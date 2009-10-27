@@ -1,0 +1,26 @@
+
+2008-04-08  Tomas Mraz <t8m@centrum.cz>
+
+        * modules/pam_xauth/pam_xauth.c(run_coprocess): Avoid multiple
+        calls to sysconf() (based on patch by Sami Farin).
+
+--- Linux-PAM-1.0/modules/pam_xauth/pam_xauth.c	2007-10-01 11:41:32.000000000 +0200
++++ Linux-PAM/modules/pam_xauth/pam_xauth.c	2008-06-22 09:47:33.000000000 +0200
+@@ -118,6 +118,7 @@
+ 		size_t j;
+ 		char *args[10];
+ 		const char *tmp;
++		int maxopened;
+ 		/* Drop privileges. */
+ 		setgid(gid);
+ 		setgroups(0, NULL);
+@@ -129,7 +130,8 @@
+ 		 * descriptors. */
+ 		dup2(ipipe[0], STDIN_FILENO);
+ 		dup2(opipe[1], STDOUT_FILENO);
+-		for (i = 0; i < sysconf(_SC_OPEN_MAX); i++) {
++		maxopened = (int)sysconf(_SC_OPEN_MAX);
++		for (i = 0; i < maxopened; i++) {
+ 			if ((i != STDIN_FILENO) && (i != STDOUT_FILENO)) {
+ 				close(i);
+ 			}

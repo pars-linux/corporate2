@@ -1,0 +1,101 @@
+--- util-linux/findfs.c.orig
++++ util-linux/findfs.c
+@@ -15,14 +15,20 @@ int findfs_main(int argc, char **argv) M
+ int findfs_main(int argc, char **argv)
+ {
+ 	char *tmp = NULL;
++    int noFloppyProbing = 0;
++
++    if (argc == 3 && !strncmp(argv[2], "--no-floppy", 11)) {
++        noFloppyProbing = 1;
++        --argc;
++    }
+ 
+ 	if (argc != 2)
+ 		bb_show_usage();
+ 
+ 	if (!strncmp(argv[1], "LABEL=", 6))
+-		tmp = get_devname_from_label(argv[1] + 6);
++		tmp = get_devname_from_label(argv[1] + 6, noFloppyProbing);
+ 	else if (!strncmp(argv[1], "UUID=", 5))
+-		tmp = get_devname_from_uuid(argv[1] + 5);
++		tmp = get_devname_from_uuid(argv[1] + 5, noFloppyProbing);
+ 	else if (!strncmp(argv[1], "/dev/", 5)) {
+ 		/* Just pass a device name right through.  This might aid in some scripts
+ 		being able to call this unconditionally */
+--- util-linux/volume_id/get_devname.c.orig
++++ util-linux/volume_id/get_devname.c
+@@ -12,6 +12,8 @@
+ 
+ //#define BLKGETSIZE64 _IOR(0x12,114,size_t)
+ 
++static int noFloppyProbing = 0;
++
+ static struct uuidCache_s {
+ 	struct uuidCache_s *next;
+ //	int major, minor;
+@@ -89,6 +91,9 @@ uuidcache_check_device(const char *devic
+ 	if (!S_ISBLK(statbuf->st_mode))
+ 		return TRUE;
+ 
++	if ((major(statbuf->st_rdev) == 2) && noFloppyProbing)
++		return TRUE;
++
+ 	fd = open(device, O_RDONLY);
+ 	if (fd < 0)
+ 		return TRUE;
+@@ -220,10 +225,13 @@ void display_uuid_cache(void)
+ 
+ /* Used by mount and findfs */
+ 
+-char *get_devname_from_label(const char *spec)
++char *get_devname_from_label(const char *spec, int _noFloppyProbing)
+ {
+ 	struct uuidCache_s *uc;
+ 
++	/* Set global noFloppyProbing */
++	noFloppyProbing = _noFloppyProbing;
++
+ 	uuidcache_init();
+ 	uc = uuidCache;
+ 	while (uc) {
+@@ -235,10 +243,13 @@ char *get_devname_from_label(const char 
+ 	return NULL;
+ }
+ 
+-char *get_devname_from_uuid(const char *spec)
++char *get_devname_from_uuid(const char *spec, int _noFloppyProbing)
+ {
+ 	struct uuidCache_s *uc;
+ 
++	/* Set global noFloppyProbing */
++	noFloppyProbing = _noFloppyProbing;
++
+ 	uuidcache_init();
+ 	uc = uuidCache;
+ 	while (uc) {
+--- include/volume_id.h.orig
++++ include/volume_id.h
+@@ -18,6 +18,6 @@
+  *	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+  */
+ 
+-char *get_devname_from_label(const char *spec);
+-char *get_devname_from_uuid(const char *spec);
++char *get_devname_from_label(const char *spec, int _noFloppyProbing);
++char *get_devname_from_uuid(const char *spec, int _noFloppyProbing);
+ void display_uuid_cache(void);
+--- util-linux/mount.c.orig
++++ util-linux/mount.c
+@@ -263,9 +263,9 @@ static void resolve_mount_spec(char **fs
+ 	char *tmp = NULL;
+ 
+ 	if (!strncmp(*fsname, "UUID=", 5))
+-		tmp = get_devname_from_uuid(*fsname + 5);
++		tmp = get_devname_from_uuid(*fsname + 5, 0);
+ 	else if (!strncmp(*fsname, "LABEL=", 6))
+-		tmp = get_devname_from_label(*fsname + 6);
++		tmp = get_devname_from_label(*fsname + 6, 0);
+ 
+ 	if (tmp)
+ 		*fsname = tmp;

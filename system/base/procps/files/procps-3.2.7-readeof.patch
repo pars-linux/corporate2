@@ -1,0 +1,99 @@
+--- proc/readproc.c
++++ proc/readproc.c	2006-07-28 11:20:18.000000000 +0000
+@@ -412,7 +412,7 @@ static int file2str(const char *director
+     int fd, num_read;
+ 
+     sprintf(filename, "%s/%s", directory, what);
+-    fd = open(filename, O_RDONLY, 0);
++    fd = open(filename, O_RDONLY, O_NOATIME);
+     if(unlikely(fd==-1)) return -1;
+     num_read = read(fd, ret, cap - 1);
+     close(fd);
+@@ -421,40 +421,58 @@ static int file2str(const char *director
+     return num_read;
+ }
+ 
++#define PROC_READ_MAY_EINTR	0		/* AFAIK reading /proc can catch EINTR
++						 * or ERESTARTSYS and therefore read
++						 * can be shorten before reaching EOF ?? */
++
+ static char** file2strvec(const char* directory, const char* what) {
+     char buf[2048];	/* read buf bytes at a time */
+-    char *p, *rbuf = 0, *endbuf, **q, **ret;
+-    int fd, tot = 0, n, c, end_of_file = 0;
+-    int align;
++    char *p, *rbuf = (char*)0, *endbuf, **q, **ret;
++    int fd, c;
++    ssize_t n, align, tot = 0;
+ 
+     sprintf(buf, "%s/%s", directory, what);
+-    fd = open(buf, O_RDONLY, 0);
++    fd = open(buf, O_RDONLY, O_NOATIME);
+     if(fd==-1) return NULL;
+ 
+     /* read whole file into a memory buffer, allocating as we go */
+-    while ((n = read(fd, buf, sizeof buf - 1)) > 0) {
+-	if (n < (int)(sizeof buf - 1))
+-	    end_of_file = 1;
+-	if (n == 0 && rbuf == 0)
+-	    return NULL;	/* process died between our open and read */
++    do {
++	n = read(fd, buf, sizeof(buf) - 1);
+ 	if (n < 0) {
+-	    if (rbuf)
+-		free(rbuf);
+-	    return NULL;	/* read error */
++#if defined(PROC_READ_MAY_EINTR) && (PROC_READ_MAY_EINTR > 0)
++	    if (errno == EINTR)
++		continue;
++#endif
++	    tot = 0;
++	    break;				/* read error! */
++	}
++	if (n == 0) {
++	    if(rbuf == (char*)0)
++		tot = 0;			/* process died between our open and read */
++	    break;				/* we're done */
+ 	}
+-	if (end_of_file && buf[n-1])		/* last read char not null */
+-	    buf[n++] = '\0';			/* so append null-terminator */
+ 	rbuf = xrealloc(rbuf, tot + n);		/* allocate more memory */
+ 	memcpy(rbuf + tot, buf, n);		/* copy buffer into it */
+ 	tot += n;				/* increment total byte ctr */
+-	if (end_of_file)
+-	    break;
+-    }
++#if defined(PROC_READ_MAY_EINTR) && (PROC_READ_MAY_EINTR > 0)
++    } while (n > 0);
++#else
++    } while (n == (sizeof(buf) - 1));
++#endif
++
+     close(fd);
+-    if (n <= 0 && !end_of_file) {
+-	if (rbuf) free(rbuf);
+-	return NULL;		/* read error */
++
++    if (tot == 0) {
++	if (rbuf)
++	    free(rbuf);
++	return NULL;				/* read error? */
+     }
++
++    if (rbuf[tot-1]) {				/* last read char not null */
++	rbuf = xrealloc(rbuf, tot + 1);		/* allocate more memory */
++	rbuf[tot++] = '\0';			/* and append null-terminator */
++    }
++
+     endbuf = rbuf + tot;			/* count space for pointers */
+     align = (sizeof(char*)-1) - ((tot + sizeof(char*)-1) & (sizeof(char*)-1));
+     for (c = 0, p = rbuf; p < endbuf; p++)
+@@ -482,7 +500,7 @@ int read_cmdline(char *restrict const ds
+     unsigned n = 0;
+     dst[0] = '\0';
+     snprintf(name, sizeof name, "/proc/%u/cmdline", pid);
+-    fd = open(name, O_RDONLY);
++    fd = open(name, O_RDONLY, O_NOATIME);
+     if(fd==-1) return 0;
+     for(;;){
+         ssize_t r = read(fd,dst+n,sz-n);

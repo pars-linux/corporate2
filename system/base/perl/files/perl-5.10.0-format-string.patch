@@ -1,0 +1,551 @@
+Index: perl-5.10.0/av.c
+===================================================================
+--- perl-5.10.0/av.c
++++ perl-5.10.0/av.c	2009-03-22 18:15:42.000000000 +0100
+@@ -321,7 +321,7 @@
+     }
+ 
+     if (SvREADONLY(av) && key >= AvFILL(av))
+-	Perl_croak(aTHX_ PL_no_modify);
++	Perl_croak(aTHX_ "%s", PL_no_modify);
+ 
+     if (!AvREAL(av) && AvREIFY(av))
+ 	av_reify(av);
+@@ -428,7 +428,7 @@
+ #endif
+ 
+     if (SvREADONLY(av))
+-	Perl_croak(aTHX_ PL_no_modify);
++	Perl_croak(aTHX_ "%s", PL_no_modify);
+ 
+     /* Give any tie a chance to cleanup first */
+     if (SvRMAGICAL(av)) {
+@@ -528,7 +528,7 @@
+     assert(av);
+ 
+     if (SvREADONLY(av))
+-	Perl_croak(aTHX_ PL_no_modify);
++	Perl_croak(aTHX_ "%s", PL_no_modify);
+ 
+     if ((mg = SvTIED_mg((SV*)av, PERL_MAGIC_tied))) {
+ 	dSP;
+@@ -566,7 +566,7 @@
+     assert(av);
+ 
+     if (SvREADONLY(av))
+-	Perl_croak(aTHX_ PL_no_modify);
++	Perl_croak(aTHX_ "%s", PL_no_modify);
+     if ((mg = SvTIED_mg((SV*)av, PERL_MAGIC_tied))) {
+ 	dSP;    
+ 	PUSHSTACKi(PERLSI_MAGIC);
+@@ -632,7 +632,7 @@
+     assert(av);
+ 
+     if (SvREADONLY(av))
+-	Perl_croak(aTHX_ PL_no_modify);
++	Perl_croak(aTHX_ "%s", PL_no_modify);
+ 
+     if ((mg = SvTIED_mg((SV*)av, PERL_MAGIC_tied))) {
+ 	dSP;
+@@ -703,7 +703,7 @@
+     assert(av);
+ 
+     if (SvREADONLY(av))
+-	Perl_croak(aTHX_ PL_no_modify);
++	Perl_croak(aTHX_ "%s", PL_no_modify);
+     if ((mg = SvTIED_mg((SV*)av, PERL_MAGIC_tied))) {
+ 	dSP;
+ 	PUSHSTACKi(PERLSI_MAGIC);
+@@ -830,7 +830,7 @@
+     assert(av);
+ 
+     if (SvREADONLY(av))
+-	Perl_croak(aTHX_ PL_no_modify);
++	Perl_croak(aTHX_ "%s", PL_no_modify);
+ 
+     if (SvRMAGICAL(av)) {
+         const MAGIC * const tied_magic = mg_find((SV*)av, PERL_MAGIC_tied);
+Index: perl-5.10.0/doop.c
+===================================================================
+--- perl-5.10.0/doop.c
++++ perl-5.10.0/doop.c	2009-03-22 18:15:42.000000000 +0100
+@@ -625,7 +625,7 @@
+         if (SvIsCOW(sv))
+             sv_force_normal_flags(sv, 0);
+         if (SvREADONLY(sv) && !(PL_op->op_private & OPpTRANS_IDENTICAL))
+-            Perl_croak(aTHX_ PL_no_modify);
++            Perl_croak(aTHX_ "%s", PL_no_modify);
+     }
+     (void)SvPV_const(sv, len);
+     if (!len)
+@@ -1000,7 +1000,7 @@
+ 	    sv_force_normal_flags(sv, 0);
+         }
+         if (SvREADONLY(sv))
+-            Perl_croak(aTHX_ PL_no_modify);
++            Perl_croak(aTHX_ "%s", PL_no_modify);
+     }
+ 
+     if (PL_encoding && !SvUTF8(sv)) {
+@@ -1084,7 +1084,7 @@
+ 	    sv_force_normal_flags(sv, 0);
+         }
+         if (SvREADONLY(sv))
+-            Perl_croak(aTHX_ PL_no_modify);
++            Perl_croak(aTHX_ "%s", PL_no_modify);
+     }
+ 
+     if (PL_encoding) {
+Index: perl-5.10.0/handy.h
+===================================================================
+--- perl-5.10.0/handy.h
++++ perl-5.10.0/handy.h	2009-03-22 18:15:42.000000000 +0100
+@@ -699,10 +699,10 @@
+ #ifdef PERL_MALLOC_WRAP
+ #define MEM_WRAP_CHECK(n,t) MEM_WRAP_CHECK_1(n,t,PL_memory_wrap)
+ #define MEM_WRAP_CHECK_1(n,t,a) \
+-	(void)(sizeof(t) > 1 && ((MEM_SIZE)(n)+0.0) > MEM_SIZE_MAX/sizeof(t) && (Perl_croak_nocontext(a),0))
++	(void)(sizeof(t) > 1 && ((MEM_SIZE)(n)+0.0) > MEM_SIZE_MAX/sizeof(t) && (Perl_croak_nocontext("%s",a),0))
+ #define MEM_WRAP_CHECK_(n,t) MEM_WRAP_CHECK(n,t),
+ 
+-#define PERL_STRLEN_ROUNDUP(n) ((void)(((n) > MEM_SIZE_MAX - 2 * PERL_STRLEN_ROUNDUP_QUANTUM) ? (Perl_croak_nocontext(PL_memory_wrap),0):0),((n-1+PERL_STRLEN_ROUNDUP_QUANTUM)&~((MEM_SIZE)PERL_STRLEN_ROUNDUP_QUANTUM-1)))
++#define PERL_STRLEN_ROUNDUP(n) ((void)(((n) > MEM_SIZE_MAX - 2 * PERL_STRLEN_ROUNDUP_QUANTUM) ? (Perl_croak_nocontext("%s",PL_memory_wrap),0):0),((n-1+PERL_STRLEN_ROUNDUP_QUANTUM)&~((MEM_SIZE)PERL_STRLEN_ROUNDUP_QUANTUM-1)))
+ 
+ #else
+ 
+Index: perl-5.10.0/mg.c
+===================================================================
+--- perl-5.10.0/mg.c
++++ perl-5.10.0/mg.c	2009-03-22 18:15:42.000000000 +0100
+@@ -572,7 +572,7 @@
+ {
+     PERL_UNUSED_ARG(sv);
+     PERL_UNUSED_ARG(mg);
+-    Perl_croak(aTHX_ PL_no_modify);
++    Perl_croak(aTHX_ "%s", PL_no_modify);
+     NORETURN_FUNCTION_END;
+ }
+ 
+@@ -2267,7 +2267,7 @@
+              * set without a previous pattern match. Unless it's C<local $1>
+              */
+             if (!PL_localizing) {
+-                Perl_croak(aTHX_ PL_no_modify);
++                Perl_croak(aTHX_ "%s", PL_no_modify);
+             }
+         }
+     case '\001':	/* ^A */
+Index: perl-5.10.0/perl.c
+===================================================================
+--- perl-5.10.0/perl.c
++++ perl-5.10.0/perl.c	2009-03-22 18:15:42.000000000 +0100
+@@ -2811,7 +2811,7 @@
+     PUTBACK;
+ 
+     if (croak_on_error && SvTRUE(ERRSV)) {
+-	Perl_croak(aTHX_ SvPVx_nolen_const(ERRSV));
++	Perl_croak(aTHX_ "%s", SvPVx_nolen_const(ERRSV));
+     }
+ 
+     return sv;
+@@ -3241,7 +3241,7 @@
+ 	if (!sv_derived_from(PL_patchlevel, "version"))
+ 	    upg_version(PL_patchlevel, TRUE);
+ #if !defined(DGUX)
+-	PerlIO_printf(PerlIO_stdout(),
++	PerlIO_printf(PerlIO_stdout(), "%s",
+ 		Perl_form(aTHX_ "\nThis is perl, %"SVf
+ #ifdef PERL_PATCHNUM
+ 			  " DEVEL" STRINGIFY(PERL_PATCHNUM)
+@@ -3251,7 +3251,7 @@
+ 			  ARCHNAME));
+ #else /* DGUX */
+ /* Adjust verbose output as in the perl that ships with the DG/UX OS from EMC */
+-	PerlIO_printf(PerlIO_stdout(),
++	PerlIO_printf(PerlIO_stdout(), "%s",
+ 		Perl_form(aTHX_ "\nThis is perl, %"SVf"\n",
+ 		    SVfARG(vstringify(PL_patchlevel))));
+ 	PerlIO_printf(PerlIO_stdout(),
+Index: perl-5.10.0/pp.c
+===================================================================
+--- perl-5.10.0/pp.c
++++ perl-5.10.0/pp.c	2009-03-22 18:30:29.000000000 +0100
+@@ -158,7 +158,7 @@
+ 		 * NI-S 1999/05/07
+ 		 */
+ 		if (SvREADONLY(sv))
+-		    Perl_croak(aTHX_ PL_no_modify);
++		    Perl_croak(aTHX_ "%s", PL_no_modify);
+ 		if (PL_op->op_private & OPpDEREF) {
+ 		    GV *gv;
+ 		    if (cUNOP->op_targ) {
+@@ -308,7 +308,7 @@
+ 	    else if (gv)
+ 		sv = save_scalar(gv);
+ 	    else
+-		Perl_croak(aTHX_ PL_no_localize_ref);
++		Perl_croak(aTHX_ "%s", PL_no_localize_ref);
+ 	}
+ 	else if (PL_op->op_private & OPpDEREF)
+ 	    vivify_ref(sv, PL_op->op_private & OPpDEREF);
+@@ -863,7 +863,7 @@
+ {
+     dVAR; dSP;
+     if (SvTYPE(TOPs) >= SVt_PVGV && SvTYPE(TOPs) != SVt_PVLV)
+-	DIE(aTHX_ PL_no_modify);
++	DIE(aTHX_ "%s", PL_no_modify);
+     if (!SvREADONLY(TOPs) && SvIOK_notUV(TOPs) && !SvNOK(TOPs) && !SvPOK(TOPs)
+         && SvIVX(TOPs) != IV_MIN)
+     {
+@@ -880,7 +880,7 @@
+ {
+     dVAR; dSP; dTARGET;
+     if (SvTYPE(TOPs) >= SVt_PVGV && SvTYPE(TOPs) != SVt_PVLV)
+-	DIE(aTHX_ PL_no_modify);
++	DIE(aTHX_ "%s", PL_no_modify);
+     sv_setsv(TARG, TOPs);
+     if (!SvREADONLY(TOPs) && SvIOK_notUV(TOPs) && !SvNOK(TOPs) && !SvPOK(TOPs)
+         && SvIVX(TOPs) != IV_MAX)
+@@ -902,7 +902,7 @@
+ {
+     dVAR; dSP; dTARGET;
+     if (SvTYPE(TOPs) >= SVt_PVGV && SvTYPE(TOPs) != SVt_PVLV)
+-	DIE(aTHX_ PL_no_modify);
++	DIE(aTHX_ "%s", PL_no_modify);
+     sv_setsv(TARG, TOPs);
+     if (!SvREADONLY(TOPs) && SvIOK_notUV(TOPs) && !SvNOK(TOPs) && !SvPOK(TOPs)
+         && SvIVX(TOPs) != IV_MIN)
+Index: perl-5.10.0/pp_ctl.c
+===================================================================
+--- perl-5.10.0/pp_ctl.c
++++ perl-5.10.0/pp_ctl.c	2009-03-22 18:15:42.000000000 +0100
+@@ -1487,7 +1487,7 @@
+ 		    sv_catpvn(err, message, msglen);
+ 		    if (ckWARN(WARN_MISC)) {
+ 			const STRLEN start = SvCUR(err)-msglen-sizeof(prefix)+1;
+-			Perl_warner(aTHX_ packWARN(WARN_MISC), SvPVX_const(err)+start);
++			Perl_warner(aTHX_ packWARN(WARN_MISC), "%s", SvPVX_const(err)+start);
+ 		    }
+ 		}
+ 	    }
+Index: perl-5.10.0/pp_hot.c
+===================================================================
+--- perl-5.10.0/pp_hot.c
++++ perl-5.10.0/pp_hot.c	2009-03-22 18:44:02.000000000 +0100
+@@ -412,7 +412,7 @@
+ {
+     dVAR; dSP;
+     if (SvTYPE(TOPs) >= SVt_PVGV && SvTYPE(TOPs) != SVt_PVLV)
+-	DIE(aTHX_ PL_no_modify);
++	DIE(aTHX_ "%s", PL_no_modify);
+     if (!SvREADONLY(TOPs) && SvIOK_notUV(TOPs) && !SvNOK(TOPs) && !SvPOK(TOPs)
+         && SvIVX(TOPs) != IV_MAX)
+     {
+@@ -830,14 +830,14 @@
+ 	}
+ 	else if (LVRET) {
+ 	    if (gimme != G_ARRAY)
+-		Perl_croak(aTHX_ is_pp_rv2av ? return_array_to_lvalue_scalar
++		Perl_croak(aTHX_ "%s", is_pp_rv2av ? return_array_to_lvalue_scalar
+ 			   : return_hash_to_lvalue_scalar);
+ 	    SETs(sv);
+ 	    RETURN;
+ 	}
+ 	else if (PL_op->op_flags & OPf_MOD
+ 		&& PL_op->op_private & OPpLVAL_INTRO)
+-	    Perl_croak(aTHX_ PL_no_localize_ref);
++	    Perl_croak(aTHX_ "%s", PL_no_localize_ref);
+     }
+     else {
+ 	if (SvTYPE(sv) == type) {
+@@ -847,7 +847,7 @@
+ 	    }
+ 	    else if (LVRET) {
+ 		if (gimme != G_ARRAY)
+-		    Perl_croak(aTHX_
++		    Perl_croak(aTHX_ "%s",
+ 			       is_pp_rv2av ? return_array_to_lvalue_scalar
+ 			       : return_hash_to_lvalue_scalar);
+ 		SETs(sv);
+@@ -953,7 +953,7 @@
+ 	    }
+ 	    else
+ 		err = "Odd number of elements in hash assignment";
+-	    Perl_warner(aTHX_ packWARN(WARN_MISC), err);
++	    Perl_warner(aTHX_ packWARN(WARN_MISC), "%s", err);
+ 	}
+ 
+         tmpstr = newSV(0);
+@@ -2065,7 +2065,7 @@
+ 	 || ( ((SvTYPE(TARG) == SVt_PVGV && isGV_with_GP(TARG))
+ 	       || SvTYPE(TARG) > SVt_PVLV)
+ 	     && !(SvTYPE(TARG) == SVt_PVGV && SvFAKE(TARG)))))
+-	DIE(aTHX_ PL_no_modify);
++	DIE(aTHX_ "%s", PL_no_modify);
+     PUTBACK;
+ 
+     s = SvPV_mutable(TARG, len);
+@@ -2938,7 +2938,7 @@
+     SvGETMAGIC(sv);
+     if (!SvOK(sv)) {
+ 	if (SvREADONLY(sv))
+-	    Perl_croak(aTHX_ PL_no_modify);
++	    Perl_croak(aTHX_ "%s", PL_no_modify);
+ 	if (SvTYPE(sv) < SVt_RV)
+ 	    sv_upgrade(sv, SVt_RV);
+ 	else if (SvTYPE(sv) >= SVt_PV) {
+Index: perl-5.10.0/pp_sort.c
+===================================================================
+--- perl-5.10.0/pp_sort.c
++++ perl-5.10.0/pp_sort.c	2009-03-22 18:15:42.000000000 +0100
+@@ -1561,7 +1561,7 @@
+ 	}
+ 	else {
+ 	    if (SvREADONLY(av))
+-		Perl_croak(aTHX_ PL_no_modify);
++		Perl_croak(aTHX_ "%s", PL_no_modify);
+ 	    else
+ 		SvREADONLY_on(av);
+ 	    p1 = p2 = AvARRAY(av);
+Index: perl-5.10.0/pp_sys.c
+===================================================================
+--- perl-5.10.0/pp_sys.c
++++ perl-5.10.0/pp_sys.c	2009-03-22 18:15:42.000000000 +0100
+@@ -1018,7 +1018,7 @@
+ 	    if (SvIsCOW(sv))
+ 		sv_force_normal_flags(sv, 0);
+ 	    if (SvREADONLY(sv) && !(SvPOK(sv) && SvCUR(sv) == 0))
+-		DIE(aTHX_ PL_no_modify);
++		DIE(aTHX_ "%s", PL_no_modify);
+ 	}
+ 	if (!SvPOK(sv)) {
+ 	    if (ckWARN(WARN_MISC))
+Index: perl-5.10.0/regcomp.c
+===================================================================
+--- perl-5.10.0/regcomp.c
++++ perl-5.10.0/regcomp.c	2009-03-22 18:15:42.000000000 +0100
+@@ -1973,7 +1973,7 @@
+                                     if ( folder )
+                                         TRIE_BITMAP_SET(trie, folder[ *ch ]);
+                                     DEBUG_OPTIMISE_r(
+-                                        PerlIO_printf(Perl_debug_log, (char*)ch)
++                                        PerlIO_printf(Perl_debug_log, "%s", (char*)ch)
+                                     );
+ 				}
+ 			    }
+@@ -4870,7 +4870,7 @@
+     if (flags & RXapif_FETCH) {
+         return reg_named_buff_fetch(rx, key, flags);
+     } else if (flags & (RXapif_STORE | RXapif_DELETE | RXapif_CLEAR)) {
+-        Perl_croak(aTHX_ PL_no_modify);
++        Perl_croak(aTHX_ "%s", PL_no_modify);
+         return NULL;
+     } else if (flags & RXapif_EXISTS) {
+         return reg_named_buff_exists(rx, key, flags)
+@@ -5144,7 +5144,7 @@
+     PERL_UNUSED_ARG(value);
+ 
+     if (!PL_localizing)
+-        Perl_croak(aTHX_ PL_no_modify);
++        Perl_croak(aTHX_ "%s", PL_no_modify);
+ }
+ 
+ I32
+Index: perl-5.10.0/sv.c
+===================================================================
+--- perl-5.10.0/sv.c
++++ perl-5.10.0/sv.c	2009-03-22 18:15:42.000000000 +0100
+@@ -3091,7 +3091,7 @@
+         sv_force_normal_flags(sv, 0);
+     }
+     if (SvREADONLY(sv)) {
+-	Perl_croak(aTHX_ PL_no_modify);
++	Perl_croak(aTHX_ "%s", PL_no_modify);
+     }
+     (void) sv_utf8_upgrade(sv);
+     SvUTF8_off(sv);
+@@ -3205,7 +3205,7 @@
+ 
+ #ifdef GV_UNIQUE_CHECK
+     if (GvUNIQUE((GV*)dstr)) {
+-	Perl_croak(aTHX_ PL_no_modify);
++	Perl_croak(aTHX_ "%s", PL_no_modify);
+     }
+ #endif
+ 
+@@ -3262,7 +3262,7 @@
+ 
+ #ifdef GV_UNIQUE_CHECK
+     if (GvUNIQUE((GV*)dstr)) {
+-	Perl_croak(aTHX_ PL_no_modify);
++	Perl_croak(aTHX_ "%s", PL_no_modify);
+     }
+ #endif
+ 
+@@ -4139,7 +4139,7 @@
+             }
+ 	}
+ 	else if (IN_PERL_RUNTIME)
+-	    Perl_croak(aTHX_ PL_no_modify);
++	    Perl_croak(aTHX_ "%s", PL_no_modify);
+         /* At this point I believe that I can drop the global SV mutex.  */
+     }
+ #else
+@@ -4157,7 +4157,7 @@
+ 	    unshare_hek(SvSHARED_HEK_FROM_PV(pvx));
+ 	}
+ 	else if (IN_PERL_RUNTIME)
+-	    Perl_croak(aTHX_ PL_no_modify);
++	    Perl_croak(aTHX_ "%s", PL_no_modify);
+     }
+ #endif
+     if (SvROK(sv))
+@@ -4509,7 +4509,7 @@
+ 	    && how != PERL_MAGIC_backref
+ 	   )
+ 	{
+-	    Perl_croak(aTHX_ PL_no_modify);
++	    Perl_croak(aTHX_ "%s", PL_no_modify);
+ 	}
+     }
+     if (SvMAGICAL(sv) || (how == PERL_MAGIC_taint && SvTYPE(sv) >= SVt_PVMG)) {
+@@ -6643,7 +6643,7 @@
+ 	    sv_force_normal_flags(sv, 0);
+ 	if (SvREADONLY(sv)) {
+ 	    if (IN_PERL_RUNTIME)
+-		Perl_croak(aTHX_ PL_no_modify);
++		Perl_croak(aTHX_ "%s", PL_no_modify);
+ 	}
+ 	if (SvROK(sv)) {
+ 	    IV i;
+@@ -6799,7 +6799,7 @@
+ 	    sv_force_normal_flags(sv, 0);
+ 	if (SvREADONLY(sv)) {
+ 	    if (IN_PERL_RUNTIME)
+-		Perl_croak(aTHX_ PL_no_modify);
++		Perl_croak(aTHX_ "%s", PL_no_modify);
+ 	}
+ 	if (SvROK(sv)) {
+ 	    IV i;
+@@ -7982,7 +7982,7 @@
+ 	if (SvIsCOW(tmpRef))
+ 	    sv_force_normal_flags(tmpRef, 0);
+ 	if (SvREADONLY(tmpRef))
+-	    Perl_croak(aTHX_ PL_no_modify);
++	    Perl_croak(aTHX_ "%s", PL_no_modify);
+ 	if (SvOBJECT(tmpRef)) {
+ 	    if (SvTYPE(tmpRef) != SVt_PVIO)
+ 		--PL_sv_objcount;
+@@ -9457,13 +9457,13 @@
+ 
+ 	have = esignlen + zeros + elen;
+ 	if (have < zeros)
+-	    Perl_croak_nocontext(PL_memory_wrap);
++	    Perl_croak_nocontext("%s", PL_memory_wrap);
+ 
+ 	need = (have > width ? have : width);
+ 	gap = need - have;
+ 
+ 	if (need >= (((STRLEN)~0) - SvCUR(sv) - dotstrlen - 1))
+-	    Perl_croak_nocontext(PL_memory_wrap);
++	    Perl_croak_nocontext("%s", PL_memory_wrap);
+ 	SvGROW(sv, SvCUR(sv) + need + dotstrlen + 1);
+ 	p = SvEND(sv);
+ 	if (esignlen && fill == '0') {
+Index: perl-5.10.0/toke.c
+===================================================================
+--- perl-5.10.0/toke.c
++++ perl-5.10.0/toke.c	2009-03-22 18:15:42.000000000 +0100
+@@ -4630,7 +4630,7 @@
+ 		&& isIDFIRST_lazy_if(s,UTF))
+ 	    {
+ 		CopLINE_dec(PL_curcop);
+-		Perl_warner(aTHX_ packWARN(WARN_SEMICOLON), PL_warn_nosemi);
++		Perl_warner(aTHX_ packWARN(WARN_SEMICOLON), "%s", PL_warn_nosemi);
+ 		CopLINE_inc(PL_curcop);
+ 	    }
+ 	    BAop(OP_BIT_AND);
+@@ -5286,7 +5286,7 @@
+ 		if (PL_expect == XOPERATOR) {
+ 		    if (PL_bufptr == PL_linestart) {
+ 			CopLINE_dec(PL_curcop);
+-			Perl_warner(aTHX_ packWARN(WARN_SEMICOLON), PL_warn_nosemi);
++			Perl_warner(aTHX_ packWARN(WARN_SEMICOLON), "%s", PL_warn_nosemi);
+ 			CopLINE_inc(PL_curcop);
+ 		    }
+ 		    else
+Index: perl-5.10.0/universal.c
+===================================================================
+--- perl-5.10.0/universal.c
++++ perl-5.10.0/universal.c	2009-03-22 18:15:42.000000000 +0100
+@@ -1238,7 +1238,7 @@
+ 
+     if (!rx) {
+         if (!PL_localizing)
+-            Perl_croak(aTHX_ PL_no_modify);
++            Perl_croak(aTHX_ "%s", PL_no_modify);
+         else
+             XSRETURN_UNDEF;
+     }
+@@ -1261,7 +1261,7 @@
+         Perl_croak(aTHX_ "Usage: Tie::Hash::NamedCapture::DELETE($key, $flags)");
+ 
+     if (!rx)
+-        Perl_croak(aTHX_ PL_no_modify);
++        Perl_croak(aTHX_ "%s", PL_no_modify);
+ 
+     SP -= items;
+ 
+@@ -1283,7 +1283,7 @@
+     rx = PL_curpm ? PM_GETRE(PL_curpm) : NULL;
+ 
+     if (!rx)
+-        Perl_croak(aTHX_ PL_no_modify);
++        Perl_croak(aTHX_ "%s", PL_no_modify);
+ 
+     SP -= items;
+ 
+Index: perl-5.10.0/util.c
+===================================================================
+--- perl-5.10.0/util.c
++++ perl-5.10.0/util.c	2009-03-22 18:15:42.000000000 +0100
+@@ -264,12 +264,12 @@
+     if (size && (count <= MEM_SIZE_MAX / size))
+ 	total_size = size * count;
+     else
+-	Perl_croak_nocontext(PL_memory_wrap);
++	Perl_croak_nocontext("%s", PL_memory_wrap);
+ #ifdef PERL_TRACK_MEMPOOL
+     if (sTHX <= MEM_SIZE_MAX - (MEM_SIZE)total_size)
+ 	total_size += sTHX;
+     else
+-	Perl_croak_nocontext(PL_memory_wrap);
++	Perl_croak_nocontext("%s", PL_memory_wrap);
+ #endif
+ #ifdef HAS_64K_LIMIT
+     if (total_size > 0xffff) {
+Index: perl-5.10.0/ext/PerlIO/scalar/scalar.xs
+===================================================================
+--- perl-5.10.0/ext/PerlIO/scalar/scalar.xs
++++ perl-5.10.0/ext/PerlIO/scalar/scalar.xs	2009-03-22 18:15:42.000000000 +0100
+@@ -26,7 +26,7 @@
+ 	if (SvROK(arg)) {
+ 	    if (SvREADONLY(SvRV(arg)) && mode && *mode != 'r') {
+ 		if (ckWARN(WARN_LAYER))
+-		    Perl_warner(aTHX_ packWARN(WARN_LAYER), PL_no_modify);
++		    Perl_warner(aTHX_ packWARN(WARN_LAYER), "%s", PL_no_modify);
+ 		SETERRNO(EINVAL, SS_IVCHAN);
+ 		return -1;
+ 	    }
+Index: perl-5.10.0/ext/XS/Typemap/stdio.c
+===================================================================
+--- perl-5.10.0/ext/XS/Typemap/stdio.c
++++ perl-5.10.0/ext/XS/Typemap/stdio.c	2009-03-22 18:15:42.000000000 +0100
+@@ -23,6 +23,6 @@
+ 
+ 
+ int xsfprintf ( FILE * stream, const char * text ) {
+-  return fprintf( stream, text );
++  return fprintf( stream, "%s", text );
+ }
+ 

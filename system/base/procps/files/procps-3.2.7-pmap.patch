@@ -1,0 +1,206 @@
+--- pmap.c
++++ pmap.c	2008-10-08 11:58:38.028263799 +0200
+@@ -12,10 +12,13 @@
+  */
+ 
+ #include <stdio.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <errno.h>
+ #include <getopt.h>
++#include <sys/utsname.h>
++#include <unistd.h>
+ 
+ #include "proc/readproc.h"
+ #include "proc/version.h"
+@@ -26,18 +29,28 @@
+ struct smap {
+ 	unsigned long size;
+ 	unsigned long rss;
++	unsigned long pss;
+ 	unsigned long shared_clean;
+ 	unsigned long shared_dirty;
+ 	unsigned long private_clean;
+ 	unsigned long private_dirty;
++	unsigned long referenced;
++	unsigned long swap;
+ };
+ 
+ static unsigned long mapped;
+ static unsigned long shared;
+ static unsigned long private;
+ static unsigned long rss;
++static unsigned long pss;
+ static unsigned long dirty;
++static unsigned long referenced;
++static unsigned long swap;
+ static FILE *smaps_fp;
++static int maj, min, patch, dopss, noref, doswap;
++static long lbits;
++#define BLK	((lbits==64)?"        ":"")
++#define WDT	((lbits==64)?16:8)
+ 
+ static void usage(const char *cmd)
+ {
+@@ -85,6 +98,18 @@ static int get_smap_data(struct smap *sm
+ 	smap->rss = data;
+ 	rss += data;
+ 
++	if (dopss) {
++		/* get pss */
++		if (!fgets(buff, BUFFERSIZE, smaps_fp))
++			return 1;
++
++		assigned = sscanf(buff, "Pss: %lld", &data);
++		if (assigned != 1)
++			return 1;
++		smap->pss = data;
++		pss += data;
++	}
++
+ 	/* get shared clean */
+ 	if (!fgets(buff, BUFFERSIZE, smaps_fp))
+ 		return 1;
+@@ -123,6 +148,32 @@ static int get_smap_data(struct smap *sm
+ 	smap->private_dirty = data;
+ 	dirty += data;
+ 
++	if (noref)
++		goto out;
++
++	/* get referenced */
++	if (!fgets(buff, BUFFERSIZE, smaps_fp))
++		return 1;
++
++	assigned = sscanf(buff, "Referenced: %lld", &data);
++	if (assigned != 1)
++		return 1;
++	smap->referenced = data;
++	referenced += data;
++
++	if (!doswap)
++		goto out;
++
++	/* get swap */
++	if (!fgets(buff, BUFFERSIZE, smaps_fp))
++		return 1;
++
++	assigned = sscanf(buff, "Swap: %lld", &data);
++	if (assigned != 1)
++		return 1;
++	smap->swap = data;
++	swap += data;
++out:
+ 	return 0;
+ }
+ 
+@@ -130,7 +181,7 @@ static void parse_line(pid_t pid, const 
+ {
+ 	unsigned long long low, high, size, offset;
+ 	unsigned long major, minor;
+-	struct smap smap = { .rss = 0 };
++	struct smap smap = { .rss = 0, .pss = 0 };
+ 	int assigned;
+ 	char read_perm, write_perm, exec_perm, access_type;
+ 	char obj_buff[OBJECTSIZE] = "[anon]";
+@@ -159,17 +210,21 @@ static void parse_line(pid_t pid, const 
+ 	else if (access_type == 'p' && write_perm == 'w')
+ 		private += size;
+ 
+-	printf("%08llx %6lluK ", low, size);
++	printf("%0*llx %6lluK ", WDT, low, size);
+ 
+ 	if (smaps_fp) {
+ 		printf("%6luK ", smap.rss);
++		if (dopss)
++			printf("%6luK ", smap.pss);
+ 		printf("%6luK ", smap.private_dirty + smap.shared_dirty);
++		if (doswap)
++			printf("%6luK ", smap.swap);
+ 	}
+ 
+ 	printf("%c%c%c%c ", read_perm, write_perm, exec_perm, access_type);
+ 
+ 	if (show_devices)
+-		printf("%08llx %02lx:%02lx  ", offset, major, minor);
++		printf("%0*llx %02lx:%02lx  ", WDT, offset, major, minor);
+ 
+ 	printf("%s\n", obj_buff);
+ }
+@@ -181,8 +236,27 @@ int main(int argc, char *argv[])
+ 	char path[PATH_MAX];
+ 	char buff[BUFFERSIZE];
+ 	int o, show_devices = 0, quiet = 0;
++	struct utsname uts;
+ 	pid_t pid;
+ 
++	if (uname(&uts) < 0) {
++		fprintf(stderr, "error getting information about current kernel: %m\n");
++		exit(EXIT_FAILURE);
++	}
++	sscanf(uts.release, "%d.%d.%d", &maj, &min, &patch);
++
++	if ((maj > 2) || ((maj == 2) && ((min > 6) || ((min == 6) && (patch >= 27)))))
++		doswap++;
++	if ((maj > 2) || ((maj == 2) && ((min > 6) || ((min == 6) && (patch >= 25)))))
++		dopss++;
++	if ((maj < 2) || ((maj == 2) && ((min < 6) || ((min == 6) && (patch < 22)))))
++		noref++;
++
++	if ((lbits = sysconf(_SC_LONG_BIT)) < 0) {
++		fprintf(stderr, "error getting information about current kernel: %m\n");
++		exit(EXIT_FAILURE);
++	}
++
+ 	struct option longopts[] = {
+ 		{ "help", 	0, NULL, 'h' },
+ 		{ "version", 	0, NULL, 'V' },
+@@ -242,11 +316,15 @@ int main(int argc, char *argv[])
+ 	smaps_fp = fopen(path, "r");
+ 
+ 	if (!quiet) {
+-		printf("START       SIZE ");
++		printf("START%s       SIZE ", BLK);
+ 
+ 		if (smaps_fp) {
+ 			printf("    RSS ");
++			if (dopss)
++				printf("    PSS ");
+ 			printf("  DIRTY ");
++			if (doswap)
++				printf("   SWAP ");
+ 		}
+ 
+ 		if (show_devices)
+@@ -259,13 +337,25 @@ int main(int argc, char *argv[])
+ 		parse_line(pid, buff, show_devices);
+ 
+ 	if (!quiet) {
+-		if (smaps_fp)
+-			printf("Total:   %6luK %6luK %6luK\n\n", mapped, rss, dirty);
+-		else 
++		if (smaps_fp) {
++			printf("Total:%s  ", BLK);
++			printf(" %6luK", mapped);
++			printf(" %6luK", rss);
++			if (dopss)
++				printf(" %6luK", pss);
++			printf(" %6luK", dirty);
++			if (doswap)
++				printf(" %6luK", swap);
++			printf("\n\n");
++		} else 
+ 			printf("mapped: %luK    ", mapped);
+ 
+-		printf("%luK writable-private, %luK readonly-private, and %luK shared\n",
+-		       private, mapped - private - shared, shared);
++		if (noref)
++			printf("%luK writable-private, %luK readonly-private, and %luK shared\n",
++				private, mapped - private - shared, shared);
++		else
++			printf("%luK writable-private, %luK readonly-private, %luK shared, and %luK referenced\n",
++				private, mapped - private - shared, shared, referenced);
+ 	}
+ 
+ 	return 0;

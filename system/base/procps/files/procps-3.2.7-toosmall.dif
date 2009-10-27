@@ -1,0 +1,60 @@
+--- top.c
++++ top.c	2008-12-10 16:28:41.000000000 +0100
+@@ -2514,7 +2514,7 @@ static void do_key (unsigned c)
+ 
+    switch (c) {
+       case '1':
+-         if (Cpu_tot+7 > Screen_rows && !CHKw(Curwin, View_CPUSUM)) {
++         if (Cpu_tot+7 > Screen_rows && CHKw(Curwin, View_CPUSUM)) {
+             show_msg(err_num_cpus);
+          } else {
+ #ifdef WARN_NOT_SMP
+@@ -2984,7 +2984,7 @@ static proc_t **summary_show (void)
+    p_table = procs_refresh(p_table, Frames_libflags);
+ 
+    // Display Uptime and Loadavg
+-   if (CHKw(Curwin, View_LOADAV)) {
++   if (CHKw(Curwin, View_LOADAV) && (Screen_rows > Msg_row+2)) {
+       if (!Rc.mode_altscr) {
+          show_special(0, fmtmk(LOADAV_line, Myname, sprint_uptime()));
+       } else {
+@@ -3001,7 +3001,7 @@ static proc_t **summary_show (void)
+    }
+ 
+    // Display Task and Cpu(s) States
+-   if (CHKw(Curwin, View_STATES)) {
++   if (CHKw(Curwin, View_STATES) && (Screen_rows > Msg_row+2)) {
+       show_special(
+          0,
+          fmtmk(
+@@ -3015,21 +3015,29 @@ static proc_t **summary_show (void)
+ 
+       if (CHKw(Curwin, View_CPUSUM)) {
+          // display just the 1st /proc/stat line
++         if (Screen_rows <= Msg_row+2)
++            goto skip;
+          summaryhlp(&smpcpu[Cpu_tot], "Cpu(s):");
+       } else {
+          int i;
+          char tmp[SMLBUFSIZ];
+          // display each cpu's states separately
++         if (Screen_rows <= Msg_row+Cpu_tot+1) {
++            show_msg("\aSorry, terminal is not big enough\n");
++            TOGw(Curwin, View_CPUSUM);
++            goto skip;
++         }
+          for (i = 0; i < Cpu_tot; i++) {
+             snprintf(tmp, sizeof(tmp), "Cpu%-3d:", smpcpu[i].id);
+             summaryhlp(&smpcpu[i], tmp);
+          }
+       }
+    }
++skip:
+ 
+    // Display Memory and Swap stats
+    meminfo();
+-   if (CHKw(Curwin, View_MEMORY)) {
++   if (CHKw(Curwin, View_MEMORY) && (Screen_rows > Msg_row+3)) {
+       show_special(0, fmtmk(MEMORY_line1
+          , kb_main_total, kb_main_used, kb_main_free, kb_main_buffers));
+       show_special(0, fmtmk(MEMORY_line2

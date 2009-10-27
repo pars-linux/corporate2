@@ -1,0 +1,26 @@
+--- Linux-PAM-0.99.3.0/modules/pam_tally/pam_tally.c.fail-close	2005-09-21 15:35:29.000000000 +0200
++++ Linux-PAM-0.99.3.0/modules/pam_tally/pam_tally.c	2006-05-04 13:31:59.000000000 +0200
+@@ -318,6 +318,7 @@
+       }
+       lstat_ret = fstat(fileno(*TALLY),&fileinfo);
+       fclose(*TALLY);
++      *TALLY = NULL;
+     }
+ 
+     if ( lstat_ret ) {
+@@ -348,6 +349,7 @@
+     if ( fseek( *TALLY, uid * sizeof(struct faillog), SEEK_SET ) ) {
+           pam_syslog(pamh, LOG_ALERT, "fseek failed for %s", filename);
+           fclose(*TALLY);
++          *TALLY = NULL;
+           return PAM_AUTH_ERR;
+     }
+ 
+@@ -394,6 +396,7 @@
+       }
+ 
+     if ( fclose(*TALLY) ) {
++      *TALLY = NULL;
+       pam_syslog(pamh, LOG_ALERT, "update (fclose) failed for %s", filename);
+       return PAM_AUTH_ERR;
+     }

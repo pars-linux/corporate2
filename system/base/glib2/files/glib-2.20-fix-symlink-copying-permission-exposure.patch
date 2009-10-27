@@ -1,0 +1,103 @@
+From 865c47d1a02d0e7a826e4b09c9c28ac2276d998b Mon Sep 17 00:00:00 2001
+From: Benjamin Otte <otte@gnome.org>
+Date: Tue, 01 Sep 2009 09:54:48 +0000
+Subject: Bug 593406 - Permissions set to 777 after copying via Nautilus
+
+When doing a g_file_copy() with nofollow-symlinks (to copy a link for
+example), the later copying of the file attributes copies the source
+links 777 attributes to the target's attributes. As chmod affects the
+symlink target, this would cause such copies to always set the target to
+777 mode.
+
+This patch makes setting the mode with nofollow-symlinks fail with
+NOT_SUPPORTED.
+
+The aforementioned g_file_copy() will still succeed, because it ignores
+errors of the attribute copy.
+
+This patch includes the whole patchset from master:
+3826963e65d8c4c68bcd3e4066505f63ef734b95
+bb7852e34b1845e516290e1b45a960a345ee8a43
+48e0af0157f52ac12b904bd92540432a18b139c7
+e695c0932f5d02f3b222f0b7a3de1f8c00ba7b81
+---
+diff --git a/configure.in b/configure.in
+index 07a6fec..998fb77 100644
+--- a/configure.in
++++ b/configure.in
+@@ -936,7 +936,7 @@ AC_MSG_RESULT(unsigned $glib_size_type)
+ 
+ # Check for some functions
+ AC_CHECK_FUNCS(lstat strerror strsignal memmove vsnprintf stpcpy strcasecmp strncasecmp poll getcwd vasprintf setenv unsetenv getc_unlocked readlink symlink fdwalk)
+-AC_CHECK_FUNCS(chown lchown fchmod fchown link statvfs statfs utimes getgrgid getpwuid)
++AC_CHECK_FUNCS(chown lchmod lchown fchmod fchown link statvfs statfs utimes getgrgid getpwuid)
+ AC_CHECK_FUNCS(getmntent_r setmntent endmntent hasmntopt getmntinfo)
+ # Check for high-resolution sleep functions
+ AC_CHECK_FUNCS(nanosleep nsleep)
+diff --git a/gio/glocalfileinfo.c b/gio/glocalfileinfo.c
+index e0d5b90..05516c3 100644
+--- a/gio/glocalfileinfo.c
++++ b/gio/glocalfileinfo.c
+@@ -1815,15 +1815,40 @@ get_string (const GFileAttributeValue  *value,
+ 
+ static gboolean
+ set_unix_mode (char                       *filename,
++               GFileQueryInfoFlags         flags,
+ 	       const GFileAttributeValue  *value,
+ 	       GError                    **error)
+ {
+   guint32 val;
++  int res = 0;
+   
+   if (!get_uint32 (value, &val, error))
+     return FALSE;
+-  
+-  if (g_chmod (filename, val) == -1)
++
++#ifdef HAVE_SYMLINK
++  if (flags & G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS) {
++#ifdef HAVE_LCHMOD
++    res = lchmod (filename, val);
++#else
++    struct stat statbuf;
++    /* Calling chmod on a symlink changes permissions on the symlink.
++     * We don't want to do this, so we need to check for a symlink */
++    res = g_lstat (filename, &statbuf);
++    if (res == 0 && S_ISLNK (statbuf.st_mode))
++      {
++        g_set_error_literal (error, G_IO_ERROR,
++                             G_IO_ERROR_NOT_SUPPORTED,
++                             _("Operation not supported"));
++        return FALSE;
++      }
++    else if (res == 0)
++      res = g_chmod (filename, val);
++#endif
++  } else
++#endif
++    res = g_chmod (filename, val);
++
++  if (res == -1)
+     {
+       int errsv = errno;
+ 
+@@ -2116,7 +2141,7 @@ _g_local_file_info_set_attribute (char                 *filename,
+   _g_file_attribute_value_set_from_pointer (&value, type, value_p, FALSE);
+   
+   if (strcmp (attribute, G_FILE_ATTRIBUTE_UNIX_MODE) == 0)
+-    return set_unix_mode (filename, &value, error);
++    return set_unix_mode (filename, flags, &value, error);
+   
+ #ifdef HAVE_CHOWN
+   else if (strcmp (attribute, G_FILE_ATTRIBUTE_UNIX_UID) == 0)
+@@ -2229,7 +2254,7 @@ _g_local_file_info_set_attributes  (char                 *filename,
+   value = _g_file_info_get_attribute_value (info, G_FILE_ATTRIBUTE_UNIX_MODE);
+   if (value)
+     {
+-      if (!set_unix_mode (filename, value, error))
++      if (!set_unix_mode (filename, flags, value, error))
+ 	{
+ 	  value->status = G_FILE_ATTRIBUTE_STATUS_ERROR_SETTING;
+ 	  res = FALSE;
+--
+cgit v0.8.2

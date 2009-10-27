@@ -1,0 +1,52 @@
+Index: procps-3.2.3/Makefile
+================================================================================
+--- procps-3.2.5/Makefile
++++ procps-3.2.5/Makefile
+@@ -27,7 +27,7 @@
+ ldconfig := ldconfig
+ ln_f     := ln -f
+ ln_sf    := ln -sf
+-install  := install -D --owner 0 --group 0
++install  := install -D
+ 
+ # Lame x86-64 /lib64 and /usr/lib64 abomination:
+ lib64    := lib$(shell [ -d /lib64 ] && echo 64)
+@@ -91,7 +91,8 @@
+   -Wstrict-prototypes -Wmissing-prototypes
+ # Note that some stuff below is conditional on CFLAGS containing
+ # an option that starts with "-g". (-g, -g2, -g3, -ggdb, etc.)
+-CFLAGS       := -O2 -s
++RPM_OPT_FLAGS = -O2 -s
++CFLAGS        = $(RPM_OPT_FLAGS)
+ ALL_CFLAGS   := $(PKG_CFLAGS) $(CFLAGS)
+ 
+ PKG_LDFLAGS  := -Wl,-warn-common
+--- procps-3.2.5/proc/module.mk
++++ procps-3.2.5/proc/module.mk
+@@ -17,7 +17,7 @@
+ # numbers for future use, the ELF soname can be set equal to the
+ # file name until some future date when a stable ABI is declared.
+ 
+-SHARED     := 1
++SHARED := 0
+ 
+ # for lib$(NAME).so and /usr/include/($NAME) and such
+ NAME       :=  proc
+@@ -38,7 +38,7 @@
+ 
+ ############
+ 
+-FPIC       := -fpic
++FPIC       := -fPIC
+ 
+ ifeq ($(SHARED),1)
+ ALL        += proc/$(SONAME)
+@@ -50,7 +50,7 @@
+ else
+ ALL        += proc/$(ANAME)
+ #INSTALL    += $(usr/lib)$(ANAME)
+-LIBFLAGS   := -DSHARED=0
++LIBFLAGS   := -DSHARED=0 $(FPIC)
+ LIBPROC    := proc/$(ANAME)
+ endif
+ 

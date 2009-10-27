@@ -1,0 +1,679 @@
+ pmap.1 |   76 +++++---
+ pmap.c |  559 +++++++++++++++++++++++++++++------------------------------------
+ 2 files changed, 297 insertions(+), 338 deletions(-)
+
+diff -urN procps-3.2.5/pmap.1 procps/pmap.1
+--- procps-3.2.5/pmap.1	2005-10-11 14:49:20.000000000 -0400
++++ procps/pmap.1	2005-10-12 10:39:28.000000000 -0400
+@@ -1,39 +1,57 @@
+-'\" t
+-.\" (The preceding line is a note to broken versions of man to tell
+-.\" them to pre-process this man page with tbl)
+-.\" Man page for pmap.
+-.\" Licensed under version 2 of the GNU General Public License.
+-.\" Written by Albert Cahalan.
++.\" pmap.1 - manpage for the pmap(1) utility, part of procps
+ .\"
+-.TH PMAP 1 "October 26, 2002" "Linux" "Linux User's Manual"
++.\" Copyright (C) 2005 Robert Love
++.\" Licensed under the terms of the GNU General Public License, v2
++.TH PMAP 1 "12 Oct 2005" "Linux" "Linux User's Manual"
+ .SH NAME
+-pmap \- report memory map of a process
++pmap \- display information about process memory mappings
+ 
+ .SH SYNOPSIS
+-.nf
+-pmap [ -x | -d ] [ -q ] pids...
+-pmap -V
+-.fi
++.BI "pmap [ \-d | \-q | \-h | \-V ] " pid 
+ 
+ .SH DESCRIPTION
+-The pmap command reports the memory map of a process or processes.
+-
+-.SH "GENERAL OPTIONS"
+-.TS
+-l l l.
+--x	extended	Show the extended format.
+--d	device	Show the device format.
+--q	quiet	Do not display some header/footer lines.
+--V	show version	Displays version of program.
+-.TE
++.BR pmap (1)
++displays information about a process's memory mappings, such as its stack,
++data segment, mapped files, and so on.
++.P
++The
++.BR pmap (1)
++utility will show, for each mapping of a given process, the starting byte
++address in the process's address space, the size, the RSS (size of the mapping
++in physical memory), the amount of dirty pages, the permission, the device node,
++the offset, and the file backing the mapping, if any.
++.P
++As the last line of output, the
++.BR pmap (1)
++utility will tally up the total size of all mappings as well as show the
++total size of writable/private mappings and of shared mappings.
++
++.SH OPTIONS
++.TP
++.B\-d, \-\^\-device
++Display major and minor device numbers.
++.TP
++.B\-q, \-\^\-quiet
++Hide header and memory statistics.
++.TP
++.B\-h, \-\^\-help
++Show pmap usage.
++.TP
++.B\-V, \-\^\-version
++Display version information.
++
++.SH FILES
++.IR /proc/pid/maps " and
++.IR /proc/pid/smaps " \-\- memory mapping information"
+ 
+ .SH "SEE ALSO"
+-ps(1) pgrep(1)
++.BR ps (1),
++.BR top (1),
++.BR free (1),
++.BR vmstat (1)
+ 
+-.SH STANDARDS
+-No standards apply, but pmap looks an awful lot like a SunOS command.
++.SH AUTHORS
++Written by Chris Rivera.
+ 
+-.SH AUTHOR
+-Albert Cahalan <albert@users.sf.net> wrote pmap in 2002, and is the current
+-maintainer of the procps collection. Please send bug reports
+-to <procps-feedback@lists.sf.net>.
++The procps package is maintained by Albert Calahan.  Please send
++bug reports to <albert@users.sf.net>.
+diff -urN procps-3.2.5/pmap.c procps/pmap.c
+--- procps-3.2.5/pmap.c	2005-10-11 14:49:21.000000000 -0400
++++ procps/pmap.c	2005-10-12 10:52:09.000000000 -0400
+@@ -1,331 +1,272 @@
+ /*
+- * Copyright 2002 by Albert Cahalan; all rights reserved.
+- * This file may be used subject to the terms and conditions of the
+- * GNU Library General Public License Version 2, or any later version
+- * at your option, as published by the Free Software Foundation.
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU Library General Public License for more details.
++ * pmap - print the address space map of a process
++ *
++ * Chris Rivera		<chrismrivera@gmail.com>
++ * Robert Love		<rml@novell.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License, v2, as
++ * published by the Free Software Foundation
++ *
++ * Copyright (C) 2003, 2005 Chris Rivera
+  */
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+-#include <ctype.h>
+-#include <sys/types.h>
+-#include <sys/stat.h>
+-#include <fcntl.h>
+ #include <string.h>
+-#include <unistd.h>
+-
+-#include <sys/ipc.h>
+-#include <sys/shm.h>
++#include <errno.h>
++#include <getopt.h>
+ 
+ #include "proc/readproc.h"
+ #include "proc/version.h"
+-#include "proc/escape.h"
+-
+-static void usage(void) NORETURN;
+-static void usage(void){
+-  fprintf(stderr,
+-    "Usage: pmap [-x | -d] [-q] pid...\n"
+-    "-x  show details\n"
+-    "-d  show offset and device number\n"
+-    "-q  quiet; less header/footer info\n"
+-    "-V  show the version number\n"
+-  );
+-  exit(1);
+-}
+-
+ 
+-static int V_option;
+-static int r_option;  // ignored -- for SunOS compatibility
+-static int x_option;
+-static int d_option;
+-static int q_option;
+-
+-
+-static unsigned shm_minor = ~0u;
+-
+-static void discover_shm_minor(void){
+-  void *addr;
+-  int shmid;
+-  char mapbuf[256];
+-
+-  if(!freopen("/proc/self/maps", "r", stdin)) return;
+-
+-  // create
+-  shmid = shmget(IPC_PRIVATE, 42, IPC_CREAT | 0666);
+-  if(shmid==-1) return; // failed; oh well
+-  // attach
+-  addr = shmat(shmid, NULL, SHM_RDONLY);
+-  if(addr==(void*)-1) goto out_destroy;
+-
+-  while(fgets(mapbuf, sizeof mapbuf, stdin)){
+-    char flags[32];
+-    char *tmp; // to clean up unprintables
+-    unsigned KLONG start, end;
+-    unsigned long long file_offset, inode;
+-    unsigned dev_major, dev_minor;
+-    sscanf(mapbuf,"%"KLF"x-%"KLF"x %31s %Lx %x:%x %Lu", &start, &end, flags, &file_offset, &dev_major, &dev_minor, &inode);
+-    tmp = strchr(mapbuf,'\n');
+-    if(tmp) *tmp='\0';
+-    tmp = mapbuf;
+-    while(*tmp){
+-      if(!isprint(*tmp)) *tmp='?';
+-      tmp++;
+-    }
+-    if(start > (unsigned long)addr) continue;
+-    if(dev_major) continue;
+-    if(flags[3] != 's') continue;
+-    if(strstr(mapbuf,"/SYSV")){
+-      shm_minor = dev_minor;
+-      break;
+-    }
+-  }
++#define BUFFERSIZE	4096
++#define OBJECTSIZE	128
+ 
+-  if(shmdt(addr)) perror("shmdt");
++struct smap {
++	unsigned long size;
++	unsigned long rss;
++	unsigned long shared_clean;
++	unsigned long shared_dirty;
++	unsigned long private_clean;
++	unsigned long private_dirty;
++};
++
++static unsigned long mapped;
++static unsigned long shared;
++static unsigned long private;
++static unsigned long rss;
++static unsigned long dirty;
++static FILE *smaps_fp;
++
++static void usage(const char *cmd)
++{
++	fprintf(stderr, "usage: %s [options] pid\n", cmd);
++	fprintf(stderr, "  -d, --device         "
++			"display offset and device numbers\n");
++	fprintf(stderr, "  -q, --quiet          "
++			"hide header and memory statistics\n");
++	fprintf(stderr, "  -V, --version        "
++			"display version information\n");
++	fprintf(stderr, "  -h, --help           "
++			"display this help\n");
++}
+ 
+-out_destroy:
+-  if(shmctl(shmid, IPC_RMID, NULL)) perror("IPC_RMID");
++static int get_smap_data(struct smap *smap)
++{
++	unsigned long long data;
++	int assigned;
++	char buff[BUFFERSIZE];
++
++	/* get main line */
++	if (!fgets(buff, BUFFERSIZE - 1, smaps_fp))
++		return 1;
++
++	assigned = sscanf(buff, "%llx-", &data);
++	if (assigned != 1)
++		return 1;
++
++	/* get size */
++	if (!fgets(buff, BUFFERSIZE, smaps_fp))
++		return 1;
++
++	assigned = sscanf(buff, "Size: %lld", &data);
++	if (assigned != 1)
++		return 1;
++	smap->size = data;
++
++	/* get rss */
++	if (!fgets(buff, BUFFERSIZE, smaps_fp))
++		return 1;
++
++	assigned = sscanf(buff, "Rss: %lld", &data);
++	if (assigned != 1)
++		return 1;
++	smap->rss = data;
++	rss += data;
++
++	/* get shared clean */
++	if (!fgets(buff, BUFFERSIZE, smaps_fp))
++		return 1;
++
++	assigned = sscanf(buff, "Shared_Clean: %lld", &data);
++	if (assigned != 1)
++		return 1;
++	smap->shared_clean = data;
++
++	/* get shared dirty */
++	if (!fgets(buff, BUFFERSIZE, smaps_fp))
++		return 1;
++
++	assigned = sscanf(buff, "Shared_Dirty: %lld", &data);
++	if (assigned != 1)
++		return 1;
++	smap->shared_dirty = data;
++	dirty += data;
++	
++	/* get private clean */
++	if (!fgets(buff, BUFFERSIZE, smaps_fp))
++		return 1;
++
++	assigned = sscanf(buff, "Private_Clean: %lld", &data);
++	if (assigned != 1)
++		return 1;
++	smap->private_clean = data;
++
++	/* get private dirty */
++	if (!fgets(buff, BUFFERSIZE, smaps_fp))
++		return 1;
++
++	assigned = sscanf(buff, "Private_Dirty: %lld", &data);
++	if (assigned != 1)
++		return 1;
++	smap->private_dirty = data;
++	dirty += data;
+ 
+-  return;
++	return 0;
+ }
+ 
++static void parse_line(pid_t pid, const char *line, int show_devices)
++{
++	unsigned long long low, high, size, offset;
++	unsigned long major, minor;
++	struct smap smap = { .rss = 0 };
++	int assigned;
++	char read_perm, write_perm, exec_perm, access_type;
++	char obj_buff[OBJECTSIZE] = "[anon]";
++
++	assigned = sscanf(line, "%llx-%llx %c%c%c%c %llx %lx:%lx %*u %" 
++		   STRINGIFY(OBJECTSIZE) "s", &low, &high, &read_perm,
++		   &write_perm, &exec_perm, &access_type, &offset, &major,
++		   &minor, obj_buff);
++
++	if (assigned < 9) {
++		fprintf(stderr, "failed to parse /proc/%d/maps\n", pid);
++		exit(EXIT_FAILURE);
++	}
++
++	size = high - low;
++	size /= 1024;
++	mapped += size;
++
++	if (smaps_fp && get_smap_data(&smap)) {
++		fprintf(stderr, "failed to parse /proc/%d/smaps\n", pid);
++		exit(1);
++	}
++
++	if (access_type == 's')
++		shared += size;
++	else if (access_type == 'p' && write_perm == 'w')
++		private += size;
++
++	printf("%08llx %6lluK ", low, size);
++
++	if (smaps_fp) {
++		printf("%6luK ", smap.rss);
++		printf("%6luK ", smap.private_dirty + smap.shared_dirty);
++	}
+ 
+-static const char *mapping_name(proc_t *p, unsigned KLONG addr, unsigned KLONG len, const char *mapbuf, unsigned showpath, unsigned dev_major, unsigned dev_minor, unsigned long long inode){
+-  const char *cp;
+-
+-  if(!dev_major && dev_minor==shm_minor && strstr(mapbuf,"/SYSV")){
+-    static char shmbuf[64];
+-    snprintf(shmbuf, sizeof shmbuf, "  [ shmid=0x%Lx ]", inode);
+-    return shmbuf;
+-  }
+-
+-  cp = strrchr(mapbuf,'/');
+-  if(cp){
+-    if(showpath) return strchr(mapbuf,'/');
+-    return cp[1] ? cp+1 : cp;
+-  }
+-
+-  cp = strchr(mapbuf,'/');
+-  if(cp){
+-    if(showpath) return cp;
+-    return strrchr(cp,'/') + 1;  // it WILL succeed
+-  }
+-
+-  cp = "  [ anon ]";
+-  if( (p->start_stack >= addr) && (p->start_stack <= addr+len) )  cp = "  [ stack ]";
+-  return cp;
+-}
++	printf("%c%c%c%c ", read_perm, write_perm, exec_perm, access_type);
+ 
+-static int one_proc(proc_t *p){
+-  char buf[32];
+-  char mapbuf[9600];
+-  char cmdbuf[512];
+-  unsigned long total_shared = 0ul;
+-  unsigned long total_private_readonly = 0ul;
+-  unsigned long total_private_writeable = 0ul;
+-
+-  // Overkill, but who knows what is proper? The "w" prog
+-  // uses the tty width to determine this.
+-  int maxcmd = 0xfffff;
+-
+-  sprintf(buf,"/proc/%u/maps",p->tgid);
+-  if(!freopen(buf, "r", stdin)) return 1;
+-
+-  escape_command(cmdbuf, p, sizeof cmdbuf, &maxcmd, ESC_ARGS|ESC_BRACKETS);
+-  printf("%u:   %s\n", p->tgid, cmdbuf);
+-
+-  if(!q_option && (x_option|d_option)){
+-    if(x_option){
+-      if(sizeof(KLONG)==4) printf("Address   Kbytes     RSS    Anon  Locked Mode   Mapping\n");
+-      else         printf("Address           Kbytes     RSS    Anon  Locked Mode   Mapping\n");
+-    }
+-    if(d_option){
+-      if(sizeof(KLONG)==4) printf("Address   Kbytes Mode  Offset           Device    Mapping\n");
+-      else         printf("Address           Kbytes Mode  Offset           Device    Mapping\n");
+-    }
+-  }
+-
+-  while(fgets(mapbuf,sizeof mapbuf,stdin)){
+-    char flags[32];
+-    char *tmp; // to clean up unprintables
+-    unsigned KLONG start, end, diff;
+-    unsigned long long file_offset, inode;
+-    unsigned dev_major, dev_minor;
+-    sscanf(mapbuf,"%"KLF"x-%"KLF"x %31s %Lx %x:%x %Lu", &start, &end, flags, &file_offset, &dev_major, &dev_minor, &inode);
+-    tmp = strchr(mapbuf,'\n');
+-    if(tmp) *tmp='\0';
+-    tmp = mapbuf;
+-    while(*tmp){
+-      if(!isprint(*tmp)) *tmp='?';
+-      tmp++;
+-    }
+-    
+-    diff = end-start;
+-    if(flags[3]=='s') total_shared  += diff;
+-    if(flags[3]=='p'){
+-      flags[3] = '-';
+-      if(flags[1]=='w') total_private_writeable += diff;
+-      else              total_private_readonly  += diff;
+-    }
+-
+-    // format used by Solaris 9 and procps-3.2.0+
+-    // an 'R' if swap not reserved (MAP_NORESERVE, SysV ISM shared mem, etc.)
+-    flags[4] = '-';
+-    flags[5] = '\0';
+-
+-    if(x_option){
+-      const char *cp = mapping_name(p, start, diff, mapbuf, 0, dev_major, dev_minor, inode);
+-      printf(
+-        (sizeof(KLONG)==8)
+-          ? "%016"KLF"x %7lu       -       -       - %s  %s\n"
+-          :      "%08lx %7lu       -       -       - %s  %s\n",
+-        start,
+-        (unsigned long)(diff>>10),
+-        flags,
+-        cp
+-      );
+-    }
+-    if(d_option){
+-      const char *cp = mapping_name(p, start, diff, mapbuf, 0, dev_major, dev_minor, inode);
+-      printf(
+-        (sizeof(KLONG)==8)
+-          ? "%016"KLF"x %7lu %s %016Lx %03x:%05x %s\n"
+-          :      "%08lx %7lu %s %016Lx %03x:%05x %s\n",
+-        start,
+-        (unsigned long)(diff>>10),
+-        flags,
+-        file_offset,
+-        dev_major, dev_minor,
+-        cp
+-      );
+-    }
+-    if(!x_option && !d_option){
+-      const char *cp = mapping_name(p, start, diff, mapbuf, 1, dev_major, dev_minor, inode);
+-      printf(
+-        (sizeof(KLONG)==8)
+-          ? "%016"KLF"x %6luK %s  %s\n"
+-          :      "%08lx %6luK %s  %s\n",
+-        start,
+-        (unsigned long)(diff>>10),
+-        flags,
+-        cp
+-      );
+-    }
+-    
+-  }
+-
+-  if(!q_option){
+-    if(x_option){
+-      if(sizeof(KLONG)==8){
+-        printf("----------------  ------  ------  ------  ------\n");
+-        printf(
+-          "total kB %15ld       -       -       -\n",
+-          (total_shared + total_private_writeable + total_private_readonly) >> 10
+-        );
+-      }else{
+-        printf("-------- ------- ------- ------- -------\n");
+-        printf(
+-          "total kB %7ld       -       -       -\n",
+-          (total_shared + total_private_writeable + total_private_readonly) >> 10
+-        );
+-      }
+-    }
+-    if(d_option){
+-        printf(
+-          "mapped: %ldK    writeable/private: %ldK    shared: %ldK\n",
+-          (total_shared + total_private_writeable + total_private_readonly) >> 10,
+-          total_private_writeable >> 10,
+-          total_shared >> 10
+-        );
+-    }
+-    if(!x_option && !d_option){
+-      if(sizeof(KLONG)==8) printf(" total %16ldK\n", (total_shared + total_private_writeable + total_private_readonly) >> 10);
+-      else                 printf(" total %8ldK\n",  (total_shared + total_private_writeable + total_private_readonly) >> 10);
+-    }
+-  }
++	if (show_devices)
++		printf("%08llx %02lx:%02lx  ", offset, major, minor);
+ 
+-  return 0;
++	printf("%s\n", obj_buff);
+ }
+ 
++int main(int argc, char *argv[])
++{
++	proc_t proc;
++	FILE *fp;
++	char path[PATH_MAX];
++	char buff[BUFFERSIZE];
++	int o, show_devices = 0, quiet = 0;
++	pid_t pid;
++
++	struct option longopts[] = {
++		{ "help", 	0, NULL, 'h' },
++		{ "version", 	0, NULL, 'V' },
++		{ "quiet", 	0, NULL, 'q' },
++		{ "device", 	0, NULL, 'd' },
++		{  NULL,	0, NULL, 0 }
++	};
++
++	while ((o = getopt_long(argc, argv, "hqdV", longopts, NULL)) != -1) {
++		switch (o) {
++		case 'V':
++			display_version();
++			return 0;
++		case 'q':
++			quiet = 1;
++			break;
++		case 'd':
++			show_devices = 1;
++			break;
++		case 'h':
++			usage(argv[0]);
++			return 0;
++		default:
++			usage(argv[0]);
++			return 1;
++		}
++	}
++
++	if (argc - optind > 0) {
++		errno = 0;
++		pid = strtoul(argv[optind], NULL, 10);
++		if (errno) {
++			perror("strtoul");
++			exit(EXIT_FAILURE);
++		}
++	} else {
++		usage(argv[0]);
++		exit(EXIT_FAILURE);
++	}
++
++	if (!get_proc_stats(pid, &proc)) {
++		fprintf(stderr, "error getting process information for pid "
++				"%d from /proc/%d\n", pid, pid);
++		exit(EXIT_FAILURE);
++	}
++
++	printf("%d: %s\n", pid, proc.cmd);
++
++	snprintf(path, PATH_MAX, "/proc/%d/maps", pid);
++	fp = fopen(path, "r");
++	if (!fp) {
++		perror("fopen");
++		exit(EXIT_FAILURE);
++	}
++
++	snprintf(path, PATH_MAX, "/proc/%d/smaps", pid);
++	smaps_fp = fopen(path, "r");
++
++	if (!quiet) {
++		printf("START       SIZE ");
++
++		if (smaps_fp) {
++			printf("    RSS ");
++			printf("  DIRTY ");
++		}
++
++		if (show_devices)
++			printf("PERM OFFSET   DEVICE MAPPING\n");
++		else
++			printf("PERM MAPPING\n");
++	}
++
++	while (fgets(buff, BUFFERSIZE - 1, fp))
++		parse_line(pid, buff, show_devices);
++
++	if (!quiet) {
++		if (smaps_fp)
++			printf("Total:   %6luK %6luK %6luK\n\n", mapped, rss, dirty);
++		else 
++			printf("mapped: %luK    ", mapped);
++
++		printf("%luK writable-private, %luK readonly-private, and %luK shared\n",
++		       private, mapped - private - shared, shared);
++	}
+ 
+-int main(int argc, char *argv[]){
+-  unsigned *pidlist;
+-  unsigned count = 0;
+-  PROCTAB* PT;
+-  proc_t p;
+-  int ret = 0;
+-
+-  if(argc<2) usage();
+-  pidlist = malloc(sizeof(unsigned)*argc);  // a bit more than needed perhaps
+-
+-  while(*++argv){
+-    if(!strcmp("--version",*argv)){
+-      V_option++;
+-      continue;
+-    }
+-    if(**argv=='-'){
+-      char *walk = *argv;
+-      if(!walk[1]) usage();
+-      while(*++walk){
+-        switch(*walk){
+-        case 'V':
+-          V_option++;
+-          break;
+-        case 'x':
+-          x_option++;
+-          break;
+-        case 'r':
+-          r_option++;
+-          break;
+-        case 'd':
+-          d_option++;
+-          break;
+-        case 'q':
+-          q_option++;
+-          break;
+-        default:
+-          usage();
+-        }
+-      }
+-    }else{
+-      char *walk = *argv;
+-      char *endp;
+-      unsigned long pid;
+-      if(!strncmp("/proc/",walk,6)){
+-        walk += 6;
+-        // user allowed to do: pmap /proc/*
+-        if(*walk<'0' || *walk>'9') continue;
+-      }
+-      if(*walk<'0' || *walk>'9') usage();
+-      pid = strtoul(walk, &endp, 0);
+-      if(pid<1ul || pid>0x7ffffffful || *endp) usage();
+-      pidlist[count++] = pid;
+-    }
+-  }
+-
+-  if( (x_option|V_option|r_option|d_option|q_option) >> 1 ) usage(); // dupes
+-  if(V_option){
+-    if(count|x_option|r_option|d_option|q_option) usage();
+-    fprintf(stdout, "pmap (%s)\n", procps_version);
+-    return 0;
+-  }
+-  if(count<1) usage();   // no processes
+-  if(d_option && x_option) usage();
+-
+-  discover_shm_minor();
+-
+-  pidlist[count] = 0;  // old libproc interface is zero-terminated
+-  PT = openproc(PROC_FILLSTAT|PROC_FILLARG|PROC_PID, pidlist);
+-  while(readproc(PT, &p)){
+-    ret |= one_proc(&p);
+-    if(p.cmdline) free((void*)*p.cmdline);
+-    count--;
+-  }
+-  closeproc(PT);
+-
+-  if(count) ret |= 42;  // didn't find all processes asked for
+-  return ret;
++	return 0;
+ }

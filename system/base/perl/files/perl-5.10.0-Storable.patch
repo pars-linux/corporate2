@@ -1,0 +1,57 @@
+diff -up perl-5.10.0/ext/Storable/Storable.xs.old perl-5.10.0/ext/Storable/Storable.xs
+--- perl-5.10.0/ext/Storable/Storable.xs.old	2007-12-18 11:47:07.000000000 +0100
++++ perl-5.10.0/ext/Storable/Storable.xs	2008-09-30 14:03:38.000000000 +0200
+@@ -4561,7 +4561,13 @@ static SV *retrieve_overloaded(pTHX_ stc
+ 	 * WARNING: breaks RV encapsulation.
+ 	 */
+ 
+-	sv_upgrade(rv, SVt_RV);
++	if (cname) {
++	/* No need to do anything, as rv will already be PVMG. */
++		assert (SvTYPE(rv) >= SVt_RV);
++	} else {
++		sv_upgrade(rv, SVt_RV);
++	}
++
+ 	SvRV_set(rv, sv);				/* $rv = \$sv */
+ 	SvROK_on(rv);
+ 
+diff -up perl-5.10.0/ext/Storable/t/overload.t.old perl-5.10.0/ext/Storable/t/overload.t
+--- perl-5.10.0/ext/Storable/t/overload.t.old	2007-12-18 11:47:07.000000000 +0100
++++ perl-5.10.0/ext/Storable/t/overload.t	2008-09-30 14:05:04.000000000 +0200
+@@ -25,7 +25,7 @@ sub ok;
+ 
+ use Storable qw(freeze thaw);
+ 
+-print "1..16\n";
++print "1..20\n";
+ 
+ package OVERLOADED;
+ 
+@@ -59,6 +59,14 @@ sub make {
+ 	return $self;
+ }
+ 
++package SCALAR_REF_TO_OVER;
++
++sub create {
++my ($class) = @_;
++my $over = bless {}, 'OVER';
++return bless \$over, $class;
++}
++
+ package OVER;
+ 
+ use overload
+@@ -103,4 +111,11 @@ ok 13, $@ eq "";
+ ok 14, ref ($t) eq 'REF';
+ ok 15, ref ($$t) eq 'HAS_OVERLOAD';
+ ok 16, $$$t eq 'snow';
++$c = SCALAR_REF_TO_OVER->create();
++# Don't segfault here
++$d = thaw freeze $c;
++ok 17, ref($c) eq 'SCALAR_REF_TO_OVER';
++ok 18, ref($d) eq 'SCALAR_REF_TO_OVER';
++ok 19, ref($$c) eq 'OVER';
++ok 20, ref($$d) eq 'OVER';
+ 1;

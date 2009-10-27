@@ -1,0 +1,88 @@
+--- ps/common.h
++++ ps/common.h	2008-09-16 18:57:14.862641102 +0200
+@@ -302,6 +302,7 @@ extern int             running_only;
+ extern int             screen_cols;
+ extern int             screen_rows;
+ extern unsigned long   seconds_since_boot;
++extern unsigned long long jiffies_since_boot;
+ extern selection_node *selection_list;
+ extern unsigned        simple_select;
+ extern sort_node      *sort_list;
+--- ps/global.c
++++ ps/global.c	2008-09-16 18:56:28.218297961 +0200
+@@ -70,6 +70,7 @@ int             prefer_bsd_defaults = -1
+ int             screen_cols = -1;
+ int             screen_rows = -1;
+ unsigned long   seconds_since_boot = -1;
++unsigned long long  jiffies_since_boot = -1;
+ selection_node *selection_list = (selection_node *)0xdeadbeef;
+ unsigned        simple_select = 0xffffffff;
+ sort_node      *sort_list = (sort_node *)0xdeadbeef; /* ready-to-use sort list */
+@@ -357,6 +358,7 @@ static const char *set_personality(void)
+ /************ Call this to reinitialize everything ***************/
+ void reset_global(void){
+   static proc_t p;
++  double uptime_secs;
+   reset_selection_list();
+   look_up_our_self(&p);
+   set_screen_size();
+@@ -380,7 +382,8 @@ void reset_global(void){
+   negate_selection      = 0;
+   page_size             = getpagesize();
+   running_only          = 0;
+-  seconds_since_boot    = uptime(0,0);
++  seconds_since_boot    = uptime(&uptime_secs,0);
++  jiffies_since_boot	= ((long double)uptime_secs * Hertz);
+   selection_list        = NULL;
+   simple_select         = 0;
+   sort_list             = NULL;
+--- ps/output.c
++++ ps/output.c	2008-09-16 19:00:48.510541613 +0200
+@@ -426,11 +426,12 @@ static int pr_etime(char *restrict const
+ static int pr_c(char *restrict const outbuf, const proc_t *restrict const pp){
+   unsigned long long total_time;   /* jiffies used by this process */
+   unsigned pcpu = 0;               /* scaled %cpu, 99 means 99% */
+-  unsigned long long seconds;      /* seconds of process life */
++  unsigned long long jiffies;      /* jiffies of process life */
++  double uptime_secs;
+   total_time = pp->utime + pp->stime;
+   if(include_dead_children) total_time += (pp->cutime + pp->cstime);
+-  seconds = seconds_since_boot - pp->start_time / Hertz;
+-  if(seconds) pcpu = (total_time * 100ULL / Hertz) / seconds;
++  jiffies = jiffies_since_boot - pp->start_time;
++  if(jiffies) pcpu = (total_time * 100ULL) / jiffies;
+   if (pcpu > 99U) pcpu = 99U;
+   return snprintf(outbuf, COLWID, "%2u", pcpu);
+ }
+@@ -438,11 +439,12 @@ static int pr_c(char *restrict const out
+ static int pr_pcpu(char *restrict const outbuf, const proc_t *restrict const pp){
+   unsigned long long total_time;   /* jiffies used by this process */
+   unsigned pcpu = 0;               /* scaled %cpu, 999 means 99.9% */
+-  unsigned long long seconds;      /* seconds of process life */
++  unsigned long long jiffies;      /* jiffies of process life */
++  double uptime_secs;
+   total_time = pp->utime + pp->stime;
+   if(include_dead_children) total_time += (pp->cutime + pp->cstime);
+-  seconds = seconds_since_boot - pp->start_time / Hertz;
+-  if(seconds) pcpu = (total_time * 1000ULL / Hertz) / seconds;
++  jiffies = jiffies_since_boot - pp->start_time;
++  if(jiffies) pcpu = (total_time * 1000ULL) / jiffies;
+   if (pcpu > 999U)
+     return snprintf(outbuf, COLWID, "%u", pcpu/10U);
+   return snprintf(outbuf, COLWID, "%u.%u", pcpu/10U, pcpu%10U);
+@@ -451,11 +453,12 @@ static int pr_pcpu(char *restrict const 
+ static int pr_cp(char *restrict const outbuf, const proc_t *restrict const pp){
+   unsigned long long total_time;   /* jiffies used by this process */
+   unsigned pcpu = 0;               /* scaled %cpu, 999 means 99.9% */
+-  unsigned long long seconds;      /* seconds of process life */
++  unsigned long long jiffies;      /* jiffies of process life */
++  double uptime_secs;
+   total_time = pp->utime + pp->stime;
+   if(include_dead_children) total_time += (pp->cutime + pp->cstime);
+-  seconds = seconds_since_boot - pp->start_time / Hertz ;
+-  if(seconds) pcpu = (total_time * 1000ULL / Hertz) / seconds;
++  jiffies = jiffies_since_boot - pp->start_time;
++  if(jiffies) pcpu = (total_time * 1000ULL) / jiffies;
+   if (pcpu > 999U) pcpu = 999U;
+   return snprintf(outbuf, COLWID, "%3u", pcpu);
+ }
