@@ -1,0 +1,144 @@
+Index: util-linux-ng-2.14/misc-utils/hostid.1
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ util-linux-ng-2.14/misc-utils/hostid.1	2008-06-24 12:12:17.000000000 +0200
+@@ -0,0 +1,24 @@
++.TH hostid 1
++.SH NAME
++hostid \- set or print system's host id.
++.SH SYNTAX
++.B hostid
++[\-v] [\|\fIdecimal-id\fR\|]
++.SH DESCRIPTION
++.\".NXR "hostid command"
++The
++.B hostid
++command prints the current host id number in hexadecimal and both
++decimal and hexadecimal in parenthesis if the \-v option is given.
++This numeric value is expected to be unique across all hosts
++and is normally set to resemble the host's Internet address.
++
++Only the super-user can set the hostid by giving an argument. This value is
++stored in the file /etc/hostid and need only be performed once.
++
++.SH AUTHOR
++Hostid is written by Mitch DSouza \- (m.dsouza@mrc-apu.cam.ac.uk)
++
++.SH SEE ALSO
++gethostid(2), sethostid(2)
++
+Index: util-linux-ng-2.14/misc-utils/hostid.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ util-linux-ng-2.14/misc-utils/hostid.c	2008-06-24 12:12:17.000000000 +0200
+@@ -0,0 +1,88 @@
++/* Program hostid. Changed on 7.10.1997 <ms@suse.de>
++   New: - Hostid 0 is not permitted.
++        - Set hostid dezimal or hexadezimal, both possible.
++        - Maximum Value for id is tested
++        - Wrong Parameters are caught
++   Nov 13 2003 - cleanup, mmj@suse.de
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++#include <errno.h>
++
++void usage(void);
++
++void usage()
++{
++	printf ("usage : hostid [-h] [-v] [<id>]\n\n"
++		"no options: print hostid as hexadecimal number\n"
++		"-h          print this helptext\n"
++		"-v          print hostid decimal and hexadecimal\n"
++		"<id>        set the hostid to <id>\n\n"
++		"The id String can be specified as\n"
++		"  - decimal number\n"
++		"  - hexadecimal number preceded by 0x\n"
++		"  - octal number preceded by 0 \n\n"
++		"Remarks:\n"
++		"  - only root can set the hostid\n"
++		"  - it's not possible to set the hostid to 0\n\n");
++}
++
++int main (int argc, char *argv[])
++{
++	long id;
++	int verbose = 0;
++
++	if (argc > 2) {
++		printf ("wrong arguments\n");
++		usage();
++		exit(1);
++	}
++
++	if (argc == 2 && strcmp(argv[1], "-h") == 0) {
++		usage();
++		exit(0);
++	}
++
++	if (argc == 2 && strcmp(argv[1], "-v") == 0) {
++		verbose = 1;
++		argc--;
++		argv++;
++	}
++
++	switch (argc) {
++	case 2:
++		id = strtol(argv[1], NULL, 0);
++		if (errno == ERANGE) {
++			printf ("Overflow: given string was out of range\n");
++			exit(1);
++		}
++
++		if (id == 0) {
++			printf ("value not possible: Abort\n");
++			usage();
++			exit(1);
++		}
++		if (sethostid(id) != 0) {
++			perror("sethostid");
++			exit(1);
++		}
++		break;
++
++	case 1:
++		id = gethostid();
++		if(id && verbose) {
++			printf("Hostid is %ld (0x%lx)\n", id, id);
++		} else if(id) {
++			printf("0x%lx\n", id);
++		} else {
++			printf ("Error while trying: gethostid\n");
++			exit(1);
++		}
++		break;
++	}
++
++	return 0;
++}
+Index: util-linux-ng-2.14/misc-utils/Makefile.am
+===================================================================
+--- util-linux-ng-2.14.orig/misc-utils/Makefile.am	2008-05-29 01:01:02.000000000 +0200
++++ util-linux-ng-2.14/misc-utils/Makefile.am	2008-06-24 12:13:45.000000000 +0200
+@@ -4,7 +4,7 @@ EXTRA_DIST = README.flushb
+ 
+ bin_PROGRAMS =
+ 
+-usrbinexec_PROGRAMS = cal ddate logger look mcookie \
++usrbinexec_PROGRAMS = cal ddate hostid logger look mcookie \
+ 	namei script whereis scriptreplay
+ EXTRA_DIST += README.cal README.ddate README.namei README.namei2
+ 
+@@ -14,7 +14,7 @@ usrbinexec_SCRIPTS = chkdupexe
+ 
+ CLEANFILES = chkdupexe
+ 
+-dist_man_MANS = cal.1 chkdupexe.1 ddate.1 logger.1 look.1 mcookie.1 \
++dist_man_MANS = cal.1 chkdupexe.1 ddate.1 hostid.1 logger.1 look.1 mcookie.1 \
+ 	namei.1 script.1 whereis.1 scriptreplay.1
+ 
+ if HAVE_TINFO

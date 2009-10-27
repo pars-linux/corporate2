@@ -1,0 +1,16 @@
+# Unref the dbus proxy when finalizing the session object, so that they are not leaked
+# Ubuntu: https://launchpad.net/bugs/284229
+# Upstream: https://bugs.freedesktop.org/show_bug.cgi?id=18330
+Index: consolekit-0.3/src/ck-session.c
+===================================================================
+--- consolekit-0.3.orig/src/ck-session.c	2008-11-23 16:51:26.000000000 +0000
++++ consolekit-0.3/src/ck-session.c	2008-11-23 16:51:41.000000000 +0000
+@@ -1100,6 +1100,8 @@
+ 
+         session_remove_activity_watch (session);
+ 
++        g_object_unref (session->priv->bus_proxy);
++
+         g_free (session->priv->id);
+         g_free (session->priv->cookie);
+         g_free (session->priv->seat_id);

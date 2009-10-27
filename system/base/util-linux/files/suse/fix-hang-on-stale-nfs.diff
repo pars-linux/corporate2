@@ -1,0 +1,18 @@
+--- mount/lomount.c
++++ mount/lomount.c
+@@ -109,7 +109,14 @@ static int
+ is_loop_used(int fd)
+ {
+ 	struct loop_info li;
+-	return ioctl (fd, LOOP_GET_STATUS, &li) == 0;
++	int ret;
++	ret = ioctl (fd, LOOP_GET_STATUS, &li);
++	if (ret == 0)
++	    return 1;
++	if (ret < 0 && (errno == ENXIO))
++	    return 0;
++	/* all other errors, e.g. ENOENT or ESTALE are an error. */
++	return -1;
+ }
+ 
+ int

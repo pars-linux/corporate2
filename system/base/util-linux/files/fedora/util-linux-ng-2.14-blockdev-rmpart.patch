@@ -1,0 +1,93 @@
+diff -up util-linux-ng-2.14-rc3/disk-utils/blockdev.c.rm util-linux-ng-2.14-rc3/disk-utils/blockdev.c
+--- util-linux-ng-2.14-rc3/disk-utils/blockdev.c.rm	2008-04-22 10:59:53.000000000 +0200
++++ util-linux-ng-2.14-rc3/disk-utils/blockdev.c	2008-05-19 12:31:52.000000000 +0200
+@@ -10,6 +10,7 @@
+ #include <unistd.h>
+ #include <sys/ioctl.h>
+ #include <errno.h>
++#include <linux/blkpg.h>
+ 
+ #include "nls.h"
+ #include "blkdev.h"
+@@ -47,8 +48,11 @@ struct bdc {
+ 	{ "--setfra", "BLKFRASET", BLKFRASET, ARGINTA, 0, "FSREADAHEAD", N_("set filesystem readahead") },
+ 	{ "--getfra", "BLKFRAGET", BLKFRAGET, ARGLINTG, -1, NULL, N_("get filesystem readahead") },
+ 	{ "--flushbufs", "BLKFLSBUF", BLKFLSBUF, ARGNONE, 0, NULL, N_("flush buffers") },
+-	{ "--rereadpt", "BLKRRPART", BLKRRPART, ARGNONE, 0, NULL,
+-	  N_("reread partition table") },
++	{ "--rereadpt", "BLKRRPART", BLKRRPART, ARGNONE, 0, NULL,  N_("reread partition table") },
++#ifdef BLKPG
++	{ "--rmpart", "BLKPG", BLKPG, ARGINTAP, 0, "PARTNO", N_("disable partition") },
++	{ "--rmparts", "BLKPG", BLKPG, ARGNONE, 0, NULL, N_("disable all partitions") },
++#endif
+ };
+ 
+ #define SIZE(a)	(sizeof(a)/sizeof((a)[0]))
+@@ -89,6 +93,40 @@ find_cmd(char *s) {
+ 	return -1;
+ }
+ 
++#ifdef BLKPG
++static int
++disable_partition(int fd, int partno) {
++	struct blkpg_partition part = {
++		.pno = partno,
++		.start = 0,
++		.length = 0,
++		.devname[0] = 0,
++		.volname[0] = 0,
++	};
++	struct blkpg_ioctl_arg io = {
++		.op = BLKPG_DEL_PARTITION,
++		.datalen = sizeof(part),
++		.data = &part,
++		.flags = 0,
++	};
++	int res;
++
++	res = ioctl(fd, BLKPG, &io);
++	if (res < 0)
++		return 0;
++	return 1;
++}
++
++static int
++disable_partitions(int fd) {
++	int p, res = 0;
++
++	for (p = 1; p <= 256; p++)
++		res += disable_partition(fd, p);
++	return res ? 0 : -1;
++}
++#endif
++
+ void do_commands(int fd, char **argv, int d);
+ void report_header(void);
+ void report_device(char *device, int quiet);
+@@ -206,6 +244,12 @@ do_commands(int fd, char **argv, int d) 
+ 		switch(bdcms[j].argtype) {
+ 		default:
+ 		case ARGNONE:
++#ifdef BLKPG
++			if (bdcms[j].ioc == BLKPG) {
++				res = disable_partitions(fd);
++				break;
++			}
++#endif
+ 			res = ioctl(fd, bdcms[j].ioc, 0);
+ 			break;
+ 		case ARGINTA:
+@@ -223,6 +267,13 @@ do_commands(int fd, char **argv, int d) 
+ 					bdcms[j].name);
+ 				usage();
+ 			}
++#ifdef BLKPG
++			if (bdcms[j].ioc == BLKPG) {
++				iarg = atoi(argv[++i]);
++				res = disable_partition(fd, iarg) ? 0 : -1;
++				break;
++			}
++#endif
+ 			iarg = atoi(argv[++i]);
+ 			res = ioctl(fd, bdcms[j].ioc, &iarg);
+ 			break;

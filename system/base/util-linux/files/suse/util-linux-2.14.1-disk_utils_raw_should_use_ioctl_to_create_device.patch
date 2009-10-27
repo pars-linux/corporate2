@@ -1,0 +1,118 @@
+From: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH] raw: Use the RAW_SETBIND ioctl without stat'ing the raw# file
+References: bnc#450675
+
+ The in-kernel ioctl code creates a raw# device on-demand. udev will create
+ the /dev/raw/raw# file when the device is created automatically.
+
+ The current raw userspace code wants to stat the file before using it,
+ which is unnecessary for setting up the raw device.
+
+ This patch stats the file only when query() is called as a singleton, and
+ it's doubtful it's needed even there. I modified as little code as I could,
+ though.
+
+ Without this patch raw devices WILL NOT WORK on SLE11.
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ disk-utils/raw.c |   54 ++++++++++++++++++++++++++++--------------------------
+ 1 file changed, 28 insertions(+), 26 deletions(-)
+
+--- a/disk-utils/raw.c
++++ b/disk-utils/raw.c
+@@ -41,7 +41,7 @@ int	master_fd;
+ int	raw_minor;
+ 
+ void open_raw_ctl(void);
+-int  query(int minor, int quiet);
++int  query(int minor, const char *raw_name, int quiet);
+ int  bind (int minor, int block_major, int block_minor);
+ 
+ 
+@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
+ 		if (optind < argc)
+ 			usage(1);
+ 		for (i = 1; i < RAW_NR_MINORS; i++)
+-			query(i, 1);
++			query(i, NULL, 1);
+ 		exit(0);
+ 	}
+ 	
+@@ -122,28 +122,8 @@ int main(int argc, char *argv[])
+ 		exit(2);
+ 	}
+
+-	err = stat(raw_name, &statbuf);
+-	if (err) {
+-		fprintf (stderr, _("Cannot locate raw device '%s' (%s)\n"),
+-			 raw_name, strerror(errno));
+-		exit(2);
+-	}
+-
+-	if (!S_ISCHR(statbuf.st_mode)) {
+-		fprintf (stderr, _("Raw device '%s' is not a character dev\n"),
+-			 raw_name);
+-		exit(2);
+-	}
+-	if (major(statbuf.st_rdev) != RAW_MAJOR) {
+-		fprintf (stderr, _("Device '%s' is not a raw dev\n"),
+-			 raw_name);
+-		exit(2);
+-	}
+-
+-	raw_minor = minor(statbuf.st_rdev);
+-
+ 	if (do_query)
+-		return query(raw_minor, 0);
++		return query(raw_minor, raw_name, 0);
+
+ 	/* 
+ 	 * It's not a query, so we still have some parsing to do.  Have
+@@ -205,13 +185,35 @@ void open_raw_ctl(void)
+ 	}
+ }
+ 
+-int query(int minor, int quiet)
++int query(int raw_minor, const char *raw_name, int quiet)
+ {
+ 	struct raw_config_request rq;
+ 	static int has_worked = 0;
+ 	int err;
++	struct stat statbuf;
++
++	if (raw_name) {
++		err = stat(raw_name, &statbuf);
++		if (err) {
++			fprintf (stderr, "Cannot locate raw device '%s' (%s)\n",
++				 raw_name, strerror(errno));
++			exit(2);
++		}
++
++		if (!S_ISCHR(statbuf.st_mode)) {
++			fprintf (stderr, "Raw device '%s' is not a character dev\n",
++				 raw_name);
++			exit(2);
++		}
++		if (major(statbuf.st_rdev) != RAW_MAJOR) {
++			fprintf (stderr, "Device '%s' is not a raw dev\n",
++				 raw_name);
++			exit(2);
++		}
++		raw_minor = minor(statbuf.st_rdev);
++	}
+ 
+-	rq.raw_minor = minor;
++	rq.raw_minor = raw_minor;
+ 	err = ioctl(master_fd, RAW_GETBIND, &rq);
+ 	if (err < 0) {
+ 		if (quiet && errno == ENODEV)
+@@ -230,7 +232,7 @@ int query(int minor, int quiet)
+ 	if (quiet && !rq.block_major && !rq.block_minor)
+ 		return 0;
+ 	printf (_(RAWDEVDIR "raw%d:	bound to major %d, minor %d\n"),
+-		minor, (int) rq.block_major, (int) rq.block_minor);
++		raw_minor, (int) rq.block_major, (int) rq.block_minor);
+ 	return 0;
+ }
+
