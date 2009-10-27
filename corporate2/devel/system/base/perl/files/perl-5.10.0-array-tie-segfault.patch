@@ -1,0 +1,26 @@
+Change 33495 by stevep@stevep-kirk on 2008/03/12 16:38:20
+
+	Subject: [perl #51636] segmentation fault with array ties
+	From: blino@mandriva.com (via RT) <perlbug-followup@perl.org>
+	Date: Wed, 12 Mar 2008 02:59:45 -0700
+	Message-ID: <rt-3.6.HEAD-25460-1205315984-377.51636-75-0@perl.org>
+
+Affected files ...
+
+... //depot/perl/av.c#132 edit
+
+Differences ...
+
+==== //depot/perl/av.c#132 (text) ====
+
+--- perl-5.10.0/av.c.orig       2008-03-12 15:47:22.000000000 +0100
++++ perl-5.10.0/av.c    2008-03-13 19:22:52.000000000 +0100
+@@ -437,7 +437,7 @@
+     /* Give any tie a chance to cleanup first */
+     if (SvRMAGICAL(av)) {
+ 	const MAGIC* const mg = SvMAGIC(av);
+-	if (PL_delaymagic && mg->mg_type == PERL_MAGIC_isa)
++	if (PL_delaymagic && mg && mg->mg_type == PERL_MAGIC_isa)
+ 	    PL_delaymagic |= DM_ARRAY;
+         else
+ 	    mg_clear((SV*)av); 

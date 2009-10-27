@@ -1,0 +1,26 @@
+commit 3c47b388eef138cab2d931b73019650914305799
+Author: Martin Pitt <martin.pitt@ubuntu.com>
+Date:   Mon Aug 24 12:02:07 2009 +0200
+
+    extras/modem-modeswitch: eject ZTE MF6xx fake CD-ROMs
+    
+    modem-modeswitch does not fully work on ZTE MF6xx modems, their fake CD-ROMs
+    need to be properly ejected in order for the actual modem to appear. Add udev
+    rule for this device (19d2:2000 in CD-ROM mode).
+    
+    https://launchpad.net/bugs/281335
+
+diff --git a/extras/modem-modeswitch/61-mobile-action.rules b/extras/modem-modeswitch/61-mobile-action.rules
+index bb99b43..9f47231 100644
+--- a/extras/modem-modeswitch/61-mobile-action.rules
++++ b/extras/modem-modeswitch/61-mobile-action.rules
+@@ -6,4 +6,9 @@ GOTO="mobile_action_end"
+ LABEL="mobile_action_switch"
+ ATTRS{idVendor}=="0df7", ATTRS{idProduct}=="0800", RUN+="modem-modeswitch -v 0x%s{idVendor} -p 0x%s{idProduct} -t mobile-action-8280p"
+ 
++# modem-modeswitch does not work with these devices, the fake CD-ROM needs to be ejected
++
++# ZTE MF6xx
++ATTRS{idVendor}=="19d2", ATTRS{idProduct}=="2000", RUN+="/usr/bin/eject %k"
++
+ LABEL="mobile_action_end"

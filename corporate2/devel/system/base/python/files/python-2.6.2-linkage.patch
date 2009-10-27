@@ -1,0 +1,84 @@
+--- configure.in~	2009-06-28 11:29:11.000000000 -0400
++++ configure.in	2009-06-28 11:40:15.000000000 -0400
+@@ -1193,7 +1193,7 @@
+ AC_MSG_CHECKING(whether $CC accepts -pthread)
+ AC_CACHE_VAL(ac_cv_thread,
+ [ac_save_cc="$CC"
+-CC="$CC -pthread"
++LIBS="$LIBS -lpthread"
+ AC_TRY_RUN([
+ #include <pthread.h>
+ 
+@@ -1232,7 +1232,7 @@
+   ac_cv_cxx_thread=yes
+ elif test "$ac_cv_pthread" = "yes"
+ then 
+-  CXX="$CXX -pthread"
++  LIBS="$LIBS -lpthread"
+   ac_cv_cxx_thread=yes
+ fi
+ 
+@@ -1487,7 +1487,7 @@
+ elif test "$ac_cv_kthread" = "yes"
+ then CC="$CC -Kthread"
+ elif test "$ac_cv_pthread" = "yes"
+-then CC="$CC -pthread"
++then LIBS="$LIBS -lpthread"
+ fi
+ AC_MSG_CHECKING(for pthread_t)
+ have_pthread_t=no
+@@ -2031,10 +2031,7 @@
+     THREADOBJ="Python/thread.o"
+ elif test "$ac_cv_pthread" = "yes"
+ then
+-    CC="$CC -pthread"
+-    if test "$ac_cv_cxx_thread" = "yes"; then
+-        CXX="$CXX -pthread"
+-    fi
++    LIBS="$LIBS -lpthread"
+     AC_DEFINE(WITH_THREAD)
+     posix_threads=yes
+     THREADOBJ="Python/thread.o"
+--- setup.py.linkage	2009-06-28 11:47:01.000000000 -0400
++++ setup.py	2009-06-28 11:53:42.000000000 -0400
+@@ -542,7 +542,7 @@
+         # Operations on audio samples
+         # According to #993173, this one should actually work fine on
+         # 64-bit platforms.
+-        exts.append( Extension('audioop', ['audioop.c']) )
++        exts.append( Extension('audioop', ['audioop.c'], library_dirs=lib_dirs, libraries=['m']) )
+ 
+         # Disabled on 64-bit platforms
+         if sys.maxint != 9223372036854775807L:
+@@ -1238,7 +1238,7 @@
+             # This requires sizeof(int) == sizeof(long) == sizeof(char*)
+             dl_inc = find_file('dlfcn.h', [], inc_dirs)
+             if (dl_inc is not None) and (platform not in ['atheos']):
+-                exts.append( Extension('dl', ['dlmodule.c']) )
++                exts.append( Extension('dl', ['dlmodule.c'], library_dirs=lib_dirs, libraries=['dl']) )
+             else:
+                 missing.append('dl')
+         else:
+@@ -1323,6 +1323,7 @@
+ 
+         exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
+                                  define_macros=macros.items(),
++				 libraries=['pthread'],
+                                  include_dirs=["Modules/_multiprocessing"]))
+         # End multiprocessing
+ 
+@@ -1752,10 +1753,13 @@
+                         include_dirs=include_dirs,
+                         extra_compile_args=extra_compile_args,
+                         extra_link_args=extra_link_args,
+-                        libraries=[],
++			library_dirs=lib_dirs,
++                        libraries=['dl'],
+                         sources=sources,
+                         depends=depends)
+         ext_test = Extension('_ctypes_test',
++			     libraries=['m'],
++			     library_dirs=lib_dirs,
+                              sources=['_ctypes/_ctypes_test.c'])
+         self.extensions.extend([ext, ext_test])
+ 

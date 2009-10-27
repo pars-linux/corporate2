@@ -1,0 +1,22 @@
+--- archival/gzip.c
++++ archival/gzip.c
+@@ -1257,7 +1257,7 @@
+ 					/* Open output file */
+ #if (__GLIBC__ >= 2) && (__GLIBC_MINOR__ >= 1) && defined O_NOFOLLOW
+ 					outFileNum =
+-						open(path, O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW);
++					  open(path, O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW, 0700);
+ #else
+ 					outFileNum = open(path, O_RDWR | O_CREAT | O_EXCL);
+ #endif
+--- e2fsprogs/ext2fs/ismounted.c
++++ e2fsprogs/ext2fs/ismounted.c
+@@ -147,7 +147,7 @@
+ is_root:
+ #define TEST_FILE "/.ismount-test-file"
+ 		*mount_flags |= EXT2_MF_ISROOT;
+-		fd = open(TEST_FILE, O_RDWR|O_CREAT);
++		fd = open(TEST_FILE, O_RDWR|O_CREAT, 0700);
+ 		if (fd < 0) {
+ 			if (errno == EROFS)
+ 				*mount_flags |= EXT2_MF_READONLY;

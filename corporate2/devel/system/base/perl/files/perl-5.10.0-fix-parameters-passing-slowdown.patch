@@ -1,0 +1,155 @@
+Change 32891 by rgs@stcosmo on 2008/01/07 14:55:23
+
+	Subject: [PATCH] Big slowdown in 5.10 @_ parameter passing
+	From: Rick Delaney <rick@bort.ca>
+	Date: Sun, 6 Jan 2008 14:14:39 -0500
+	Message-ID: <20080106191439.GF13935@bort.ca>
+
+Affected files ...
+
+... //depot/perl/op.c#975 edit
+
+Differences ...
+
+==== //depot/perl/op.c#975 (text) ====
+
+--- perl-5.10.0/op.c.orig       2008-03-12 15:47:22.000000000 +0100
++++ perl-5.10.0/op.c    2008-03-13 19:22:52.000000000 +0100
+@@ -3992,6 +3992,7 @@
+ 	static const char no_list_state[] = "Initialization of state variables"
+ 	    " in list context currently forbidden";
+ 	OP *curop;
++	bool maybe_common_vars = TRUE;
+ 
+ 	PL_modcount = 0;
+ 	/* Grandfathering $[ assignment here.  Bletch.*/
+@@ -4009,6 +4010,65 @@
+ 	o = newBINOP(OP_AASSIGN, flags, list(force_list(right)), curop);
+ 	o->op_private = (U8)(0 | (flags >> 8));
+ 
++	if ((left->op_type == OP_LIST
++	     || (left->op_type == OP_NULL && left->op_targ == OP_LIST)))
++	{
++	    OP* lop = ((LISTOP*)left)->op_first;
++	    maybe_common_vars = FALSE;
++	    while (lop) {
++		if (lop->op_type == OP_PADSV ||
++		    lop->op_type == OP_PADAV ||
++		    lop->op_type == OP_PADHV ||
++		    lop->op_type == OP_PADANY) {
++		    if (!(lop->op_private & OPpLVAL_INTRO))
++			maybe_common_vars = TRUE;
++
++		    if (lop->op_private & OPpPAD_STATE) {
++			if (left->op_private & OPpLVAL_INTRO) {
++			    /* Each variable in state($a, $b, $c) = ... */
++			}
++			else {
++			    /* Each state variable in
++			       (state $a, my $b, our $c, $d, undef) = ... */
++			}
++			yyerror(no_list_state);
++		    } else {
++			/* Each my variable in
++			   (state $a, my $b, our $c, $d, undef) = ... */
++		    }
++		} else if (lop->op_type == OP_UNDEF ||
++			   lop->op_type == OP_PUSHMARK) {
++		    /* undef may be interesting in
++		       (state $a, undef, state $c) */
++		} else {
++		    /* Other ops in the list. */
++		    maybe_common_vars = TRUE;
++		}
++		lop = lop->op_sibling;
++	    }
++	}
++	else if ((left->op_private & OPpLVAL_INTRO)
++		&& (   left->op_type == OP_PADSV
++		    || left->op_type == OP_PADAV
++		    || left->op_type == OP_PADHV
++		    || left->op_type == OP_PADANY))
++	{
++	    maybe_common_vars = FALSE;
++	    if (left->op_private & OPpPAD_STATE) {
++		/* All single variable list context state assignments, hence
++		   state ($a) = ...
++		   (state $a) = ...
++		   state @a = ...
++		   state (@a) = ...
++		   (state @a) = ...
++		   state %a = ...
++		   state (%a) = ...
++		   (state %a) = ...
++		*/
++		yyerror(no_list_state);
++	    }
++	}
++
+ 	/* PL_generation sorcery:
+ 	 * an assignment like ($a,$b) = ($c,$d) is easier than
+ 	 * ($a,$b) = ($c,$a), since there is no need for temporary vars.
+@@ -4023,7 +4083,7 @@
+ 	 * to store these values, evil chicanery is done with SvUVX().
+ 	 */
+ 
+-	{
++	if (maybe_common_vars) {
+ 	    OP *lastop = o;
+ 	    PL_generation++;
+ 	    for (curop = LINKLIST(o); curop != o; curop = LINKLIST(curop)) {
+@@ -4084,54 +4144,6 @@
+ 		o->op_private |= OPpASSIGN_COMMON;
+ 	}
+ 
+-	if ((left->op_type == OP_LIST
+-	     || (left->op_type == OP_NULL && left->op_targ == OP_LIST))) {
+-	    OP* lop = ((LISTOP*)left)->op_first;
+-	    while (lop) {
+-		if (lop->op_type == OP_PADSV ||
+-		    lop->op_type == OP_PADAV ||
+-		    lop->op_type == OP_PADHV ||
+-		    lop->op_type == OP_PADANY) {
+-		    if (lop->op_private & OPpPAD_STATE) {
+-			if (left->op_private & OPpLVAL_INTRO) {
+-			    /* Each variable in state($a, $b, $c) = ... */
+-			}
+-			else {
+-			    /* Each state variable in
+-			       (state $a, my $b, our $c, $d, undef) = ... */
+-			}
+-			yyerror(no_list_state);
+-		    } else {
+-			/* Each my variable in
+-			   (state $a, my $b, our $c, $d, undef) = ... */
+-		    }
+-		} else {
+-		    /* Other ops in the list. undef may be interesting in
+-		       (state $a, undef, state $c) */
+-		}
+-		lop = lop->op_sibling;
+-	    }
+-	}
+-	else if (((left->op_private & (OPpLVAL_INTRO | OPpPAD_STATE))
+-		    == (OPpLVAL_INTRO | OPpPAD_STATE))
+-		&& (   left->op_type == OP_PADSV
+-		    || left->op_type == OP_PADAV
+-		    || left->op_type == OP_PADHV
+-		    || left->op_type == OP_PADANY))
+-	{
+-	    /* All single variable list context state assignments, hence
+-	       state ($a) = ...
+-	       (state $a) = ...
+-	       state @a = ...
+-	       state (@a) = ...
+-	       (state @a) = ...
+-	       state %a = ...
+-	       state (%a) = ...
+-	       (state %a) = ...
+-	    */
+-	    yyerror(no_list_state);
+-	}
+-
+ 	if (right && right->op_type == OP_SPLIT && !PL_madskills) {
+ 	    OP* tmpop = ((LISTOP*)right)->op_first;
+ 	    if (tmpop && (tmpop->op_type == OP_PUSHRE)) {

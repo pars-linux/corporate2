@@ -1,0 +1,67 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>dnsmasq</Name>
+        <Homepage>http://www.thekelleys.org.uk/dnsmasq/doc.html</Homepage>
+        <Packager>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <License>GPLv3</License>
+        <IsA>service</IsA>
+        <Summary>Lightweight, easy to configure DNS forwarder and DHCP server</Summary>
+        <Description>A DNS forwarder and DHCP server that can serve the names of local machines which are not in the global DNS. The DHCP server integrates with the DNS server and allows machines with DHCP-allocated addresses to appear in the DNS with names configured in each host.</Description>
+        <Archive type="targz" sha1sum="a01ae622410636c5cdad9b789e69fb4bbc3a5d6a">http://www.thekelleys.org.uk/dnsmasq/dnsmasq-2.47.tar.gz</Archive>
+        <Patches>
+            <Patch level="1">dbus_pardus_methods.patch</Patch>
+            <Patch>CVE-2009-2957+2958.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>dnsmasq</Name>
+        <Files>
+            <Path fileType="executable">/usr/sbin</Path>
+            <Path fileType="executable">/usr/lib/python2.6/site-packages</Path>
+            <Path fileType="config">/etc</Path>
+            <Path fileType="config">/usr/share/dbus-1/system-services</Path>
+            <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+         </Files>
+         <AdditionalFiles>
+             <AdditionalFile target="/etc/dnsmasq.conf" permission="0644" owner="root">dnsmasq.conf</AdditionalFile>
+             <AdditionalFile target="/usr/share/dbus-1/system-services/uk.org.thekelleys.dnsmasq.service" permission="0644" owner="root">uk.org.thekelleys.dnsmasq.service</AdditionalFile>
+             <AdditionalFile target="/usr/lib/python2.6/site-packages/dnsmasq.py" permission="0644" owner="root">dnsmasq.py</AdditionalFile>
+         </AdditionalFiles>
+         <Provides>
+             <COMAR script="service.py">System.Service</COMAR>
+             <COMAR script="stack.py">Network.Stack</COMAR>
+         </Provides>
+    </Package>
+
+    <History>
+         <Update release="3" type="security">
+            <Date>2009-09-02</Date>
+            <Version>2.47</Version>
+            <Comment>Fix for remote buffer overflow and DoS in tftp (CVE-2009-2957, CVE-2009-2958, Bug#11087)</Comment>
+            <Name>Taner Taş</Name>
+            <Email>taner@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2009-05-04</Date>
+            <Version>2.47</Version>
+            <Comment>New release.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2009-04-30</Date>
+            <Version>2.46</Version>
+            <Comment>First release.</Comment>
+            <Name>Furkan Duman</Name>
+            <Email>coderlord@gmail.com</Email>
+        </Update>
+    </History>
+</PISI>

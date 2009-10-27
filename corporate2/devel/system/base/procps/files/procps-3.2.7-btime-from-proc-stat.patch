@@ -1,0 +1,76 @@
+Read the time of system boot from /proc/stat (entry: btime) instead
+of computing it as the difference between the current time and the
+uptime. This is the only way to get a consistent result which won't
+possibly change from one run to the next.
+
+The problems with the original code were:
+* Both the current time and the uptime are rounded down to the second,
+  but the system doesn't boot on an integer second value so they do not
+  tick at the same moment. Thus, the rounding errors can cause a one
+  second difference from one run to the next.
+* We can't read the uptime and the current time at the exact same moment
+  anyway, so the time difference we compute is bound to be inaccurate.
+
+Signed-off-by: Jean Delvare <jdelvare@suse.de>
+---
+ proc/sysinfo.c |   26 ++++++++++++++++++++++++++
+ proc/sysinfo.h |    1 +
+ ps/output.c    |    2 +-
+ 3 files changed, 28 insertions(+), 1 deletion(-)
+
+--- procps-3.2.7.orig/proc/sysinfo.c	2007-08-31 10:18:07.000000000 +0200
++++ procps-3.2.7/proc/sysinfo.c	2007-08-31 13:55:32.000000000 +0200
+@@ -88,6 +88,32 @@ int uptime(double *restrict uptime_secs,
+     return up;	/* assume never be zero seconds in practice */
+ }
+ 
++unsigned long getbtime(void) {
++    unsigned long btime = 0;
++    FILE *f;
++
++    /* /proc/stat can get very large on multi-CPU systems so we
++       can't use FILE_TO_BUF */
++    if (!(f = fopen(STAT_FILE, "r"))) {
++	fputs(BAD_OPEN_MESSAGE, stderr);
++	fflush(NULL);
++	_exit(102);
++    }
++
++    while ((fgets(buf, sizeof buf, f))) {
++        if (sscanf(buf, "btime %lu", &btime) == 1)
++            break;
++    }
++    fclose(f);
++
++    if (!btime) {
++	fputs("missing btime in " STAT_FILE "\n", stderr);
++	exit(1);
++    }
++
++    return btime;
++}
++
+ /***********************************************************************
+  * Some values in /proc are expressed in units of 1/HZ seconds, where HZ
+  * is the kernel clock tick rate. One of these units is called a jiffy.
+--- procps-3.2.7.orig/proc/sysinfo.h	2007-08-31 10:18:07.000000000 +0200
++++ procps-3.2.7/proc/sysinfo.h	2007-08-31 10:18:58.000000000 +0200
+@@ -17,6 +17,7 @@ extern void eight_cpu_numbers(JT *uret, 
+ #endif
+ 
+ extern int        uptime (double *uptime_secs, double *idle_secs);
++extern unsigned long getbtime(void);
+ extern void       loadavg(double *av1, double *av5, double *av15);
+ 
+ 
+--- procps-3.2.7.orig/ps/output.c	2007-08-31 10:18:22.000000000 +0200
++++ procps-3.2.7/ps/output.c	2007-08-31 10:18:58.000000000 +0200
+@@ -1952,7 +1952,7 @@ void init_output(void){
+   // available space:  page_size*outbuf_pages-SPACE_AMOUNT
+ 
+   seconds_since_1970 = time(NULL);
+-  time_of_boot = seconds_since_1970 - seconds_since_boot;
++  time_of_boot = getbtime();
+ 
+   meminfo();
+ 

@@ -1,0 +1,341 @@
+diff -urp memtest86+-2.01.mm/io.h memtest86+-2.01/io.h
+--- memtest86+-2.01.mm/io.h	2008-02-21 12:26:05.000000000 +0100
++++ memtest86+-2.01/io.h	2008-04-30 12:32:34.787275000 +0200
+@@ -31,7 +31,7 @@
+  */
+ 
+ #define __OUT1(s,x) \
+-extern inline void __out##s(unsigned x value, unsigned short port) {
++static inline void __out##s(unsigned x value, unsigned short port) {
+ 
+ #define __OUT2(s,s1,s2) \
+ __asm__ __volatile__ ("out" #s " %" s1 "0,%" s2 "1"
+@@ -43,7 +43,7 @@ __OUT1(s##_p,x) __OUT2(s,s1,"w") : : "a"
+ __OUT1(s##c_p,x) __OUT2(s,s1,"") : : "a" (value), "id" (port)); SLOW_DOWN_IO; }
+ 
+ #define __IN1(s) \
+-extern inline RETURN_TYPE __in##s(unsigned short port) { RETURN_TYPE _v;
++static inline RETURN_TYPE __in##s(unsigned short port) { RETURN_TYPE _v;
+ 
+ #define __IN2(s,s1,s2) \
+ __asm__ __volatile__ ("in" #s " %" s2 "1,%" s1 "0"
+@@ -55,7 +55,7 @@ __IN1(s##_p) __IN2(s,s1,"w") : "=a" (_v)
+ __IN1(s##c_p) __IN2(s,s1,"") : "=a" (_v) : "id" (port) ,##i ); SLOW_DOWN_IO; return _v; }
+ 
+ #define __OUTS(s) \
+-extern inline void outs##s(unsigned short port, const void * addr, unsigned long count) \
++static inline void outs##s(unsigned short port, const void * addr, unsigned long count) \
+ { __asm__ __volatile__ ("cld ; rep ; outs" #s \
+ : "=S" (addr), "=c" (count) : "d" (port),"0" (addr),"1" (count)); }
+ 
+diff -urp memtest86+-2.01.mm/test.c memtest86+-2.01/test.c
+--- memtest86+-2.01.mm/test.c	2008-02-21 12:26:05.000000000 +0100
++++ memtest86+-2.01/test.c	2008-04-30 14:15:56.666389000 +0200
+@@ -25,6 +25,22 @@ void poll_errors();
+ 
+ int ecount = 0;
+ 
++static inline volatile ulong * sat_add(volatile ulong *ptr, ulong i, volatile ulong *end)
++{
++  if ((ulong)ptr + i * sizeof(*ptr) > (ulong)ptr)
++    return ptr + i;
++  else
++    return end;
++}
++
++static inline volatile ulong * sat_sub(volatile ulong *ptr, ulong i, volatile ulong *start)
++{
++  if ((ulong)ptr > i * sizeof(*ptr))
++    return ptr - i;
++  else
++    return start;
++}
++
+ static inline ulong roundup(ulong value, ulong mask)
+ {
+ 	return (value + mask) & ~mask;
+@@ -150,11 +166,7 @@ void addr_tst2()
+ 		done = 0;
+ 		do {
+ 			/* Check for overflow */
+-			if (pe + SPINSZ > pe) {
+-				pe += SPINSZ;
+-			} else {
+-				pe = end;
+-			}
++			pe = sat_add(pe, SPINSZ, end);
+ 			if (pe >= end) {
+ 				pe = end;
+ 				done++;
+@@ -194,11 +206,7 @@ void addr_tst2()
+ 		done = 0;
+ 		do {
+ 			/* Check for overflow */
+-			if (pe + SPINSZ > pe) {
+-				pe += SPINSZ;
+-			} else {
+-				pe = end;
+-			}
++			pe = sat_add(pe, SPINSZ, end);
+ 			if (pe >= end) {
+ 				pe = end;
+ 				done++;
+@@ -280,11 +288,7 @@ void movinvr()
+ 		done = 0;
+ 		do {
+ 			/* Check for overflow */
+-			if (pe + SPINSZ > pe) {
+-				pe += SPINSZ;
+-			} else {
+-				pe = end;
+-			}
++			pe = sat_add(pe, SPINSZ, end);
+ 			if (pe >= end) {
+ 				pe = end;
+ 				done++;
+@@ -331,11 +335,7 @@ void movinvr()
+ 			done = 0;
+ 			do {
+ 				/* Check for overflow */
+-				if (pe + SPINSZ > pe) {
+-					pe += SPINSZ;
+-				} else {
+-					pe = end;
+-				}
++				pe = sat_add(pe, SPINSZ, end);
+ 				if (pe >= end) {
+ 					pe = end;
+ 					done++;
+@@ -419,7 +419,8 @@ void movinv1(int iter, ulong p1, ulong p
+ 	hprint(LINE_PAT, COL_PAT, p1);
+ 
+ 	/* Initialize memory with the initial pattern.  */
+-	for (j=0; j<segs; j++) {
++	for (j=0; j<segs; j++)
++	{
+ 		start = v->map[j].start;
+ 		end = v->map[j].end;
+ 		pe = start;
+@@ -427,11 +428,7 @@ void movinv1(int iter, ulong p1, ulong p
+ 		done = 0;
+ 		do {
+ 			/* Check for overflow */
+-			if (pe + SPINSZ > pe) {
+-				pe += SPINSZ;
+-			} else {
+-				pe = end;
+-			}
++			pe = sat_add(pe, SPINSZ, end);
+ 			if (pe >= end) {
+ 				pe = end;
+ 				done++;
+@@ -440,17 +437,19 @@ void movinv1(int iter, ulong p1, ulong p
+ 			if (p == pe ) {
+ 				break;
+ 			}
+-/* Original C code replaced with hand tuned assembly code
+- *			for (; p < pe; p++) {
+- *				*p = p1;
+- *			}
+- */
++/* Original C code replaced with hand tuned assembly code */
++#if 0
++  			for (; p < pe; p++) {
++  				*p = p1;
++  			}
++#else
+ 			asm __volatile__ (
+ 				"rep\n\t" \
+ 				"stosl\n\t"
+ 				: "=D" (p)
+ 				: "c" (len), "0" (p), "a" (p1)
+ 			);
++#endif
+ 			do_tick();
+ 			BAILR
+ 		} while (!done);
+@@ -460,7 +459,8 @@ void movinv1(int iter, ulong p1, ulong p
+ 	 * write the complement for each memory location. Test from bottom
+ 	 * up and then from the top down.  */
+ 	for (i=0; i<iter; i++) {
+-		for (j=0; j<segs; j++) {
++		for (j=0; j<segs; j++)
++		{
+ 			start = v->map[j].start;
+ 			end = v->map[j].end;
+ 			pe = start;
+@@ -468,11 +468,7 @@ void movinv1(int iter, ulong p1, ulong p
+ 			done = 0;
+ 			do {
+ 				/* Check for overflow */
+-				if (pe + SPINSZ > pe) {
+-					pe += SPINSZ;
+-				} else {
+-					pe = end;
+-				}
++				pe = sat_add(pe, SPINSZ, end);
+ 				if (pe >= end) {
+ 					pe = end;
+ 					done++;
+@@ -480,14 +476,16 @@ void movinv1(int iter, ulong p1, ulong p
+ 				if (p == pe ) {
+ 					break;
+ 				}
+-/* Original C code replaced with hand tuned assembly code
+- *				for (; p < pe; p++) {
+- *					if ((bad=*p) != p1) {
+- *						error((ulong*)p, p1, bad);
+- *					}
+- *					*p = p2;
+- *				}
+- */
++/* Original C code replaced with hand tuned assembly code */
++#if 0
++  				for (; p < pe; p++) {
++					ulong bad;
++  					if ((bad=*p) != p1) {
++  						error((ulong*)p, p1, bad);
++  					}
++  					*p = p2;
++  				}
++#else 
+ 				asm __volatile__ (
+ 					"jmp L2\n\t" \
+ 
+@@ -522,10 +520,12 @@ void movinv1(int iter, ulong p1, ulong p
+ 					: "a" (p1), "0" (p), "d" (pe), "b" (p2)
+ 					: "ecx"
+ 				);
++#endif
+ 				do_tick();
+ 				BAILR
+ 			} while (!done);
+ 		}
++
+ 		for (j=segs-1; j>=0; j--) {
+ 			start = v->map[j].start;
+ 			end = v->map[j].end;
+@@ -534,11 +534,7 @@ void movinv1(int iter, ulong p1, ulong p
+ 			done = 0;
+ 			do {
+ 				/* Check for underflow */
+-				if (pe - SPINSZ < pe) {
+-					pe -= SPINSZ;
+-				} else {
+-					pe = start;
+-				}
++				pe = sat_sub(pe, SPINSZ, start);
+ 				if (pe <= start) {
+ 					pe = start;
+ 					done++;
+@@ -546,14 +542,16 @@ void movinv1(int iter, ulong p1, ulong p
+ 				if (p == pe ) {
+ 					break;
+ 				}
+-/* Original C code replaced with hand tuned assembly code
+- *				do {
+- *					if ((bad=*p) != p2) {
+- *						error((ulong*)p, p2, bad);
+- *					}
+- *					*p = p1;
+- *				} while (p-- > pe);
+- */
++/* Original C code replaced with hand tuned assembly code */
++#if 0
++  				do {
++					ulong bad;
++  					if ((bad=*p) != p2) {
++  						error((ulong*)p, p2, bad);
++  					}
++  					*p = p1;
++  				} while (p-- > pe);
++#else 
+ 				asm __volatile__ (
+ 					"addl $4, %%edi\n\t"
+ 					"jmp L9\n\t"
+@@ -590,6 +588,7 @@ void movinv1(int iter, ulong p1, ulong p
+ 					: "a" (p1), "0" (p), "d" (pe), "b" (p2)
+ 					: "ecx"
+ 				);
++#endif
+ 				do_tick();
+ 				BAILR
+ 			} while (!done);
+@@ -623,11 +622,7 @@ void movinv32(int iter, ulong p1, ulong 
+ 		pat = p1;
+ 		do {
+ 			/* Check for overflow */
+-			if (pe + SPINSZ > pe) {
+-				pe += SPINSZ;
+-			} else {
+-				pe = end;
+-			}
++			pe = sat_add(pe, SPINSZ, end);
+ 			if (pe >= end) {
+ 				pe = end;
+ 				done++;
+@@ -685,11 +680,7 @@ void movinv32(int iter, ulong p1, ulong 
+ 			pat = p1;
+ 			do {
+ 				/* Check for overflow */
+-				if (pe + SPINSZ > pe) {
+-					pe += SPINSZ;
+-				} else {
+-					pe = end;
+-				}
++				pe = sat_add(pe, SPINSZ, end);
+ 				if (pe >= end) {
+ 					pe = end;
+ 					done++;
+@@ -798,11 +789,7 @@ void movinv32(int iter, ulong p1, ulong 
+ 			done = 0;
+ 			do {
+ 				/* Check for underflow */
+-				if (pe - SPINSZ < pe) {
+-					pe -= SPINSZ;
+-				} else {
+-					pe = start;
+-				}
++				pe = sat_sub(pe, SPINSZ, start);
+ 				if (pe <= start) {
+ 					pe = start;
+ 					done++;
+@@ -906,11 +893,7 @@ void modtst(int offset, int iter, ulong 
+ 		done = 0;
+ 		do {
+ 			/* Check for overflow */
+-			if (pe + SPINSZ > pe) {
+-				pe += SPINSZ;
+-			} else {
+-				pe = end;
+-			}
++			pe = sat_add(pe, SPINSZ, end);
+ 			if (pe >= end) {
+ 				pe = end;
+ 				done++;
+@@ -951,11 +934,7 @@ void modtst(int offset, int iter, ulong 
+ 			k = 0;
+ 			do {
+ 				/* Check for overflow */
+-				if (pe + SPINSZ > pe) {
+-					pe += SPINSZ;
+-				} else {
+-					pe = end;
+-				}
++				pe = sat_add(pe, SPINSZ, end);
+ 				if (pe >= end) {
+ 					pe = end;
+ 					done++;
+@@ -1009,11 +988,7 @@ void modtst(int offset, int iter, ulong 
+ 		done = 0;
+ 		do {
+ 			/* Check for overflow */
+-			if (pe + SPINSZ > pe) {
+-				pe += SPINSZ;
+-			} else {
+-				pe = end;
+-			}
++			pe = sat_add(pe, SPINSZ, end);
+ 			if (pe >= end) {
+ 				pe = end;
+ 				done++;
