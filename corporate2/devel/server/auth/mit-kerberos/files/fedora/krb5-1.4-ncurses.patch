@@ -1,0 +1,19 @@
+Prevent an incompatible declaration for setupterm(), declared for curses
+in <term.h>, from being used when we're building with termcap.
+
+--- krb5/src/appl/telnet/telnet/telnet.c	2005-03-15 19:26:12.676150256 -0500
++++ krb5/src/appl/telnet/telnet/telnet.c	2005-03-15 19:26:07.382841519 -0500
+@@ -52,9 +52,13 @@
+ #include <curses.h>
+ #endif
+ 
++#ifndef TERMCAP
+ #ifdef HAVE_TERM_H
+ #include <term.h>
+ #endif
++#else
++#include <termcap.h>
++#endif
+ 
+ #include <arpa/telnet.h>
+ 
