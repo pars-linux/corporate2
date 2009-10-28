@@ -110,3 +110,6 @@ def install():
     # This symlink was pointing to a nonsense location in /var/pisi, causing
     # pisi to bork about the package integrity.
     pisitools.remove("/usr/qt/3/mkspecs/linux-g++/linux-g++")
+
+    # Symlink pkgconfig file
+    pisitools.dosym("/usr/qt/3/lib/pkgconfig/qt-mt.pc","/usr/lib/pkgconfig/qt-mt.pc")
