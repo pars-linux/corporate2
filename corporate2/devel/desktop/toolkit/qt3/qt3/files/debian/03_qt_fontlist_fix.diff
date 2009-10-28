@@ -1,0 +1,29 @@
+author: Martin Loschwitz <madkiss@debian.org>
+
+Fix fonts list to show only the fonts we can use
+
+--- a/src/kernel/qfontdatabase_x11.cpp
++++ b/src/kernel/qfontdatabase_x11.cpp
+@@ -721,6 +721,9 @@
+     if ( fontFamily && fontFamily->xlfdLoaded )
+ 	return;
+ 
++#ifdef QT_XFT2
++    if ( !qt_has_xft ) {
++#endif // QT_XFT2
+     int fontCount;
+     // force the X server to give us XLFDs
+     QCString xlfd_pattern = "-*-";
+@@ -822,8 +825,11 @@
+     }
+ 
+     XFreeFontNames( fontList );
+-}
+ 
++#ifdef QT_XFT2
++    }
++#endif // QT_XFT2
++}
+ 
+ #ifndef QT_NO_XFTFREETYPE
+ static int getXftWeight(int xftweight)

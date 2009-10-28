@@ -1,0 +1,24 @@
+author: Martin Loschwitz <madkiss@madkiss.org>
+
+Fix makeqpf by make it not use stuff defined in Qt embedded
+
+--- a/tools/makeqpf/main.cpp
++++ b/tools/makeqpf/main.cpp
+@@ -137,8 +137,6 @@
+     }
+ };
+ 
+-extern QString qws_topdir();
+-
+ class MakeQPF : public QMainWindow
+ {
+     Q_OBJECT
+@@ -152,7 +150,7 @@
+ 	view->addColumn("Weight");
+ 	view->addColumn("Style");
+ 	setCentralWidget(view);
+-	QString fontdir = qws_topdir() + "/lib/fonts";
++	QString fontdir = QString(getenv("QTDIR")) + "/lib/fonts";
+ 	readFontDir(fontdir);
+ 
+ 	connect(view,SIGNAL(selectionChanged(QListViewItem*)),

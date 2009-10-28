@@ -1,0 +1,37 @@
+--- a/src/widgets/qlistview.cpp
++++ b/src/widgets/qlistview.cpp
+@@ -7577,21 +7577,21 @@
+ 
+ QListViewItemIterator &QListViewItemIterator::operator++()
+ {
+-    if ( !curr )
+-	return *this;
++    do {
++        if ( !curr )
++	    return *this;
+ 
+-    QListViewItem *item = curr->firstChild();
+-    if ( !item ) {
+-	while ( (item = curr->nextSibling()) == 0  ) {
+-	    curr = curr->parent();
+-	    if ( curr == 0 )
+-		break;
++	QListViewItem *item = curr->firstChild();
++	if ( !item ) {
++	    while ( (item = curr->nextSibling()) == 0  ) {
++		curr = curr->parent();
++		if ( curr == 0 )
++		    break;
++	    }
+ 	}
+-    }
+-    curr = item;
+-    // if the next one doesn't match the flags we try one more ahead
+-    if ( curr && !matchesFlags( curr ) )
+-	++( *this );
++	curr = item;
++	// if the next one doesn't match the flags we try one more ahead
++    } while  ( curr && !matchesFlags( curr ) );
+     return *this;
+ }
+ 

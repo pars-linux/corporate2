@@ -1,0 +1,13 @@
+--- a/src/dialogs/qdialog.cpp
++++ b/src/dialogs/qdialog.cpp
+@@ -799,7 +799,9 @@
+ 	w = w->topLevelWidget();
+     QRect desk;
+     if ( w ) {
+-	scrn = QApplication::desktop()->screenNumber( w );
++	// Use mapToGlobal rather than geometry() in case w might
++	// be embedded in another application
++	scrn = QApplication::desktop()->screenNumber( w->mapToGlobal( QPoint(0,0) ) );
+     } else if ( QApplication::desktop()->isVirtualDesktop() ) {
+ 	scrn = QApplication::desktop()->screenNumber( QCursor::pos() );
+     } else {

@@ -1,0 +1,543 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>qt3</Name>
+        <Homepage>http://www.trolltech.com/</Homepage>
+        <Packager>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Packager>
+        <License>QPL</License>
+        <License>GPLv2</License>
+        <License>GPLv3</License>
+        <IsA>library</IsA>
+        <Summary>Qt graphical interface library</Summary>
+        <Description>The Qt toolkit is a comprehensive C++ application development framework.</Description>
+        <Archive sha1sum="745def6250dc7f337dbb265e20bf38dcb41fd854" type="targz">ftp://ftp.trolltech.com/qt/source/qt-x11-free-3.3.8b.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>libmng</Dependency>
+            <Dependency>cups</Dependency>
+            <Dependency>sqlite</Dependency>
+            <Dependency>mysql-lib</Dependency>
+            <Dependency>postgresql-lib</Dependency>
+            <Dependency>fontconfig</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch>0001-dnd_optimization.patch</Patch>
+            <Patch>0002-dnd_active_window_fix.patch</Patch>
+            <Patch>0005-qpixmap_mitshm.patch</Patch>
+            <Patch>0007-qpixmap_constants.patch</Patch>
+            <Patch>0015-qiconview-finditem.patch</Patch>
+            <Patch>0016-qiconview-rebuildcontainer.patch</Patch>
+            <Patch>0017-qiconview-ctrl_rubber.patch</Patch>
+            <Patch>0020-designer-deletetabs.patch</Patch>
+            <Patch>0032-fix_rotated_randr.diff</Patch>
+            <Patch>0035-qvaluelist-streaming-operator.patch</Patch>
+            <Patch>0036-qprogressbar-optimization.patch</Patch>
+            <Patch>0038-dragobject-dont-prefer-unknown.patch</Patch>
+            <Patch>0044-qscrollview-windowactivate-fix.diff</Patch>
+            <Patch>0046-qiconview-no-useless-scrollbar.diff</Patch>
+            <Patch>0047-fix-kmenu-width.diff</Patch>
+            <Patch>0048-qclipboard_hack_80072.patch</Patch>
+            <Patch>0049-qiconview-rubber_on_move.diff</Patch>
+            <Patch>0056-khotkeys_input_84434.patch</Patch>
+            <Patch>0059-qpopup_has_mouse.patch</Patch>
+            <Patch>0060-qpopup_ignore_mousepos.patch</Patch>
+            <Patch>0061-qscrollview-propagate-horizontal-wheelevent.patch</Patch>
+            <Patch>0085-fix-buildkey.diff</Patch>
+            <Patch>0086-revert-qt-khmer-fix.diff</Patch>
+            <Patch>qt-x11-rubberband.diff</Patch>
+            <Patch>uic.patch</Patch>
+            <Patch>ttc-font-collection.patch</Patch>
+            <Patch level="1">qt-x11-free-3.1.0-assistant.patch</Patch>
+            <!-- http://ktown.kde.org/~seli/xinerama/ -->
+            <Patch>qt-xinerema.patch</Patch>
+            <Patch>use-xrandr-1.2.patch</Patch>
+
+            <!-- Debian and Kubuntu patches -->
+            <Patch level="1">debian/02_various_fixes.diff</Patch>
+            <Patch level="1">debian/03_qt_fontlist_fix.diff</Patch>
+            <Patch level="1">debian/08_thread_default.diff</Patch>
+            <Patch level="1">debian/13_qt335_qlistview_crash_fix.diff</Patch>
+            <Patch level="1">debian/17_qlistview_crash_iterator.diff</Patch>
+            <Patch level="1">debian/18_fix_makeqpf_qembed.diff</Patch>
+            <Patch level="1">debian/19_qfontdatabase_hack.diff</Patch>
+            <Patch level="1">debian/32_gtkstyle.diff</Patch>
+            <Patch level="1">debian/53_xinerama_dialog_placement_fix.diff</Patch>
+            <Patch level="1">kubuntu/kubuntu_06_fglrx_0_size_screen.diff</Patch>
+            <Patch level="1">kubuntu/kubuntu_09_flickerfree_qiconview.diff</Patch>
+
+            <Patch level="1">no-hardcoded-font-aliases.patch</Patch>
+            <!-- Default font should be Sans Serif, not Helvetica when KDE did not override font family -->
+            <Patch level="1">default-font-sans-serif.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>qt3</Name>
+        <RuntimeDependencies>
+            <Dependency>libmng</Dependency>
+            <Dependency>cups</Dependency>
+            <Dependency>dejavu-fonts</Dependency>
+            <Dependency>fontconfig</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/env.d</Path>
+            <Path fileType="data">/usr/qt/3/.qmake.cache</Path>
+            <Path fileType="config">/usr/qt/3/etc</Path>
+            <Path fileType="executable">/usr/qt/3/bin</Path>
+            <Path fileType="header">/usr/qt/3/include</Path>
+            <Path fileType="library">/usr/qt/3/lib</Path>
+            <Path fileType="data">/usr/qt/3/mkspecs</Path>
+            <Path fileType="data">/usr/qt/3/phrasebooks</Path>
+            <Path fileType="data">/usr/qt/3/templates</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
+            <Path fileType="localedata">/usr/qt/3/translations</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/env.d/45qt3">45qt3</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/env.d/50qtdir3">50qtdir3</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/qt/3/etc/qtrc">qtrc</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <Package>
+        <Name>qt3-assistant</Name>
+        <IsA>app:gui</IsA>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>qt3-doc</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/usr/qt/3/bin/assistant</Path>
+            <Path fileType="data">/usr/share/applications/assistant.desktop</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/applications/assistant.desktop">assistant.desktop</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <Package>
+        <Name>qt3-designer</Name>
+        <IsA>app:gui</IsA>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/qt/3/plugins/designer</Path>
+            <Path fileType="executable">/usr/qt/3/bin/designer</Path>
+            <Path fileType="data">/usr/share/applications/designer.desktop</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/applications/designer.desktop">designer.desktop</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <Package>
+        <Name>qt3-linguist</Name>
+        <IsA>app:gui</IsA>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/usr/qt/3/bin/linguist</Path>
+            <Path fileType="data">/usr/share/applications/linguist.desktop</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/applications/linguist.desktop">linguist.desktop</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <Package>
+        <Name>qt3-doc</Name>
+        <Files>
+            <Path fileType="doc">/usr/qt/3/doc</Path>
+            <Path fileType="doc">/usr/qt/3/examples</Path>
+            <Path fileType="doc">/usr/qt/3/tutorial</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>qt3-sql-mysql</Name>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>mysql-lib</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/qt/3/plugins/sqldrivers/libqsqlmysql.so</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>qt3-sql-postgresql</Name>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency releaseFrom="7">postgresql-lib</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/qt/3/plugins/sqldrivers/libqsqlpsql.so</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>qt3-sql-sqlite</Name>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>sqlite</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/qt/3/plugins/sqldrivers/libqsqlite.so</Path>
+        </Files>
+    </Package>
+
+    <History>
+        <Update release="48">
+            <Date>2008-11-10</Date>
+            <Version>3.3.8b</Version>
+            <Comment>PKG_CONFIG_PATH is added to 45qt3 file</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="47">
+            <Date>2008-11-10</Date>
+            <Version>3.3.8b</Version>
+            <Comment>Fix desktop files to make them XDG compliant.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="46">
+            <Date>2008-11-05</Date>
+            <Version>3.3.8b</Version>
+            <Comment>Various patches from Kubuntu and Debian:
+                * New executables: mergetr, qconfig, makeqpf, msg2qm, qembed
+                * Fix fonts list to show only the fonts we can use
+                * Crash fixes for QListView and QListViewItemIterator
+                * GTK compatibility mode added: GtkStyle
+                * Fix dialog placement when using xinerama
+                * Force DPI when display size is zero
+                * Fix flickering in QIconView using double buffering
+            </Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="45">
+            <Date>2008-10-21</Date>
+            <Version>3.3.8b</Version>
+            <Comment>Remove dangling symlink in /usr/qt/3/mkspecs/linux-g++, Fixes #7149.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="44">
+            <Date>2008-09-23</Date>
+            <Version>3.3.8b</Version>
+            <Comment>Do not hardcode font aliases</Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+        <Update release="43">
+            <Date>2008-08-08</Date>
+            <Version>3.3.8b</Version>
+            <Comment>
+                * Default font is Sans Serif, not Helvetica when KDE did not override font family.
+                * Change Qt to Qt3 in desktop files.
+            </Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="42">
+            <Date>2008-01-19</Date>
+            <Version>3.3.8b</Version>
+            <Comment>Qt is now GPLv3 compatible</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="41">
+            <Date>2007-12-06</Date>
+            <Version>3.3.8</Version>
+            <Comment>Sync with qt-copy</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="40" type="security">
+            <Date>2007-09-14</Date>
+            <Version>3.3.8</Version>
+            <Comment>Fix CVE-2007-4137</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="39" type="security">
+            <Date>2007-07-30</Date>
+            <Version>3.3.8</Version>
+            <Comment>Fix CVE-2007-3388</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="38">
+            <Date>2007-06-27</Date>
+            <Version>3.3.8</Version>
+            <Comment>Merge qt-assistant library into main package</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="37">
+            <Date>2007-06-14</Date>
+            <Version>3.3.8</Version>
+            <Comment>Fix http://trolltech.com/developer/task-tracker/index_html?method=entry&amp;id=154194</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="36">
+            <Date>2007-04-17</Date>
+            <Version>3.3.8</Version>
+            <Comment>Fix #5453</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="35" type="security">
+            <Date>2007-03-29</Date>
+            <Version>3.3.8</Version>
+            <Comment>Fix UTF-8 overlong sequence decoding vulnerability</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="34">
+            <Date>2007-03-25</Date>
+            <Version>3.3.8</Version>
+            <Comment>Symlink pkgconfig file</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="33">
+            <Date>2007-02-21</Date>
+            <Version>3.3.8</Version>
+            <Comment>Stable update</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="32">
+            <Date>2007-02-05</Date>
+            <Version>3.3.7</Version>
+            <Comment>Added missing runtime dependency.</Comment>
+            <Name>Ahmet AYGÜN</Name>
+            <Email>ahmet@zion.gen.tr</Email>
+        </Update>
+        <Update release="31">
+            <Date>2007-02-03</Date>
+            <Version>3.3.7</Version>
+            <Comment>Add desktop files but this times they are REAL!</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="30">
+            <Date>2007-02-01</Date>
+            <Version>3.3.7</Version>
+            <Comment>Add desktop files</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="29">
+            <Date>2007-01-27</Date>
+            <Version>3.3.7</Version>
+            <Comment>Add back libqassistantclient.so</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="28">
+            <Date>2006-12-11</Date>
+            <Version>3.3.7</Version>
+            <Comment>Revertlast</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="27">
+            <Date>2006-12-10</Date>
+            <Version>3.3.7</Version>
+            <Comment>Re-enable round passwords patch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="26">
+            <Date>2006-11-27</Date>
+            <Version>3.3.7</Version>
+            <Comment>Correctly package designer plugins</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="25">
+            <Date>2006-11-19</Date>
+            <Version>3.3.7</Version>
+            <Comment>Remove unused prl files</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="24">
+            <Date>2006-11-13</Date>
+            <Version>3.3.7</Version>
+            <Comment>Remove static libs and split designer,assistant,linguist packages</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="23">
+            <Date>2006-10-24</Date>
+            <Version>3.3.7</Version>
+            <Comment>Stable update</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="22" type="security">
+            <Date>2006-10-19</Date>
+            <Version>3.3.6</Version>
+            <Comment>Better patch from TT to fix CVE-2006-4811</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="21" type="security">
+            <Date>2006-10-17</Date>
+            <Version>3.3.6</Version>
+            <Comment>Fix integer overflow [https://bugs.gentoo.org/show_bug.cgi?id=151838]</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="20">
+            <Date>2006-10-06</Date>
+            <Version>3.3.6</Version>
+            <Comment>Postgresql include fix</Comment>
+            <Name>Ali Erdinç Köroğlu</Name>
+            <Email>erdinc@pardus.org.tr</Email>
+        </Update>
+        <Update release="19">
+            <Date>2006-09-02</Date>
+            <Version>3.3.6</Version>
+            <Comment>Add Lubas Lunak's xinerama patch</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="18">
+            <Date>2006-06-03</Date>
+            <Version>3.3.6</Version>
+            <Comment>Unbreak TTC font collections</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="17">
+            <Date>2006-05-31</Date>
+            <Version>3.3.6</Version>
+            <Comment>Sync with qt-copy SVN</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="16">
+            <Date>2006-04-03</Date>
+            <Version>3.3.6</Version>
+            <Comment>missing /usr/qt/3/.qmake.cache added to package</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="15">
+            <Date>2006-03-22</Date>
+            <Version>3.3.6</Version>
+            <Comment>Sync with qt-copy SVN</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="14">
+            <Date>2006-03-20</Date>
+            <Version>3.3.6</Version>
+            <Comment>Version bump and sync with qt-copy</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2006-02-19</Date>
+            <Version>3.3.5</Version>
+            <Comment>Provide mysql/postgresql support and seperate sql plugin packages</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2006-01-12</Date>
+            <Version>3.3.5</Version>
+            <Comment>Don't show old X cursors during DND patch by Lubos Lunak</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2005-12-15</Date>
+            <Version>3.3.5</Version>
+            <Comment>Add fontconfig optimization patches from Lubos Lunak</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2005-12-13</Date>
+            <Version>3.3.5</Version>
+            <Comment>Remove Network Transparency support</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="9">
+            <Date>2005-12-05</Date>
+            <Version>3.3.5</Version>
+            <Comment>Network Transparency support</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2005-11-30</Date>
+            <Version>3.3.5</Version>
+            <Comment>QListView::clear method doesn't reset d->highlighted to NULL</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2005-11-26</Date>
+            <Version>3.3.5</Version>
+            <Comment>Backport from 3.3.6 snapshot to disable usage of internal freetype headers</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2005-11-24</Date>
+            <Version>3.3.5</Version>
+            <Comment>Added a patch to enable WindowsXP/MacOSX like round password characters</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2005-11-17</Date>
+            <Version>3.3.5</Version>
+            <Comment>Add qt defaults, enable anti-aliasing (fix #634)</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2005-11-11</Date>
+            <Version>3.3.5</Version>
+            <Comment>Enable sqlite and minor dep fix</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2005-10-15</Date>
+            <Version>3.3.5</Version>
+            <Comment>Version bump, sync with qt-copy of KDE</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2005-10-12</Date>
+            <Version>3.3.4</Version>
+            <Comment>dosed function in action.py fixed.</Comment>
+            <Name>A. Murat Eren</Name>
+            <Email>meren@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2005-08-30</Date>
+            <Version>3.3.4</Version>
+            <Comment>First release.</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>

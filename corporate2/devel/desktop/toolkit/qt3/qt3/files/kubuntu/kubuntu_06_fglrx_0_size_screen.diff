@@ -1,0 +1,32 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## kubuntu_06_fglrx_0_size_screen.diff.dpatch by  <jr@pechin3>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: No description.
+
+@DPATCH@
+diff -urNad qt-x11-free-3.3.8really3.3.7~/src/kernel/qpaintdevice_x11.cpp qt-x11-free-3.3.8really3.3.7/src/kernel/qpaintdevice_x11.cpp
+--- qt-x11-free-3.3.8really3.3.7~/src/kernel/qpaintdevice_x11.cpp	2007-04-02 20:06:28.000000000 +0100
++++ qt-x11-free-3.3.8really3.3.7/src/kernel/qpaintdevice_x11.cpp	2007-04-02 20:12:10.000000000 +0100
+@@ -526,11 +526,16 @@
+     Q_CHECK_PTR( dpisX );
+     Q_CHECK_PTR( dpisY );
+     for ( i = 0; i < screens; i++ ) {
+-	dpisX[ i ] = (DisplayWidth(dpy,i) * 254 + DisplayWidthMM(dpy,i)*5)
+-
+-		     / (DisplayWidthMM(dpy,i)*10);
+-	dpisY[ i ] = (DisplayHeight(dpy,i) * 254 + DisplayHeightMM(dpy,i)*5)
+-		     / (DisplayHeightMM(dpy,i)*10);
++       if (DisplayWidthMM(dpy,i) < 1)
++               dpisX[ i ] = 75; // default the dpi to 75.
++       else
++               dpisX[ i ] = (DisplayWidth(dpy,i) * 254 + DisplayWidthMM(dpy,i)*5)
++                     / (DisplayWidthMM(dpy,i)*10);
++       if (DisplayHeightMM(dpy,i) < 1)
++               dpisY[ i ] = 75; // default the dpi to 75.
++       else
++               dpisY[ i ] = (DisplayHeight(dpy,i) * 254 + DisplayHeightMM(dpy,i)*5)
++                     / (DisplayHeightMM(dpy,i)*10);
+     }
+ }
+ 

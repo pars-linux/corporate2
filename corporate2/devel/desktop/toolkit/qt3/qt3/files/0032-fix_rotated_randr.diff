@@ -1,0 +1,21 @@
+qt-bugs@ issue : N34454
+bugs.kde.org number : 67101, 101516
+applied: no
+author: Lubos Lunak <l.lunak@kde.org>
+
+This patch replaces the old #0032 patch.
+The real problem is https://bugs.freedesktop.org/show_bug.cgi?id=2965 ,
+so this patch is actually just a workaround.
+
+--- src/kernel/qapplication_x11.cpp.sav	2005-04-08 16:52:58.000000000 +0200
++++ src/kernel/qapplication_x11.cpp	2005-04-11 13:09:46.000000000 +0200
+@@ -3399,7 +3399,8 @@ int QApplication::x11ProcessEvent( XEven
+ #endif
+ 
+ #ifndef QT_NO_XRANDR
+-    if (event->type == xrandr_eventbase + RRScreenChangeNotify) {
++    if (event->type == xrandr_eventbase + RRScreenChangeNotify
++	|| ( event->type == ConfigureNotify && event->xconfigure.window == QPaintDevice::x11AppRootWindow())) {
+ 	// update Xlib internals with the latest screen configuration
+ 	XRRUpdateConfiguration(event);
+ 
