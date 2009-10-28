@@ -1,0 +1,77 @@
+From 16e21191e26084848c7e6e3ffd9e15ef670855c5 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mathias=20Fr=C3=B6hlich?= <Mathias.Froehlich@web.de>
+Date: Mon, 19 Oct 2009 11:47:21 -0400
+Subject: [PATCH 2/2] r300: fix texture size handling with size > 2048
+
+The in kernel texture check fails because of both
+bit11 flags being set on 16x16 textures. It tuns out
+that these bits are still set and not cleared in the
+pp_txpitch field of the texture. The attached patch
+at least helps for this case on my machine. It clears
+the bit 11 from the pitch field if the texture is smaller
+and masks out that hight bits on the conventional width
+and height field.
+
+Fixes bug 24584
+---
+ src/mesa/drivers/dri/r300/r300_texstate.c |   20 ++++++++++++++------
+ 1 files changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/src/mesa/drivers/dri/r300/r300_texstate.c b/src/mesa/drivers/dri/r300/r300_texstate.c
+index f030451..65cabcc 100644
+--- a/src/mesa/drivers/dri/r300/r300_texstate.c
++++ b/src/mesa/drivers/dri/r300/r300_texstate.c
+@@ -225,10 +225,10 @@ static void setup_hardware_state(r300ContextPtr rmesa, radeonTexObj *t)
+ 	if (t->image_override && t->bo)
+ 		return;
+ 
+-	t->pp_txsize = (((firstImage->Width - 1) << R300_TX_WIDTHMASK_SHIFT)
+-			| ((firstImage->Height - 1) << R300_TX_HEIGHTMASK_SHIFT)
+-			| ((firstImage->DepthLog2) << R300_TX_DEPTHMASK_SHIFT)
+-			| ((t->mt->lastLevel - t->mt->firstLevel) << R300_TX_MAX_MIP_LEVEL_SHIFT));
++	t->pp_txsize = (((R300_TX_WIDTHMASK_MASK & ((firstImage->Width - 1) << R300_TX_WIDTHMASK_SHIFT)))
++			| ((R300_TX_HEIGHTMASK_MASK & ((firstImage->Height - 1) << R300_TX_HEIGHTMASK_SHIFT)))
++			| ((R300_TX_DEPTHMASK_MASK & ((firstImage->DepthLog2) << R300_TX_DEPTHMASK_SHIFT)))
++			| ((R300_TX_MAX_MIP_LEVEL_MASK & ((t->mt->lastLevel - t->mt->firstLevel) << R300_TX_MAX_MIP_LEVEL_SHIFT))));
+ 
+ 	t->tile_bits = 0;
+ 
+@@ -248,8 +248,12 @@ static void setup_hardware_state(r300ContextPtr rmesa, radeonTexObj *t)
+ 	if (rmesa->radeon.radeonScreen->chip_family >= CHIP_FAMILY_RV515) {
+ 	    if (firstImage->Width > 2048)
+ 		t->pp_txpitch |= R500_TXWIDTH_BIT11;
++            else
++		t->pp_txpitch &= ~R500_TXWIDTH_BIT11;
+ 	    if (firstImage->Height > 2048)
+ 		t->pp_txpitch |= R500_TXHEIGHT_BIT11;
++            else
++		t->pp_txpitch &= ~R500_TXHEIGHT_BIT11;
+ 	}
+ }
+ 
+@@ -479,16 +483,20 @@ void r300SetTexBuffer2(__DRIcontext *pDRICtx, GLint target, GLint glx_texture_fo
+ 		break;
+ 	}
+ 	pitch_val--;
+-	t->pp_txsize = ((rb->base.Width - 1) << R300_TX_WIDTHMASK_SHIFT) |
+-              ((rb->base.Height - 1) << R300_TX_HEIGHTMASK_SHIFT);
++	t->pp_txsize = (((R300_TX_WIDTHMASK_MASK & ((rb->base.Width - 1) << R300_TX_WIDTHMASK_SHIFT)))
++			| ((R300_TX_HEIGHTMASK_MASK & ((rb->base.Height - 1) << R300_TX_HEIGHTMASK_SHIFT))));
+ 	t->pp_txsize |= R300_TX_SIZE_TXPITCH_EN;
+ 	t->pp_txpitch |= pitch_val;
+ 
+ 	if (rmesa->radeon.radeonScreen->chip_family >= CHIP_FAMILY_RV515) {
+ 	    if (rb->base.Width > 2048)
+ 		t->pp_txpitch |= R500_TXWIDTH_BIT11;
++            else
++		t->pp_txpitch &= ~R500_TXWIDTH_BIT11;
+ 	    if (rb->base.Height > 2048)
+ 		t->pp_txpitch |= R500_TXHEIGHT_BIT11;
++            else
++		t->pp_txpitch &= ~R500_TXHEIGHT_BIT11;
+ 	}
+ 	t->validated = GL_TRUE;
+ 	_mesa_unlock_texture(radeon->glCtx, texObj);
+-- 
+1.6.4.4
+
