@@ -1,0 +1,92 @@
+--- trunk~/Makedefs.in	2009-02-16 17:07:47.000000000 +0100
++++ trunk/Makedefs.in	2009-02-16 17:09:21.115060271 +0100
+@@ -121,7 +121,7 @@
+ CXXFLAGS	=	@CPPFLAGS@ @CXXFLAGS@
+ CXXLIBS		=	@CXXLIBS@
+ DSOFLAGS	=	@DSOFLAGS@
+-DSOLIBS		=	@DSOLIBS@ $(COMMONLIBS)
++DSOLIBS		=	@DSOLIBS@
+ DNSSDLIBS	=	@DNSSDLIBS@
+ FONTS		=	@FONTS@
+ IMGLIBS		=	@IMGLIBS@
+@@ -132,9 +132,9 @@
+ LEGACY_BACKENDS	=	@LEGACY_BACKENDS@
+ LIBCUPSORDER	=	@LIBCUPSORDER@
+ LIBCUPSIMAGEORDER =	@LIBCUPSIMAGEORDER@
+-LINKCUPS	=	@LINKCUPS@ $(SSLLIBS)
++LINKCUPS	=	@LINKCUPS@
+ LINKCUPSIMAGE	=	@LINKCUPSIMAGE@
+-LIBS		=	$(LINKCUPS) $(COMMONLIBS)
++LIBS		=	$(LINKCUPS) $(SSLLIBS) $(COMMONLIBS)
+ OPTIM		=	@OPTIM@
+ OPTIONS		=
+ PAMLIBS		=	@PAMLIBS@
+diff -urNad trunk~/config-scripts/cups-gssapi.m4 trunk/config-scripts/cups-gssapi.m4
+--- trunk~/config-scripts/cups-gssapi.m4	2009-02-16 17:07:47.000000000 +0100
++++ trunk/config-scripts/cups-gssapi.m4	2009-02-16 17:08:12.105208948 +0100
+@@ -40,7 +40,7 @@
+ 				# Other platforms just ask for GSSAPI
+ 				CFLAGS="`$KRB5CONFIG --cflags gssapi` $CFLAGS"		
+ 				CPPFLAGS="`$KRB5CONFIG --cflags gssapi` $CPPFLAGS"		
+-				LIBGSSAPI="`$KRB5CONFIG --libs gssapi`"
++				LIBGSSAPI="-lgssapi_krb5"
+ 				;;
+ 		esac
+ 		AC_DEFINE(HAVE_GSSAPI, 1, [Whether GSSAPI is available])
+diff -urNad trunk~/cups/Makefile trunk/cups/Makefile
+--- trunk~/cups/Makefile	2009-02-16 17:07:47.000000000 +0100
++++ trunk/cups/Makefile	2009-02-16 17:08:12.107055551 +0100
+@@ -230,7 +230,7 @@
+ 
+ libcups.so.2 libcups.sl.2:	$(LIBOBJS)
+ 	echo Linking $@...
+-	$(DSO) $(ARCHFLAGS) $(DSOFLAGS) -o $@ $(LIBOBJS) $(LIBGSSAPI) $(SSLLIBS) $(COMMONLIBS) $(LIBZ)
++	$(DSO) $(ARCHFLAGS) $(DSOFLAGS) -o $@ $(LIBOBJS) $(LIBGSSAPI) $(SSLLIBS) -lpthread $(LIBZ)
+ 	$(RM) `basename $@ .2`
+ 	$(LN) $@ `basename $@ .2`
+ 
+@@ -242,7 +242,7 @@
+ 32bit/libcups.so.2:	$(LIB32OBJS)
+ 	echo Linking 32-bit $@...
+ 	-mkdir 32bit
+-	$(DSO) $(ARCH32FLAGS) $(DSO32FLAGS) -o $@ $(LIB32OBJS) $(LIBGSSAPI) $(SSLLIBS) $(COMMONLIBS) $(LIBZ)
++	$(DSO) $(ARCH32FLAGS) $(DSO32FLAGS) -o $@ $(LIB32OBJS) $(LIBGSSAPI) $(SSLLIBS) -lpthread $(LIBZ)
+ 	$(RM) 32bit/libcups.so
+ 	$(LN) libcups.so.2 32bit/libcups.so
+ 
+@@ -254,7 +254,7 @@
+ 64bit/libcups.so.2:	$(LIB64OBJS)
+ 	echo Linking 64-bit $@...
+ 	-mkdir 64bit
+-	$(DSO) $(ARCH64FLAGS) $(DSO64FLAGS) -o $@ $(LIB64OBJS) $(LIBGSSAPI) $(SSLLIBS) $(COMMONLIBS) $(LIBZ)
++	$(DSO) $(ARCH64FLAGS) $(DSO64FLAGS) -o $@ $(LIB64OBJS) $(LIBGSSAPI) $(SSLLIBS) -lpthread $(LIBZ)
+ 	$(RM) 64bit/libcups.so
+ 	$(LN) libcups.so.2 64bit/libcups.so
+ 
+@@ -271,7 +271,7 @@
+ 		-compatibility_version 2.0.0 \
+ 		-exported_symbols_list libcups.exp \
+ 		-sectorder __TEXT __text $(LIBCUPSORDER) \
+-		$(LIBOBJS) $(LIBGSSAPI) $(SSLLIBS) $(COMMONLIBS) $(LIBZ)
++		$(LIBOBJS) $(LIBGSSAPI) $(SSLLIBS) -lpthread $(LIBZ)
+ 	$(RM) libcups.dylib
+ 	$(LN) $@ libcups.dylib
+ 
+@@ -282,7 +282,7 @@
+ 
+ libcups_s.a:	$(LIBOBJS) libcups_s.exp
+ 	echo Creating $@...
+-	$(DSO) $(DSOFLAGS) -Wl,-bexport:libcups_s.exp -o libcups_s.o $(LIBOBJS) $(LIBGSSAPI) $(SSLLIBS) $(COMMONLIBS) $(LIBZ) -lm
++	$(DSO) $(DSOFLAGS) -Wl,-bexport:libcups_s.exp -o libcups_s.o $(LIBOBJS) $(LIBGSSAPI) $(SSLLIBS) -lpthread $(LIBZ)
+ 	$(RM) $@
+ 	$(AR) $(ARFLAGS) $@ libcups_s.o
+ 
+@@ -294,7 +294,7 @@
+ libcups.la:    $(LIBOBJS)
+ 	echo Linking $@...
+ 	$(CC) $(ARCHFLAGS) $(DSOFLAGS) -o $@ $(LIBOBJS:.o=.lo) -rpath $(LIBDIR) \
+-		-version-info 2:8 $(LIBGSSAPI) $(SSLLIBS) $(COMMONLIBS) $(LIBZ)
++		-version-info 2:8 $(LIBGSSAPI) $(SSLLIBS) -lpthread $(LIBZ)
+ 
+ 
+ #
