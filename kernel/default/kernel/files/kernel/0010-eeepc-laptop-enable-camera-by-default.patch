@@ -1,0 +1,54 @@
+From d3340787f53f70fe887dc5932772253e8121b89f Mon Sep 17 00:00:00 2001
+From: Pekka Enberg <penberg@cs.helsinki.fi>
+Date: Tue, 16 Jun 2009 19:28:45 +0000
+Subject: [PATCH 10/10] eeepc-laptop: enable camera by default
+
+If we leave the camera disabled by default, userspace programs (e.g.
+Skype, Cheese) leave the user out in the cold saying that the machine
+"has no camera." Therefore, it's better to enable camera by default and
+let people who really don't want it just disable the thing.
+
+To reduce power usage you should enable USB autosuspend:
+echo -n auto > /sys/bus/usb/drivers/uvcvideo/*:*/../power/level
+
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Pekka Enberg <penberg@cs.helsinki.fi>
+Signed-off-by: Corentin Chary <corentincj@iksaif.net>
+Signed-off-by: Len Brown <len.brown@intel.com>
+---
+ drivers/platform/x86/eeepc-laptop.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/platform/x86/eeepc-laptop.c b/drivers/platform/x86/eeepc-laptop.c
+index 353a898..9d7a19a 100644
+--- a/drivers/platform/x86/eeepc-laptop.c
++++ b/drivers/platform/x86/eeepc-laptop.c
+@@ -333,6 +333,15 @@ static int eeepc_bluetooth_rfkill_state(void *data, enum rfkill_state *state)
+ 	return 0;
+ }
+ 
++static void __init eeepc_enable_camera(void)
++{
++	/*
++	 * If the following call to set_acpi() fails, it's because there's no
++	 * camera so we can ignore the error.
++	 */
++	set_acpi(CM_ASL_CAMERA, 1);
++}
++
+ /*
+  * Sys helpers
+  */
+@@ -996,6 +1005,9 @@ static int __init eeepc_laptop_init(void)
+ 	result = eeepc_hwmon_init(dev);
+ 	if (result)
+ 		goto fail_hwmon;
++
++	eeepc_enable_camera();
++
+ 	/* Register platform stuff */
+ 	result = platform_driver_register(&platform_driver);
+ 	if (result)
+-- 
+1.6.3.4
+

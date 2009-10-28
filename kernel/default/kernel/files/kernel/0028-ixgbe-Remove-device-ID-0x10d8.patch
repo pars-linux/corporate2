@@ -1,0 +1,46 @@
+From 99beda77d4388bca2bd123b396f8b31e2e163286 Mon Sep 17 00:00:00 2001
+From: Peter P Waskiewicz Jr <peter.p.waskiewicz.jr@intel.com>
+Date: Tue, 26 May 2009 20:40:09 -0700
+Subject: [PATCH 28/30] ixgbe: Remove device ID 0x10d8
+
+Device ID 0x10d8 is the default silicon device ID for 82599.  However, the
+device will not be functional without an EEPROM, so we want to prevent the
+driver from loading on the device.  Otherwise, the driver will load, but no
+PHY setup or PCIe setup will occur, causing the device to be unusable.  To
+prevent users from encountering this, just remove the device ID.
+
+Signed-off-by: Peter P Waskiewicz Jr <peter.p.waskiewicz.jr@intel.com>
+Signed-off-by: Jeff Kirsher <jeffrey.t.kirsher@intel.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ixgbe/ixgbe_82599.c |    1 -
+ drivers/net/ixgbe/ixgbe_type.h  |    1 -
+ 2 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ixgbe/ixgbe_82599.c b/drivers/net/ixgbe/ixgbe_82599.c
+index 29771fb..bc18bd1 100644
+--- a/drivers/net/ixgbe/ixgbe_82599.c
++++ b/drivers/net/ixgbe/ixgbe_82599.c
+@@ -323,7 +323,6 @@ enum ixgbe_media_type ixgbe_get_media_type_82599(struct ixgbe_hw *hw)
+ 	}
+ 
+ 	switch (hw->device_id) {
+-	case IXGBE_DEV_ID_82599:
+ 	case IXGBE_DEV_ID_82599_KX4:
+ 		/* Default device ID is mezzanine card KX/KX4 */
+ 		media_type = ixgbe_media_type_backplane;
+diff --git a/drivers/net/ixgbe/ixgbe_type.h b/drivers/net/ixgbe/ixgbe_type.h
+index 030ff0a..5b42d46 100644
+--- a/drivers/net/ixgbe/ixgbe_type.h
++++ b/drivers/net/ixgbe/ixgbe_type.h
+@@ -45,7 +45,6 @@
+ #define IXGBE_DEV_ID_82598_DA_DUAL_PORT  0x10F1
+ #define IXGBE_DEV_ID_82598_SR_DUAL_PORT_EM      0x10E1
+ #define IXGBE_DEV_ID_82598EB_XF_LR       0x10F4
+-#define IXGBE_DEV_ID_82599               0x10D8
+ #define IXGBE_DEV_ID_82599_KX4           0x10F7
+ #define IXGBE_DEV_ID_82599_SFP           0x10FB
+ 
+-- 
+1.6.3.4
+

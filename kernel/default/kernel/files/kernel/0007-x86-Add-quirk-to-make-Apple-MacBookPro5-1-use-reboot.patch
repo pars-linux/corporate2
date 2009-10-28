@@ -1,0 +1,50 @@
+From 498cdbfbcf98e0d2c90a26e6a02a82f043876e48 Mon Sep 17 00:00:00 2001
+From: =?utf-8?q?Ozan=20=C3=87a=C4=9Flayan?= <ozan@pardus.org.tr>
+Date: Tue, 4 Aug 2009 19:39:31 +0300
+Subject: [PATCH 7/7] x86: Add quirk to make Apple MacBookPro5,1 use reboot=pci
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+MacBookPro5,1 is not able to reboot unless reboot=pci is set.
+This patch forces it through a DMI quirk specific to this
+device.
+
+Signed-off-by: Ozan Çağlayan <ozan@pardus.org.tr>
+LKML-Reference: <1249403971-6543-1-git-send-email-ozan@pardus.org.tr>
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+---
+ arch/x86/kernel/reboot.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+diff --git a/arch/x86/kernel/reboot.c b/arch/x86/kernel/reboot.c
+index 834c9da..9eb8976 100644
+--- a/arch/x86/kernel/reboot.c
++++ b/arch/x86/kernel/reboot.c
+@@ -405,7 +405,7 @@ EXPORT_SYMBOL(machine_real_restart);
+ #endif /* CONFIG_X86_32 */
+ 
+ /*
+- * Apple MacBook5,2 (2009 MacBook) needs reboot=p
++ * Some Apple MacBook and MacBookPro's needs reboot=p to be able to reboot
+  */
+ static int __init set_pci_reboot(const struct dmi_system_id *d)
+ {
+@@ -426,6 +426,14 @@ static struct dmi_system_id __initdata pci_reboot_dmi_table[] = {
+ 			DMI_MATCH(DMI_PRODUCT_NAME, "MacBook5,2"),
+ 		},
+ 	},
++	{	/* Handle problems with rebooting on Apple MacBookPro5,1 */
++		.callback = set_pci_reboot,
++		.ident = "Apple MacBookPro5,1",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "Apple Inc."),
++			DMI_MATCH(DMI_PRODUCT_NAME, "MacBookPro5,1"),
++		},
++	},
+ 	{ }
+ };
+ 
+-- 
+1.6.3.4
+

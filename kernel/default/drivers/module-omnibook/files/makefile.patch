@@ -1,0 +1,25 @@
+--- Makefile.orig	2009-05-03 16:19:52.000000000 +0300
++++ Makefile	2009-05-03 16:21:09.000000000 +0300
+@@ -71,22 +71,8 @@
+ 		$(RM) -r Module.symvers Modules.symvers
+ 
+ install:	all
+-		# Removing module from locations used by previous versions
+-		$(RM) $(VMODDIR)/kernel/drivers/char/$(MODULE_NAME).ko
+-		$(RM) $(VMODDIR)/kernel/drivers/misc/$(MODULE_NAME).ko
+ 		make INSTALL_MOD_PATH=$(DESTDIR) INSTALL_MOD_DIR=$(INSTDIR) -C $(KSRC) M=$(PWD) modules_install
+ 
+-unload:
+-		$(RMMOD) $(MODULE_NAME) || :
+-
+-load:		install unload
+-		$(DEPMOD)
+-		$(INSMOD) $(MODULE_NAME)
+-
+-uninstall:	unload
+-		$(FIND) $(VMODDIR) -name "$(MODULE_NAME).ko" -exec $(RM) {} \;
+-		$(DEPMOD)
+-
+ $(MODULE_NAME).ko:
+ 		$(MAKE) -C $(KSRC) SUBDIRS=$(PWD) modules
+ 

@@ -1,0 +1,64 @@
+From e6890f6f3dc2d9024a08b1a149d9bd5208eea350 Mon Sep 17 00:00:00 2001
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Tue, 8 Sep 2009 17:09:24 -0700
+Subject: [PATCH 04/60] i915: disable interrupts before tearing down GEM state
+
+Reinette Chatre reports a frozen system (with blinking keyboard LEDs)
+when switching from graphics mode to the text console, or when
+suspending (which does the same thing). With netconsole, the oops
+turned out to be
+
+	BUG: unable to handle kernel NULL pointer dereference at 0000000000000084
+	IP: [<ffffffffa03ecaab>] i915_driver_irq_handler+0x26b/0xd20 [i915]
+
+and it's due to the i915_gem.c code doing drm_irq_uninstall() after
+having done i915_gem_idle(). And the i915_gem_idle() path will do
+
+  i915_gem_idle() ->
+    i915_gem_cleanup_ringbuffer() ->
+      i915_gem_cleanup_hws() ->
+        dev_priv->hw_status_page = NULL;
+
+but if an i915 interrupt comes in after this stage, it may want to
+access that hw_status_page, and gets the above NULL pointer dereference.
+
+And since the NULL pointer dereference happens from within an interrupt,
+and with the screen still in graphics mode, the common end result is
+simply a silently hung machine.
+
+Fix it by simply uninstalling the irq handler before idling rather than
+after. Fixes
+
+    http://bugzilla.kernel.org/show_bug.cgi?id=13819
+
+Reported-and-tested-by: Reinette Chatre <reinette.chatre@intel.com>
+Acked-by: Jesse Barnes <jbarnes@virtuousgeek.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+---
+ drivers/gpu/drm/i915/i915_gem.c |    6 +-----
+ 1 files changed, 1 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/gpu/drm/i915/i915_gem.c b/drivers/gpu/drm/i915/i915_gem.c
+index 7edb5b9..80e5ba4 100644
+--- a/drivers/gpu/drm/i915/i915_gem.c
++++ b/drivers/gpu/drm/i915/i915_gem.c
+@@ -4232,15 +4232,11 @@ int
+ i915_gem_leavevt_ioctl(struct drm_device *dev, void *data,
+ 		       struct drm_file *file_priv)
+ {
+-	int ret;
+-
+ 	if (drm_core_check_feature(dev, DRIVER_MODESET))
+ 		return 0;
+ 
+-	ret = i915_gem_idle(dev);
+ 	drm_irq_uninstall(dev);
+-
+-	return ret;
++	return i915_gem_idle(dev);
+ }
+ 
+ void
+-- 
+1.6.4.4
+

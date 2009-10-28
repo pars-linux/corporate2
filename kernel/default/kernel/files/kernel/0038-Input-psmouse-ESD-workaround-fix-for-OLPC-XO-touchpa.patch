@@ -1,0 +1,38 @@
+From 6ab0a47b8c4ed7fb622a6cfd56b1e5632d861a06 Mon Sep 17 00:00:00 2001
+From: Zephaniah E. Hull <warp@aehallh.com>
+Date: Thu, 14 May 2009 22:02:33 -0700
+Subject: [PATCH 38/47] Input: psmouse - ESD workaround fix for OLPC XO touchpad
+
+It appears that when the XO touchpad unit resets from ESD, it sends AA
+AA instead of AA 00, the psmouse-base code handles the case of AA 00 by
+triggering a serio reconnect for the port, causing a full reprobe of
+the device.
+
+Testing with OFW shows that this is likely to solve the problem, so
+the attached patch simply expands the existing test to also catch AA AA.
+
+Signed-off-by: Andres Salomon <dilinger@debian.org>
+Signed-off-by: Deepak Saxena <dsaxena@laptop.org>
+Signed-off-by: Dmitry Torokhov <dtor@mail.ru>
+---
+ drivers/input/mouse/psmouse-base.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/input/mouse/psmouse-base.c b/drivers/input/mouse/psmouse-base.c
+index f8f86de..b407b35 100644
+--- a/drivers/input/mouse/psmouse-base.c
++++ b/drivers/input/mouse/psmouse-base.c
+@@ -327,7 +327,9 @@ static irqreturn_t psmouse_interrupt(struct serio *serio,
+ 			goto out;
+ 		}
+ 
+-		if (psmouse->packet[1] == PSMOUSE_RET_ID) {
++		if (psmouse->packet[1] == PSMOUSE_RET_ID ||
++		    (psmouse->type == PSMOUSE_HGPK &&
++		     psmouse->packet[1] == PSMOUSE_RET_BAT)) {
+ 			__psmouse_set_state(psmouse, PSMOUSE_IGNORE);
+ 			serio_reconnect(serio);
+ 			goto out;
+-- 
+1.6.3.4
+

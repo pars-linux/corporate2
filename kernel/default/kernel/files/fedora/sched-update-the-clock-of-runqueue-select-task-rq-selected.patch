@@ -1,0 +1,52 @@
+From: Mike Galbraith <efault@gmx.de>
+Date: Fri, 9 Oct 2009 06:35:03 +0000 (+0200)
+Subject: sched: Update the clock of runqueue select_task_rq() selected
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=f5dc375
+
+sched: Update the clock of runqueue select_task_rq() selected
+
+[ backport to 2.6.3[01] : <cebbert@redhat.com> ]
+
+In try_to_wake_up(), we update the runqueue clock, but
+select_task_rq() may select a different runqueue than the one we
+updated, leaving the new runqueue's clock stale for a bit.
+
+This patch cures occasional huge latencies reported by latencytop
+when coming out of idle on a mostly idle NO_HZ box.
+
+Signed-off-by: Mike Galbraith <efault@gmx.de>
+Signed-off-by: Peter Zijlstra <a.p.zijlstra@chello.nl>
+LKML-Reference: <1255070103.7639.30.camel@marge.simson.net>
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+---
+
+diff a/kernel/sched.c b/kernel/sched.c
+--- a/kernel/sched.c
++++ b/kernel/sched.c
+@@ -2344,7 +2344,7 @@ static int try_to_wake_up(struct task_st
+ 	int cpu, orig_cpu, this_cpu, success = 0;
+ 	unsigned long flags;
+ 	long old_state;
+-	struct rq *rq;
++	struct rq *rq, *orig_rq;
+ 
+ 	if (!sched_feat(SYNC_WAKEUPS))
+ 		sync = 0;
+@@ -2366,7 +2366,7 @@ static int try_to_wake_up(struct task_st
+ #endif
+ 
+ 	smp_wmb();
+-	rq = task_rq_lock(p, &flags);
++	rq = orig_rq = task_rq_lock(p, &flags);
+ 	update_rq_clock(rq);
+ 	old_state = p->state;
+ 	if (!(old_state & state))
+@@ -2389,6 +2389,8 @@ static int try_to_wake_up(struct task_st
+ 		task_rq_unlock(rq, &flags);
+ 		/* might preempt at this point */
+ 		rq = task_rq_lock(p, &flags);
++		if (rq != orig_rq)
++			update_rq_clock(rq);
+ 		old_state = p->state;
+ 		if (!(old_state & state))
+ 			goto out;

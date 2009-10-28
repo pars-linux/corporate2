@@ -1,0 +1,85 @@
+From: Jeremy Fitzhardinge <jeremy.fitzhardinge@citrix.com>
+Date: Mon, 17 Aug 2009 19:26:53 +0000 (-0700)
+Subject: xen: rearrange things to fix stackprotector
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=ce2eef33d35cd7b932492b5a81fb0febd2b323cd
+
+xen: rearrange things to fix stackprotector
+
+Make sure the stack-protector segment registers are properly set up
+before calling any functions which may have stack-protection compiled
+into them.
+
+[ Impact: prevent Xen early-boot crash when stack-protector is enabled ]
+Signed-off-by: Jeremy Fitzhardinge <jeremy.fitzhardinge@citrix.com>
+---
+
+diff --git a/arch/x86/xen/Makefile b/arch/x86/xen/Makefile
+index 3b767d0..a5b9288 100644
+--- a/arch/x86/xen/Makefile
++++ b/arch/x86/xen/Makefile
+@@ -5,6 +5,10 @@ CFLAGS_REMOVE_time.o = -pg
+ CFLAGS_REMOVE_irq.o = -pg
+ endif
+ 
++# Make sure early boot has no stackprotector
++nostackp := $(call cc-option, -fno-stack-protector)
++CFLAGS_enlighten.o		:= $(nostackp)
++
+ obj-y		:= enlighten.o setup.o multicalls.o mmu.o irq.o \
+ 			time.o xen-asm.o xen-asm_$(BITS).o \
+ 			grant-table.o suspend.o
+diff --git a/arch/x86/xen/enlighten.c b/arch/x86/xen/enlighten.c
+index f09e8c3..edcf72a 100644
+--- a/arch/x86/xen/enlighten.c
++++ b/arch/x86/xen/enlighten.c
+@@ -925,10 +925,6 @@ asmlinkage void __init xen_start_kernel(void)
+ 
+ 	xen_domain_type = XEN_PV_DOMAIN;
+ 
+-	BUG_ON(memcmp(xen_start_info->magic, "xen-3", 5) != 0);
+-
+-	xen_setup_features();
+-
+ 	/* Install Xen paravirt ops */
+ 	pv_info = xen_info;
+ 	pv_init_ops = xen_init_ops;
+@@ -937,8 +933,15 @@ asmlinkage void __init xen_start_kernel(void)
+ 	pv_apic_ops = xen_apic_ops;
+ 	pv_mmu_ops = xen_mmu_ops;
+ 
+-	xen_init_irq_ops();
++#ifdef CONFIG_X86_64
++	/*
++	 * Setup percpu state.  We only need to do this for 64-bit
++	 * because 32-bit already has %fs set properly.
++	 */
++	load_percpu_segment(0);
++#endif
+ 
++	xen_init_irq_ops();
+ 	xen_init_cpuid_mask();
+ 
+ #ifdef CONFIG_X86_LOCAL_APIC
+@@ -948,6 +951,8 @@ asmlinkage void __init xen_start_kernel(void)
+ 	set_xen_basic_apic_ops();
+ #endif
+ 
++	xen_setup_features();
++
+ 	if (xen_feature(XENFEAT_mmu_pt_update_preserve_ad)) {
+ 		pv_mmu_ops.ptep_modify_prot_start = xen_ptep_modify_prot_start;
+ 		pv_mmu_ops.ptep_modify_prot_commit = xen_ptep_modify_prot_commit;
+@@ -955,13 +960,6 @@ asmlinkage void __init xen_start_kernel(void)
+ 
+ 	machine_ops = xen_machine_ops;
+ 
+-#ifdef CONFIG_X86_64
+-	/*
+-	 * Setup percpu state.  We only need to do this for 64-bit
+-	 * because 32-bit already has %fs set properly.
+-	 */
+-	load_percpu_segment(0);
+-#endif
+ 	/*
+ 	 * The only reliable way to retain the initial address of the
+ 	 * percpu gdt_page is to remember it here, so we can go and

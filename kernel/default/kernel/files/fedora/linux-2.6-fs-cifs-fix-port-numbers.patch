@@ -1,0 +1,33 @@
+From: Simo Leone <simo@archlinux.org>
+Date: Thu, 25 Jun 2009 02:44:43 +0000 (+0000)
+Subject: [CIFS] Copy struct *after* setting the port, instead of before.
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=6debdbc0ba6253ac519cd5a3d22e30f1f9f1dd12
+
+[CIFS] Copy struct *after* setting the port, instead of before.
+
+Acked-by: Jeff Layton <jlayton@redhat.com>
+Signed-off-by: Simo Leone <simo@archlinux.org>
+Signed-off-by: Steve French <sfrench@us.ibm.com>
+---
+
+diff --git a/fs/cifs/connect.c b/fs/cifs/connect.c
+index a581cfa..12c2cf6 100644
+--- a/fs/cifs/connect.c
++++ b/fs/cifs/connect.c
+@@ -1496,14 +1496,14 @@ cifs_get_tcp_session(struct smb_vol *volume_info)
+ 		cFYI(1, ("attempting ipv6 connect"));
+ 		/* BB should we allow ipv6 on port 139? */
+ 		/* other OS never observed in Wild doing 139 with v6 */
++		sin_server6->sin6_port = htons(volume_info->port);
+ 		memcpy(&tcp_ses->addr.sockAddr6, sin_server6,
+ 			sizeof(struct sockaddr_in6));
+-		sin_server6->sin6_port = htons(volume_info->port);
+ 		rc = ipv6_connect(tcp_ses);
+ 	} else {
++		sin_server->sin_port = htons(volume_info->port);
+ 		memcpy(&tcp_ses->addr.sockAddr, sin_server,
+ 			sizeof(struct sockaddr_in));
+-		sin_server->sin_port = htons(volume_info->port);
+ 		rc = ipv4_connect(tcp_ses);
+ 	}
+ 	if (rc < 0) {

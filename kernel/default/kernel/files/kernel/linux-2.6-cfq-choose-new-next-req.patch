@@ -1,0 +1,27 @@
+From: Jeff Moyer <jmoyer@redhat.com>
+Date: Fri, 11 Sep 2009 15:08:59 +0000 (+0200)
+Subject: cfq: choose a new next_req when a request is dispatched
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=06d2188644c85c56d243efab914f368d1d23c4a3
+
+cfq: choose a new next_req when a request is dispatched
+
+This patch addresses http://bugzilla.kernel.org/show_bug.cgi?id=13401, a
+regression introduced in 2.6.30.
+
+From the bug report:
+
+Signed-off-by: Jens Axboe <jens.axboe@oracle.com>
+---
+
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index a34686f..0e3814b 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -1110,6 +1110,7 @@ static void cfq_dispatch_insert(struct request_queue *q, struct request *rq)
+ 
+ 	cfq_log_cfqq(cfqd, cfqq, "dispatch_insert");
+ 
++	cfqq->next_rq = cfq_find_next_rq(cfqd, cfqq, rq);
+ 	cfq_remove_request(rq);
+ 	cfqq->dispatched++;
+ 	elv_dispatch_sort(q, rq);

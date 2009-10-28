@@ -1,0 +1,55 @@
+From efdf365b1ef054a6d51ffd08e11bd5aa2281594f Mon Sep 17 00:00:00 2001
+From: Ooiwa Naohiro <nooiwa@miraclelinux.com>
+Date: Wed, 24 Jun 2009 00:19:06 -0700
+Subject: [PATCH 2/2] bnx2: Fix the behavior of ethtool when ONBOOT=no
+
+I found a little bug.
+
+When configure in ifcfg-eth* is ONBOOT=no,
+the behavior of ethtool command is wrong.
+
+    # grep ONBOOT /etc/sysconfig/network-scripts/ifcfg-eth2
+    ONBOOT=no
+    # ethtool eth2 | tail -n1
+            Link detected: yes
+
+I think "Link detected" should be "no".
+
+Signed-off-by: Ooiwa Naohiro <nooiwa@miraclelinux.com>
+Acked-by: Michael Chan <mchan@broadcom.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/bnx2.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/net/bnx2.c b/drivers/net/bnx2.c
+index b0cb29d..bc684dd 100644
+--- a/drivers/net/bnx2.c
++++ b/drivers/net/bnx2.c
+@@ -6638,6 +6638,14 @@ bnx2_nway_reset(struct net_device *dev)
+ 	return 0;
+ }
+ 
++static u32
++bnx2_get_link(struct net_device *dev)
++{
++	struct bnx2 *bp = netdev_priv(dev);
++
++	return bp->link_up;
++}
++
+ static int
+ bnx2_get_eeprom_len(struct net_device *dev)
+ {
+@@ -7205,7 +7213,7 @@ static const struct ethtool_ops bnx2_ethtool_ops = {
+ 	.get_wol		= bnx2_get_wol,
+ 	.set_wol		= bnx2_set_wol,
+ 	.nway_reset		= bnx2_nway_reset,
+-	.get_link		= ethtool_op_get_link,
++	.get_link		= bnx2_get_link,
+ 	.get_eeprom_len		= bnx2_get_eeprom_len,
+ 	.get_eeprom		= bnx2_get_eeprom,
+ 	.set_eeprom		= bnx2_set_eeprom,
+-- 
+1.6.3
+

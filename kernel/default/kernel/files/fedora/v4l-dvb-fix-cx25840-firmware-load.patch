@@ -1,0 +1,29 @@
+
+# HG changeset patch
+# User Steven Toth <stoth@kernellabs.com>
+# Date 1251746101 14400
+# Node ID 38c5fb14c770c256d1a497ff6da3e33849f6b8cf
+# Parent 7c23abfe445f8b57d57db98a97a0786ab801d63e
+CX25840: Bugfix CX23885 and CX241xx caused ivtv regression.
+
+From: Steven Toth <stoth@kernellabs.com>
+
+If we override a global we need to ensure the else case resets it correctly,
+or we end up loading an incorrect firmware.
+
+Priority: normal
+
+Signed-off-by: Steven Toth <stoth@kernellabs.com>
+
+--- a/drivers/media/video/cx25840/cx25840-firmware.c	Mon Aug 31 02:03:28 2009 -0300
++++ b/drivers/media/video/cx25840/cx25840-firmware.c	Mon Aug 31 15:15:01 2009 -0400
+@@ -109,6 +109,8 @@
+ 	}
+ 	else if (state->is_cx231xx)
+ 		firmware = FWFILE_CX231XX;
++	else
++		firmware = FWFILE;
+ 
+ 	if ((state->is_cx231xx) && MAX_BUF_SIZE > 16) {
+ 		v4l_err(client, " Firmware download size changed to 16 bytes max length\n");
+
