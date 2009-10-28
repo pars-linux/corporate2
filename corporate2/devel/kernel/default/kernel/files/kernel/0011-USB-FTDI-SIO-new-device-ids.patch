@@ -1,0 +1,46 @@
+From 5549cb37decc151d9bc08dcdd8e8688bdfcd65b3 Mon Sep 17 00:00:00 2001
+From: Daniel Suchy <danny@danysek.cz>
+Date: Wed, 13 May 2009 10:05:48 +0200
+Subject: [PATCH 11/26] USB: FTDI-SIO new device ids
+
+I would like to have added new device to usbserial/ftdi_sio driver.
+These ids used USB track device (http://www.l-and-b.dk/access_alt.html).
+They use differend device IDs, but it works as standard usb-serial
+conventer.
+
+From: Daniel Suchy <danny@danysek.cz>
+Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+---
+ drivers/usb/serial/ftdi_sio.c |    1 +
+ drivers/usb/serial/ftdi_sio.h |    3 +++
+ 2 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/usb/serial/ftdi_sio.c b/drivers/usb/serial/ftdi_sio.c
+index 9722512..1117a30 100644
+--- a/drivers/usb/serial/ftdi_sio.c
++++ b/drivers/usb/serial/ftdi_sio.c
+@@ -672,6 +672,7 @@ static struct usb_device_id id_table_combined [] = {
+ 	{ USB_DEVICE(JETI_VID, JETI_SPC1201_PID) },
+ 	{ USB_DEVICE(MARVELL_VID, MARVELL_SHEEVAPLUG_PID),
+ 		.driver_info = (kernel_ulong_t)&ftdi_jtag_quirk },
++	{ USB_DEVICE(LARSENBRUSGAARD_VID, LB_ALTITRACK_PID) },
+ 	{ },					/* Optional parameter entry */
+ 	{ }					/* Terminating entry */
+ };
+diff --git a/drivers/usb/serial/ftdi_sio.h b/drivers/usb/serial/ftdi_sio.h
+index 12330fa..0a09118 100644
+--- a/drivers/usb/serial/ftdi_sio.h
++++ b/drivers/usb/serial/ftdi_sio.h
+@@ -33,6 +33,9 @@
+ #define FTDI_NF_RIC_PID	0x0001	/* Product Id */
+ #define FTDI_USBX_707_PID 0xF857	/* ADSTech IR Blaster USBX-707 */
+ 
++/* Larsen and Brusgaard AltiTrack/USBtrack  */
++#define LARSENBRUSGAARD_VID		0x0FD8
++#define LB_ALTITRACK_PID		0x0001
+ 
+ /* www.canusb.com Lawicel CANUSB device */
+ #define FTDI_CANUSB_PID 0xFFA8 /* Product Id */
+-- 
+1.6.3.4
+

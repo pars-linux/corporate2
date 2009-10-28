@@ -1,0 +1,253 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>module-gspca</Name>
+        <Homepage>http://moinejf.free.fr/</Homepage>
+        <Packager>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <IsA>driver</IsA>
+        <Summary>Webcam driver</Summary>
+        <Description>Contains driver for more than 200 webcams from manufacturers like Creative, Logitech, Mustek, etc., using chips like Conexant, Etoms, Mars-Semi, Pixart, Sonix, Sunplus, Transvision, Vimicro, Microdia.</Description>
+        <!-- 
+        <Archive sha1sum="8abae05ec73809240618243da87a67c1751f2ead" type="tarbz2">http://cekirdek.pardus.org.tr/~onur/distfiles/v4l-dvb-ee300d3178c4.tar.bz2</Archive>
+        -->
+        <Archive sha1sum="f36a6055c25f00c2081dffd98c0c5a85a0e609e3" type="tarbz2">http://cekirdek.pardus.org.tr/~onur/distfiles/gspca-111c1cbc759b.tar.bz2</Archive>
+        <BuildDependencies>
+            <Dependency release="128">kernel-module-headers</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch>gspca_config.patch</Patch>
+            <!-- Hans' ovfx2 changes from his tree -->
+            <Patch level="1">hgoede_6b7617d4a0be..5631c0e3f434.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>module-gspca</Name>
+        <RuntimeDependencies>
+            <Dependency release="128">kernel</Dependency>
+            <Dependency>module-gspca-userspace</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>gspca</Package>
+            <Package>m5602</Package>
+            <Package>qc-usb</Package>
+            <Package>qc-usb-messenger</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="library" permanent="true">/lib/modules</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>module-gspca-userspace</Name>
+        <Summary>Userspace documentation, tools, udev and modprobe rules for the kernel driver gspca</Summary>
+        <Conflicts>
+            <Package releaseTo="20">module-gspca</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+    </Package>
+
+
+    <History>
+        <Update release="25">
+            <Date>2009-10-13</Date>
+            <Version>0.0_20091013</Version>
+            <Comment>
+                Add support for ovfx2 bridge
+                Add support for OV2610 and OV3610 sensors
+                zc3xx.c: Change init sequences of sensor tas5130c
+                stv06xx + ov518: dont discard every other frame
+                Enable GSPCA_JEILINJ
+                Enable GSPCA_SN9C20X
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="24">
+            <Date>2009-08-26</Date>
+            <Version>0.0_20090816</Version>
+            <Comment>Make ov7660 sensor work again</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="23">
+            <Date>2009-08-16</Date>
+            <Version>0.0_20090816</Version>
+            <Comment>
+                Bump snapshot to ee300d3178c4
+                Fix i2c functions
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="22">
+            <Date>2009-07-16</Date>
+            <Version>0.0_20090716</Version>
+            <Comment>Bump snapshot to d754a2d5a376</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="21">
+            <Date>2009-07-15</Date>
+            <Version>0.0_20090707</Version>
+            <Comment>Depend on the new userspace sub-package.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="20">
+            <Date>2009-07-07</Date>
+            <Version>0.0_20090707</Version>
+            <Comment>Bump snapshot, probably fixing #10252</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="19">
+            <Date>2009-06-09</Date>
+            <Version>0.0_20090607</Version>
+            <Comment>Fix V4L1_COMPAT part of vidioc calls</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="18">
+            <Date>2009-06-07</Date>
+            <Version>0.0_20090607</Version>
+            <Comment>
+                Fix VIDIOC_ usage to fix infinite loop of VIDIOC_G_INPUT, this should fix bugs #9907 and #9770
+                Shuffle build system for easier patching
+                Bump snapshot to 5ed2a853b692
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="17">
+            <Date>2009-05-29</Date>
+            <Version>0.0_20090529</Version>
+            <Comment>Bump snapshot to 65ec132f20df</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="16">
+            <Date>2009-05-14</Date>
+            <Version>0.0_20090514</Version>
+            <Comment>Bump snapshot to fdc16f5f9f6e</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="15">
+            <Date>2009-05-08</Date>
+            <Version>0.0_20090508</Version>
+            <Comment>
+                Bump snapshot to 0c3ea1ef36a5
+                Compile module outside kernel
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="14">
+            <Date>2008-05-21</Date>
+            <Version>0.0_20071224</Version>
+            <Comment>Add support for OV7648,OV6650 sensors and SN9C325,SN9C102G chips</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2008-01-12</Date>
+            <Version>0.0_20071224</Version>
+            <Comment>Add PAC7311 fixes</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2007-12-24</Date>
+            <Version>0.0_20071224</Version>
+            <Comment>Bump to stable, added Genius ge110 Philips spc220nc pac207 and fix mjpeg palette for vc cams</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2007-12-20</Date>
+            <Version>0.0_20071220</Version>
+            <Comment>Fix mc501cb init, add support for Logitec QC Cool</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2007-12-20</Date>
+            <Version>0.0_20071214</Version>
+            <Comment>Fix gamma levels for vimicron cams</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="9">
+            <Date>2007-12-14</Date>
+            <Version>0.0_20071214</Version>
+            <Comment>Version bump, lots of new cameras, test only the height byte for pac207</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2007-11-01</Date>
+            <Version>0.0_20070508</Version>
+            <Comment>Fix Trust webcams hang</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2007-05-08</Date>
+            <Version>0.0_20070508</Version>
+            <Comment>Add DMVC 1300K and Pixart PAC7311 based webcams support</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2007-05-08</Date>
+            <Version>0.0_20070426</Version>
+            <Comment>Bump for new webcams and ov7660 controller</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2007-04-03</Date>
+            <Version>0.0_20070110</Version>
+            <Comment>Patch for better quality in quickcam express</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2007-02-10</Date>
+            <Version>0.0_20070110</Version>
+            <Comment>Make sure it is compiled with get.curKERNEL()</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2007-01-13</Date>
+            <Version>0.0_20070110</Version>
+            <Comment>Version bump for uvc cameras to work (like microdia) bug #4488</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2006-12-19</Date>
+            <Version>0.0_20061216</Version>
+            <Comment>Version bump for zoran cameras to work</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2006-10-28</Date>
+            <Version>0.0_20060925</Version>
+            <Comment>First release, successor of spca5xx</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
+

@@ -1,0 +1,166 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>module-ov51x-jpeg</Name>
+        <Homepage>http://www.rastageeks.org/ov51x-jpeg/</Homepage>
+        <Packager>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <IsA>driver</IsA>
+        <Summary>Omnivision webcam driver with JPEG compression</Summary>
+        <Description>ov51x-jpeg is the driver for OmniVision-based webcams, forked, rewritten and employing JPEG compression.</Description>
+        <Archive sha1sum="ab039055707c9af10aa78ba75211c06374b13629" type="targz">http://www.rastageeks.org/downloads/ov51x-jpeg/ov51x-jpeg-1.5.9.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency release="128">kernel-module-headers</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">kernel_messages.patch</Patch>
+            <Patch level="1">ov51x-jpeg-2.6.29.patch</Patch>
+            <Patch level="1">ov51x-jpeg-2.6.30.patch</Patch>
+            <Patch level="1">noowner.patch</Patch>
+            <Patch level="1">v4lcompat_old_kernels_only.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>module-ov51x-jpeg</Name>
+        <RuntimeDependencies>
+            <Dependency release="128">kernel</Dependency>
+            <Dependency>module-ov51x-jpeg-userspace</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>ov51x-jpeg</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="library" permanent="true">/lib/modules</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>module-ov51x-jpeg-userspace</Name>
+        <Summary>Userspace documentation, tools, udev and modprobe rules for the kernel driver ov51x-jpeg</Summary>
+        <Conflicts>
+            <Package releaseTo="13">module-ov51x-jpeg</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="data">/etc/modprobe.d</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/modprobe.d/ov51x-jpeg.conf">ov51x-jpeg</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+
+    <History>
+        <Update release="15">
+            <Date>2009-09-03</Date>
+            <Version>1.5.9</Version>
+            <Comment>Disable v4l compatibility for kernels > 2.6.29, thanks to Ron Widler</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="14">
+            <Date>2009-07-15</Date>
+            <Version>1.5.9</Version>
+            <Comment>Depend on the new userspace sub-package.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2009-05-01</Date>
+            <Version>1.5.9</Version>
+            <Comment>Port to 2.6.29 kernel</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2008-12-04</Date>
+            <Version>1.5.9</Version>
+            <Comment>Bump to fix compilation on kernels >= 2.6.27</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2008-07-03</Date>
+            <Version>1.5.8</Version>
+            <Comment>Bump to fix compilation on newer kernels</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2008-05-29</Date>
+            <Version>1.5.7</Version>
+            <Comment>Move files from modules.d to modprobe.d</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="9">
+            <Date>2008-05-15</Date>
+            <Version>1.5.7</Version>
+            <Comment>Stable bump for another live cam and bugfixes</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2008-02-11</Date>
+            <Version>1.5.6</Version>
+            <Comment>Added support for VF0470 Live! Cam Notebook, Live! Cam Notebook Pro, added unblocking workaround for various applications like skype</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2007-12-14</Date>
+            <Version>1.5.4</Version>
+            <Comment>Support for Creative Live Cam VF0350</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2007-11-07</Date>
+            <Version>1.5.3</Version>
+            <Comment>Bump for Creative Vista Webcam VF0420 and VF0330 support</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2007-06-16</Date>
+            <Version>1.5.1</Version>
+            <Comment>Bump for I2C and string bugfixes</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2007-05-08</Date>
+            <Version>1.5.0</Version>
+            <Comment>Bump for bugfixes and Creative IM vista support</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2007-04-02</Date>
+            <Version>1.0.0</Version>
+            <Comment>Bump to stable</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2007-02-10</Date>
+            <Version>0.5.4</Version>
+            <Comment>More curKERNEL</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2007-01-19</Date>
+            <Version>0.5.4</Version>
+            <Comment>First release</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
+

@@ -1,0 +1,86 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>module-omnibook</Name>
+        <Homepage>http://omnibook.sf.net</Homepage>
+        <Packager>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <License>LGPLv2.1</License>
+        <IsA>driver</IsA>
+        <Summary>Linux kernel module for (but not limited to) HP Omnibook support</Summary>
+        <Description>module-omnibook is a linux kernel module for many HP Omnibook/Pavillon, Toshiba Satellite (with Phoenix BIOS) and Compal laptops.</Description>
+        <Archive sha1sum="e03450c7fc2b95798d62b257017eca9329e663c6" type="tarbz2">http://cekirdek.pardus.org.tr/~ozan/dist/sources/omnibook-20090720.tar.bz2</Archive>
+        <BuildDependencies>
+            <Dependency release="128">kernel-module-headers</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch>makefile.patch</Patch>
+
+            <!-- Enable bluetooth on Toshiba Satellite A200 (#10566) -->
+            <Patch level="1">add-toshiba-satellite-a200-quirk.patch</Patch>
+
+            <!-- Enable bluetooth on Toshiba Satellite A210 (#10952) -->
+            <Patch level="1">add-toshiba-satellite-a210-quirk.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>module-omnibook</Name>
+        <RuntimeDependencies>
+            <Dependency release="128">kernel</Dependency>
+            <Dependency>module-omnibook-userspace</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library" permanent="true">/lib/modules</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>module-omnibook-userspace</Name>
+        <Summary>Userspace documentation, tools, udev and modprobe rules for the kernel driver omnibook</Summary>
+        <Conflicts>
+            <Package releaseTo="1">module-omnibook</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+    </Package>
+
+    <History>
+        <Update release="4">
+            <Date>2009-08-20</Date>
+            <Version>0.0_20090720</Version>
+            <Comment>Add quirk and DMI modalias for Toshiba Satellite A210 (#10952).</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2009-07-20</Date>
+            <Version>0.0_20090720</Version>
+            <Comment>
+                - Bump to the latest snapshot,
+                - Add quirk and DMI modalias for Toshiba Satellite A200 (#10566).
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2009-07-15</Date>
+            <Version>0.0_20090503</Version>
+            <Comment>Depend on the new userspace sub-package.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2009-05-03</Date>
+            <Version>0.0_20090503</Version>
+            <Comment>First release.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>

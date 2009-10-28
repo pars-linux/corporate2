@@ -1,0 +1,57 @@
+--- linux-2.6.27/drivers/input/mouse/alps.c	2008-12-09 00:31:48.000000000 +1100
++++ linux-2.6.27.alps/drivers/input/mouse/alps.c	2008-12-09 01:08:09.000000000 +1100
+@@ -100,6 +100,19 @@
+ 		return;
+ 	}
+ 
++	if ((packet[3] & 0xf) == 0xf) {
++		/* 9-byte packet format seen on some DualPoints */
++		/* handle relative update and then fall through for remainder */
++		input_report_rel(dev2, REL_X,
++			packet[4] ? packet[4] - ((packet[3] << 4) & 0x100) : 0);
++		input_report_rel(dev2, REL_Y,
++			packet[5] ? ((packet[3] << 3) & 0x100) - packet[5] : 0);
++		input_sync(dev2);
++		packet[3] = packet[6];
++		packet[4] = packet[7];
++		packet[5] = packet[8];
++	}
++
+ 	if (priv->i->flags & ALPS_OLDPROTO) {
+ 		left = packet[2] & 0x10;
+ 		right = packet[2] & 0x08;
+@@ -197,6 +210,21 @@
+ 	if ((psmouse->packet[0] & priv->i->mask0) != priv->i->byte0)
+ 		return PSMOUSE_BAD_DATA;
+ 
++	if ((psmouse->pktcnt >= 4) && ((psmouse->packet[3] & 0xf) == 0xf))
++	{
++		/* 9-byte packet format seen on some DualPoints */
++		/* Bytes 7 - 9 should have 0 in the highest bit */
++		if ((psmouse->pktcnt >= 7) && (psmouse->pktcnt <= 9) &&
++		    (psmouse->packet[psmouse->pktcnt - 1] & 0x80))
++			return PSMOUSE_BAD_DATA;
++
++		if (psmouse->pktcnt == 9) {
++			alps_process_packet(psmouse);
++			return PSMOUSE_FULL_PACKET;
++		}
++		return PSMOUSE_GOOD_DATA;
++	}
++
+ 	/* Bytes 2 - 6 should have 0 in the highest bit */
+ 	if (psmouse->pktcnt >= 2 && psmouse->pktcnt <= 6 &&
+ 	    (psmouse->packet[psmouse->pktcnt - 1] & 0x80))
+--- linux-2.6.27/drivers/input/mouse/psmouse.h	2008-10-10 09:13:53.000000000 +1100
++++ linux-2.6.27.alps/drivers/input/mouse/psmouse.h	2008-11-06 02:32:45.000000000 +1100
+@@ -42,7 +42,7 @@
+ 	struct work_struct resync_work;
+ 	char *vendor;
+ 	char *name;
+-	unsigned char packet[8];
++	unsigned char packet[9];
+ 	unsigned char badbyte;
+ 	unsigned char pktcnt;
+ 	unsigned char pktsize;
+
+  

@@ -1,0 +1,45 @@
+From: Len Brown <len.brown@intel.com>
+Date: Sat, 5 Sep 2009 17:33:23 +0000 (-0400)
+Subject: Revert "ACPI: Attach the ACPI device to the ACPI handle as early as possible"
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Flenb%2Flinux-acpi-2.6.git;a=commitdiff_plain;h=f61f925859c57f6175082aeeee17743c68558a6e
+
+Revert "ACPI: Attach the ACPI device to the ACPI handle as early as possible"
+
+This reverts commit eab4b645769fa2f8703f5a3cb0cc4ac090d347af.
+
+http://bugzilla.kernel.org/show_bug.cgi?id=13002
+
+Signed-off-by: Len Brown <len.brown@intel.com>
+---
+
+diff --git a/drivers/acpi/scan.c b/drivers/acpi/scan.c
+index 781435d..5dd702c 100644
+--- a/drivers/acpi/scan.c
++++ b/drivers/acpi/scan.c
+@@ -1264,16 +1264,6 @@ acpi_add_single_object(struct acpi_device **child,
+ 	acpi_device_set_id(device, parent, handle, type);
+ 
+ 	/*
+-	 * The ACPI device is attached to acpi handle before getting
+-	 * the power/wakeup/peformance flags. Otherwise OS can't get
+-	 * the corresponding ACPI device by the acpi handle in the course
+-	 * of getting the power/wakeup/performance flags.
+-	 */
+-	result = acpi_device_set_context(device, type);
+-	if (result)
+-		goto end;
+-
+-	/*
+ 	 * Power Management
+ 	 * ----------------
+ 	 */
+@@ -1303,6 +1293,8 @@ acpi_add_single_object(struct acpi_device **child,
+ 			goto end;
+ 	}
+ 
++	if ((result = acpi_device_set_context(device, type)))
++		goto end;
+ 
+ 	result = acpi_device_register(device, parent);
+ 
+

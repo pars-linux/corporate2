@@ -1,0 +1,26 @@
+From 09fd6eab60734f7c59bc29c86ebd98790b646fb4 Mon Sep 17 00:00:00 2001
+From: Pierre Ossman <pierre@ossman.eu>
+Date: Thu, 4 Jun 2009 07:53:38 +0200
+Subject: [PATCH 5/5] cb710: fix printk format string
+
+Signed-off-by: Pierre Ossman <pierre@ossman.eu>
+---
+ drivers/mmc/host/cb710-mmc.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/mmc/host/cb710-mmc.c b/drivers/mmc/host/cb710-mmc.c
+index bc048aa..11efefb 100644
+--- a/drivers/mmc/host/cb710-mmc.c
++++ b/drivers/mmc/host/cb710-mmc.c
+@@ -219,7 +219,7 @@ static void cb710_mmc_set_transfer_size(struct cb710_slot *slot,
+ 	cb710_write_port_32(slot, CB710_MMC_TRANSFER_SIZE_PORT,
+ 		((count - 1) << 16)|(blocksize - 1));
+ 
+-	dev_vdbg(cb710_slot_dev(slot), "set up for %d block%s of %d bytes\n",
++	dev_vdbg(cb710_slot_dev(slot), "set up for %zu block%s of %zu bytes\n",
+ 		count, count == 1 ? "" : "s", blocksize);
+ }
+ 
+-- 
+1.6.3
+

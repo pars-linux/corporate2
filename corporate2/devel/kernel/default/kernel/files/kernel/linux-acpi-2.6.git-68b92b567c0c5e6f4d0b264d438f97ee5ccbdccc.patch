@@ -1,0 +1,28 @@
+From 68b92b567c0c5e6f4d0b264d438f97ee5ccbdccc Mon Sep 17 00:00:00 2001
+From: Mark Langsdorf <mark.langsdorf@amd.com>
+Date: Tue, 11 Aug 2009 15:15:42 -0500
+Subject: [PATCH] ACPI: add AC/DC notifier
+
+Add an ACPI event notifier for AC/DC connect/disconnect events.
+
+Signed-off-by: Mark Langsdorf <mark.langsdorf@amd.com>
+Signed-off-by: Len Brown <len.brown@intel.com>
+---
+ drivers/acpi/ac.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/acpi/ac.c b/drivers/acpi/ac.c
+index 98b9690..b6ed60b 100644
+--- a/drivers/acpi/ac.c
++++ b/drivers/acpi/ac.c
+@@ -245,6 +245,7 @@ static void acpi_ac_notify(struct acpi_device *device, u32 event)
+ 		acpi_bus_generate_netlink_event(device->pnp.device_class,
+ 						  dev_name(&device->dev), event,
+ 						  (u32) ac->state);
++		acpi_notifier_call_chain(device, event, (u32) ac->state);
+ #ifdef CONFIG_ACPI_SYSFS_POWER
+ 		kobject_uevent(&ac->charger.dev->kobj, KOBJ_CHANGE);
+ #endif
+-- 
+1.6.5.1
+

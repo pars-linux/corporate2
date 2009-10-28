@@ -1,0 +1,384 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>module-uvcvideo</Name>
+        <Homepage>http://linux-uvc.berlios.de/</Homepage>
+        <Packager>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <IsA>driver</IsA>
+        <Summary>USB webcam driver</Summary>
+        <Description>linux-uvc is a webcam driver using Linux USB Video Class.</Description>
+        <!-- switch to Laurent's tree for now
+        <Archive sha1sum="8abae05ec73809240618243da87a67c1751f2ead" type="tarbz2">http://cekirdek.pardus.org.tr/~onur/distfiles/v4l-dvb-ee300d3178c4.tar.bz2</Archive>
+        -->
+        <Archive sha1sum="ece89ab169666c60aaf978b2a68f8aeb0efecf8f" type="tarbz2">http://cekirdek.pardus.org.tr/~onur/distfiles/uvcvideo-214c94aa62aa.tar.bz2</Archive>
+        <BuildDependencies>
+            <Dependency release="128">kernel-module-headers</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch>uvc_config.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>module-uvcvideo</Name>
+        <RuntimeDependencies>
+            <Dependency release="128">kernel</Dependency>
+            <Dependency>module-uvcvideo-userspace</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>linux-uvc</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="library" permanent="true">/lib/modules</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>module-uvcvideo-userspace</Name>
+        <Summary>Userspace documentation, tools, udev and modprobe rules for the kernel driver uvcvideo</Summary>
+        <Conflicts>
+            <Package releaseTo="41">module-uvcvideo</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+    </Package>
+
+    <History>
+        <Update release="45">
+            <Date>2009-10-13</Date>
+            <Version>0.0_20091013</Version>
+            <Comment>
+                Bump snapshot to 214c94aa62aa of uvcvideo tree
+                Fix initialize timeout
+                Many buffer and stream fixes
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="44">
+            <Date>2009-08-16</Date>
+            <Version>0.0_20090816</Version>
+            <Comment>
+                Bump snapshot to ee300d3178c4
+                Avoid flooding the kernel log with "unknown event type" messages
+                Fix FIXBANDWIDTH quirk for ViMicro devices
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="43">
+            <Date>2009-07-16</Date>
+            <Version>0.0_20090716</Version>
+            <Comment>Bump snapshot to d754a2d5a376</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="42">
+            <Date>2009-07-16</Date>
+            <Version>0.0_20090707</Version>
+            <Comment>Depend on the new sub-package.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="41">
+            <Date>2009-07-07</Date>
+            <Version>0.0_20090707</Version>
+            <Comment>Bump snapshot to c300798213a9</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="40">
+            <Date>2009-06-07</Date>
+            <Version>0.0_20090607</Version>
+            <Comment>
+                Bump snapshot to 5ed2a853b692
+                Tidy up build system
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="39">
+            <Date>2009-05-08</Date>
+            <Version>0.0_20090508</Version>
+            <Comment>
+                Bump snapshot to 1b4c7a6b9d26
+                Add patches for out of kernel build
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="38">
+            <Date>2008-11-03</Date>
+            <Version>0.0_262</Version>
+            <Comment>Handle failed video GET_MIN/GET_MAX/GET_DEF requests more gracefully</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="37">
+            <Date>2008-10-25</Date>
+            <Version>0.0_259</Version>
+            <Comment>Sort frame descriptors during parsing</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="36" type="security">
+            <Date>2008-10-15</Date>
+            <Version>0.0_259</Version>
+            <Comment>Fix buffer overflow in uvc_query_v4l2_ctrl</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="35">
+            <Date>2008-09-22</Date>
+            <Version>0.0_251</Version>
+            <Comment>Add support for Advent 4211,Compaq Presario B1200 and Acer Travelmate 7720 integrated webcams, fix incomplete frame drop when switching to a variable size format, add usb buffer fixes</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="34">
+            <Date>2008-09-01</Date>
+            <Version>0.0_246</Version>
+            <Comment>Add payload size fixes, add support for Bison Electronics webcam found in the Fujitsu Amilo SI2636</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="33">
+            <Date>2008-08-01</Date>
+            <Version>0.0_240</Version>
+            <Comment>Don't use stack-based buffers for USB transfers, add support for 2 Bison cams</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="32">
+            <Date>2008-07-19</Date>
+            <Version>0.0_232</Version>
+            <Comment>Fix possible AB-BA deadlock with videodev_lock and open_mutex, add support for a few more cams</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="31" type="security">
+            <Date>2008-07-07</Date>
+            <Version>0.0_225</Version>
+            <Comment>Fix buffer overflow in format descriptor parsing and some suspend fixes</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="30">
+            <Date>2008-06-23</Date>
+            <Version>0.0_217</Version>
+            <Comment>Fix quirks for Bodelin, Sigma and Syntek cams</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="29">
+            <Date>2008-06-08</Date>
+            <Version>0.0_214</Version>
+            <Comment>Release streaming interface when probe fails, make VIDIOC_QBUF return -ENODEV</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="28">
+            <Date>2008-06-03</Date>
+            <Version>0.0_212</Version>
+            <Comment>Fix breakage in VIDIOC_ENUM_FRAMEINTERVALS</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="27">
+            <Date>2008-05-23</Date>
+            <Version>0.0_211</Version>
+            <Comment>Compute framesize for uncompressed formats giving a nice optimization, add quirk for SiGma Micro USB</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="26">
+            <Date>2008-05-15</Date>
+            <Version>0.0_209</Version>
+            <Comment>Version bump</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="25">
+            <Date>2008-04-21</Date>
+            <Version>0.0_203</Version>
+            <Comment>Version bump for crash fix for GET_* on the Video Probe Control and a few more webcam support</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="24">
+            <Date>2008-03-22</Date>
+            <Version>0.0_195</Version>
+            <Comment>Remove patches for 2.6.18 kernel to compile with new kernels</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="23">
+            <Date>2008-03-14</Date>
+            <Version>0.0_195</Version>
+            <Comment>Many bugfixes for quirks,iSight support,alignment and buffer management. Added on the fly quirk testing support</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="22">
+            <Date>2008-02-14</Date>
+            <Version>0.0_181</Version>
+            <Comment>Fix possible off-by-one overflow in processing unit descriptor parsing</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="21">
+            <Date>2008-01-30</Date>
+            <Version>0.0_173</Version>
+            <Comment>Add support for MT6227 and some syntek cameras in HP spartan systems, some stream and bulk transfer fixes</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="20">
+            <Date>2008-01-12</Date>
+            <Version>0.0_166</Version>
+            <Comment>Fix dv format parsing, many auto exposure stuff, atomic counter underflow bug, usb powermanagement and a memory leak</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="19">
+            <Date>2007-12-20</Date>
+            <Version>0.0_157</Version>
+            <Comment>Add fixes for invalid V4L2 ID calls, oops during status endpoint init, VIDIOC_REQBUFS is called with a zero buffer count</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="18">
+            <Date>2007-12-12</Date>
+            <Version>0.0_151</Version>
+            <Comment>Fix a few crashes, support for ALi M5606 and iSight</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="17">
+            <Date>2007-11-12</Date>
+            <Version>0.0_141</Version>
+            <Comment>Use the control interface as physical device for the video class device</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="16">
+            <Date>2007-10-26</Date>
+            <Version>0.0_139</Version>
+            <Comment>Do not let null bandwidth requests, do not loose device settings on I/O errors</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="15">
+            <Date>2007-10-19</Date>
+            <Version>0.0_137</Version>
+            <Comment>Add support for Acer Crystal Eye and Silicon Motion SM371, fix serious map->xmap typos in UVCIOC_CTRL_MAP, make V4L2_CTRL_FLAG_NEXT_CTRL work, fixed external terminal types handling</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="14">
+            <Date>2007-10-04</Date>
+            <Version>0.0_131</Version>
+            <Comment>Fix bork in uvc_control</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2007-10-01</Date>
+            <Version>0.0_131</Version>
+            <Comment>Merge dynctrl branch</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2007-09-27</Date>
+            <Version>0.0_127</Version>
+            <Comment>Don't fail on unknown formatted frame based cams, use uncompressed format instead</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2007-09-24</Date>
+            <Version>0.0_126</Version>
+            <Comment>Send SET_INTERFACE before any other video request, fixes many webcams' init</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2007-09-08</Date>
+            <Version>0.0_125</Version>
+            <Comment>Suspend/resume support, fix stream control timeout, focus fixes</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="9">
+            <Date>2007-07-30</Date>
+            <Version>0.0_117</Version>
+            <Comment>Added Acer Orbicam 5986:0200 support</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2007-07-15</Date>
+            <Version>0.0_113</Version>
+            <Comment>Fix VIDIOC_REQBUFS return value</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2007-07-08</Date>
+            <Version>0.0_113</Version>
+            <Comment>Support for YV12, I420 and UYVY, input selection, webcam 5986:0100</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2007-05-16</Date>
+            <Version>0.0_108</Version>
+            <Comment>Set the video device name to the product name provided by the device if available</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2007-05-13</Date>
+            <Version>0.0_106</Version>
+            <Comment>Pico iMage bug workaround, DV format support, multiple input enhancements</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2007-05-01</Date>
+            <Version>0.0_101</Version>
+            <Comment>Fix a few bugs like NULL pointer dereference, support more cams with checking SIC spesific descriptors</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2007-03-08</Date>
+            <Version>0.0_89</Version>
+            <Comment>Fix a few bugs like "division by zero on some error cases"</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2007-02-10</Date>
+            <Version>0.0_78</Version>
+            <Comment>curKERNEL ize</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2007-01-23</Date>
+            <Version>0.0_78</Version>
+            <Comment>First release</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
+
