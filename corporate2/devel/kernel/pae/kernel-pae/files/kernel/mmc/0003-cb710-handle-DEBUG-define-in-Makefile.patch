@@ -1,0 +1,41 @@
+From 7a0d4a0f10f6de9f0f45b77feda6f11cbd584f21 Mon Sep 17 00:00:00 2001
+From: Pierre Ossman <pierre@ossman.eu>
+Date: Thu, 4 Jun 2009 08:00:40 +0200
+Subject: [PATCH 3/5] cb710: handle DEBUG define in Makefile
+
+Signed-off-by: Pierre Ossman <pierre@ossman.eu>
+---
+ drivers/misc/cb710/Makefile |    4 ++++
+ include/linux/cb710.h       |    4 ----
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/misc/cb710/Makefile b/drivers/misc/cb710/Makefile
+index 62d51ac..7b80cbf 100644
+--- a/drivers/misc/cb710/Makefile
++++ b/drivers/misc/cb710/Makefile
+@@ -1,3 +1,7 @@
++ifeq ($(CONFIG_CB710_DEBUG),y)
++	EXTRA_CFLAGS		+= -DDEBUG
++endif
++
+ obj-$(CONFIG_CB710_CORE)	+= cb710.o
+ 
+ cb710-y				:= core.o sgbuf2.o
+diff --git a/include/linux/cb710.h b/include/linux/cb710.h
+index c3819e1..a09213b 100644
+--- a/include/linux/cb710.h
++++ b/include/linux/cb710.h
+@@ -10,10 +10,6 @@
+ #ifndef LINUX_CB710_DRIVER_H
+ #define LINUX_CB710_DRIVER_H
+ 
+-#ifdef CONFIG_CB710_DEBUG
+-#define DEBUG
+-#endif
+-
+ /* verify assumptions on platform_device framework */
+ #define CONFIG_CB710_DEBUG_ASSUMPTIONS
+ 
+-- 
+1.6.3
+

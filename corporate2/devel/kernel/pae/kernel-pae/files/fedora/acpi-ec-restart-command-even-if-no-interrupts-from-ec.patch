@@ -1,0 +1,32 @@
+From: Alexey Starikovskiy <astarikovskiy@suse.de>
+Date: Thu, 1 Oct 2009 22:53:15 +0000 (+0400)
+Subject: ACPI: EC: Restart command even if no interrupts from EC
+X-Git-Tag: v2.6.32-rc3~4^2~2^2
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=e12ac3d018dd8f20a075f552020
+
+ACPI: EC: Restart command even if no interrupts from EC
+
+EC may forget a command without sending any "reset" interrupt,
+thus we need to lessen the requirement for transaction restart.
+
+Reference: http://bugzilla.kernel.org/show_bug.cgi?id=14247
+Signed-off-by: Alexey Starikovskiy <astarikovskiy@suse.de>
+Signed-off-by: Len Brown <len.brown@intel.com>
+---
+
+diff --git a/drivers/acpi/ec.c b/drivers/acpi/ec.c
+index f707960..8a4897d 100644
+--- a/drivers/acpi/ec.c
++++ b/drivers/acpi/ec.c
+@@ -232,10 +232,8 @@ static int ec_poll(struct acpi_ec *ec)
+ 			}
+ 			advance_transaction(ec, acpi_ec_read_status(ec));
+ 		} while (time_before(jiffies, delay));
+-		if (!ec->curr->irq_count ||
+-		    (acpi_ec_read_status(ec) & ACPI_EC_FLAG_IBF))
++		if (acpi_ec_read_status(ec) & ACPI_EC_FLAG_IBF)
+ 			break;
+-		/* try restart command if we get any false interrupts */
+ 		pr_debug(PREFIX "controller reset, restart transaction\n");
+ 		spin_lock_irqsave(&ec->curr_lock, flags);
+ 		start_transaction(ec);

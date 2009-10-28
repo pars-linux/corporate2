@@ -1,0 +1,90 @@
+From: Jan Nikitenko <jan.nikitenko@gmail.com>
+Date: Tue, 9 Jun 2009 22:31:55 +0000 (-0300)
+Subject: V4L/DVB (11999): af9015: fix stack corruption bug
+X-Git-Tag: v2.6.31-rc1~297^2~58
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=1e7439388a5aa6decf76ac1d73d5312fe713e6af
+
+V4L/DVB (11999): af9015: fix stack corruption bug
+
+This patch fixes stack corruption bug present in af9015_eeprom_dump():
+the buffer buf is one byte smaller than required - there is 4 chars
+for address prefix, 16*3 chars for dump of 16 eeprom bytes per line
+and 1 byte for zero ending the string required, i.e. 53 bytes, but
+only 52 are provided.
+The one byte missing in stack based buffer buf causes following oops
+on MIPS little endian platform, because i2c_adap pointer in
+af9015_af9013_frontend_attach() is corrupted by inlined function
+af9015_eeprom_dump():
+
+CPU 0 Unable to handle kernel paging request at virtual address 00000000, epc ==
+803a4488, ra == c049a1c8
+Oops[#1]:
+Cpu 0
+$ 0   : 00000000 10003c00 00000000 803a4468
+$ 4   : 8f17c600 8f067b30 00000002 00000038
+$ 8   : 00000001 8faf3e98 11da000d 09010002
+$12   : 00000000 00000000 00000000 0000000a
+$16   : 8f17c600 8f067b68 8faf3c00 8f067c04
+$20   : 8f067b9c 00000100 8f067bf0 80104100
+$24   : 00000000 2aba9fb0
+$28   : 8f066000 8f067af0 802cbc48 c049a1c8
+Hi    : 00000000
+Lo    : 00000000
+epc   : 803a4488 i2c_transfer+0x20/0x104
+   Not tainted
+ra    : c049a1c8 af9013_read_reg+0x78/0xc4 [af9013]
+Status: 10003c03    KERNEL EXL IE
+Cause : 00808008
+BadVA : 00000000
+PrId  : 03030200 (Au1550)
+Modules linked in: af9013 dvb_usb_af9015(+) dvb_usb dvb_core firmware_class
+i2c_au1550 au1550_spi
+Process modprobe (pid: 2757, threadinfo=8f066000, task=8fade098, tls=2aad6470)
+Stack : c049f5e0 80163090 805ba880 00000100 8f067bf0 0000d733 8f067b68 8faf3c00
+       8f067c04 c049a1c8 80163bc0 8056a630 8f067b40 80163224 80569fc8 8f0033d7
+       00000038 80140003 8f067b2c 00010038 c0420001 8f067b28 c049f5e0 00000004
+       00000004 c049a524 c049d5a8 c049d5a8 00000000 803a6700 00000000 8f17c600
+       c042a7a4 8f17c600 c042a7a4 c049c924 00000000 00000000 00000002 613a6c00
+       ...
+Call Trace:
+[<803a4488>] i2c_transfer+0x20/0x104
+[<c049a1c8>] af9013_read_reg+0x78/0xc4 [af9013]
+[<c049a524>] af9013_read_reg_bits+0x2c/0x70 [af9013]
+[<c049c924>] af9013_attach+0x98/0x65c [af9013]
+[<c04257bc>] af9015_af9013_frontend_attach+0x214/0x67c [dvb_usb_af9015]
+[<c03e2428>] dvb_usb_adapter_frontend_init+0x20/0x12c [dvb_usb]
+[<c03e1ad8>] dvb_usb_device_init+0x374/0x6b0 [dvb_usb]
+[<c0426120>] af9015_usb_probe+0x4fc/0xfcc [dvb_usb_af9015]
+[<80381024>] usb_probe_interface+0xbc/0x218
+[<803227fc>] driver_probe_device+0x12c/0x30c
+[<80322a80>] __driver_attach+0xa4/0xac
+[<80321ed0>] bus_for_each_dev+0x60/0xd0
+[<8032162c>] bus_add_driver+0x1e8/0x2a8
+[<80322cdc>] driver_register+0x7c/0x17c
+[<80380d30>] usb_register_driver+0xa0/0x12c
+[<c042e030>] af9015_usb_module_init+0x30/0x6c [dvb_usb_af9015]
+[<8010d2a4>] __kprobes_text_end+0x3c/0x1f4
+[<80167150>] sys_init_module+0xb8/0x1cc
+[<80102370>] stack_done+0x20/0x3c
+
+Code: afb10018  7000003f  00808021 <8c430000> 7000003f  1060002d  00c09021
+8f830014  3c02efff
+
+Signed-off-by: Jan Nikitenko <jan.nikitenko@gmail.com>
+Acked-by: Antti Palosaari <crope@iki.fi>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@redhat.com>
+---
+
+diff --git a/drivers/media/dvb/dvb-usb/af9015.c b/drivers/media/dvb/dvb-usb/af9015.c
+index 9155a79..4cb31e7 100644
+--- a/drivers/media/dvb/dvb-usb/af9015.c
++++ b/drivers/media/dvb/dvb-usb/af9015.c
+@@ -538,7 +538,7 @@ exit:
+ /* dump eeprom */
+ static int af9015_eeprom_dump(struct dvb_usb_device *d)
+ {
+-	char buf[52], buf2[4];
++	char buf[4+3*16+1], buf2[4];
+ 	u8 reg, val;
+ 
+ 	for (reg = 0; ; reg++) {

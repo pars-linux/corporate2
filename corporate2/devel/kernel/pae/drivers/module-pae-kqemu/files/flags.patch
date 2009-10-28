@@ -1,0 +1,58 @@
+diff -Nur kqemu-1.4.0pre1-old/common/Makefile kqemu-1.4.0pre1/common/Makefile
+--- kqemu-1.4.0pre1-old/common/Makefile	2009-05-05 11:00:09.000000000 +0300
++++ kqemu-1.4.0pre1/common/Makefile	2009-05-05 11:04:27.000000000 +0300
+@@ -27,43 +27,40 @@
+ cc-option = $(shell if test -z "`$(1) $(2) -S -o /dev/null -xc \
+               /dev/null 2>&1`"; then echo "$(2)"; else echo "$(3)"; fi  ;) 
+ 
+-HOST_CC=gcc
+-MON_CC=gcc
++MON_CC=pardusCC
+ MON_LD=ld
+ ifdef CONFIG_WIN32
+ TARGET=../kqemu-mod-$(ARCH)-win32.o
+-CC=i386-mingw32-gcc
+ LD=i386-mingw32-ld
+ else
+ TARGET=../kqemu-mod-$(ARCH).o
+-CC=gcc
+ LD=ld
+ endif
+ 
+ DEFINES=-D__KERNEL__
+ INCLUDES=-nostdinc -iwithprefix include -I. -I..
+-TOOLS_CFLAGS=-Wall -O2 -Werror -g
++TOOLS_CFLAGS=-Wall -O2 -Werror -g pardusCFLAGS
+ COMMON_CFLAGS=-Wall -O2 -fomit-frame-pointer -fno-strict-aliasing -Werror 
+ ifeq ($(ARCH), x86_64)
+ COMMON_CFLAGS+=-mno-red-zone
+ endif
+-CFLAGS=$(COMMON_CFLAGS)
+-MON_CFLAGS=$(COMMON_CFLAGS)
+-KERNEL_CFLAGS=$(COMMON_CFLAGS)
++CFLAGS+=$(COMMON_CFLAGS)
++MON_CFLAGS=$(COMMON_CFLAGS) pardusCFLAGS
++KERNEL_CFLAGS=$(COMMON_CFLAGS) pardusCFLAGS
+ 
+ # Disable SSP if GCC supports it
+-MON_CFLAGS+=$(call cc-option,$(MON_CC),-fno-stack-protector,)
+-MON_CFLAGS+=$(call cc-option,$(MON_CC),-fno-stack-protector-all,)
++MON_CFLAGS+=$(call cc-option,$(MON_CC),-fno-stack-protector,) pardusCFLAGS
++MON_CFLAGS+=$(call cc-option,$(MON_CC),-fno-stack-protector-all,) pardusCFLAGS
+ 
+ ifeq ($(ARCH), x86_64)
+-KERNEL_CFLAGS+=-mcmodel=kernel
+-MON_CFLAGS+= -fpic # needed for correct computed goto relocations
++KERNEL_CFLAGS+=-mcmodel=kernel pardusCFLAGS
++MON_CFLAGS+= -fpic # needed for correct computed goto relocations pardusCFLAGS
+ endif
+ ifdef CONFIG_WIN32
+ # for win32, we need the same alignment for int64_t when using the
+ # Linux compiler
+-TOOLS_CFLAGS+=-malign-double
+-MON_CFLAGS+=-malign-double
++TOOLS_CFLAGS+=-malign-double pardusCFLAGS
++MON_CFLAGS+=-malign-double pardusCFLAGS
+ endif
+ VISIBLE_SYMS=kqemu_init kqemu_exec kqemu_log kqemu_delete kqemu_get_cpu_state \
+ kqemu_debug \

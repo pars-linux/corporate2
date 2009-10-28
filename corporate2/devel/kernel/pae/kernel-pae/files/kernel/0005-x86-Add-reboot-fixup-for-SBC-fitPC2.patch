@@ -1,0 +1,36 @@
+From 77f32dfdd97857280ae1ebac64382ff082cd7ea0 Mon Sep 17 00:00:00 2001
+From: Denis Turischev <denis@compulab.co.il>
+Date: Mon, 20 Jul 2009 18:48:17 +0300
+Subject: [PATCH 5/7] x86: Add reboot fixup for SBC-fitPC2
+
+The CompuLab SBC-fitPC2 board needs to reboot via BIOS.
+
+Signed-off-by: Denis Turischev <denis@compulab.co.il>
+Signed-off-by: Mike Rapoport <mike@compulab.co.il>
+Signed-off-by: H. Peter Anvin <hpa@zytor.com>
+---
+ arch/x86/kernel/reboot.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/arch/x86/kernel/reboot.c b/arch/x86/kernel/reboot.c
+index d2d1ce8..508e982 100644
+--- a/arch/x86/kernel/reboot.c
++++ b/arch/x86/kernel/reboot.c
+@@ -249,6 +249,14 @@ static struct dmi_system_id __initdata reboot_dmi_table[] = {
+ 			DMI_MATCH(DMI_PRODUCT_NAME, "VGN-Z540N"),
+ 		},
+ 	},
++	{	/* Handle problems with rebooting on CompuLab SBC-FITPC2 */
++		.callback = set_bios_reboot,
++		.ident = "CompuLab SBC-FITPC2",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "CompuLab"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "SBC-FITPC2"),
++		},
++	},
+ 	{ }
+ };
+ 
+-- 
+1.6.3.4
+

@@ -1,0 +1,150 @@
+diff -Nur vloopback-1.2-old/Makefile vloopback-1.2/Makefile
+--- vloopback-1.2-old/Makefile	2009-01-20 14:27:50.000000000 +0200
++++ vloopback-1.2/Makefile	2009-09-18 14:39:17.732510526 +0300
+@@ -48,7 +48,7 @@
+ 	-/sbin/depmod -a
+ clean:
+ 	rm -f .*.cmd *.o *.mod.c *.ko .v* *~ core Modules.symvers Module.symvers modules.order
+-	rm -rf .tmp_versions/
++	rm -rf .tmp_versions/ Module.markers
+ 	rm -f example/dummy example/feed example/resize example/invert
+ 
+ dist: clean
+diff -Nur vloopback-1.2-old/vloopback.c vloopback-1.2/vloopback.c
+--- vloopback-1.2-old/vloopback.c	2009-01-20 14:27:50.000000000 +0200
++++ vloopback-1.2/vloopback.c	2009-09-18 14:39:17.730510131 +0300
+@@ -151,11 +151,20 @@
+  *            in Makefile.
+  *
+  * 22.12.08    (Angel Carpintero)
+- *            Allow build with kernel 2.6.28 and 2.6.27.git ( struct video_dev has not priv member anymore).          
++ *            Allow build with kernel 2.6.28 and 2.6.27.git ( struct video_dev has not priv member anymore).         
++ *
++ * 17.05.09    (Peter Holik)
++ *            Patch to allow work with kernel 2.6.29  
++ *
++ * 05.08.09   (Angel Carpintero)
++ *            Allow to compile with kernel 2.6.30.*
++ *
++ * 11.09.09   (Angel Carpintero)
++ *            Allow to compile with kernel 2.6.31
+  */
+ 
+ 
+-#define VLOOPBACK_VERSION "1.2"
++#define VLOOPBACK_VERSION "1.3-trunk"
+ 
+ /* Include files common to 2.4 and 2.6 versions */
+ #include <linux/version.h>    /* >= 2.6.14 LINUX_VERSION_CODE */ 
+@@ -164,17 +173,27 @@
+ #include <linux/module.h>
+ #include <linux/pagemap.h>
+ 
++#ifndef CONFIG_VIDEO_V4L1_COMPAT
++#error "need CONFIG_VIDEO_V4L1_COMPAT"
++#endif
++
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
+  #include <media/v4l2-common.h>
+ #endif
+ 
+ /* v4l_compat_ioctl32 */ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)
++ #ifdef __KERNEL__
++  #undef __KERNEL__
++ #endif
+  #include <media/v4l2-ioctl.h>
+ #endif
+ 
+ #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,27)
+  #define vd_private_data dev.driver_data
++ #ifndef __KERNEL__
++  #define __KERNEL__
++ #endif
+ #else
+  #define vd_private_data priv
+ #endif
+@@ -183,6 +202,7 @@
+ #include <linux/vmalloc.h>
+ #include <linux/wait.h>
+ 
++
+ /* Include files which are unique to versions */
+ #if LINUX_VERSION_CODE > KERNEL_VERSION(2,5,0)
+  #include <asm/ioctl.h>
+@@ -376,7 +396,11 @@
+     return 0;
+ }
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
+ static int vloopback_open(struct inode *inod, struct file *f)
++#else
++static int vloopback_open(struct file *f)
++#endif
+ {    
+     struct video_device *loopdev = video_devdata(f);
+     priv_ptr ptr = (priv_ptr)loopdev->vd_private_data; 
+@@ -418,6 +442,8 @@
+         }
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+         loops[nr]->pid = current->pid;
++#elif LINUX_VERSION_CODE > KERNEL_VERSION(2,6,30)        
++        loops[nr]->pid = find_pid_ns(current->pid,0);
+ #else
+         // TODO : Check in stable 2.6.27
+         loops[nr]->pid = task_pid(find_task_by_vpid(current->pid));
+@@ -430,7 +456,11 @@
+     return 0;
+ }
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
+ static int vloopback_release(struct inode * inod, struct file *f)
++#else
++static int vloopback_release(struct file *f)
++#endif
+ {
+     struct video_device *loopdev = video_devdata(f);
+     priv_ptr ptr = (priv_ptr)loopdev->vd_private_data;
+@@ -691,8 +721,12 @@
+     return 0;
+ }
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
+ static int vloopback_ioctl(struct inode *inod, struct file *f, unsigned int cmd, 
+            unsigned long arg)
++#else
++static long vloopback_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
++#endif
+ {
+     struct video_device *loopdev = video_devdata(f);
+     priv_ptr ptr = (priv_ptr)loopdev->vd_private_data;
+@@ -1115,7 +1149,11 @@
+     return 0;
+ }
+ 
+-static struct file_operations fileops_template =
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
++static const struct file_operations fileops_template =
++#else
++static const struct v4l2_file_operations fileops_template =
++#endif
+ {
+     owner:        THIS_MODULE,
+     open:        vloopback_open,
+@@ -1124,7 +1162,7 @@
+     write:        vloopback_write,
+     poll:        vloopback_poll,
+     ioctl:        vloopback_ioctl,
+-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,15)
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,15) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
+     compat_ioctl:   v4l_compat_ioctl32,
+ #endif
+     mmap:        vloopback_mmap,
+@@ -1157,7 +1195,6 @@
+         minor_in  = 2 * nr + dev_offset;
+         minor_out = 2 * nr + 1 + dev_offset;
+     }
+-
+     /* allocate space for this pipe */
+     loops[nr]= kmalloc(sizeof(struct vloopback_pipe), GFP_KERNEL);
+ 

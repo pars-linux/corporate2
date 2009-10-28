@@ -1,0 +1,28 @@
+From 7939ccec415effb9a7ecd49223cec8beb691b21d Mon Sep 17 00:00:00 2001
+From: Ping Cheng <pingc@wacom.com>
+Date: Tue, 2 Jun 2009 16:59:58 -0700
+Subject: [PATCH 39/47] Input: wacom - clear Intuos4 wheel data when finger leaves proximity
+
+Signed-off-by: Ping Cheng <pingc@wacom.com>
+Signed-off-by: Dmitry Torokhov <dtor@mail.ru>
+---
+ drivers/input/tablet/wacom_wac.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/input/tablet/wacom_wac.c b/drivers/input/tablet/wacom_wac.c
+index 2ff8990..38bf863 100644
+--- a/drivers/input/tablet/wacom_wac.c
++++ b/drivers/input/tablet/wacom_wac.c
+@@ -455,6 +455,9 @@ static int wacom_intuos_irq(struct wacom_wac *wacom, void *wcombo)
+ 			wacom_report_key(wcombo, BTN_6, (data[3] & 0x20));
+ 			if (data[1] & 0x80) {
+ 				wacom_report_abs(wcombo, ABS_WHEEL, (data[1] & 0x7f));
++			} else {
++				/* Out of proximity, clear wheel value. */
++				wacom_report_abs(wcombo, ABS_WHEEL, 0);
+ 			}
+ 			if (wacom->features->type != INTUOS4S) {
+ 				wacom_report_key(wcombo, BTN_7, (data[3] & 0x40));
+-- 
+1.6.3.4
+

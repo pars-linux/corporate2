@@ -1,0 +1,41 @@
+From 7e61615857c6fb3afbcb43f5c4e97511a923f5a8 Mon Sep 17 00:00:00 2001
+From: Chris Wilson <chris@chris-wilson.co.uk>
+Date: Thu, 10 Sep 2009 08:53:04 +0100
+Subject: [PATCH 2/2] drm/i915: Only destroy a constructed mmap offset
+
+drm_ht_remove_item() does not handle removing an absent item and the hlist
+in particular is incorrectly initialised. The easy remedy is simply skip
+calling i915_gem_free_mmap_offset() unless we have actually created the
+offset and associated ht entry.
+
+This also fixes the mishandling of a partially constructed offset which
+leaves pointers initialized after freeing them along the
+i915_gem_create_mmap_offset() error paths.
+
+In particular this should fix the oops found here:
+https://bugs.launchpad.net/ubuntu/+source/xserver-xorg-video-intel/+bug/415357/comments/8
+
+Signed-off-by: Chris Wilson <chris@chris-wilson.co.uk>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Cc: stable@kernel.org
+---
+ drivers/gpu/drm/i915/i915_gem.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/gpu/drm/i915/i915_gem.c b/drivers/gpu/drm/i915/i915_gem.c
+index 30ea4b6..e0da986 100644
+--- a/drivers/gpu/drm/i915/i915_gem.c
++++ b/drivers/gpu/drm/i915/i915_gem.c
+@@ -3834,7 +3834,8 @@ void i915_gem_free_object(struct drm_gem_object *obj)
+ 
+ 	i915_gem_object_unbind(obj);
+ 
+-	i915_gem_free_mmap_offset(obj);
++	if (obj_priv->mmap_offset)
++		i915_gem_free_mmap_offset(obj);
+ 
+ 	kfree(obj_priv->page_cpu_valid);
+ 	kfree(obj_priv->bit_17);
+-- 
+1.6.3.4
+

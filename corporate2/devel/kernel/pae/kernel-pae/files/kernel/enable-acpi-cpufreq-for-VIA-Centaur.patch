@@ -1,0 +1,31 @@
+commit 0de51088e6a82bc8413d3ca9e28bbca2788b5b53
+Author: Harald Welte <HaraldWelte@viatech.com>
+Date:   Mon Jun 8 18:27:54 2009 +0800
+
+    CPUFREQ: Enable acpi-cpufreq driver for VIA/Centaur CPUs
+    
+    The VIA/Centaur C7, C7-M and Nano CPU's all support ACPI based cpu p-states
+    using a MSR interface.  The Linux driver just never made use of it, since in
+    addition to the check for the EST flag it also checked if the vendor is Intel.
+    
+    Signed-off-by: Harald Welte <HaraldWelte@viatech.com>
+    [ Removed the vendor checks entirely  - Linus ]
+    Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+diff --git a/arch/x86/kernel/cpu/cpufreq/acpi-cpufreq.c b/arch/x86/kernel/cpu/cpufreq/acpi-cpufreq.c
+index 752e8c6..ae9b503 100644
+--- a/arch/x86/kernel/cpu/cpufreq/acpi-cpufreq.c
++++ b/arch/x86/kernel/cpu/cpufreq/acpi-cpufreq.c
+@@ -90,11 +90,7 @@ static int check_est_cpu(unsigned int cpuid)
+ {
+ 	struct cpuinfo_x86 *cpu = &cpu_data(cpuid);
+ 
+-	if (cpu->x86_vendor != X86_VENDOR_INTEL ||
+-	    !cpu_has(cpu, X86_FEATURE_EST))
+-		return 0;
+-
+-	return 1;
++	return cpu_has(cpu, X86_FEATURE_EST);
+ }
+ 
+ static unsigned extract_io(u32 value, struct acpi_cpufreq_data *data)
