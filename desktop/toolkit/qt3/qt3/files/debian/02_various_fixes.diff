@@ -1,0 +1,78 @@
+author: Martin Loschwitz <madkiss@madkiss.org>
+
+Fixes various smaller mistakes
+
+--- a/tools/tools.pro
++++ b/tools/tools.pro
+@@ -6,7 +6,12 @@
+ 		      designer \
+ 		      assistant \
+ 		      linguist
+-    unix:SUBDIRS	+= qtconfig
++    unix:SUBDIRS	+= qtconfig \
++			mergetr \
++			qconfig \
++			makeqpf \
++			msg2qm \
++			qembed
+ }
+ 
+ CONFIG+=ordered
+--- a/tools/designer/designer.pro
++++ b/tools/designer/designer.pro
+@@ -5,7 +5,9 @@
+ SUBDIRS	=  uic \
+ 	   uilib \
+ 	   designer \
+-	   app
++	   app \
++	   tools/createcw \
++	   tools/conv2ui
+ 
+ dll:SUBDIRS *=  editor plugins
+ shared:SUBDIRS *=  editor plugins
+--- a/tools/designer/tools/createcw/createcw.pro
++++ b/tools/designer/tools/createcw/createcw.pro
+@@ -3,3 +3,6 @@
+ HEADERS		=
+ SOURCES		= main.cpp
+ TARGET		= createcw
++
++target.path = $$bins.path
++INSTALLS += target
+--- a/tools/makeqpf/makeqpf.pro
++++ b/tools/makeqpf/makeqpf.pro
+@@ -5,3 +5,6 @@
+ INTERFACES	=
+ TARGET		= makeqpf
+ REQUIRES=full-config nocrosscompiler
++
++target.path = $$bins.path
++INSTALLS += target
+--- a/tools/mergetr/mergetr.pro
++++ b/tools/mergetr/mergetr.pro
+@@ -4,3 +4,6 @@
+ SOURCES		= mergetr.cpp
+ TARGET		= mergetr
+ REQUIRES=full-config nocrosscompiler
++
++target.path = $$bins.path
++INSTALLS += target
+--- a/tools/msg2qm/msg2qm.pro
++++ b/tools/msg2qm/msg2qm.pro
+@@ -5,3 +5,6 @@
+ SOURCES		= msg2qm.cpp
+ TARGET		= msg2qm
+ REQUIRES=full-config nocrosscompiler
++
++target.path = $$bins.path
++INSTALLS += target
+--- a/tools/qembed/qembed.pro
++++ b/tools/qembed/qembed.pro
+@@ -2,3 +2,6 @@
+ SOURCES = qembed.cpp
+ TARGET  = qembed
+ REQUIRES=full-config nocrosscompiler
++
++target.path = $$bins.path
++INSTALLS += target
