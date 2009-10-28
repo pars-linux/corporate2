@@ -5,23 +5,31 @@
         <Name>qt3</Name>
         <Homepage>http://www.trolltech.com/</Homepage>
         <Packager>
-            <Name>Gökçen Eraslan</Name>
-            <Email>gokcen@pardus.org.tr</Email>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
         </Packager>
         <License>QPL</License>
         <License>GPLv2</License>
         <License>GPLv3</License>
         <IsA>library</IsA>
-        <Summary>Qt graphical interface library</Summary>
-        <Description>The Qt toolkit is a comprehensive C++ application development framework.</Description>
+        <Summary>Qt3 graphical interface library</Summary>
+        <Description>The Qt3 toolkit is a comprehensive C++ application development framework.</Description>
         <Archive sha1sum="745def6250dc7f337dbb265e20bf38dcb41fd854" type="targz">ftp://ftp.trolltech.com/qt/source/qt-x11-free-3.3.8b.tar.gz</Archive>
         <BuildDependencies>
-            <Dependency>libmng</Dependency>
+            <Dependency>mesa</Dependency>
             <Dependency>cups</Dependency>
+            <Dependency>libXi</Dependency>
+            <Dependency>libmng</Dependency>
+            <Dependency>libXft</Dependency>
+            <Dependency>libXmu</Dependency>
             <Dependency>sqlite</Dependency>
             <Dependency>mysql-lib</Dependency>
-            <Dependency>postgresql-lib</Dependency>
+            <Dependency>libXrandr</Dependency>
             <Dependency>fontconfig</Dependency>
+            <Dependency>libXcursor</Dependency>
+            <Dependency>libXrender</Dependency>
+            <Dependency>libXinerama</Dependency>
+            <Dependency>postgresql-lib</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch>0001-dnd_optimization.patch</Patch>
@@ -51,6 +59,7 @@
             <Patch>uic.patch</Patch>
             <Patch>ttc-font-collection.patch</Patch>
             <Patch level="1">qt-x11-free-3.1.0-assistant.patch</Patch>
+
             <!-- http://ktown.kde.org/~seli/xinerama/ -->
             <Patch>qt-xinerema.patch</Patch>
             <Patch>use-xrandr-1.2.patch</Patch>
@@ -69,6 +78,7 @@
             <Patch level="1">kubuntu/kubuntu_09_flickerfree_qiconview.diff</Patch>
 
             <Patch level="1">no-hardcoded-font-aliases.patch</Patch>
+
             <!-- Default font should be Sans Serif, not Helvetica when KDE did not override font family -->
             <Patch level="1">default-font-sans-serif.patch</Patch>
         </Patches>
@@ -77,10 +87,18 @@
     <Package>
         <Name>qt3</Name>
         <RuntimeDependencies>
-            <Dependency>libmng</Dependency>
+            <Dependency>mesa</Dependency>
             <Dependency>cups</Dependency>
-            <Dependency>dejavu-fonts</Dependency>
+            <Dependency>libXi</Dependency>
+            <Dependency>libmng</Dependency>
+            <Dependency>libXft</Dependency>
+            <Dependency>libXext</Dependency>
+            <Dependency>libXrandr</Dependency>
+            <Dependency>libXcursor</Dependency>
+            <Dependency>libXrender</Dependency>
             <Dependency>fontconfig</Dependency>
+            <Dependency>libXinerama</Dependency>
+            <Dependency>dejavu-fonts</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="config">/etc/env.d</Path>
@@ -161,7 +179,7 @@
     <Package>
         <Name>qt3-sql-mysql</Name>
         <RuntimeDependencies>
-            <Dependency>qt3</Dependency>
+            <Dependency version="3.3.8b">qt3</Dependency>
             <Dependency>mysql-lib</Dependency>
         </RuntimeDependencies>
         <Files>
@@ -172,8 +190,8 @@
     <Package>
         <Name>qt3-sql-postgresql</Name>
         <RuntimeDependencies>
-            <Dependency>qt3</Dependency>
-            <Dependency releaseFrom="7">postgresql-lib</Dependency>
+            <Dependency version="3.3.8b">qt3</Dependency>
+            <Dependency>postgresql-lib</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="library">/usr/qt/3/plugins/sqldrivers/libqsqlpsql.so</Path>
@@ -183,7 +201,7 @@
     <Package>
         <Name>qt3-sql-sqlite</Name>
         <RuntimeDependencies>
-            <Dependency>qt3</Dependency>
+            <Dependency version="3.3.8b">qt3</Dependency>
             <Dependency>sqlite</Dependency>
         </RuntimeDependencies>
         <Files>
