@@ -1,0 +1,158 @@
+From http://hg.jannau.net/hdpvr/, pending v4l-dvb pull request
+
+---
+ drivers/media/video/hdpvr/Makefile     |    4 +--
+ drivers/media/video/hdpvr/hdpvr-core.c |    7 ++---
+ drivers/media/video/hdpvr/hdpvr-i2c.c  |   40 ++++++++++++++++++++++++++-----
+ 3 files changed, 37 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/media/video/hdpvr/Makefile b/drivers/media/video/hdpvr/Makefile
+index e0230fc..79ad2e1 100644
+--- a/drivers/media/video/hdpvr/Makefile
++++ b/drivers/media/video/hdpvr/Makefile
+@@ -1,6 +1,4 @@
+-hdpvr-objs	:= hdpvr-control.o hdpvr-core.o hdpvr-video.o
+-
+-hdpvr-$(CONFIG_I2C) += hdpvr-i2c.o
++hdpvr-objs	:= hdpvr-control.o hdpvr-core.o hdpvr-i2c.o hdpvr-video.o
+ 
+ obj-$(CONFIG_VIDEO_HDPVR) += hdpvr.o
+ 
+diff --git a/drivers/media/video/hdpvr/hdpvr-core.c b/drivers/media/video/hdpvr/hdpvr-core.c
+index 188bd5a..779f907 100644
+--- a/drivers/media/video/hdpvr/hdpvr-core.c
++++ b/drivers/media/video/hdpvr/hdpvr-core.c
+@@ -362,9 +362,8 @@ static int hdpvr_probe(struct usb_interface *interface,
+ 		goto error;
+ 	}
+ 
+-#ifdef CONFIG_I2C
+-	/* until i2c is working properly */
+-	retval = 0; /* hdpvr_register_i2c_adapter(dev); */
++#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
++	retval = hdpvr_register_i2c_adapter(dev);
+ 	if (retval < 0) {
+ 		v4l2_err(&dev->v4l2_dev, "registering i2c adapter failed\n");
+ 		goto error;
+@@ -414,7 +413,7 @@ static void hdpvr_disconnect(struct usb_interface *interface)
+ 	mutex_unlock(&dev->io_mutex);
+ 
+ 	/* deregister I2C adapter */
+-#ifdef CONFIG_I2C
++#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
+ 	mutex_lock(&dev->i2c_mutex);
+ 	if (dev->i2c_adapter)
+ 		i2c_del_adapter(dev->i2c_adapter);
+diff --git a/drivers/media/video/hdpvr/hdpvr-i2c.c b/drivers/media/video/hdpvr/hdpvr-i2c.c
+index c4b5d15..e0ae619 100644
+--- a/drivers/media/video/hdpvr/hdpvr-i2c.c
++++ b/drivers/media/video/hdpvr/hdpvr-i2c.c
+@@ -10,6 +10,8 @@
+  *
+  */
+ 
++#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
++
+ #include <linux/i2c.h>
+ 
+ #include "hdpvr.h"
+@@ -22,7 +24,7 @@
+ #define REQTYPE_I2C_WRITE_STATT	0xd0
+ 
+ static int hdpvr_i2c_read(struct hdpvr_device *dev, unsigned char addr,
+-			  char *data, int len)
++			  char *data, int len, int bus)
+ {
+ 	int ret;
+ 	char *buf = kmalloc(len, GFP_KERNEL);
+@@ -32,7 +34,7 @@ static int hdpvr_i2c_read(struct hdpvr_device *dev, unsigned char addr,
+ 	ret = usb_control_msg(dev->udev,
+ 			      usb_rcvctrlpipe(dev->udev, 0),
+ 			      REQTYPE_I2C_READ, CTRL_READ_REQUEST,
+-			      0x100|addr, 0, buf, len, 1000);
++			      bus<<8 | addr, 0, buf, len, 1000);
+ 
+ 	if (ret == len) {
+ 		memcpy(data, buf, len);
+@@ -46,7 +48,7 @@ static int hdpvr_i2c_read(struct hdpvr_device *dev, unsigned char addr,
+ }
+ 
+ static int hdpvr_i2c_write(struct hdpvr_device *dev, unsigned char addr,
+-			   char *data, int len)
++			   char *data, int len, int bus)
+ {
+ 	int ret;
+ 	char *buf = kmalloc(len, GFP_KERNEL);
+@@ -57,7 +59,7 @@ static int hdpvr_i2c_write(struct hdpvr_device *dev, unsigned char addr,
+ 	ret = usb_control_msg(dev->udev,
+ 			      usb_sndctrlpipe(dev->udev, 0),
+ 			      REQTYPE_I2C_WRITE, CTRL_WRITE_REQUEST,
+-			      0x100|addr, 0, buf, len, 1000);
++			      bus<<8 | addr, 0, buf, len, 1000);
+ 
+ 	if (ret < 0)
+ 		goto error;
+@@ -67,7 +69,7 @@ static int hdpvr_i2c_write(struct hdpvr_device *dev, unsigned char addr,
+ 			      REQTYPE_I2C_WRITE_STATT, CTRL_READ_REQUEST,
+ 			      0, 0, buf, 2, 1000);
+ 
+-	if (ret == 2)
++	if ((ret == 2) && (buf[1] == (len - 1)))
+ 		ret = 0;
+ 	else if (ret >= 0)
+ 		ret = -EIO;
+@@ -93,10 +95,10 @@ static int hdpvr_transfer(struct i2c_adapter *i2c_adapter, struct i2c_msg *msgs,
+ 
+ 		if (msgs[i].flags & I2C_M_RD)
+ 			retval = hdpvr_i2c_read(dev, addr, msgs[i].buf,
+-						msgs[i].len);
++						msgs[i].len, 1);
+ 		else
+ 			retval = hdpvr_i2c_write(dev, addr, msgs[i].buf,
+-						 msgs[i].len);
++						 msgs[i].len, 1);
+ 	}
+ 
+ 	mutex_unlock(&dev->i2c_mutex);
+@@ -114,6 +116,26 @@ static struct i2c_algorithm hdpvr_algo = {
+ 	.functionality = hdpvr_functionality,
+ };
+ 
++static int hdpvr_activate_ir(struct hdpvr_device *dev)
++{
++	char buffer[8];
++
++	mutex_lock(&dev->i2c_mutex);
++
++	hdpvr_i2c_read(dev, 0x54, buffer, 1, 0);
++
++	buffer[0] = 0;
++	buffer[1] = 0x8;
++	hdpvr_i2c_write(dev, 0x54, buffer, 2, 1);
++
++	buffer[1] = 0x18;
++	hdpvr_i2c_write(dev, 0x54, buffer, 2, 1);
++
++	mutex_unlock(&dev->i2c_mutex);
++	return 0;
++}
++
++
+ int hdpvr_register_i2c_adapter(struct hdpvr_device *dev)
+ {
+ 	struct i2c_adapter *i2c_adap;
+@@ -123,6 +145,8 @@ int hdpvr_register_i2c_adapter(struct hdpvr_device *dev)
+ 	if (i2c_adap == NULL)
+ 		goto error;
+ 
++	hdpvr_activate_ir(dev);
++
+ 	strlcpy(i2c_adap->name, "Hauppauge HD PVR I2C",
+ 		sizeof(i2c_adap->name));
+ 	i2c_adap->algo  = &hdpvr_algo;
+@@ -143,3 +167,5 @@ int hdpvr_register_i2c_adapter(struct hdpvr_device *dev)
+ error:
+ 	return retval;
+ }
++
++#endif /* CONFIG_I2C */

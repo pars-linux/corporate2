@@ -1,0 +1,31 @@
+From: Jeremy Fitzhardinge <jeremy.fitzhardinge@citrix.com>
+Date: Mon, 17 Aug 2009 19:25:41 +0000 (-0700)
+Subject: x86: make sure load_percpu_segment has no stackprotector
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=5416c2663517ebd0be0664c4d4ce3df0b116c059
+
+x86: make sure load_percpu_segment has no stackprotector
+
+load_percpu_segment() is used to set up the per-cpu segment registers,
+which are also used for -fstack-protector.  Make sure that the
+load_percpu_segment() function doesn't have stackprotector enabled.
+
+[ Impact: allow percpu setup before calling stack-protected functions ]
+
+Signed-off-by: Jeremy Fitzhardinge <jeremy.fitzhardinge@citrix.com>
+---
+
+diff --git a/arch/x86/kernel/cpu/Makefile b/arch/x86/kernel/cpu/Makefile
+index 4e242f9..8b5b9b6 100644
+--- a/arch/x86/kernel/cpu/Makefile
++++ b/arch/x86/kernel/cpu/Makefile
+@@ -7,6 +7,10 @@ ifdef CONFIG_FUNCTION_TRACER
+ CFLAGS_REMOVE_common.o = -pg
+ endif
+ 
++# Make sure load_percpu_segment has no stackprotector
++nostackp := $(call cc-option, -fno-stack-protector)
++CFLAGS_common.o		:= $(nostackp)
++
+ obj-y			:= intel_cacheinfo.o addon_cpuid_features.o
+ obj-y			+= proc.o capflags.o powerflags.o common.o
+ obj-y			+= vmware.o hypervisor.o

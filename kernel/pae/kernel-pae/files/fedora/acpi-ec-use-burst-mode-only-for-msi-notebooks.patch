@@ -1,0 +1,36 @@
+From: Alexey Starikovskiy <astarikovskiy@suse.de>
+Date: Fri, 28 Aug 2009 19:29:44 +0000 (+0400)
+Subject: ACPI: EC: use BURST mode only for MSI notebooks
+X-Git-Tag: v2.6.32-rc1~171^2~11^2~1
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=6a63b06f3c494cc87eade97f081300bda60acec7
+
+ACPI: EC: use BURST mode only for MSI notebooks
+
+Signed-off-by: Alexey Starikovskiy <astarikovskiy@suse.de>
+Signed-off-by: Len Brown <len.brown@intel.com>
+---
+
+diff --git a/drivers/acpi/ec.c b/drivers/acpi/ec.c
+index 839b542..788db78 100644
+--- a/drivers/acpi/ec.c
++++ b/drivers/acpi/ec.c
+@@ -575,7 +575,8 @@ acpi_ec_space_handler(u32 function, acpi_physical_address address,
+ 	if (bits != 8 && acpi_strict)
+ 		return AE_BAD_PARAMETER;
+ 
+-	acpi_ec_burst_enable(ec);
++	if (EC_FLAGS_MSI)
++		acpi_ec_burst_enable(ec);
+ 
+ 	if (function == ACPI_READ) {
+ 		result = acpi_ec_read(ec, address, &temp);
+@@ -596,7 +597,8 @@ acpi_ec_space_handler(u32 function, acpi_physical_address address,
+ 		}
+ 	}
+ 
+-	acpi_ec_burst_disable(ec);
++	if (EC_FLAGS_MSI)
++		acpi_ec_burst_disable(ec);
+ 
+ 	switch (result) {
+ 	case -EINVAL:

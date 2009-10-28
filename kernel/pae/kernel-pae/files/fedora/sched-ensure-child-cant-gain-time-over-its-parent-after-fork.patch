@@ -1,0 +1,62 @@
+From: Mike Galbraith <efault@gmx.de>
+Date: Tue, 8 Sep 2009 09:12:28 +0000 (+0200)
+Subject: sched: Ensure that a child can't gain time over it's parent after fork()
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=b5d9d734a53e0204aab0089079cbde2a1285a38f
+
+sched: Ensure that a child can't gain time over it's parent after fork()
+
+A fork/exec load is usually "pass the baton", so the child
+should never be placed behind the parent.  With START_DEBIT we
+make room for the new task, but with child_runs_first, that
+room comes out of the _parent's_ hide. There's nothing to say
+that the parent wasn't ahead of min_vruntime at fork() time,
+which means that the "baton carrier", who is essentially the
+parent in drag, can gain time and increase scheduling latencies
+for waiters.
+
+With NEW_FAIR_SLEEPERS + START_DEBIT + child_runs_first
+enabled, we essentially pass the sleeper fairness off to the
+child, which is fine, but if we don't base placement on the
+parent's updated vruntime, we can end up compounding latency
+woes if the child itself then does fork/exec.  The debit
+incurred at fork doesn't hurt the parent who is then going to
+sleep and maybe exit, but the child who acquires the error
+harms all comers.
+
+This improves latencies of make -j<n> kernel build workloads.
+
+Reported-by: Jens Axboe <jens.axboe@oracle.com>
+Signed-off-by: Mike Galbraith <efault@gmx.de>
+Acked-by: Peter Zijlstra <a.p.zijlstra@chello.nl>
+LKML-Reference: <new-submission>
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+---
+
+diff --git a/kernel/sched_fair.c b/kernel/sched_fair.c
+index cc97ea4..e386e5d 100644
+--- a/kernel/sched_fair.c
++++ b/kernel/sched_fair.c
+@@ -728,11 +728,11 @@ place_entity(struct cfs_rq *cfs_rq, struct sched_entity *se, int initial)
+ 
+ 			vruntime -= thresh;
+ 		}
+-
+-		/* ensure we never gain time by being placed backwards. */
+-		vruntime = max_vruntime(se->vruntime, vruntime);
+ 	}
+ 
++	/* ensure we never gain time by being placed backwards. */
++	vruntime = max_vruntime(se->vruntime, vruntime);
++
+ 	se->vruntime = vruntime;
+ }
+ 
+@@ -1756,6 +1756,8 @@ static void task_new_fair(struct rq *rq, struct task_struct *p)
+ 	sched_info_queued(p);
+ 
+ 	update_curr(cfs_rq);
++	if (curr)
++		se->vruntime = curr->vruntime;
+ 	place_entity(cfs_rq, se, 1);
+ 
+ 	/* 'curr' will be NULL if the child belongs to a different group */

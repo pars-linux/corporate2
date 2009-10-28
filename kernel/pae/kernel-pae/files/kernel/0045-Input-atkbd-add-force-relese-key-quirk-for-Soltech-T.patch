@@ -1,0 +1,57 @@
+From b6cfd177c5ec7c0898ad561248c39068b5ca36ea Mon Sep 17 00:00:00 2001
+From: Jerone Young <jerone.young@canonical.com>
+Date: Mon, 20 Jul 2009 22:14:59 -0700
+Subject: [PATCH 45/47] Input: atkbd - add force relese key quirk for Soltech TA12
+
+Netbooks based on the Soltech TA12 do not send a key release
+for volume keys causing Linux to think the key is constantly
+being pressed forever.
+
+Added quirk data for forced release keys.
+
+BugLink: https://bugs.launchpad.net//bugs/397499
+
+Signed-off-by: Jerone Young <jerone.young@canonical.com>
+Signed-off-by: Tim Gardner <tim.gardner@canonical.com>
+Signed-off-by: Dmitry Torokhov <dtor@mail.ru>
+---
+ drivers/input/keyboard/atkbd.c |   16 ++++++++++++++++
+ 1 files changed, 16 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/input/keyboard/atkbd.c b/drivers/input/keyboard/atkbd.c
+index 809a7dd..95fe045 100644
+--- a/drivers/input/keyboard/atkbd.c
++++ b/drivers/input/keyboard/atkbd.c
+@@ -909,6 +909,13 @@ static unsigned int atkbd_amilo_xi3650_forced_release_keys[] = {
+ };
+ 
+ /*
++ * Soltech TA12 system with broken key release on volume keys and mute key
++ */
++static unsigned int atkdb_soltech_ta12_forced_release_keys[] = {
++	0xa0, 0xae, 0xb0, -1U
++};
++
++/*
+  * atkbd_set_keycode_table() initializes keyboard's keycode table
+  * according to the selected scancode set
+  */
+@@ -1592,6 +1599,15 @@ static struct dmi_system_id atkbd_dmi_quirk_table[] __initdata = {
+ 		.callback = atkbd_setup_forced_release,
+ 		.driver_data = atkbd_amilo_xi3650_forced_release_keys,
+ 	},
++	{
++		.ident = "Soltech Corporation TA12",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "Soltech Corporation"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "TA12"),
++		},
++		.callback = atkbd_setup_forced_release,
++		.driver_data = atkdb_soltech_ta12_forced_release_keys,
++	},
+ 	{ }
+ };
+ 
+-- 
+1.6.3.4
+

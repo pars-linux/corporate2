@@ -1,0 +1,71 @@
+commit 68924920cb457ac44b14ca38343954bdcee046fc
+Author: Jonas Sjöquist <jonas.sjoquist@ericsson.com>
+Date:   Thu Jun 18 01:50:52 2009 +0000
+
+    cdc_ether: additional PID's to the whitelist
+    
+    This patch adds five PID's to the whitelist set of devices.
+    
+    Devices added to the whitelist:
+    
+    Dell Wireless 5530 HSPA
+    Ericsson Mobile Broadband Module variants (F3507g, F3607gw and F3307)
+    Toshiba F3507g
+    
+    Signed-off-by: Jonas Sjöquist <jonas.sjoquist@ericsson.com>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+diff --git a/drivers/net/usb/Kconfig b/drivers/net/usb/Kconfig
+index 3717569..a906d39 100644
+--- a/drivers/net/usb/Kconfig
++++ b/drivers/net/usb/Kconfig
+@@ -169,10 +169,12 @@ config USB_NET_CDCETHER
+ 	  The Linux-USB CDC Ethernet Gadget driver is an open implementation.
+  	  This driver should work with at least the following devices:
+ 
++	    * Dell Wireless 5530 HSPA
+  	    * Ericsson PipeRider (all variants)
++	    * Ericsson Mobile Broadband Module (all variants)
+  	    * Motorola (DM100 and SB4100)
+  	    * Broadcom Cable Modem (reference design)
+- 	    * Toshiba PCX1100U
++	    * Toshiba (PCX1100U and F3507g)
+ 	    * ...
+ 
+ 	  This driver creates an interface named "ethX", where X depends on
+diff --git a/drivers/net/usb/cdc_ether.c b/drivers/net/usb/cdc_ether.c
+index 01fd528..4a6aff5 100644
+--- a/drivers/net/usb/cdc_ether.c
++++ b/drivers/net/usb/cdc_ether.c
+@@ -533,6 +533,31 @@ static const struct usb_device_id	products [] = {
+ 	USB_DEVICE_AND_INTERFACE_INFO(0x0bdb, 0x1900, USB_CLASS_COMM,
+ 			USB_CDC_SUBCLASS_MDLM, USB_CDC_PROTO_NONE),
+ 	.driver_info = (unsigned long) &cdc_info,
++}, {
++	/* Ericsson F3507g ver. 2 */
++	USB_DEVICE_AND_INTERFACE_INFO(0x0bdb, 0x1902, USB_CLASS_COMM,
++			USB_CDC_SUBCLASS_MDLM, USB_CDC_PROTO_NONE),
++	.driver_info = (unsigned long) &cdc_info,
++}, {
++	/* Ericsson F3607gw */
++	USB_DEVICE_AND_INTERFACE_INFO(0x0bdb, 0x1904, USB_CLASS_COMM,
++			USB_CDC_SUBCLASS_MDLM, USB_CDC_PROTO_NONE),
++	.driver_info = (unsigned long) &cdc_info,
++}, {
++	/* Ericsson F3307 */
++	USB_DEVICE_AND_INTERFACE_INFO(0x0bdb, 0x1906, USB_CLASS_COMM,
++			USB_CDC_SUBCLASS_MDLM, USB_CDC_PROTO_NONE),
++	.driver_info = (unsigned long) &cdc_info,
++}, {
++	/* Toshiba F3507g */
++	USB_DEVICE_AND_INTERFACE_INFO(0x0930, 0x130b, USB_CLASS_COMM,
++			USB_CDC_SUBCLASS_MDLM, USB_CDC_PROTO_NONE),
++	.driver_info = (unsigned long) &cdc_info,
++}, {
++	/* Dell F3507g */
++	USB_DEVICE_AND_INTERFACE_INFO(0x413c, 0x8147, USB_CLASS_COMM,
++			USB_CDC_SUBCLASS_MDLM, USB_CDC_PROTO_NONE),
++	.driver_info = (unsigned long) &cdc_info,
+ },
+ 	{ },		// END
+ };

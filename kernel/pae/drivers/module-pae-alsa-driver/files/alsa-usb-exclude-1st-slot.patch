@@ -1,0 +1,12 @@
+diff -ur alsa-driver-1.0.15.orig/alsa-kernel/usb/usbaudio.c alsa-driver-1.0.15/alsa-kernel/usb/usbaudio.c
+--- alsa-driver-1.0.15.orig/alsa-kernel/usb/usbaudio.c	2007-10-15 11:45:06.000000000 +0300
++++ alsa-driver-1.0.15/alsa-kernel/usb/usbaudio.c	2007-12-18 15:12:02.000000000 +0200
+@@ -63,7 +63,7 @@
+ MODULE_SUPPORTED_DEVICE("{{Generic,USB Audio}}");
+ 
+ 
+-static int index[SNDRV_CARDS] = SNDRV_DEFAULT_IDX;	/* Index 0-MAX */
++static int index[SNDRV_CARDS] = {[0 ... (SNDRV_CARDS-1)] = -2};	/* exclude the 1st slot */
+ static char *id[SNDRV_CARDS] = SNDRV_DEFAULT_STR;	/* ID for this card */
+ static int enable[SNDRV_CARDS] = SNDRV_DEFAULT_ENABLE_PNP;	/* Enable this card */
+ static int vid[SNDRV_CARDS] = { [0 ... (SNDRV_CARDS-1)] = -1 }; /* Vendor ID for this card */

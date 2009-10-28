@@ -1,0 +1,56 @@
+From 8475b812c6202066f52ca6e76417bdf90eed137b Mon Sep 17 00:00:00 2001
+From: =?utf-8?q?Micha=C5=82=20Miros=C5=82aw?= <mirq-linux@rere.qmqm.pl>
+Date: Sat, 13 Jun 2009 12:37:59 +0200
+Subject: [PATCH 4/5] cb710: more cleanup for the DEBUG case.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Michał Mirosław <mirq-linux@rere.qmqm.pl>
+Signed-off-by: Pierre Ossman <pierre@ossman.eu>
+---
+ drivers/misc/cb710/Kconfig |    4 ++++
+ drivers/mmc/host/Makefile  |    3 +++
+ include/linux/cb710.h      |    3 ---
+ 3 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/misc/cb710/Kconfig b/drivers/misc/cb710/Kconfig
+index 0b55079..22429b8 100644
+--- a/drivers/misc/cb710/Kconfig
++++ b/drivers/misc/cb710/Kconfig
+@@ -19,3 +19,7 @@ config CB710_DEBUG
+ 	  This is an option for use by developers; most people should
+ 	  say N here.  This adds a lot of debugging output to dmesg.
+ 
++config CB710_DEBUG_ASSUMPTIONS
++	bool
++	depends on CB710_CORE != n
++	default y
+diff --git a/drivers/mmc/host/Makefile b/drivers/mmc/host/Makefile
+index ce9c8b6..4806fd7 100644
+--- a/drivers/mmc/host/Makefile
++++ b/drivers/mmc/host/Makefile
+@@ -31,3 +31,6 @@ obj-$(CONFIG_MMC_SDRICOH_CS)	+= sdricoh_cs.o
+ obj-$(CONFIG_MMC_TMIO)		+= tmio_mmc.o
+ obj-$(CONFIG_MMC_CB710)	+= cb710-mmc.o
+ 
++ifeq ($(CONFIG_CB710_DEBUG),y)
++	CFLAGS-cb710-mmc	+= -DDEBUG
++endif
+diff --git a/include/linux/cb710.h b/include/linux/cb710.h
+index a09213b..63bc9a4 100644
+--- a/include/linux/cb710.h
++++ b/include/linux/cb710.h
+@@ -10,9 +10,6 @@
+ #ifndef LINUX_CB710_DRIVER_H
+ #define LINUX_CB710_DRIVER_H
+ 
+-/* verify assumptions on platform_device framework */
+-#define CONFIG_CB710_DEBUG_ASSUMPTIONS
+-
+ #include <linux/io.h>
+ #include <linux/interrupt.h>
+ #include <linux/spinlock.h>
+-- 
+1.6.3
+
