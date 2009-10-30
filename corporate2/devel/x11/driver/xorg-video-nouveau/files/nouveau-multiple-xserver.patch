@@ -1,0 +1,157 @@
+From 2c643c98ae006460c0a3fdb5f9660bd3ea9a4fce Mon Sep 17 00:00:00 2001
+From: Ben Skeggs <bskeggs@redhat.com>
+Date: Sun, 28 Jun 2009 20:35:54 +1000
+Subject: [PATCH 1/3] f12: hack to support multiple xserver instances
+
+---
+ src/nv_driver.c |   84 +++++++++++++++++++++++++++++++++++++-----------------
+ 1 files changed, 57 insertions(+), 27 deletions(-)
+
+diff --git a/src/nv_driver.c b/src/nv_driver.c
+index 9317b5e..37a8da7 100644
+--- a/src/nv_driver.c
++++ b/src/nv_driver.c
+@@ -21,6 +21,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <sys/ioctl.h>
+ 
+ #include "nv_include.h"
+ 
+@@ -377,6 +378,7 @@ NV50ReleaseDisplay(ScrnInfoPtr pScrn)
+  */
+ 
+ /* Mandatory */
++static void NVMapMemGART(ScrnInfoPtr);
+ static Bool
+ NVEnterVT(int scrnIndex, int flags)
+ {
+@@ -390,8 +392,10 @@ NVEnterVT(int scrnIndex, int flags)
+ 	if (ret)
+ 		ErrorF("Unable to get master: %d\n", ret);
+ 
+-	if (!pNv->NoAccel)
++	if (!pNv->NoAccel) {
++		NVMapMemGART(pScrn);
+ 		NVAccelCommonInit(pScrn);
++	}
+ 
+ 	if (!pNv->kms_enable) {
+ 		/* Save current state, VGA fonts etc */
+@@ -440,6 +444,8 @@ NVLeaveVT(int scrnIndex, int flags)
+ 
+ 	NVSync(pScrn);
+ 
++	nouveau_bo_ref(NULL, &pNv->GART);
++
+ 	ret = drmDropMaster(nouveau_device(pNv->dev)->fd);
+ 	if (ret)
+ 		ErrorF("Error dropping master: %d\n", ret);
+@@ -1185,6 +1191,52 @@ NVPreInit(ScrnInfoPtr pScrn, int flags)
+ 
+ 
+ static Bool
++NVMapMemSharedFB(ScrnInfoPtr pScrn)
++{
++	NVPtr pNv = NVPTR(pScrn);
++	uint64_t handle;
++	int ret;
++
++	ret = nouveau_device_get_param(pNv->dev, 0xdeadcafe00000001, &handle);
++	if (ret)
++		return FALSE;
++
++	ret = nouveau_bo_wrap(pNv->dev, handle, &pNv->offscreen);
++	if (ret)
++		return FALSE;
++
++	return TRUE;
++}
++
++static void
++NVMapMemGART(ScrnInfoPtr pScrn) {
++	NVPtr pNv = NVPTR(pScrn);
++	int size;
++
++	if (pNv->AGPSize) {
++		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
++			   "AGPGART: %dMiB available\n",
++			   (unsigned int)(pNv->AGPSize >> 20));
++		if (pNv->AGPSize > (16*1024*1024))
++			size = 16*1024*1024;
++		else
++			/* always leave 512kb for other things like the fifos */
++			size = pNv->AGPSize - 512*1024;
++	} else {
++		size = (4 << 20) - (1 << 18) ;
++		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
++			   "GART: PCI DMA - using %dKiB\n",
++			   size >> 10);
++	}
++
++	if (nouveau_bo_new(pNv->dev, NOUVEAU_BO_GART | NOUVEAU_BO_MAP,
++			   0, size, &pNv->GART)) {
++		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
++			   "Unable to allocate GART memory\n");
++	}
++}
++
++static Bool
+ NVMapMem(ScrnInfoPtr pScrn)
+ {
+ 	NVPtr pNv = NVPTR(pScrn);
+@@ -1224,6 +1276,9 @@ NVMapMem(ScrnInfoPtr pScrn)
+ 		goto skip_offscreen_gart;
+ 
+ 	if (!pNv->exa_driver_pixmaps) {
++		if (NVMapMemSharedFB(pScrn))
++			goto skip_fb;
++
+ 		size = (pNv->VRAMPhysicalSize / 2) - size;
+ 
+ 		if (pNv->Architecture >= NV_ARCH_50) {
+@@ -1240,6 +1295,7 @@ NVMapMem(ScrnInfoPtr pScrn)
+ 			return FALSE;
+ 		}
+ 
++skip_fb:
+ 		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+ 			   "Allocated %dMiB VRAM for offscreen pixmaps\n",
+ 			   (uint32_t)(pNv->offscreen->size >> 20));
+@@ -1249,32 +1305,6 @@ NVMapMem(ScrnInfoPtr pScrn)
+ 		nouveau_bo_unmap(pNv->offscreen);
+ 	}
+ 
+-	if (pNv->AGPSize) {
+-		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+-			   "AGPGART: %dMiB available\n",
+-			   (unsigned int)(pNv->AGPSize >> 20));
+-		if (pNv->AGPSize > (16*1024*1024))
+-			size = 16*1024*1024;
+-		else
+-			/* always leave 512kb for other things like the fifos */
+-			size = pNv->AGPSize - 512*1024;
+-	} else {
+-		size = (4 << 20) - (1 << 18) ;
+-		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+-			   "GART: PCI DMA - using %dKiB\n", size >> 10);
+-	}
+-
+-	if (nouveau_bo_new(pNv->dev, NOUVEAU_BO_GART | NOUVEAU_BO_MAP,
+-			   0, size, &pNv->GART)) {
+-		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+-			   "Unable to allocate GART memory\n");
+-	}
+-	if (pNv->GART) {
+-		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+-			   "GART: Allocated %dMiB as a scratch buffer\n",
+-			   (unsigned int)(pNv->GART->size >> 20));
+-	}
+-
+ skip_offscreen_gart:
+ 	/* We don't need to allocate cursors / lut here if we're using
+ 	 * kernel modesetting
+-- 
+1.6.4.2
+

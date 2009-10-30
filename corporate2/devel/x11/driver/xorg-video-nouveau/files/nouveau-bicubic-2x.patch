@@ -1,0 +1,39 @@
+From 4c5b7cde89e9411aa5b107be48ce164837b05881 Mon Sep 17 00:00:00 2001
+From: Ben Skeggs <skeggsb@beleth.localdomain>
+Date: Mon, 4 May 2009 17:04:34 +1000
+Subject: [PATCH 2/3] xv: only use bicubic filtering when scaling >=2x
+
+---
+ src/nv30_xv_tex.c |    2 +-
+ src/nv40_xv_tex.c |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/nv30_xv_tex.c b/src/nv30_xv_tex.c
+index cd76279..25cae64 100644
+--- a/src/nv30_xv_tex.c
++++ b/src/nv30_xv_tex.c
+@@ -324,7 +324,7 @@ NV30PutTextureImage(ScrnInfoPtr pScrn, struct nouveau_bo *src, int src_offset,
+ 	BEGIN_RING(chan, rankine, NV34TCL_TX_ENABLE(3), 1);
+ 	OUT_RING  (chan, 0x0);
+ 
+-	if (pPriv->bicubic)
++	if (pPriv->bicubic && (drw_w / 2 >= src_w) && (drw_h / 2 >= src_h))
+ 		NV30_LoadFragProg(pScrn, &nv30_fp_yv12_bicubic);
+ 	else
+ 		NV30_LoadFragProg(pScrn, &nv30_fp_yv12_bilinear);
+diff --git a/src/nv40_xv_tex.c b/src/nv40_xv_tex.c
+index 3d1f146..e0efb41 100644
+--- a/src/nv40_xv_tex.c
++++ b/src/nv40_xv_tex.c
+@@ -299,7 +299,7 @@ NV40PutTextureImage(ScrnInfoPtr pScrn,
+ 	NV40VideoTexture(pScrn, src, src_offset2, src_w/2, src_h/2, src_pitch, 2);
+ 
+ 	NV40_LoadVtxProg(pScrn, &nv40_vp_video);
+-	if (pPriv->bicubic)
++	if (pPriv->bicubic && (drw_w / 2 >= src_w) && (drw_h / 2 >= src_h))
+ 		NV40_LoadFragProg(pScrn, &nv40_fp_yv12_bicubic);
+ 	else
+ 		NV40_LoadFragProg(pScrn, &nv30_fp_yv12_bilinear);
+-- 
+1.6.4.2
+
