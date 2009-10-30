@@ -6,12 +6,17 @@
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from pisi.actionsapi import kde
+from pisi.actionsapi import get
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import shelltools
+
+shelltools.export("HOME", get.workDIR())
 
 def setup():
     kde.make("-f admin/Makefile.common")
 
-    kde.configure("--enable-kipi")
+    kde.configure("--without-arts \
+                   --with-kipi")
 
 def build():
     kde.make()
