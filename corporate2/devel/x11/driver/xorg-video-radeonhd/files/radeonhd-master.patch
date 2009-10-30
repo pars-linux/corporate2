@@ -1,0 +1,211 @@
+diff --git a/configure.ac b/configure.ac
+index 3615a9b..712e8e2 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -169,10 +169,6 @@ if test "x$DRI" = xyes; then
+ 	PKG_CHECK_MODULES(DRI, [libdrm >= 2.2 xf86driproto glproto],, [USE_DRI=no])
+ fi
+ 
+-if test "x$USE_DRI" = xyes; then
+-	AC_CHECK_HEADER(GL/gl.h, [USE_DRI="yes"], [USE_DRI="no"])
+-fi
+-
+ AC_MSG_CHECKING([whether to enable DRI support])
+ AC_MSG_RESULT($USE_DRI)
+ test "x$USE_DRI" = xyes && AC_DEFINE(USE_DRI, 1, [Build support for DRI])
+diff --git a/src/rhd_acpi.c b/src/rhd_acpi.c
+index 3831925..78751e5 100644
+--- a/src/rhd_acpi.c
++++ b/src/rhd_acpi.c
+@@ -28,6 +28,7 @@
+ 
+ #if HAVE_XF86_ANSIC_H
+ # include "xf86_ansic.h"
++# define dirent _xf86dirent
+ #else
+ # include <unistd.h>
+ # include <sys/types.h>
+diff --git a/src/rhd_atomout.c b/src/rhd_atomout.c
+index 9d50ade..5f3db26 100644
+--- a/src/rhd_atomout.c
++++ b/src/rhd_atomout.c
+@@ -582,7 +582,7 @@ atomGetBacklight(struct rhdOutput *Output)
+ 
+     if (Private->BlLevel == -1) return -1;
+ 
+-    RHDAtomBIOSScratchBlLevel(rhdPtr, rhdBIOSScratchBlSet, &level);
++    RHDAtomBIOSScratchBlLevel(rhdPtr, rhdBIOSScratchBlGet, &level);
+ 
+     return level;
+ }
+diff --git a/src/rhd_driver.c b/src/rhd_driver.c
+index e502c5f..f08c097 100644
+--- a/src/rhd_driver.c
++++ b/src/rhd_driver.c
+@@ -3061,7 +3061,8 @@ rhdGetCardType(RHDPtr rhdPtr)
+ {
+     uint32_t cmd_stat;
+ 
+-    if (rhdPtr->ChipSet == RHD_RS780)
++    if ((rhdPtr->ChipSet == RHD_RS780) ||
++	(rhdPtr->ChipSet == RHD_RS880))
+ 	return RHD_CARD_PCIE;
+ 
+ #ifdef XSERVER_LIBPCIACCESS
+diff --git a/src/rhd_i2c.c b/src/rhd_i2c.c
+index d5b698a..b59f3d4 100644
+--- a/src/rhd_i2c.c
++++ b/src/rhd_i2c.c
+@@ -39,6 +39,7 @@
+ 
+ #include "rhd.h"
+ #include "rhd_i2c.h"
++#include "rhd_pm.h"
+ #include "rhd_regs.h"
+ 
+ #ifdef ATOM_BIOS
+@@ -1157,43 +1158,40 @@ rhdTearDownI2C(I2CBusPtr *I2C)
+ static CARD32
+ rhdGetI2CPrescale(RHDPtr rhdPtr)
+ {
+-#ifdef ATOM_BIOS
+-    AtomBiosArgRec atomBiosArg;
+     RHDFUNC(rhdPtr);
+ 
+     if (rhdPtr->ChipSet < RHD_R600) {
+-	if (RHDAtomBiosFunc(rhdPtr->scrnIndex, rhdPtr->atomBIOS,
+-			    ATOM_GET_DEFAULT_ENGINE_CLOCK, &atomBiosArg)
+-	    == ATOM_SUCCESS)
+-	    return (0x7f << 8)
+-		+ (atomBiosArg.val / (4 * 0x7f * TARGET_HW_I2C_CLOCK));
+-	else
+-	    return (0x7f << 8)
+-		+ (DEFAULT_ENGINE_CLOCK / (4 * 0x7f * TARGET_HW_I2C_CLOCK));
+-    } else if (rhdPtr->ChipSet < RHD_RV620) {
+-	if (RHDAtomBiosFunc(rhdPtr->scrnIndex, rhdPtr->atomBIOS,
+-			    ATOM_GET_REF_CLOCK, &atomBiosArg) == ATOM_SUCCESS)
+-	    return (atomBiosArg.val / TARGET_HW_I2C_CLOCK);
+-	else
+-	    return (DEFAULT_REF_CLOCK / TARGET_HW_I2C_CLOCK);
++
++	CARD32 EngineClock = DEFAULT_ENGINE_CLOCK;
++	if (rhdPtr->Pm)
++	    EngineClock = rhdPtr->Pm->Current.EngineClock;
++#ifdef ATOM_BIOS
++	else {
++	    AtomBiosArgRec atomBiosArg;
++	    if (RHDAtomBiosFunc(rhdPtr->scrnIndex, rhdPtr->atomBIOS,
++				ATOM_GET_DEFAULT_ENGINE_CLOCK, &atomBiosArg)
++		== ATOM_SUCCESS)
++		EngineClock = atomBiosArg.val;
++	}
++#endif
++	return (0x7f << 8) + (EngineClock / (4 * 0x7f * TARGET_HW_I2C_CLOCK));
++
+     } else {
++
++	CARD32 RefClock = DEFAULT_REF_CLOCK;
++#ifdef ATOM_BIOS
++	AtomBiosArgRec atomBiosArg;
+ 	if (RHDAtomBiosFunc(rhdPtr->scrnIndex, rhdPtr->atomBIOS,
+ 			    ATOM_GET_REF_CLOCK, &atomBiosArg) == ATOM_SUCCESS)
+-	    return (atomBiosArg.val / (4 * TARGET_HW_I2C_CLOCK));
++	    RefClock = atomBiosArg.val;
++#endif
++
++	if (rhdPtr->ChipSet < RHD_RV620)
++	    return RefClock / TARGET_HW_I2C_CLOCK;
+ 	else
+-	    return (DEFAULT_REF_CLOCK / (4 * TARGET_HW_I2C_CLOCK));
+-    }
+-#else
+-    RHDFUNC(rhdPtr);
++	    return RefClock / (4 * TARGET_HW_I2C_CLOCK);
+ 
+-    if (rhdPtr->ChipSet < RHD_R600) {
+-	return (0x7f << 8)
+-	    + (DEFAULT_ENGINE_CLOCK) / (4 * 0x7f * TARGET_HW_I2C_CLOCK);
+-    } else if (rhdPtr->ChipSet < RHD_RV620) {
+-	return (DEFAULT_REF_CLOCK / TARGET_HW_I2C_CLOCK);
+-    } else
+-	  return (DEFAULT_REF_CLOCK / (4 * TARGET_HW_I2C_CLOCK));
+-#endif
++    }
+ }
+ 
+ static Bool
+@@ -1373,6 +1371,21 @@ rhdInitI2C(int scrnIndex)
+     return NULL;
+ }
+ 
++/* If the engine clock is changed, recalculate the prescale */
++static void
++rhdI2CRecalcPrescale(int scrnIndex, I2CBusPtr *I2CList)
++{
++    RHDPtr rhdPtr = RHDPTR(xf86Screens[scrnIndex]);
++    CARD16 prescale = rhdGetI2CPrescale(rhdPtr);
++    int i;
++
++    for (i = 0; i < MAX_I2C_LINES; i++) {
++	if (!I2CList[i])
++	    break;
++	((rhdI2CPtr)(I2CList[i]->DriverPrivate.ptr))->prescale = prescale;
++    }
++}
++
+ RHDI2CResult
+ rhdI2CProbeAddress(int scrnIndex, I2CBusPtr I2CBusPtr, CARD8 slave)
+ {
+@@ -1453,6 +1466,11 @@ RHDI2CFunc(int scrnIndex, I2CBusPtr *I2CList, RHDi2cFunc func,
+ 	    rhdTearDownI2C(I2CList);
+ 	return RHD_I2C_SUCCESS;
+     }
++    if (func == RHD_I2C_RECALC_PRESCALE) {
++	if (I2CList)
++	    rhdI2CRecalcPrescale(scrnIndex, I2CList);
++	return RHD_I2C_SUCCESS;
++    }
+     return RHD_I2C_FAILED;
+ }
+ 
+diff --git a/src/rhd_i2c.h b/src/rhd_i2c.h
+index cfc2747..3df8d43 100644
+--- a/src/rhd_i2c.h
++++ b/src/rhd_i2c.h
+@@ -34,7 +34,8 @@ typedef enum {
+     RHD_I2C_PROBE_ADDR_LINE,
+     RHD_I2C_PROBE_ADDR,
+     RHD_I2C_GETBUS,
+-    RHD_I2C_TEARDOWN
++    RHD_I2C_TEARDOWN,
++    RHD_I2C_RECALC_PRESCALE
+ } RHDi2cFunc;
+ 
+ typedef union RHDI2CDataArg
+diff --git a/src/rhd_pm.c b/src/rhd_pm.c
+index 26433aa..75a9bf8 100644
+--- a/src/rhd_pm.c
++++ b/src/rhd_pm.c
+@@ -35,6 +35,7 @@
+ 
+ #include "rhd.h"
+ #include "rhd_pm.h"
++#include "rhd_i2c.h"
+ 
+ #include "rhd_atombios.h"
+ 
+@@ -274,9 +275,12 @@ rhdPmSetRawState (RHDPtr rhdPtr, struct rhdPowerState *state)
+     if (state->EngineClock && state->EngineClock != rhdPtr->Pm->Current.EngineClock) {
+ 	data.clockValue = state->EngineClock;
+ 	if (RHDAtomBiosFunc (rhdPtr->scrnIndex, rhdPtr->atomBIOS,
+-			     ATOM_SET_ENGINE_CLOCK, &data) == ATOM_SUCCESS)
++			     ATOM_SET_ENGINE_CLOCK, &data) == ATOM_SUCCESS) {
+ 	    rhdPtr->Pm->Current.EngineClock = state->EngineClock;
+-	else
++	    /* On pre-R6xx DDC clock depends on engine clock, thus recalculate */
++	    if (rhdPtr->ChipSet < RHD_R600)
++		RHDI2CFunc(rhdPtr->scrnIndex, rhdPtr->I2C, RHD_I2C_RECALC_PRESCALE, NULL);
++	} else
+ 	    ret = FALSE;
+     }
+ #if 0	/* don't do for the moment */
