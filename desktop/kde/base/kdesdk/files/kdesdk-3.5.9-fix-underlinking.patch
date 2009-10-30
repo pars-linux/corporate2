@@ -1,0 +1,105 @@
+Index: kbabel/kbabeldict/Makefile.am
+===================================================================
+--- kbabel/kbabeldict/Makefile.am.orig
++++ kbabel/kbabeldict/Makefile.am
+@@ -18,13 +18,13 @@ INCLUDES         = -I$(srcdir)/../common
+ # library for babeldict plugins
+ lib_LTLIBRARIES = libkbabeldictplugin.la
+ libkbabeldictplugin_la_SOURCES = searchengine.cpp 
+-libkbabeldictplugin_la_LIBADD =  $(LIB_KDECORE)
++libkbabeldictplugin_la_LIBADD =  $(LIB_KDECORE) $(LIB_QT)
+ libkbabeldictplugin_la_LDFLAGS = -version-info 3:0:2 $(all_libraries)
+ 
+ libkbabeldict_la_SOURCES = kbabeldictbox.cpp \
+             kbabeldictiface.skel dictionarymenu.cpp dictchooser.cpp \
+             aboutmoduledlg.cpp 
+-libkbabeldict_la_LIBADD =  ../common/libkbabelcommon.la libkbabeldictplugin.la $(LIB_KDEUI)
++libkbabeldict_la_LIBADD =  ../common/libkbabelcommon.la libkbabeldictplugin.la $(LIB_KDEUI) $(LIB_QT)
+ libkbabeldict_la_LDFLAGS = $(all_libraries) -no-undefined
+ 
+ 
+Index: kbabel/kbabeldict/Makefile.in
+===================================================================
+--- kbabel/kbabeldict/Makefile.in.orig
++++ kbabel/kbabeldict/Makefile.in
+@@ -437,7 +437,7 @@ INCLUDES = -I$(srcdir)/../common -I$(top
+ # library for babeldict plugins
+ lib_LTLIBRARIES = libkbabeldictplugin.la
+ libkbabeldictplugin_la_SOURCES = searchengine.cpp 
+-libkbabeldictplugin_la_LIBADD = $(LIB_KDECORE)
++libkbabeldictplugin_la_LIBADD = $(LIB_KDECORE) $(LIB_QT)
+ libkbabeldictplugin_la_LDFLAGS = -version-info 3:0:2 $(all_libraries)
+ #>- libkbabeldict_la_SOURCES = kbabeldictbox.cpp \
+ #>-             kbabeldictiface.skel dictionarymenu.cpp dictchooser.cpp \
+@@ -447,7 +447,7 @@ libkbabeldict_la_SOURCES=kbabeldictbox.c
+              dictionarymenu.cpp dictchooser.cpp \
+             aboutmoduledlg.cpp  kbabeldictiface_skel.cpp
+ 
+-libkbabeldict_la_LIBADD = ../common/libkbabelcommon.la libkbabeldictplugin.la $(LIB_KDEUI)
++libkbabeldict_la_LIBADD = ../common/libkbabelcommon.la libkbabeldictplugin.la $(LIB_KDEUI) $(LIB_QT)
+ libkbabeldict_la_LDFLAGS = $(all_libraries) -no-undefined
+ kbabeldict_SOURCES = main.cpp kbabeldictview.cpp kbabeldict.cpp kbabelsplash.cpp
+ 
+Index: kunittest/Makefile.am
+===================================================================
+--- kunittest/Makefile.am.orig
++++ kunittest/Makefile.am
+@@ -5,7 +5,7 @@ METASOURCES = AUTO
+ lib_LTLIBRARIES = libkunittestgui.la
+ libkunittestgui_la_SOURCES = testerwidget.ui runnergui.cpp dcopinterface.skel
+ libkunittestgui_la_LDFLAGS = $(all_libraries) $(KDE_RPATH)
+-libkunittestgui_la_LIBADD = -lkunittest $(LIB_KDECORE)
++libkunittestgui_la_LIBADD = -lkunittest $(LIB_KDECORE) $(LIB_QT) -lDCOP
+ 
+ runnergui.lo : testerwidget.h
+ 
+Index: kunittest/Makefile.in
+===================================================================
+--- kunittest/Makefile.in.orig
++++ kunittest/Makefile.in
+@@ -415,7 +415,7 @@ lib_LTLIBRARIES = libkunittestgui.la
+ #>+ 1
+ libkunittestgui_la_SOURCES= runnergui.cpp  dcopinterface_skel.cpp testerwidget.cpp
+ libkunittestgui_la_LDFLAGS = $(all_libraries) $(KDE_RPATH)
+-libkunittestgui_la_LIBADD = -lkunittest $(LIB_KDECORE)
++libkunittestgui_la_LIBADD = -lkunittest $(LIB_KDECORE) $(LIB_QT) -lDCOP
+ kunittestguimodrunner_SOURCES = guimodrunner.cpp
+ kunittestguimodrunner_LDFLAGS = $(all_libraries) $(KDE_RPATH)
+ kunittestguimodrunner_LDADD = libkunittestgui.la $(LIB_KDECORE) $(LIB_KIO)
+Index: kbugbuster/kresources/Makefile.in
+===================================================================
+--- kbugbuster/kresources/Makefile.in.orig
++++ kbugbuster/kresources/Makefile.in
+@@ -376,7 +376,7 @@ kcal_bugzilla_la_SOURCES=kcalresource.cp
+                            kcalresource_plugin.cpp  resourceprefs.cpp
+ 
+ kcal_bugzilla_la_LDFLAGS = $(all_libraries) -module $(KDE_PLUGIN)
+-kcal_bugzilla_la_LIBADD = ../backend/libkbbbackend.la -lkcal
++kcal_bugzilla_la_LIBADD = ../backend/libkbbbackend.la -lkcal $(LIB_KDECORE) $(LIB_KIO) $(LIB_KABC) $(LIB_KDEUI) $(LIB_QT) -lDCOP
+ servicedir = $(kde_servicesdir)/kresources/kcal
+ service_DATA = bugzilla.desktop
+ #>- METASOURCES = AUTO
+Index: kioslave/svn/Makefile.in
+===================================================================
+--- kioslave/svn/Makefile.in.orig
++++ kioslave/svn/Makefile.in
+@@ -275,7 +275,7 @@ SVNCONFIG = @SVNCONFIG@
+ SVNLD = @SVNLD@
+ SVN_CPPFLAGS = @SVN_CPPFLAGS@
+ SVN_INCLUDE = @SVN_INCLUDE@
+-SVN_LIB = @SVN_LIB@
++SVN_LIB = @SVN_LIB@ -lsvn_subr-1 -lsvn_ra-1
+ TOPSUBDIRS = @TOPSUBDIRS@
+ UIC = @UIC@
+ UIC_TR = @UIC_TR@
+@@ -385,8 +385,8 @@ SUBDIRS = ksvnd svnhelper icons
+ INCLUDES = $(SVN_INCLUDE) $(all_includes)
+ kde_module_LTLIBRARIES = kio_svn.la
+ kio_svn_la_SOURCES = svn.cpp
+-kio_svn_la_LIBADD = -lkio
+-kio_svn_la_LDFLAGS = -avoid-version -module $(all_libraries) $(KDE_PLUGIN) $(SVNLD) $(SVN_LIB)
++kio_svn_la_LIBADD = -lkio $(SVN_LIB)
++kio_svn_la_LDFLAGS = -avoid-version -module $(all_libraries) $(KDE_PLUGIN) $(SVNLD)
+ protocol_DATA = svn+http.protocol svn+https.protocol svn+file.protocol svn+ssh.protocol svn.protocol
+ protocoldir = $(kde_servicesdir)
+ #>- all: all-recursive
