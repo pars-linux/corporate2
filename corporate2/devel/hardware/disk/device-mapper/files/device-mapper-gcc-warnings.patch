@@ -1,0 +1,45 @@
+diff -pur device-mapper.1.02.09.orig/lib/datastruct/hash.c device-mapper.1.02.09/lib/datastruct/hash.c
+--- device-mapper.1.02.09.orig/lib/datastruct/hash.c	2006-01-09 21:35:24.000000000 +0100
++++ device-mapper.1.02.09/lib/datastruct/hash.c	2006-08-30 09:27:47.000000000 +0200
+@@ -19,7 +19,7 @@ struct dm_hash_node {
+ 	struct dm_hash_node *next;
+ 	void *data;
+ 	unsigned keylen;
+-	char key[0];
++	unsigned char key[0];
+ };
+ 
+ struct dm_hash_table {
+@@ -140,7 +140,7 @@ void dm_hash_destroy(struct dm_hash_tabl
+ static struct dm_hash_node **_find(struct dm_hash_table *t, const char *key,
+ 				   uint32_t len)
+ {
+-	unsigned h = _hash(key, len) & (t->num_slots - 1);
++	unsigned h = _hash((unsigned char *)key, len) & (t->num_slots - 1);
+ 	struct dm_hash_node **c;
+ 
+ 	for (c = &t->slots[h]; *c; c = &((*c)->next))
+@@ -232,7 +232,7 @@ void dm_hash_wipe(struct dm_hash_table *
+ 
+ char *dm_hash_get_key(struct dm_hash_table *t, struct dm_hash_node *n)
+ {
+-	return n->key;
++	return (char *)n->key;
+ }
+ 
+ void *dm_hash_get_data(struct dm_hash_table *t, struct dm_hash_node *n)
+Nur in device-mapper.1.02.09/lib/datastruct: hash.c~.
+diff -pur device-mapper.1.02.09.orig/lib/ioctl/libdm-iface.c device-mapper.1.02.09/lib/ioctl/libdm-iface.c
+--- device-mapper.1.02.09.orig/lib/ioctl/libdm-iface.c	2006-08-08 23:22:31.000000000 +0200
++++ device-mapper.1.02.09/lib/ioctl/libdm-iface.c	2006-08-30 09:36:14.000000000 +0200
+@@ -1555,7 +1555,8 @@ static struct dm_ioctl *_do_dm_ioctl(str
+ 		  dmt->major > 0 ? ") " : "",
+ 		  dmt->no_open_count ? 'N' : 'O',
+ 		  dmt->skip_lockfs ? "S " : "",
+-		  dmt->sector, dmt->message ? dmt->message : "",
++		  (unsigned long long int)dmt->sector,
++		  dmt->message ? dmt->message : "",
+ 		  dmi->data_size);
+ #ifdef DM_IOCTLS
+ 	if (ioctl(_control_fd, command, dmi) < 0) {
+Nur in device-mapper.1.02.09/lib/ioctl: libdm-iface.c~.
