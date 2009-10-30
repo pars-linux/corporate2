@@ -1,0 +1,537 @@
+diff -u -p -N -r kdelibs.sav/kdecore/kstartupinfo.cpp kdelibs/kdecore/kstartupinfo.cpp
+--- kdelibs.sav/kdecore/kstartupinfo.cpp	2006-08-23 17:19:58.000000000 +0200
++++ kdelibs/kdecore/kstartupinfo.cpp	2006-09-01 13:26:45.000000000 +0200
+@@ -1105,7 +1105,7 @@ unsigned long KStartupInfoId::timestamp(
+ struct KStartupInfoDataPrivate
+     {
+     KStartupInfoDataPrivate() : desktop( 0 ), wmclass( "" ), hostname( "" ),
+-	silent( KStartupInfoData::Unknown ), timestamp( -1U ), screen( -1 ) {}
++	silent( KStartupInfoData::Unknown ), timestamp( -1U ), screen( -1 ), xinerama( -1 ), launched_by( 0 ) {};
+     QString bin;
+     QString name;
+     QString description;
+@@ -1117,6 +1117,8 @@ struct KStartupInfoDataPrivate
+     KStartupInfoData::TriState silent;
+     unsigned long timestamp;
+     int screen;
++    int xinerama;
++    WId launched_by;
+     };
+ 
+ QString KStartupInfoData::to_text() const
+@@ -1147,6 +1149,10 @@ QString KStartupInfoData::to_text() cons
+         ret += QString::fromLatin1( " TIMESTAMP=%1" ).arg( d->timestamp );
+     if( d->screen != -1 )
+         ret += QString::fromLatin1( " SCREEN=%1" ).arg( d->screen );
++    if( d->xinerama != -1 )
++        ret += QString::fromLatin1( " XINERAMA=%1" ).arg( d->xinerama );
++    if( d->launched_by != 0 )
++        ret += QString::fromLatin1( " LAUNCHED_BY=%1" ).arg( d->launched_by );
+     return ret;
+     }
+ 
+@@ -1165,6 +1171,8 @@ KStartupInfoData::KStartupInfoData( cons
+     const QString silent_str = QString::fromLatin1( "SILENT=" );
+     const QString timestamp_str = QString::fromLatin1( "TIMESTAMP=" );
+     const QString screen_str = QString::fromLatin1( "SCREEN=" );
++    const QString xinerama_str = QString::fromLatin1( "XINERAMA=" );
++    const QString launched_by_str = QString::fromLatin1( "LAUNCHED_BY=" );
+     for( QStringList::Iterator it = items.begin();
+          it != items.end();
+          ++it )
+@@ -1195,6 +1203,10 @@ KStartupInfoData::KStartupInfoData( cons
+             d->timestamp = get_unum( *it );
+         else if( ( *it ).startsWith( screen_str ))
+             d->screen = get_num( *it );
++        else if( ( *it ).startsWith( xinerama_str ))
++            d->xinerama = get_num( *it );
++        else if( ( *it ).startsWith( launched_by_str ))
++            d->launched_by = get_num( *it );
+         }
+     }
+ 
+@@ -1238,6 +1250,10 @@ void KStartupInfoData::update( const KSt
+         d->timestamp = data_P.timestamp();
+     if( data_P.screen() != -1 )
+         d->screen = data_P.screen();
++    if( data_P.xinerama() != -1 && xinerama() != -1 ) // don't overwrite
++        d->xinerama = data_P.xinerama();
++    if( data_P.launchedBy() != 0 && launchedBy() != 0 ) // don't overwrite
++        d->launched_by = data_P.launchedBy();
+     }
+ 
+ KStartupInfoData::KStartupInfoData()
+@@ -1408,6 +1424,26 @@ int KStartupInfoData::screen() const
+     return d->screen;
+     }
+ 
++void KStartupInfoData::setXinerama( int xinerama )
++    {
++    d->xinerama = xinerama;
++    }
++
++int KStartupInfoData::xinerama() const
++    {
++    return d->xinerama;
++    }
++
++void KStartupInfoData::setLaunchedBy( WId window )
++    {
++    d->launched_by = window;
++    }
++
++WId KStartupInfoData::launchedBy() const
++    {
++    return d->launched_by;
++    }
++
+ static
+ long get_num( const QString& item_P )
+     {
+diff -u -p -N -r kdelibs.sav/kdecore/kstartupinfo.h kdelibs/kdecore/kstartupinfo.h
+--- kdelibs.sav/kdecore/kstartupinfo.h	2005-05-04 13:02:22.000000000 +0200
++++ kdelibs/kdecore/kstartupinfo.h	2006-09-01 13:26:45.000000000 +0200
+@@ -635,6 +635,30 @@ class KDECORE_EXPORT KStartupInfoData
+          * This is usually not necessary to set, as it's set by default to qt_xscreen().
+          */
+         void setScreen( int screen );
++        
++        /**
++         * The Xinerama screen for the startup notification, -1 if unknown.
++         */
++        int xinerama() const;
++
++        /**        
++	 * Sets the Xinerama screen for the startup notification ( i.e. the screeen on which
++	 * the starting application should appear ).
++	 * @param xinerama the Xinerama screen for the startup notification
++         */
++        void setXinerama( int xinerama );
++
++        /**
++         * The toplevel window of the application that caused this startup notification,
++         * 0 if unknown.
++         */
++        WId launchedBy() const;
++        
++        /**
++	 * Sets the toplevel window of the application that caused this startup notification.
++	 * @param window window ID of the toplevel window that is responsible for this startup
++         */
++        void setLaunchedBy( WId window );
+ 
+ 	/**
+ 	 * Updates the notification data from the given data. Some data, such as the desktop
+diff -u -p -N -r kdelibs.sav/kdecore/netwm.cpp kdelibs/kdecore/netwm.cpp
+--- kdelibs.sav/kdecore/netwm.cpp	2006-08-25 16:10:16.000000000 +0200
++++ kdelibs/kdecore/netwm.cpp	2006-09-01 13:26:14.000000000 +0200
+@@ -138,6 +138,9 @@ static Atom net_wm_state_stays_on_top = 
+ // used to determine whether application window is managed or not
+ static Atom xa_wm_state = 0;
+ 
++// ability flags
++static Atom net_wm_full_placement = 0;
++
+ static Bool netwm_atoms_created      = False;
+ const unsigned long netwm_sendevent_mask = (SubstructureRedirectMask|
+ 					     SubstructureNotifyMask);
+@@ -229,7 +232,7 @@ static int wcmp(const void *a, const voi
+ }
+ 
+ 
+-static const int netAtomCount = 84;
++static const int netAtomCount = 85;
+ static void create_atoms(Display *d) {
+     static const char * const names[netAtomCount] =
+     {
+@@ -316,7 +319,9 @@ static void create_atoms(Display *d) {
+             "_KDE_NET_WM_TEMPORARY_RULES",
+ 
+ 	    "WM_STATE",
+-	    "WM_PROTOCOLS"
++	    "WM_PROTOCOLS",
++            
++            "_NET_WM_FULL_PLACEMENT"
+ 	    };
+ 
+     Atom atoms[netAtomCount], *atomsp[netAtomCount] =
+@@ -404,7 +409,9 @@ static void create_atoms(Display *d) {
+             &kde_net_wm_temporary_rules,
+ 
+ 	    &xa_wm_state,
+-	    &wm_protocols
++	    &wm_protocols,
++            
++            &net_wm_full_placement
+ 	    };
+ 
+     assert( !netwm_atoms_created );
+@@ -1309,6 +1316,8 @@ void NETRootInfo::setSupported() {
+ 
+     if (p->properties[ PROTOCOLS2 ] & WM2KDETemporaryRules)
+ 	atoms[pnum++] = kde_net_wm_temporary_rules;
++    if (p->properties[ PROTOCOLS2 ] & WM2FullPlacement)
++	atoms[pnum++] = net_wm_full_placement;
+ 
+     XChangeProperty(p->display, p->root, net_supported, XA_ATOM, 32,
+ 		    PropModeReplace, (unsigned char *) atoms, pnum);
+@@ -1526,6 +1535,8 @@ void NETRootInfo::updateSupportedPropert
+ 
+     else if( atom == kde_net_wm_temporary_rules )
+         p->properties[ PROTOCOLS2 ] |= WM2KDETemporaryRules;
++    else if( atom == net_wm_full_placement )
++        p->properties[ PROTOCOLS2 ] |= WM2FullPlacement;
+ }
+ 
+ extern Time qt_x_user_time;
+diff -u -p -N -r kdelibs.sav/kdecore/netwm_def.h kdelibs/kdecore/netwm_def.h
+--- kdelibs.sav/kdecore/netwm_def.h	2006-08-01 17:35:25.000000000 +0200
++++ kdelibs/kdecore/netwm_def.h	2006-09-01 13:26:14.000000000 +0200
+@@ -610,5 +610,6 @@
+         WM2WindowRole          = 1<<11, ///< @since 3.3
+         WM2ClientMachine       = 1<<12, ///< @since 3.3
+         WM2ShowingDesktop      = 1<<13, ///< @since 3.5
++        WM2FullPlacement       = 1<<14,
+         WM2DesktopLayout       = 1<<15  ///< @since 3.5.8
+     };
+
+diff -u -p -N -r kdelibs.sav/kio/kio/krun.cpp kdelibs/kio/kio/krun.cpp
+--- kdelibs.sav/kio/kio/krun.cpp	2006-08-23 17:19:56.000000000 +0200
++++ kdelibs/kio/kio/krun.cpp	2006-09-01 13:26:54.000000000 +0200
+@@ -77,6 +77,7 @@ public:
+     QString m_localPath;
+     QString m_suggestedFileName;
+     QGuardedPtr <QWidget> m_window;
++    QCString m_asn;
+ };
+ 
+ pid_t KRun::runURL( const KURL& u, const QString& _mimetype )
+@@ -109,14 +110,20 @@ bool KRun::isExecutableFile( const KURL&
+   return false;
+ }
+ 
+-// This is called by foundMimeType, since it knows the mimetype of the URL
+ pid_t KRun::runURL( const KURL& u, const QString& _mimetype, bool tempFile, bool runExecutables, const QString& suggestedFileName )
+ {
++    return runURL( u, _mimetype, NULL, "", tempFile, runExecutables, suggestedFileName );
++}
++
++// This is called by foundMimeType, since it knows the mimetype of the URL
++pid_t KRun::runURL( const KURL& u, const QString& _mimetype, QWidget* window, const QCString& asn,
++    bool tempFile, bool runExecutables, const QString& suggestedFileName )
++{
+   bool noRun = false;
+   bool noAuth = false;
+   if ( _mimetype == "inode/directory-locked" )
+   {
+-    KMessageBoxWrapper::error( 0L,
++    KMessageBoxWrapper::error( window,
+             i18n("<qt>Unable to enter <b>%1</b>.\nYou do not have access rights to this location.</qt>").arg(u.htmlURL()) );
+     return 0;
+   }
+@@ -133,7 +140,7 @@ pid_t KRun::runURL( const KURL& u, const
+       {
+         QString path = u.path();
+         shellQuote( path );
+-        return (KRun::runCommand(path)); // just execute the url as a command
++        return (KRun::runCommand(path, QString::null, QString::null, window, asn)); // just execute the url as a command
+         // ## TODO implement deleting the file if tempFile==true
+       }
+       else
+@@ -155,14 +162,14 @@ pid_t KRun::runURL( const KURL& u, const
+ 
+   if ( noRun )
+   {
+-    KMessageBox::sorry( 0L,
++    KMessageBox::sorry( window,
+         i18n("<qt>The file <b>%1</b> is an executable program. "
+              "For safety it will not be started.</qt>").arg(u.htmlURL()));
+     return 0;
+   }
+   if ( noAuth )
+   {
+-    KMessageBoxWrapper::error( 0L,
++    KMessageBoxWrapper::error( window,
+         i18n("<qt>You do not have permission to run <b>%1</b>.</qt>").arg(u.htmlURL()) );
+     return 0;
+   }
+@@ -182,7 +189,7 @@ pid_t KRun::runURL( const KURL& u, const
+     return displayOpenWithDialog( lst, tempFile, suggestedFileName );
+   }
+ 
+-  return KRun::run( *offer, lst, 0 /*window*/, tempFile, suggestedFileName );
++  return KRun::run( *offer, lst, window, asn, tempFile, suggestedFileName );
+ }
+ 
+ bool KRun::displayOpenWithDialog( const KURL::List& lst )
+@@ -536,13 +543,13 @@ QString KRun::binaryName( const QString 
+ }
+ 
+ static pid_t runCommandInternal( KProcess* proc, const KService* service, const QString& binName,
+-    const QString &execName, const QString & iconName )
++    const QString &execName, const QString & iconName, QWidget* window, QCString asn )
+ {
+   if (service && !service->desktopEntryPath().isEmpty()
+       && !KDesktopFile::isAuthorizedDesktopFile( service->desktopEntryPath() ))
+   {
+      kdWarning() << "No authorization to execute " << service->desktopEntryPath() << endl;
+-     KMessageBox::sorry(0, i18n("You are not authorized to execute this file."));
++     KMessageBox::sorry(window, i18n("You are not authorized to execute this file."));
+      return 0;
+   }
+   QString bin = KRun::binaryName( binName, true );
+@@ -550,10 +557,10 @@ static pid_t runCommandInternal( KProces
+   bool silent;
+   QCString wmclass;
+   KStartupInfoId id;
+-  bool startup_notify = KRun::checkStartupNotify( binName, service, &silent, &wmclass );
++  bool startup_notify = ( asn != "0" && KRun::checkStartupNotify( binName, service, &silent, &wmclass ));
+   if( startup_notify )
+   {
+-      id.initId();
++      id.initId( asn );
+       id.setupStartupEnv();
+       KStartupInfoData data;
+       data.setHostname();
+@@ -572,6 +579,8 @@ static pid_t runCommandInternal( KProces
+       if( silent )
+           data.setSilent( KStartupInfoData::Yes );
+       data.setDesktop( KWin::currentDesktop());
++      if( window )
++          data.setLaunchedBy( window->winId());
+       KStartupInfo::sendStartup( id, data );
+   }
+   pid_t pid = KProcessRunner::run( proc, binName, id );
+@@ -629,7 +638,8 @@ bool KRun::checkStartupNotify( const QSt
+   return true;
+ }
+ 
+-static pid_t runTempService( const KService& _service, const KURL::List& _urls, bool tempFiles, const QString& suggestedFileName )
++static pid_t runTempService( const KService& _service, const KURL::List& _urls, QWidget* window,
++    const QCString& asn, bool tempFiles, const QString& suggestedFileName )
+ {
+   if (!_urls.isEmpty()) {
+     kdDebug(7010) << "runTempService: first url " << _urls.first().url() << endl;
+@@ -648,7 +658,7 @@ static pid_t runTempService( const KServ
+       {
+          KURL::List singleUrl;
+          singleUrl.append(*it);
+-         runTempService( _service, singleUrl, tempFiles, suggestedFileName );
++         runTempService( _service, singleUrl, window, "", tempFiles, suggestedFileName );
+       }
+       KURL::List singleUrl;
+       singleUrl.append(_urls.first());
+@@ -667,7 +677,7 @@ static pid_t runTempService( const KServ
+      proc->setWorkingDirectory(_service.path());
+ 
+   return runCommandInternal( proc, &_service, KRun::binaryName( _service.exec(), false ),
+-                             _service.name(), _service.icon() );
++                             _service.name(), _service.icon(), window, asn );
+ }
+ 
+ // WARNING: don't call this from processDesktopExec, since klauncher uses that too...
+@@ -728,11 +738,22 @@ pid_t KRun::run( const KService& _servic
+ 
+ pid_t KRun::run( const KService& _service, const KURL::List& _urls, QWidget* window, bool tempFiles )
+ {
+-    return run( _service, _urls, window, tempFiles, QString::null );
++    return run( _service, _urls, window, "", tempFiles, QString::null );
++}
++
++pid_t KRun::run( const KService& _service, const KURL::List& _urls, QWidget* window, const QCString& asn, bool tempFiles )
++{
++    return run( _service, _urls, window, asn, tempFiles, QString::null );
+ }
+ 
+ pid_t KRun::run( const KService& _service, const KURL::List& _urls, QWidget* window, bool tempFiles, const QString& suggestedFileName )
+ {
++    return run( _service, _urls, window, "", tempFiles, suggestedFileName );
++}
++
++pid_t KRun::run( const KService& _service, const KURL::List& _urls, QWidget* window, const QCString& asn,
++    bool tempFiles, const QString& suggestedFileName )
++{
+   if (!_service.desktopEntryPath().isEmpty() &&
+       !KDesktopFile::isAuthorizedDesktopFile( _service.desktopEntryPath()))
+   {
+@@ -753,7 +774,7 @@ pid_t KRun::run( const KService& _servic
+ 
+   if ( tempFiles || _service.desktopEntryPath().isEmpty() || !suggestedFileName.isEmpty() )
+   {
+-     return runTempService(_service, _urls, tempFiles, suggestedFileName);
++     return runTempService(_service, _urls, window, asn, tempFiles, suggestedFileName);
+   }
+ 
+   kdDebug(7010) << "KRun::run " << _service.desktopEntryPath() << endl;
+@@ -767,9 +788,25 @@ pid_t KRun::run( const KService& _servic
+ 
+   QString error;
+   int pid = 0;
+-
++  
++  QCString myasn = asn;
++  // startServiceByDesktopPath() doesn't take QWidget*, add it to the startup info now
++  if( window != NULL )
++  {
++    if( myasn.isEmpty())
++        myasn = KStartupInfo::createNewStartupId();
++    if( myasn != "0" )
++    {
++        KStartupInfoId id;
++        id.initId( myasn );
++        KStartupInfoData data;
++        data.setLaunchedBy( window->winId());
++        KStartupInfo::sendChange( id, data );
++    }
++  }
++  
+   int i = KApplication::startServiceByDesktopPath(
+-        _service.desktopEntryPath(), urls.toStringList(), &error, 0L, &pid
++        _service.desktopEntryPath(), urls.toStringList(), &error, 0L, &pid, myasn
+         );
+ 
+   if (i != 0)
+@@ -794,33 +831,47 @@ pid_t KRun::run( const QString& _exec, c
+ 
+ pid_t KRun::runCommand( QString cmd )
+ {
+-  return KRun::runCommand( cmd, QString::null, QString::null );
++  return KRun::runCommand( cmd, QString::null, QString::null, NULL, "" );
+ }
+ 
+ pid_t KRun::runCommand( const QString& cmd, const QString &execName, const QString & iconName )
+ {
++  return KRun::runCommand( cmd, execName, iconName, NULL, "" );
++}
++
++pid_t KRun::runCommand( const QString& cmd, const QString &execName, const QString & iconName,
++    QWidget* window, const QCString& asn )
++{
+   kdDebug(7010) << "runCommand " << cmd << "," << execName << endl;
+   KProcess * proc = new KProcess;
+   proc->setUseShell(true);
+   *proc << cmd;
+   KService::Ptr service = KService::serviceByDesktopName( binaryName( execName, true ) );
+-  return runCommandInternal( proc, service.data(), binaryName( execName, false ), execName, iconName );
++  return runCommandInternal( proc, service.data(), binaryName( execName, false ), execName, iconName,
++      window, asn );
+ }
+ 
+ KRun::KRun( const KURL& url, mode_t mode, bool isLocalFile, bool showProgressInfo )
+      :m_timer(0,"KRun::timer")
+ {
+-  init (url, 0, mode, isLocalFile, showProgressInfo);
++  init (url, 0, "", mode, isLocalFile, showProgressInfo);
+ }
+ 
+ KRun::KRun( const KURL& url, QWidget* window, mode_t mode, bool isLocalFile,
+             bool showProgressInfo )
+      :m_timer(0,"KRun::timer")
+ {
+-  init (url, window, mode, isLocalFile, showProgressInfo);
++  init (url, window, "", mode, isLocalFile, showProgressInfo);
++}
++
++KRun::KRun( const KURL& url, QWidget* window, const QCString& asn, mode_t mode, bool isLocalFile,
++            bool showProgressInfo )
++     :m_timer(0,"KRun::timer")
++{
++  init (url, window, asn, mode, isLocalFile, showProgressInfo);
+ }
+ 
+-void KRun::init ( const KURL& url, QWidget* window, mode_t mode, bool isLocalFile,
++void KRun::init ( const KURL& url, QWidget* window, const QCString& asn, mode_t mode, bool isLocalFile,
+                   bool showProgressInfo )
+ {
+   m_bFault = false;
+@@ -836,6 +887,7 @@ void KRun::init ( const KURL& url, QWidg
+   d = new KRunPrivate;
+   d->m_runExecutables = true;
+   d->m_window = window;
++  d->m_asn = asn;
+   setEnableExternalBrowser(true);
+ 
+   // Start the timer. This means we will return to the event
+@@ -936,7 +988,7 @@ void KRun::init()
+        KService::Ptr service = KService::serviceByStorageId( exec );
+        if (service)
+        {
+-          run( *service, urls );
++          run( *service, urls, d->m_window, d->m_asn );
+           ok = true;
+        }
+     }
+@@ -1229,7 +1281,7 @@ void KRun::foundMimeType( const QString&
+       {
+           KURL::List lst;
+           lst.append( m_strURL );
+-          m_bFinished = KRun::run( *serv, lst );
++          m_bFinished = KRun::run( *serv, lst, d->m_window, d->m_asn );
+           /// Note: the line above means that if that service failed, we'll
+           /// go to runURL to maybe find another service, even though a dialog
+           /// box was displayed. That's good if runURL tries another service,
+@@ -1244,7 +1296,7 @@ void KRun::foundMimeType( const QString&
+     m_strURL.setPath( d->m_localPath );
+   }
+ 
+-  if (!m_bFinished && KRun::runURL( m_strURL, type, false, d->m_runExecutables, d->m_suggestedFileName )){
++  if (!m_bFinished && KRun::runURL( m_strURL, type, d->m_window, d->m_asn, false, d->m_runExecutables, d->m_suggestedFileName )){
+     m_bFinished = true;
+   }
+   else{
+diff -u -p -N -r kdelibs.sav/kio/kio/krun.h kdelibs/kio/kio/krun.h
+--- kdelibs.sav/kio/kio/krun.h	2006-05-24 18:34:50.000000000 +0200
++++ kdelibs/kio/kio/krun.h	2006-09-01 13:26:54.000000000 +0200
+@@ -111,6 +111,8 @@ public:
+    */
+   KRun( const KURL& url, QWidget* window, mode_t mode = 0,
+ 	bool isLocalFile = false, bool showProgressInfo = true );
++  KRun( const KURL& url, QWidget* window, const QCString& asn, mode_t mode = 0,
++	bool isLocalFile = false, bool showProgressInfo = true );
+ 
+   /**
+    * Destructor. Don't call it yourself, since a KRun object auto-deletes
+@@ -210,6 +212,8 @@ public:
+    * @since 3.5.2
+    */
+   static pid_t run( const KService& _service, const KURL::List& _urls, QWidget* window, bool tempFiles = false );
++  static pid_t run( const KService& _service, const KURL::List& _urls, QWidget* window,
++      const QCString& asn, bool tempFiles = false );
+   /**
+    * Open a list of URLs with a certain service (application).
+    *
+@@ -226,6 +230,8 @@ public:
+   /// @since 3.5.3
+   /// @internal
+   static pid_t run( const KService& _service, const KURL::List& _urls, QWidget* window, bool tempFiles, const QString& suggestedFileName );
++  static pid_t run( const KService& _service, const KURL::List& _urls, QWidget* window,
++      const QCString& asn, bool tempFiles, const QString& suggestedFileName );
+ 
+   /**
+    * Open a list of URLs with.
+@@ -269,6 +275,7 @@ public:
+   static pid_t runURL( const KURL& _url, const QString& _mimetype );
+   /// @since 3.5.3
+   /// @internal
++  static pid_t runURL( const KURL& _url, const QString& _mimetype, QWidget* window, const QCString& asn, bool tempFile, bool runExecutables, const QString& suggestedFileName );
+   static pid_t runURL( const KURL& _url, const QString& _mimetype, bool tempFile, bool runExecutables, const QString& suggestedFileName );
+ 
+   /**
+@@ -299,6 +306,8 @@ public:
+    * of running command) if command was unsafe for map notification.
+    */
+   static pid_t runCommand( const QString& cmd, const QString & execName, const QString & icon );
++  static pid_t runCommand( const QString& cmd, const QString & execName, const QString & icon,
++      QWidget* window, const QCString& asn );
+ 
+   /**
+    * Display the Open-With dialog for those URLs, and run the chosen application.
+@@ -438,7 +447,7 @@ protected:
+   virtual void virtual_hook( int id, void* data );
+ 
+ private:
+-  void init (const KURL& url, QWidget* window, mode_t mode,
++  void init (const KURL& url, QWidget* window, const QCString& asn, mode_t mode,
+              bool isLocalFile, bool showProgressInfo);
+ private:
+   class KRunPrivate;

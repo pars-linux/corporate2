@@ -1,0 +1,830 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>kdelibs</Name>
+        <Homepage>http://www.kde.org/</Homepage>
+        <Packager>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <License>LGPLv2.1</License>
+        <IsA>library</IsA>
+        <Summary>KDE libraries needed by all KDE programs</Summary>
+        <Description>kdelibs contains base KDE libraries and some command-line tools needed by all KDE programs.</Description>
+        <Archive sha1sum="c930a25f4419134def55b8466c3a6f737227fb82" type="tarbz2">mirrors://kde/stable/3.5.10/src/kdelibs-3.5.10.tar.bz2</Archive>
+        <BuildDependencies>
+            <Dependency>qt</Dependency>
+            <!--<Dependency>arts</Dependency>-->
+            <Dependency>cups</Dependency>
+            <Dependency>avahi</Dependency>
+            <Dependency>aspell</Dependency>
+            <Dependency>jasper</Dependency>
+            <Dependency>doxygen</Dependency>
+            <Dependency>openexr</Dependency>
+            <Dependency>ilmbase</Dependency>
+            <Dependency>libXext</Dependency>
+            <Dependency>avahi-qt</Dependency>
+            <Dependency>utempter</Dependency>
+            <Dependency>alsa-lib</Dependency>
+            <Dependency>libXrender</Dependency>
+            <Dependency>fontconfig</Dependency>
+            <Dependency>libart_lgpl</Dependency>
+            <Dependency>ghostscript</Dependency>
+            <Dependency>mit-kerberos</Dependency>
+            <Dependency>pardus-support</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">kdelibs-3.5.0-default-printer-cups.patch</Patch>
+            <Patch level="1">kdelibs-3.5.0-konqueror.fonts.patch</Patch>
+            <Patch level="1">kdelibs-3.5.0-kdecore-singleclick.patch</Patch>
+            <Patch level="1">kdelibs-3.5.0-kcookiejar.patch</Patch>
+            <Patch level="1">show-distribution.diff</Patch>
+            <Patch>kdelibs-3.5.0-pertty.patch</Patch>
+            <Patch>kdelibs-3.5.0-kio_fish_utf8.patch</Patch>
+            <Patch>kdelibs-3.5.0-default-font.patch</Patch>
+            <Patch>ooo-icons-for-mimetypes.diff</Patch>
+            <Patch>kio-utf8-paste.diff</Patch>
+            <Patch>uludag-bugzilla.diff</Patch>
+            <Patch>quiet-kbuildsyscoca.patch</Patch>
+
+            <!-- Fix automake version -->
+            <Patch level="1">fix-automake-version.patch</Patch>
+
+            <!-- Suse patches -->
+            <Patch>suse/r874968-ebay-crash.diff</Patch>
+            <Patch>suse/bug-382959_kabc_fix_vcardparser.patch</Patch>
+
+            <!-- Add latest branch fixes -->
+            <Patch>branches-kdecore-fix-passwords-with-exclamation-mark-r987597.patch</Patch>
+            <Patch>branches-kdeui-fix-a-crash-with-KDatePicker-r971511.patch</Patch>
+            <Patch>branches-uncomment-setStrut-in-kwin-r1017229.patch</Patch>
+
+            <!-- Fix http://bugs.kde.org/93359, alternative to export libltdl_cv_shlibext='.so' -->
+            <Patch level="1">fedora/kde-3.5-libtool-shlibext.patch</Patch>
+
+            <!-- Update the Kate part latex.xml syntax definition to the version from Kile 2.0.3 -->
+            <Patch level="1">fedora/kdelibs-3.5.10-latex-syntax-kile-2.0.3.patch</Patch>
+
+            <!-- Add OpenSSL 0.9.8k file names into kssl kio -->
+            <Patch level="1">fedora/kdelibs-3.5.10-openssl.patch</Patch>
+
+            <!-- GCC 4.4 fix -->
+            <Patch level="1">fedora/kdelibs-3.5.10-gcc44.patch</Patch>
+
+            <!-- Fix build with newer kernel headers -->
+            <Patch level="1">fedora/kdelibs-3.5.9-fix-flock-redefinition.patch</Patch>
+
+            <!-- KGet ignores simultaneous download limit (kde #101956) -->
+            <Patch level="1">fedora/kdelibs-3.5.0-101956.patch</Patch>
+
+            <!-- Security fixes -->
+
+            <!-- Possible ACE in KHTML (CVE-2009-1690) -->
+            <Patch level="1">fedora/kdelibs-3.5.4-CVE-2009-1690.patch</Patch>
+
+            <!-- Possible ACE in KJS (FIXME: still crashes?) (CVE-2009-1687) -->
+            <Patch level="1">fedora/kdelibs-3.5.4-CVE-2009-1687.patch</Patch>
+
+            <!-- Crash, possible ACE in CSS style attribute handling (CVE-2009-1698) -->
+            <Patch level="1">fedora/kdelibs-3.5.10-cve-2009-1698.patch</Patch>
+
+            <!-- SSL incorrect verification of SSL certificate with NUL in subjectAltName (CVE-2009-2702) -->
+            <Patch level="1">fedora/kdelibs-3.5.10-CVE-2009-2702.patch</Patch>
+
+            <!-- select() length DoS (CVE-2009-2537) -->
+            <Patch level="1">fedora/kdelibs-3.5.10-cve-2009-2537-select-length.patch</Patch>
+
+            <!-- Crash, possible ACE in numeric character references (CVE-2009-1725) -->
+            <Patch level="1">fedora/kdelibs-3.5.10-cve-2009-1725.patch</Patch>
+
+
+            <!-- use xauthlocalhostname so getting hostname from dhcp server problems solved-->
+            <Patch>use-xauthlocalhostname.diff</Patch>
+
+            <!-- use utf-8 with kdeprint -->
+            <Patch>kdeprint-utf8.diff</Patch>
+
+            <!-- Fileshareset comarize patch -->
+            <Patch level="1">fileshareset_comarize.patch</Patch>
+
+            <!-- http://ktown.kde.org/~seli/xinerama/ -->
+            <Patch level="1">kdelibs-xinerama.patch</Patch>
+
+            <Patch>global-style-settings.patch</Patch>
+
+            <Patch level="1">kdelibs-3.5.5-kio-redirection-encode.patch</Patch>
+
+            <!-- http://bugs.pardus.org.tr/show_bug.cgi?id=180 -->
+            <Patch>vcard-country-locale.patch</Patch>
+
+            <Patch level="1">kdeprint-width.patch</Patch>
+
+            <!-- Pardus style menu -->
+            <Patch level="1">clean-menu.patch</Patch>
+
+            <!-- http://www.kde-look.org/content/show.php/Icon+execute+feedback?content=52994 -->
+            <Patch level="1">kdelibs-3.5.6-execute_feedback.patch</Patch>
+
+            <!-- Show Translated strings on desktop preview -->
+            <Patch>desktop-translations.diff</Patch>
+
+            <!-- http://websvn.kde.org/branches/work/~wstephens/ -->
+            <Patch level="1">kdelibs_networkstatus_branch.diff</Patch>
+
+            <!-- Use avahi -->
+            <Patch>avahi-pidfile.diff</Patch>
+
+            <!-- Open *.so files instead of *.la files for plugins -->
+            <Patch>ltdl-use-so.patch</Patch>
+
+            <!-- Fix SMB printer scanning -->
+            <Patch level="1">fix-smb-scan-printer.patch</Patch>
+
+            <!-- Fix default cups daemon user and group settings -->
+            <Patch level="1">cups-users-template.patch</Patch>
+            <Patch level="1">cups-users-config.patch</Patch>
+
+            <Patch>milliyet.patch</Patch>
+
+            <!-- Renaming a file on an FTP server does not ask for confirmation if the name is used by another file -->
+            <Patch>bug-399296_ftphandling-fix.diff</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>kdelibs</Name>
+        <RuntimeDependencies>
+            <Dependency>qt</Dependency>
+            <!--<Dependency>arts</Dependency>-->
+            <Dependency>cups</Dependency>
+            <Dependency>avahi</Dependency>
+            <Dependency>aspell</Dependency>
+            <Dependency>jasper</Dependency>
+            <Dependency>openexr</Dependency>
+            <Dependency>ilmbase</Dependency>
+            <Dependency>libXext</Dependency>
+            <Dependency>avahi-qt</Dependency>
+            <Dependency>utempter</Dependency>
+            <Dependency>alsa-lib</Dependency>
+            <Dependency>libXrender</Dependency>
+            <Dependency>fontconfig</Dependency>
+            <Dependency>libart_lgpl</Dependency>
+            <Dependency>ghostscript</Dependency>
+            <Dependency>mit-kerberos</Dependency>
+            <Dependency>pardus-support</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc</Path>
+            <Path fileType="executable">/usr/kde/3.5/bin</Path>
+            <Path fileType="config">/usr/kde/3.5/etc</Path>
+            <Path fileType="header">/usr/kde/3.5/include</Path>
+            <Path fileType="library">/usr/kde/3.5/lib</Path>
+            <Path fileType="data">/usr/kde/3.5/share</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kconf_update/pardus-1.0-defaults.upd" permission="0644">pardus-1.0-defaults.upd</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kconf_update/pardus-1.0-browser-defaults.sh" permission="0755">pardus-1.0-browser-defaults.sh</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kconf_update/pardus-1.0-kspell-defaults.sh" permission="0755">pardus-1.0-kspell-defaults.sh</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kconf_update/pardus-1.0-tr-locale.sh" permission="0755">pardus-1.0-tr-locale.sh</AdditionalFile>
+
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kconf_update/pardus-2007-defaults.upd" permission="0644">pardus-2007-defaults.upd</AdditionalFile>
+            <!--
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kconf_update/pardus-2007-arts-defaults.sh" permission="0755">pardus-2007-arts-defaults.sh</AdditionalFile>
+            -->
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kconf_update/pardus-2007-font-defaults.sh" permission="0755">pardus-2007-font-defaults.sh</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kconf_update/pardus-2007-kcmfonts-defaults.sh" permission="0755">pardus-2007-kcmfonts-defaults.sh</AdditionalFile>
+
+            <!-- Initial style and icon theme -->
+            <AdditionalFile owner="root" permission="0644" target="/usr/kde/3.5/share/config/kdeglobals">kdeglobals</AdditionalFile>
+
+            <!-- Permit Simple Samba Sharing -->
+            <AdditionalFile owner="root" permission="0644" target="/etc/security/fileshare.conf">fileshare.conf</AdditionalFile>
+
+            <!-- Fix #2945 and #9311 -->
+            <AdditionalFile owner="root" permission="0644" target="/usr/kde/3.5/share/mimelnk/image/x-djvu.desktop">x-djvu.desktop</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/kde/3.5/share/mimelnk/image/x-djvu-2.desktop">x-djvu-2.desktop</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/kde/3.5/share/mimelnk/audio/ape.desktop">ape.desktop</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/kde/3.5/share/applnk/.hidden/kviewshell.desktop">kviewshell.desktop</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <History>
+        <Update release="87" type="security">
+            <Date>2009-09-29</Date>
+            <Version>3.5.10</Version>
+            <Comment>
+                - Add security fixes,
+                - Grab latest branch fixes from KDE,
+                - Grab additional patches from Fedora,
+                - Add two fixes from Suse,
+                - Don't build apidox package, keep libtool .la files.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="86">
+            <Date>2009-04-14</Date>
+            <Version>3.5.10</Version>
+            <Comment>KDE now correctly opens audio/x-ape mimetypes (#9313).</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="85">
+            <Date>2008-09-12</Date>
+            <Version>3.5.10</Version>
+            <Comment>Fix KDE bug 127793: Renaming a file on an FTP server does not ask for confirmation if the name is used by another file</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="84">
+            <Date>2008-09-10</Date>
+            <Version>3.5.10</Version>
+            <Comment>Add default kdeglobals for style and icon theme as kconf_update does not affect the first KDE splash</Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+        <Update release="83">
+            <Date>2008-09-06</Date>
+            <Version>3.5.10</Version>
+            <Comment>Use kconf_update script for default icon theme. Check if zpspell is installed. Remove tulliana2, zpspell and other unneeded sys deps.</Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+        <Update release="82">
+            <Date>2008-09-05</Date>
+            <Version>3.5.10</Version>
+            <Comment>Use kconf_update script for default style. Obsoletes kdelibs-3.5.0-default-style.patch</Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+        <Update release="81">
+            <Date>2008-08-27</Date>
+            <Version>3.5.10</Version>
+            <Comment>Fix nfs_utils service name in fileshareset_comarize.patch</Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+        <Update release="80">
+            <Date>2008-08-26</Date>
+            <Version>3.5.10</Version>
+            <Comment>Version bump</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="79">
+            <Date>2008-06-09</Date>
+            <Version>3.5.9</Version>
+            <Comment>Revert to tulliana2 as default</Comment>
+            <Name>Ekin Meroğlu</Name>
+            <Email>ekin@pardus.org.tr</Email>
+        </Update>
+        <Update release="78">
+            <Date>2008-05-10</Date>
+            <Version>3.5.9</Version>
+            <Comment>Switch to QtCurve and Milky as default</Comment>
+            <Name>Ekin Meroğlu</Name>
+            <Email>ekin@pardus.org.tr</Email>
+        </Update>
+        <Update release="77" type="security">
+            <Date>2008-04-26</Date>
+            <Version>3.5.9</Version>
+            <Comment>Security fix for kinit</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="76">
+            <Date>2008-04-04</Date>
+            <Version>3.5.9</Version>
+            <Comment>Switch to Polyester style</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="75">
+            <Date>2008-03-23</Date>
+            <Version>3.5.9</Version>
+            <Comment>Fix compilation error "-lqt-mt not found"</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="74">
+            <Date>2008-03-12</Date>
+            <Version>3.5.9</Version>
+            <Comment>Adapted to new avahi packages</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="73">
+            <Date>2008-02-22</Date>
+            <Version>3.5.9</Version>
+            <Comment>Fix default group and users for cups daemon settings</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="72">
+            <Date>2008-02-16</Date>
+            <Version>3.5.9</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="71">
+            <Date>2008-01-18</Date>
+            <Version>3.5.8</Version>
+            <Comment>Sync with branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="70">
+            <Date>2008-01-04</Date>
+            <Version>3.5.8</Version>
+            <Comment>First part of fix for #6721</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="69">
+            <Date>2007-12-29</Date>
+            <Version>3.5.8</Version>
+            <Comment>Use avahi instead of mDNSResponder</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="68">
+            <Date>2007-11-12</Date>
+            <Version>3.5.8</Version>
+            <Comment>Branch update to fix Uluzilla #5389</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="67">
+            <Date>2007-10-22</Date>
+            <Version>3.5.8</Version>
+            <Comment>Branch update to fix a regression (KDE bug #150944)</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="66">
+            <Date>2007-10-09</Date>
+            <Version>3.5.8</Version>
+            <Comment>Version bump</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="65">
+            <Date>2007-09-26</Date>
+            <Version>3.5.7</Version>
+            <Comment>Update branch patch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="64" type="security">
+            <Date>2007-09-12</Date>
+            <Version>3.5.7</Version>
+            <Comment>Update branch patch which improves url spoofing protection</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="63" type="security">
+            <Date>2007-09-01</Date>
+            <Version>3.5.7</Version>
+            <Comment>Branch update to fix a cross-site cookie injection vulnerability</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="62" type="security">
+            <Date>2007-08-28</Date>
+            <Version>3.5.7</Version>
+            <Comment>Update to 3.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="61" type="security">
+            <Date>2007-08-15</Date>
+            <Version>3.5.7</Version>
+            <Comment>Fix CVE-2007-4225</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="60">
+            <Date>2007-06-17</Date>
+            <Version>3.5.7</Version>
+            <Comment>Grab networkstatus branch patch set from KDE SVN and add show desktop files' preview in users locale patch from OpenSuse</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="59">
+            <Date>2007-04-14</Date>
+            <Version>3.5.7</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="58">
+            <Date>2007-03-29</Date>
+            <Version>3.5.6</Version>
+            <Comment>Implementation of switching language for individual applications.</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="57" type="security">
+            <Date>2007-03-29</Date>
+            <Version>3.5.6</Version>
+            <Comment>Fix UTF-8 overlong sequence decoding vulnerability</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="56" type="security">
+            <Date>2007-03-26</Date>
+            <Version>3.5.6</Version>
+            <Comment>Fix CVE-2007-1564</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="55" type="security">
+            <Date>2007-03-05</Date>
+            <Version>3.5.6</Version>
+            <Comment>Fix http://bindshell.net/advisories/konq355</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="54">
+            <Date>2007-01-17</Date>
+            <Version>3.5.6</Version>
+            <Comment>Version bump to stable</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="53">
+            <Date>2006-12-08</Date>
+            <Version>3.5.5</Version>
+            <Comment>Clean/beatify menu</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="52">
+            <Date>2006-12-06</Date>
+            <Version>3.5.5</Version>
+            <Comment>Hide Settings menu</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="51">
+            <Date>2006-12-03</Date>
+            <Version>3.5.5</Version>
+            <Comment>Fix GTK+ fonts</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="50">
+            <Date>2006-11-25</Date>
+            <Version>3.5.5</Version>
+            <Comment>Fix #1913</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="49">
+            <Date>2006-11-25</Date>
+            <Version>3.5.5</Version>
+            <Comment>Update branch patch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="48">
+            <Date>2006-11-24</Date>
+            <Version>3.5.5</Version>
+            <Comment>Make 96dpi default</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="47">
+            <Date>2006-11-23</Date>
+            <Version>3.5.5</Version>
+            <Comment>Fixes wrong textbox width in kdeprint</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="46">
+            <Date>2006-11-20</Date>
+            <Version>3.5.5</Version>
+            <Comment>Fix #180</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="45">
+            <Date>2006-11-08</Date>
+            <Version>3.5.5</Version>
+            <Comment>kdelibs-3.5.5-kio-redirection-encode.patch</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="44">
+            <Date>2006-11-04</Date>
+            <Version>3.5.5</Version>
+            <Comment>Update branch patch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="43">
+            <Date>2006-10-27</Date>
+            <Version>3.5.5</Version>
+            <Comment>Partial fix of #3747 (KDE side)</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="42" type="security">
+            <Date>2006-10-18</Date>
+            <Version>3.5.5</Version>
+            <Comment>Fix CVE-2006-4811</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="41">
+            <Date>2006-10-16</Date>
+            <Version>3.5.5</Version>
+            <Comment>Sync with 3.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="40">
+            <Date>2006-10-11</Date>
+            <Version>3.5.5</Version>
+            <Comment>Sync with 3.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="39">
+            <Date>2006-10-03</Date>
+            <Version>3.5.5</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="38">
+            <Date>2006-09-29</Date>
+            <Version>3.5.4</Version>
+            <Comment>Disable LUA support</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="37">
+            <Date>2006-09-28</Date>
+            <Version>3.5.4</Version>
+            <Comment>Update 3.5 branch patch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="36">
+            <Date>2006-09-22</Date>
+            <Version>3.5.4</Version>
+            <Comment>Update 3.5 branch patch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="35">
+            <Date>2006-09-13</Date>
+            <Version>3.5.4</Version>
+            <Comment>Really use our default style settings</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="34">
+            <Date>2006-09-12</Date>
+            <Version>3.5.4</Version>
+            <Comment>Update to 3.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="33">
+            <Date>2006-09-02</Date>
+            <Version>3.5.4</Version>
+            <Comment>Add Lubas Lunak's xinerama patch</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="32">
+            <Date>2006-08-23</Date>
+            <Version>3.5.4</Version>
+            <Comment>Update TLSv1 patch from 3.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="31">
+            <Date>2006-08-18</Date>
+            <Version>3.5.4</Version>
+            <Comment>Fix never going away silent notifications</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="30">
+            <Date>2006-08-15</Date>
+            <Version>3.5.4</Version>
+            <Comment>Fix file conflict with kmplayer</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="29">
+            <Date>2006-08-11</Date>
+            <Version>3.5.4</Version>
+            <Comment>Fix SSL sites that don't accept TLS1</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="28">
+            <Date>2006-08-08</Date>
+            <Version>3.5.4</Version>
+            <Comment>Fix favicon loader</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="27">
+            <Date>2006-07-25</Date>
+            <Version>3.5.4</Version>
+            <Comment>New stable release</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="26">
+            <Date>2006-07-07</Date>
+            <Version>3.5.3</Version>
+            <Comment>--with-distribution=Pardus 1.1 Alpha</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="25">
+            <Date>2006-06-28</Date>
+            <Version>3.5.3</Version>
+            <Comment>Fix file conflicts with digikam and ktorrent</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="24" type="security">
+            <Date>2006-06-14</Date>
+            <Version>3.5.3</Version>
+            <Comment>Fix display problems with new slashdot and add checks for setuid calls</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="23">
+            <Date>2006-06-09</Date>
+            <Version>3.5.3</Version>
+            <Comment>Use Tulliana2</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="22">
+            <Date>2006-06-09</Date>
+            <Version>3.5.3</Version>
+            <Comment>Fix KDE bug #128842 and update smooth scrolling patch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="21">
+            <Date>2006-05-24</Date>
+            <Version>3.5.3</Version>
+            <Comment>new version</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="20">
+            <Date>2006-05-17</Date>
+            <Version>3.5.2</Version>
+            <Comment>Fix #2606</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="19">
+            <Date>2006-05-02</Date>
+            <Version>3.5.2</Version>
+            <Comment>Fix samba simple sharing</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="18">
+            <Date>2006-03-21</Date>
+            <Version>3.5.2</Version>
+            <Comment>New stable release</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="17">
+            <Date>2006-03-11</Date>
+            <Version>3.5.1</Version>
+            <Comment>Minor config changes</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="16">
+            <Date>2006-03-11</Date>
+            <Version>3.5.1</Version>
+            <Comment>Use inotify instead of ugly fam</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="15">
+            <Date>2006-03-10</Date>
+            <Version>3.5.1</Version>
+            <Comment>Add speedup patch, use utf-8 for kprint and xhostauthname for KDE</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="14">
+            <Date>2006-02-03</Date>
+            <Version>3.5.1</Version>
+            <Comment>Add a patch from upstream to fix bug #1093</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2006-02-01</Date>
+            <Version>3.5.1</Version>
+            <Comment>New stable release</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2005-12-29</Date>
+            <Version>3.5.0</Version>
+            <Comment>Add OpenEXR and Kerberos support</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2005-12-24</Date>
+            <Version>3.5.0</Version>
+            <Comment>Use Uludag bugzilla to report problems</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2005-12-12</Date>
+            <Version>3.5.0</Version>
+            <Comment>Fix #895</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="9">
+            <Date>2005-12-08</Date>
+            <Version>3.5.0</Version>
+            <Comment>Fix #933</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2005-12-05</Date>
+            <Version>3.5.0</Version>
+            <Comment>Fix #972</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2005-11-29</Date>
+            <Version>3.5.0</Version>
+            <Comment>Version bump to stable release</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2005-11-25</Date>
+            <Version>3.5.0_rc2</Version>
+            <Comment>Use OpenOffice.org icons for OpenOffice.org documents</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2005-11-21</Date>
+            <Version>3.5.0_rc2</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2005-11-21</Date>
+            <Version>3.5.0_rc1</Version>
+            <Comment>Dep fix</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2005-11-15</Date>
+            <Version>3.5.0_rc1</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2005-10-15</Date>
+            <Version>3.5.0_beta2</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2005-09-04</Date>
+            <Version>3.4.2</Version>
+            <Comment>First release.</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>

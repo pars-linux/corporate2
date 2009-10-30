@@ -1,0 +1,34 @@
+Index: kabc/address.cpp
+===================================================================
+--- kabc/address.cpp	(revision 606117)
++++ kabc/address.cpp	(working copy)
+@@ -28,6 +28,7 @@
+ #include <kstaticdeleter.h>
+ 
+ #include <qfile.h>
++#include <pardus.h>
+ 
+ using namespace KABC;
+ 
+@@ -373,7 +374,7 @@
+     entry.setGroup( "KCM Locale" );
+     QString cpos = entry.readEntry( "AddressCountryPosition" );
+     if ( "BELOW" == cpos || cpos.isEmpty() ) {
+-      ret = ret + "\n\n" + country().upper();
++      ret = ret + "\n\n" + Pardus::upper(country());
+     } else if ( "below" == cpos ) {
+       ret = ret + "\n\n" + country();
+     } else if ( "ABOVE" == cpos ) {
+Index: kabc/Makefile.am
+===================================================================
+--- kabc/Makefile.am	(revision 606117)
++++ kabc/Makefile.am	(working copy)
+@@ -22,7 +22,7 @@
+ lib_LTLIBRARIES = libkabc.la
+ libkabc_la_LDFLAGS = $(KDE_RPATH) $(all_libraries) -version-info 3:0:2 -no-undefined
+ libkabc_la_LIBADD = vcard/libvcard.la vcardparser/libvcards.la $(LIB_KIO) \
+-                    $(top_builddir)/kresources/libkresources.la
++                    $(top_builddir)/kresources/libkresources.la -lpardus
+ libkabc_la_COMPILE_FIRST = addressee.h
+ 
+ libkabc_la_SOURCES = \

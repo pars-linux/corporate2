@@ -1,0 +1,2675 @@
+diff -Nur kdelibs-3.5.7.orig/networkstatus/connectionmanager.cpp kdelibs-3.5.7/networkstatus/connectionmanager.cpp
+--- kdelibs-3.5.7.orig/networkstatus/connectionmanager.cpp	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/connectionmanager.cpp	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,171 @@
++/*  This file is part of kdepim.
++    Copyright (C) 2005,2007 Will Stephenson <wstephenson@kde.org>
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License version 2 as published by the Free Software Foundation.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library.  If not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this library
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#include <kapplication.h>
++#include <kdebug.h>
++#include <kstaticdeleter.h>
++
++#include "connectionmanager.h"
++#include "connectionmanager_p.h"
++
++// Connection manager itself
++ConnectionManager::ConnectionManager( QObject * parent, const char * name ) : DCOPObject( "ConnectionManager" ), QObject( parent, name ), d( new ConnectionManagerPrivate( this ) )
++{
++    d->service = new NetworkStatusIface_stub( kapp->dcopClient(), "kded", "networkstatus" );
++
++    connectDCOPSignal( "kded", "networkstatus", "statusChange(int)", "slotStatusChanged(int)", false );
++
++    initialise();
++}
++
++ConnectionManager::~ConnectionManager()
++{
++    delete d;
++}
++
++ConnectionManager *ConnectionManager::s_self = 0L;
++
++ConnectionManager *ConnectionManager::self()
++{
++    static KStaticDeleter<ConnectionManager> deleter;
++    if(!s_self)
++        deleter.setObject( s_self, new ConnectionManager( 0, "connection_manager" ) );
++    return s_self;	
++}
++
++void ConnectionManager::initialise()
++{
++    // determine initial state and set the state object accordingly.
++    d->status = ( NetworkStatus::Status )d->service->status();
++}
++
++NetworkStatus::Status ConnectionManager::status()
++{
++    return d->status;
++}
++
++void ConnectionManager::slotStatusChanged( int status )
++{
++    d->status = ( NetworkStatus::Status )status;
++    switch ( status ) {
++      case NetworkStatus::NoNetworks:
++        break;
++      case NetworkStatus::Unreachable:
++        break;
++      case NetworkStatus::OfflineDisconnected:
++      case NetworkStatus::OfflineFailed:
++      case NetworkStatus::ShuttingDown:
++      case NetworkStatus::Offline:
++      case NetworkStatus::Establishing:
++        if ( d->disconnectPolicy == Managed ) {
++          emit d->disconnected();
++        } else if ( d->disconnectPolicy == OnNextChange ) {
++          setDisconnectPolicy( Manual );
++          emit d->disconnected();
++        }
++        break;
++      case NetworkStatus::Online:
++        if ( d->disconnectPolicy == Managed ) {
++          emit d->connected();
++        } else if ( d->disconnectPolicy == OnNextChange ) {
++          setConnectPolicy( Manual );
++          emit d->connected();
++        }
++        break;
++      default:
++        kdDebug() << k_funcinfo <<  "Unrecognised status code!" << endl;
++    }
++    emit statusChanged( d->status );
++}
++
++ConnectionManager::ConnectionPolicy ConnectionManager::connectPolicy() const
++{
++    return d->connectPolicy;
++}
++
++void ConnectionManager::setConnectPolicy( ConnectionManager::ConnectionPolicy policy )
++{
++    d->connectPolicy = policy;
++}
++
++ConnectionManager::ConnectionPolicy ConnectionManager::disconnectPolicy() const
++{
++    return d->disconnectPolicy;
++}
++
++void ConnectionManager::setDisconnectPolicy( ConnectionManager::ConnectionPolicy policy )
++{
++    d->disconnectPolicy = policy;
++}
++
++void ConnectionManager::setManualConnectionPolicies()
++{
++    d->connectPolicy = ConnectionManager::Manual;
++    d->disconnectPolicy = ConnectionManager::Manual;
++}
++
++void ConnectionManager::setManagedConnectionPolicies()
++{
++    d->connectPolicy = ConnectionManager::Managed;
++    d->disconnectPolicy = ConnectionManager::Managed;
++}
++
++void ConnectionManager::registerConnectSlot( QObject * receiver, const char * member )
++{
++    d->connectReceiver = receiver;
++    d->connectSlot = member;
++    connect( d, SIGNAL( connected() ), receiver, member );
++}
++
++void ConnectionManager::forgetConnectSlot()
++{
++    disconnect( d, SIGNAL( connected() ), d->connectReceiver, d->connectSlot );
++    d->connectReceiver = 0;
++    d->connectSlot = 0;
++}
++
++bool ConnectionManager::isConnectSlotRegistered() const
++{
++    return ( d->connectSlot != 0 );
++}
++
++void ConnectionManager::registerDisconnectSlot( QObject * receiver, const char * member )
++{
++    d->disconnectReceiver = receiver;
++    d->disconnectSlot = member;
++    connect( d, SIGNAL( disconnected() ), receiver, member );
++}
++
++void ConnectionManager::forgetDisconnectSlot()
++{
++    disconnect( d, SIGNAL( disconnected() ), d->disconnectReceiver, d->disconnectSlot );
++    d->disconnectReceiver = 0;
++    d->disconnectSlot = 0;
++}
++
++bool ConnectionManager::isDisconnectSlotRegistered() const
++{
++    return ( d->disconnectSlot != 0 );
++}
++
++#include "connectionmanager.moc"
++
+diff -Nur kdelibs-3.5.7.orig/networkstatus/connectionmanager.h kdelibs-3.5.7/networkstatus/connectionmanager.h
+--- kdelibs-3.5.7.orig/networkstatus/connectionmanager.h	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/connectionmanager.h	2007-05-24 19:56:45.000000000 +0300
+@@ -0,0 +1,167 @@
++/*  This file is part of kdepim.
++    Copyright (C) 2005,2007 Will Stephenson <wstephenson@kde.org>
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License version 2 as published by the Free Software Foundation.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library.  If not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this library
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#ifndef KDE_CONNECTION_MANAGER_H
++#define KDE_CONNECTION_MANAGER_H
++
++#include <dcopobject.h>
++#include <kdemacros.h>
++
++#include <networkstatuscommon.h>
++
++class ConnectionManagerPrivate;
++
++class KDE_EXPORT ConnectionManager : public QObject, virtual public DCOPObject
++{
++Q_OBJECT
++K_DCOP
++k_dcop:
++    void slotStatusChanged( int status );
++public:
++    /**
++     * This defines application policy in response to networking connect/disconnect events
++     * Manual - the app only disconnects when the user does so
++     * OnNextChange - the app should connect or disconnect the next time the network changes state, thereafter
++     * Manual
++     * Managed - the app should disconnect when the ConnectionManager thinks the system is
++     * offline
++     */
++    enum ConnectionPolicy { Manual, OnNextChange, Managed };
++    /**
++     * Set a policy to manage the application's connect behaviour
++     */
++    void setConnectPolicy( ConnectionPolicy );
++    /**
++     * Retrieve a policy managing the application's connect behaviour
++     */
++    ConnectionPolicy connectPolicy() const;
++
++    /**
++     * Set a policy to manage the application's disconnect behaviour
++     */
++    void setDisconnectPolicy( ConnectionPolicy );
++
++    /**
++     * Retrieve a policy managing the application's disconnect behaviour
++     */
++    ConnectionPolicy disconnectPolicy() const;
++
++    /*
++     * We'll get logic of the form
++     * onStatusChange() {
++     *   if ( ConnectionManager::self()->policy( ConnectionManager::ConnectBehaviour ) == ConnectionManager::OnNextChange || 
++     *        ConnectionManager::self()->policy( ConnectionManager::ConnectBehaviour ) == ConnectionManager::Managed ) 
++     *   {
++     *        // do connect
++     *
++     *        // reset the policy
++     *        if ( ConnectionManager::self()->policy( ConnectionManager::ConnectBehaviour ) == ConnectionManager::OnNextChange )
++     *          ConnectionManager::self()->setPolicy( ConnectionManager::ConnectionManager,
++     *          ConnectionManager::Manual );
++     *   }
++     * 
++     * Do we just use the CM for policy storage, or do we try to factor the logic to implement the
++     * policy into the CM too?
++     *
++     * could signal doConnect(), then reset the policy
++     * or could register a connect slot
++     *  registerConnectMethod( QObject * receiver, const char * member );
++     *  unregisterConnectMethod();
++     * etc.
++     * 
++     * The problem with automatically controlled behaviour, where policy may change as a result of a
++     * connect, is that if it is also manually altered, the CM needs to be updated.  But the CM needs to
++     * be updated in any case.
++     * CM need
++     */
++    /**
++     * Lazy-method to set Manual on both policies
++     */
++    void setManualConnectionPolicies();
++    /**
++     * Lazy-method to set Managed on both policies
++     */
++    void setManagedConnectionPolicies();
++
++    /**
++     * Record a slot to call on a given receiving QObject when 
++     * 1) the network connection is online,
++     * 2) the policy mandates that the app connect
++     *
++     * Only one slot may be registered at any one time. If a second slot is 
++     * registered, the first slot is forgotten
++     * @param receiver the QObject where the slot is located
++     * @param member the slot to call. Set up member using the SLOT() macro.
++     */
++    void registerConnectSlot( QObject * receiver, const char * member );
++
++    /**
++     * Forget any connect slot previously registered
++     */
++    void forgetConnectSlot();
++
++    /**
++     * Has any slot been registered to be called on connect?
++     */
++    bool isConnectSlotRegistered() const;
++
++    /**
++     * Record a slot to call on a given receiving QObject when 
++     * 1) the network connection goes offline (in any way ),
++     * 2) the policy mandates that the app disconnect
++     *
++     * Only one slot may be registered at any one time. If a second slot is 
++     * registered, the first slot is forgotten
++     * @param receiver the QObject where the slot is located
++     * @param member the slot to call. Set up member using the SLOT() macro.
++     */
++    void registerDisconnectSlot( QObject * receiver, const char * member );
++
++    /**
++     * Forget any disconnect slot previously registered
++     */
++    void forgetDisconnectSlot();
++
++    /**
++     * Has any slot been registered to be called on disconnect?
++     */
++    bool isDisconnectSlotRegistered() const;
++
++    /// existing API
++
++    static ConnectionManager* self();
++    virtual ~ConnectionManager();
++    NetworkStatus::Status status();
++signals:
++    // signal that the network for a hostname is up/down
++    void statusChanged( NetworkStatus::Status status );
++private:
++    // sets up internal state
++    void initialise();
++    // reread the desktop status from the daemon and update internal state
++    ConnectionManager( QObject *parent, const char * name );
++    ConnectionManagerPrivate * d;
++    static ConnectionManager * s_self;
++};
++
++#endif
++
+diff -Nur kdelibs-3.5.7.orig/networkstatus/connectionmanager_p.cpp kdelibs-3.5.7/networkstatus/connectionmanager_p.cpp
+--- kdelibs-3.5.7.orig/networkstatus/connectionmanager_p.cpp	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/connectionmanager_p.cpp	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,13 @@
++#include "connectionmanager_p.h"
++
++ConnectionManagerPrivate::ConnectionManagerPrivate(QObject * parent, const char * name ) : QObject( parent, name ), service( 0 ), connectPolicy( ConnectionManager::Managed ),
++  disconnectPolicy( ConnectionManager::Managed ), connectReceiver( 0 ), connectSlot( 0 ),
++  disconnectReceiver( 0 ), disconnectSlot( 0 )
++{
++}
++
++ConnectionManagerPrivate::~ConnectionManagerPrivate()
++{
++}
++
++#include "connectionmanager_p.moc"
+diff -Nur kdelibs-3.5.7.orig/networkstatus/connectionmanager_p.h kdelibs-3.5.7/networkstatus/connectionmanager_p.h
+--- kdelibs-3.5.7.orig/networkstatus/connectionmanager_p.h	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/connectionmanager_p.h	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,55 @@
++/*  This file is part of the KDE project
++    Copyright (C) 2007 Will Stephenson <wstephenson@kde.org>
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License version 2 as published by the Free Software Foundation.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library.  If not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this library
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#ifndef CONNECTIONMANAGERPRIVATE_H
++#define CONNECTIONMANAGERPRIVATE_H
++
++#include <qobject.h>
++
++#include "connectionmanager.h"
++#include "networkstatuscommon.h"
++#include "networkstatusiface_stub.h"
++
++
++// ConnectionManager's private parts
++class ConnectionManagerPrivate : public QObject
++{
++Q_OBJECT
++    friend class ConnectionManager;
++public:
++    ConnectionManagerPrivate( QObject * parent = 0, const char * name = 0);
++    ~ConnectionManagerPrivate();
++    // this holds the currently active state
++    NetworkStatus::Status status;
++    NetworkStatusIface_stub * service;
++    ConnectionManager::ConnectionPolicy connectPolicy;
++    ConnectionManager::ConnectionPolicy disconnectPolicy;
++    QObject * connectReceiver;
++    const char * connectSlot;
++    QObject * disconnectReceiver;
++    const char * disconnectSlot;
++signals:
++    void connected();
++    void disconnected();
++};
++
++#endif
+diff -Nur kdelibs-3.5.7.orig/networkstatus/Makefile.am kdelibs-3.5.7/networkstatus/Makefile.am
+--- kdelibs-3.5.7.orig/networkstatus/Makefile.am	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/Makefile.am	2007-05-24 16:39:11.000000000 +0300
+@@ -0,0 +1,45 @@
++#SUBDIRS = networkstatustray
++
++METASOURCES = AUTO
++
++INCLUDES = -I$(top_srcdir)/kded -I$(top_srcdir) $(all_includes)
++
++kde_module_LTLIBRARIES = kded_networkstatus.la 
++
++kded_networkstatus_la_SOURCES = networkstatus.cpp networkstatus.skel \
++								network.cpp
++kded_networkstatus_la_LIBADD = $(LIB_KDECORE) $(LIB_KIO) ./libnetworkstatus.la
++kded_networkstatus_la_LDFLAGS = $(all_libraries) -module -avoid-version 
++
++servicesdir = $(kde_servicesdir)/kded
++
++services_DATA = networkstatus.desktop
++
++lib_LTLIBRARIES = libnetworkstatus.la libconnectionmanager.la
++
++libnetworkstatus_la_LIBADD = $(LIB_KDECORE)
++libnetworkstatus_la_LDFLAGS = $(all_libraries)
++libnetworkstatus_la_SOURCES = networkstatuscommon.cpp
++
++libconnectionmanager_la_LIBADD = $(LIB_KDECORE) libnetworkstatus.la
++libconnectionmanager_la_LDFLAGS = $(all_libraries)
++libconnectionmanager_la_SOURCES = connectionmanager.cpp connectionmanager_p.cpp networkstatusindicator.cpp connectionmanager.skel networkstatusiface.stub
++
++noinst_PROGRAMS = networkstatustestservice networkstatustestclient managedconnectiontestclient
++
++networkstatustestservice_LDFLAGS =  $(all_libraries)
++networkstatustestservice_LDADD = $(LIB_KFILE) libnetworkstatus.la
++networkstatustestservice_SOURCES = testservice.cpp testserviceview.ui networkstatusiface.stub
++
++networkstatustestclient_LDFLAGS = $(all_libraries)
++networkstatustestclient_LDADD   = $(LIB_KFILE) libnetworkstatus.la libconnectionmanager.la 
++networkstatustestclient_SOURCES = testclient.cpp testclientview.ui 
++
++managedconnectiontestclient_LDFLAGS = $(all_libraries)
++managedconnectiontestclient_LDADD   = $(LIB_KFILE) libnetworkstatus.la libconnectionmanager.la 
++managedconnectiontestclient_SOURCES = testclient2.cpp testclientview.ui 
++
++noinst_HEADERS = network.h testservice.h testclient.h
++
++include_HEADERS = networkstatuscommon.h connectionmanager.h networkstatusindicator.h \
++				  networkstatusiface.h
+diff -Nur kdelibs-3.5.7.orig/networkstatus/network.cpp kdelibs-3.5.7/networkstatus/network.cpp
+--- kdelibs-3.5.7.orig/networkstatus/network.cpp	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/network.cpp	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,62 @@
++/*  This file is part of kdepim.
++    Copyright (C) 2005,2007 Will Stephenson <wstephenson@kde.org>
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License version 2 as published by the Free Software Foundation.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library.  If not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this library
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#include <kdebug.h>
++
++#include "network.h"
++
++Network::Network( NetworkStatus::Properties properties )
++	: m_name( properties.name ), m_status( properties.status ), m_service( properties.service )
++{
++}
++
++void Network::setStatus( NetworkStatus::Status status )
++{
++	m_status = status;
++}
++
++NetworkStatus::Status Network::status()
++{
++	return m_status;
++}
++
++void Network::setName( const QString& name )
++{
++	m_name = name;
++}
++
++QString Network::name()
++{
++	return m_name;
++}
++
++QString Network::service()
++{
++	return m_service;
++}
++
++void Network::setService( const QString& service )
++{
++	m_service = service;
++}
++
++// vim: sw=4 ts=4
+diff -Nur kdelibs-3.5.7.orig/networkstatus/network.h kdelibs-3.5.7/networkstatus/network.h
+--- kdelibs-3.5.7.orig/networkstatus/network.h	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/network.h	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,60 @@
++/*  This file is part of kdepim.
++    Copyright (C) 2005,2007 Will Stephenson <wstephenson@kde.org>
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License version 2 as published by the Free Software Foundation.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library.  If not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this library
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#ifndef NETWORKSTATUS_NETWORK_H
++#define NETWORKSTATUS_NETWORK_H
++
++#include "networkstatuscommon.h"
++
++class Network
++{
++public:
++	Network( const QString name );
++	Network( NetworkStatus::Properties properties );
++	/**
++	 * Update the status of this network
++	 */
++	void setStatus( NetworkStatus::Status status );
++	/**
++	 * The connection status of this network
++	 */
++	NetworkStatus::Status status();
++	/**
++	 * The name of this network
++	 */
++	QString name();
++	void setName( const QString& name );
++	/**
++	 * Returns the service owning this network
++	 */
++	QString service();
++	void setService( const QString& service );
++
++private:
++	Network( const Network & );
++	QString m_name;
++	NetworkStatus::Status m_status;
++	QString m_service;
++};
++
++#endif
++// vim: sw=4 ts=4
+diff -Nur kdelibs-3.5.7.orig/networkstatus/networkstatuscommon.cpp kdelibs-3.5.7/networkstatus/networkstatuscommon.cpp
+--- kdelibs-3.5.7.orig/networkstatus/networkstatuscommon.cpp	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/networkstatuscommon.cpp	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,76 @@
++/*  This file is part of kdepim.
++    Copyright (C) 2005,2007 Will Stephenson <wstephenson@kde.org>
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License version 2 as published by the Free Software Foundation.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library.  If not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this library
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#include "networkstatuscommon.h"
++
++QDataStream & operator<< ( QDataStream & s, const NetworkStatus::Properties p )
++{
++  s << p.name;
++	s << (int)p.status;
++	s << p.service;
++	return s;
++}
++
++QDataStream & operator>> ( QDataStream & s, NetworkStatus::Properties &p )
++{
++	int status;
++	s >> p.name;
++	s >> status;
++	p.status = (NetworkStatus::Status)status;
++	s >> p.service;
++	return s;
++}
++
++namespace NetworkStatus
++{
++  QString toString( NetworkStatus::Status st )
++  {
++    QString str;
++    switch ( st ) {
++      case NetworkStatus::NoNetworks:
++        str = "NoNetworks";
++        break;
++      case NetworkStatus::Unreachable:
++        str = "Unreachable";
++        break;
++      case NetworkStatus::OfflineDisconnected:
++        str = "OfflineDisconnected";
++        break;
++      case NetworkStatus::OfflineFailed:
++        str = "OfflineFailed";
++        break;
++      case NetworkStatus::ShuttingDown:
++        str = "ShuttingDown";
++        break;
++      case NetworkStatus::Offline:
++        str = "Offline";
++        break;
++      case NetworkStatus::Establishing:
++        str = "Establishing";
++        break;
++      case NetworkStatus::Online:
++        str = "Online";
++        break;
++    }
++    return str;
++  }
++} // namespace NetworkStatus
+diff -Nur kdelibs-3.5.7.orig/networkstatus/networkstatuscommon.h kdelibs-3.5.7/networkstatus/networkstatuscommon.h
+--- kdelibs-3.5.7.orig/networkstatus/networkstatuscommon.h	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/networkstatuscommon.h	2007-06-05 17:23:36.000000000 +0300
+@@ -0,0 +1,52 @@
++/*  This file is part of kdepim
++    Copyright (C) 2005,2007 Will Stephenson <wstephenson@kde.org>
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License version 2 as published by the Free Software Foundation.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library.  If not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this library
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#ifndef NETWORKSTATUS_COMMON_H
++#define NETWORKSTATUS_COMMON_H
++
++#include <qstringlist.h>
++
++namespace NetworkStatus
++{
++    enum Status { NoNetworks = 1, Unreachable, OfflineDisconnected,  OfflineFailed, ShuttingDown, Offline, Establishing, Online };
++    enum RequestResult { RequestAccepted = 1, Connected, UserRefused, Unavailable };
++    enum UnusedDemandPolicy { All, User, None, Permanent };
++
++    // BINARY COMPATIBILITY ALERT BEGIN !!!!
++    struct Properties
++    {
++        QString name;
++        Status status;
++        UnusedDemandPolicy unused1;
++        QCString           service;
++        bool               unused3;
++        QStringList        unused4;
++    };
++    // BINARY COMPATIBILITY ALERT END !!!!
++
++    QString toString( Status st );
++}
++
++QDataStream & operator>> ( QDataStream & s, NetworkStatus::Properties &p );
++QDataStream & operator<< ( QDataStream & s, const NetworkStatus::Properties p );
++
++#endif
+diff -Nur kdelibs-3.5.7.orig/networkstatus/networkstatus.cpp kdelibs-3.5.7/networkstatus/networkstatus.cpp
+--- kdelibs-3.5.7.orig/networkstatus/networkstatus.cpp	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/networkstatus.cpp	2007-05-24 17:14:06.000000000 +0300
+@@ -0,0 +1,162 @@
++/*  This file is part of kdepim
++    Copyright (C) 2005,2007 Will Stephenson <wstephenson@kde.org>
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License version 2 as published by the Free Software Foundation.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library.  If not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this library
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#include "networkstatus.h"
++
++#include <qmap.h>
++
++#include <dcopclient.h>
++#include <kapplication.h>
++#include <kdebug.h>
++
++#include "network.h"
++#include <kdemacros.h>
++
++extern "C" {
++    KDE_EXPORT KDEDModule* create_networkstatus( const QCString& obj )
++    {
++        return new NetworkStatusModule( obj );
++    }
++}
++
++// INTERNALLY USED STRUCTS AND TYPEDEFS
++
++typedef QMap< QString, Network * > NetworkMap;
++
++class NetworkStatusModule::Private
++{
++public:
++    NetworkMap networks;
++    NetworkStatus::Status status;
++};
++
++// CTORS/DTORS
++
++NetworkStatusModule::NetworkStatusModule( const QCString & obj ) : KDEDModule( obj ), d( new Private )
++{
++    d->status = NetworkStatus::NoNetworks;
++    connect( kapp->dcopClient(), SIGNAL( applicationRemoved( const QCString& ) ) , this, SLOT( unregisteredFromDCOP( const QCString& ) ) );
++    //	connect( kapp->dcopClient(), SIGNAL( applicationRegistered( const QCString& ) ) , this, SLOT( registeredToDCOP( const QCString& ) ) );
++}
++
++NetworkStatusModule::~NetworkStatusModule()
++{
++    NetworkMap::ConstIterator it;
++    const NetworkMap::ConstIterator end = d->networks.end();
++
++    for ( it = d->networks.begin(); it != end; ++it ) {
++        delete ( *it );
++    }
++
++    delete d;
++}
++
++// CLIENT INTERFACE
++
++QStringList NetworkStatusModule::networks()
++{
++    kdDebug() << k_funcinfo << " contains " << d->networks.count() << " networks" << endl;
++    return d->networks.keys();
++}
++
++int NetworkStatusModule::status()
++{
++    kdDebug() << k_funcinfo << " status: " << (int)d->status << endl;
++    return (int)d->status;
++}
++
++//protected:
++
++void NetworkStatusModule::updateStatus()
++{
++    NetworkStatus::Status bestStatus = NetworkStatus::NoNetworks;
++    const NetworkStatus::Status oldStatus = d->status;
++
++    NetworkMap::ConstIterator it;
++    const NetworkMap::ConstIterator end = d->networks.end();
++    for ( it = d->networks.begin(); it != end; ++it ) {
++        if ( ( *it )->status() > bestStatus )
++            bestStatus = ( *it )->status();
++    }
++    d->status = bestStatus;
++
++    if ( oldStatus != d->status ) {
++        statusChange( (int)d->status );
++    }
++}
++
++void NetworkStatusModule::unregisteredFromDCOP( const QCString & appId )
++{
++    // unregister and delete any networks owned by a service that has just unregistered
++    NetworkMap::Iterator it;
++    const NetworkMap::Iterator end = d->networks.end();
++    for ( it = d->networks.begin(); it != end; ++it )
++    {
++        if ( ( *it )->service() == QString( appId ) )
++        {
++            NetworkMap::Iterator toRemove = it;
++            Network * removedNet = *toRemove;
++            d->networks.remove( toRemove );
++            updateStatus();
++            delete removedNet;
++        }
++    }
++}
++
++// SERVICE INTERFACE //
++void NetworkStatusModule::setNetworkStatus( const QString & networkName, int st )
++{
++    kdDebug() << k_funcinfo << networkName << ", " << st << endl;
++    NetworkStatus::Status changedStatus = (NetworkStatus::Status)st;
++    Network * net = 0;
++    NetworkMap::Iterator it = d->networks.find( networkName );
++    if ( it != d->networks.end() ) {
++        net = (*it);
++        net->setStatus( changedStatus );
++        updateStatus();
++    }
++    else
++        kdDebug() << "  No network named '" << networkName << "' found." << endl;
++}
++
++void NetworkStatusModule::registerNetwork( const NetworkStatus::Properties properties )
++{
++    kdDebug() << k_funcinfo << properties.name << ", with status " << properties.status << endl;
++
++    d->networks.insert( properties.name, new Network( properties ) );
++    updateStatus();
++}
++
++void NetworkStatusModule::unregisterNetwork( const QString & networkName )
++{
++    kdDebug() << k_funcinfo << networkName << endl;
++
++    NetworkMap::Iterator it = d->networks.find( networkName );
++    if ( it != d->networks.end() ) {
++        delete *it;
++        d->networks.remove( it );
++    }
++    updateStatus();
++}
++
++#include "networkstatus.moc"
++// vim: set noet sw=4 ts=4:
+diff -Nur kdelibs-3.5.7.orig/networkstatus/networkstatus.desktop kdelibs-3.5.7/networkstatus/networkstatus.desktop
+--- kdelibs-3.5.7.orig/networkstatus/networkstatus.desktop	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/networkstatus.desktop	2007-04-24 06:33:43.000000000 +0300
+@@ -0,0 +1,98 @@
++[Desktop Entry]
++Encoding=UTF-8
++Name=Network Status Daemon
++Name[af]=Netwerk status bediener
++Name[ar]=مراقب القرص و التنفيذ لحالة الشبكة
++Name[bg]=Демон за състояние на мрежата
++Name[ca]=Dimoni de l'estat de la xarxa
++Name[cs]=Démon stavu sítě
++Name[da]=Netværkstatusdæmon
++Name[de]=Überwachung des Netzwerkstatus
++Name[el]=Δαίμονας κατάστασης δικτύου
++Name[es]=Daemon de estado de la red
++Name[et]=Võrguoleku deemon
++Name[eu]=Sarearen egoera deabrua
++Name[fa]=شبح وضعیت شبکه
++Name[fi]=Verkkotilan tarkkailija
++Name[fr]=Suivi de l'état du réseau
++Name[fy]=Netwurktastândaemon
++Name[gl]=Daemon do Estado da Rede
++Name[hu]=Hálózati állapotjelző szolgáltatás
++Name[is]=Netstöðupúki
++Name[it]=Demone dello stato della rete
++Name[ja]=ネットワークステータスデーモン
++Name[kk]=Желі күйінің қызметі
++Name[km]=ដេមិន​ស្ថានភាព​បណ្ដាញ
++Name[lt]=Tinklo statuso tarnyba
++Name[mk]=Даемон за мрежен статус
++Name[ms]=Daemon Berstatus Rangkaian
++Name[nb]=Statusnisse for nettverket
++Name[nds]=Nettwarkstatus-Dämoon
++Name[ne]=सञ्जाल स्थिति डेइमोन
++Name[nl]=Netwerkstatusdaemon
++Name[nn]=Statusnisse for nettverket
++Name[pl]=Usługa stanu sieci
++Name[pt]=Servidor de Estado de Rede
++Name[pt_BR]=Daemon de Status da Rede
++Name[ru]=Служба состояния сети
++Name[sk]=Daemon stavu siete
++Name[sl]=Demon za omrežno stanje
++Name[sr]=Демон за статус мреже
++Name[sr@Latn]=Demon za status mreže
++Name[sv]=Nätverksstatusdemon
++Name[ta]=வலைப்பின்னல் நிலை டெமான்
++Name[tr]=Ağ Durum İzleyici
++Name[uk]=Демон стану мережі
++Name[zh_CN]=网络状态守护程序
++Name[zh_TW]=網路狀態守護程式
++Comment=Tracks status of network interfaces and provides notification to applications using the network.
++Comment[af]=Hou tred van die status van netwerk intervlakke en verskaf kennisgewings na programme wat die netwerk gebruik.
++Comment[bg]=Следене на състоянието на мрежата и предаване на информацията на програмите, които имат нужда
++Comment[ca]=Controla l'estat de les interfícies de xarxa i proporciona notificacions a les aplicacions que usen la xarxa.
++Comment[cs]=Zjiš'tuje stav síťových rozhraní a upozorňuje v případě přístupu aplikací k síti.
++Comment[da]=Sporer status af netværksgrænseflade og sørger for meddelelser til programmer der bruger netværket.
++Comment[de]=Überprüft den Netzwerk-Status und benachrichtigt anfragende Anwendungen
++Comment[el]=Παρακολουθεί την κατάσταση του δικτύου και παρέχει ειδοποιήσεις σε εφαρμογές που χρησιμοποιούν το δίκτυο.
++Comment[es]=Sigue la pista de las interfaces de red y proporciona notificaciones a las aplicaciones que están usando la red.
++Comment[et]=Jälgib võrguliideste olekut ja annab sellest võrgu vahendusel rakendustele teada.
++Comment[eu]=Sare interfazeen egoera jarraitzen du eta sarea darabilten aplikazioei jakinarazten die.
++Comment[fa]=وضعیت واسطهای شبکه را شیار داده و با استفاده از شبکه، برای کاربردها اخطار فراهم می‌کند.
++Comment[fi]=Tarkkailee verkkoliitäntöjen tilaa ja varoittaa verkkoa käyttäviä sovelluksia.
++Comment[fr]=Surveille l'état des interfaces réseaux et fournit des notifications aux applications qui utilisent le réseau
++Comment[fy]=Hâldt de tastân by fan de Netwurkynterfaces en hâldt dêr de tapassings fan op de hichte.
++Comment[gl]=Monitoriza o estado das interfaces de rede e fornece notificacións ás aplicacións que usen a rede.
++Comment[hu]=Figyeli a hálózati csatolók állapotát és értesítési lehetőséget biztosít hálózati alkalmazások számára.
++Comment[is]=Fylgist með stöðu netkorta og sendir tilkynningar til forrita sem nota netið.
++Comment[it]=Controlla lo stato delle interfacce di rete e fornisce notifiche alle applicazioni che usano al rete.
++Comment[ja]=ネットワークインターフェースの状態を追跡し、ネットワークを用いるアプリケーションに通知します
++Comment[kk]=Желі интерфейстерінің күйін бақылап, желіні қолданатын бағдарламаларын құлақтандыру қызметі.
++Comment[km]=តាមដាន​ស្ថានភាព​របស់​ចំណុច​ប្រទាក់​បណ្ដាញ ព្រម​ទាំង​ផ្ដល់​នូវ​ការ​ជូនដំណឹង​ទៅ​កម្មវិធី ដែល​ប្រើ​បណ្ដាញ ។
++Comment[lt]=Seka tinklo sąsajų būseną ir informuoja apie jas programas, naudojančias tinklą
++Comment[mk]=Го следи статусот на мрежните интерфејси и дава известувања на апликациите што ја користат мрежата.
++Comment[ms]=Menjejak status antara muka rangkaian dan memberitahu aplikasi yang menggunakan rangkaian tersebut.
++Comment[nb]=Overvåker status for nettverksgrensesnitt og varsler programmer som bruker nettverket.
++Comment[nds]=Överwacht den Tostand vun Nettwark-Koppelsteden un sendt Narichten na Programmen, de dat Nettwark bruukt.
++Comment[ne]=सञ्जाल इन्टरफेसको स्थिति ट्र्याक गर्दछ र सञ्जाल प्रयोग गरेर अनुप्रयोगमा जानकारी उपलब्ध गराउछ ।
++Comment[nl]=Houdt de status bij van de netwerkinterfaces en houdt daar de toepassingen van op de hoogte.
++Comment[nn]=Overvakar status for nettverksgrensesnitt og varslar program som brukar nettverket.
++Comment[pl]=Śledzi stan interfejsów sieciowych i powiadamia programy używające sieci.
++Comment[pt]=Vigia o estado das interfaces de rede e avisa as aplicações que utilizam a rede.
++Comment[pt_BR]=Controla o status das interfaces de rede e fornece notificações para aplicativos utilizando a rede.
++Comment[ru]=Служба отслеживания состояния сетевых интерфейсов и обращения приложений к сети.
++Comment[sk]=Sleduje stav sieťových rozhraní a poskytuje upozornenia aplikáciám používajúcim sieť.
++Comment[sl]=Sledi stanju omrežnim vmesnikom in omogoča obvestila programom, ki uporabljajo omrežje
++Comment[sr]=Прати статус мрежних интерфејса и пружа обавештења програмима који користе мрежу.
++Comment[sr@Latn]=Prati status mrežnih interfejsa i pruža obaveštenja programima koji koriste mrežu.
++Comment[sv]=Bevakar status för nätverksgränssnitt och tillhandahåller underrättelser till program som använder nätverket.
++Comment[ta]=வலைப்பின்னலைப் பயன்படுத்தி வலைப்பின்னல் இடைமுகங்களின் நிலையை கண்காணிக்கிறது மற்றும் பயன்பாடுகளுக்கு அறிவிப்பை வழங்குகிறது.
++Comment[uk]=Слідкує за станом інтерфейсів мережі і сповіщає програми, які користуються мережею.
++Comment[zh_CN]=跟踪网卡的状态并为应用程序提供使用网络的通知。
++Comment[zh_TW]=追蹤網路介面的狀態，並提供使用網路的應用程式的通知。
++Type=Service
++ServiceTypes=KDEDModule
++X-KDE-ModuleType=Library
++X-KDE-Library=networkstatus
++X-KDE-FactoryName=networkstatus
++X-KDE-Kded-autoload=true
++X-KDE-Kded-load-on-demand=true
++
+diff -Nur kdelibs-3.5.7.orig/networkstatus/networkstatus.h kdelibs-3.5.7/networkstatus/networkstatus.h
+--- kdelibs-3.5.7.orig/networkstatus/networkstatus.h	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/networkstatus.h	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,66 @@
++/*  This file is part of kdepim
++    Copyright (C) 2005,2007 Will Stephenson <wstephenson@kde.org>
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License version 2 as published by the Free Software Foundation.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library.  If not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this library
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#ifndef KDED_NETWORKSTATUS_H
++#define KDED_NETWORKSTATUS_H
++
++#include <kdedmodule.h>
++
++#include "networkstatuscommon.h"
++#include "network.h"
++
++class NetworkStatusModule : virtual public KDEDModule
++{
++Q_OBJECT
++K_DCOP
++public:
++    NetworkStatusModule( const QCString& obj );
++    ~NetworkStatusModule();
++k_dcop:
++    // Client interface
++    QStringList networks();
++    int status();
++    // Service interface
++    void setNetworkStatus( const QString & networkName, int status );
++    void registerNetwork( NetworkStatus::Properties properties );
++    void unregisterNetwork( const QString & networkName );
++k_dcop_signals:
++    /**
++     * A status change occurred affecting the overall connectivity
++     * @param status The new status
++     */
++    void statusChange( int status );
++protected slots:
++    //void registeredToDCOP( const QCString& appId );
++    void unregisteredFromDCOP( const QCString& appId );
++
++protected:
++    // recalculate cached status
++    void updateStatus();
++
++private:
++    class Private;
++    Private *d;
++};
++
++#endif
++// vim: sw=4 ts=4
+diff -Nur kdelibs-3.5.7.orig/networkstatus/networkstatusiface.h kdelibs-3.5.7/networkstatus/networkstatusiface.h
+--- kdelibs-3.5.7.orig/networkstatus/networkstatusiface.h	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/networkstatusiface.h	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,50 @@
++/*  This file is part of kdepim.
++    Copyright (C) 2005,2007 Will Stephenson <wstephenson@kde.org>
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License version 2 as published by the Free Software Foundation.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library.  If not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this library
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#ifndef KDED_NETWORKSTATUSIFACE_H
++#define KDED_NETWORKSTATUSIFACE_H
++
++#include <dcopobject.h>
++#include <qstringlist.h>
++
++#include "networkstatuscommon.h"
++
++class NetworkStatusIface : virtual public DCOPObject
++{
++K_DCOP
++k_dcop:
++	// Client interface
++	virtual QStringList networks() = 0;
++	virtual int status() = 0;
++	// Service interface
++	virtual void setNetworkStatus( const QString & networkName, int status ) = 0;
++	virtual void registerNetwork( NetworkStatus::Properties properties ) = 0;
++	virtual void unregisterNetwork( const QString & networkName ) = 0 ;
++k_dcop_signals:
++	/**
++	 * A status change occurred affecting the overall connectivity
++	 * @param status The new status
++	 */
++	virtual void statusChange( int status ) = 0;
++};
++#endif
++// vim: sw=4 ts=4
+diff -Nur kdelibs-3.5.7.orig/networkstatus/networkstatusindicator.cpp kdelibs-3.5.7/networkstatus/networkstatusindicator.cpp
+--- kdelibs-3.5.7.orig/networkstatus/networkstatusindicator.cpp	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/networkstatusindicator.cpp	2007-05-22 11:02:55.000000000 +0300
+@@ -0,0 +1,64 @@
++/*  This file is part of the KDE project
++    Copyright (C) 2007 Will Stephenson <wstephenson@kde.org>
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License version 2 as published by the Free Software Foundation.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library.  If not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this library
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#include <qlabel.h>
++#include <qtooltip.h>
++#include <kiconloader.h>
++#include <klocale.h>
++
++#include "connectionmanager.h"
++
++#include "networkstatusindicator.h"
++
++StatusBarNetworkStatusIndicator::StatusBarNetworkStatusIndicator(
++    QWidget * parent, const char * name ) : QHBox( parent, name )/*, d( new StatusBarNetworkStatusIndicatorPrivate )*/
++{
++  setMargin( 2 );
++  setSpacing( 1 );
++  QLabel * label = new QLabel( this, "offlinemodelabel" );
++  label->setPixmap( SmallIcon("connect_no") );
++  QToolTip::add( label, i18n( "The desktop is offline" ) );
++
++  connect( ConnectionManager::self(), SIGNAL( statusChanged( NetworkStatus::Status ) ),
++      SLOT( networkStatusChanged( NetworkStatus::Status) ) );
++
++}
++
++void StatusBarNetworkStatusIndicator::init()
++{
++  networkStatusChanged( ConnectionManager::self()->status());
++}
++
++StatusBarNetworkStatusIndicator::~StatusBarNetworkStatusIndicator()
++{
++}
++
++void StatusBarNetworkStatusIndicator::networkStatusChanged( NetworkStatus::Status status )
++{
++  if ( status == NetworkStatus::Online || status == NetworkStatus::NoNetworks ) {
++    hide();
++  } else {
++    show();
++  }
++}
++
++#include "networkstatusindicator.moc"
+diff -Nur kdelibs-3.5.7.orig/networkstatus/networkstatusindicator.h kdelibs-3.5.7/networkstatus/networkstatusindicator.h
+--- kdelibs-3.5.7.orig/networkstatus/networkstatusindicator.h	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/networkstatusindicator.h	2007-05-22 11:02:55.000000000 +0300
+@@ -0,0 +1,42 @@
++/*  This file is part of the KDE project
++    Copyright (C) 2007 Will Stephenson <wstephenson@kde.org>
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License version 2 as published by the Free Software Foundation.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library.  If not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this library
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#ifndef KDE_NETWORKSTATUS_INDICATOR_H
++#define KDE_NETWORKSTATUS_INDICATOR_H
++
++#include <qhbox.h>
++#include <kdemacros.h>
++#include <networkstatuscommon.h>
++
++class StatusBarNetworkStatusIndicator : public QHBox
++{
++Q_OBJECT
++public:
++  StatusBarNetworkStatusIndicator( QWidget * parent, const char * name );
++  virtual ~StatusBarNetworkStatusIndicator();
++  void init();
++protected slots:
++  void networkStatusChanged( NetworkStatus::Status status );
++};
++
++#endif
++
+diff -Nur kdelibs-3.5.7.orig/networkstatus/networkstatus.kdevelop kdelibs-3.5.7/networkstatus/networkstatus.kdevelop
+--- kdelibs-3.5.7.orig/networkstatus/networkstatus.kdevelop	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/networkstatus.kdevelop	2005-01-24 10:48:57.000000000 +0200
+@@ -0,0 +1,108 @@
++<?xml version = '1.0'?>
++<kdevelop>
++  <general>
++    <author>Will Stephenson</author>
++    <email>wstephenson@suse.de</email>
++    <version>$VERSION$</version>
++    <projectmanagement>KDevKDEAutoProject</projectmanagement>
++    <primarylanguage>C++</primarylanguage>
++    <keywords>
++      <keyword>Qt</keyword>
++      <keyword>KDE</keyword>
++    </keywords>
++  </general>
++  <kdevfileview>
++    <groups>
++      <group pattern="*.cpp;*.cxx;*.h" name="Sources" />
++      <group pattern="*.ui" name="User Interface" />
++      <group pattern="*.png" name="Icons" />
++      <group pattern="*.po;*.ts" name="Translations" />
++      <group pattern="*" name="Others" />
++      <hidenonprojectfiles>false</hidenonprojectfiles>
++      <hidenonlocation>false</hidenonlocation>
++    </groups>
++    <tree>
++      <hidepatterns>*.o,*.lo,CVS</hidepatterns>
++      <hidenonprojectfiles>false</hidenonprojectfiles>
++    </tree>
++  </kdevfileview>
++  <kdevdoctreeview>
++    <ignoretocs>
++      <toc>ada</toc>
++      <toc>ada_bugs_gcc</toc>
++      <toc>bash</toc>
++      <toc>bash_bugs</toc>
++      <toc>clanlib</toc>
++      <toc>fortran_bugs_gcc</toc>
++      <toc>gnome1</toc>
++      <toc>gnustep</toc>
++      <toc>gtk</toc>
++      <toc>gtk_bugs</toc>
++      <toc>haskell</toc>
++      <toc>haskell_bugs_ghc</toc>
++      <toc>java_bugs_gcc</toc>
++      <toc>java_bugs_sun</toc>
++      <toc>opengl</toc>
++      <toc>pascal_bugs_fp</toc>
++      <toc>php</toc>
++      <toc>php_bugs</toc>
++      <toc>perl</toc>
++      <toc>perl_bugs</toc>
++      <toc>python</toc>
++      <toc>python_bugs</toc>
++      <toc>ruby</toc>
++      <toc>ruby_bugs</toc>
++      <toc>sdl</toc>
++      <toc>stl</toc>
++      <toc>sw</toc>
++      <toc>w3c-dom-level2-html</toc>
++      <toc>w3c-svg</toc>
++      <toc>w3c-uaag10</toc>
++      <toc>wxwidgets_bugs</toc>
++    </ignoretocs>
++    <ignoreqt_xml>
++      <toc>qmake User Guide</toc>
++    </ignoreqt_xml>
++  </kdevdoctreeview>
++  <kdevdebugger>
++    <general>
++      <dbgshell>libtool</dbgshell>
++    </general>
++  </kdevdebugger>
++  <kdevfilecreate>
++    <useglobaltypes>
++      <type ext="ui" />
++      <type ext="cpp" />
++      <type ext="h" />
++    </useglobaltypes>
++  </kdevfilecreate>
++  <kdevautoproject>
++    <make>
++      <envvars>
++        <envvar value="1" name="WANT_AUTOCONF_2_5" />
++        <envvar value="1" name="WANT_AUTOMAKE_1_6" />
++      </envvars>
++    </make>
++    <run>
++      <directoryradio>executable</directoryradio>
++    </run>
++    <general>
++      <activetarget>kded_networkstatus.la</activetarget>
++    </general>
++  </kdevautoproject>
++  <kdevcppsupport>
++    <references/>
++    <codecompletion>
++      <includeGlobalFunctions>true</includeGlobalFunctions>
++      <includeTypes>true</includeTypes>
++      <includeEnums>true</includeEnums>
++      <includeTypedefs>false</includeTypedefs>
++      <automaticCodeCompletion>true</automaticCodeCompletion>
++      <automaticArgumentsHint>true</automaticArgumentsHint>
++      <automaticHeaderCompletion>true</automaticHeaderCompletion>
++      <codeCompletionDelay>250</codeCompletionDelay>
++      <argumentsHintDelay>400</argumentsHintDelay>
++      <headerCompletionDelay>250</headerCompletionDelay>
++    </codecompletion>
++  </kdevcppsupport>
++</kdevelop>
+diff -Nur kdelibs-3.5.7.orig/networkstatus/README.statetransition kdelibs-3.5.7/networkstatus/README.statetransition
+--- kdelibs-3.5.7.orig/networkstatus/README.statetransition	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/README.statetransition	2005-02-11 17:15:30.000000000 +0200
+@@ -0,0 +1,29 @@
++This table defines the actions to be taken on state transition.
++
++TODO: potentially add extra states OnlineReading and OnlineWriting
++
++                       NEW
++       |Offline         |        Online |
++---+---+----------------+---------------+
++   |   |                |N|set online   |
++   |   |                |L|reload       |
++   | O |                |C|resources    |
++   | F |                +---------------+ 
++   | F |                |L|set online   | 
++O  |   |                |C|reload res.  |
++L  |   |                | |write res.   |
++D  +---+----------------+---------------+
++   |   |N|set offline   |               |
++   |   |C|              |               |
++   |   | |              |               |
++   | O +---------------+|               |
++   | N |U|set offline   |               |
++   |   |W|write locally |               |
++   |   |C|(subject to   |               |
++   |   | |  save policy)|               |
++---+---+----------------+---------------+
++LC = Local changes exist
++NLC = No local changes exist
++UWC = Unsaved changes exist
++NC = no changes exist
++
+diff -Nur kdelibs-3.5.7.orig/networkstatus/testclient2.cpp kdelibs-3.5.7/networkstatus/testclient2.cpp
+--- kdelibs-3.5.7.orig/networkstatus/testclient2.cpp	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/testclient2.cpp	2007-05-21 15:30:21.000000000 +0300
+@@ -0,0 +1,222 @@
++/*  This file is part of kdepim.
++    Copyright (C) 2007 Will Stephenson <wstephenson@kde.org>
++
++    This program is free software; you can redistribute it and/or modify
++    it under the terms of the GNU General Public License version 2
++    as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this program
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#include <qlabel.h>
++#include <qpushbutton.h>
++#include <qvbox.h>
++
++#include <kaboutdata.h>
++#include <kcmdlineargs.h>
++#include <kdebug.h>
++#include <kdeversion.h>
++#include <kglobal.h>
++#include <klocale.h>
++#include <kiconloader.h>
++
++#include <connectionmanager.h>
++#include <networkstatusindicator.h>
++
++#include "testclientview.h"
++#include "testclient2.h"
++
++TestClient::TestClient()
++    : KMainWindow( 0, "ktestnetworkstatus" ),
++      m_layout( new QVBox( 0, "layout" ) ),
++      m_status( AppDisconnected )
++{
++    m_view = new TestClientView( this );
++    new StatusBarNetworkStatusIndicator( m_view, "statusindicator" );
++    // tell the KMainWindow that this is indeed the main widget
++    setCentralWidget(m_view);
++
++    networkStatusChanged( ConnectionManager::self()->status() );
++    appDisconnected();
++
++    connect( ConnectionManager::self(), SIGNAL( statusChanged( NetworkStatus::Status ) ), SLOT( networkStatusChanged( NetworkStatus::Status ) ) );
++    ConnectionManager::self()->registerConnectSlot( this, SLOT( doConnect() ) );
++    ConnectionManager::self()->registerDisconnectSlot( this, SLOT( doDisconnect() ) );
++
++    connect( m_view->connectButton, SIGNAL( clicked() ), SLOT( connectButtonClicked() ) );
++}
++
++TestClient::~TestClient()
++{
++}
++
++void TestClient::networkStatusChanged( NetworkStatus::Status status )
++{
++    kdDebug() << k_funcinfo << endl;
++    kdDebug() << "Networking is now: " << NetworkStatus::toString( status ) << " (" << status << ")" << endl;
++    m_view->netStatusLabel->setText( NetworkStatus::toString( status ) );
++    m_view->netStatusLabel->setPaletteBackgroundColor( toQColor( status ) );
++}
++
++void TestClient::doConnect()
++{
++  Q_ASSERT( ConnectionManager::self()->status() == NetworkStatus::Online );
++  if ( m_status != AppConnected ) {
++    appIsConnected();
++  }
++}
++
++void TestClient::doDisconnect()
++{
++  Q_ASSERT( ConnectionManager::self()->status() != NetworkStatus::Online );
++  if ( m_status == AppConnected ) {
++    appDisconnected();
++  }
++}
++
++void TestClient::connectButtonClicked()
++{
++  kdDebug() << k_funcinfo << endl;
++  if ( m_status == AppDisconnected ) {
++    switch ( ConnectionManager::self()->status() )
++    {
++      case NetworkStatus::NoNetworks:
++      case NetworkStatus::Online:
++        appIsConnected();
++        break;
++      default:
++        appWaiting();
++        break;
++    }
++  }
++  else if ( m_status == AppConnected || m_status == AppWaitingForConnect ) {
++    appDisconnected();
++  }
++}
++
++void TestClient::appWaiting()
++{
++  kdDebug() << k_funcinfo << endl;
++  //m_status = AppWaitingForConnect;
++  m_view->appStatusLabel->setText( "Waiting" );
++}
++
++void TestClient::appIsConnected()
++{
++  kdDebug() << k_funcinfo << endl;
++  m_view->connectButton->setEnabled( true );
++  m_view->connectButton->setText( "Disconnect" );
++  m_view->appStatusLabel->setText( "Connected" );
++  m_status = AppConnected;
++}
++
++void TestClient::appEstablishing()
++{
++  kdDebug() << k_funcinfo << endl;
++  m_view->netStatusLabel->setText( "Establishing" );
++  m_view->connectButton->setEnabled( false );
++}
++
++void TestClient::appDisestablishing( )
++{
++  kdDebug() << k_funcinfo << endl;
++  m_view->connectButton->setEnabled( false );
++  m_view->appStatusLabel->setText( "Disconnected" );
++}
++
++void TestClient::appDisconnected( )
++{
++  kdDebug() << k_funcinfo << endl;
++  m_view->connectButton->setEnabled( true );
++  m_view->connectButton->setText( "Start Connect" );
++  m_view->appStatusLabel->setText( "Disconnected" );
++  m_status = AppDisconnected;
++}
++
++QColor TestClient::toQColor( NetworkStatus::Status st )
++{
++    QColor col;
++    switch ( st ) {
++      case NetworkStatus::NoNetworks:
++        col = Qt::darkGray;
++        break;
++      case NetworkStatus::Unreachable:
++        col = Qt::darkMagenta;
++        break;
++      case NetworkStatus::OfflineDisconnected:
++        col = Qt::blue;
++        break;
++      case NetworkStatus::OfflineFailed:
++        col = Qt::darkRed;
++        break;
++      case NetworkStatus::ShuttingDown:
++        col = Qt::darkYellow;
++        break;
++      case NetworkStatus::Offline:
++        col = Qt::blue;
++        break;
++      case NetworkStatus::Establishing:
++        col = Qt::yellow;
++        break;
++      case NetworkStatus::Online:
++        col = Qt::green;
++        break;
++    }
++    return col;
++}
++//main
++static const char description[] =
++    I18N_NOOP("Test Client for Network Status kded module");
++
++static const char version[] = "v0.1";
++
++static KCmdLineOptions options[] =
++{
++    KCmdLineLastOption
++};
++
++int main(int argc, char **argv)
++{
++  KAboutData about("KNetworkStatusTestClient", I18N_NOOP("knetworkstatustestclient"), version, description, KAboutData::License_GPL, "(C) 2007 Will Stephenson", 0, 0, "wstephenson@kde.org");
++  about.addAuthor( "Will Stephenson", 0, "wstephenson@kde.org" );
++  KCmdLineArgs::init(argc, argv, &about);
++  KCmdLineArgs::addCmdLineOptions(options);
++  KApplication app;
++
++  // register ourselves as a dcop client
++  app.dcopClient()->registerAs(app.name(), false);
++
++  KCmdLineArgs *args = KCmdLineArgs::parsedArgs();
++  if (args->count() == 0)
++  {
++    TestClient *widget = new TestClient;
++    widget->show();
++  }
++  else
++  {
++    int i = 0;
++    for (; i < args->count(); i++)
++    {
++      TestClient *widget = new TestClient;
++      widget->show();
++    }
++  }
++  args->clear();
++
++  return app.exec();
++}
++
++#include "testclient2.moc"
++
+diff -Nur kdelibs-3.5.7.orig/networkstatus/testclient2.h kdelibs-3.5.7/networkstatus/testclient2.h
+--- kdelibs-3.5.7.orig/networkstatus/testclient2.h	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/testclient2.h	2007-05-21 15:30:21.000000000 +0300
+@@ -0,0 +1,82 @@
++/*  This file is part of kdepim.
++
++    Copyright (C) 2007 Will Stephenson <wstephenson@kde.org>
++
++    This program is free software; you can redistribute it and/or modify
++    it under the terms of the GNU General Public License as published by
++    the Free Software Foundation; either version 2 of the License, or
++    (at your option) any later version.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this program
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#ifndef KTESTNETWORKSTATUS_H
++#define KTESTNETWORKSTATUS_H
++
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
++#include <dcopclient.h>
++#include <kapplication.h>
++#include <kmainwindow.h>
++#include <networkstatuscommon.h>
++
++#include "networkstatusiface_stub.h"
++
++class TestClientView;
++
++/**
++ * Test client that uses a ConnectionManager to change its state
++ *
++ * @short Main window class
++ * @author Will Stephenson <wstephenson@kde.org>
++ * @version 0.1
++ */
++class TestClient : public KMainWindow
++{
++Q_OBJECT
++public:
++    enum AppStatus{ AppDisconnected, AppWaitingForConnect, AppConnected };
++    /**
++     * Default Constructor
++     */
++    TestClient();
++
++    /**
++     * Default Destructor
++     */
++    virtual ~TestClient();
++
++private slots:
++    void networkStatusChanged( NetworkStatus::Status status );
++    void connectButtonClicked();
++    void doConnect();
++    void doDisconnect();
++private:
++    void appWaiting();
++    void appEstablishing();
++    void appIsConnected();
++    void appDisestablishing();
++    void appDisconnected();
++    static QColor toQColor( NetworkStatus::Status );
++private:
++    QHBox * m_layout;
++    NetworkStatusIface_stub *m_service;
++    TestClientView *m_view;
++    AppStatus m_status; // this represents the app's status not the network's status
++};
++
++#endif // KTESTNETWORKSTATUS_H
++
+diff -Nur kdelibs-3.5.7.orig/networkstatus/testclient.cpp kdelibs-3.5.7/networkstatus/testclient.cpp
+--- kdelibs-3.5.7.orig/networkstatus/testclient.cpp	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/testclient.cpp	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,234 @@
++/*  This file is part of kdepim.
++    Copyright (C) 2007 Will Stephenson <wstephenson@kde.org>
++
++    This program is free software; you can redistribute it and/or modify
++    it under the terms of the GNU General Public License version 2
++    as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this program
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#include <qlabel.h>
++#include <qpushbutton.h>
++
++
++#include <kaboutdata.h>
++#include <kcmdlineargs.h>
++#include <kdebug.h>
++#include <kdeversion.h>
++#include <kglobal.h>
++#include <klocale.h>
++#include <kiconloader.h>
++
++#include "connectionmanager.h"
++#include "testclientview.h"
++#include "testclient.h"
++
++TestClient::TestClient()
++    : KMainWindow( 0, "ktestnetworkstatus" ),
++      m_view(new TestClientView(this)),
++      m_status( AppDisconnected )
++{
++    // tell the KMainWindow that this is indeed the main widget
++    setCentralWidget(m_view);
++
++    networkStatusChanged( ConnectionManager::self()->status() );
++    appDisconnected();
++
++    connect( ConnectionManager::self(), SIGNAL( statusChanged( NetworkStatus::Status ) ), SLOT( networkStatusChanged( NetworkStatus::Status ) ) );
++
++    connect( m_view->connectButton, SIGNAL( toggled( bool ) ), SLOT( connectButtonToggled( bool ) ) );
++}
++
++TestClient::~TestClient()
++{
++}
++
++void TestClient::networkStatusChanged( NetworkStatus::Status status )
++{
++    kdDebug() << k_funcinfo << endl;
++//enum EnumStatus { NoNetworks = 1, Unreachable, OfflineDisconnected,  OfflineFailed, ShuttingDown
++//  , Offline, Establishing, Online };
++    kdDebug() << "Networking is now: " << NetworkStatus::toString( status ) << " (" << status << ")" << endl;
++    m_view->netStatusLabel->setText( NetworkStatus::toString( status ) );
++    m_view->netStatusLabel->setPaletteBackgroundColor( toQColor( status ) );
++    switch ( status ) {
++      case NetworkStatus::NoNetworks:
++        break;
++      case NetworkStatus::Unreachable:
++        break;
++       case NetworkStatus::OfflineDisconnected:
++        break;
++      case NetworkStatus::OfflineFailed:
++        break;
++      case NetworkStatus::ShuttingDown:
++        if ( m_status == AppConnected ) {
++          appDisestablishing();
++        }
++        break;
++      case NetworkStatus::Offline:
++        if ( m_status == AppConnected ) {
++          appDisconnected();
++        }
++        break;
++      case NetworkStatus::Establishing:
++        if ( m_status == AppWaitingForConnect )
++          appEstablishing();
++        else if ( m_status == AppConnected )
++          appDisconnected();
++        break;
++      case NetworkStatus::Online:
++        if ( m_status == AppWaitingForConnect )
++          appIsConnected();
++        break;
++      default:
++        m_view->netStatusLabel->setText( "Unrecognised status code!" );
++    }
++}
++
++void TestClient::connectButtonToggled( bool on )
++{
++  kdDebug() << k_funcinfo << endl;
++  if ( on && m_status == AppDisconnected ) {
++    switch ( ConnectionManager::self()->status() )
++    {
++      case NetworkStatus::NoNetworks:
++      case NetworkStatus::Online:
++        appIsConnected();
++        break;
++      default:
++        appWaiting();
++        break;
++    }
++  }
++  else if ( !on && m_status == AppConnected ) {
++    appDisconnected();
++  }
++}
++
++void TestClient::appWaiting()
++{
++  kdDebug() << k_funcinfo << endl;
++  m_status = AppWaitingForConnect;
++  m_view->appStatusLabel->setText( "Waiting" );
++}
++
++void TestClient::appIsConnected()
++{
++  kdDebug() << k_funcinfo << endl;
++  m_view->connectButton->setEnabled( true );
++  m_view->connectButton->setText( "Disconnect" );
++  m_view->appStatusLabel->setText( "Connected" );
++  m_status = AppConnected;
++}
++
++void TestClient::appEstablishing()
++{
++  kdDebug() << k_funcinfo << endl;
++  m_view->netStatusLabel->setText( "Establishing" );
++  m_view->connectButton->setEnabled( false );
++}
++
++void TestClient::appDisestablishing( )
++{
++  kdDebug() << k_funcinfo << endl;
++  m_view->connectButton->setEnabled( false );
++  m_view->appStatusLabel->setText( "Disconnected" );
++}
++
++void TestClient::appDisconnected( )
++{
++  kdDebug() << k_funcinfo << endl;
++  m_view->connectButton->setEnabled( true );
++  m_view->connectButton->setText( "Start Connect" );
++  m_view->appStatusLabel->setText( "Disconnected" );
++  m_status = AppDisconnected;
++}
++
++QColor TestClient::toQColor( NetworkStatus::Status st )
++{
++    QColor col;
++    switch ( st ) {
++      case NetworkStatus::NoNetworks:
++        col = Qt::darkGray;
++        break;
++      case NetworkStatus::Unreachable:
++        col = Qt::darkMagenta;
++        break;
++      case NetworkStatus::OfflineDisconnected:
++        col = Qt::blue;
++        break;
++      case NetworkStatus::OfflineFailed:
++        col = Qt::darkRed;
++        break;
++      case NetworkStatus::ShuttingDown:
++        col = Qt::darkYellow;
++        break;
++      case NetworkStatus::Offline:
++        col = Qt::blue;
++        break;
++      case NetworkStatus::Establishing:
++        col = Qt::yellow;
++        break;
++      case NetworkStatus::Online:
++        col = Qt::green;
++        break;
++    }
++    return col;
++}
++//main
++static const char description[] =
++    I18N_NOOP("Test Client for Network Status kded module");
++
++static const char version[] = "v0.1";
++
++static KCmdLineOptions options[] =
++{
++    KCmdLineLastOption
++};
++
++int main(int argc, char **argv)
++{
++  KAboutData about("KNetworkStatusTestClient", I18N_NOOP("knetworkstatustestclient"), version, description, KAboutData::License_GPL, "(C) 2007 Will Stephenson", 0, 0, "wstephenson@kde.org");
++  about.addAuthor( "Will Stephenson", 0, "wstephenson@kde.org" );
++  KCmdLineArgs::init(argc, argv, &about);
++  KCmdLineArgs::addCmdLineOptions(options);
++  KApplication app;
++
++  // register ourselves as a dcop client
++  app.dcopClient()->registerAs(app.name(), false);
++
++  KCmdLineArgs *args = KCmdLineArgs::parsedArgs();
++  if (args->count() == 0)
++  {
++    TestClient *widget = new TestClient;
++    widget->show();
++  }
++  else
++  {
++    int i = 0;
++    for (; i < args->count(); i++)
++    {
++      TestClient *widget = new TestClient;
++      widget->show();
++    }
++  }
++  args->clear();
++
++  return app.exec();
++}
++
++#include "testclient.moc"
++
+diff -Nur kdelibs-3.5.7.orig/networkstatus/testclient.h kdelibs-3.5.7/networkstatus/testclient.h
+--- kdelibs-3.5.7.orig/networkstatus/testclient.h	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/testclient.h	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,80 @@
++/*  This file is part of kdepim.
++
++    Copyright (C) 2007 Will Stephenson <wstephenson@kde.org>
++
++    This program is free software; you can redistribute it and/or modify
++    it under the terms of the GNU General Public License as published by
++    the Free Software Foundation; either version 2 of the License, or
++    (at your option) any later version.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this program
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#ifndef KTESTNETWORKSTATUS_H
++#define KTESTNETWORKSTATUS_H
++
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
++#include <dcopclient.h>
++#include <kapplication.h>
++#include <kmainwindow.h>
++#include <networkstatuscommon.h>
++
++#include "networkstatusiface_stub.h"
++
++class TestClientView;
++
++/**
++ * This class serves as the main window for ktestnetworkstatus.  It handles the
++ * menus, toolbars, and status bars.
++ *
++ * @short Main window class
++ * @author Will Stephenson <wstephenson@kde.org>
++ * @version 0.1
++ */
++class TestClient : public KMainWindow
++{
++Q_OBJECT
++public:
++    enum AppStatus{ AppDisconnected, AppWaitingForConnect, AppConnected };
++    /**
++     * Default Constructor
++     */
++    TestClient();
++
++    /**
++     * Default Destructor
++     */
++    virtual ~TestClient();
++
++private slots:
++    void networkStatusChanged( NetworkStatus::Status status );
++    void connectButtonToggled( bool on );
++private:
++    void appWaiting();
++    void appEstablishing();
++    void appIsConnected();
++    void appDisestablishing();
++    void appDisconnected();
++    static QColor toQColor( NetworkStatus::Status );
++private:
++    NetworkStatusIface_stub *m_service;
++    TestClientView *m_view;
++    AppStatus m_status; // this represents the app's status not the network's status
++};
++
++#endif // KTESTNETWORKSTATUS_H
++
+diff -Nur kdelibs-3.5.7.orig/networkstatus/testclientview.ui kdelibs-3.5.7/networkstatus/testclientview.ui
+--- kdelibs-3.5.7.orig/networkstatus/testclientview.ui	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/testclientview.ui	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,177 @@
++<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
++<class>TestClientView</class>
++<widget class="QWidget">
++    <property name="name">
++        <cstring>TestClientView</cstring>
++    </property>
++    <property name="geometry">
++        <rect>
++            <x>0</x>
++            <y>0</y>
++            <width>356</width>
++            <height>127</height>
++        </rect>
++    </property>
++    <property name="caption">
++        <string>Form1</string>
++    </property>
++    <vbox>
++        <property name="name">
++            <cstring>unnamed</cstring>
++        </property>
++        <widget class="QLabel">
++            <property name="name">
++                <cstring>textLabel4</cstring>
++            </property>
++            <property name="sizePolicy">
++                <sizepolicy>
++                    <hsizetype>5</hsizetype>
++                    <vsizetype>5</vsizetype>
++                    <horstretch>0</horstretch>
++                    <verstretch>0</verstretch>
++                </sizepolicy>
++            </property>
++            <property name="text">
++                <string>&lt;font size="+2"&gt;&lt;b&gt;Client for KDE 3 Offline Mode&lt;/b&gt;&lt;/font&gt;</string>
++            </property>
++            <property name="alignment">
++                <set>AlignVCenter</set>
++            </property>
++        </widget>
++        <widget class="QLayoutWidget">
++            <property name="name">
++                <cstring>layout1</cstring>
++            </property>
++            <hbox>
++                <property name="name">
++                    <cstring>unnamed</cstring>
++                </property>
++                <widget class="QLabel">
++                    <property name="name">
++                        <cstring>textLabel1</cstring>
++                    </property>
++                    <property name="text">
++                        <string>Network status:</string>
++                    </property>
++                </widget>
++                <widget class="QLabel">
++                    <property name="name">
++                        <cstring>netStatusLabel</cstring>
++                    </property>
++                    <property name="paletteBackgroundColor">
++                        <color>
++                            <red>0</red>
++                            <green>255</green>
++                            <blue>0</blue>
++                        </color>
++                    </property>
++                    <property name="frameShape">
++                        <enum>Panel</enum>
++                    </property>
++                    <property name="text">
++                        <string>STATUS</string>
++                    </property>
++                    <property name="alignment">
++                        <set>AlignCenter</set>
++                    </property>
++                </widget>
++            </hbox>
++        </widget>
++        <widget class="QLayoutWidget">
++            <property name="name">
++                <cstring>layout1_2</cstring>
++            </property>
++            <hbox>
++                <property name="name">
++                    <cstring>unnamed</cstring>
++                </property>
++                <widget class="QLabel">
++                    <property name="name">
++                        <cstring>textLabel1_2</cstring>
++                    </property>
++                    <property name="text">
++                        <string>App status:</string>
++                    </property>
++                </widget>
++                <widget class="QLabel">
++                    <property name="name">
++                        <cstring>appStatusLabel</cstring>
++                    </property>
++                    <property name="paletteBackgroundColor">
++                        <color>
++                            <red>0</red>
++                            <green>255</green>
++                            <blue>0</blue>
++                        </color>
++                    </property>
++                    <property name="frameShape">
++                        <enum>Panel</enum>
++                    </property>
++                    <property name="text">
++                        <string>STATUS</string>
++                    </property>
++                    <property name="alignment">
++                        <set>AlignCenter</set>
++                    </property>
++                </widget>
++            </hbox>
++        </widget>
++        <widget class="QLayoutWidget">
++            <property name="name">
++                <cstring>layout2</cstring>
++            </property>
++            <hbox>
++                <property name="name">
++                    <cstring>unnamed</cstring>
++                </property>
++                <spacer>
++                    <property name="name">
++                        <cstring>spacer1</cstring>
++                    </property>
++                    <property name="orientation">
++                        <enum>Horizontal</enum>
++                    </property>
++                    <property name="sizeType">
++                        <enum>Expanding</enum>
++                    </property>
++                    <property name="sizeHint">
++                        <size>
++                            <width>31</width>
++                            <height>20</height>
++                        </size>
++                    </property>
++                </spacer>
++                <widget class="QPushButton">
++                    <property name="name">
++                        <cstring>connectButton</cstring>
++                    </property>
++                    <property name="text">
++                        <string>Start Connect</string>
++                    </property>
++                    <property name="toggleButton">
++                        <bool>false</bool>
++                    </property>
++                </widget>
++                <spacer>
++                    <property name="name">
++                        <cstring>spacer2</cstring>
++                    </property>
++                    <property name="orientation">
++                        <enum>Horizontal</enum>
++                    </property>
++                    <property name="sizeType">
++                        <enum>Expanding</enum>
++                    </property>
++                    <property name="sizeHint">
++                        <size>
++                            <width>61</width>
++                            <height>20</height>
++                        </size>
++                    </property>
++                </spacer>
++            </hbox>
++        </widget>
++    </vbox>
++</widget>
++<layoutdefaults spacing="6" margin="11"/>
++</UI>
+diff -Nur kdelibs-3.5.7.orig/networkstatus/testservice.cpp kdelibs-3.5.7/networkstatus/testservice.cpp
+--- kdelibs-3.5.7.orig/networkstatus/testservice.cpp	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/testservice.cpp	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,219 @@
++/*  This file is part of kdepim.
++    Copyright (C) 2005,2007 Will Stephenson <wstephenson@kde.org>
++
++    This program is free software; you can redistribute it and/or modify
++    it under the terms of the GNU General Public License version 2
++    as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this program
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#include <qcombobox.h>
++#include <qlabel.h>
++#include <qpushbutton.h>
++#include <qtimer.h>
++
++#include <dcopclient.h>
++#include <kaboutdata.h>
++#include <kapplication.h>
++#include <kcmdlineargs.h>
++#include <kdebug.h>
++#include <klocale.h>
++
++#include "testservice.h"
++#include "testserviceview.h"
++#include "networkstatusiface_stub.h"
++
++TestService::TestService() : KMainWindow( 0, "testservice" ),
++    m_service( new NetworkStatusIface_stub( "kded", "networkstatus" ) ),
++    m_status ( NetworkStatus::Offline ),
++    m_nextStatus( NetworkStatus::OfflineDisconnected ),
++    m_view( new TestServiceView( this ) )
++{
++    setCentralWidget( m_view );
++    kapp->dcopClient()->registerAs("testservice" );
++
++    connect( m_view->changeCombo, SIGNAL( activated( int ) ), SLOT( changeComboActivated( int ) ) );
++    connect( m_view->changeButton, SIGNAL( clicked() ), SLOT( changeButtonClicked() ) );
++
++    connect( kapp->dcopClient(), SIGNAL( applicationRegistered( const QCString& ) ), this, SLOT( registeredToDCOP( const QCString& ) ) );
++    kapp->dcopClient()->setNotifications( true );
++
++    m_view->statusLabel->setText( NetworkStatus::toString( m_status ) );
++    m_view->statusLabel->setPaletteBackgroundColor( toQColor( m_status ) );
++    setCaption( NetworkStatus::toString( m_status ) );
++
++    registerService();
++}
++
++TestService::~TestService()
++{
++    delete m_service;
++    delete m_view;
++}
++
++void TestService::registerService()
++{
++    NetworkStatus::Properties nsp;
++    nsp.name = "test_net";
++    nsp.service = kapp->dcopClient()->appId();
++    nsp.status = m_status;
++    m_service->registerNetwork( nsp );
++}
++
++void TestService::registeredToDCOP( const QCString & appId )
++{
++    if ( appId == "kded" )
++        registerService();
++}
++
++int TestService::status( const QString & network )
++{
++    Q_UNUSED( network );
++    return (int)m_status;
++}
++
++void TestService::changeComboActivated( int index )
++{
++  switch ( index ) {
++    case 0 /*NetworkStatus::OfflineDisconnected*/:
++      m_nextStatus = NetworkStatus::OfflineDisconnected;
++      break;
++    case 1 /*NetworkStatus::OfflineFailed*/:
++      m_nextStatus = NetworkStatus::OfflineFailed;
++      break;
++    case 2 /*NetworkStatus::ShuttingDown*/:
++      m_nextStatus = NetworkStatus::ShuttingDown;
++      break;
++    case 3 /*NetworkStatus::Offline*/:
++      m_nextStatus = NetworkStatus::Offline;
++      break;
++    case 4 /*NetworkStatus::Establishing*/:
++      m_nextStatus = NetworkStatus::Establishing;
++      break;
++    case 5 /*NetworkStatus::Online*/:
++      m_nextStatus = NetworkStatus::Online;
++      break;
++    default:
++      kdDebug() << "Unrecognised status!" << endl;
++      Q_ASSERT( false );
++  }
++  m_view->changeButton->setEnabled( true );
++}
++
++void TestService::changeButtonClicked()
++{
++  m_view->changeButton->setEnabled( false );
++  m_status = m_nextStatus;
++  m_service->setNetworkStatus( "test_net", ( int )m_status );
++  m_view->statusLabel->setText( NetworkStatus::toString( m_status ) );
++  m_view->statusLabel->setPaletteBackgroundColor( toQColor( m_status ) );
++  setCaption( NetworkStatus::toString( m_status ) );
++}
++
++int TestService::establish( const QString & network )
++{
++	Q_UNUSED( network );
++	m_status = NetworkStatus::Establishing;
++	m_service->setNetworkStatus( "test_net", (int)m_status );
++	m_nextStatus = NetworkStatus::Online;
++	QTimer::singleShot( 5000, this, SLOT( slotStatusChange() ) );
++	return (int)NetworkStatus::RequestAccepted;
++}
++
++int TestService::shutdown( const QString & network )
++{
++	Q_UNUSED( network );
++	m_status = NetworkStatus::ShuttingDown;
++	m_service->setNetworkStatus( "test_net", (int)m_status );
++	m_nextStatus = NetworkStatus::Offline;
++	QTimer::singleShot( 5000, this, SLOT( slotStatusChange() ) );
++	return (int)NetworkStatus::RequestAccepted;
++}
++
++void TestService::simulateFailure()
++{
++	m_status = NetworkStatus::OfflineFailed;
++	m_service->setNetworkStatus( "test_net", (int)m_status );
++}
++
++void TestService::simulateDisconnect()
++{
++	m_status = NetworkStatus::OfflineDisconnected;
++	m_service->setNetworkStatus( "test_net", (int)m_status );
++}
++
++void TestService::slotStatusChange()
++{
++	m_status = m_nextStatus;
++	m_service->setNetworkStatus( "test_net", (int)m_status );
++}
++
++QColor TestService::toQColor( NetworkStatus::Status st )
++{
++    QColor col;
++    switch ( st ) {
++      case NetworkStatus::NoNetworks:
++        col = Qt::darkGray;
++        break;
++      case NetworkStatus::Unreachable:
++        col = Qt::darkMagenta;
++        break;
++      case NetworkStatus::OfflineDisconnected:
++        col = Qt::blue;
++        break;
++      case NetworkStatus::OfflineFailed:
++        col = Qt::darkRed;
++        break;
++      case NetworkStatus::ShuttingDown:
++        col = Qt::darkYellow;
++        break;
++      case NetworkStatus::Offline:
++        col = Qt::blue;
++        break;
++      case NetworkStatus::Establishing:
++        col = Qt::yellow;
++        break;
++      case NetworkStatus::Online:
++        col = Qt::green;
++        break;
++    }
++    return col;
++}
++
++static const char description[] =
++    I18N_NOOP("Test Service for Network Status kded module");
++
++static const char version[] = "v0.1";
++
++static KCmdLineOptions options[] =
++{
++    KCmdLineLastOption
++};
++
++int main( int argc, char** argv )
++{
++    KAboutData about("KNetworkStatusTestService", I18N_NOOP("knetworkstatustestservice"), version, description, KAboutData::License_GPL, "(C) 2007 Will Stephenson", 0, 0, "wstephenson@kde.org");
++    about.addAuthor( "Will Stephenson", 0, "wstephenson@kde.org" );
++    KCmdLineArgs::init(argc, argv, &about);
++    KCmdLineArgs::addCmdLineOptions(options);
++    KApplication app;
++
++    TestService * test = new TestService;
++    test->show();
++    return app.exec();
++}
++
++#include "testservice.moc"
+diff -Nur kdelibs-3.5.7.orig/networkstatus/testservice.h kdelibs-3.5.7/networkstatus/testservice.h
+--- kdelibs-3.5.7.orig/networkstatus/testservice.h	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/testservice.h	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,60 @@
++/*  This file is part of kdepim.
++
++    Copyright (C) 2005,2007 Will Stephenson <wstephenson@kde.org>
++
++    This program is free software; you can redistribute it and/or modify
++    it under the terms of the GNU General Public License as published by
++    the Free Software Foundation; either version 2 of the License, or
++    (at your option) any later version.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
++
++    As a special exception, permission is given to link this program
++    with any edition of Qt, and distribute the resulting executable,
++    without including the source code for Qt in the source distribution.
++*/
++
++#ifndef _TEST_NETWORKSTATUS_SERVICE_H
++#define _TEST_NETWORKSTATUS_SERVICE_H
++
++#include <kmainwindow.h>
++
++#include "networkstatuscommon.h"
++
++class NetworkStatusIface_stub;
++class TestServiceView;
++
++class TestService : public KMainWindow {
++Q_OBJECT
++public:
++	TestService();
++	virtual ~TestService();
++	int status( const QString & network );
++	int establish( const QString & network );
++	int shutdown( const QString & network );
++	void simulateFailure();
++	void simulateDisconnect();
++protected slots:
++	void changeComboActivated( int index );
++    void registeredToDCOP( const QCString& appId );
++
++	void changeButtonClicked();
++
++	void slotStatusChange();
++private:
++    void registerService();
++    static QColor toQColor( NetworkStatus::Status );
++	NetworkStatusIface_stub * m_service;
++	NetworkStatus::Status m_status;
++	NetworkStatus::Status m_nextStatus;
++    TestServiceView * m_view;
++};
++
++#endif
+diff -Nur kdelibs-3.5.7.orig/networkstatus/testserviceview.ui kdelibs-3.5.7/networkstatus/testserviceview.ui
+--- kdelibs-3.5.7.orig/networkstatus/testserviceview.ui	1970-01-01 02:00:00.000000000 +0200
++++ kdelibs-3.5.7/networkstatus/testserviceview.ui	2007-05-17 18:45:56.000000000 +0300
+@@ -0,0 +1,181 @@
++<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
++<class>TestServiceView</class>
++<widget class="QWidget">
++    <property name="name">
++        <cstring>TestServiceView</cstring>
++    </property>
++    <property name="geometry">
++        <rect>
++            <x>0</x>
++            <y>0</y>
++            <width>367</width>
++            <height>132</height>
++        </rect>
++    </property>
++    <property name="caption">
++        <string>Form1</string>
++    </property>
++    <vbox>
++        <property name="name">
++            <cstring>unnamed</cstring>
++        </property>
++        <widget class="QLabel">
++            <property name="name">
++                <cstring>textLabel4</cstring>
++            </property>
++            <property name="text">
++                <string>&lt;font size="+2"&gt;&lt;b&gt;Service for KDE 3 Offline Mode&lt;/b&gt;&lt;/font&gt;</string>
++            </property>
++            <property name="alignment">
++                <set>AlignVCenter</set>
++            </property>
++        </widget>
++        <widget class="QLayoutWidget">
++            <property name="name">
++                <cstring>layout2</cstring>
++            </property>
++            <hbox>
++                <property name="name">
++                    <cstring>unnamed</cstring>
++                </property>
++                <widget class="QLabel">
++                    <property name="name">
++                        <cstring>textLabel1</cstring>
++                    </property>
++                    <property name="text">
++                        <string>Status:</string>
++                    </property>
++                </widget>
++                <widget class="QLabel">
++                    <property name="name">
++                        <cstring>statusLabel</cstring>
++                    </property>
++                    <property name="paletteBackgroundColor">
++                        <color>
++                            <red>0</red>
++                            <green>255</green>
++                            <blue>0</blue>
++                        </color>
++                    </property>
++                    <property name="frameShape">
++                        <enum>StyledPanel</enum>
++                    </property>
++                    <property name="text">
++                        <string>STATUS</string>
++                    </property>
++                    <property name="alignment">
++                        <set>AlignCenter</set>
++                    </property>
++                </widget>
++            </hbox>
++        </widget>
++        <widget class="QLayoutWidget">
++            <property name="name">
++                <cstring>layout3</cstring>
++            </property>
++            <hbox>
++                <property name="name">
++                    <cstring>unnamed</cstring>
++                </property>
++                <widget class="QLabel">
++                    <property name="name">
++                        <cstring>textLabel3</cstring>
++                    </property>
++                    <property name="text">
++                        <string>Change to:</string>
++                    </property>
++                </widget>
++                <widget class="QComboBox">
++                    <item>
++                        <property name="text">
++                            <string>Offline Disconnected</string>
++                        </property>
++                    </item>
++                    <item>
++                        <property name="text">
++                            <string>Offline Failed</string>
++                        </property>
++                    </item>
++                    <item>
++                        <property name="text">
++                            <string>Shutting Down</string>
++                        </property>
++                    </item>
++                    <item>
++                        <property name="text">
++                            <string>Offline</string>
++                        </property>
++                    </item>
++                    <item>
++                        <property name="text">
++                            <string>Establishing</string>
++                        </property>
++                    </item>
++                    <item>
++                        <property name="text">
++                            <string>Online</string>
++                        </property>
++                    </item>
++                    <property name="name">
++                        <cstring>changeCombo</cstring>
++                    </property>
++                </widget>
++            </hbox>
++        </widget>
++        <widget class="QLayoutWidget">
++            <property name="name">
++                <cstring>layout1</cstring>
++            </property>
++            <hbox>
++                <property name="name">
++                    <cstring>unnamed</cstring>
++                </property>
++                <spacer>
++                    <property name="name">
++                        <cstring>spacer1</cstring>
++                    </property>
++                    <property name="orientation">
++                        <enum>Horizontal</enum>
++                    </property>
++                    <property name="sizeType">
++                        <enum>Expanding</enum>
++                    </property>
++                    <property name="sizeHint">
++                        <size>
++                            <width>51</width>
++                            <height>20</height>
++                        </size>
++                    </property>
++                </spacer>
++                <widget class="QPushButton">
++                    <property name="name">
++                        <cstring>changeButton</cstring>
++                    </property>
++                    <property name="text">
++                        <string>Do change</string>
++                    </property>
++                </widget>
++                <spacer>
++                    <property name="name">
++                        <cstring>spacer2</cstring>
++                    </property>
++                    <property name="orientation">
++                        <enum>Horizontal</enum>
++                    </property>
++                    <property name="sizeType">
++                        <enum>Expanding</enum>
++                    </property>
++                    <property name="sizeHint">
++                        <size>
++                            <width>41</width>
++                            <height>20</height>
++                        </size>
++                    </property>
++                </spacer>
++            </hbox>
++        </widget>
++    </vbox>
++</widget>
++<layoutdefaults spacing="6" margin="11"/>
++</UI>
++

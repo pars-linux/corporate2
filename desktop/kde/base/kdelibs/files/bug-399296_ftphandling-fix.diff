@@ -1,0 +1,53 @@
+--- kioslave/ftp/ftp.cc	2007-05-14 09:52:34.000000000 +0200
++++ kioslave/ftp/ftp.cc	2008-06-10 17:13:41.000000000 +0200
+@@ -1264,6 +1264,16 @@
+   // TODO honor overwrite
+   assert( m_bLoggedOn );
+ 
++  // Must check if dst already exists, RNFR+RNTO overwrites by default (#127793).
++  if (ftpFileExists(dst)) {
++      error(ERR_FILE_ALREADY_EXIST, dst);
++      return false;
++  }
++  if (ftpFolder(dst, false)) {
++      error(ERR_DIR_ALREADY_EXIST, dst);
++      return false;
++  }
++
+   int pos = src.findRev("/");
+   if( !ftpFolder(src.left(pos+1), false) )
+       return false;
+@@ -2393,6 +2403,19 @@
+   return true;
+ }
+ 
++bool Ftp::ftpFileExists(const QString& path)
++{
++  QCString buf;
++  buf = "SIZE ";
++  buf += remoteEncoding()->encode(path);
++  if( !ftpSendCmd( buf ) || (m_iRespType != 2) )
++  return false;
++
++  // skip leading "213 " (response code)
++  const char* psz = ftpResponse(4);
++  return psz != 0;
++}
++
+ // Today the differences between ASCII and BINARY are limited to
+ // CR or CR/LF line terminators. Many servers ignore ASCII (like
+ // win2003 -or- vsftp with default config). In the early days of
+--- kioslave/ftp/ftp.h	2007-01-15 12:34:08.000000000 +0100
++++ kioslave/ftp/ftp.h	2008-06-10 13:51:51.000000000 +0200
+@@ -350,6 +350,11 @@
+   /**
+    * Set the current working directory, but only if not yet current
+    */
++  bool ftpFileExists(const QString& path);
++
++  /**
++   * Set the current working directory, but only if not yet current
++   */
+   bool ftpFolder(const QString& path, bool bReportError);
+ 
+   /**
