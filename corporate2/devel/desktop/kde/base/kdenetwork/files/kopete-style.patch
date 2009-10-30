@@ -1,0 +1,1277 @@
+diff -aburN kopete-0.12.2/kopete/kopete/config/appearance/appearanceconfig_colors.ui modified/kopete/kopete/config/appearance/appearanceconfig_colors.ui
+--- kopete-0.12.2/kopete/kopete/config/appearance/appearanceconfig_colors.ui	2006-08-12 02:51:40.000000000 +0200
++++ modified/kopete/kopete/config/appearance/appearanceconfig_colors.ui	2006-12-08 22:40:57.000000000 +0100
+@@ -1,4 +1,4 @@
+-<!DOCTYPE UI><UI version="3.1" stdsetdef="1">
++<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+ <class>AppearanceConfig_Colors</class>
+ <widget class="QWidget">
+     <property name="name">
+@@ -8,8 +8,8 @@
+         <rect>
+             <x>0</x>
+             <y>0</y>
+-            <width>595</width>
+-            <height>606</height>
++            <width>618</width>
++            <height>594</height>
+         </rect>
+     </property>
+     <property name="caption">
+@@ -203,7 +203,7 @@
+                 </widget>
+                 <widget class="QLayoutWidget">
+                     <property name="name">
+-                        <cstring>layout5</cstring>
++                        <cstring>layout9</cstring>
+                     </property>
+                     <hbox>
+                         <property name="name">
+@@ -222,38 +222,56 @@
+                             <property name="sizeHint">
+                                 <size>
+                                     <width>20</width>
+-                                    <height>0</height>
++                                    <height>16</height>
+                                 </size>
+                             </property>
+                         </spacer>
+                         <widget class="QLayoutWidget">
+                             <property name="name">
+-                                <cstring>layout4</cstring>
++                                <cstring>layout8</cstring>
+                             </property>
+-                            <grid>
++                            <vbox>
+                                 <property name="name">
+                                     <cstring>unnamed</cstring>
+                                 </property>
+-                                <widget class="QLabel" row="1" column="0">
++                                <widget class="QLayoutWidget">
+                                     <property name="name">
+-                                        <cstring>mSmallFontLabel</cstring>
++                                        <cstring>layout5</cstring>
++                                    </property>
++                                    <hbox>
++                                        <property name="name">
++                                            <cstring>unnamed</cstring>
++                                        </property>
++                                        <widget class="QLabel">
++                                            <property name="name">
++                                                <cstring>mGroupFontLabel</cstring>
+                                     </property>
+                                     <property name="enabled">
+                                         <bool>false</bool>
+                                     </property>
+                                     <property name="text">
+-                                        <string>Small font:</string>
++                                                <string>Group font:</string>
+                                     </property>
+                                 </widget>
+-                                <widget class="KFontRequester" row="0" column="1">
++                                        <widget class="KFontRequester">
+                                     <property name="name">
+-                                        <cstring>mNormalFont</cstring>
++                                                <cstring>mGroupFont</cstring>
+                                     </property>
+                                     <property name="enabled">
+                                         <bool>false</bool>
+                                     </property>
+                                 </widget>
+-                                <widget class="QLabel" row="0" column="0">
++                                    </hbox>
++                                </widget>
++                                <widget class="QLayoutWidget">
++                                    <property name="name">
++                                        <cstring>layout6</cstring>
++                                    </property>
++                                    <hbox>
++                                        <property name="name">
++                                            <cstring>unnamed</cstring>
++                                        </property>
++                                        <widget class="QLabel">
+                                     <property name="name">
+                                         <cstring>mNormalFontLabel</cstring>
+                                     </property>
+@@ -264,7 +282,36 @@
+                                         <string>Normal font:</string>
+                                     </property>
+                                 </widget>
+-                                <widget class="KFontRequester" row="1" column="1">
++                                        <widget class="KFontRequester">
++                                            <property name="name">
++                                                <cstring>mNormalFont</cstring>
++                                            </property>
++                                            <property name="enabled">
++                                                <bool>false</bool>
++                                            </property>
++                                        </widget>
++                                    </hbox>
++                                </widget>
++                                <widget class="QLayoutWidget">
++                                    <property name="name">
++                                        <cstring>layout7</cstring>
++                                    </property>
++                                    <hbox>
++                                        <property name="name">
++                                            <cstring>unnamed</cstring>
++                                        </property>
++                                        <widget class="QLabel">
++                                            <property name="name">
++                                                <cstring>mSmallFontLabel</cstring>
++                                            </property>
++                                            <property name="enabled">
++                                                <bool>false</bool>
++                                            </property>
++                                            <property name="text">
++                                                <string>Small font:</string>
++                                            </property>
++                                        </widget>
++                                        <widget class="KFontRequester">
+                                     <property name="name">
+                                         <cstring>mSmallFont</cstring>
+                                     </property>
+@@ -272,7 +319,9 @@
+                                         <bool>false</bool>
+                                     </property>
+                                 </widget>
+-                            </grid>
++                                    </hbox>
++                                </widget>
++                            </vbox>
+                         </widget>
+                     </hbox>
+                 </widget>
+@@ -342,8 +391,6 @@
+         </spacer>
+     </vbox>
+ </widget>
+-<customwidgets>
+-</customwidgets>
+ <connections>
+     <connection>
+         <sender>mUseCustomFonts</sender>
+@@ -375,6 +422,18 @@
+         <receiver>idleContactColor</receiver>
+         <slot>setEnabled(bool)</slot>
+     </connection>
++    <connection>
++        <sender>mUseCustomFonts</sender>
++        <signal>toggled(bool)</signal>
++        <receiver>mGroupFontLabel</receiver>
++        <slot>setEnabled(bool)</slot>
++    </connection>
++    <connection>
++        <sender>mUseCustomFonts</sender>
++        <signal>toggled(bool)</signal>
++        <receiver>mGroupFont</receiver>
++        <slot>setEnabled(bool)</slot>
++    </connection>
+ </connections>
+ <tabstops>
+     <tabstop>bgColor</tabstop>
+@@ -391,6 +450,7 @@
+     <includehint>kfontrequester.h</includehint>
+     <includehint>kfontrequester.h</includehint>
+     <includehint>kfontrequester.h</includehint>
++    <includehint>kfontrequester.h</includehint>
+     <includehint>kcolorbutton.h</includehint>
+     <includehint>kcolorbutton.h</includehint>
+ </includehints>
+diff -aburN kopete-0.12.2/kopete/kopete/config/appearance/appearanceconfig_contactlist.ui modified/kopete/kopete/config/appearance/appearanceconfig_contactlist.ui
+--- kopete-0.12.2/kopete/kopete/config/appearance/appearanceconfig_contactlist.ui	2006-08-12 02:51:40.000000000 +0200
++++ modified/kopete/kopete/config/appearance/appearanceconfig_contactlist.ui	2006-12-09 10:41:43.000000000 +0100
+@@ -9,17 +9,25 @@
+             <x>0</x>
+             <y>0</y>
+             <width>707</width>
+-            <height>445</height>
++            <height>507</height>
+         </rect>
+     </property>
+     <property name="caption">
+         <string>Contact List Appearance</string>
+     </property>
+-    <grid>
++    <vbox>
+         <property name="name">
+             <cstring>unnamed</cstring>
+         </property>
+-        <widget class="QGroupBox" row="0" column="0">
++        <widget class="QLayoutWidget">
++            <property name="name">
++                <cstring>layout4</cstring>
++            </property>
++            <hbox>
++                <property name="name">
++                    <cstring>unnamed</cstring>
++                </property>
++                <widget class="QGroupBox">
+             <property name="name">
+                 <cstring>groupBox1</cstring>
+             </property>
+@@ -94,7 +102,7 @@
+                 </widget>
+             </vbox>
+         </widget>
+-        <widget class="QGroupBox" row="0" column="1">
++                <widget class="QGroupBox">
+             <property name="name">
+                 <cstring>groupBox10</cstring>
+             </property>
+@@ -155,7 +172,70 @@
+             	</widget>
+             </vbox>
+         </widget>
+-        <widget class="QGroupBox" row="2" column="0" rowspan="1" colspan="2">
++            </hbox>
++        </widget>
++        <widget class="QGroupBox">
++            <property name="name">
++                <cstring>groupBox5</cstring>
++            </property>
++            <property name="title">
++                <string>Displayed Theme Path</string>
++            </property>
++            <vbox>
++                <property name="name">
++                    <cstring>unnamed</cstring>
++                </property>
++                <widget class="KURLRequester">
++                    <property name="name">
++                        <cstring>mThemeURL</cstring>
++                    </property>
++                    <property name="mode">
++                        <number>15</number>
++                    </property>
++                </widget>
++            </vbox>
++        </widget>
++        <widget class="QGroupBox">
++            <property name="name">
++                <cstring>groupBox2</cstring>
++            </property>
++            <property name="title">
++                <string>Contact List Animations</string>
++            </property>
++            <vbox>
++                <property name="name">
++                    <cstring>unnamed</cstring>
++                </property>
++                <widget class="QCheckBox">
++                    <property name="name">
++                        <cstring>mAnimateChanges</cstring>
++                    </property>
++                    <property name="text">
++                        <string>&amp;Animate changes to contact list items</string>
++                    </property>
++                    <property name="accel">
++                        <string>Alt+A</string>
++                    </property>
++                </widget>
++                <widget class="QCheckBox">
++                    <property name="name">
++                        <cstring>mFadeVisibility</cstring>
++                    </property>
++                    <property name="text">
++                        <string>Fade in / out contacts as the&amp;y appear / disappear</string>
++                    </property>
++                </widget>
++                <widget class="QCheckBox">
++                    <property name="name">
++                        <cstring>mFoldVisibility</cstring>
++                    </property>
++                    <property name="text">
++                        <string>Fo&amp;ld in / out contacts as they appear / disappear</string>
++                    </property>
++                </widget>
++            </vbox>
++        </widget>
++        <widget class="QGroupBox">
+             <property name="name">
+                 <cstring>groupBox3</cstring>
+             </property>
+@@ -269,44 +349,7 @@
+                 </widget>
+             </vbox>
+         </widget>
+-        <widget class="QGroupBox" row="1" column="0" rowspan="1" colspan="2">
+-            <property name="name">
+-                <cstring>groupBox2</cstring>
+-            </property>
+-            <property name="title">
+-                <string>Contact List Animations</string>
+-            </property>
+-            <vbox>
+-                <property name="name">
+-                    <cstring>unnamed</cstring>
+-                </property>
+-                <widget class="QCheckBox">
+-                    <property name="name">
+-                        <cstring>mAnimateChanges</cstring>
+-                    </property>
+-                    <property name="text">
+-                        <string>&amp;Animate changes to contact list items</string>
+-                    </property>
+-                </widget>
+-                <widget class="QCheckBox">
+-                    <property name="name">
+-                        <cstring>mFadeVisibility</cstring>
+-                    </property>
+-                    <property name="text">
+-                        <string>Fade in / out contacts as the&amp;y appear / disappear</string>
+-                    </property>
+-                </widget>
+-                <widget class="QCheckBox">
+-                    <property name="name">
+-                        <cstring>mFoldVisibility</cstring>
+-                    </property>
+-                    <property name="text">
+-                        <string>Fo&amp;ld in / out contacts as they appear / disappear</string>
+-                    </property>
+-                </widget>
+-            </vbox>
+-        </widget>
+-        <widget class="QLayoutWidget" row="3" column="0" rowspan="1" colspan="2">
++        <widget class="QLayoutWidget">
+             <property name="name">
+                 <cstring>layout8</cstring>
+             </property>
+@@ -341,7 +384,7 @@
+                 </spacer>
+             </hbox>
+         </widget>
+-        <spacer row="4" column="0" rowspan="1" colspan="2">
++        <spacer>
+             <property name="name">
+                 <cstring>spacer15</cstring>
+             </property>
+@@ -358,7 +401,7 @@
+                 </size>
+             </property>
+         </spacer>
+-    </grid>
++    </vbox>
+ </widget>
+ <connections>
+     <connection>
+@@ -375,4 +418,9 @@
+     </connection>
+ </connections>
+ <layoutdefaults spacing="6" margin="11"/>
++<includehints>
++    <includehint>kurlrequester.h</includehint>
++    <includehint>klineedit.h</includehint>
++    <includehint>kpushbutton.h</includehint>
++</includehints>
+ </UI>
+diff -aburN kopete-0.12.2/kopete/kopete/config/appearance/appearanceconfig.cpp modified/kopete/kopete/config/appearance/appearanceconfig.cpp
+--- kopete-0.12.2/kopete/kopete/config/appearance/appearanceconfig.cpp	2006-08-12 02:51:40.000000000 +0200
++++ modified/kopete/kopete/config/appearance/appearanceconfig.cpp	2006-12-13 00:17:00.000000000 +0100
+@@ -56,6 +56,7 @@
+ #include <ktextedit.h>
+ #include <kurl.h> // KNewStuff
+ #include <kurlrequesterdlg.h>
++#include <kurlrequester.h>
+ #include <krun.h>
+ #include <kfiledialog.h>
+ 
+@@ -262,6 +263,8 @@
+ 		this, SLOT(emitChanged()));
+ 	connect(d->mPrfsContactList->mIconMode, SIGNAL(toggled(bool)),
+ 		this, SLOT(emitChanged()));
++	connect(d->mPrfsContactList->mThemeURL, SIGNAL(textChanged(const QString&)),
++		this, SLOT(emitChanged()));
+ 	connect(d->mPrfsContactList->mAnimateChanges, SIGNAL(toggled(bool)),
+ 		this, SLOT(emitChanged()));
+ 	connect(d->mPrfsContactList->mFadeVisibility, SIGNAL(toggled(bool)),
+@@ -308,6 +311,8 @@
+ 		this, SLOT(emitChanged()));
+ 	connect(d->mPrfsColors->mNormalFont, SIGNAL(fontSelected(const QFont &)),
+ 		this, SLOT(emitChanged()));
++	connect(d->mPrfsColors->mGroupFont, SIGNAL(fontSelected(const QFont &)),
++		this, SLOT(emitChanged()));
+ 	connect(d->mPrfsColors->mGroupNameColor, SIGNAL(changed(const QColor &)),
+ 		this, SLOT(emitChanged()));
+ 
+@@ -365,6 +370,7 @@
+ 	}
+ 
+ 	// "Contact List" TAB =======================================================
++	p->setThemeURL(d->mPrfsContactList->mThemeURL->url());
+ 	p->setTreeView(d->mPrfsContactList->mTreeContactList->isChecked());
+ 	p->setSortByGroup(d->mPrfsContactList->mSortByGroup->isChecked());
+ 	p->setContactListIndentContacts(d->mPrfsContactList->mIndentContacts->isChecked());
+@@ -387,6 +393,7 @@
+ 	p->setContactListUseCustomFonts(d->mPrfsColors->mUseCustomFonts->isChecked());
+ 	p->setContactListCustomSmallFont(d->mPrfsColors->mSmallFont->font());
+ 	p->setContactListCustomNormalFont(d->mPrfsColors->mNormalFont->font());
++	p->setContactListCustomGroupFont(d->mPrfsColors->mGroupFont->font());
+ 	p->setContactListGroupNameColor(d->mPrfsColors->mGroupNameColor->color());
+ 	p->setContactListAutoHide(d->mPrfsContactList->mAutoHide->isChecked());
+ 	p->setContactListAutoHideVScroll(d->mPrfsContactList->mAutoHideVScroll->isChecked());
+@@ -420,6 +427,7 @@
+ 	slotLoadChatStyles();
+ 	
+ 	// "Contact List" TAB =======================================================
++	d->mPrfsContactList->mThemeURL->setURL(p->themeURL());
+ 	d->mPrfsContactList->mTreeContactList->setChecked( p->treeView() );
+ 	d->mPrfsContactList->mSortByGroup->setChecked( p->sortByGroup() );
+ 	d->mPrfsContactList->mIndentContacts->setChecked( p->contactListIndentContacts() );
+@@ -458,6 +466,7 @@
+ 	d->mPrfsColors->mUseCustomFonts->setChecked(p->contactListUseCustomFonts());
+ 	d->mPrfsColors->mSmallFont->setFont(p->contactListCustomSmallFont());
+ 	d->mPrfsColors->mNormalFont->setFont(p->contactListCustomNormalFont());
++	d->mPrfsColors->mGroupFont->setFont(p->contactListCustomGroupFont());
+ 	d->mPrfsColors->mGroupNameColor->setColor(p->contactListGroupNameColor());
+ 
+ 	d->mPrfsColors->mBgOverride->setChecked( p->bgOverride() );
+diff -aburN kopete-0.12.2/kopete/kopete/contactlist/kopetegroupviewitem.cpp modified/kopete/kopete/contactlist/kopetegroupviewitem.cpp
+--- kopete-0.12.2/kopete/kopete/contactlist/kopetegroupviewitem.cpp	2006-08-12 02:51:37.000000000 +0200
++++ modified/kopete/kopete/contactlist/kopetegroupviewitem.cpp	2006-12-13 19:04:51.000000000 +0100
+@@ -38,8 +38,9 @@
+ class KopeteGroupViewItem::Private
+ {
+ public:
++	Kopete::UI::ListView::GroupBoxComponent *hbox;
+ 	Kopete::UI::ListView::ImageComponent *image;
+-	Kopete::UI::ListView::DisplayNameComponent *name;
++	Kopete::UI::ListView::TextComponent *name;
+ 	Kopete::UI::ListView::TextComponent *count;
+ 	std::auto_ptr<Kopete::UI::ListView::ToolTipSource> toolTipSource;
+ };
+@@ -93,12 +94,14 @@
+ 	d->toolTipSource.reset( new Kopete::UI::ListView::GroupToolTipSource( this ) );
+ 
+ 	using namespace Kopete::UI::ListView;
+-	Component *hbox = new BoxComponent( this, BoxComponent::Horizontal );
+-	d->image = new ImageComponent( hbox );
+-	d->name = new DisplayNameComponent( hbox );
++	d->hbox = new GroupBoxComponent( this, BoxComponent::Horizontal );
++
++	Component	*hbox = d->hbox;
++	//d->image = new ImageComponent( hbox );
++	d->name = new TextComponent( hbox );
+ 	d->count = new TextComponent( hbox );
+ 
+-	d->image->setToolTipSource( d->toolTipSource.get() );
++//	d->image->setToolTipSource( d->toolTipSource.get() );
+ 	d->name->setToolTipSource( d->toolTipSource.get() );
+ 	d->count->setToolTipSource( d->toolTipSource.get() );
+ 
+@@ -131,17 +134,20 @@
+ 
+ void KopeteGroupViewItem::slotConfigChanged()
+ {
+-	updateIcon();
++	if (d->hbox != NULL)
++		d->hbox->reloadTheme();
++
++	//	updateIcon();
+ 	updateVisibility();
+ 
+ 	d->name->setColor( KopetePrefs::prefs()->contactListGroupNameColor() );
++	d->count->setColor( KopetePrefs::prefs()->contactListGroupNameColor() );
+ 
+ 	QFont font = listView()->font();
+ 	if ( KopetePrefs::prefs()->contactListUseCustomFonts() )
+-		font = KopetePrefs::prefs()->contactListCustomNormalFont();
++		font = KopetePrefs::prefs()->contactListCustomGroupFont();
+ 	d->name->setFont( font );
+-
+-	d->count->setFont( KopetePrefs::prefs()->contactListSmallFont() );
++	d->count->setFont( font );
+ }
+ 
+ void KopeteGroupViewItem::refreshDisplayName()
+@@ -242,7 +248,7 @@
+ 		else
+ 			open = SmallIcon( KOPETE_GROUP_DEFAULT_OPEN_ICON );
+ 
+-		d->image->setPixmap( open );
++//		d->image->setPixmap( open );
+ 	}
+ 	else
+ 	{
+@@ -251,7 +257,7 @@
+ 		else
+ 			closed = SmallIcon( KOPETE_GROUP_DEFAULT_CLOSED_ICON );
+ 
+-		d->image->setPixmap( closed );
++//		d->image->setPixmap( closed );
+ 	}
+ }
+ 
+diff -aburN kopete-0.12.2/kopete/kopete/contactlist/kopetemetacontactlvi.cpp modified/kopete/kopete/contactlist/kopetemetacontactlvi.cpp
+--- kopete-0.12.2/kopete/kopete/contactlist/kopetemetacontactlvi.cpp	2006-08-12 02:51:37.000000000 +0200
++++ modified/kopete/kopete/contactlist/kopetemetacontactlvi.cpp	2006-12-11 16:45:54.000000000 +0100
+@@ -149,8 +149,9 @@
+ {
+ public:
+ 	Private() : metaContactIcon( 0L ), nameText( 0L ), extraText( 0L ), contactIconBox( 0L ),
+-	            currentMode( -1 ), currentIconMode( -1 ) {}
+-	ListView::ImageComponent *metaContactIcon;
++	            currentMode( -1 ), currentIconMode( -1 ), hbox(NULL) {}
++	ListView::ContactBoxComponent *hbox;
++	ListView::FaceComponent *metaContactIcon;
+ 	ListView::DisplayNameComponent *nameText;
+ 	ListView::DisplayNameComponent *extraText;
+ 	ListView::BoxComponent *contactIconBox;
+@@ -649,6 +650,9 @@
+ 
+ void KopeteMetaContactLVI::slotConfigChanged()
+ {
++	if (d->hbox != NULL)
++   	d->hbox->reloadTheme();
++
+     setDisplayMode( KopetePrefs::prefs()->contactListDisplayMode(),
+                     KopetePrefs::prefs()->contactListIconMode() );
+ 
+@@ -720,13 +724,15 @@
+ 
+ 	// generate our contents
+ 	using namespace ListView;
+-	Component *hbox = new BoxComponent( this, BoxComponent::Horizontal );
++	d->hbox = new ContactBoxComponent( this, BoxComponent::Horizontal );
++	d->hbox->reloadTheme();
++	Component	*hbox = d->hbox;
+ 	d->spacerBox = new BoxComponent( hbox, BoxComponent::Horizontal );
+ 	
+ 	if (iconmode == KopetePrefs::PhotoPic) {
+ 		Component *imageBox = new BoxComponent( hbox, BoxComponent::Vertical );
+ 		new VSpacerComponent( imageBox );
+-		d->metaContactIcon = new ImageComponent( imageBox, d->iconSize + 2 , d->iconSize + 2 );
++		d->metaContactIcon = new FaceComponent( imageBox, d->iconSize , d->iconSize );
+ 		new VSpacerComponent( imageBox );
+ 		if(!metaContact()->photoSource() && !Kopete::KABCPersistence::self()->addressBook()->findByUid( metaContact()->metaContactId() ).isEmpty()   )
+ 		{	//if the photo is the one of the kaddressbook,  track every change in the adressbook, it might be the photo of our contact.
+@@ -734,9 +740,11 @@
+ 				 this , SLOT(slotPhotoChanged()));
+ 		}
+ 	} else {
+-		d->metaContactIcon = new ImageComponent( hbox );
++		d->metaContactIcon = new FaceComponent( hbox );
+ 	}
+ 	 
++	new SpacerComponent(hbox, 8, 8);
++
+ 	if( mode == KopetePrefs::Detailed )
+ 	{
+ 		d->contactIconSize = IconSize( KIcon::Small );
+diff -aburN kopete-0.12.2/kopete/libkopete/kopeteprefs.cpp modified/kopete/libkopete/kopeteprefs.cpp
+--- kopete-0.12.2/kopete/libkopete/kopeteprefs.cpp	2006-08-12 02:51:51.000000000 +0200
++++ modified/kopete/libkopete/kopeteprefs.cpp	2006-12-09 10:51:18.000000000 +0100
+@@ -127,6 +127,7 @@
+ 	}
+ 
+ 	config->setGroup("ContactList");
++	setThemeURL(config->readEntry("ThemeURL"));
+ 	int n = metaObject()->findProperty( "contactListDisplayMode" );
+ 	QString value = config->readEntry("DisplayMode",QString::fromLatin1("Default"));
+ 	mContactListDisplayMode = (ContactDisplayMode)metaObject()->property( n )->keyToValue( value.latin1() );
+@@ -138,6 +139,7 @@
+ 	mContactListHideVerticalScrollBar = config->readBoolEntry("HideVerticalScrollBar", false );
+ 	mContactListUseCustomFonts = config->readBoolEntry("UseCustomFonts", false);
+ 	QFont font = KGlobalSettings::generalFont();
++	mContactListGroupFont = config->readFontEntry("GroupFont", &font);
+ 	mContactListNormalFont = config->readFontEntry("NormalFont", &font);
+ 	if ( font.pixelSize() != -1 )
+ 		font.setPixelSize( (font.pixelSize() * 3) / 4 );
+@@ -229,6 +231,7 @@
+ 	config->writeEntry("ToolTipContents", mToolTipContents);
+ 
+ 	config->setGroup("ContactList");
++	config->writeEntry("ThemeURL", mThemeURL);
+ 	int n = metaObject()->findProperty( "contactListDisplayMode" );
+ 	config->writeEntry("DisplayMode", metaObject()->property( n )->valueToKey( mContactListDisplayMode ));
+ 	n = metaObject()->findProperty( "contactListIconMode" );
+@@ -236,6 +239,7 @@
+ 	config->writeEntry("IndentContacts", mContactListIndentContacts);
+ 	config->writeEntry("HideVerticalScrollBar", mContactListHideVerticalScrollBar );
+ 	config->writeEntry("UseCustomFonts", mContactListUseCustomFonts);
++	config->writeEntry("GroupFont", mContactListGroupFont);
+ 	config->writeEntry("NormalFont", mContactListNormalFont);
+ 	config->writeEntry("SmallFont", mContactListSmallFont);
+ 	config->writeEntry("GroupNameColor", mContactListGroupNameColor);
+@@ -420,6 +424,12 @@
+ 	mSoundIfAway = value;
+ }
+ 
++void KopetePrefs::setThemeURL(const QString &path)
++{
++	if( path != mThemeURL ) mContactListAppearanceChanged = true;
++	mThemeURL = path;
++}
++
+ void KopetePrefs::setStylePath(const QString &stylePath)
+ {
+ 	if(mStylePath != stylePath) mStylePathChanged = true;
+@@ -596,6 +606,12 @@
+ 	mContactListUseCustomFonts = v;
+ }
+ 
++void KopetePrefs::setContactListCustomGroupFont( const QFont & v )
++{
++	if( v != mContactListGroupFont ) mContactListAppearanceChanged = true;
++	mContactListGroupFont = v;
++}
++
+ void KopetePrefs::setContactListCustomNormalFont( const QFont & v )
+ {
+ 	if( v != mContactListNormalFont ) mContactListAppearanceChanged = true;
+diff -aburN kopete-0.12.2/kopete/libkopete/kopeteprefs.h modified/kopete/libkopete/kopeteprefs.h
+--- kopete-0.12.2/kopete/libkopete/kopeteprefs.h	2006-08-12 02:51:51.000000000 +0200
++++ modified/kopete/libkopete/kopeteprefs.h	2006-12-09 10:45:30.000000000 +0100
+@@ -107,6 +107,8 @@
+ 
+ 	QStringList toolTipContents() const { return mToolTipContents; }
+ 
++	QString themeURL() const { return mThemeURL; }
++
+ 	///
+ 	enum ContactDisplayMode { Classic, RightAligned, Detailed, Yagami, Default = Classic };
+ 	///
+@@ -116,6 +118,7 @@
+ 	ContactDisplayMode contactListDisplayMode() const { return mContactListDisplayMode; }
+ 	IconDisplayMode contactListIconMode() const { return mContactListIconMode; }
+ 	bool contactListUseCustomFonts() const { return mContactListUseCustomFonts; }
++	QFont contactListCustomGroupFont() const { return mContactListGroupFont; }
+ 	QFont contactListCustomNormalFont() const { return mContactListNormalFont; }
+ 	QFont contactListCustomSmallFont() const { return mContactListSmallFont; }
+ 	QFont contactListSmallFont() const;
+@@ -159,6 +162,7 @@
+ 	void setSoundIfAway(bool);
+ 	void setBeepNotify(bool);
+ 	void setChatWindowPolicy(int);
++	void setThemeURL(const QString &);
+ 	void setStylePath(const QString &);
+ 	void setStyleVariant(const QString &);
+ 	void setChatViewBufferSize(int);
+@@ -183,6 +187,7 @@
+ 	void setContactListDisplayMode( ContactDisplayMode v );
+ 	void setContactListIconMode( IconDisplayMode v );
+ 	void setContactListUseCustomFonts( bool v );
++	void setContactListCustomGroupFont( const QFont & v );
+ 	void setContactListCustomNormalFont( const QFont & v );
+ 	void setContactListCustomSmallFont( const QFont & v );
+ 	void setContactListGroupNameColor( const QColor & v );
+@@ -293,6 +298,7 @@
+ 
+ 	// xhtml+css
+ 	//for Adium (xhtml+css)
++	QString mThemeURL;
+ 	QString mStylePath;
+ 	QString mStyleVariant;
+ 	bool mStylePathChanged;
+@@ -305,6 +311,7 @@
+ 	ContactDisplayMode mContactListDisplayMode;
+ 	IconDisplayMode mContactListIconMode;
+ 	bool mContactListUseCustomFonts;
++	QFont mContactListGroupFont;
+ 	QFont mContactListNormalFont;
+ 	QFont mContactListSmallFont;
+ 	QColor mContactListGroupNameColor;
+diff -aburN kopete-0.12.2/kopete/libkopete/Makefile.am modified/kopete/libkopete/Makefile.am
+--- kopete-0.12.2/kopete/libkopete/Makefile.am	2006-08-12 02:51:51.000000000 +0200
++++ modified/kopete/libkopete/Makefile.am	2006-12-08 14:17:07.000000000 +0100
+@@ -13,7 +13,7 @@
+ 
+ METASOURCES = AUTO
+ 
+-AM_CPPFLAGS = -DKDE_NO_COMPAT -DQT_NO_COMPAT -DQT_NO_CAST_ASCII -DQT_NO_ASCII_CAST \
++AM_CPPFLAGS = -DKDE_NO_COMPAT -DQT_NO_COMPAT \
+ 	$(KOPETE_INCLUDES) -I$(top_srcdir)/kopete/libkopete/private \
+ 	-I$(top_srcdir)/kopete/libkopete/ui $(all_includes)
+ 
+diff -aburN kopete-0.12.2/kopete/libkopete/Makefile.in modified/kopete/libkopete/Makefile.in
+--- kopete-0.12.2/kopete/libkopete/Makefile.in	2006-08-12 03:12:41.000000000 +0200
++++ modified/kopete/libkopete/Makefile.in	2006-12-08 14:17:27.000000000 +0100
+@@ -492,7 +492,7 @@
+ DOXYGEN_SET_PROJECT_NAME = libkopete
+ SUBDIRS = $(COMPAT_DIR) private ui . avdevice
+ #>- METASOURCES = AUTO
+-AM_CPPFLAGS = -DKDE_NO_COMPAT -DQT_NO_COMPAT -DQT_NO_CAST_ASCII -DQT_NO_ASCII_CAST \
++AM_CPPFLAGS = -DKDE_NO_COMPAT -DQT_NO_COMPAT \
+ 	$(KOPETE_INCLUDES) -I$(top_srcdir)/kopete/libkopete/private \
+ 	-I$(top_srcdir)/kopete/libkopete/ui $(all_includes)
+ 
+diff -aburN kopete-0.12.2/kopete/libkopete/ui/kopetelistview.cpp modified/kopete/libkopete/ui/kopetelistview.cpp
+--- kopete-0.12.2/kopete/libkopete/ui/kopetelistview.cpp	2006-08-12 02:51:51.000000000 +0200
++++ modified/kopete/libkopete/ui/kopetelistview.cpp	2006-12-08 21:09:38.000000000 +0100
+@@ -132,6 +132,9 @@
+ 	// This is, of course, a nasty hack, but it works, so...
+ 	static_cast<ListView*>(viewport())->clearWFlags( WStaticContents );
+ 	static_cast<ListView*>(viewport())->setWFlags( WNoAutoErase );
++
++    setMargin(0);
++    setFrameShape(QFrame::NoFrame);
+ }
+
+ ListView::~ListView()
+diff -aburN kopete-0.12.2/kopete/libkopete/ui/kopetelistviewitem.cpp modified/kopete/libkopete/ui/kopetelistviewitem.cpp
+--- kopete-0.12.2/kopete/libkopete/ui/kopetelistviewitem.cpp	2006-08-12 02:51:51.000000000 +0200
++++ modified/kopete/libkopete/ui/kopetelistviewitem.cpp	2006-12-11 15:28:43.000000000 +0100
+@@ -20,6 +20,7 @@
+ #include "config.h"
+ #endif
+ 
++#include "kopeteprefs.h"
+ #include "kopetecontact.h"
+ #include "kopetelistviewitem.h"
+ #include "kopeteemoticons.h"
+@@ -291,7 +292,7 @@
+ 	Private( BoxComponent::Direction dir ) : direction( dir ) {}
+ 	BoxComponent::Direction direction;
+ 
+-	static const int padding = 2;
++	static const int padding = 0;
+ };
+ 
+ BoxComponent::BoxComponent( ComponentBase *parent, Direction dir )
+@@ -459,6 +460,284 @@
+ 	calcMinSize();
+ }
+ 
++
++
++/*= ContactBoxComponent =====================================================*/
++
++class ContactBoxComponent::Private
++{
++public:
++	QRect				sub;
++
++	QPixmap 			back_pixmap;
++
++	QPixmap 			corner_tl_pixmap;
++	QPixmap 			corner_bl_pixmap;
++	QPixmap 			corner_tr_pixmap;
++	QPixmap 			corner_br_pixmap;
++
++	QPixmap 			top_pixmap;
++	QPixmap 			left_pixmap;
++	QPixmap 			right_pixmap;
++	QPixmap 			bottom_pixmap;
++};
++
++ContactBoxComponent::ContactBoxComponent(ComponentBase *parent, Direction dir)
++ : BoxComponent(parent, dir), d(new Private())
++{}
++
++ContactBoxComponent::~ContactBoxComponent()
++{
++	delete d;
++}
++
++void	ContactBoxComponent::reloadTheme()
++{
++	QString	path = KopetePrefs::prefs()->themeURL();
++	QString	str;
++
++	str = path + "ContactBackground.png";
++	d->back_pixmap.load(str);
++
++	str = path + "ContactTopLeft.png";
++	d->corner_tl_pixmap.load(str);
++	str = path + "ContactBottomLeft.png";
++	d->corner_bl_pixmap.load(str);
++	str = path + "ContactTopRight.png";
++	d->corner_tr_pixmap.load(str);
++	str = path + "ContactBottomRight.png";
++	d->corner_br_pixmap.load(str);
++
++	str = path + "ContactTop.png";
++	d->top_pixmap.load(str);
++	str = path + "ContactLeft.png";
++	d->left_pixmap.load(str);
++	str = path + "ContactRight.png";
++	d->right_pixmap.load(str);
++	str = path + "ContactBottom.png";
++	d->bottom_pixmap.load(str);
++}
++
++void	ContactBoxComponent::layout(const QRect &rect)
++{
++	d->sub.setLeft(rect.left() +
++			d->left_pixmap.width());
++	d->sub.setTop(rect.top() +
++			d->top_pixmap.height());
++	d->sub.setRight(rect.right() -
++			d->right_pixmap.width());
++	d->sub.setBottom(rect.bottom() -
++			d->bottom_pixmap.height());
++
++	BoxComponent::layout(d->sub);
++	Component::layout(rect);
++}
++
++int	ContactBoxComponent::widthForHeight(int height)
++{
++	return BoxComponent::widthForHeight(height) +
++			d->left_pixmap.width() +
++			d->right_pixmap.width();
++}
++
++int	ContactBoxComponent::heightForWidth(int width)
++{
++	return BoxComponent::heightForWidth(width) +
++			d->top_pixmap.height() +
++			d->bottom_pixmap.height();
++}
++
++void	ContactBoxComponent::paint(QPainter *painter, const QColorGroup &cg)
++{
++	painter->drawPixmap(0,
++							  0,
++							  d->corner_tl_pixmap);
++
++	painter->drawPixmap(0,
++							  d->sub.bottom()+1,
++							  d->corner_bl_pixmap);
++
++	painter->drawPixmap(d->sub.right()+1,
++							  0,
++							  d->corner_tr_pixmap);
++
++	painter->drawPixmap(d->sub.right()+1,
++							  d->sub.bottom()+1,
++							  d->corner_br_pixmap);
++
++	painter->drawTiledPixmap(0,
++									 d->sub.top(),
++									 d->left_pixmap.width(),
++									 d->sub.height(),
++									 d->left_pixmap);
++
++	painter->drawTiledPixmap(d->sub.left(),
++									 0,
++									 d->sub.width(),
++									 d->top_pixmap.height(),
++									 d->top_pixmap);
++
++	painter->drawTiledPixmap(d->sub.left(),
++									 d->sub.bottom()+1,
++									 d->sub.width(),
++									 d->bottom_pixmap.height(),
++									 d->bottom_pixmap);
++
++	painter->drawTiledPixmap(d->sub.right()+1,
++									 d->sub.top(),
++									 d->right_pixmap.width(),
++									 d->sub.height(),
++									 d->right_pixmap);
++
++	painter->drawTiledPixmap(d->sub,
++									 d->back_pixmap);
++
++	return BoxComponent::paint(painter, cg);
++}
++
++
++
++/*= GroupBoxComponent =======================================================*/
++
++class GroupBoxComponent::Private
++{
++public:
++	QRect				sub;
++
++	QPixmap 			back_pixmap;
++
++	QPixmap			open_pixmap;
++	QPixmap			closed_pixmap;
++
++	QPixmap 			corner_tl_pixmap;
++	QPixmap 			corner_bl_pixmap;
++	QPixmap 			corner_tr_pixmap;
++	QPixmap 			corner_br_pixmap;
++
++	QPixmap 			top_pixmap;
++	QPixmap 			left_pixmap;
++	QPixmap 			right_pixmap;
++	QPixmap 			bottom_pixmap;
++};
++
++GroupBoxComponent::GroupBoxComponent(ComponentBase *parent, Direction dir)
++ : BoxComponent(parent, dir), d(new Private())
++{}
++
++GroupBoxComponent::~GroupBoxComponent()
++{
++	delete d;
++}
++
++void	GroupBoxComponent::reloadTheme()
++{
++	QString	path = KopetePrefs::prefs()->themeURL();
++	QString	str;
++
++	str = path + "GroupBackground.png";
++	d->back_pixmap.load(str);
++
++	str = path + "GroupOpen.png";
++	d->open_pixmap.load(str);
++	str = path + "GroupClosed.png";
++	d->closed_pixmap.load(str);
++
++	str = path + "GroupTopLeft.png";
++	d->corner_tl_pixmap.load(str);
++	str = path + "GroupBottomLeft.png";
++	d->corner_bl_pixmap.load(str);
++	str = path + "GroupTopRight.png";
++	d->corner_tr_pixmap.load(str);
++	str = path + "GroupBottomRight.png";
++	d->corner_br_pixmap.load(str);
++
++	str = path + "GroupTop.png";
++	d->top_pixmap.load(str);
++	str = path + "GroupLeft.png";
++	d->left_pixmap.load(str);
++	str = path + "GroupRight.png";
++	d->right_pixmap.load(str);
++	str = path + "GroupBottom.png";
++	d->bottom_pixmap.load(str);
++}
++
++void	GroupBoxComponent::layout(const QRect &rect)
++{
++	d->sub.setLeft(rect.left() +
++			d->left_pixmap.width());
++	d->sub.setTop(rect.top() +
++			d->top_pixmap.height());
++	d->sub.setRight(rect.right() -
++			d->right_pixmap.width());
++	d->sub.setBottom(rect.bottom() -
++			d->bottom_pixmap.height());
++
++	BoxComponent::layout(d->sub);
++	Component::layout(rect);
++}
++
++int	GroupBoxComponent::widthForHeight(int height)
++{
++	return BoxComponent::widthForHeight(height) +
++			d->left_pixmap.width() +
++			d->right_pixmap.width();
++}
++
++int	GroupBoxComponent::heightForWidth( int width )
++{
++	return BoxComponent::heightForWidth(width) +
++			d->top_pixmap.height() +
++			d->bottom_pixmap.height();
++}
++
++void	GroupBoxComponent::paint( QPainter *painter, const QColorGroup &cg )
++{
++	painter->drawPixmap(0,
++							  0,
++							  d->corner_tl_pixmap);
++
++	painter->drawPixmap(0,
++							  d->sub.bottom()+1,
++							  d->corner_bl_pixmap);
++
++	painter->drawPixmap(d->sub.right()+1,
++							  0,
++							  d->corner_tr_pixmap);
++
++	painter->drawPixmap(d->sub.right()+1,
++							  d->sub.bottom()+1,
++							  d->corner_br_pixmap);
++
++	painter->drawTiledPixmap(0,
++									 d->sub.top(),
++									 d->left_pixmap.width(),
++									 d->sub.height(),
++									 d->left_pixmap);
++
++	painter->drawTiledPixmap(d->sub.left(),
++									 0,
++									 d->sub.width(),
++									 d->top_pixmap.height(),
++									 d->top_pixmap);
++
++	painter->drawTiledPixmap(d->sub.left(),
++									 d->sub.bottom()+1,
++									 d->sub.width(),
++									 d->bottom_pixmap.height(),
++									 d->bottom_pixmap);
++
++	painter->drawTiledPixmap(d->sub.right()+1,
++									 d->sub.top(),
++									 d->right_pixmap.width(),
++									 d->sub.height(),
++									 d->right_pixmap);
++
++	painter->drawTiledPixmap(d->sub,
++									 d->back_pixmap);
++
++	return BoxComponent::paint(painter, cg);
++}
++
+ // ImageComponent --------
+ 
+ class ImageComponent::Private
+@@ -492,33 +771,21 @@
+ 	return d->image;
+ }
+ 
+-void ImageComponent::setPixmap( const QPixmap &img, bool adjustSize)
++void ImageComponent::setPixmap( const QPixmap &img, bool)
+ {
+ 	d->image = img;
+-	if ( adjustSize )
+-	{
+-		setMinWidth( img.width() );
+-		setMinHeight( img.height() );
+-	}
+-	repaint();
+-}
++	setMinWidth(d->image.width());
++	setMinHeight(d->image.height());
+ 
+-static QPoint operator+( const QPoint &pt, const QSize &sz )
+-{
+-	return QPoint( pt.x() + sz.width(), pt.y() + sz.height() );
++	repaint();
+ }
+ 
+-/*static QPoint operator+( const QSize &sz, const QPoint &pt )
+-{
+-	return pt + sz;
+-}*/
+-
+ void ImageComponent::paint( QPainter *painter, const QColorGroup & )
+ {
+ 	QRect ourRc = rect();
+ 	QRect rc = d->image.rect();
+ 	// center rc within our rect
+-	rc.moveTopLeft( ourRc.topLeft() + (ourRc.size() - rc.size()) / 2 );
++	rc.moveTopLeft(ourRc.topLeft());
+ 	// paint, shrunk to be within our rect
+ 	painter->drawPixmap( rc & ourRc, d->image );
+ }
+@@ -528,6 +795,57 @@
+ 	QImage im = d->image.convertToImage();
+ 	setPixmap( QPixmap( im.smoothScale( w, h, mode ) ) );
+ }
++
++
++
++/*= FaceComponent ===========================================================*/
++
++void		FaceComponent::setPixmap(const QPixmap &img, bool)
++{
++	d->image = img;
++
++	setMinWidth(d->image.width());
++	setMinHeight(d->image.height());
++
++	if (img.width() >= 30)
++	{
++		d->image = QPixmap(img.convertToImage().smoothScale(30, 30));
++		setMinWidth(d->image.width() + 4);
++		setMinHeight(d->image.height() + 4);
++	}
++
++	repaint();
++}
++
++static QPoint	operator+(const QPoint &pt, const QSize &sz)
++{
++	return QPoint(pt.x() + sz.width(), pt.y() + sz.height());
++}
++
++void	FaceComponent::paint(QPainter *painter, const QColorGroup &)
++{
++	QRect	outRc = rect();
++	QRect pixRc = d->image.rect();
++
++	pixRc.moveTopLeft(outRc.topLeft() + (outRc.size() - pixRc.size()) / 2);
++
++	if (d->image.width() == 30)
++	{
++		QPixmap	pixBorder;
++		QString	path = KopetePrefs::prefs()->themeURL();
++		QString	str = path + "ContactFace.png";
++
++		pixBorder.load(str);
++		QRect pixRc2 =  pixBorder.rect();
++
++		pixRc2.moveTopLeft(outRc.topLeft() + (outRc.size() - pixRc2.size()) / 2);
++		painter->drawPixmap(pixRc2, pixBorder);
++	}
++
++	painter->drawPixmap(pixRc, d->image);
++}
++
++
+ // TextComponent
+ 
+ class TextComponent::Private
+@@ -813,10 +1131,10 @@
+ 	int iconSize;
+ };
+ 
+-ContactComponent::ContactComponent( ComponentBase *parent, Kopete::Contact *contact, int iconSize) : ImageComponent( parent ) , d( new Private )
++ContactComponent::ContactComponent( ComponentBase *parent, Kopete::Contact *contact, int) : ImageComponent( parent ) , d( new Private )
+ {
+ 	d->contact = contact;
+-	d->iconSize = iconSize;
++	d->iconSize = 12; // size of the image is fixed to 12 pixels
+ 	updatePixmap();
+ }
+ 
+diff -aburN kopete-0.12.2/kopete/libkopete/ui/kopetelistviewitem.h modified/kopete/libkopete/ui/kopetelistviewitem.h
+--- kopete-0.12.2/kopete/libkopete/ui/kopetelistviewitem.h	2006-08-12 02:51:51.000000000 +0200
++++ modified/kopete/libkopete/ui/kopetelistviewitem.h	2006-12-09 11:30:24.000000000 +0100
+@@ -1,4 +1,4 @@
+-/*
++/*  Modified by neptune3k
+     kopetelistviewitem.h - Kopete's modular QListViewItems
+ 
+     Copyright (c) 2005      by Engin AYDOGAN          <engin@bzzzt.biz>
+@@ -236,7 +236,7 @@
+ 	BoxComponent( ComponentBase *parent, Direction dir = Horizontal );
+ 	~BoxComponent();
+ 
+-	void layout( const QRect &rect );
++	virtual void layout( const QRect &rect );
+ 
+ 	virtual int widthForHeight( int height );
+ 	virtual int heightForWidth( int width );
+@@ -256,6 +256,52 @@
+ 	Private *d;
+ };
+ 
++/**
++ * ContactBoxComponent
++ */
++class ContactBoxComponent : public BoxComponent
++{
++public:
++	ContactBoxComponent(ComponentBase *parent, Direction dir = Horizontal);
++	~ContactBoxComponent();
++
++	virtual void	reloadTheme();
++
++	virtual void	layout(const QRect &rect);
++
++	virtual int		widthForHeight(int height);
++	virtual int		heightForWidth(int width);
++
++	virtual void	paint(QPainter *painter, const QColorGroup &cg);
++
++private:
++	class	Private;
++	Private	*d;
++};
++
++/**
++ * GroupBoxComponent
++ */
++class GroupBoxComponent : public BoxComponent
++{
++public:
++	GroupBoxComponent(ComponentBase *parent, Direction dir = Horizontal);
++	~GroupBoxComponent();
++
++	virtual void	reloadTheme();
++
++	virtual void	layout(const QRect &rect);
++
++	virtual int		widthForHeight(int height);
++	virtual int		heightForWidth(int width);
++
++	virtual void	paint(QPainter *painter, const QColorGroup &cg);
++
++private:
++	class	Private;
++	Private	*d;
++};
++
+ class TextComponent : public Component
+ {
+ public:
+@@ -293,20 +339,33 @@
+ 	ImageComponent( ComponentBase *parent, int minW, int minH );
+ 	~ImageComponent();
+ 
+-	void setPixmap( const QPixmap &img, bool adjustSize = true);
++	virtual void setPixmap( const QPixmap &img, bool adjustSize = true);
+ 	QPixmap pixmap( void );
+ 
+-	void paint( QPainter *painter, const QColorGroup &cg );
++	virtual void paint( QPainter *painter, const QColorGroup &cg );
+ 
+-	void scale( int w, int h, QImage::ScaleMode );
++	virtual void scale( int w, int h, QImage::ScaleMode );
+ 	static int RTTI;
+ 	virtual int rtti() const { return RTTI; }
+-private:
++protected:
+ 	class Private;
+ 	Private *d;
+ };
+ 
+ /**
++ * FaceComponent
++ */
++class FaceComponent : public ImageComponent
++{
++public:
++	FaceComponent(ComponentBase *parent): ImageComponent(parent) {}
++	FaceComponent(ComponentBase *parent, int minW, int minH): ImageComponent(parent, minH, minW) {}
++
++	void	setPixmap(const QPixmap &img, bool adjustSize = true);
++	void	paint(QPainter *painter, const QColorGroup &cg);
++};
++
++/**
+  * ContactComponent
+  */
+ class ContactComponent : public ImageComponent
+diff -aburN kopete-0.12.2/kopete/libkopete/ui/Makefile.am modified/kopete/libkopete/ui/Makefile.am
+--- kopete-0.12.2/kopete/libkopete/ui/Makefile.am	2006-08-12 02:51:51.000000000 +0200
++++ modified/kopete/libkopete/ui/Makefile.am	2006-12-08 14:33:12.000000000 +0100
+@@ -1,5 +1,5 @@
+ METASOURCES = AUTO
+-AM_CPPFLAGS = -DKDE_NO_COMPAT -DQT_NO_COMPAT -DQT_NO_CAST_ASCII -DQT_NO_ASCII_CAST \
++AM_CPPFLAGS = -DKDE_NO_COMPAT -DQT_NO_COMPAT \
+ 	$(KOPETE_INCLUDES) -I$(top_srcdir)/kopete/libkopete/private $(all_includes)
+ 
+ noinst_LTLIBRARIES = libkopeteui.la
+diff -aburN kopete-0.12.2/kopete/libkopete/ui/Makefile.in modified/kopete/libkopete/ui/Makefile.in
+--- kopete-0.12.2/kopete/libkopete/ui/Makefile.in	2006-08-12 03:12:41.000000000 +0200
++++ modified/kopete/libkopete/ui/Makefile.in	2006-12-08 14:33:21.000000000 +0100
+@@ -428,7 +428,7 @@
+ xdg_directorydir = @xdg_directorydir@
+ xdg_menudir = @xdg_menudir@
+ #>- METASOURCES = AUTO
+-AM_CPPFLAGS = -DKDE_NO_COMPAT -DQT_NO_COMPAT -DQT_NO_CAST_ASCII -DQT_NO_ASCII_CAST \
++AM_CPPFLAGS = -DKDE_NO_COMPAT -DQT_NO_COMPAT \
+ 	$(KOPETE_INCLUDES) -I$(top_srcdir)/kopete/libkopete/private $(all_includes)
+ 
+ noinst_LTLIBRARIES = libkopeteui.la
+diff -aburN kopete-0.12.2/kopete/libkopete/ui/metacontactselectorwidget.cpp modified/kopete/libkopete/ui/metacontactselectorwidget.cpp
+--- kopete-0.12.2/kopete/libkopete/ui/metacontactselectorwidget.cpp	2006-08-12 02:51:51.000000000 +0200
++++ modified/kopete/libkopete/ui/metacontactselectorwidget.cpp	2006-12-08 20:43:58.000000000 +0100
+@@ -57,7 +57,7 @@
+ {
+ public:
+ 	Kopete::MetaContact *metaContact;
+-	ImageComponent *metaContactPhoto;
++	FaceComponent *metaContactPhoto;
+ 	ImageComponent *metaContactIcon;
+ 	DisplayNameComponent *nameText;
+ 	TextComponent *extraText;
+@@ -150,7 +150,7 @@
+ 	Component *imageBox = new BoxComponent( hbox, BoxComponent::Vertical );
+ 	new VSpacerComponent( imageBox );
+ 	// include borders in size
+-	d->metaContactPhoto = new ImageComponent( imageBox, d->photoSize + 2 , d->photoSize + 2 );
++	d->metaContactPhoto = new FaceComponent( imageBox, d->photoSize , d->photoSize );
+ 	new VSpacerComponent( imageBox );
+ 	Component *vbox = new BoxComponent( hbox, BoxComponent::Vertical );
+ 	d->nameText = new DisplayNameComponent( vbox );

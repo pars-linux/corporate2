@@ -1,0 +1,924 @@
+Index: kopete/kopete/protocols/groupwise/gwaccount.h
+===================================================================
+--- kopete/protocols/groupwise/gwaccount.h	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/protocols/groupwise/gwaccount.h	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -27,7 +27,7 @@
+ 
+ #include "gwerror.h"
+ 
+-#include <managedconnectionaccount.h>
++#include <kopetepasswordedaccount.h>
+ 
+ class KActionMenu;
+ 
+@@ -54,7 +54,7 @@
+ /**
+  * This represents an account on a Novell GroupWise Messenger Server
+  */
+-class GroupWiseAccount : public Kopete::ManagedConnectionAccount
++class GroupWiseAccount : public Kopete::PasswordedAccount
+ {
+ 	Q_OBJECT
+ public:
+@@ -146,7 +146,7 @@
+ 	void slotTestRTFize();
+ 
+ 	/* Connects to the server. */
+-	void performConnectWithPassword ( const QString &password );
++	void connectWithPassword ( const QString &password );
+ 
+ 	/* Disconnects from the server. */
+ 	virtual void disconnect();
+Index: kopete/protocols/groupwise/gwaccount.cpp
+===================================================================
+--- kopete/protocols/groupwise/gwaccount.cpp	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/protocols/groupwise/gwaccount.cpp	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -66,7 +66,7 @@
+ #include "gwaccount.h"
+ 
+ GroupWiseAccount::GroupWiseAccount( GroupWiseProtocol *parent, const QString& accountID, const char *name )
+-: Kopete::ManagedConnectionAccount ( parent, accountID, 0, "groupwiseaccount" )
++: Kopete::PasswordedAccount ( parent, accountID, 0, "groupwiseaccount" )
+ {
+ 	Q_UNUSED( name );
+ 	// Init the myself contact
+@@ -231,7 +231,7 @@
+ 		setOnlineStatus( protocol()->groupwiseAvailable );
+ }
+ 
+-void GroupWiseAccount::performConnectWithPassword( const QString &password )
++void GroupWiseAccount::connectWithPassword( const QString &password )
+ {
+ 	if ( password.isEmpty() )
+ 	{
+Index: kopete/kopete/kopetewindow.h
+===================================================================
+--- kopete/kopete/kopetewindow.h	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/kopete/kopetewindow.h	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -24,6 +24,7 @@
+ 
+ #include <kmainwindow.h>
+ #include <qlabel.h>
++#include <networkstatuscommon.h>
+ 
+ class QHBox;
+ class QTimer;
+@@ -240,6 +241,7 @@
+ 	int deskRight;
+ 	QPoint position;
+ 	QHBox *m_statusBarWidget;
++	QHBox *m_statusBarOfflineModeWidget;
+ 	KopeteSystemTray *m_tray;
+ 	bool m_autoHide;
+ 	unsigned int m_autoHideTimeout;
+@@ -259,6 +261,7 @@
+ 	KPopupMenu * m_globalStatusMessageMenu;
+ 	QLineEdit * m_newMessageEdit;
+ 	QString m_globalStatusMessageStored;
++    QLabel * m_offlineModeLabel;
+ };
+ 
+ 
+Index: kopete/kopete/kopeteapplication.cpp
+===================================================================
+--- kopete/kopete/kopeteapplication.cpp	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/kopete/kopeteapplication.cpp	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -28,6 +28,7 @@
+ #include <klocale.h>
+ #include <kcmdlineargs.h>
+ #include <kmessagebox.h>
++#include <connectionmanager.h>
+ 
+ #include "addaccountwizard.h"
+ #include "kabcpersistence.h"
+@@ -211,7 +212,9 @@
+ 	KCmdLineArgs *args = KCmdLineArgs::parsedArgs();
+ 
+ 	// --noconnect not specified?
+-	if ( args->isSet( "connect" )  && KopetePrefs::prefs()->autoConnect() )
++	if ( args->isSet( "connect" )  && KopetePrefs::prefs()->autoConnect() &&
++            ( ConnectionManager::self()->status() == NetworkStatus::NoNetworks ||
++              ConnectionManager::self()->status() == NetworkStatus::Online ) )
+ 		Kopete::AccountManager::self()->connectAll();
+ 
+ 
+Index: kopete/kopete/kopetewindow.cpp
+===================================================================
+--- kopete/kopete/kopetewindow.cpp	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/kopete/kopetewindow.cpp	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -52,6 +52,8 @@
+ #include <ksqueezedtextlabel.h>
+ #include <kstringhandler.h>
+ #include <kurl.h>
++#include <connectionmanager.h>
++#include <networkstatusindicator.h>
+ 
+ #include "addcontactpage.h"
+ #include "addcontactwizard.h"
+@@ -146,6 +148,10 @@
+ 	m_globalStatusMessage = new KSqueezedTextLabel( statusBarMessage );
+ 	statusBar()->addWidget(statusBarMessage, 1, false );
+ 
++	StatusBarNetworkStatusIndicator * indicator = new StatusBarNetworkStatusIndicator( this, "netstatusindicator" );
++	statusBar()->addWidget( indicator, 0, false );
++    indicator->init();
++
+ 	m_pluginConfig = 0L;
+ 	m_autoHideTimer = new QTimer( this );
+ 
+@@ -193,7 +199,6 @@
+     //install an event filter for the quick search toolbar so we can
+     //catch the hide events
+     toolBar( "quickSearchBar" )->installEventFilter( this );
+-
+ }
+ 
+ void KopeteWindow::initView()
+Index: kopete/kopete/config/behavior/behaviorconfig_general.ui
+===================================================================
+--- kopete/kopete/config/behavior/behaviorconfig_general.ui	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/kopete/config/behavior/behaviorconfig_general.ui	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -8,8 +8,8 @@
+         <rect>
+             <x>0</x>
+             <y>0</y>
+-            <width>348</width>
+-            <height>302</height>
++            <width>454</width>
++            <height>318</height>
+         </rect>
+     </property>
+     <property name="caption">
+@@ -151,13 +151,16 @@
+                         <cstring>mAutoConnect</cstring>
+                     </property>
+                     <property name="text">
+-                        <string>Connect automatically at &amp;startup</string>
++                        <string>Connect automatically</string>
+                     </property>
++                    <property name="accel">
++                        <string></string>
++                    </property>
+                     <property name="toolTip" stdset="0">
+-                        <string>Connect all your accounts automatically when starting Kopete</string>
++                        <string>Connect on startup and when a network is available</string>
+                     </property>
+                     <property name="whatsThis" stdset="0">
+-                        <string>When starting Kopete all your accounts will be connected automatically. Note: You can exclude accounts individually in their properties.</string>
++                        <string>When starting Kopete, and whenever a network is online, all your accounts will be connected automatically. Note: You can exclude accounts individually in their properties.</string>
+                     </property>
+                 </widget>
+                 <widget class="QCheckBox">
+Index: kopete/libkopete/managedconnectionaccount.h
+===================================================================
+--- kopete/libkopete/managedconnectionaccount.h	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/libkopete/managedconnectionaccount.h	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -1,79 +0,0 @@
+-/*
+-    managedconnectionaccount.h - Kopete Account that uses a  manager to
+-    control its connection and respond to connection events
+-
+-    Copyright (c) 2005      by Will Stephenson <lists@stevello.free-online.co.uk>
+-    Kopete    (c) 2002-2005 by the Kopete developers <kopete-devel@kde.org>
+-
+-    *************************************************************************
+-    *                                                                       *
+-    * This library is free software; you can redistribute it and/or         *
+-    * modify it under the terms of the GNU Lesser General Public            *
+-    * License as published by the Free Software Foundation; either          *
+-    * version 2 of the License, or (at your option) any later version.      *
+-    *                                                                       *
+-    *************************************************************************
+-*/
+-
+-#ifndef MANAGEDCONNECTIONACCOUNT_H
+-#define MANAGEDCONNECTIONACCOUNT_H
+-
+-#include "networkstatuscommon.h"
+-
+-#include "kopetepasswordedaccount.h"
+-
+-namespace Kopete
+-{
+-class Protocol;
+-
+-/**
+- * A ManagedConnectionAccount queries the NetworkStatus KDED Module before trying to connect using 
+- * connectwithPassword, starting a network connection if needed.  If the network is not available, 
+- * it delays calling performConnectWithPassword until it receives notification from the daemon 
+- * that the network is up.  The account receiveds notifications from the daemon of network failures
+- * and calls disconnect to set the account offline in a timely manner.
+- */
+-class KOPETE_EXPORT ManagedConnectionAccount : public PasswordedAccount
+-{
+-	Q_OBJECT
+-	public:
+-		/**
+-		* @brief ManagedConnectionAccount constructor.
+-		* @param parent The protocol this account connects via
+-		* @param acctId The ID of this account - should be unique within this protocol
+-		* @param maxPasswordLength The maximum length for passwords for this account, or 0 for no limit
+-		* @param name The name for this QObject
+-		*/
+-		ManagedConnectionAccount( Protocol *parent, const QString &acctId, uint maxPasswordLength = 0, const char *name = 0 );
+-	public slots:
+-		/**
+-		 * @brief Begin the connection process, by checking if the connection is available with the ConnectionManager.
+-		 * This method is called by PasswordedAccount::connect()
+-		 * @param password the password to connect with.
+-		 */
+-		void connectWithPassword( const QString &password );
+-	protected:
+-		/** 
+-		 * @brief Connect to the server, once the network is available.
+-		 * This method is called by the ManagedConnectionAccount once the network is available. In this method you should set up your 
+-		 * network connection and connect to the server.
+-		 */
+-		virtual void performConnectWithPassword( const QString & password ) = 0;
+-	protected slots:
+-		/**
+-		 * @brief Handle a change in the network connection
+-		 * Called by the ConnectionManager when the network comes up or fails.  
+-		 * The default implementation calls performConnectWithPassword when the network goes online and connectWithPassword() was
+-		 * previously called, and calls disconnect() when the connection goes down.
+-		 * @param host For future expansion.
+-		 * @param status the new status of the network
+-		 */
+-		virtual void slotConnectionStatusChanged( const QString & host, NetworkStatus::EnumStatus status );
+-	private:
+-		QString m_password;
+-		bool m_waitingForConnection;
+-};
+-
+-}
+-
+-#endif
+Index: kopete/libkopete/connectionmanager.h
+===================================================================
+--- kopete/libkopete/connectionmanager.h	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/libkopete/connectionmanager.h	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -1,58 +0,0 @@
+-/*
+-    connectionmanager.h - Provides the client side interface to the kde networkstatus daemon
+-
+-    Copyright (c) 2004      by Will Stephenson <lists@stevello.free-online.co.uk>
+-
+-    *************************************************************************
+-    *                                                                       *
+-    * This library is free software; you can redistribute it and/or         *
+-    * modify it under the terms of the GNU Lesser General Public            *
+-    * License as published by the Free Software Foundation; either          *
+-    * version 2 of the License, or (at your option) any later version.      *
+-    *                                                                       *
+-    *************************************************************************
+-*/
+-
+-#ifndef KDE_CONNECTION_MANAGER_H
+-#define KDE_CONNECTION_MANAGER_H
+-
+-#include <dcopobject.h>
+-
+-#include "kopete_export.h"
+-#include "networkstatuscommon.h"
+-
+-class ConnectionManagerPrivate;
+-
+-class KOPETE_EXPORT ConnectionManager : public QObject, virtual public DCOPObject
+-{
+-	Q_OBJECT
+-	K_DCOP
+-	public:
+-		static ConnectionManager* self();
+-		enum State { Inactive, Online, Offline, Pending };
+-		virtual ~ConnectionManager();
+-		NetworkStatus::EnumStatus status( const QString & host );
+-			// check if a hostname is available.  Ask user if offline.  Request host
+-		NetworkStatus::EnumRequestResult requestConnection( QWidget* mainWidget, const QString & host, bool userInitiated );
+-			// method to relinquish a connection
+-		void relinquishConnection( const QString & host );
+-	signals:
+-		// signal that the network for a hostname is up/down
+-		void statusChanged( const QString & host, NetworkStatus::EnumStatus status );
+-	protected:
+-		// sets up internal state
+-		void initialise();
+-		// reread the desktop status from the daemon and update internal state
+-		void updateStatus();
+-			// ask if the user would like to reconnect
+-		bool askToConnect( QWidget * mainWidget );
+-	k_dcop:
+-			void slotStatusChanged( QString host, int status );
+-	private:
+-		ConnectionManager( QObject *parent, const char * name );
+-		ConnectionManagerPrivate *d;
+-		static ConnectionManager * s_self;
+-};
+-
+-#endif
+-
+Index: kopete/libkopete/networkstatuscommon.cpp
+===================================================================
+--- kopete/libkopete/networkstatuscommon.cpp	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/libkopete/networkstatuscommon.cpp	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -1,32 +0,0 @@
+-#include "networkstatuscommon.h"
+-#include <kdebug.h>
+-
+-QDataStream & operator<< ( QDataStream & s, const NetworkStatus::Properties p )
+-{
+-	kdDebug() << k_funcinfo << "status is: " << (int)p.status << endl;
+-	s << (int)p.status;
+-	s << (int)p.onDemandPolicy;
+-	s << p.service;
+-	s << ( p.internet ? 1 : 0 );
+-	s << p.netmasks;
+-	return s;
+-}
+-
+-QDataStream & operator>> ( QDataStream & s, NetworkStatus::Properties &p )
+-{
+-	int status, onDemandPolicy, internet;
+-	s >> status;
+-	kdDebug() << k_funcinfo << "status is: " << status << endl;
+-	p.status = ( NetworkStatus::EnumStatus )status;
+-	s >> onDemandPolicy;
+-	p.onDemandPolicy = ( NetworkStatus::EnumOnDemandPolicy )onDemandPolicy;
+-	s >> p.service;
+-	s >> internet;
+-	if ( internet )
+-		p.internet = true;
+-	else
+-		p.internet = false;
+-	s >> p.netmasks;
+-	kdDebug() << k_funcinfo << "enum converted status is: " << p.status << endl;
+-	return s;
+-}
+Index: kopete/libkopete/managedconnectionaccount.cpp
+===================================================================
+--- kopete/libkopete/managedconnectionaccount.cpp	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/libkopete/managedconnectionaccount.cpp	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -1,73 +0,0 @@
+-/*
+-    managedconnectionaccount.h - Kopete Account that uses a  manager to
+-    control its connection and respond to connection events
+-
+-    Copyright (c) 2005      by Will Stephenson <lists@stevello.free-online.co.uk>
+-    Kopete    (c) 2002-2005 by the Kopete developers <kopete-devel@kde.org>
+-
+-    *************************************************************************
+-    *                                                                       *
+-    * This library is free software; you can redistribute it and/or         *
+-    * modify it under the terms of the GNU Lesser General Public            *
+-    * License as published by the Free Software Foundation; either          *
+-    * version 2 of the License, or (at your option) any later version.      *
+-    *                                                                       *
+-    *************************************************************************
+-*/
+-
+-#include "connectionmanager.h"
+-#include "kopeteuiglobal.h"
+-
+-#include "managedconnectionaccount.h"
+-
+-
+-namespace Kopete
+-{
+-	
+-ManagedConnectionAccount::ManagedConnectionAccount( Protocol *parent, const QString &acctId, uint maxPasswordLength, const char *name )
+-	: PasswordedAccount( parent, acctId, maxPasswordLength, name ), m_waitingForConnection( false )
+-{
+-	QObject::connect( ConnectionManager::self(), SIGNAL(statusChanged(const QString&, NetworkStatus::EnumStatus ) ),
+-										SLOT(slotConnectionStatusChanged(const QString&, NetworkStatus::EnumStatus ) ) );
+-}
+-
+-void ManagedConnectionAccount::connectWithPassword( const QString &password )
+-{
+-	m_password = password;
+-	NetworkStatus::EnumStatus status = ConnectionManager::self()->status( QString::null );
+-	if ( status == NetworkStatus::NoNetworks )
+-		performConnectWithPassword( password );
+-	else
+-	{
+-		m_waitingForConnection = true;
+-		// need to adapt libkopete so we know the hostname in this class and whether the connection was user initiated
+-		// for now, these are the default parameters to always bring up a connection to "the internet".
+-		NetworkStatus::EnumRequestResult response = ConnectionManager::self()->requestConnection( Kopete::UI::Global::mainWidget(), QString::null, true );
+-		if ( response == NetworkStatus::Connected )
+-		{
+-			m_waitingForConnection = false;
+-			performConnectWithPassword( password );
+-		}
+-		else if ( response == NetworkStatus::UserRefused || response == NetworkStatus::Unavailable )
+-			disconnect();
+-	}
+-}
+-
+-void ManagedConnectionAccount::slotConnectionStatusChanged( const QString & host, NetworkStatus::EnumStatus status )
+-{
+-	Q_UNUSED(host); // as above, we didn't register a hostname, so treat any connection as our own.
+-	
+-	if ( m_waitingForConnection && ( status == NetworkStatus::Online || status == NetworkStatus::NoNetworks ) )
+-	{
+-		m_waitingForConnection = false;
+-		performConnectWithPassword( m_password );
+-	}
+-	else if ( isConnected() && ( status == NetworkStatus::Offline 
+-						 || status == NetworkStatus::ShuttingDown 
+-						 || status == NetworkStatus::OfflineDisconnected 
+-				 		 || status == NetworkStatus::OfflineFailed ) )
+-		disconnect();
+-}
+-		
+-} // end namespace Kopete
+-#include "managedconnectionaccount.moc"
+Index: kopete/libkopete/networkstatuscommon.h
+===================================================================
+--- kopete/libkopete/networkstatuscommon.h	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/libkopete/networkstatuscommon.h	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -1,33 +0,0 @@
+-#ifndef NETWORKSTATUS_COMMON_H
+-#define NETWORKSTATUS_COMMON_H
+-
+-#include <qstringlist.h>
+-
+-namespace NetworkStatus
+-{
+-	enum EnumStatus { NoNetworks = 1, Unreachable, OfflineDisconnected,  OfflineFailed, ShuttingDown, Offline, Establishing, Online };
+-	enum EnumRequestResult { RequestAccepted = 1, Connected, UserRefused, Unavailable };
+-	enum EnumOnDemandPolicy { All, User, None, Permanent };
+-	struct Properties
+-	{
+-		QString name;
+-		// status of the network
+-		EnumStatus status;
+-		// policy for on-demand usage as defined by the service
+-		EnumOnDemandPolicy onDemandPolicy;
+-		// identifier for the service
+-		QCString service;
+-		// indicate that the connection is to 'the internet' - similar to default gateway in routing
+-		bool internet;
+-		// list of netmasks that the network connects to - overridden by above internet
+-		QStringList netmasks;
+-		// for future expansion consider
+-		// EnumChargingModel - FlatRate, TimeCharge, VolumeCharged
+-		// EnumLinkStatus - for WLANs - VPOOR, POOR, AVERAGE, GOOD, EXCELLENT
+-	};
+-}
+-
+-QDataStream & operator>> ( QDataStream & s, NetworkStatus::Properties &p );
+-QDataStream & operator<< ( QDataStream & s, const NetworkStatus::Properties p );
+-
+-#endif
+Index: kopete/libkopete/connectionmanager.cpp
+===================================================================
+--- kopete/libkopete/connectionmanager.cpp	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/libkopete/connectionmanager.cpp	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -1,153 +0,0 @@
+-#include <kapplication.h>
+-#include <kdebug.h>
+-#include <klocale.h>
+-#include <kmessagebox.h>
+-#include <kstaticdeleter.h>
+-
+-#include "clientiface_stub.h"
+-#include "networkstatuscommon.h"
+-
+-#include "connectionmanager.h"
+-
+-// ConnectionManager's private parts
+-class ConnectionManagerPrivate
+-{
+-	public:
+-		// this holds the currently active state
+-		ConnectionManager::State m_state;
+-		ClientIface_stub * m_stub;
+-		bool m_userInitiatedOnly;
+-};
+-
+-// Connection manager itself
+-ConnectionManager::ConnectionManager( QObject * parent, const char * name ) : DCOPObject( "ConnectionManager" ),QObject( parent, name )
+-{
+-	d = new ConnectionManagerPrivate;
+-	
+-	d->m_stub = new ClientIface_stub( kapp->dcopClient(), "kded", "networkstatus" );
+-	
+-	connectDCOPSignal( "kded", "networkstatus", "statusChange(QString,int)", "slotStatusChanged(QString,int)", false );
+-	d->m_userInitiatedOnly = false;
+-	initialise();
+-}
+-
+-ConnectionManager *ConnectionManager::s_self = 0L;
+-
+-ConnectionManager *ConnectionManager::self()
+-{
+-	static KStaticDeleter<ConnectionManager> deleter;
+-	if(!s_self)
+-		deleter.setObject( s_self, new ConnectionManager( 0, "connection_manager" ) );
+-	return s_self;	
+-}
+-
+-void ConnectionManager::initialise()
+-{
+-	// determine initial state and set the state object accordingly.
+-	d->m_state = Inactive;
+-	updateStatus();
+-}
+-
+-void ConnectionManager::updateStatus()
+-{
+-	NetworkStatus::EnumStatus daemonStatus = (NetworkStatus::EnumStatus)d->m_stub->status( QString::null );
+-	kdDebug() << k_funcinfo << endl;
+-	switch ( daemonStatus )
+-	{
+-		case NetworkStatus::Offline:
+-		case NetworkStatus::OfflineFailed:
+-		case NetworkStatus::OfflineDisconnected:
+-		case NetworkStatus::ShuttingDown:
+-			if ( d->m_state == Online )
+-			{
+-				kdDebug() << "STATE IS PENDING" << endl;
+-				d->m_state = Pending;
+-			}
+-			else
+-			{
+-				kdDebug() << "STATE IS OFFLINE" << endl;
+-				d->m_state = Offline;
+-			}
+-			break;
+-		case NetworkStatus::Establishing:
+-		case NetworkStatus::Online:
+-			kdDebug() << "STATE IS ONLINE" << endl;
+-			d->m_state = Online;
+-			break;
+-		case NetworkStatus::NoNetworks:
+-		case NetworkStatus::Unreachable:
+-			kdDebug() << "STATE IS INACTIVE" << endl;
+-			d->m_state = Inactive;
+-			break;
+-	}
+-}
+-
+-ConnectionManager::~ConnectionManager()
+-{
+-	delete d;
+-}
+-
+-NetworkStatus::EnumStatus ConnectionManager::status( const QString & host )
+-{
+-	// need also to check that the daemon hasn't died
+-	updateStatus();
+-	if ( d->m_state == Pending )
+-		return NetworkStatus::Offline;
+-	if ( d->m_state == Online )
+-		return NetworkStatus::Online;
+-	if ( d->m_state == Offline )
+-		return NetworkStatus::Offline;
+-	return NetworkStatus::NoNetworks;
+-}
+-
+-NetworkStatus::EnumRequestResult ConnectionManager::requestConnection( QWidget * mainWidget, const QString & host, bool userInitiated )
+-{
+-	kdDebug() << k_funcinfo << endl;
+-	NetworkStatus::EnumRequestResult result;
+-	// if offline and the user has previously indicated they didn't want any new connections, suppress it
+-	if ( d->m_state == Offline && !userInitiated && d->m_userInitiatedOnly )
+-		result = NetworkStatus::UserRefused;
+-	// if offline, ask the user whether this connection should be allowed
+-	if ( d->m_state == Offline )
+-	{
+-		if ( askToConnect( mainWidget ) )
+-			//result = NetworkStatus::Connected;
+-			result = (NetworkStatus::EnumRequestResult)d->m_stub->request( host, userInitiated );
+-		else
+-			result = NetworkStatus::UserRefused;
+-	}
+-	// otherwise, just ask for the connection
+-	else
+-		result = (NetworkStatus::EnumRequestResult)d->m_stub->request( host, userInitiated );
+-	
+-	return result;
+-}
+-
+-void ConnectionManager::relinquishConnection( const QString & host )
+-{
+-	d->m_stub->relinquish( host );
+-}
+-
+-void ConnectionManager::slotStatusChanged( QString host, int status )
+-{
+-	kdDebug() << k_funcinfo << endl;
+-	updateStatus();
+-	// reset user initiated only flag if we are now online
+-	if ( d->m_state == Online )
+-		d->m_userInitiatedOnly = false;
+-
+-	emit statusChanged( host, (NetworkStatus::EnumStatus)status );
+-}
+-
+-bool ConnectionManager::askToConnect( QWidget * mainWidget )
+-{
+-	i18n( "A network connection was disconnected.  The application is now in offline mode.  Do you want the application to resume network operations when the network is available again?" );
+-	i18n( "This application is currently in offline mode.  Do you want to connect?" );
+-	return ( KMessageBox::questionYesNo( mainWidget,
+-			i18n("This application is currently in offline mode.  Do you want to connect in order to carry out this operation?"),
+-			i18n("Leave Offline Mode?"),
+-			i18n("Connect"), i18n("Stay Offline"),
+-			QString::fromLatin1("OfflineModeAlwaysGoOnline") ) == KMessageBox::Yes );
+-}
+-
+-#include "connectionmanager.moc"
+Index: kopete/libkopete/kopeteaccountmanager.h
+===================================================================
+--- kopete/libkopete/kopeteaccountmanager.h	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/libkopete/kopeteaccountmanager.h	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -208,6 +208,10 @@
+ 	AccountManager();
+ 
+ private slots:
++    /**
++     * Slot called by ConnectionManager to connect everything
++     */
++    void doConnect();
+ 	void slotPluginLoaded( Kopete::Plugin *plugin );
+ 	void slotAccountOnlineStatusChanged(Kopete::Contact *c,
+ 		const Kopete::OnlineStatus &oldStatus, const Kopete::OnlineStatus &newStatus);
+Index: kopete/libkopete/kopeteaccountmanager.cpp
+===================================================================
+--- kopete/libkopete/kopeteaccountmanager.cpp	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/libkopete/kopeteaccountmanager.cpp	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -27,12 +27,15 @@
+ #include <kglobal.h>
+ #include <kplugininfo.h>
+ 
++#include <connectionmanager.h>
++
+ #include "kopeteaccount.h"
+ #include "kopeteaway.h"
+ #include "kopeteprotocol.h"
+ #include "kopetecontact.h"
+ #include "kopetecontactlist.h"
+ #include "kopetepluginmanager.h"
++#include "kopeteprefs.h"
+ #include "kopeteonlinestatus.h"
+ #include "kopeteonlinestatusmanager.h"
+ #include "kopetemetacontact.h"
+@@ -78,6 +81,8 @@
+ : QObject( qApp, "KopeteAccountManager" )
+ {
+ 	d = new Private;
++	ConnectionManager::self()->registerConnectSlot( this, SLOT( doConnect() ) );
++	ConnectionManager::self()->registerDisconnectSlot( this, SLOT( disconnectAll() ) );
+ }
+ 
+ 
+@@ -433,6 +438,12 @@
+ 	emit accountOnlineStatusChanged(account, oldStatus, newStatus);
+ }
+ 
++void AccountManager::doConnect()
++{
++	if ( KopetePrefs::prefs()->autoConnect() )
++		setAvailableAll();
++}
++
+ } //END namespace Kopete
+ 
+ #include "kopeteaccountmanager.moc"
+Index: kopete/libkopete/Makefile.am
+===================================================================
+--- kopete/libkopete/Makefile.am	(.../KDE/3.5/kdenetwork/kopete)	(revision 667245)
++++ kopete/libkopete/Makefile.am	(.../work/~wstephens/kopete)	(revision 667245)
+@@ -19,7 +19,7 @@
+ 
+ lib_LTLIBRARIES = libkopete.la
+ 
+-libkopete_la_SOURCES = knotification.cpp connectionmanager.cpp kopeteonlinestatus.cpp kopeteonlinestatusmanager.cpp \
++libkopete_la_SOURCES = knotification.cpp kopeteonlinestatus.cpp kopeteonlinestatusmanager.cpp \
+ 	kopeteprotocol.cpp kopetecontact.cpp kopetepluginmanager.cpp kopeteplugin.cpp \
+ 	kopetemessage.cpp kopetechatsession.cpp kopetechatsessionmanager.cpp \
+ 	kopetecontactlist.cpp kopetemetacontact.cpp kopeteawaydialog.cpp kopetetransfermanager.cpp \
+@@ -30,12 +30,12 @@
+ 	kopetemimetypehandler.cpp kopetetask.cpp kopetemimesourcefactory.cpp \
+ 	kopeteeventpresentation.cpp kopetenotifyevent.cpp kopetenotifydataobject.cpp kopeteblacklister.cpp \
+ 	kopetemessageevent.cpp kopetemessagehandler.cpp kopetemessagehandlerchain.cpp \
+-	kopetesimplemessagehandler.cpp kopeteproperties.cpp kabcpersistence.cpp connectionmanager.skel \
+-	clientiface.stub managedconnectionaccount.cpp networkstatuscommon.h kopeteconfig.kcfgc kopeteutils.cpp \
++	kopetesimplemessagehandler.cpp kopeteproperties.cpp kabcpersistence.cpp \
++	kopeteconfig.kcfgc kopeteutils.cpp \
+ 	kopeteprefs.cpp kopetepicture.cpp webcamwidget.cpp
+ 
+ libkopete_la_LDFLAGS = -no-undefined -version-info 1:0:0 $(all_libraries)
+-libkopete_la_LIBADD = -lkabc ui/libkopeteui.la $(COMPAT_LIBS) $(LIB_KIO) $(LIB_XSS) $(LIB_XRENDER)
++libkopete_la_LIBADD = -lkabc ui/libkopeteui.la $(COMPAT_LIBS) $(LIB_KIO) $(LIB_XSS) $(LIB_XRENDER) -lconnectionmanager
+ 
+ kde_kcfg_DATA = kopete.kcfg
+ 
+@@ -62,7 +62,7 @@
+ 	kopetechatsession.h kopetechatsessionmanager.h kopetemetacontact.h kopetemimetypehandler.h \
+ 	kopeteonlinestatus.h kopeteonlinestatusmanager.h kopetepasswordedaccount.h \
+ 	kopetepassword.h kopeteplugin.h kopeteprotocol.h kopetesimplemessagehandler.h kopetetask.h \
+-	kopetetransfermanager.h kopeteuiglobal.h kabcpersistence.h managedconnectionaccount.h \
++	kopetetransfermanager.h kopeteuiglobal.h kabcpersistence.h \
+ 	kopetenotifydataobject.h kopeteversion.h kopeteprefs.h kopetepicture.h webcamwidget.h \
+ 	kopetepluginmanager.h
+ 
+Index: kppp/kpppwidget.cpp
+===================================================================
+--- kppp/kpppwidget.cpp	(.../KDE/3.5/kdenetwork/kppp)	(revision 667246)
++++ kppp/kpppwidget.cpp	(.../work/~wstephens/kppp)	(revision 667246)
+@@ -69,6 +69,8 @@
+ #include "general.h"
+ #include "modems.h"
+ 
++#include "networkstatusiface_stub.h"
++
+ // delay disconnection for a second
+ #define DISCONNECT_DELAY 1000
+ 
+@@ -79,6 +81,7 @@
+   , acct(0)
+   , m_bCmdlAccount (false)
+   , m_bCmdlModem (false)
++  , m_serviceStub( 0 )
+ {
+   tabWindow = 0;
+ 
+@@ -336,9 +339,17 @@
+   // attach to the DCOP server, if possible
+   if (!kapp->dcopClient()->attach())
+     kdDebug(5002) << "Error: Could not connect to the DCOP server" << endl;
+-  else
++  else {
+     kapp->dcopClient()->registerAs(kapp->name(), true);
+ 
++    m_serviceStub = new NetworkStatusIface_stub( "kded", "networkstatus" );
++
++    connect( kapp->dcopClient(), SIGNAL( applicationRegistered( const QCString& ) ), 
++        this, SLOT( appRegisteredToDCOP( const QCString& ) ) );
++    kapp->dcopClient()->setNotifications( true );
++    registerService();
++  }
++
+   // this timer will delay the actual disconnection DISCONNECTION_DELAY ms
+   // to give applications time to shutdown, logout, whatever..
+   disconnectTimer = new QTimer(this);
+@@ -581,6 +592,7 @@
+       disconnectTimer->stop();
+       // signal other applications that we are disconnected now
+       kapp->dcopClient()->emitDCOPSignal("KpppIface", "disconnected()", QByteArray());
++      m_serviceStub->setNetworkStatus( KDED_NETWORK_NAME, NetworkStatus::Offline );
+ 
+       kdDebug(5002) << "Executing command on disconnect since pppd has died." << endl;
+       QApplication::flushX();
+@@ -798,6 +810,7 @@
+ 
+   // signal other applications that we are about to go offline now
+   kapp->dcopClient()->emitDCOPSignal("KpppIface", "aboutToDisconnect()", QByteArray());
++  m_serviceStub->setNetworkStatus( KDED_NETWORK_NAME, NetworkStatus::ShuttingDown );
+   con_win->hide();
+   con->show();
+   con->disableButtons(); // will reenable them later in delayedDisconnect()
+@@ -836,6 +849,7 @@
+ 
+   // signal other applications that we are disconnected now
+   kapp->dcopClient()->emitDCOPSignal("KpppIface", "disconnected()", QByteArray());
++  m_serviceStub->setNetworkStatus( KDED_NETWORK_NAME, NetworkStatus::Offline );
+ 
+   QApplication::flushX();
+   execute_command(gpppdata.command_on_disconnect());
+@@ -880,6 +894,7 @@
+ 
+       // signal other applications that we are disconnected now
+       kapp->dcopClient()->emitDCOPSignal("KpppIface", "disconnected()", QByteArray());
++      m_serviceStub->setNetworkStatus( KDED_NETWORK_NAME, NetworkStatus::Offline );
+ 
+       QApplication::flushX();
+       execute_command(gpppdata.command_on_disconnect());
+@@ -1068,6 +1083,25 @@
+ #endif
+ }
+ 
++NetworkStatusIface_stub * KPPPWidget::networkService() const
++{
++    return m_serviceStub;
++}
+ 
++void KPPPWidget::appRegisteredToDCOP( const QCString & appId )
++{
++  if ( appId == "kded" )
++    registerService();
++}
++
++void KPPPWidget::registerService()
++{
++    NetworkStatus::Properties nsp;
++    nsp.name = KDED_NETWORK_NAME;
++    nsp.service = kapp->dcopClient()->appId();
++    nsp.status = NetworkStatus::NoNetworks;
++    m_serviceStub->registerNetwork( nsp );
++}
++
+ #include "kpppwidget.moc"
+ 
+Index: kppp/connect.cpp
+===================================================================
+--- kppp/connect.cpp	(.../KDE/3.5/kdenetwork/kppp)	(revision 667246)
++++ kppp/connect.cpp	(.../work/~wstephens/kppp)	(revision 667246)
+@@ -71,6 +71,7 @@
+ #include "pppstats.h"
+ #include "requester.h"
+ #include "utils.h"
++#include "networkstatusiface_stub.h"
+ 
+ extern KPPPWidget *p_kppp;
+ 
+@@ -217,6 +218,7 @@
+ 
+   // signal other applications that we are about to get connected
+   kapp->dcopClient()->emitDCOPSignal("KpppIface", "aboutToConnect()", QByteArray());
++  p_kppp->networkService()->setNetworkStatus( KDED_NETWORK_NAME, NetworkStatus::Establishing );
+ 
+   // run the "before-connect" command
+   if (!gpppdata.command_before_connect().isEmpty()) {
+@@ -1193,7 +1195,7 @@
+ 
+   // signal other applications that we are connected now
+   kapp->dcopClient()->emitDCOPSignal("KpppIface", "connected()", QByteArray());
+-
++  p_kppp->networkService()->setNetworkStatus( KDED_NETWORK_NAME, NetworkStatus::Online );
+   if(!gpppdata.command_on_connect().isEmpty()) {
+     messg->setText(i18n("Running startup command..."));
+ 
+Index: kppp/kpppwidget.h
+===================================================================
+--- kppp/kpppwidget.h	(.../KDE/3.5/kdenetwork/kppp)	(revision 667246)
++++ kppp/kpppwidget.h	(.../work/~wstephens/kppp)	(revision 667246)
+@@ -40,6 +40,8 @@
+ 
+ #include "KPPPIface.h"
+ 
++#define KDED_NETWORK_NAME "KPPPNetwork"
++
+ class GeneralWidget;
+ class ModemsWidget;
+ class ModemWidget;
+@@ -49,6 +51,7 @@
+ class PPPStats;
+ class KDialogBase;
+ class KPushButton;
++class NetworkStatusIface_stub;
+ 
+ class SignalEvent : public QEvent {
+ public:
+@@ -72,6 +75,7 @@
+   void setQuitOnDisconnect (bool b);
+   bool quitOnDisconnect () {return m_bQuitOnDisconnect;};
+ 
++  NetworkStatusIface_stub * networkService() const;
+ private slots:
+   void newdefaultaccount(int);
+ 	void newdefaultmodem(int);
+@@ -88,6 +92,7 @@
+   void shutDown();
+ 
+   void delayedDisconnect();
++  void appRegisteredToDCOP( const QCString & appId );
+ 
+ public slots:
+   void beginConnect();
+@@ -125,6 +130,7 @@
+   QString encodeWord(const QString &s);
+   void showNews ();
+ 	void setButtons();
++  void registerService();
+ 
+   QString ruleset_load_errmsg;
+ 
+@@ -167,6 +173,8 @@
+ 
+ 
+   QTimer *disconnectTimer;
++
++  NetworkStatusIface_stub * m_serviceStub;
+ };
+ 
+ 
+Index: kppp/Makefile.am
+===================================================================
+--- kppp/Makefile.am	(.../KDE/3.5/kdenetwork/kppp)	(revision 667246)
++++ kppp/Makefile.am	(.../work/~wstephens/kppp)	(revision 667246)
+@@ -48,10 +48,13 @@
+ 		utils.cpp \
+ 		providerdb.cpp \
+ 		modems.cpp \
++		networkstatusiface.stub \
+ 		KPPPIface.skel
+ 
++networkstatusiface_DIR = $(includedir)
++
+ # the library search path
+-kppp_LDFLAGS = $(all_libraries) $(KDE_RPATH)
++kppp_LDFLAGS = $(all_libraries) $(KDE_RPATH) -lnetworkstatus
+ 
+ # the libraries to link against. Be aware of the order. First the libraries,
+ # that depend on the following ones.

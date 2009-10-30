@@ -1,0 +1,425 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>kdenetwork</Name>
+        <Homepage>http://www.kde.org/</Homepage>
+        <Packager>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <IsA>app:gui</IsA>
+        <Summary>KDE network apps: kopete, kppp, kget...</Summary>
+        <Archive type="tarbz2" sha1sum="eb280bffaf4642bfda442cc6a9fb38dc4163b720">mirrors://kde/stable/3.5.10/src/kdenetwork-3.5.10.tar.bz2</Archive>
+        <BuildDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>qca</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>kdebase</Dependency>
+            <Dependency>openslp</Dependency>
+            <Dependency>wireless-tools</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">fix-automake-version.patch</Patch>
+            <Patch level="1">kopete-autoconnect.patch</Patch>
+            <Patch level="1">krdc-keyrepeat.patch</Patch>
+            <Patch level="1">kopete-show-hide-shortcut.patch</Patch>
+            <Patch>msn-nowlistening.patch</Patch>
+            <Patch>add-account-menu.patch</Patch>
+            <Patch level="1">kopete-style.patch</Patch>
+
+            <!-- Suse fixes -->
+            <Patch>suse/wifi-without-arts.patch</Patch>
+            <Patch>suse/kppp-security.diff</Patch>
+            <Patch>suse/krdc-eintr.diff</Patch>
+            <Patch>suse/kopete_stop_doubled_irc_status_changes.diff</Patch>
+            <Patch>suse/3_5_BRANCH.diff</Patch>
+            <Patch>suse/external-qca.diff</Patch>
+            <Patch>suse/krdc-threadsafe.diff</Patch>
+
+            <!-- http://websvn.kde.org/branches/work/~wstephens/ -->
+            <Patch>kdenetwork_networkstatus_branch.diff</Patch>
+            <Patch level="1">jabber_webcam.diff</Patch>
+
+            <!-- fixes annoying paranthesis in tray icon's tooltip -->
+            <Patch>tray-paranthesis.patch</Patch>
+        </Patches>
+    </Source>
+    <Package>
+        <Name>kdenetwork</Name>
+        <RuntimeDependencies>
+            <Dependency>qca</Dependency>
+            <Dependency>qca-tls</Dependency>
+            <Dependency>kdebase</Dependency>
+            <Dependency>openslp</Dependency>
+            <Dependency>rdesktop</Dependency>
+            <Dependency>perl-IO-Socket-SSL</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc</Path>
+            <Path fileType="executable">/usr/kde/3.5/bin</Path>
+            <Path fileType="library">/usr/kde/3.5/lib</Path>
+            <Path fileType="data">/usr/kde/3.5/share</Path>
+            <Path fileType="header">/usr/kde/3.5/include</Path>
+        </Files>
+        <AdditionalFiles>
+            <!-- Pure Style, http://www.kde-look.org/content/show.php?content=23473 -->
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/Pure.xsl" permission="0644" owner="root">pure_style/Pure.xsl</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/Pure_single.xsl" permission="0644" owner="root">pure_style/Pure_single.xsl</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/data/Pure/action.png" permission="0644" owner="root">pure_style/action.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/data/Pure/arrow0.png" permission="0644" owner="root">pure_style/arrow0.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/data/Pure/arrow1.png" permission="0644" owner="root">pure_style/arrow1.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/data/Pure/clock.png" permission="0644" owner="root">pure_style/clock.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/data/Pure/contact.png" permission="0644" owner="root">pure_style/contact.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/data/Pure/corner-bl.png" permission="0644" owner="root">pure_style/corner-bl.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/data/Pure/corner-br.png" permission="0644" owner="root">pure_style/corner-br.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/data/Pure/corner-tl.png" permission="0644" owner="root">pure_style/corner-tl.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/data/Pure/corner-tr.png" permission="0644" owner="root">pure_style/corner-tr.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/data/Pure/important.png" permission="0644" owner="root">pure_style/important.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/data/Pure/myself.png" permission="0644" owner="root">pure_style/myself.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/styles/data/Pure/system.png" permission="0644" owner="root">pure_style/system.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/konqueror/servicemenus/kget_download.desktop" permission="0644" owner="root">kget_download.desktop</AdditionalFile>
+
+            <!-- Kopete themes -->
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/ContactRight.png" permission="0644" owner="root">kopete-themes/default/ContactRight.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/Closed.png" permission="0644" owner="root">kopete-themes/default/Closed.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/GroupBottomLeft.png" permission="0644" owner="root">kopete-themes/default/GroupBottomLeft.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/ContactFace.png" permission="0644" owner="root">kopete-themes/default/ContactFace.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/ContactTopRight.png" permission="0644" owner="root">kopete-themes/default/ContactTopRight.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/GroupBackground.png" permission="0644" owner="root">kopete-themes/default/GroupBackground.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/ContactBottom.png" permission="0644" owner="root">kopete-themes/default/ContactBottom.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/ContactTopLeft.png" permission="0644" owner="root">kopete-themes/default/ContactTopLeft.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/ContactBottomLeft.png" permission="0644" owner="root">kopete-themes/default/ContactBottomLeft.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/ContactLeft.png" permission="0644" owner="root">kopete-themes/default/ContactLeft.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/GroupLeft.png" permission="0644" owner="root">kopete-themes/default/GroupLeft.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/GroupTopRight.png" permission="0644" owner="root">kopete-themes/default/GroupTopRight.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/ContactBackground.png" permission="0644" owner="root">kopete-themes/default/ContactBackground.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/Open.png" permission="0644" owner="root">kopete-themes/default/Open.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/GroupBottom.png" permission="0644" owner="root">kopete-themes/default/GroupBottom.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/GroupRight.png" permission="0644" owner="root">kopete-themes/default/GroupRight.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/GroupBottomRight.png" permission="0644" owner="root">kopete-themes/default/GroupBottomRight.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/GroupTopLeft.png" permission="0644" owner="root">kopete-themes/default/GroupTopLeft.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/GroupTop.png" permission="0644" owner="root">kopete-themes/default/GroupTop.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/ContactBottomRight.png" permission="0644" owner="root">kopete-themes/default/ContactBottomRight.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/default/ContactTop.png" permission="0644" owner="root">kopete-themes/default/ContactTop.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/ContactRight.png" permission="0644" owner="root">kopete-themes/grey/ContactRight.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/Closed.png" permission="0644" owner="root">kopete-themes/grey/Closed.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/GroupBottomLeft.png" permission="0644" owner="root">kopete-themes/grey/GroupBottomLeft.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/ContactFace.png" permission="0644" owner="root">kopete-themes/grey/ContactFace.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/ContactTopRight.png" permission="0644" owner="root">kopete-themes/grey/ContactTopRight.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/GroupBackground.png" permission="0644" owner="root">kopete-themes/grey/GroupBackground.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/ContactBottom.png" permission="0644" owner="root">kopete-themes/grey/ContactBottom.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/ContactTopLeft.png" permission="0644" owner="root">kopete-themes/grey/ContactTopLeft.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/ContactBottomLeft.png" permission="0644" owner="root">kopete-themes/grey/ContactBottomLeft.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/ContactLeft.png" permission="0644" owner="root">kopete-themes/grey/ContactLeft.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/GroupLeft.png" permission="0644" owner="root">kopete-themes/grey/GroupLeft.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/GroupTopRight.png" permission="0644" owner="root">kopete-themes/grey/GroupTopRight.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/ContactBackground.png" permission="0644" owner="root">kopete-themes/grey/ContactBackground.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/Open.png" permission="0644" owner="root">kopete-themes/grey/Open.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/GroupBottom.png" permission="0644" owner="root">kopete-themes/grey/GroupBottom.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/GroupRight.png" permission="0644" owner="root">kopete-themes/grey/GroupRight.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/GroupBottomRight.png" permission="0644" owner="root">kopete-themes/grey/GroupBottomRight.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/GroupTopLeft.png" permission="0644" owner="root">kopete-themes/grey/GroupTopLeft.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/GroupTop.png" permission="0644" owner="root">kopete-themes/grey/GroupTop.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/ContactBottomRight.png" permission="0644" owner="root">kopete-themes/grey/ContactBottomRight.png</AdditionalFile>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/kopete/themes/grey/ContactTop.png" permission="0644" owner="root">kopete-themes/grey/ContactTop.png</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+    <History>
+        <Update release="42">
+            <Date>2009-10-27</Date>
+            <Version>3.5.10</Version>
+            <Comment>Add suse fixes.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="41">
+            <Date>2008-08-26</Date>
+            <Version>3.5.10</Version>
+            <Comment>Stable update</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="40">
+            <Date>2008-02-16</Date>
+            <Version>3.5.9</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="39">
+            <Date>2008-02-06</Date>
+            <Version>3.5.8</Version>
+            <Comment>Redundant paranthesis removed from Kopete tray tooltip</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="38">
+            <Date>2008-01-17</Date>
+            <Version>3.5.8</Version>
+            <Comment>Branch merge for sn9c1xx webcam support in Kopete</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="37">
+            <Date>2007-10-09</Date>
+            <Version>3.5.8</Version>
+            <Comment>Version bump</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="36">
+            <Date>2007-10-03</Date>
+            <Version>3.5.7</Version>
+            <Comment>Disable redundant code which can cause crashes in some cases</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="35">
+            <Date>2007-09-26</Date>
+            <Version>3.5.7</Version>
+            <Comment>Update branch patch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="34">
+            <Date>2007-08-28</Date>
+            <Version>3.5.7</Version>
+            <Comment>Update to 3.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="33">
+            <Date>2007-06-17</Date>
+            <Version>3.5.7</Version>
+            <Comment>Grab networkstatus branch patch set from KDE SVN</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="32">
+            <Date>2007-05-14</Date>
+            <Version>3.5.7</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="31">
+            <Date>2007-01-17</Date>
+            <Version>3.5.6</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="30">
+            <Date>2006-11-17</Date>
+            <Version>3.5.5</Version>
+            <Comment>Fix #3070</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="29" type="security">
+            <Date>2006-11-02</Date>
+            <Version>3.5.5</Version>
+            <Comment>Sync with 3.5 branch to fix some security issues</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="28">
+            <Date>2006-11-01</Date>
+            <Version>3.5.5</Version>
+            <Comment>Kopete icq fix</Comment>
+            <Name>Ali Erdinç Köroğlu</Name>
+            <Email>erdinc@pardus.org.tr</Email>
+        </Update>
+        <Update release="27">
+            <Date>2006-10-28</Date>
+            <Version>3.5.5</Version>
+            <Comment>Fix #352 again, lost in 3.5.5 update</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="26">
+            <Date>2006-10-25</Date>
+            <Version>3.5.5</Version>
+            <Comment>Let msn play nicely with now listening plugin</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="25">
+            <Date>2006-10-16</Date>
+            <Version>3.5.5</Version>
+            <Comment>Sync with 3.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="24">
+            <Date>2006-10-11</Date>
+            <Version>3.5.5</Version>
+            <Comment>Sync with 3.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="23">
+            <Date>2006-10-03</Date>
+            <Version>3.5.5</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="22">
+            <Date>2006-07-31</Date>
+            <Version>3.5.4</Version>
+            <Comment>Fix for The ICQ server thinks your client is too old (KDE SVN #568263)</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="21">
+            <Date>2006-07-25</Date>
+            <Version>3.5.4</Version>
+            <Comment>New stable release</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="20">
+            <Date>2006-07-12</Date>
+            <Version>3.5.3</Version>
+            <Comment>Don&apos;t freeze kdesktop, KDE bug #127749</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="19" type="security">
+            <Date>2006-07-07</Date>
+            <Version>3.5.3</Version>
+            <Comment>Remove unneeded files, enable setuid patch!</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="18" type="security">
+            <Date>2006-06-14</Date>
+            <Version>3.5.3</Version>
+            <Comment>Check return values of setuid calls</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="17">
+            <Date>2006-05-24</Date>
+            <Version>3.5.3</Version>
+            <Comment>new version</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="16">
+            <Date>2006-05-23</Date>
+            <Version>3.5.2</Version>
+            <Comment>Fix #2815</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="15">
+            <Date>2006-03-31</Date>
+            <Version>3.5.2</Version>
+            <Comment>Fix #2361, kopete-show-hide-shortcut.patch</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="14">
+            <Date>2006-03-21</Date>
+            <Version>3.5.2</Version>
+            <Comment>New stable release</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2006-03-06</Date>
+            <Version>3.5.1</Version>
+            <Comment>Fix MSN file transfer plugin(#710)</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2006-02-18</Date>
+            <Version>3.5.1</Version>
+            <Comment>fix #1931</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2006-02-04</Date>
+            <Version>3.5.1</Version>
+            <Comment>fix #1703</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2006-02-01</Date>
+            <Version>3.5.1</Version>
+            <Comment>New stable release</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="9">
+            <Date>2006-01-18</Date>
+            <Version>3.5.0</Version>
+            <Comment>Fix kopete webcam settings</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2005-12-08</Date>
+            <Version>3.5.0</Version>
+            <Comment>Fix #943</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2005-11-29</Date>
+            <Version>3.5.0</Version>
+            <Comment>Version bump to stable release</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2005-11-21</Date>
+            <Version>3.5.0_rc2</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2005-11-15</Date>
+            <Version>3.5.0_rc1</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2005-11-10</Date>
+            <Version>3.5.0_beta2</Version>
+            <Comment>Disable ksirc from compilation</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2005-11-05</Date>
+            <Version>3.5.0_beta2</Version>
+            <Comment>fix #455</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2005-10-15</Date>
+            <Version>3.5.0_beta2</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2005-09-05</Date>
+            <Version>3.4.2</Version>
+            <Comment>First release.</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>

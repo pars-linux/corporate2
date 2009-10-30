@@ -1,0 +1,126 @@
+--- kppp/connect.cpp
++++ kppp/connect.cpp	2004/01/27 14:06:46
+@@ -1263,7 +1263,7 @@
+ 
+   kapp->flushX();
+ 
+-  return Requester::rq->execPPPDaemon(command);
++  return Requester::rq->execPPPDaemon(command, gpppdata.password());
+ }
+ 
+ 
+--- kppp/opener.cpp
++++ kppp/opener.cpp	2004/01/27 14:06:46
+@@ -298,7 +298,8 @@
+       case ExecPPPDaemon:
+ 	Debug("Opener: received ExecPPPDaemon");
+ 	MY_ASSERT(len == sizeof(struct ExecDaemonRequest));
+-	response.status = execpppd(request.daemon.arguments);
++	response.status = execpppd(request.daemon.arguments,
++				   request.daemon.password);
+ 	sendResponse(&response);
+ 	break;
+ 
+@@ -504,8 +505,7 @@
+ }
+ 
+ 
+-bool Opener::execpppd(const char *arguments) {
+-  char buf[MAX_CMDLEN];
++bool Opener::execpppd(const char *arguments, char *password) {
+   char *args[MaxArgs];
+   pid_t pgrpid;
+ 
+@@ -521,11 +521,28 @@
+       return false;
+       break;
+ 
+-    case 0:
++    case 0: {
++      
++      char buffer[MAX_CMDLEN] = "";
++      
++      // if (access( "passwordfd.so", F_OK) == 0) {
++
++      // open a pipe to pass password to pppd
++      int pppd_passwdfd[2];
++      if (pipe (pppd_passwdfd) == -1) {
++        fprintf (stderr, "pipe failed: %s\n", strerror(errno));
++        exit (EXIT_FAILURE);
++      }
++      write (pppd_passwdfd[1], (const char *) password, strlen (password));
++      close (pppd_passwdfd[1]);
++
++      snprintf (buffer, MAX_CMDLEN, "%s call kppp passwordfd %d",
++                arguments, pppd_passwdfd[0]);
++
+       // let's parse the arguments the user supplied into UNIX suitable form
+       // that is a list of pointers each pointing to exactly one word
+-      strlcpy(buf, arguments, sizeof(buf));
+-      parseargs(buf, args);
++      parseargs(buffer, args);
++
+       // become a session leader and let /dev/ttySx
+       // be the controlling terminal.
+       pgrpid = setsid();
+@@ -556,7 +573,7 @@
+ 
+       execve(pppdPath(), args, 0L);
+       _exit(0);
+-      break;
++    } break;
+ 
+     default:
+       Debug2("In parent: pppd pid %d\n",pppdPid);
+--- kppp/opener.h
++++ kppp/opener.h	2004/01/27 14:07:39
+@@ -48,7 +48,7 @@
+   bool createAuthFile(Auth method, char *username, char *password);
+   bool removeAuthFile(Auth method);
+   const char* authFile(Auth method, int version = Original);
+-  bool execpppd(const char *arguments);
++  bool execpppd(const char *arguments, char *password);
+   bool killpppd()const;
+   void parseargs(char* buf, char** args);
+ 
+@@ -114,6 +114,7 @@
+ struct ExecDaemonRequest {
+   struct RequestHeader header;
+   char   arguments[MAX_CMDLEN+1];
++  char   password[Opener::MaxStrLen+1];
+ };
+ 
+ struct KillDaemonRequest {
+--- kppp_peers
++++ kppp_peers	2004/01/27 14:06:46
+@@ -0,0 +1,2 @@
++plugin passwordfd.so
++
+--- kppp/requester.cpp
++++ kppp/requester.cpp	2004/01/27 14:06:46
+@@ -284,11 +284,13 @@
+ }
+ 
+ 
+-bool Requester::execPPPDaemon(const QString &arguments) {
++bool Requester::execPPPDaemon(const QString &arguments, const QString &password) {
+   struct ExecDaemonRequest req;
+   req.header.type = Opener::ExecPPPDaemon;
+   strncpy(req.arguments, QFile::encodeName(arguments), MAX_CMDLEN);
+   req.arguments[MAX_CMDLEN] = '\0';
++  strncpy(req.password, QFile::encodeName(password), Opener::MaxStrLen);
++  req.password[Opener::MaxStrLen] = '\0';
+   sendRequest((struct RequestHeader *) &req, sizeof(req));
+   if(recvResponse()==0) {
+     gpppdata.setpppdRunning(true);
+--- kppp/requester.h
++++ kppp/requester.h	2004/01/27 14:06:46
+@@ -15,7 +15,7 @@
+   bool setSecret(int method, const QString & name, const QString & password);
+   bool removeSecret(int authMethode);
+   bool setHostname(const QString & name);
+-  bool execPPPDaemon(const QString & arguments);
++  bool execPPPDaemon(const QString & arguments, const QString & password);
+   bool killPPPDaemon();
+   int  pppdExitStatus();
+   bool stop();

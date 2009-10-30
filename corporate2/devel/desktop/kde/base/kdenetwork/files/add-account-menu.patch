@@ -1,0 +1,96 @@
+Index: kopete/kopete/kopetewindow.h
+===================================================================
+--- kopete/kopete/kopetewindow.h	(revision 587072)
++++ kopete/kopete/kopetewindow.h	(working copy)
+@@ -161,6 +161,11 @@
+ 	 */
+ 	void showAddContactDialog( Kopete::Account * );
+ 
++        /**
++         * Show the Add Account wizard
++         */
++        void showAddAccountDialog();
++
+ 	/**
+ 	 * Show the Export Contacts wizards
+ 	 */
+@@ -192,12 +197,13 @@
+ 	 * We need both to uniquely identify an account, but QSignalMapper only emits one QString.
+ 	 */
+ 	void slotAddContactDialogInternal( const QString & accountIdentifier );
+-	
++
+ public:
+ 	KopeteContactListView *contactlist;
+ 
+ 	// Some Actions
+-	KActionMenu* actionAddContact;
++        KActionMenu* actionAddContact;
++        KAction* actionAddAccount;
+ 
+ 	//KActionMenu* actionConnectionMenu;
+ 	//KAction* actionConnect;
+Index: kopete/kopete/kopeteui.rc
+===================================================================
+--- kopete/kopete/kopeteui.rc	(revision 587072)
++++ kopete/kopete/kopeteui.rc	(working copy)
+@@ -1,5 +1,5 @@
+ <!DOCTYPE kpartgui>
+-<kpartgui name="kopete" version="25">
++<kpartgui name="kopete" version="26">
+ 	<MenuBar>
+ 		<Menu name="file" noMerge="1">
+ 			<text>&amp;File</text>
+@@ -7,6 +7,8 @@
+ 			<Action name="Status"/>
+ 			<Action name="SetStatusMessage"/>
+ 			<Separator lineSeparator="true"/>
++                        <Action name="AddAccount" />
++                        <Separator lineSeparator="true"/>
+ 			<Action name="AddContact"/>
+ 			<Action name="AddGroup"/>
+ 			<Action name="ExportContacts"/>
+Index: kopete/kopete/kopetewindow.cpp
+===================================================================
+--- kopete/kopete/kopetewindow.cpp	(revision 587072)
++++ kopete/kopete/kopetewindow.cpp	(working copy)
+@@ -53,6 +53,7 @@
+ #include <kstringhandler.h>
+ #include <kurl.h>
+ 
++#include "addaccountwizard.h"
+ #include "addcontactpage.h"
+ #include "addcontactwizard.h"
+ #include "addressbooklinkwidget.h"
+@@ -213,6 +214,10 @@
+ 	connect( addContactMapper, SIGNAL( mapped( const QString & ) ),
+ 		 this, SLOT( slotAddContactDialogInternal( const QString & ) ) );
+ 
++        actionAddAccount = new KAction( i18n( "&Add Account..." ), "kopete",
++                                        0, this, SLOT( showAddAccountDialog() ),
++                                        actionCollection(), "AddAccount" );
++
+ 	/* ConnectAll is now obsolete.  "Go online" has replaced it.
+ 	actionConnect = new KAction( i18n( "&Connect Accounts" ), "connect_creating",
+ 		0, Kopete::AccountManager::self(), SLOT( connectAll() ),
+@@ -385,6 +390,7 @@
+ 	// NOTE: This is in reverse order because we insert
+ 	// at the top of the menu, not at bottom!
+ 	actionAddContact->plug( tm, 1 );
++        actionAddAccount->plug( tm, 1);
+ 	actionPrefs->plug( tm, 1 );
+ 	tm->insertSeparator( 1 );
+ 	actionAwayMenu->plug( tm, 1 );
+@@ -914,6 +920,11 @@
+ 	}
+ }*/
+ 
++void KopeteWindow::showAddAccountDialog()
++{
++        (new  AddAccountWizard(this))->show();
++}
++
+ void KopeteWindow::showExportDialog()
+ {
+ 	( new KabcExportWizard( this, "export_contact_dialog" ) )->show();
+ 

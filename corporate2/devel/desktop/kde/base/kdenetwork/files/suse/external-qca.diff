@@ -1,0 +1,83 @@
+Index: kopete/protocols/jabber/Makefile.am
+================================================================================
+--- kopete/protocols/groupwise/libgroupwise/Makefile.am
++++ kopete/protocols/groupwise/libgroupwise/Makefile.am
+@@ -1,5 +1,4 @@
+-INCLUDES = -I$(top_srcdir)/kopete/protocols/groupwise/libgroupwise/qca/src \
+-		   -I$(top_srcdir)/kopete/protocols/groupwise \
++INCLUDES = -I$(top_srcdir)/kopete/protocols/groupwise \
+ 		   $(all_includes)
+ METASOURCES = AUTO
+ 
+@@ -7,7 +6,7 @@
+ 
+ CLEANFILES = securestream.moc
+ 
+-SUBDIRS = qca tasks
++SUBDIRS = tasks
+ 
+ KDE_OPTIONS = nofinal
+ 
+@@ -26,8 +25,7 @@
+ 						rtf.cc userdetailsmanager.cpp eventprotocol.cpp inputprotocolbase.cpp \
+ 			responseprotocol.cpp privacymanager.cpp gwglobal.cpp
+ libgroupwise_la_LDFLAGS = -no-undefined $(all_libraries)
+-libgroupwise_la_LIBADD = tasks/libgroupwise_tasks.la -lqt-mt qca/src/libqca.la 
+-
++libgroupwise_la_LIBADD = tasks/libgroupwise_tasks.la -lqt-mt -lqca
+ tests_COMPILE_FIRST = libgroupwise.la libgwtest.la
+ 
+ libgwtest_la_SOURCES = coreprotocol.cpp eventtransfer.cpp \
+@@ -36,5 +34,5 @@
+ 			stream.cpp tlshandler.cpp response.cpp connector.cpp securestream.cpp \
+ 			bytestream.cpp
+ libgwtest_la_LDFLAGS = $(all_libraries) -no-undefined
+-libgwtest_la_LIBADD = qca/src/libqca.la \
++libgwtest_la_LIBADD = -lqca \
+ 	$(top_builddir)/kopete/protocols/groupwise/libgroupwise/tasks/libgroupwise_tasks.la -lqt-mt
+--- kopete/protocols/jabber/Makefile.am
++++ kopete/protocols/jabber/Makefile.am
+@@ -4,7 +4,6 @@
+ 	-I$(srcdir)/libiris/iris/include \
+ 	-I$(srcdir)/libiris/iris/xmpp-im \
+ 	-I$(srcdir)/libiris/iris/jabber \
+-	-I$(srcdir)/libiris/qca/src \
+ 	-I$(srcdir)/libiris/cutestuff/util \
+ 	-I$(srcdir)/libiris/cutestuff/network \
+ 	-I$(srcdir)/ui \
+@@ -42,7 +41,7 @@
+ 	libiris/iris/jabber/libiris_jabber.la \
+ 	libiris/iris/xmpp-core/libiris_xmpp_core.la \
+ 	libiris/iris/xmpp-im/libiris_xmpp_im.la \
+-	libiris/qca/src/libqca.la \
++	-lqca \
+ 	libiris/cutestuff/network/libcutestuff_network.la \
+ 	libiris/cutestuff/util/libcutestuff_util.la \
+ 	libjabberclient.la
+--- kopete/protocols/jabber/kioslave/Makefile.am
++++ kopete/protocols/jabber/kioslave/Makefile.am
+@@ -13,7 +13,7 @@
+ kde_module_LTLIBRARIES = kio_jabberdisco.la
+ 
+ kio_jabberdisco_la_SOURCES = jabberdisco.cpp
+-kio_jabberdisco_la_LIBADD = ../libjabberclient.la ../libiris/qca/src/libqca.la ../libiris/iris/include/libiris.la ../libiris/iris/xmpp-im/libiris_xmpp_im.la ../libiris/iris/xmpp-core/libiris_xmpp_core.la ../libiris/iris/jabber/libiris_jabber.la ../libiris/cutestuff/util/libcutestuff_util.la ../libiris/cutestuff/network/libcutestuff_network.la $(LIB_KIO)
++kio_jabberdisco_la_LIBADD = ../libjabberclient.la -lqca ../libiris/iris/include/libiris.la ../libiris/iris/xmpp-im/libiris_xmpp_im.la ../libiris/iris/xmpp-core/libiris_xmpp_core.la ../libiris/iris/jabber/libiris_jabber.la ../libiris/cutestuff/util/libcutestuff_util.la ../libiris/cutestuff/network/libcutestuff_network.la $(LIB_KIO)
+ kio_jabberdisco_la_LDFLAGS = -no-undefined -module $(KDE_PLUGIN) $(all_libraries)
+ 
+ noinst_HEADERS = jabberdisco.h
+--- kopete/protocols/jabber/libiris/Makefile.am
++++ kopete/protocols/jabber/libiris/Makefile.am
+@@ -1,2 +1,2 @@
+-SUBDIRS = iris qca cutestuff
++SUBDIRS = iris cutestuff
+ 
+--- kopete/protocols/jabber/ui/Makefile.am
++++ kopete/protocols/jabber/ui/Makefile.am
+@@ -3,7 +3,6 @@
+ 	-I$(srcdir)/../libiris/iris/include \
+ 	-I$(srcdir)/../libiris/iris/xmpp-im \
+ 	-I$(srcdir)/../libiris/iris/jabber \
+-	-I$(srcdir)/../libiris/qca/src \
+ 	-I$(srcdir)/../libiris/cutestuff/util \
+ 	-I$(srcdir)/.. \
+ 	$(all_includes)
