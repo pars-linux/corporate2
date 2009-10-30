@@ -1,0 +1,22 @@
+diff -Naur konqueror/listview/konq_listview.cc konqueror-patched/listview/konq_listview.cc
+--- konqueror/listview/konq_listview.cc	2005-10-10 18:04:14.000000000 +0300
++++ konqueror-patched/listview/konq_listview.cc	2009-02-25 16:45:46.000000000 +0200
+@@ -167,6 +167,18 @@
+   KLineEdit* le = m_listView->listViewWidget()->renameLineEdit();
+   if ( le ) {
+      const QString txt = le->text();
++
++     // Construct full path
++
++     KURL url = m_listView->url();
++     KURL *kpath = new KURL(url.path() + "/" + txt);
++     KFileItem *kfile = new KFileItem(KFileItem::Unknown, KFileItem::Unknown, *kpath);
++
++     if (kfile->isDir()) {
++         le->setSelection(0, txt.length());
++         return;
++     }
++
+      QString pattern;
+      KMimeType::diagnoseFileName( txt, pattern );
+      if (!pattern.isEmpty() && pattern.at(0)=='*' && pattern.find('*',1)==-1)

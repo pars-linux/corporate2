@@ -1,0 +1,418 @@
+diff -Naur kcontrol/clock/clock.desktop kcontrol/clock/clock.desktop
+--- kcontrol/clock/clock.desktop	2008-06-24 16:05:13.000000000 +0300
++++ kcontrol/clock/clock.desktop	2008-06-24 16:05:24.000000000 +0300
+@@ -7,8 +7,6 @@
+ 
+ 
+ X-KDE-Library=clock
+-X-KDE-RootOnly=true
+-X-KDE-SubstituteUID=true
+ X-KDE-ParentApp=kcontrol
+ 
+ Name=Date & Time
+diff -Naur kcontrol/clock/dtime.cpp kcontrol/clock/dtime.cpp
+--- kcontrol/clock/dtime.cpp	2008-06-24 16:05:13.000000000 +0300
++++ kcontrol/clock/dtime.cpp	2008-06-24 16:05:24.000000000 +0300
+@@ -173,15 +173,6 @@
+ 
+   load();
+ 
+-  if (getuid() != 0)
+-    {
+-      cal->setEnabled(false);
+-      hour->setEnabled(false);
+-      minute->setEnabled(false);
+-      second->setEnabled(false);
+-      timeServerList->setEnabled(false);
+-      setDateTimeAuto->setEnabled(false);
+-    }
+   kclock->setEnabled(false);
+ }
+ 
+@@ -261,6 +252,55 @@
+   timeout();
+ }
+ 
++bool Dtime::obtain()
++{
++    DBusError dbus_err;
++    dbus_error_init(&dbus_err);
++    
++    DBusConnection *dbus_conn = dbus_bus_get_private(DBUS_BUS_SESSION, &dbus_err);
++    if (dbus_error_is_set(&dbus_err)) {
++        KMessageBox::error(this, i18n(QString("Unable to connect D-Bus: %1.").arg(dbus_err.message).latin1()));
++        dbus_error_free(&dbus_err);
++        return FALSE;
++    }
++    
++    DBusMessage *dbus_msg = dbus_message_new_method_call("org.freedesktop.PolicyKit.AuthenticationAgent",
++                                                         "/",
++                                                         "org.freedesktop.PolicyKit.AuthenticationAgent",
++                                                         "ObtainAuthorization");
++
++    const char *v_action = "tr.org.pardus.comar.time.clock.set";
++    dbus_int32_t v_win = 0;
++    dbus_int32_t v_pid = getpid();
++
++    dbus_message_append_args(dbus_msg,
++                             DBUS_TYPE_STRING, &v_action,
++                             DBUS_TYPE_UINT32, &v_win,
++                             DBUS_TYPE_UINT32, &v_pid,
++                             DBUS_TYPE_INVALID);
++
++    DBusMessage *dbus_reply = dbus_connection_send_with_reply_and_block(dbus_conn, dbus_msg, 65535 * 1000, &dbus_err);
++    if (dbus_error_is_set(&dbus_err)) {
++        KMessageBox::error(this, i18n(QString("Unable to change date: %1.").arg(dbus_err.message).latin1()));
++        dbus_message_unref(dbus_msg);
++        dbus_error_free(&dbus_err);
++        return FALSE;
++    }
++
++    dbus_bool_t v_grant = FALSE;
++    dbus_message_get_args(dbus_reply, &dbus_err,
++                          DBUS_TYPE_BOOLEAN, &v_grant,
++                          DBUS_TYPE_INVALID);
++
++    dbus_message_unref(dbus_reply);
++    dbus_message_unref(dbus_msg);
++    dbus_error_free(&dbus_err);
++    dbus_connection_close(dbus_conn);
++    dbus_connection_unref(dbus_conn);
++
++    return v_grant;
++}
++
+ void Dtime::save()
+ {
+   KConfig config("kcmclockrc", false, false);
+@@ -302,40 +342,63 @@
+     }
+   }
+   else {
+-    // User time setting
+-    KProcess c_proc;
+-
+-  // BSD systems reverse year compared to Susv3
+-#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
+-    BufS.sprintf("%04d%02d%02d%02d%02d.%02d",
+-               date.year(),
+-               date.month(), date.day(),
+-               hour->value(), minute->value(), second->value());
+-#else
+-    BufS.sprintf("%02d%02d%02d%02d%04d.%02d",
+-               date.month(), date.day(),
+-               hour->value(), minute->value(),
+-               date.year(), second->value());
+-#endif
+-
+-    kdDebug() << "Set date " << BufS << endl;
+-
+-    c_proc << "date" << BufS;
+-    c_proc.start( KProcess::Block );
+-    int result = c_proc.exitStatus();
+-    if (result != 0
+-#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
+-  	  && result != 2	// can only set local date, which is okay
+-#endif
+-      ) {
+-      KMessageBox::error( this, i18n("Can not set date."));
+-      return;
++    // Comar stuff 
++    DBusError dbus_err;
++    dbus_error_init(&dbus_err);
++    
++    DBusConnection *dbus_conn = dbus_bus_get_private(DBUS_BUS_SYSTEM, &dbus_err);
++    if (dbus_error_is_set(&dbus_err)) {
++        KMessageBox::error(this, i18n(QString("Unable to connect D-Bus: %1.").arg(dbus_err.message).latin1()));
++        dbus_error_free(&dbus_err);
++        return;
+     }
++    
++    DBusMessage *dbus_msg = dbus_message_new_method_call("tr.org.pardus.comar",
++                                                         "/package/util_linux",
++                                                         "tr.org.pardus.comar.Time.Clock",
++                                                         "setDate");
++
++    dbus_int32_t v_year = date.year();
++    dbus_int32_t v_month = date.month();
++    dbus_int32_t v_day = date.day();
++    dbus_int32_t v_hour = hour->value();
++    dbus_int32_t v_minute = minute->value();
++    dbus_int32_t v_second = second->value();
++    dbus_message_append_args(dbus_msg,
++                             DBUS_TYPE_INT32, &v_year,
++                             DBUS_TYPE_INT32, &v_month,
++                             DBUS_TYPE_INT32, &v_day,
++                             DBUS_TYPE_INT32, &v_hour,
++                             DBUS_TYPE_INT32, &v_minute,
++                             DBUS_TYPE_INT32, &v_second,
++                             DBUS_TYPE_INVALID);
++
++    DBusMessage *dbus_reply = dbus_connection_send_with_reply_and_block(dbus_conn, dbus_msg, 65535 * 1000, &dbus_err);
++    if (dbus_error_is_set(&dbus_err)) {
++        dbus_message_unref(dbus_msg);
++        dbus_error_free(&dbus_err);
++        
++        if (this->obtain()) {
++            this->save();
++        }
++        else {
++            KMessageBox::error(this, i18n(QString("Unable to get authorization.").latin1()));
++        }
++        return;
++    }
++
++    dbus_msg = dbus_message_new_method_call("tr.org.pardus.comar",
++                                            "/package/util_linux",
++                                            "tr.org.pardus.comar.Time.Clock",
++                                            "saveToHW");
++    dbus_connection_send_with_reply_and_block(dbus_conn, dbus_msg, 65535 * 1000, &dbus_err);
++
++    dbus_message_unref(dbus_reply);
++    dbus_message_unref(dbus_msg);
++    dbus_error_free(&dbus_err);
++    dbus_connection_close(dbus_conn);
++    dbus_connection_unref(dbus_conn);
+ 
+-    // try to set hardware clock. We do not care if it fails
+-    KProcess hwc_proc;
+-    hwc_proc << "hwclock" << "--systohc";
+-    hwc_proc.start(KProcess::Block);
+   }
+ 
+   // restart time
+diff -Naur kcontrol/clock/dtime.h kcontrol/clock/dtime.h
+--- kcontrol/clock/dtime.h	2008-06-24 16:05:13.000000000 +0300
++++ kcontrol/clock/dtime.h	2008-06-24 16:05:24.000000000 +0300
+@@ -22,6 +22,10 @@
+ #ifndef dtime_included
+ #define dtime_included
+ 
++#include <polkit-grant/polkit-grant.h>
++#include <polkit-dbus/polkit-dbus.h>
++#include <dbus/dbus.h>
++
+ #include <qdatetime.h> 
+ #include <qlineedit.h> 
+ #include <qspinbox.h> 
+@@ -51,6 +55,7 @@
+  public:
+   Dtime( QWidget *parent=0, const char* name=0 );
+ 
++  bool obtain();
+   void	save();
+   void	load();
+ 
+diff -Naur kcontrol/clock/Makefile.am kcontrol/clock/Makefile.am
+--- kcontrol/clock/Makefile.am	2008-06-24 16:05:13.000000000 +0300
++++ kcontrol/clock/Makefile.am	2008-06-24 16:05:26.000000000 +0300
+@@ -3,9 +3,9 @@
+ kcm_clock_la_SOURCES = dtime.cpp tzone.cpp main.cpp 
+ 
+ kcm_clock_la_LDFLAGS = $(all_libraries) -module -avoid-version -no-undefined
+-kcm_clock_la_LIBADD = $(LIB_KIO)
++kcm_clock_la_LIBADD = $(LIB_KIO) -lpolkit-grant -lglib-2.0 -lpolkit -ldbus-1 -lpolkit-dbus
+ 
+-AM_CPPFLAGS = $(all_includes)
++AM_CPPFLAGS = $(all_includes) -I/usr/include/PolicyKit -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include
+  
+ METASOURCES = AUTO
+ 
+diff -Naur kcontrol/clock/tzone.cpp kcontrol/clock/tzone.cpp
+--- kcontrol/clock/tzone.cpp	2008-06-24 16:05:13.000000000 +0300
++++ kcontrol/clock/tzone.cpp	2008-06-24 16:05:27.000000000 +0300
+@@ -58,7 +58,7 @@
+ 
+     load();
+ 
+-    tzonelist->setEnabled(getuid() == 0);
++    tzonelist->setEnabled(true);
+ }
+ 
+ void Tzone::load()
+@@ -84,117 +84,43 @@
+ // on non-Solaris systems which do not use /etc/timezone?
+ void Tzone::save()
+ {
+-    QStringList selectedZones(tzonelist->selection());
+-
+-    if (selectedZones.count() > 0)
+-    {
+-      // Find untranslated selected zone
+-      QString selectedzone(selectedZones[0]);
+-
+-#if defined(USE_SOLARIS)	// MARCO
+-
+-        KTempFile tf( locateLocal( "tmp", "kde-tzone" ) );
+-        tf.setAutoDelete( true );
+-        QTextStream *ts = tf.textStream();
+-
+-# ifndef INITFILE
+-#  define INITFILE	"/etc/default/init"
+-# endif
+-
+-        QFile fTimezoneFile(INITFILE);
+-        bool updatedFile = false;
+-
+-        if (tf.status() == 0 && fTimezoneFile.open(IO_ReadOnly))
+-        {
+-            bool found = false;
+-
+-            QTextStream is(&fTimezoneFile);
+-
+-            for (QString line = is.readLine(); !line.isNull();
+-                 line = is.readLine())
+-            {
+-                if (line.find("TZ=") == 0)
+-                {
+-                    *ts << "TZ=" << selectedzone << endl;
+-                    found = true;
+-                }
+-                else
+-                {
+-                    *ts << line << endl;
+-                }
+-            }
+-
+-            if (!found)
+-            {
+-                *ts << "TZ=" << selectedzone << endl;
+-            }
+-
+-            updatedFile = true;
+-            fTimezoneFile.close();
+-        }
+-
+-        if (updatedFile)
+-        {
+-            ts->device()->reset();
+-            fTimezoneFile.remove();
+-
+-            if (fTimezoneFile.open(IO_WriteOnly | IO_Truncate))
+-            {
+-                QTextStream os(&fTimezoneFile);
+-
+-                for (QString line = ts->readLine(); !line.isNull();
+-                     line = ts->readLine())
+-                {
+-                    os << line << endl;
+-                }
+-
+-                fchmod(fTimezoneFile.handle(),
+-                       S_IXUSR | S_IRUSR | S_IRGRP | S_IXGRP |
+-                       S_IROTH | S_IXOTH);
+-                fTimezoneFile.close();
+-            }
+-        }
+-
+-
+-        QString val = selectedzone;
+-#else
+-        QFile fTimezoneFile("/etc/timezone");
+-
+-        if (fTimezoneFile.open(IO_WriteOnly | IO_Truncate) )
+-        {
+-            QTextStream t(&fTimezoneFile);
+-            t << selectedzone;
+-            fTimezoneFile.close();
+-        }
+-
+-        QString tz = "/usr/share/zoneinfo/" + selectedzone;
+-
+-        kdDebug() << "Set time zone " << tz << endl;
+-
+-	if (!QFile::remove("/etc/localtime"))
+-	{
+-		//After the KDE 3.2 release, need to add an error message
+-	}
+-	else
+-		if (!KIO::NetAccess::file_copy(KURL(tz),KURL("/etc/localtime")))
+-			KMessageBox::error( 0,  i18n("Error setting new timezone."),
+-                        		    i18n("Timezone Error"));
+-
+-        QString val = ":" + tz;
+-#endif // !USE_SOLARIS
+-
+-        setenv("TZ", val.ascii(), 1);
+-        tzset();
+-
+-    } else {
+-#if !defined(USE_SOLARIS) // Do not update the System!
+-        unlink( "/etc/timezone" );
+-        unlink( "/etc/localtime" );
+-
+-        setenv("TZ", "", 1);
+-        tzset();
+-#endif // !USE SOLARIS
++  QStringList selectedZones(tzonelist->selection());
++  if (selectedZones.count() <= 0)
++    return;
++
++  // Find untranslated selected zone
++  QString selectedzone(selectedZones[0]);
++  
++  // Comar stuff
++    DBusError dbus_err;
++    dbus_error_init(&dbus_err);
++    
++    DBusConnection *dbus_conn = dbus_bus_get_private(DBUS_BUS_SYSTEM, &dbus_err);
++    if (dbus_error_is_set(&dbus_err)) {
++        KMessageBox::error(this, i18n(QString("Unable to connect D-Bus: %1.").arg(dbus_err.message).latin1()));
++        dbus_error_free(&dbus_err);
++        return;
+     }
+-
+-    currentZone();
++    
++    DBusMessage *dbus_msg = dbus_message_new_method_call("tr.org.pardus.comar",
++                                                         "/package/util_linux",
++                                                         "tr.org.pardus.comar.Time.Clock",
++                                                         "setTimeZone");
++
++    const char *v_zone = selectedzone.ascii();
++    dbus_message_append_args(dbus_msg,
++                             DBUS_TYPE_STRING, &v_zone,
++                             DBUS_TYPE_INVALID);
++
++    DBusMessage *dbus_reply = dbus_connection_send_with_reply_and_block(dbus_conn, dbus_msg, 65535 * 1000, &dbus_err);
++
++    dbus_message_unref(dbus_reply);
++    dbus_message_unref(dbus_msg);
++    dbus_error_free(&dbus_err);
++    dbus_connection_close(dbus_conn);
++    dbus_connection_unref(dbus_conn);
++  
++  setenv("TZ",selectedzone.local8Bit(),1);
++  tzset();
++  currentZone();
+ }
+diff -Naur kcontrol/clock/tzone.h kcontrol/clock/tzone.h
+--- kcontrol/clock/tzone.h	2008-06-24 16:05:13.000000000 +0300
++++ kcontrol/clock/tzone.h	2008-06-24 16:05:28.000000000 +0300
+@@ -22,6 +22,10 @@
+ #ifndef tzone_included
+ #define tzone_included
+ 
++#include <polkit-grant/polkit-grant.h>
++#include <polkit-dbus/polkit-dbus.h>
++#include <dbus/dbus.h>
++
+ #include <ktimezones.h>
+ #include <ktimezonewidget.h>
+ #include <qvgroupbox.h>
+--- kicker/applets/clock/clock.cpp	2008-11-07 00:14:59.000000000 +0200
++++ kicker/applets/clock/clock.cpp	2008-11-15 19:26:53.000000000 +0200
+@@ -1547,11 +1547,8 @@
+             preferences();
+             break;
+         case 103:
+-            proc << locate("exe", "kdesu");
+-            proc << "--nonewdcop";
+-            proc << QString("%1 kde-clock.desktop --lang %2")
+-                .arg(locate("exe", "kcmshell"))
+-                .arg(KGlobal::locale()->language());
++            proc << locate("exe", "kcmshell");
++            proc << "kde-clock.desktop";
+             proc.start(KProcess::DontCare);
+             break;
+         case 104:

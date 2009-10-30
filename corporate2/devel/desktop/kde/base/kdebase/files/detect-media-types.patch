@@ -1,0 +1,38 @@
+Index: kioslave/media/mediamanager/halbackend.cpp
+===================================================================
+--- kioslave/media/mediamanager/halbackend.cpp	(revision 605183)
++++ kioslave/media/mediamanager/halbackend.cpp	(working copy)
+@@ -17,7 +17,6 @@
+ */
+ 
+ #include "halbackend.h"
+-#include "linuxcdpolling.h"
+ 
+ #include <stdlib.h>
+ 
+@@ -494,19 +493,12 @@
+         medium->setIconName(QString::null);
+ 
+         /* check if the disc id a vcd or a video dvd */
+-        DiscType type = LinuxCDPolling::identifyDiscType(libhal_volume_get_device_file(halVolume));
+-        switch (type)
+-        {
+-        case DiscType::VCD:
+-            mimeType = "media/vcd";
+-            break;
+-        case DiscType::SVCD:
+-            mimeType = "media/svcd";
+-            break;
+-        case DiscType::DVD:
+-            mimeType = "media/dvdvideo";
+-            break;
+-        }
++        if (libhal_device_get_property_bool(m_halContext, udi, "volume.disc.is_vcd", NULL))
++          mimeType = "media/vcd";
++        else if (libhal_device_get_property_bool(m_halContext, udi, "volume.disc.is_svcd", NULL))
++          mimeType = "media/svcd";
++        else if (libhal_device_get_property_bool(m_halContext, udi, "volume.disc.is_videodvd", NULL))
++          mimeType = "media/dvdvideo";
+     }
+     else
+     {

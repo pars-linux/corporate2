@@ -1,0 +1,24 @@
+diff -ur kdebase-3.4.92.orig/kwin/kcmkwin/kwinoptions/mouse.cpp kdebase-3.4.92/kwin/kcmkwin/kwinoptions/mouse.cpp
+--- kdebase-3.4.92.orig/kwin/kcmkwin/kwinoptions/mouse.cpp	2005-10-10 18:04:21.000000000 +0300
++++ kdebase-3.4.92/kwin/kcmkwin/kwinoptions/mouse.cpp	2005-10-24 02:01:41.000000000 +0300
+@@ -530,7 +530,7 @@
+ void KTitleBarActionsConfig::load()
+ {
+   config->setGroup("Windows");
+-  setComboText(coTiDbl, config->readEntry("TitlebarDoubleClickCommand","Shade").ascii());
++  setComboText(coTiDbl,config->readEntry("TitlebarDoubleClickCommand","Maximize").ascii());
+   for (int t = 0; t < 3; ++t)
+     setComboText(coMax[t],config->readEntry(cnf_Max[t], tbl_Max[t]).ascii());
+ 
+diff -ur kdebase-3.4.92.orig/kwin/options.cpp kdebase-3.4.92/kwin/options.cpp
+--- kdebase-3.4.92.orig/kwin/options.cpp	2005-09-10 11:26:03.000000000 +0300
++++ kdebase-3.4.92/kwin/options.cpp	2005-10-24 02:01:56.000000000 +0300
+@@ -132,7 +132,7 @@
+     electric_borders = config->readNumEntry("ElectricBorders", 0);
+     electric_border_delay = config->readNumEntry("ElectricBorderDelay", 150);
+ 
+-    OpTitlebarDblClick = windowOperation( config->readEntry("TitlebarDoubleClickCommand", "Shade"), true );
++    OpTitlebarDblClick = windowOperation(config->readEntry("TitlebarDoubleClickCommand", "Maximize"), true );
+     d->OpMaxButtonLeftClick = windowOperation( config->readEntry("MaximizeButtonLeftClickCommand", "Maximize"), true );
+     d->OpMaxButtonMiddleClick = windowOperation( config->readEntry("MaximizeButtonMiddleClickCommand", "Maximize (vertical only)"), true );
+     d->OpMaxButtonRightClick = windowOperation( config->readEntry("MaximizeButtonRightClickCommand", "Maximize (horizontal only)"), true );

@@ -1,0 +1,29 @@
+diff -ur kdebase-3.5.5.orig/kdm/kfrontend/kgreeter.cpp kdebase-3.5.5/kdm/kfrontend/kgreeter.cpp
+--- kdebase-3.5.5.orig/kdm/kfrontend/kgreeter.cpp	2006-11-23 01:00:28.000000000 +0200
++++ kdebase-3.5.5/kdm/kfrontend/kgreeter.cpp	2006-11-23 01:00:35.000000000 +0200
+@@ -429,11 +429,13 @@
+ void
+ KGreeter::slotUserClicked( QListViewItem *item )
+ {
++    if (!verify->isFailed()) {
+ 	if (item) {
+ 		curUser = ((UserListViewItem *)item)->login;
+ 		verify->setUser( curUser );
+ 		slotLoadPrevWM();
+ 	}
++    }
+ }
+ 
+ void
+diff -ur kdebase-3.5.5.orig/kdm/kfrontend/kgverify.h kdebase-3.5.5/kdm/kfrontend/kgverify.h
+--- kdebase-3.5.5.orig/kdm/kfrontend/kgverify.h	2006-11-23 01:00:28.000000000 +0200
++++ kdebase-3.5.5/kdm/kfrontend/kgverify.h	2006-11-23 01:00:35.000000000 +0200
+@@ -119,6 +119,8 @@
+ 	static PluginList init( const QStringList &plugins );
+ 	static void done();
+ 
++	bool isFailed() { return failed; }
++
+   public slots:
+ 	void start();
+ 

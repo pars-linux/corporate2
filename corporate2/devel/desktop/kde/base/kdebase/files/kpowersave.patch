@@ -1,0 +1,171 @@
+Index: kcontrol/energy/energy.h
+===================================================================
+--- kcontrol/energy/energy.h    (revision 552073)
++++ kcontrol/energy/energy.h    (working copy)
+@@ -43,6 +43,7 @@ private slots:
+     void slotChangeStandby(int);
+     void slotChangeSuspend(int);
+     void slotChangeOff(int);
++    void slotLaunchKPowersave();
+     void openURL(const QString &);
+ 
+ private:
+@@ -53,7 +54,7 @@ private:
+     static void applySettings(bool, int, int, int);
+     friend void init_energy();
+ 
+-    bool m_bChanged, m_bDPMS, m_bEnabled, m_bMaintainSanity;
++    bool m_bChanged, m_bDPMS, m_bKPowersave, m_bEnabled, m_bMaintainSanity;
+     int m_Standby, m_Suspend, m_Off;
+     int m_StandbyDesired, m_SuspendDesired, m_OffDesired;
+ 
+Index: kcontrol/energy/energy.cpp
+===================================================================
+--- kcontrol/energy/energy.cpp  (revision 552073)
++++ kcontrol/energy/energy.cpp  (working copy)
+@@ -26,6 +26,7 @@
+ #include <qlabel.h>
+ #include <qlayout.h>
+ #include <qwhatsthis.h>
++#include <qpushbutton.h>
+ 
+ #include <kconfig.h>
+ #include <kcursor.h>
+@@ -36,6 +37,7 @@
+ #include <krun.h>
+ #include <kstandarddirs.h>
+ #include <kurllabel.h>
++#include <dcopref.h>
+ 
+ #include <X11/X.h>
+ #include <X11/Xlib.h>
+@@ -140,6 +142,7 @@ KEnergy::KEnergy(QWidget *parent, const 
+     m_Suspend = DFLT_SUSPEND;
+     m_Off = DFLT_OFF;
+     m_bDPMS = false;
++    m_bKPowersave = false;
+     m_bMaintainSanity = true;
+ 
+     setQuickHelp( i18n("<h1>Display Power Control</h1> If your display supports"
+@@ -154,6 +157,13 @@ KEnergy::KEnergy(QWidget *parent, const 
+ #ifdef HAVE_DPMS
+     int dummy;
+     m_bDPMS = DPMSQueryExtension(qt_xdisplay(), &dummy, &dummy);
++
++   DCOPRef kpowersave("kpowersave", "KPowersaveIface");
++   DCOPReply managingDPMS = kpowersave.call("currentSchemeManagesDPMS()");
++   if (managingDPMS.isValid()) {
++       m_bKPowersave = managingDPMS;
++       m_bDPMS = !m_bKPowersave;
++   }
+ #endif
+ 
+     QVBoxLayout *top = new QVBoxLayout(this, 0, KDialog::spacingHint());
+@@ -162,14 +172,26 @@ KEnergy::KEnergy(QWidget *parent, const 
+ 
+     QLabel *lbl;
+     if (m_bDPMS) {
+-    m_pCBEnable= new QCheckBox(i18n("&Enable display power management" ), this);
+-    connect(m_pCBEnable, SIGNAL(toggled(bool)), SLOT(slotChangeEnable(bool)));
+-    hbox->addWidget(m_pCBEnable);
++        KGlobal::locale()->insertCatalogue("kpowersave");
++
++        // ### these i18n strings need to be synced with kpowersave !!
++        m_pCBEnable= new QCheckBox(i18n("&Enable display power management" ), this);
++        connect(m_pCBEnable, SIGNAL(toggled(bool)), SLOT(slotChangeEnable(bool)));
++        hbox->addWidget(m_pCBEnable);
+         QWhatsThis::add( m_pCBEnable, i18n("Check this option to enable the"
+-           " power saving features of your display.") );
+-    } else {
++                    " power saving features of your display.") );
++
++        // ###
++    } else if(m_bKPowersave) {
++        m_pCBEnable = new QCheckBox(i18n("&Enable specific display power management"), this);
++        hbox->addWidget(m_pCBEnable);
++        m_bEnabled = false;
++        m_pCBEnable->setChecked(true);
++        m_pCBEnable->setEnabled(false);
++
++   } else {
+         lbl = new QLabel(i18n("Your display does not support power saving."), this);
+-         hbox->addWidget(lbl);
++        hbox->addWidget(lbl);
+     }
+ 
+     KURLLabel *logo = new KURLLabel(this);
+@@ -183,6 +205,7 @@ connect(logo, SIGNAL(leftClickedURL(cons
+     hbox->addWidget(logo);
+ 
+     // Sliders
++    if (!m_bKPowersave) {
+     m_pStandbySlider = new KIntNumInput(m_Standby, this);
+     m_pStandbySlider->setLabel(i18n("&Standby after:"));
+     m_pStandbySlider->setRange(0, 120, 10);
+@@ -218,6 +241,17 @@ connect(logo, SIGNAL(leftClickedURL(cons
+        " greatest level of power saving that can be achieved while the"
+        " display is still physically turned on.") );
+ 
++    }
++    else {
++       m_pStandbySlider = 0;
++       m_pSuspendSlider = 0;
++       m_pOffSlider = 0;
++       QPushButton* btnKPowersave = new QPushButton(this);
++       btnKPowersave->setText(i18n("Configure KPowersave..."));
++       connect(btnKPowersave, SIGNAL(clicked()), SLOT(slotLaunchKPowersave()));
++       top->addWidget(btnKPowersave);
++    }
++
+     top->addStretch();
+ 
+     if (m_bDPMS)
+@@ -275,7 +309,8 @@ void KEnergy::defaults()
+ 
+ void KEnergy::readSettings()
+ {
+-    m_bEnabled = m_pConfig->readBoolEntry("displayEnergySaving", false);
++    if (m_bDPMS)
++        m_bEnabled = m_pConfig->readBoolEntry("displayEnergySaving", false);
+     m_Standby = m_pConfig->readNumEntry("displayStandby", DFLT_STANDBY);
+     m_Suspend = m_pConfig->readNumEntry("displaySuspend", DFLT_SUSPEND);
+     m_Off = m_pConfig->readNumEntry("displayPowerOff", DFLT_OFF);
+@@ -302,20 +337,27 @@ void KEnergy::writeSettings()
+     m_bChanged = false;
+ }
+ 
++void KEnergy::slotLaunchKPowersave()
++{
++    DCOPRef r("kpowersave", "KPowersaveIface");
++    r.send("openConfigureDialog()");
++}
+ 
+ void KEnergy::showSettings()
+ {
+     m_bMaintainSanity = false;
+ 
+     if (m_bDPMS)
+-    m_pCBEnable->setChecked(m_bEnabled);
++        m_pCBEnable->setChecked(m_bEnabled);
+ 
+-    m_pStandbySlider->setEnabled(m_bEnabled);
+-    m_pStandbySlider->setValue(m_Standby);
+-    m_pSuspendSlider->setEnabled(m_bEnabled);
+-    m_pSuspendSlider->setValue(m_Suspend);
+-    m_pOffSlider->setEnabled(m_bEnabled);
+-    m_pOffSlider->setValue(m_Off);
++    if (!m_bKPowersave) {
++        m_pStandbySlider->setEnabled(m_bEnabled);
++        m_pStandbySlider->setValue(m_Standby);
++        m_pSuspendSlider->setEnabled(m_bEnabled);
++        m_pSuspendSlider->setValue(m_Suspend);
++        m_pOffSlider->setEnabled(m_bEnabled);
++        m_pOffSlider->setValue(m_Off);
++    }
+ 
+     m_bMaintainSanity = true;
+ }
+
+
+
+

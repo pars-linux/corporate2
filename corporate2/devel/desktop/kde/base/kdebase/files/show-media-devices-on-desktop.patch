@@ -1,0 +1,26 @@
+Index: kdesktop/kdesktop.kcfg
+===================================================================
+--- kdesktop/kdesktop.kcfg	(revision 608277)
++++ kdesktop/kdesktop.kcfg	(working copy)
+@@ -191,7 +191,7 @@
+   </group>
+   <group name="Media"> 
+     <entry name="MediaEnabled" key="enabled" type="Bool">
+-      <default>false</default>
++      <default>true</default>
+       <label></label>
+       <whatsthis></whatsthis>
+       <!-- kdiconview.cc:258 -->
+Index: kcontrol/konq/desktopbehavior_impl.cpp
+===================================================================
+--- kcontrol/konq/desktopbehavior_impl.cpp	(revision 665122)
++++ kcontrol/konq/desktopbehavior_impl.cpp	(working copy)
+@@ -235,7 +235,7 @@
+     KMimeType::List mimetypes = KMimeType::allMimeTypes();
+     QValueListIterator<KMimeType::Ptr> it2(mimetypes.begin());
+     g_pConfig->setGroup( "Media" );
+-    enableMediaBox->setChecked(g_pConfig->readBoolEntry("enabled",false));
++    enableMediaBox->setChecked(g_pConfig->readBoolEntry("enabled",true));
+     QString excludedMedia=g_pConfig->readEntry("exclude","media/hdd_mounted,media/hdd_unmounted,media/floppy_unmounted,media/cdrom_unmounted,media/floppy5_unmounted");
+     for (; it2 != mimetypes.end(); ++it2) {
+        if ( ((*it2)->name().startsWith("media/")) )

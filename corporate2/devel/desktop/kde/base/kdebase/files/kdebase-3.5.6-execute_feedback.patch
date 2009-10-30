@@ -1,0 +1,96 @@
+diff -r -u -p kdebase-3.5.6.original/kicker/libkicker/panelbutton.cpp kdebase-3.5.6.patched/kicker/libkicker/panelbutton.cpp
+--- kdebase-3.5.6.original/kicker/libkicker/panelbutton.cpp	2006-07-22 10:15:18.000000000 +0200
++++ kdebase-3.5.6.patched/kicker/libkicker/panelbutton.cpp	2007-02-09 21:43:06.000000000 +0100
+@@ -29,6 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE 
+ #include <qstyle.h>
+ #include <qstylesheet.h>
+ #include <qtooltip.h>
++#include <qpixmap.h>
+ 
+ #include <kapplication.h>
+ #include <kconfig.h>
+@@ -39,6 +40,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE 
+ #include <kglobalsettings.h>
+ #include <kiconloader.h>
+ #include <kicontheme.h>
++#include <kiconeffect.h>
+ #include <kipc.h>
+ #include <kstandarddirs.h>
+ #include <klocale.h>
+@@ -487,6 +489,9 @@ void PanelButton::mouseReleaseEvent(QMou
+     if (e->button() == LeftButton)
+     {
+         m_isLeftMouseButtonDown = false;
++	
++	QPixmap pix = labelIcon();
++	KIconEffect::visualActivate(this, this->geometry(), &pix);
+     }
+     QButton::mouseReleaseEvent(e);
+ }
+diff -r -u -p kdebase-3.5.6.original/konqueror/listview/konq_listviewwidget.cc kdebase-3.5.6.patched/konqueror/listview/konq_listviewwidget.cc
+--- kdebase-3.5.6.original/konqueror/listview/konq_listviewwidget.cc	2007-02-09 23:58:09.000000000 +0100
++++ kdebase-3.5.6.patched/konqueror/listview/konq_listviewwidget.cc	2007-02-08 03:15:39.000000000 +0100
+@@ -33,6 +33,7 @@
+ #include <kurldrag.h>
+ #include <kmessagebox.h>
+ #include <kiconloader.h>
++#include <kiconeffect.h>
+ 
+ #include <qheader.h>
+ #include <qpainter.h>
+@@ -961,7 +962,42 @@ void KonqBaseListViewWidget::slotReturnP
+    url.cleanPath();
+    bool isIntoTrash =  url.isLocalFile() && url.path(1).startsWith(KGlobalSettings::trashPath());
+    if ( !isIntoTrash || (isIntoTrash && fileItem->isDir()) )
+-      m_pBrowserView->lmbClicked( fileItem );
++   {
++         m_pBrowserView->lmbClicked( fileItem );
++
++	 if (_item->pixmap(0) != 0)
++	 {
++	   // Rect of the QListViewItem's pixmap area.
++           QRect rect = _item->listView()->itemRect(_item);
++
++	   // calculate nesting depth
++	   int nestingDepth = 0;
++	   for (QListViewItem *currentItem = _item->parent();
++	        currentItem != 0;
++	        currentItem = currentItem->parent())
++	  	  nestingDepth++;
++	
++	   // no parent no indent
++	   if (_item->parent() == 0)
++		nestingDepth = 0;
++	
++	   // Root decoration means additional indent
++	   if (_item->listView()->rootIsDecorated())
++		nestingDepth++;
++	
++	   // set recalculated rect	
++	   rect.setLeft(_item->listView()->itemMargin() + _item->listView()->treeStepSize() * nestingDepth);
++	   rect.setWidth(_item->pixmap(0)->width());
++
++	   // gather pixmap
++	   QPixmap *pix = new QPixmap(*(_item->pixmap(0)));
++
++	   // call the icon effect
++           KIconEffect::visualActivate(viewport(), rect, pix);
++	 
++	   delete(pix);
++	 }
++   }
+    else
+       KMessageBox::information( 0, i18n("You must take the file out of the trash before being able to use it.") );
+ }
+diff -r -u -p kdebase-3.5.6.original/libkonq/konq_iconviewwidget.cc kdebase-3.5.6.patched/libkonq/konq_iconviewwidget.cc
+--- kdebase-3.5.6.original/libkonq/konq_iconviewwidget.cc	2006-01-19 18:02:19.000000000 +0100
++++ kdebase-3.5.6.patched/libkonq/konq_iconviewwidget.cc	2007-02-08 03:15:39.000000000 +0100
+@@ -1848,7 +1848,7 @@ void KonqIconViewWidget::visualActivate(
+     // Adjust for scrolling (David)
+     rect.moveBy( -contentsX(), -contentsY() );
+ 
+-    KIconEffect::visualActivate(viewport(), rect);
++    KIconEffect::visualActivate(viewport(), rect, item->pixmap());
+ }
+ 
+ void KonqIconViewWidget::backgroundPixmapChange( const QPixmap & )

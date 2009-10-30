@@ -1,0 +1,124 @@
+Index: kdm/config.def
+===================================================================
+--- kdm/config.def	(revision 665122)
++++ kdm/config.def	(working copy)
+@@ -1244,10 +1244,10 @@
+  None/BO_NONE: no boot manager
+  Grub/BO_GRUB: Grub boot manager
+  Lilo/BO_LILO: Lilo boot manager (Linux on i386 &amp; x86-64 only)
+-Default: None
++Default: Grub
+ User: core
+ User: greeter
+-Instance: #Grub
++Instance: Grub
+ Merge: kdm:UseLilo(P_UseLilo)
+ Comment: &
+ Description:
+@@ -2096,7 +2096,7 @@
+ # This needs to come _in front_ of the font settings to be effective!
+ Key: AntiAliasing
+ Type: bool
+-Default: false
++Default: true
+ User: greeter
+ Instance: #*/!
+ Comment: &
+@@ -2105,30 +2105,30 @@
+ 
+ Key: GreetFont
+ Type: string
+-Default: "Serif,20,5,0,50,0"
+-CDefault: "Serif,20,bold"
++Default: "DejaVu Sans,20,5,0,50,0"
++CDefault: "DejaVu Sans,20,bold"
+ User: greeter:font
+-Instance: #*/"Serif,20,5,0,50,0"
++Instance: #*/"DejaVu Sans,20,5,0,50,0"
+ Comment: &
+ Description:
+  The font for the greeter headline.
+ 
+ Key: StdFont
+ Type: string
+-Default: "Sans Serif,10,5,0,50,0"
+-CDefault: "Sans Serif,10"
++Default: "DejaVu Sans,10,5,0,50,0"
++CDefault: "DejaVu Sans,10"
+ User: greeter(normalFont):font
+-Instance: #*/"Sans Serif,10,5,0,50,0"
++Instance: #*/"DejaVu Sans,10,5,0,50,0"
+ Comment: &
+ Description:
+  The normal font used in the greeter.
+ 
+ Key: FailFont
+ Type: string
+-Default: "Sans Serif,10,5,0,75,0"
+-CDefault: "Sans Serif,10,bold"
++Default: "DejaVu Sans,10,5,0,75,0"
++CDefault: "DejaVu Sans,10,bold"
+ User: greeter:font
+-Instance: #*/"Sans Serif,10,5,0,75,0"
++Instance: #*/"DejaVu Sans,10,5,0,75,0"
+ Comment: &
+ Description:
+  The font used for the <quote>Login Failed</quote> message.
+@@ -2147,9 +2147,9 @@
+ 
+ Key: Language
+ Type: string
+-Default: "en_US"
++Default: "tr"
+ User: greeter-c
+-Instance: #*/"de_DE"
++Instance: */"tr"
+ Update: upd_language
+ Comment: &
+ Description:
+@@ -2268,9 +2268,9 @@
+  PreferAdmin/FACE_PREFER_ADMIN: prefer &lt;<option>FaceDir</option>&gt;, fallback on $<envar>HOME</envar>
+  PreferUser/FACE_PREFER_USER: ... and the other way round
+  UserOnly/FACE_USER_ONLY: from the user's <filename>$<envar>HOME</envar>/.face[.icon]</filename>
+-Default: AdminOnly
++Default: PreferUser
+ User: greeter
+-Instance: #*/PreferUser
++Instance: */PreferUser
+ Comment:
+  Specify, where the users' pictures should be taken from.
+ Description:
+@@ -2597,7 +2597,7 @@
+ 
+ Key: UseTheme
+ Type: bool
+-Default: false
++Default: true
+ User: greeter
+ Instance: #*/true
+ Comment: &
+@@ -2606,9 +2606,9 @@
+ 
+ Key: Theme
+ Type: string
+-Default: ""
++Default: "pardus"
+ User: greeter
+-Instance: */KDMDATA "/themes/circles"
++Instance: */KDMDATA "/themes/pardus"
+ Comment: &
+ Description:
+  The theme to use for the greeter. Can point to either a directory or an XML
+Index: kdm/kfrontend/genkdmconf.c
+===================================================================
+--- kdm/kfrontend/genkdmconf.c	(revision 665122)
++++ kdm/kfrontend/genkdmconf.c	(working copy)
+@@ -721,7 +721,7 @@
+ "Program=\n"
+ "ReverseBlending=false\n"
+ "UseSHM=false\n"
+-"Wallpaper=default_blue.jpg\n"
++"Wallpaper=/usr/kde/3.5/share/apps/kdm/themes/pardus/background.jpg\n"
+ "WallpaperList=\n"
+ "WallpaperMode=Scaled\n";
+ 

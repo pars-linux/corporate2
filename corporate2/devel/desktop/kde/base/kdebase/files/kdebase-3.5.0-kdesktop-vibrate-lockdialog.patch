@@ -1,0 +1,77 @@
+diff -ur kdebase-3.4.92.orig/kdesktop/lock/lockdlg.cc kdebase-3.4.92/kdesktop/lock/lockdlg.cc
+--- kdebase-3.4.92.orig/kdesktop/lock/lockdlg.cc	2005-09-10 11:25:41.000000000 +0300
++++ kdebase-3.4.92/kdesktop/lock/lockdlg.cc	2005-10-24 02:26:38.000000000 +0300
+@@ -332,6 +332,7 @@
+             ok->setEnabled(false);
+             cancel->setEnabled(false);
+             mNewSessButton->setEnabled( false );
++            badPasswordLogin();
+             return;
+         case AuthAbort:
+             return;
+@@ -339,6 +340,37 @@
+     cantCheck();
+ }
+ 
++#include <kapplication.h>
++void PasswordDlg::movedialog( int _move )
++{
++     waitMoveDialog = true;
++     this->move(pos().x()+_move, pos().y());
++     QTimer::singleShot( 50, this, SLOT(moveTimerDone()) );
++     while (waitMoveDialog)
++          kapp->processEvents();
++}
++
++void PasswordDlg::moveTimerDone()
++{
++     waitMoveDialog = false;
++}
++
++void PasswordDlg::badPasswordLogin()
++{
++     if ( mUnlockingFailed )
++     {
++          for ( int i = 0 ; i<2 ; i++)
++          {
++               movedialog( 10 );
++               movedialog( -20 );
++               movedialog( 20 );
++               movedialog( -20 );
++               movedialog( 20 );
++               movedialog( -10 );
++          }
++     }
++}
++
+ void PasswordDlg::handleVerify()
+ {
+     int ret;
+diff -ur kdebase-3.4.92.orig/kdesktop/lock/lockdlg.h kdebase-3.4.92/kdesktop/lock/lockdlg.h
+--- kdebase-3.4.92.orig/kdesktop/lock/lockdlg.h	2005-09-10 11:25:41.000000000 +0300
++++ kdebase-3.4.92/kdesktop/lock/lockdlg.h	2005-10-24 02:27:19.000000000 +0300
+@@ -55,6 +55,7 @@
+     void slotOK();
+     void layoutClicked();
+     void slotActivity();
++    void moveTimerDone();
+ 
+ private:
+     void setLayoutText( const QString &txt );
+@@ -71,6 +72,8 @@
+     void handleVerify();
+     void reapVerify();
+     void cantCheck();
++    void movedialog( int _move );
++    void badPasswordLogin();
+     GreeterPluginHandle *mPlugin;
+     KGreeterPlugin *greet;
+     QFrame      *frame;
+@@ -86,6 +89,7 @@
+     QStringList::iterator currLayout;
+     int         sPid, sFd;
+     QListView   *lv;
++    bool        waitMoveDialog;                          
+ };
+ 
+ #endif

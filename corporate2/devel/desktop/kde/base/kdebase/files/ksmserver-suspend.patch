@@ -1,0 +1,227 @@
+--- ksmserver/Makefile.am
++++ ksmserver/Makefile.am
+@@ -17,7 +17,7 @@
+ 
+ SUBDIRS = .
+ 
+-INCLUDES= -I$(top_srcdir)/kdmlib $(all_includes)
++INCLUDES= -I$(top_srcdir)/kdmlib $(all_includes) $(DBUS_INCS)
+ 
+ bin_PROGRAMS =
+ lib_LTLIBRARIES =
+@@ -31,7 +31,7 @@
+ 	KSMServerInterface.skel server.skel
+ 
+ ksmserver_la_LDFLAGS = $(all_libraries) -avoid-version -module
+-ksmserver_la_LIBADD = ../kdmlib/libdmctl.la $(LIB_KDEUI)
++ksmserver_la_LIBADD = ../kdmlib/libdmctl.la $(LIB_KDEUI) -llazy $(DBUS_LIBS)
+ 
+ picsdir = $(kde_datadir)/ksmserver/pics
+ pics_DATA = shutdownkonq.png
+@@ -44,7 +44,7 @@
+ EXTRA_PROGRAMS = testsh
+ testsh_SOURCES = test.cpp
+ testsh_LDFLAGS = $(all_libraries) $(KDE_RPATH)
+-testsh_LDADD = $(LIB_KDEUI) shutdowndlg.lo ../kdmlib/libdmctl.la
++testsh_LDADD = $(LIB_KDEUI) shutdowndlg.lo ../kdmlib/libdmctl.la -llazy $(DBUS_LIBS)
+ 
+ messages:
+ 	$(XGETTEXT) *.cpp -o $(podir)/ksmserver.pot
+--- ksmserver/shutdowndlg.cpp
++++ ksmserver/shutdowndlg.cpp
+@@ -38,17 +38,23 @@
+ #include <kpixmapeffect.h>
+ #include <kdialog.h>
+ #include <kseparator.h>
++#include <kmessagebox.h>
+ 
+ #include <sys/types.h>
+ #include <sys/utsname.h>
+ #include <unistd.h>
+ #include <stdlib.h>
+ #include <dmctl.h>
++#include <liblazy.h>
+ 
+ #include <X11/Xlib.h>
+ 
+ #include "shutdowndlg.moc"
+ 
++#define DBUS_HAL_INTERFACE		"org.freedesktop.Hal"
++#define DBUS_HAL_SYSTEM_POWER_INTERFACE	"org.freedesktop.Hal.Device.SystemPowerManagement"
++#define HAL_UDI_COMPUTER		"/org/freedesktop/Hal/devices/computer"
++
+ static const int max_faded = 2300;
+ static const int slice = 20;
+ 
+@@ -195,8 +201,8 @@
+     connect(btnLogout, SIGNAL(clicked()), SLOT(slotLogout()));
+ 
+     if (maysd) {
+-
+-        // Shutdown
++	
++	// Shutdown
+         KPushButton* btnHalt = new KPushButton( KGuiItem( i18n("&Turn Off Computer"), "exit"), frame );
+         QToolTip::add( btnHalt, i18n( "<qt><h3>Turn Off Computer</h3><p>Log out of the current session and turn off the computer</p></qt>" ) );
+         btnHalt->setFont( btnFont );
+@@ -229,13 +235,58 @@
+ 	      else
+ 		targets->insertItem( *it, index );
+ 	    }
+-
++	  
+ 	  btnReboot->setPopup(targets);
+ 	  connect( targets, SIGNAL(activated(int)), SLOT(slotReboot(int)) );
+ 	} else
+             QToolTip::add( btnReboot, i18n( "<qt><h3>Restart Computer</h3><p>Log out of the current session and restart the computer</p></qt>" ) );
+-    }
+ 
++	int supported = -1;
++	liblazy_hal_get_property_bool(HAL_UDI_COMPUTER, "power_management.can_suspend", &supported);
++	if (supported == 1)
++	     suspend_ram = true;
++	else
++	     suspend_ram = false;
++	liblazy_hal_get_property_bool(HAL_UDI_COMPUTER, "power_management.can_standby", &supported);
++	if (supported == 1)
++	     standby = true;
++	else
++	     standby = false;
++	liblazy_hal_get_property_bool(HAL_UDI_COMPUTER, "power_management.can_hibernate", &supported);
++	if (supported == 1)
++	     suspend_disk = true;
++	else
++	     suspend_disk = false;
++	
++	if (liblazy_hal_is_caller_privileged("hal-power-hibernate") != 1) 
++	     suspend_disk = false;
++	if (liblazy_hal_is_caller_privileged("hal-power-suspend") != 1)
++	     suspend_ram = false;
++	if (liblazy_hal_is_caller_privileged("hal-power-standby") != 1)
++	    standby = false;
++	
++	int sum = standby + suspend_ram + suspend_disk;
++	if ( sum ) {
++	     QButton *btnSuspend;
++	     if (sum > 1) {
++		  btnSuspend = new KSMDelayedPushButton( KGuiItem( i18n("&Suspend Computer"), "player_pause"), frame );
++		  QPopupMenu *suspends = new QPopupMenu(frame);
++		  if (suspend_disk)
++		       suspends->insertItem(i18n("Suspend to Disk"), 1);
++		  if (suspend_ram)
++		       suspends->insertItem(i18n("Suspend to RAM"), 2);
++		  if (standby)
++		       suspends->insertItem(i18n("Standby"), 3);
++		  connect(suspends, SIGNAL(activated(int)), SLOT(slotSuspend(int)));
++		  static_cast<KSMDelayedPushButton*>(btnSuspend)->setPopup(suspends);
++	     } else {
++		  btnSuspend = new KPushButton( KGuiItem( i18n("&Suspend Computer"), "player_pause"), frame );
++	     }
++	     btnSuspend->setFont( btnFont );
++	     buttonlay->addWidget( btnSuspend );
++	     connect(btnSuspend, SIGNAL(clicked()), SLOT(slotSuspend()));
++	}
++    }
+     buttonlay->addStretch( 1 );
+ 
+     // Separator
+@@ -248,6 +299,80 @@
+ 
+ }
+ 
++void KSMShutdownDlg::slotSuspend()
++{
++  int error = 0;
++  int wake = 0;
++  DBusMessage *reply;
++
++  if (suspend_disk)
++       error = liblazy_dbus_system_send_method_call(DBUS_HAL_INTERFACE,
++						    HAL_UDI_COMPUTER,
++						    DBUS_HAL_SYSTEM_POWER_INTERFACE,
++						    "Hibernate",
++						    &reply,
++						    DBUS_TYPE_INVALID);
++  else if (suspend_ram)
++       error = liblazy_dbus_system_send_method_call(DBUS_HAL_INTERFACE,
++						    HAL_UDI_COMPUTER,
++						    DBUS_HAL_SYSTEM_POWER_INTERFACE,
++						    "Suspend",
++						    &reply,
++						    DBUS_TYPE_INT32,
++						    &wake,
++						    DBUS_TYPE_INVALID);
++  else
++       error = liblazy_dbus_system_send_method_call(DBUS_HAL_INTERFACE,
++						    HAL_UDI_COMPUTER,
++						    DBUS_HAL_SYSTEM_POWER_INTERFACE,
++						    "Standby",
++						    &reply,
++						    DBUS_TYPE_INVALID);
++  
++  if (error)
++       KMessageBox::error(this, i18n("Suspend failed"));
++  
++  // possibly after resume :)
++  reject();
++}
++
++void KSMShutdownDlg::slotSuspend(int id)
++{
++  int error = 0;
++  int wake = 0;
++  DBusMessage *reply;
++
++  if (suspend_disk && id == 1) {
++       error = liblazy_dbus_system_send_method_call(DBUS_HAL_INTERFACE,
++						    HAL_UDI_COMPUTER,
++						    DBUS_HAL_SYSTEM_POWER_INTERFACE,
++						    "Hibernate",
++						    &reply,
++						    DBUS_TYPE_INVALID);
++  } else if (suspend_ram && id == 2)
++       error = liblazy_dbus_system_send_method_call(DBUS_HAL_INTERFACE,
++						    HAL_UDI_COMPUTER,
++						    DBUS_HAL_SYSTEM_POWER_INTERFACE,
++						    "Suspend",
++						    &reply,
++						    DBUS_TYPE_INT32,
++						    &wake,
++						    DBUS_TYPE_INVALID);
++  else if (standby && id == 3)
++       error = liblazy_dbus_system_send_method_call(DBUS_HAL_INTERFACE,
++						    HAL_UDI_COMPUTER,
++						    DBUS_HAL_SYSTEM_POWER_INTERFACE,
++						    "Standby",
++						    &reply,
++						  DBUS_TYPE_INVALID);
++  else
++       return;
++  if (error)
++       KMessageBox::error(this, i18n("Suspend failed"));
++  
++  // possibly after resume :)
++  reject();
++}
+ 
+ void KSMShutdownDlg::slotLogout()
+ {
+--- ksmserver/shutdowndlg.h
++++ ksmserver/shutdowndlg.h
+@@ -59,6 +59,8 @@
+     void slotHalt();
+     void slotReboot();
+     void slotReboot(int);
++    void slotSuspend();
++    void slotSuspend(int);
+ 
+ protected:
+     ~KSMShutdownDlg() {};
+@@ -69,6 +71,7 @@
+     QString m_bootOption;
+     QPopupMenu *targets;
+     QStringList rebootOptions;
++    bool suspend_disk, suspend_ram, standby;
+ };
+ 
+ class KSMDelayedPushButton : public KPushButton

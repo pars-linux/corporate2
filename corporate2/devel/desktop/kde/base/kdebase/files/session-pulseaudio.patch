@@ -1,0 +1,16 @@
+diff -Nur kdebase-3.5.9.orig/startkde kdebase-3.5.9/startkde
+--- kdebase-3.5.9.orig/startkde	2008-05-26 16:06:40.000000000 +0300
++++ kdebase-3.5.9/startkde	2008-05-26 16:08:29.000000000 +0300
+@@ -324,6 +324,12 @@
+     eval `dbus-launch --sh-syntax --exit-with-session`
+ fi
+ 
++# Launch PulseAudio
++if [ -d /tmp/pulse-$USER ]; then
++    rm -rf /tmp/pulse-$USER
++fi
++eval `/usr/bin/pulseaudio -D`
++
+ # run KPersonalizer before the session, if this is the first login
+ if test "$kpersonalizerrc_general_firstlogin" = "true"; then
+     # start only dcopserver, don't start whole kdeinit (takes too long)

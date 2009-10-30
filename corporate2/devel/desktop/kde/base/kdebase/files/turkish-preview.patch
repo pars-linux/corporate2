@@ -1,0 +1,112 @@
+Index: kioslave/thumbnail/textcreator.cpp
+===================================================================
+--- kioslave/thumbnail/textcreator.cpp	(revision 664853)
++++ kioslave/thumbnail/textcreator.cpp	(working copy)
+@@ -25,6 +25,7 @@
+ #include <kstandarddirs.h>
+ #include <kpixmapsplitter.h>
+ #include <kmimetype.h>
++#include <qtextcodec.h>
+ 
+ #include "textcreator.h"
+ 
+@@ -112,11 +113,48 @@
+         int read = file.readBlock( m_data, bytesToRead );
+         if ( read > 0 )
+         {
+-            ok = true;
+             m_data[read] = '\0';
++            ok = false;
++            uint total=1000;
++
++            if (read < total) total = read;
++
++            for (uint i = 0; i < total - 1; i++)
++              {
++                switch (m_data[i]) {
++                case 195:
++                  if ((m_data[i+1] == -74) || (m_data[i+1] == -89) ||
++                      (m_data[i+1] == -68) || (m_data[i+1] == -106) ||
++                      (m_data[i+1] == -121) || (m_data[i+1] == -100)) {
++                    ok = true;
++                    break;
++                  }
++                case 196:
++                  if ((m_data[i+1] == -79) || (m_data[i+1] == -97) ||
++                      (m_data[i+1] == -80) || (m_data[i+1] == -98)) {
++                    ok = true;
++                    break;
++                  }
++
++                case 197:
++                  if ((m_data[i+1] == -97) || (m_data[i+1] == -98)) {
++                    ok = true;
++                    break;
++                  }
++                }
++                if (ok) break;
++              }
++            /* Finish of Encoding herustic. */
+             QString text = QString::fromLocal8Bit( m_data );
++            if (!ok)
++              {
++                QTextCodec *codec = QTextCodec::codecForName("ISO8859-9");
++                text = codec->toUnicode( m_data );
++              }
++            //						QString text = QString::fromUtf8( m_data );
+             // FIXME: maybe strip whitespace and read more?
+ 
++            ok = true;
+             m_pixmap.fill( QColor( 245, 245, 245 ) ); // light-grey background
+ 
+             QRect rect;
+@@ -171,6 +209,49 @@
+                     continue;
+                 }
+ 
++                // Turkish Conversions Begin
++
++                switch (ch.unicode()) {
++                case 305:
++                  ch = 224; // ı
++                  break;
++                case 351:
++                  ch = 229; // ş
++                  break;
++                case 246:
++                  ch = 227; // ö
++                  break;
++                case 231:
++                  ch = 228; // ç
++                  break;
++                case 252:
++                  ch = 226; // ü
++                  break;
++                case 287:
++                  ch = 225; // ğ
++                  break;
++                case 304:
++                  ch = 230; // İ
++                  break;
++                case 214:
++                  ch = 232; // Ö
++                  break;
++                case 199:
++                  ch = 233; // Ç
++                  break;
++                case 286:
++                  ch = 231; // Ğ
++                  break;
++                case 220:
++                  ch = 235; // Ü
++                  break;
++                case 350:
++                  ch = 234; // Ş
++                  break;
++                }
++
++                // Turkish Conversions End
++
+                 rect = m_splitter->coordinates( ch );
+                 if ( !rect.isEmpty() )
+                 {

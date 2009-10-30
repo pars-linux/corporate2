@@ -1,0 +1,99 @@
+diff -ur kdebase-3.5.0.orig/kicker/kicker/buttons/windowlistbutton.cpp kdebase-3.5.0/kicker/kicker/buttons/windowlistbutton.cpp
+--- kdebase-3.5.0.orig/kicker/kicker/buttons/windowlistbutton.cpp	2005-12-06 13:55:29.000000000 +0200
++++ kdebase-3.5.0/kicker/kicker/buttons/windowlistbutton.cpp	2005-12-13 14:54:17.000000000 +0200
+@@ -25,6 +25,7 @@
+ 
+ #include <kwindowlistmenu.h>
+ #include <klocale.h>
++#include <kwinmodule.h>
+ 
+ #include "windowlistbutton.h"
+ #include "windowlistbutton.moc"
+@@ -39,9 +40,25 @@
+     setTitle(i18n("Window List"));
+     QToolTip::add(this, i18n("Window list"));
+     setIcon("window_list");
++
++    m_winModule = new KWinModule();
++    
++    connect( m_winModule, SIGNAL(activeWindowChanged(WId)),
++             this, SLOT(activeWindowChanged(WId)) );
+ }
+ 
+ void WindowListButton::initPopup()
+ {
+     topMenu->init();
+ }
++
++void WindowListButton::activeWindowChanged( WId win )
++{
++    int size = preferredIconSize();
++    QImage img (KWin::icon( win ).convertToImage());
++    img = img.smoothScale( size, size );
++
++    QPixmap pix( img );
++    setIcon( pix );
++}
++
+diff -ur kdebase-3.5.0.orig/kicker/kicker/buttons/windowlistbutton.h kdebase-3.5.0/kicker/kicker/buttons/windowlistbutton.h
+--- kdebase-3.5.0.orig/kicker/kicker/buttons/windowlistbutton.h	2005-12-06 13:55:29.000000000 +0200
++++ kdebase-3.5.0/kicker/kicker/buttons/windowlistbutton.h	2005-12-13 14:55:49.000000000 +0200
+@@ -25,8 +25,10 @@
+ #define __windowlistbutton_h__
+ 
+ #include "panelbutton.h"
++#include "kwin.h"
+ 
+ class KWindowListMenu;
++class KWinModule;
+ 
+ /**
+  * Button that contains a windowlist menu
+@@ -38,11 +40,18 @@
+ public:
+     WindowListButton( QWidget* parent );
+ 
++protected slots:
++    void activeWindowChanged( WId win );
++
+ protected:
+     virtual QString tileName() { return "WindowList"; }
+     virtual void initPopup();
+ 
+     KWindowListMenu* topMenu;
++
++private:
++    KWinModule* m_winModule;
++
+ };
+ 
+ #endif
+diff -ur kdebase-3.5.0.orig/kicker/libkicker/panelbutton.cpp kdebase-3.5.0/kicker/libkicker/panelbutton.cpp
+--- kdebase-3.5.0.orig/kicker/libkicker/panelbutton.cpp	2005-12-06 13:55:29.000000000 +0200
++++ kdebase-3.5.0/kicker/libkicker/panelbutton.cpp	2005-12-13 14:57:53.000000000 +0200
+@@ -334,6 +334,14 @@
+     emit iconChanged();
+ }
+ 
++void PanelButton::setIcon(const QPixmap& pix)
++{
++    m_icon = pix;
++    m_iconh = pix;
++    m_iconz = pix;
++    update();
++}
++
+ QString PanelButton::icon() const
+ {
+     return m_iconName;
+diff -ur kdebase-3.5.0.orig/kicker/libkicker/panelbutton.h kdebase-3.5.0/kicker/libkicker/panelbutton.h
+--- kdebase-3.5.0.orig/kicker/libkicker/panelbutton.h	2005-12-06 13:55:29.000000000 +0200
++++ kdebase-3.5.0/kicker/libkicker/panelbutton.h	2005-12-13 14:58:15.000000000 +0200
+@@ -131,6 +131,7 @@
+      * @param icon the path to the button's icon
+      */
+     void setIcon(const QString& icon);
++    void setIcon(const QPixmap&);
+ 
+     /**
+      * @return the button's icon

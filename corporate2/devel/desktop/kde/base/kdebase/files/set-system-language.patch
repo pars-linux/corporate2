@@ -1,0 +1,42 @@
+Index: kdebase-3.5.9/kcontrol/kdm/kdm-appear.cpp
+===================================================================
+--- kdebase-3.5.9.orig/kcontrol/kdm/kdm-appear.cpp
++++ kdebase-3.5.9/kcontrol/kdm/kdm-appear.cpp
+@@ -434,6 +434,37 @@ void KDMAppearanceWidget::save()
+   config->writeEntry("GreeterPos", xLineEdit->text() + ',' + yLineEdit->text());
+ 
+   config->writeEntry("Language", langcombo->current());
++
++  QFile file( "/etc/conf.d/mudur" );
++
++  if ( file.open( IO_ReadOnly ) ) {
++      QTextStream stream( &file );
++      QStringList lines;
++      QString line;
++      QString languageLine = QString("language=\"%1\"").arg(langcombo->current());
++      bool written = false;
++
++      while ( !stream.atEnd() ) {
++          line = stream.readLine();
++          if ( QString(line).replace(" ", "").startsWith("language=") ) {
++              line = languageLine;
++              written = true;
++          }
++          lines += line;
++      }
++      if ( !written ) {
++          lines += languageLine;
++      }
++      file.close();
++
++      if ( file.open( IO_WriteOnly ) ) {
++          stream.reset();
++          for ( QStringList::Iterator it = lines.begin(); it != lines.end(); ++it ) {
++              stream << *it << endl;
++          }
++          file.close();
++      }
++  }
+ }
+ 
+ 

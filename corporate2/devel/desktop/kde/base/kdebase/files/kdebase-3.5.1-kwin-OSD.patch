@@ -1,0 +1,617 @@
+Index: kwin/workspace.h
+===================================================================
+--- kwin/workspace.h	(revision 508997)
++++ kwin/workspace.h	(working copy)
+@@ -41,7 +41,7 @@
+ 
+ class Client;
+ class TabBox;
+-class PopupInfo;
++class OSDWidget;
+ class RootInfo;
+ class PluginMgr;
+ class Placement;
+@@ -536,7 +536,7 @@
+         int block_focus;
+ 
+         TabBox* tab_box;
+-        PopupInfo* popupinfo;
++        OSDWidget* popupinfo;
+ 
+         QPopupMenu *popup;
+         QPopupMenu *advanced_popup;
+Index: kwin/kcmkwin/kwinoptions/windows.cpp
+===================================================================
+--- kwin/kcmkwin/kwinoptions/windows.cpp	(revision 508997)
++++ kwin/kcmkwin/kwinoptions/windows.cpp	(working copy)
+@@ -411,7 +411,7 @@
+     setRollOverDesktops( config->readBoolEntry(KWIN_ROLL_OVER_DESKTOPS, true ));
+ 
+     config->setGroup( "PopupInfo" );
+-    setShowPopupinfo( config->readBoolEntry(KWIN_SHOW_POPUP, false ));
++    setShowPopupinfo( config->readBoolEntry(KWIN_SHOW_POPUP, true ));
+ 
+     config->setGroup( "TabBox" );
+     setTraverseAll( config->readBoolEntry(KWIN_TRAVERSE_ALL, false ));
+Index: kwin/osd.h
+===================================================================
+--- kwin/osd.h	(revision 0)
++++ kwin/osd.h	(revision 0)
+@@ -0,0 +1,99 @@
++/*
++  This program is free software; you can redistribute it and/or modify
++  it under the terms of the GNU General Public License as published by
++  the Free Software Foundation; either version 2 of the License, or
++  (at your option) any later version.
++*/
++
++/*
++  osd.h   -  Provides an interface to a plain QWidget, which is independent of KDE (bypassed to X11)
++  begin:     Fre Sep 26 2003
++  copyright: (C) 2003 by Christian Muehlhaeuser
++  email:     chris@chris.de
++*/
++
++#ifndef OSD_H
++#define OSD_H
++
++#include <kpixmap.h>
++#include <qimage.h>
++#include <qvaluelist.h>
++#include <qwidget.h> //baseclass
++
++namespace KWinInternal
++{
++
++
++
++class OSDWidget : public QWidget
++{
++    Q_OBJECT
++
++    public:
++        enum Alignment { Left, Middle, Center, Right };
++
++        OSDWidget( QWidget *parent = 0, const char *name = "osd" );
++
++        /** resets the colours to defaults */
++        void unsetColors();
++
++	void reconfigure();
++
++      public slots:
++        /** calls setText() then show(), after setting image if needed */
++        void show( const QString &text, QImage newImage = QImage::QImage() );
++
++        /** reimplemented, shows the OSD */
++        virtual void show();
++
++        /**
++         * For the sake of simplicity, when these settings are
++         * changed they do not take effect until the next time
++         * the OSD is shown!
++         *
++         * To force an update call show();
++         */
++        void setDuration( int ms ) { m_duration = ms; }
++        void setTextColor( const QColor &color ) { setPaletteForegroundColor( color ); }
++        void setBackgroundColor(const QColor &color ) { setPaletteBackgroundColor( color ); }
++        void setOffset( int y ) { m_y = y; }
++        void setAlignment( Alignment alignment ) { m_alignment = alignment; }
++        void setImage( const QImage &image ) { m_cover = image; }
++        void setScreen( int screen );
++        void setText( const QString &text ) { m_text = text; }
++        void setDrawShadow( bool b ) { m_drawShadow = b; }
++        void setTranslucency( bool b ) { m_translucency = b; }
++
++    protected:
++        /** determine new size and position */
++        QRect determineMetrics( const uint marginMetric );
++
++        /** render OSD */
++        void render( const uint marginMetric, const QSize &size );
++
++        /** reimplemented */
++        virtual void mousePressEvent( QMouseEvent* );
++        virtual bool event( QEvent* );
++
++        /** distance from screen edge */
++        static const int MARGIN = 15;
++
++        int         m_duration;
++	bool        m_show;
++        QTimer     *m_timer;
++        Alignment   m_alignment;
++        int         m_screen;
++        uint        m_y;
++        bool        m_drawShadow;
++        bool        m_translucency;
++        QString     m_text;
++        QImage      m_cover;
++        QPixmap     m_scaledCover;
++        KPixmap     m_screenshot;
++        QPixmap     m_buffer;
++};
++
++
++} // namespace
++
++#endif /*OSD_H*/
+Index: kwin/osd.cpp
+===================================================================
+--- kwin/osd.cpp	(revision 0)
++++ kwin/osd.cpp	(revision 0)
+@@ -0,0 +1,427 @@
++/*
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * osd.cpp:   Shows some text in a pretty way independent to the WM
++ * begin:     Fre Sep 26 2003
++ * copyright: (C) 2004 Christian Muehlhaeuser <chris@chris.de>
++ *            (C) 2004 Seb Ruiz <me@sebruiz.net>
++ *            (C) 2004, 2005 Max Howell
++ *            (C) 2005 Gábor Lehel <illissius@gmail.com>
++ */
++
++#include "osd.h"
++
++#include <kdebug.h>
++#include <kapplication.h>
++#include <kpixmap.h>
++#include <kpixmapeffect.h>
++#include <kstandarddirs.h>   //locate
++#include <kconfig.h>
++
++#include <qbitmap.h>
++#include <qpainter.h>
++#include <qregexp.h>
++#include <qtimer.h>
++#include <qvaluevector.h>
++
++namespace ShadowEngine
++{
++    QImage makeShadow( const QPixmap &textPixmap, const QColor &bgColor );
++}
++
++namespace KWinInternal
++{
++
++
++OSDWidget::OSDWidget( QWidget *parent, const char *name )
++        : QWidget( parent, name, WType_TopLevel | WNoAutoErase | WStyle_Customize | WX11BypassWM | WStyle_StaysOnTop )
++        , m_duration( 1500 )
++	, m_show (true)
++        , m_timer( new QTimer( this ) )
++        , m_alignment( Middle )
++        , m_screen( 0 )
++        , m_y( MARGIN )
++        , m_drawShadow( true )
++        , m_translucency( true )
++{
++    setFocusPolicy( NoFocus );
++    setBackgroundMode( NoBackground );
++    unsetColors();
++
++    
++    QFont f = font();
++    f.setBold( TRUE );
++    f.setPointSize( 25 );
++    setFont( f );
++
++
++    // show in the middle hohoho
++    setOffset(KApplication::desktop()->height() / 2);
++
++    reconfigure();
++
++    connect( m_timer, SIGNAL(timeout()), SLOT(hide()) );
++
++    //or crashes, KWin bug I think, crashes in QWidget::icon()
++    kapp->setTopWidget( this );
++}
++
++void OSDWidget::reconfigure() 
++{
++    KConfig * c(KGlobal::config());
++    c->setGroup("PopupInfo");
++    m_show = c->readBoolEntry("ShowPopup", true );
++    m_duration = c->readNumEntry("PopupHideDelay", 1500 );
++}
++
++void
++OSDWidget::show( const QString &text, QImage newImage )
++{
++    if ( !m_show )
++        return;
++
++    m_text = text;
++    if ( !newImage.isNull() ) {
++        m_cover = newImage;
++        int w = m_scaledCover.width();
++        int h = m_scaledCover.height();
++        m_scaledCover = m_cover.smoothScale(w, h);
++    }
++    show();
++}
++
++void
++OSDWidget::show() //virtual
++{
++    if ( !isEnabled() || m_text.isEmpty() )
++        return;
++
++    const uint M = fontMetrics().width( 'x' );
++
++    const QRect oldGeometry = QRect( pos(), size() );
++    const QRect newGeometry = determineMetrics( M );
++
++#ifdef Q_WS_X11
++    if( m_translucency && !isShown() || !newGeometry.intersects( oldGeometry ) )
++        m_screenshot = QPixmap::grabWindow( qt_xrootwin(),
++                newGeometry.x(), newGeometry.y(),
++                newGeometry.width(), newGeometry.height() );
++
++
++    else if( m_translucency ) {
++        const QRect unite = oldGeometry.unite( newGeometry );
++        KPixmap pix = QPixmap::grabWindow( qt_xrootwin(), unite.x(), unite.y(), unite.width(), unite.height() );
++
++        QPoint p = oldGeometry.topLeft() - unite.topLeft();
++        bitBlt( &pix, p, &m_screenshot );
++
++        m_screenshot.resize( newGeometry.size() );
++
++        p = newGeometry.topLeft() - unite.topLeft();
++        bitBlt( &m_screenshot, 0, 0, &pix, p.x(), p.y() );
++    }
++#endif
++
++    if( newGeometry.width() > 0 && newGeometry.height() > 0 )
++    {
++        render( M, newGeometry.size() );
++        setGeometry( newGeometry );
++        QWidget::show();
++        bitBlt( this, 0, 0, &m_buffer );
++
++        if( m_duration ) //duration 0 -> stay forever
++            m_timer->start( m_duration, true ); //calls hide()
++    }
++    else
++      kdDebug() << "Attempted to make an invalid sized OSD\n";
++}
++
++QRect
++OSDWidget::determineMetrics( const uint M )
++{
++    // sometimes we only have a tiddly cover
++    const QSize minImageSize = m_cover.size().boundedTo( QSize(100,100) );
++
++    // determine a sensible maximum size, don't cover the whole desktop or cross the screen
++    const QSize margin( (M + MARGIN) * 2, (M + MARGIN) * 2 ); //margins
++    const QSize image = m_cover.isNull() ? QSize( 0, 0 ) : minImageSize;
++    const QSize max = QApplication::desktop()->screen( m_screen )->size() - margin;
++
++    // If we don't do that, the boundingRect() might not be suitable for drawText() (Qt issue N67674)
++    m_text.replace( QRegExp(" +\n"), "\n" );
++
++    // The osd cannot be larger than the screen
++    QRect rect = fontMetrics().boundingRect( 0, 0,
++            max.width() - image.width(), max.height(),
++            AlignCenter | WordBreak, m_text );
++
++    if( !m_cover.isNull() ) {
++        const int availableWidth = max.width() - rect.width() - M; //WILL be >= (minImageSize.width() - M)
++
++        m_scaledCover = m_cover.smoothScale(
++                QMIN( availableWidth, m_cover.width() ),
++                QMIN( rect.height(), m_cover.height() ),
++                QImage::ScaleMin ); //this will force us to be with our bounds
++
++        int shadowWidth = 0;
++        if( m_drawShadow && !m_scaledCover.hasAlpha() &&
++          ( m_scaledCover.width() > 22 || m_scaledCover.height() > 22 ) )
++            shadowWidth = static_cast<uint>( m_scaledCover.width() / 100.0 * 6.0 );
++
++        const int widthIncludingImage = rect.width()
++                + m_scaledCover.width()
++                + shadowWidth
++                + M; //margin between text + image
++
++        rect.setWidth( widthIncludingImage );
++    }
++
++    // expand in all directions by M
++    rect.addCoords( -M, -M, M, M );
++
++    const QSize newSize = rect.size();
++    const QRect screen = QApplication::desktop()->screenGeometry( m_screen );
++    QPoint newPos( MARGIN, m_y );
++
++    switch( m_alignment )
++    {
++        case Left:
++            break;
++
++        case Right:
++            newPos.rx() = screen.width() - MARGIN - newSize.width();
++            break;
++
++        case Center:
++            newPos.ry() = (screen.height() - newSize.height()) / 2;
++
++            //FALL THROUGH
++
++        case Middle:
++            newPos.rx() = (screen.width() - newSize.width()) / 2;
++            break;
++    }
++
++    //ensure we don't dip below the screen
++    if ( newPos.y() + newSize.height() > screen.height() - MARGIN )
++        newPos.ry() = screen.height() - MARGIN - newSize.height();
++
++    // correct for screen position
++    newPos += screen.topLeft();
++
++    return QRect( newPos, rect.size() );
++}
++
++void
++OSDWidget::render( const uint M, const QSize &size )
++{
++    /// render with margin/spacing @param M and @param size
++
++    QPoint point;
++    QRect rect( point, size );
++
++    // From qt sources
++    const uint xround = (M * 200) / size.width();
++    const uint yround = (M * 200) / size.height();
++
++    {   /// apply the mask
++        static QBitmap mask;
++
++        mask.resize( size );
++        mask.fill( Qt::black );
++
++        QPainter p( &mask );
++        p.setBrush( Qt::white );
++        p.drawRoundRect( rect, xround, yround );
++        setMask( mask );
++    }
++
++    QColor shadowColor;
++    {
++        int h,s,v;
++        foregroundColor().getHsv( &h, &s, &v );
++        shadowColor = v > 128 ? Qt::black : Qt::white;
++    }
++
++    int align = Qt::AlignCenter | WordBreak;
++
++    m_buffer.resize( rect.size() );
++    QPainter p( &m_buffer );
++
++    if( m_translucency ) {
++        KPixmap background( m_screenshot );
++        KPixmapEffect::fade( background, 0.80, backgroundColor() );
++        p.drawPixmap( 0, 0, background );
++    }
++    else
++        p.fillRect( rect, backgroundColor() );
++
++    p.setPen( backgroundColor().dark() );
++    p.drawRoundRect( rect, xround, yround );
++
++    rect.addCoords( M, M, -M, -M );
++
++    if( !m_cover.isNull() ) {
++        QRect r( rect );
++        r.setTop( (size.height() - m_scaledCover.height()) / 2 );
++        r.setSize( m_scaledCover.size() );
++
++        p.drawPixmap( r.topLeft(), m_scaledCover );
++
++        rect.rLeft() += m_scaledCover.width() + M;
++    }
++
++    if( m_drawShadow )
++    {
++        QPixmap pixmap( rect.size() + QSize(10,10) );
++        pixmap.fill( Qt::black );
++        pixmap.setMask( pixmap.createHeuristicMask( true ) );
++
++        QPainter p2( &pixmap );
++        p2.setFont( font() );
++        p2.setPen( Qt::white );
++        p2.setBrush( Qt::white );
++        p2.drawText( QRect(QPoint(5,5), rect.size()), align , m_text );
++        p2.end();
++
++        p.drawImage( rect.topLeft() - QPoint(5,5), ShadowEngine::makeShadow( pixmap, shadowColor ) );
++    }
++
++    p.setPen( foregroundColor() );
++    p.setFont( font() );
++    p.drawText( rect, align, m_text );
++    p.end();
++}
++
++bool
++OSDWidget::event( QEvent *e )
++{
++    switch( e->type() )
++    {
++    case QEvent::Paint:
++        bitBlt( this, 0, 0, &m_buffer );
++        return true;
++    default:
++        return QWidget::event( e );
++    }
++}
++
++void
++OSDWidget::mousePressEvent( QMouseEvent* )
++{
++    hide();
++}
++
++void
++OSDWidget::unsetColors()
++{
++    const QColorGroup c = QApplication::palette().active();
++
++    setPaletteForegroundColor( c.highlightedText() );
++    setPaletteBackgroundColor( c.highlight() );
++}
++
++void
++OSDWidget::setScreen( int screen )
++{
++    const int n = QApplication::desktop()->numScreens();
++    m_screen = (screen >= n) ? n-1 : screen;
++}
++
++} // namespace
++
++
++
++/* Code copied from kshadowengine.cpp
++ *
++ * Copyright (C) 2003 Laur Ivan <laurivan@eircom.net>
++ *
++ * Many thanks to:
++ *  - Bernardo Hung <deciare@gta.igs.net> for the enhanced shadow
++ *    algorithm (currently used)
++ *  - Tim Jansen <tim@tjansen.de> for the API updates and fixes.
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Library General Public
++ * License version 2 as published by the Free Software Foundation.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Library General Public License for more details.
++ *
++ * You should have received a copy of the GNU Library General Public License
++ * along with this library; see the file COPYING.LIB.  If not, write to
++ * the Free Software Foundation, Inc., 51 Franklin Steet, Fifth Floor,
++ * Boston, MA 02110-1301, USA.
++ */
++
++namespace ShadowEngine
++{
++    // Not sure, doesn't work above 10
++    static const int    MULTIPLICATION_FACTOR = 3;
++    // Multiplication factor for pixels directly above, under, or next to the text
++    static const double AXIS_FACTOR = 2.0;
++    // Multiplication factor for pixels diagonal to the text
++    static const double DIAGONAL_FACTOR = 0.1;
++    // Self explanatory
++    static const int    MAX_OPACITY = 200;
++
++    double decay( QImage&, int, int );
++
++    QImage makeShadow( const QPixmap& textPixmap, const QColor &bgColor )
++    {
++        QImage result;
++
++        const int w   = textPixmap.width();
++        const int h   = textPixmap.height();
++        const int bgr = bgColor.red();
++        const int bgg = bgColor.green();
++        const int bgb = bgColor.blue();
++
++        int alphaShadow;
++
++        // This is the source pixmap
++        QImage img = textPixmap.convertToImage().convertDepth( 32 );
++
++        result.create( w, h, 32 );
++        result.fill( 0 ); // fill with black
++        result.setAlphaBuffer( true );
++
++        static const int M = 5;
++        for( int i = M; i < w - M; i++) {
++            for( int j = M; j < h - M; j++ )
++            {
++                alphaShadow = (int) decay( img, i, j );
++
++                result.setPixel( i,j, qRgba( bgr, bgg , bgb, QMIN( MAX_OPACITY, alphaShadow ) ) );
++            }
++        }
++
++        return result;
++    }
++
++    double decay( QImage& source, int i, int j )
++    {
++        //if ((i < 1) || (j < 1) || (i > source.width() - 2) || (j > source.height() - 2))
++        //    return 0;
++
++        double alphaShadow;
++        alphaShadow =(qGray(source.pixel(i-1,j-1)) * DIAGONAL_FACTOR +
++                qGray(source.pixel(i-1,j  )) * AXIS_FACTOR +
++                qGray(source.pixel(i-1,j+1)) * DIAGONAL_FACTOR +
++                qGray(source.pixel(i  ,j-1)) * AXIS_FACTOR +
++                0                         +
++                qGray(source.pixel(i  ,j+1)) * AXIS_FACTOR +
++                qGray(source.pixel(i+1,j-1)) * DIAGONAL_FACTOR +
++                qGray(source.pixel(i+1,j  )) * AXIS_FACTOR +
++                qGray(source.pixel(i+1,j+1)) * DIAGONAL_FACTOR) / MULTIPLICATION_FACTOR;
++
++        return alphaShadow;
++    }
++}
++
++#include "osd.moc"
+Index: kwin/Makefile.am
+===================================================================
+--- kwin/Makefile.am	(revision 508997)
++++ kwin/Makefile.am	(working copy)
+@@ -11,7 +11,7 @@
+ kdeinit_LTLIBRARIES = kwin.la
+ 
+ kwin_la_SOURCES = workspace.cpp client.cpp placement.cpp atoms.cpp \
+-	utils.cpp layers.cpp main.cpp popupinfo.cpp tabbox.cpp \
++	utils.cpp layers.cpp main.cpp osd.cpp tabbox.cpp \
+ 	 options.cpp plugins.cpp events.cpp KWinInterface.skel \
+ 	killwindow.cpp geometrytip.cpp sm.cpp group.cpp bridge.cpp \
+ 	manage.cpp notifications.cpp activation.cpp useractions.cpp \
+Index: kwin/workspace.cpp
+===================================================================
+--- kwin/workspace.cpp~	2006-09-22 20:19:58.000000000 +0300
++++ kwin/workspace.cpp	2006-09-22 20:22:33.000000000 +0300
+@@ -32,7 +32,7 @@
+
+ #include "plugins.h"
+ #include "client.h"
+-#include "popupinfo.h"
++#include "osd.h"
+ #include "tabbox.h"
+ #include "atoms.h"
+ #include "placement.h"
+@@ -1271,7 +1271,7 @@
+ //    kdDebug(1212) << s << "}\n";
+
+     if( old_desktop != 0 )  // not for the very first time
+-        popupinfo->showInfo( desktopName(currentDesktop()) );
++        popupinfo->show( desktopName(currentDesktop()) );
+     return true;
+     }
+
+--- kwin/workspace.cpp	2006-09-22 20:55:45.000000000 +0300
++++ kwin/workspace.cpp	2006-09-22 20:56:07.000000000 +0300
+@@ -190,7 +190,7 @@
+     client_keys = new KGlobalAccel( this );
+     initShortcuts();
+     tab_box = new TabBox( this );
+-    popupinfo = new PopupInfo( this );
++    popupinfo = new OSDWidget( this );
+ 
+     init();
+ 

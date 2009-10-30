@@ -1,0 +1,55 @@
+diff -ur kdebase-3.4.92.orig/kdesktop/krootwm.cc kdebase-3.4.92/kdesktop/krootwm.cc
+--- kdebase-3.4.92.orig/kdesktop/krootwm.cc	2005-10-10 18:04:11.000000000 +0300
++++ kdebase-3.4.92/kdesktop/krootwm.cc	2005-10-24 02:23:08.000000000 +0300
+@@ -93,7 +93,7 @@
+      connect( menuNew, SIGNAL( activated() ),
+               m_pDesktop->iconView(), SLOT( slotNewMenuActivated() ) );
+   }
+-
++/* Disabled by Pardus Linux
+   if (kapp->authorizeKAction("bookmarks"))
+   {
+      bookmarks = new KActionMenu( i18n("Bookmarks"), "bookmark", m_actionCollection, "bookmarks" );
+@@ -108,7 +108,11 @@
+      bookmarks = 0;
+      bookmarkMenu = 0;
+   }
+-  
++*/
++    
++  bookmarks = 0;
++  bookmarkMenu = 0;
++
+   // The windowList and desktop menus can be part of a menubar (Mac style)
+   // so we create them here
+   desktopMenu = new QPopupMenu;
+@@ -131,10 +135,12 @@
+   }
+ #endif
+ 
++/* Disabled by Pardus Linux
+   if (kapp->authorize("run_command"))
+   {
+      new KAction(i18n("Run Command..."), "run", 0, m_pDesktop, SLOT( slotExecuteCommand() ), m_actionCollection, "exec" );
+   }
++*/  
+   if (!KGlobal::config()->isImmutable())
+   {
+      new KAction(i18n("Configure Desktop..."), "configure", 0, this, SLOT( slotConfigureDesktop() ),
+@@ -184,6 +190,7 @@
+      new KAction(i18n("Refresh Desktop"), "desktop", 0, this, SLOT( slotRefreshDesktop() ),
+                  m_actionCollection, "refresh" );
+   }
++/* Disabled by Pardus Linux  
+   // Icons in sync with kicker
+   if (kapp->authorize("lock_screen"))
+   {
+@@ -206,7 +213,7 @@
+                       SLOT( slotLockNNewSession() ), m_actionCollection, "lockNnewsession" );
+       }
+   }
+-
++*/
+   initConfig();
+ }
+ 

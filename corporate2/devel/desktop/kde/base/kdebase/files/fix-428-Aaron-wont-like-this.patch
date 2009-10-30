@@ -1,0 +1,24 @@
+--- kdebase-3.5.0.orig/kcontrol/kicker/menuconfig.cpp	2005-12-06 11:00:08.000000000 +0200
++++ kdebase-3.5.0/kcontrol/kicker/menuconfig.cpp	2005-12-06 11:45:38.000000000 +0200
+@@ -68,12 +68,19 @@
+     // This slot is triggered by the signal,
+     // which is send before Kicker is notified.
+     // See comment in save().
+-    m_widget->save();
+-    KCModule::save();
++    //    m_widget->save();
++    //    KCModule::save();
+ }
+ 
+ void MenuConfig::save()
+ {
++  // Aaron won't like this but we need to save settings for sidepixmap
++  // to work :(. Haven't traced the bug carefully, but I'll later
++  // on. For now saving the day is enough.
++  // http://bugs.uludag.org.tr/show_bug.cgi?id=428
++  m_widget->save();
++  KCModule::save();
++  
+     // As we don't want to notify Kicker multiple times
+     // we do not save the settings here. Instead the
+     // KickerConfig object sends a signal before the

@@ -1,0 +1,72 @@
+Index: kxkb/kxkbconfig.cpp
+===================================================================
+--- kxkb/kxkbconfig.cpp	(revision 608060)
++++ kxkb/kxkbconfig.cpp	(working copy)
+@@ -14,6 +14,7 @@
+ #include <qregexp.h>
+ #include <qstringlist.h>
+ #include <qdict.h>
++#include <qfile.h>
+ 
+ #include <kconfig.h>
+ #include <kdebug.h>
+@@ -33,12 +34,32 @@
+ LayoutUnit KxkbConfig::getDefaultLayout()
+ {
+ 	if( m_layouts.size() == 0 )
+-		return DEFAULT_LAYOUT_UNIT;
+-	
++          {
++            QString line,layout;
++            QFile file("/etc/X11/xorg.conf");
++
++            if ( file.open( IO_ReadOnly ) ) {
++              QTextStream stream( &file );
++              while (!stream.atEnd()) {
++                line = stream.readLine();
++                if (line.contains("XkbLayout"))
++                  {
++                    layout = line.section("\"",3);
++                    break;
++                  }
++              }
++            }
++
++            if (!layout.isEmpty())
++              return LayoutUnit(layout, "");
++            else
++              return DEFAULT_LAYOUT_UNIT;
++          }
++
+ 	return m_layouts[0];
+ }
+ 
+-bool KxkbConfig::load(int loadMode) 
++bool KxkbConfig::load(int loadMode)
+ {
+ 	KConfig *config = new KConfig("kxkbrc", true, false);
+ 	config->setGroup("Layout");
+@@ -62,19 +83,18 @@
+ 
+ 	m_model = config->readEntry("Model", DEFAULT_MODEL);
+ 	kdDebug() << "Model: " << m_model << endl;
+-	
++
+ 	QStringList layoutList;
+ 	if( config->hasKey("LayoutList") ) {
+ 		layoutList = config->readListEntry("LayoutList");
+ 	}
+ 	else { // old config
+-		QString mainLayout = config->readEntry("Layout", DEFAULT_LAYOUT_UNIT.toPair());
++                QString mainLayout = config->readEntry("Layout", getDefaultLayout().toPair());
+ 		layoutList = config->readListEntry("Additional");
++        layoutList.prepend("us");
+ 		layoutList.prepend(mainLayout);
+ 	}
+-	if( layoutList.count() == 0 )
+-		layoutList.append("us");
+-	
++
+ 	m_layouts.clear();
+ 	for(QStringList::ConstIterator it = layoutList.begin(); it != layoutList.end() ; ++it) {
+ 		m_layouts.append( LayoutUnit(*it) );

@@ -1,0 +1,58 @@
+Index: kcontrol/componentchooser/componentchooser.cpp
+===================================================================
+--- kcontrol/componentchooser/componentchooser.cpp	(revision 572951)
++++ kcontrol/componentchooser/componentchooser.cpp	(working copy)
+@@ -204,6 +204,53 @@
+ 
+ 	kapp->dcopClient()->emitDCOPSignal("KDE_emailSettingsChanged()", QByteArray());
+ 
++
++        // Update Firefox's prefs too
++        QDir dir;
++        QFile prefs;
++        QString data, backup;
++        bool foundEmailHandler = false;
++
++        QDir::setCurrent(QDir::homeDirPath()+"/.mozilla/firefox/");
++        dir.setNameFilter("*.default");
++
++        prefs.setName(dir.entryList()[0]+"/prefs.js");
++        prefs.open(IO_ReadOnly);
++        QTextStream stream( &prefs );
++
++        while (!stream.atEnd())
++          {
++            data = stream.readLine();
++
++            if (data.contains("network.protocol-handler.app.mailto"))
++              {
++                if (!kmailCB->isChecked())
++                  backup += QString("user_pref(\"network.protocol-handler.app.mailto\",\"%1\")").arg(txtEMailClient->text());
++                foundEmailHandler = true;
++              }
++            else
++              backup += data;
++
++            backup += "\n";
++          }
++
++        prefs.close();
++
++        if (foundEmailHandler)
++          {
++            prefs.open(IO_WriteOnly);
++            stream.setDevice( &prefs );
++            stream << backup;
++          }
++        else if(!kmailCB->isChecked())
++          {
++            prefs.open(IO_WriteOnly | IO_Append);
++            stream.setDevice( &prefs );
++            stream << QString("user_pref(\"network.protocol-handler.app.mailto\",\"%1\")").arg(txtEMailClient->text());
++          }
++
++        prefs.close();
++
+ 	emit changed(false);
+ }
+ 

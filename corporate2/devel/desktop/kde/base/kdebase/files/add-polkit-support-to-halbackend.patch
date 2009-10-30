@@ -1,0 +1,99 @@
+--- a/kioslave/media/mediamanager/halbackend.cpp	2009-01-21 16:16:26.000000000 +0200
++++ b/kioslave/media/mediamanager/halbackend.cpp	2009-01-21 16:18:04.000000000 +0200
+@@ -962,6 +962,87 @@
+     return true;
+ }
+ 
++static bool obtain_authorization(void)
++{
++    DBusError error;
++    DBusMessage *dmesg, *reply;
++
++    dbus_error_init(&error);
++
++    DBusConnection *dbus_connection = dbus_bus_get_private(DBUS_BUS_SESSION, &error);
++    if (dbus_error_is_set(&error))
++    {
++        kdDebug() << i18n(QString("Unable to connect D-Bus: %1.").arg(error.message).latin1()) << endl;
++        dbus_error_free(&error);
++        return false;
++    }
++
++    const char *v_action = "org.freedesktop.hal.storage.mount-fixed";
++    dbus_int32_t v_win = 0;
++    dbus_int32_t v_pid = getpid();
++
++    if (!(dmesg = dbus_message_new_method_call("org.freedesktop.PolicyKit.AuthenticationAgent",
++                                               "/",
++                                               "org.freedesktop.PolicyKit.AuthenticationAgent",
++                                               "ObtainAuthorization")))
++    {
++        kdDebug() << "obtain_authorization failed for " << v_action << ": could not create dbus message\n";
++        return false;
++    }
++
++    if (!dbus_message_append_args(dmesg,
++                                  DBUS_TYPE_STRING, &v_action,
++                                  DBUS_TYPE_UINT32, &v_win,
++                                  DBUS_TYPE_UINT32, &v_pid,
++                                  DBUS_TYPE_INVALID))
++    {
++        kdDebug() << "obtain_authorization failed for " << v_action << ": could not append args to dbus message\n";
++        dbus_message_unref (dmesg);
++        return false;
++    }
++
++    QString qerror;
++
++    dbus_error_init(&error);
++    if (!(reply = dbus_connection_send_with_reply_and_block(dbus_connection, dmesg, 65535*1000, &error)))
++    {
++        QString qerror = error.message;
++        kdError() << "obtain_authorization failed for " << v_action << ": " << error.name << " - " << qerror << endl;
++        dbus_message_unref(dmesg);
++        dbus_error_free(&error);
++        return false;
++    }
++
++    dbus_bool_t v_grant = FALSE;
++    dbus_message_get_args(reply, &error, DBUS_TYPE_BOOLEAN, &v_grant, DBUS_TYPE_INVALID);
++
++    dbus_message_unref(dmesg);
++    dbus_message_unref(reply);
++    dbus_error_free(&error);
++    dbus_connection_close(dbus_connection);
++    dbus_connection_unref(dbus_connection);
++
++    kdDebug() << "obtain_authorization returns " << v_grant << endl;
++    return v_grant;
++}
++
++static QString privilegedMount(const char* udi, const char* mountPoint, const char** options, int numberOfOptions,
++             DBusConnection *dbus_connection)
++{
++    QString error;
++
++    kdDebug() << "run privileged mount for " << udi << endl;
++    bool b = obtain_authorization();
++
++    if (obtain_authorization())
++    {
++        // Authorization granted for privileged mount
++    }
++        return i18n("Authorization granted");
++    return i18n("Permission denied");
++
++}
++
+ static QString mount_priv(const char *udi, const char *mount_point, const char **poptions, int noptions,
+ 			  DBusConnection *dbus_connection)
+ {
+@@ -996,6 +1077,8 @@
+             qerror = i18n("Invalid filesystem type");
+         else if ( !strcmp(error.name, "org.freedesktop.Hal.Device.Volume.PermissionDenied"))
+             qerror = i18n("Permissions denied");
++        else if ( !strcmp(error.name, "org.freedesktop.Hal.Device.PermissionDeniedByPolicy"))
++            qerror = privilegedMount(udi, mount_point, poptions, noptions, dbus_connection);
+         else if ( !strcmp(error.name, "org.freedesktop.Hal.Device.Volume.AlreadyMounted"))
+             qerror = i18n("Device is already mounted.");
+         else if ( !strcmp(error.name, "org.freedesktop.Hal.Device.Volume.InvalidMountpoint") && strlen(mount_point)) {
