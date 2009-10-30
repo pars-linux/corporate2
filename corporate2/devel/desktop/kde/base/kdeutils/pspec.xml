@@ -1,0 +1,296 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>kdeutils</Name>
+        <Homepage>http://www.kde.org/</Homepage>
+        <Packager>
+            <Name>Gökmen GÖKSEL</Name>
+            <Email>gokmen@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2+</License>
+        <IsA>app:gui</IsA>
+        <Summary>KDE utilities</Summary>
+        <Archive type="tarbz2" sha1sum="dfa440253fd9802d1a9665d339c20d903ea676af">mirrors://kde/stable/3.5.10/src/kdeutils-3.5.10.tar.bz2</Archive>
+        <BuildDependencies>
+            <Dependency>kdebase</Dependency>
+            <Dependency>gmp</Dependency>
+            <Dependency>lirc</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">02_kmilo-defaultwidget-config.patch</Patch>
+            <Patch level="1">01_kmilo-defaultwidget-compact.patch</Patch>
+            <Patch level="1">fix-dangling-else-ambiguity.patch</Patch>
+            <Patch level="1">ark_prefer_7z_for_zip_extract.patch</Patch>
+            <Patch level="1">ark_7z_overwrite.patch</Patch>
+            <Patch level="1">ark_7z_password.patch</Patch>
+            <Patch level="1">ark_7z_empty_space_in_filename.patch</Patch>
+            <Patch level="1">sevenzip-implement-passwordRequired.patch</Patch>
+
+            <!-- Some RAR archives needs password even for giving a TOC (#8889) -->
+            <Patch level="1">handle-password-when-opening-rar-archives.patch</Patch>
+            <Patch level="1">ask-password-if-rar-wants-password-for-TOC.patch</Patch>
+
+            <!-- kgpg fails to parse gnupg 2.0.10 output - https://bugs.kde.org/show_bug.cgi?id=188473 -->
+            <Patch level="1">kgpg-3.5.10-gnupg-fixed-list-mode.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>kdeutils</Name>
+        <RuntimeDependencies>
+            <Dependency>kdebase</Dependency>
+            <Dependency>gnupg</Dependency>
+            <Dependency>gmp</Dependency>
+            <Dependency>lirc</Dependency>
+            <Dependency>p7zip</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin</Path>
+            <Path fileType="library">/usr/kde/3.5/lib</Path>
+            <Path fileType="data">/usr/kde/3.5/share</Path>
+            <Path fileType="header">/usr/kde/3.5/include</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile target="/usr/kde/3.5/share/applications/kde/kwalletmanager.desktop" permission="0644" owner="root">kwalletmanager.desktop</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <History>
+        <Update release="33">
+            <Date>2009-10-26</Date>
+            <Version>3.5.10</Version>
+            <Comment>Fix sandbox problem, disable arts.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="32">
+            <Date>2009-09-06</Date>
+            <Version>3.5.10</Version>
+            <Comment>Fixes "kgpg fails to parse gnupg 2.0.10 output" problem</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="31">
+            <Date>2009-04-07</Date>
+            <Version>3.5.10</Version>
+            <Comment>Fix 7z password prompting issue, fix extracting of some password protected rar archives (#8889).</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="30">
+            <Date>2008-11-11</Date>
+            <Version>3.5.10</Version>
+            <Comment>Fix desktop files to make them XDG compliant</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="29">
+            <Date>2008-11-04</Date>
+            <Version>3.5.10</Version>
+            <Comment>Fix extracting zip files compressed with lzma, by using 7z as default, fix 7z password usage, fix 7z overwrite support, fix wrong empty space in filenames, fixes bug #4913</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="28">
+            <Date>2008-09-26</Date>
+            <Version>3.5.10</Version>
+            <Comment>Fix dangling else ambiguity</Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+        <Update release="27">
+            <Date>2008-08-26</Date>
+            <Version>3.5.10</Version>
+            <Comment>Stable update</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="26">
+            <Date>2008-02-16</Date>
+            <Version>3.5.9</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="25">
+            <Date>2008-02-11</Date>
+            <Version>3.5.8</Version>
+            <Comment>Grab kmilo patchset from KDE on steroids to solve;
+                - Reintroduced support for kmix&apos;s user-set master channel uses the new masterDeviceIndex dcop call in KMix
+                - Compat kmilo widget
+                - Change kmilo look and feel
+            </Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="24">
+            <Date>2007-11-06</Date>
+            <Version>3.5.8</Version>
+            <Comment>Sync with 3.5 branch to fix #6504</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="23">
+            <Date>2007-10-09</Date>
+            <Version>3.5.8</Version>
+            <Comment>Version bump</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="22">
+            <Date>2007-08-15</Date>
+            <Version>3.5.7</Version>
+            <Comment>Fix #3736</Comment>
+            <Name>Alper Somuncu</Name>
+            <Email>alpersomuncu@gmail.com</Email>
+        </Update>
+        <Update release="21">
+            <Date>2007-05-14</Date>
+            <Version>3.5.7</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="20">
+            <Date>2007-03-05</Date>
+            <Version>3.5.6</Version>
+            <Comment>Fix #5146</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="19">
+            <Date>2007-01-17</Date>
+            <Version>3.5.6</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="18">
+            <Date>2007-01-09</Date>
+            <Version>3.5.5</Version>
+            <Comment>Fix #3121, superkaramba session management</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="17">
+            <Date>2006-10-03</Date>
+            <Version>3.5.5</Version>
+            <Comment>Fix floppy device lookup</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="16">
+            <Date>2006-10-03</Date>
+            <Version>3.5.5</Version>
+            <Comment>New stable release</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="15">
+            <Date>2006-07-25</Date>
+            <Version>3.5.4</Version>
+            <Comment>New stable release</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="14">
+            <Date>2006-06-06</Date>
+            <Version>3.5.3</Version>
+            <Comment>Update to BRANCH to solve utf8 related kgpg problems</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2006-05-24</Date>
+            <Version>3.5.3</Version>
+            <Comment>new version</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2006-05-03</Date>
+            <Version>3.5.2</Version>
+            <Comment>Remove khexeditpart</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2006-03-22</Date>
+            <Version>3.5.2</Version>
+            <Comment>New stable release</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2006-02-15</Date>
+            <Version>3.5.1</Version>
+            <Comment>fix #1803</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="9">
+            <Date>2006-02-01</Date>
+            <Version>3.5.1</Version>
+            <Comment>New stable release</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2005-12-12</Date>
+            <Version>3.5.0</Version>
+            <Comment>Enable kdelirc compiling, we have lirc now in repo</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2005-12-10</Date>
+            <Version>3.5.0</Version>
+            <Comment>Disable some applications from compiling</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2005-11-29</Date>
+            <Version>3.5.0</Version>
+            <Comment>Version bump to stable release</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2005-11-21</Date>
+            <Version>3.5.0_rc2</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2005-11-15</Date>
+            <Version>3.5.0_rc1</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2005-11-01</Date>
+            <Version>3.5.0_beta2</Version>
+            <Comment>Fix #651</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2005-10-15</Date>
+            <Version>3.5.0_beta2</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2005-09-06</Date>
+            <Version>3.4.2</Version>
+            <Comment>First release.</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
