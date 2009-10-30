@@ -1,0 +1,33 @@
+From 6876c8d496d2658f4cf1b5f5f3ca6db207e13e73 Mon Sep 17 00:00:00 2001
+From: Julien Cristau <jcristau@debian.org>
+Date: Fri, 15 May 2009 17:29:32 +0200
+Subject: [PATCH 1/4] xfree86: add edid quirk for Samsung Syncmaster 2333HD
+
+It reports vertical size in cm in the detailed mode.
+X.Org bug#21750 <http://bugs.freedesktop.org/show_bug.cgi?id=21750>
+
+Reported-by: Peter Poklop <Peter.Poklop@gmx.at>
+Signed-off-by: Julien Cristau <jcristau@debian.org>
+---
+ hw/xfree86/modes/xf86EdidModes.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/hw/xfree86/modes/xf86EdidModes.c b/hw/xfree86/modes/xf86EdidModes.c
+index 6256fda..449fbf8 100644
+--- a/hw/xfree86/modes/xf86EdidModes.c
++++ b/hw/xfree86/modes/xf86EdidModes.c
+@@ -160,6 +160,11 @@ static Bool quirk_detailed_v_in_cm (int scrnIndex, xf86MonPtr DDC)
+ 	DDC->vendor.prod_id == 47360)
+ 	return TRUE;
+ 
++    /* Bug #21750: Samsung Syncmaster 2333HD */
++    if (memcmp (DDC->vendor.name, "SAM", 4) == 0 &&
++	DDC->vendor.prod_id == 1157)
++	return TRUE;
++
+     return FALSE;
+ }
+ 
+-- 
+1.6.3.4
+

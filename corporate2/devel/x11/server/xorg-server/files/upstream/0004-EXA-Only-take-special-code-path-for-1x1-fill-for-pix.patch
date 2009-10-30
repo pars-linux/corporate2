@@ -1,0 +1,30 @@
+From e24d8a9ddf9eb9a80c0f98c6190a2f8214a07433 Mon Sep 17 00:00:00 2001
+From: =?utf-8?q?Michel=20D=C3=A4nzer?= <daenzer@vmware.com>
+Date: Tue, 8 Sep 2009 15:25:19 +0200
+Subject: [PATCH 4/4] EXA: Only take special code path for 1x1 fill for pixmaps.
+
+It doesn't make sense for windows.
+
+Also double-check that the data pointer is valid.
+
+Fixes http://bugs.freedesktop.org/show_bug.cgi?id=23461 (not sure that could
+happen on master even without this, but just in case)
+---
+ exa/exa_accel.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/exa/exa_accel.c b/exa/exa_accel.c
+index dac6e6c..22980d9 100644
+--- a/exa/exa_accel.c
++++ b/exa/exa_accel.c
+@@ -966,6 +966,7 @@ exaFillRegionSolid (DrawablePtr	pDrawable, RegionPtr pRegion, Pixel pixel,
+ 	exaMarkSync(pDrawable->pScreen);
+ 
+ 	if (!(pExaScr->info->flags & EXA_HANDLES_PIXMAPS) &&
++	    pExaPixmap->sys_ptr && pDrawable->type == DRAWABLE_PIXMAP &&
+ 	    pDrawable->width == 1 && pDrawable->height == 1 &&
+ 	    pDrawable->bitsPerPixel != 24) {
+ 	    ExaPixmapPriv(pPixmap);
+-- 
+1.6.3.4
+
