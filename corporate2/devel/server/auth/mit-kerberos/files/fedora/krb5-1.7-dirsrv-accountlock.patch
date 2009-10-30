@@ -1,14 +1,15 @@
-Treat 'nsAccountLock: true' the same as 'loginDisabled: true'. RT#5891.
+Treat 'nsAccountLock: true' the same as 'loginDisabled: true'.  Updated from
+original version filed as RT#5891.
 
-diff -ur krb5-1.6.2.orig/src/aclocal.m4 krb5-1.6.2/src/aclocal.m4
---- krb5-1.6.2.orig/src/aclocal.m4	2007-11-20 11:39:51.000000000 -0500
-+++ krb5-1.6.2/src/aclocal.m4	2007-11-20 12:09:56.000000000 -0500
-@@ -1798,6 +1798,12 @@
+diff -up krb5-1.7/src/aclocal.m4 krb5-1.7/src/aclocal.m4
+--- krb5-1.7/src/aclocal.m4	2009-06-04 14:38:07.000000000 -0400
++++ krb5-1.7/src/aclocal.m4	2009-06-04 14:38:07.000000000 -0400
+@@ -1746,6 +1746,12 @@ AC_ARG_WITH([edirectory],
      yes | no) ;;
      *)  AC_MSG_ERROR(Invalid option value --with-edirectory="$withval") ;;
  esac], with_edirectory=no)dnl
 +AC_ARG_WITH([dirsrv],
-+[  --with-dirsrv       compile Red Hat/Fedora/Netscape Directory Server database backend module],
++[  --with-dirsrv       compile 389/Red Hat/Fedora/Netscape Directory Server database backend module],
 +[case "$withval" in
 +    yes | no) ;;
 +    *)  AC_MSG_ERROR(Invalid option value --with-dirsrv="$withval") ;;
@@ -16,21 +17,21 @@ diff -ur krb5-1.6.2.orig/src/aclocal.m4 krb5-1.6.2/src/aclocal.m4
  
  if test $with_ldap = yes; then
    if test $with_edirectory = yes; then
-@@ -1809,6 +1815,10 @@
+@@ -1757,6 +1763,10 @@ elif test $with_edirectory = yes; then
    AC_MSG_NOTICE(enabling eDirectory database backend module support)
    OPENLDAP_PLUGIN=yes
    AC_DEFINE(HAVE_EDIRECTORY,1,[Define if LDAP KDB interface should assume eDirectory.])
 +elif test $with_dirsrv = yes; then
-+  AC_MSG_NOTICE(enabling Red Hat/Fedora/Netscape Directory Server database backend module support)
++  AC_MSG_NOTICE(enabling 389/Red Hat/Fedora/Netscape Directory Server database backend module support)
 +  OPENLDAP_PLUGIN=yes
 +  AC_DEFINE(HAVE_DIRSRV,1,[Define if LDAP KDB interface should assume RHDS/FDS/NDS.])
  else
    : # neither enabled
  dnl  AC_MSG_NOTICE(disabling ldap backend module support)
-diff -ur krb5-1.6.2.orig/src/plugins/kdb/ldap/libkdb_ldap/ldap_misc.c krb5-1.6.2/src/plugins/kdb/ldap/libkdb_ldap/ldap_misc.c
---- krb5-1.6.2.orig/src/plugins/kdb/ldap/libkdb_ldap/ldap_misc.c	2006-12-21 23:28:09.000000000 -0500
-+++ krb5-1.6.2/src/plugins/kdb/ldap/libkdb_ldap/ldap_misc.c	2007-11-20 12:04:10.000000000 -0500
-@@ -2141,6 +2141,22 @@
+diff -up krb5-1.7/src/plugins/kdb/ldap/libkdb_ldap/ldap_misc.c krb5-1.7/src/plugins/kdb/ldap/libkdb_ldap/ldap_misc.c
+--- krb5-1.7/src/plugins/kdb/ldap/libkdb_ldap/ldap_misc.c	2009-02-18 13:14:48.000000000 -0500
++++ krb5-1.7/src/plugins/kdb/ldap/libkdb_ldap/ldap_misc.c	2009-06-04 14:38:07.000000000 -0400
+@@ -2157,6 +2157,22 @@ populate_krb5_db_entry (krb5_context con
  	}
      }
  #endif
@@ -53,16 +54,16 @@ diff -ur krb5-1.6.2.orig/src/plugins/kdb/ldap/libkdb_ldap/ldap_misc.c krb5-1.6.2
  
      if ((st=krb5_read_tkt_policy (context, ldap_context, entry, tktpolname)) !=0)
  	goto cleanup;
-diff -ur krb5-1.6.2.orig/src/plugins/kdb/ldap/libkdb_ldap/ldap_principal.c krb5-1.6.2/src/plugins/kdb/ldap/libkdb_ldap/ldap_principal.c
---- krb5-1.6.2.orig/src/plugins/kdb/ldap/libkdb_ldap/ldap_principal.c	2007-01-03 19:27:26.000000000 -0500
-+++ krb5-1.6.2/src/plugins/kdb/ldap/libkdb_ldap/ldap_principal.c	2007-11-20 12:00:27.000000000 -0500
-@@ -57,6 +57,9 @@
+diff -up krb5-1.7/src/plugins/kdb/ldap/libkdb_ldap/ldap_principal.c krb5-1.7/src/plugins/kdb/ldap/libkdb_ldap/ldap_principal.c
+--- krb5-1.7/src/plugins/kdb/ldap/libkdb_ldap/ldap_principal.c	2009-04-14 17:07:34.000000000 -0400
++++ krb5-1.7/src/plugins/kdb/ldap/libkdb_ldap/ldap_principal.c	2009-06-04 14:38:07.000000000 -0400
+@@ -58,6 +58,9 @@ char     *principal_attributes[] = { "kr
  				     "loginexpirationtime",
  				     "logindisabled",
  #endif
 +#ifdef HAVE_DIRSRV
 +				     "nsaccountlock",
 +#endif
- 				     "loginexpirationtime",
- 				     "logindisabled",
- 				     "modifytimestamp",
+ 				     "krbLastPwdChange",
+ 				     "krbExtraData",
+ 				     "krbObjectReferences",
