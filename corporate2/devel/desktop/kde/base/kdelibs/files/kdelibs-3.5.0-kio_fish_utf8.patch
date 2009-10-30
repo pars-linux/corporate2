@@ -1,0 +1,16 @@
+Index: kio/kio/slavebase.cpp
+===================================================================
+--- kio/kio/slavebase.cpp	(revision 448877)
++++ kio/kio/slavebase.cpp	(working copy)
+@@ -392,7 +392,10 @@
+    if (d->remotefile != 0)
+       return d->remotefile;
+ 
+-   return d->remotefile = new KRemoteEncoding(metaData("Charset").latin1());
++   if(metaData("Charset").isEmpty())
++     return d->remotefile = new KRemoteEncoding("UTF-8");
++   else
++     return d->remotefile = new KRemoteEncoding(metaData("Charset").latin1());
+ }
+ 
+ void SlaveBase::data( const QByteArray &data )

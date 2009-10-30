@@ -1,0 +1,50 @@
+diff -Nru kdelibs-3.5.8.orig/kdeprint/management/smbview.cpp kdelibs-3.5.8/kdeprint/management/smbview.cpp
+--- kdelibs-3.5.8.orig/kdeprint/management/smbview.cpp	2007-10-08 11:52:10.000000000 +0200
++++ kdelibs-3.5.8/kdeprint/management/smbview.cpp	2007-12-06 18:20:48.000000000 +0100
+@@ -179,11 +179,8 @@
+ 			m_current = item;
+ 			*m_proc << "nmblookup"+m_wins_server+"-M ";
+                         *m_proc << KProcess::quote(item->text(0));
+-                        *m_proc << " -S | grep '<20>' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*<20>.*//' | xargs -Iserv_name smbclient -N -L 'serv_name' -W ";
+-                        *m_proc << KProcess::quote(item->text(0));
+-			*m_proc << " -A ";
+-                        *m_proc << KProcess::quote(m_passwdFile->name());
+-			startProcess(ServerListing);
++                        *m_proc << " -S";
++                        startProcess(ServerListing);
+ 		}
+ 		else if (item->depth() == 1)
+ 		{ // opening server
+@@ -192,8 +189,11 @@
+                         *m_proc << KProcess::quote(item->text(0));
+                         *m_proc << " -W ";
+                         *m_proc << KProcess::quote(item->parent()->text(0));
+-			*m_proc << " -A ";
+-                        *m_proc << KProcess::quote(m_passwdFile->name());
++                        if (m_login != QString::null)
++                        {
++				*m_proc << " -A ";
++                        	*m_proc << KProcess::quote(m_passwdFile->name());
++                        }
+ 			startProcess(ShareListing);
+ 		}
+ 	}
+@@ -220,16 +220,14 @@
+ 	QStringList	lines = QStringList::split('\n',m_buffer,true);
+ 	QString		line;
+ 	uint 		index(0);
+-	for (;index < lines.count();index++)
+-		if (lines[index].stripWhiteSpace().startsWith("Server"))
+-			break;
+-	index += 2;
+ 	while (index < lines.count())
+ 	{
+ 		line = lines[index++].stripWhiteSpace();
+ 		if (line.isEmpty())
+ 			break;
+ 		QStringList	words = QStringList::split(' ',line,false);
++		if (words[1] != "<00>" || words[3] == "<GROUP>")
++			continue;
+ 		QListViewItem	*item = new QListViewItem(m_current,words[0]);
+ 		item->setExpandable(true);
+ 		item->setPixmap(0,SmallIcon("kdeprint_computer"));

@@ -1,0 +1,135 @@
+--- kinit/wrapper.c.sav	2006-02-06 19:33:52.000000000 +0100
++++ kinit/wrapper.c	2006-02-06 19:35:06.000000000 +0100
+@@ -164,7 +164,9 @@
+      sock_file[strlen(sock_file)-1] = 0;
+   
+   strncat(sock_file, "/socket-", MAX_SOCK_FILE - strlen(sock_file));
+-  if (gethostname(sock_file+strlen(sock_file), MAX_SOCK_FILE - strlen(sock_file) - 1) != 0)
++  if( getenv("XAUTHLOCALHOSTNAME"))
++      strncat(sock_file, getenv("XAUTHLOCALHOSTNAME"), MAX_SOCK_FILE - strlen(sock_file) - 1);
++  else if (gethostname(sock_file+strlen(sock_file), MAX_SOCK_FILE - strlen(sock_file) - 1) != 0)
+   {
+      perror("Warning: Could not determine hostname: ");
+      return -1;
+--- kinit/lnusertemp.c.sav	2006-02-06 19:33:52.000000000 +0100
++++ kinit/lnusertemp.c	2006-02-06 19:35:06.000000000 +0100
+@@ -39,7 +39,7 @@
+ 
+ int check_tmp_dir(const char *tmp_dir);
+ int create_link(const char *file, const char *tmp_dir);
+-int build_link(const char *tmp_prefix, const char *kde_prefix);
++int build_link(const char *tmp_prefix, const char *kde_prefix, int kdehostname);
+ 
+ int check_tmp_dir(const char *tmp_dir)
+ {
+@@ -89,7 +89,7 @@
+ }
+ 
+ 
+-int build_link(const char *tmp_prefix, const char *kde_prefix)
++int build_link(const char *tmp_prefix, const char *kde_prefix, int kdehostname)
+ {
+   struct passwd *pw_ent;
+   char kde_tmp_dir[PATH_MAX+1];
+@@ -156,10 +156,21 @@
+   }  
+ 
+   strncat(kde_tmp_dir, kde_prefix, PATH_MAX - strlen(kde_tmp_dir));
+-  if (gethostname(kde_tmp_dir+strlen(kde_tmp_dir), PATH_MAX - strlen(kde_tmp_dir) - 1) != 0)
++
++  if( kdehostname )
++  {
++      if( getenv("XAUTHLOCALHOSTNAME"))
++          strncat(kde_tmp_dir+strlen(kde_tmp_dir), getenv("XAUTHLOCALHOSTNAME"), PATH_MAX - strlen(kde_tmp_dir) - 1);
++      else
++          return 0;
++  }
++  else
+   {
+-     perror("Aborting. Could not determine hostname: ");
+-     exit(255);
++     if (gethostname(kde_tmp_dir+strlen(kde_tmp_dir), PATH_MAX - strlen(kde_tmp_dir) - 1) != 0)
++     {
++        perror("Could not determine hostname: ");
++        return 1;
++     }
+   }
+   kde_tmp_dir[sizeof(kde_tmp_dir)-1] = '\0';
+ 
+@@ -266,7 +277,9 @@
+     kde_prefix = "/cache-"; 
+   }
+ 
+-  res = build_link(tmp_prefix, kde_prefix); 
++  res = build_link(tmp_prefix, kde_prefix, 1); 
++  if( build_link(tmp_prefix, kde_prefix, 0))
++    res = 1;
+     
+   free(tmp_prefix);
+ 
+--- kdecore/kstandarddirs.cpp.sav	2006-02-06 19:33:52.000000000 +0100
++++ kdecore/kstandarddirs.cpp	2006-02-06 19:35:06.000000000 +0100
+@@ -718,7 +718,10 @@
+ {
+    char hostname[256];
+    hostname[0] = 0;
+-   gethostname(hostname, 255);
++   if( getenv("XAUTHLOCALHOSTNAME"))
++       strlcpy(hostname, getenv("XAUTHLOCALHOSTNAME"), 255 );
++   else
++       gethostname(hostname, 255);
+    QString dir = QString("%1%2-%3").arg(localkdedir()).arg(type).arg(hostname);
+    char link[1024];
+    link[1023] = 0;
+--- kdecore/kcrash.cpp.sav	2006-02-06 19:33:52.000000000 +0100
++++ kdecore/kcrash.cpp	2006-02-06 19:35:06.000000000 +0100
+@@ -461,7 +461,9 @@
+      sock_file[strlen(sock_file)-1] = 0;
+   
+   strncat(sock_file, "/socket-", MAX_SOCK_FILE - strlen(sock_file));
+-  if (gethostname(sock_file+strlen(sock_file), MAX_SOCK_FILE - strlen(sock_file) - 1) != 0)
++  if( getenv("XAUTHLOCALHOSTNAME"))
++      strncat(sock_file, getenv("XAUTHLOCALHOSTNAME"), MAX_SOCK_FILE - strlen(sock_file) - 1);
++  else if (gethostname(sock_file+strlen(sock_file), MAX_SOCK_FILE - strlen(sock_file) - 1) != 0)
+   {
+      perror("Warning: Could not determine hostname: ");
+      return -1;
+--- dcop/dcopserver_shutdown.c.sav	2006-02-06 19:33:52.000000000 +0100
++++ dcop/dcopserver_shutdown.c	2006-02-06 19:35:06.000000000 +0100
+@@ -95,7 +95,9 @@
+   strncat(dcop_file, "/.DCOPserver_", n);
+   n -= strlen("/.DCOPserver_");
+ 
+-  if (gethostname(dcop_file+strlen(dcop_file), n) != 0)
++  if (getenv("XAUTHLOCALHOSTNAME"))
++     strncat(dcop_file+strlen(dcop_file), getenv("XAUTHLOCALHOSTNAME"), n);
++  else if (gethostname(dcop_file+strlen(dcop_file), n) != 0)
+   {
+      perror("Error. Could not determine hostname: ");
+      dcop_file[0] = '\0';
+--- dcop/dcopc.c.sav	2006-02-06 19:33:52.000000000 +0100
++++ dcop/dcopc.c	2006-02-06 19:35:06.000000000 +0100
+@@ -684,7 +684,9 @@
+     }
+ 
+     hostName[0] = '\0';
+-    if (gethostname(hostName, sizeof(hostName)))
++    if (getenv("XAUTHLOCALHOSTNAME"))
++            strlcpy(hostName, getenv("XAUTHLOCALHOSTNAME"),sizeof(hostName)-1);
++    else if (gethostname(hostName, sizeof(hostName)))
+ 	    strcpy(hostName, "localhost");
+     else
+ 	    hostName[sizeof(hostName)-1] = '\0';
+--- dcop/dcopclient.cpp.sav	2006-02-06 19:33:52.000000000 +0100
++++ dcop/dcopclient.cpp	2006-02-06 19:35:06.000000000 +0100
+@@ -275,7 +275,9 @@
+     {
+         char hostName[256];
+         hostName[0] = '\0';
+-        if (gethostname(hostName, sizeof(hostName)))
++        if (getenv("XAUTHLOCALHOSTNAME"))
++            fName += getenv("XAUTHLOCALHOSTNAME");
++        else if (gethostname(hostName, sizeof(hostName)))
+         {
+             fName += "localhost";
+         }

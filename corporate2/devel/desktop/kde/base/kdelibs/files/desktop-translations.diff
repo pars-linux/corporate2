@@ -1,0 +1,114 @@
+--- kdecore/kconfigbase.h		(Revision 506454)
++++ kdecore/kconfigbase.h		(Arbeitskopie)
+@@ -1985,6 +1985,7 @@ public:
+ 
+ protected:
+   QCString readEntryUtf8( const char *pKey) const;
++  bool hasTranslatedKey( const char *pKey ) const;
+ 
+   /**
+    * The currently selected group. */
+--- kdecore/kconfigbase.cpp		(Revision 506454)
++++ kdecore/kconfigbase.cpp		(Arbeitskopie)
+@@ -131,6 +131,24 @@ bool KConfigBase::hasKey(const char *pKe
+   return !entry.mValue.isNull();
+ }
+ 
++bool KConfigBase::hasTranslatedKey(const char* pKey) const
++{
++  KEntryKey aEntryKey(mGroup, 0);
++  aEntryKey.c_key = pKey;
++  aEntryKey.bDefault = readDefaults();
++
++  if (!locale().isNull()) {
++    // try the localized key first
++    aEntryKey.bLocal = true;
++    KEntry entry = lookupData(aEntryKey);
++    if (!entry.mValue.isNull())
++       return true;
++    aEntryKey.bLocal = false;
++  }
++
++  return false;
++}
++
+ bool KConfigBase::hasGroup(const QString &group) const
+ {
+   return internalHasGroup( group.utf8());
+--- kdecore/kdesktopfile.h		(Revision 506454)
++++ kdecore/kdesktopfile.h		(Arbeitskopie)
+@@ -236,6 +236,8 @@ private:
+ 
+ private:
+ 
++  QString translatedEntry(const char*) const;
++
+   // copy-construction and assignment are not allowed
+   KDesktopFile( const KDesktopFile& );
+   KDesktopFile& operator= ( const KDesktopFile& );
+--- kdecore/kdesktopfile.cpp		(Revision 506454)
++++ kdecore/kdesktopfile.cpp		(Arbeitskopie)
+@@ -34,6 +34,8 @@
+ #include "kapplication.h"
+ #include "kstandarddirs.h"
+ #include "kmountpoint.h"
++#include "kcatalogue.h"
++#include "klocale.h"
+ 
+ #include "kdesktopfile.h"
+ #include "kdesktopfile.moc"
+@@ -145,6 +147,27 @@ bool KDesktopFile::isAuthorizedDesktopFi
+   return false;
+ }
+ 
++QString KDesktopFile::translatedEntry(const char* key) const
++{
++  if (hasTranslatedKey(key))
++    return readEntry(key);
++
++  if (hasKey(key)) {
++    QString value = readEntryUntranslated(key);
++    QString fName = fileName();
++    fName = fName.mid(fName.findRev('/')+1);
++    QString po_lookup_key = QString::fromLatin1(key) + "(" + fName + "): " + value;
++    QString po_value = KGlobal::locale()->translate(po_lookup_key.utf8().data());
++
++    if (po_value == po_lookup_key)
++      return value;
++
++    return po_value;
++  }
++
++  return QString::null;
++} 
++
+ QString KDesktopFile::readType() const
+ {
+   return readEntry("Type");
+@@ -157,17 +180,17 @@ QString KDesktopFile::readIcon() const
+ 
+ QString KDesktopFile::readName() const
+ {
+-  return readEntry("Name");
++  return translatedEntry("Name");
+ }
+ 
+ QString KDesktopFile::readComment() const
+ {
+-  return readEntry("Comment");
++  return translatedEntry("Comment");
+ }
+ 
+ QString KDesktopFile::readGenericName() const
+ {
+-  return readEntry("GenericName");
++  return translatedEntry("GenericName");
+ }
+ 
+ QString KDesktopFile::readPath() const
+@@ -342,5 +365,3 @@ KDesktopFile* KDesktopFile::copyTo(const
+   config->setDesktopGroup();
+   return config;
+ }
+-
+-

@@ -1,0 +1,19 @@
+--- khtml/dom/html_inline.cpp	2007-05-14 10:52:40.000000000 +0300
++++ khtml/dom/html_inline.cpp	2008-03-04 01:08:52.000000000 +0200
+@@ -28,6 +28,7 @@
+ #include "html/html_baseimpl.h"
+ #include "xml/dom_docimpl.h"
+ #include "misc/htmlhashes.h"
++#include "css/csshelper.h"
+ 
+ using namespace DOM;
+ 
+@@ -95,7 +96,7 @@
+ DOMString HTMLAnchorElement::href() const
+ {
+     if(!impl) return DOMString();
+-    DOMString href = static_cast<ElementImpl*>(impl)->getAttribute(ATTR_HREF);
++    DOMString href = khtml::parseURL(static_cast<ElementImpl*>(impl)->getAttribute(ATTR_HREF));
+     return !href.isNull() ? impl->getDocument()->completeURL(href.string()) : href;
+ }
+ 
