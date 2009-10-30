@@ -1,0 +1,51 @@
+diff -ur pykdeextensions-0.4.0.orig/src/kdedistutils.py pykdeextensions-0.4.0/src/kdedistutils.py
+--- pykdeextensions-0.4.0.orig/src/kdedistutils.py	2007-02-21 00:17:53.879157000 +0200
++++ pykdeextensions-0.4.0/src/kdedistutils.py	2007-02-21 00:18:44.740398104 +0200
+@@ -290,10 +290,19 @@
+ 
+ ###########################################################################
+ class InstallApplicationDataAndLinks(install_data):
++    user_options = [
++        ('compile', 'c', "compile .py to .pyc [default]"),
++        ('no-compile', None, "don't compile .py files"),
++    ]
++    
++    boolean_options = ['compile']
++    negative_opt = {'no-compile': 'compile'}
++    
+     def get_command_name(self):
+         return 'install_application_data'
+         
+     def initialize_options(self):
++        self.compile = None
+         install_data.initialize_options(self)
+ 
+         self.data_files = self.distribution.application_data
+@@ -303,8 +312,12 @@
+                                    ('install_application_data', 'install_dir'),
+                                    ('root', 'root'),
+                                    ('force', 'force'),
++                                   ('compile', 'compile'),
+                                   )
+         
++        if self.compile is None:
++            self.compile = 1
++
+     def run(self):
+         self.outfiles.extend(self.mkpath(self.install_dir))
+         for f in self.data_files:
+@@ -366,10 +379,11 @@
+         
+         # Byte compile the .py files
+         from distutils.util import byte_compile
+-        byte_compile(self.outfiles, optimize=0, force=1, prefix=prefix, base_dir=install_cmd.prefix, dry_run=self.dry_run)
++        if self.compile:
++            byte_compile(self.outfiles, optimize=0, force=1, prefix=prefix, base_dir=install_cmd.prefix, dry_run=self.dry_run)
+ 
+-        # Add the .pyc files to the list of outfiles.
+-        self.outfiles.extend( [item+'c' for item in self.outfiles if item.endswith('.py')] )
++            # Add the .pyc files to the list of outfiles.
++            self.outfiles.extend( [item+'c' for item in self.outfiles if item.endswith('.py')] )
+ 
+     def mkpath(self, name, mode=0777):
+         return dir_util.mkpath(name, mode, dry_run=self.dry_run)
