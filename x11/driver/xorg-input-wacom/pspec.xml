@@ -1,0 +1,102 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>xorg-input-wacom</Name>
+        <Homepage>http://linuxwacom.sourceforge.net/</Homepage>
+        <Packager>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2+</License>
+        <License>LGPLv2+</License>
+        <IsA>driver</IsA>
+        <Summary>Input driver for Wacom tablets and drawing devices</Summary>
+        <Description>xorg-input-wacom includes the drivers and tools for Wacom devices.</Description>
+        <Archive sha1sum="ee9562c5d4f396812c402656368d7c4c8b45c2f2" type="tarbz2">mirrors://sourceforge/linuxwacom/linuxwacom-0.8.4.tar.bz2</Archive>
+        <BuildDependencies>
+            <Dependency>hal</Dependency>
+            <Dependency>libXi</Dependency>
+            <Dependency>xorg-server-devel</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch>fdi.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>xorg-input-wacom</Name>
+        <RuntimeDependencies>
+            <Dependency>hal</Dependency>
+            <Dependency>libXi</Dependency>
+            <Dependency versionFrom="1.6.1">xorg-server</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>linuxwacom</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="data">/lib/udev</Path>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="executable">/usr/libexec</Path>
+            <Path fileType="data">/usr/share/hal</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="man">/usr/share/man</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/lib/udev/rules.d/60-wacom.rules">60-wacom.rules</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <History>
+        <Update release="5">
+            <Date>2009-07-31</Date>
+            <Version>0.8.4</Version>
+            <Comment>
+                - Bump to new stable release
+                - Rename package to xorg-input-wacom
+            </Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2009-07-05</Date>
+            <Version>0.8.3_6</Version>
+            <Comment>
+                - Bump to new development release
+                - Add missing hal and libXi dependencies
+            </Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2009-05-26</Date>
+            <Version>0.8.3_5</Version>
+            <Comment>
+                New development release. Changes:
+                * Fixed a menu strip out-prox issue in wacom_wac.c (Sylvain Giasson)
+                * Fixed a relative mode button issue for ExpressKeys
+                * Updated --enable-quirk-tablet-rescale support
+                * Split TOOLSEIAL from SERIAL for xsetwacom
+                * Support boundary cases of "usbParse: Exceeded channel" (Stefan Schimanski)
+            </Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2009-04-04</Date>
+            <Version>0.8.3_2</Version>
+            <Comment>Bump to new release. Includes build related changes.</Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2009-03-30</Date>
+            <Version>0.8.3_1</Version>
+            <Comment>First release</Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>

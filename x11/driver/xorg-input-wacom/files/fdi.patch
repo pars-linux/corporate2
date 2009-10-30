@@ -1,0 +1,31 @@
+--- src/util/10-linuxwacom.fdi	2009-04-03 22:31:24.000000000 +0300
++++ src/util/10-linuxwacom.fdi	2009-04-04 02:04:47.000000000 +0300
+@@ -3,7 +3,7 @@
+ <deviceinfo version="0.2">
+   <device>
+     <match key="info.category" contains="input">
+-      <match key="info.product" contains_outof="Wacom">
++      <match key="info.product" contains_outof="Wacom;WALTOP">
+ 	<merge key="input.x11_driver" type="string">wacom</merge>
+ 	<merge key="input.x11_options.Type" type="string">stylus</merge>
+ 	<append key="info.callouts.add" type="strlist">hal-setup-wacom</append>
+@@ -27,6 +27,13 @@
+ 	</match>
+       </match>
+     </match>
++    <!-- N-Trig Duosense Electromagnetic Digitizer -->
++    <match key="info.product" contains="HID 1b96:0001">
++      <match key="info.parent" contains="if0">
++       <merge key="input.x11_driver" type="string">wacom</merge>
++       <merge key="input.x11_options.Type" type="string">stylus</merge>
++      </match>
++    </match>
+   </device>
+   <!-- Match the Wacom Bluetooth A5 pen tablet -->
+   <device>
+@@ -43,5 +50,3 @@
+     </match>
+   </device>
+ </deviceinfo>
+-
+-
