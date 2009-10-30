@@ -1,0 +1,81 @@
+From 682b24f8d6fb5053ed8b89cacaaca4dd25c03a16 Mon Sep 17 00:00:00 2001
+From: Ben Skeggs <bskeggs@redhat.com>
+Date: Wed, 9 Sep 2009 16:26:25 +1000
+Subject: [PATCH 3/3] f12: use 0x7000 flags for scanout to avoid mixed tile mode corruption
+
+---
+ src/drmmode_display.c |    4 ++--
+ src/nv_driver.c       |    7 ++++++-
+ src/nv_type.h         |    2 ++
+ 3 files changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/src/drmmode_display.c b/src/drmmode_display.c
+index 82b86c4..1157221 100644
+--- a/src/drmmode_display.c
++++ b/src/drmmode_display.c
+@@ -443,7 +443,7 @@ drmmode_crtc_shadow_allocate(xf86CrtcPtr crtc, int width, int height)
+ 
+ 	if (pNv->Architecture >= NV_ARCH_50) {
+ 		tile_mode = 4;
+-		tile_flags = (drmmode->cpp == 2) ? 0x7000 : 0x7a00;
++		tile_flags = (drmmode->cpp == 2 || pNv->pf_ok) ? 0x7000 : 0x7a00;
+ 		ah = NOUVEAU_ALIGN(height, 1 << (tile_mode + 2));
+ 		pitch = NOUVEAU_ALIGN(width * drmmode->cpp, 64);
+ 	} else {
+@@ -1064,7 +1064,7 @@ drmmode_xf86crtc_resize(ScrnInfoPtr scrn, int width, int height)
+ 
+ 	if (pNv->Architecture >= NV_ARCH_50 && pNv->wfb_enabled) {
+ 		tile_mode = 4;
+-		tile_flags = (scrn->bitsPerPixel == 16) ? 0x7000 : 0x7a00;
++		tile_flags = (scrn->bitsPerPixel == 16 || pNv->pf_ok) ? 0x7000 : 0x7a00;
+ 		ah = NOUVEAU_ALIGN(height, 1 << (tile_mode + 2));
+ 		pitch = NOUVEAU_ALIGN(width * (scrn->bitsPerPixel >> 3), 64);
+ 	} else {
+diff --git a/src/nv_driver.c b/src/nv_driver.c
+index e57a696..e0c1c10 100644
+--- a/src/nv_driver.c
++++ b/src/nv_driver.c
+@@ -696,6 +696,7 @@ NVPreInitDRM(ScrnInfoPtr pScrn)
+ {
+ 	NVPtr pNv = NVPTR(pScrn);
+ 	drmVersion *version;
++	uint64_t val;
+ 	char *bus_id;
+ 	int ret;
+ 
+@@ -742,6 +743,10 @@ NVPreInitDRM(ScrnInfoPtr pScrn)
+ 		return FALSE;
+ 	}
+ 
++	ret = nouveau_device_get_param(pNv->dev, 0xdeadcafe00000003, &val);
++	if (ret == 0)
++		pNv->pf_ok = (val == 1);
++
+ 	/* Check if KMS is enabled before we do anything, we don't want to
+ 	 * go stomping on registers behind its back
+ 	 */
+@@ -1256,7 +1261,7 @@ NVMapMem(ScrnInfoPtr pScrn)
+ 	size = pScrn->displayWidth * (pScrn->bitsPerPixel >> 3);
+ 	if (pNv->Architecture >= NV_ARCH_50 && pNv->tiled_scanout) {
+ 		tile_mode = 4;
+-		tile_flags = pScrn->bitsPerPixel == 16 ? 0x7000 : 0x7a00;
++		tile_flags = (pScrn->bitsPerPixel == 16 || pNv->pf_ok) ? 0x7000 : 0x7a00;
+ 		size *= NOUVEAU_ALIGN(pScrn->virtualY, (1 << (tile_mode + 2)));
+ 	} else {
+ 		size *= pScrn->virtualY;
+diff --git a/src/nv_type.h b/src/nv_type.h
+index ddf121c..6e1f2f3 100644
+--- a/src/nv_type.h
++++ b/src/nv_type.h
+@@ -113,6 +113,8 @@ typedef struct _NVRec {
+     /* Accessible AGP size */
+     unsigned long	AGPSize;
+ 
++    Bool pf_ok;
++
+     /* Various pinned memory regions */
+     struct nouveau_bo * scanout;
+     struct nouveau_bo * offscreen;
+-- 
+1.6.4.4
+
