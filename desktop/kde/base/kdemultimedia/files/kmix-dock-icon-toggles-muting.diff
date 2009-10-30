@@ -1,0 +1,131 @@
+--- kmix/kmix.cpp
++++ kmix/kmix.cpp
+@@ -197,7 +197,7 @@
+ 
+ 		// create dock widget
+                 // !! This should be a View in the future
+-		m_dockWidget = new KMixDockWidget( Mixer::mixers().first(), this, "mainDockWidget", m_volumeWidget );
++		m_dockWidget = new KMixDockWidget( Mixer::mixers().first(), this, "mainDockWidget", m_volumeWidget, m_dockIconMuting );
+ 
+ /* Belongs in KMixDockWidget
+ 		// create RMB menu
+@@ -249,6 +249,7 @@
+    config->writeEntry( "Tickmarks", m_showTicks );
+    config->writeEntry( "Labels", m_showLabels );
+    config->writeEntry( "startkdeRestore", m_onLogin );
++   config->writeEntry( "DockIconMuting", m_dockIconMuting );
+    Mixer* mixerMasterCard = Mixer::masterCard();
+    if ( mixerMasterCard != 0 ) {
+       config->writeEntry( "MasterMixer", mixerMasterCard->id() );
+@@ -295,6 +296,7 @@
+    m_showLabels = config->readBoolEntry("Labels", true);
+    const QString& valueStyleString = config->readEntry("ValueStyle", "None");
+    m_onLogin = config->readBoolEntry("startkdeRestore", true );
++   m_dockIconMuting = config->readBoolEntry( "DockIconMuting", true);
+    m_startVisible = false;
+    m_multiDriverMode = config->readBoolEntry("MultiDriver", false);
+    m_surroundView    = config->readBoolEntry("Experimental-ViewSurround", false );
+@@ -425,6 +427,7 @@
+       m_prefDlg->m_showTicks->setChecked( m_showTicks );
+       m_prefDlg->m_showLabels->setChecked( m_showLabels );
+       m_prefDlg->m_onLogin->setChecked( m_onLogin );
++      m_prefDlg->m_dockIconMuting->setChecked( m_dockIconMuting );
+       m_prefDlg->_rbVertical  ->setChecked( m_toplevelOrientation == Qt::Vertical );
+       m_prefDlg->_rbHorizontal->setChecked( m_toplevelOrientation == Qt::Horizontal );
+       m_prefDlg->_rbNone->setChecked( m_valueStyle == MixDeviceWidget::NNONE );
+@@ -492,6 +495,7 @@
+    m_showTicks = prefDlg->m_showTicks->isChecked();
+    m_showLabels = prefDlg->m_showLabels->isChecked();
+    m_onLogin = prefDlg->m_onLogin->isChecked();
++   m_dockIconMuting = prefDlg->m_dockIconMuting->isChecked();
+ 
+    if ( prefDlg->_rbNone->isChecked() ) {
+      m_valueStyle = MixDeviceWidget::NNONE;
+--- kmix/kmix.h
++++ kmix/kmix.h
+@@ -100,6 +100,7 @@
+    bool m_volumeWidget;
+    bool m_hideOnClose;
+    bool m_showTicks;
++   bool m_dockIconMuting;
+    bool m_showLabels;
+    MixDeviceWidget::ValueStyle m_valueStyle;             // No numbers by default
+    bool m_onLogin;
+--- kmix/kmixdockwidget.cpp
++++ kmix/kmixdockwidget.cpp
+@@ -47,7 +47,7 @@
+ #include "kwin.h"
+ #include "viewdockareapopup.h"
+ 
+-KMixDockWidget::KMixDockWidget( Mixer *mixer, QWidget *parent, const char *name, bool volumePopup )
++KMixDockWidget::KMixDockWidget( Mixer *mixer, QWidget *parent, const char *name, bool volumePopup, bool dockIconMuting )
+     : KSystemTray( parent, name ),
+       m_mixer(mixer),
+       _dockAreaPopup(0L),
+@@ -55,7 +55,8 @@
+       _playBeepOnVolumeChange(false), // disabled due to triggering a "Bug"
+       _oldToolTipValue(-1),
+       _oldPixmapType('-'),
+-      _volumePopup(volumePopup)
++      _volumePopup(volumePopup),
++      _dockIconMuting(dockIconMuting)
+ {
+     Mixer* preferredMasterMixer = Mixer::masterCard();
+     if ( preferredMasterMixer != 0 ) {
+@@ -294,7 +295,11 @@
+ 		return;
+ 	} // LeftMouseButton pressed
+ 	else if ( me->button() ==  MidButton ) {
+-		toggleActive();
++		if ( ! _dockIconMuting ) {
++            toggleActive();
++        } else {
++            dockMute();
++        }
+ 		return;
+ 	}
+ 	else {
+--- kmix/kmixdockwidget.h
++++ kmix/kmixdockwidget.h
+@@ -43,7 +43,7 @@
+    friend class KMixWindow;
+ 
+  public:
+-   KMixDockWidget(Mixer *, QWidget *parent=0, const char *name=0, bool volumePopup=true);
++   KMixDockWidget(Mixer *, QWidget *parent=0, const char *name=0, bool volumePopup=true, bool dockIconMuting=false);
+    ~KMixDockWidget();
+ 
+    void setErrorPixmap();
+@@ -73,6 +73,7 @@
+    int  _oldToolTipValue;
+    char _oldPixmapType;
+    bool _volumePopup;
++   bool _dockIconMuting;
+  private slots:
+    void dockMute();
+    void selectMaster();
+--- kmix/kmixprefdlg.cpp
++++ kmix/kmixprefdlg.cpp
+@@ -67,7 +67,11 @@
+ 
+    m_onLogin = new QCheckBox( i18n("Restore volumes on login"), m_generalTab );
+    layout->addWidget( m_onLogin );
+-
++   
++   m_dockIconMuting = new QCheckBox( 
++            i18n("Middle click on system tray icon toggles muting"), m_generalTab );
++   layout->addWidget( m_dockIconMuting );
++   
+    QBoxLayout *numbersLayout = new QHBoxLayout( layout );
+    QButtonGroup *numbersGroup = new QButtonGroup( 3, Qt::Horizontal, i18n("Numbers"), m_generalTab );
+    numbersGroup->setRadioButtonExclusive(true);
+--- kmix/kmixprefdlg.h
++++ kmix/kmixprefdlg.h
+@@ -57,6 +57,7 @@
+    QCheckBox *m_showTicks;
+    QCheckBox *m_showLabels;
+    QCheckBox *m_onLogin;
++   QCheckBox *m_dockIconMuting;
+    QRadioButton *_rbVertical;
+    QRadioButton *_rbHorizontal;
+    QRadioButton *_rbNone;

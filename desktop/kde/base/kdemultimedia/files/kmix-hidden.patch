@@ -1,0 +1,28 @@
+diff -ur kmix.orig/KMixApp.cpp kmix/KMixApp.cpp
+--- kmix.orig/KMixApp.cpp	2005-09-10 11:20:07.000000000 +0300
++++ kmix/KMixApp.cpp	2005-12-05 18:39:46.000000000 +0200
+@@ -40,11 +40,7 @@
+ int
+ KMixApp::newInstance()
+ {
+-	if ( m_kmix )
+-	{
+-		m_kmix->show();
+-	}
+-	else
++	if ( !m_kmix )
+ 	{
+ 		m_kmix = new KMixWindow;
+ 		connect(this, SIGNAL(stopUpdatesOnVisibility()), m_kmix, SLOT(stopVisibilityUpdates()));
+diff -ur kmix.orig/kmix.cpp kmix/kmix.cpp
+--- kmix.orig/kmix.cpp	2005-11-26 09:26:35.000000000 +0200
++++ kmix/kmix.cpp	2005-12-05 18:39:30.000000000 +0200
+@@ -287,7 +287,7 @@
+    m_showTicks = config->readBoolEntry("Tickmarks", true);
+    m_showLabels = config->readBoolEntry("Labels", true);
+    m_onLogin = config->readBoolEntry("startkdeRestore", true );
+-   m_startVisible = config->readBoolEntry("Visible", true);
++   m_startVisible = false;
+    m_multiDriverMode = config->readBoolEntry("MultiDriver", false);
+    m_surroundView    = config->readBoolEntry("Experimental-ViewSurround", false );
+    m_gridView    = config->readBoolEntry("Experimental-ViewGrid", false );

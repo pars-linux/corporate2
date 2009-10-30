@@ -1,0 +1,73 @@
+--- kioslave/audiocd/plugins/flac/encoderflac.cpp	(revision 597315)
++++ kioslave/audiocd/plugins/flac/encoderflac.cpp	(working copy)
+@@ -31,6 +31,12 @@
+ #include <QPair>
+ #include <QDateTime>
+ 
++#if !defined FLAC_API_VERSION_CURRENT || FLAC_API_VERSION_CURRENT < 8
++#define LEGACY_FLAC
++#else
++#undef LEGACY_FLAC
++#endif
++
+ extern "C"
+ {
+   KDE_EXPORT void create_audiocd_encoders(KIO::SlaveBase *slave, QList<AudioCDEncoder*> &encoders)
+@@ -48,7 +54,11 @@
+     unsigned long data;
+ };
+ 
++#ifdef LEGACY_FLAC
+ static FLAC__StreamEncoderWriteStatus WriteCallback(const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[], unsigned bytes, unsigned samples, unsigned current_frame, void *client_data)
++#else
++static FLAC__StreamEncoderWriteStatus WriteCallback(const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[], size_t bytes, unsigned samples, unsigned current_frame, void *client_data)
++#endif
+ {
+     EncoderFLAC::Private *d = (EncoderFLAC::Private*)client_data;
+ 
+@@ -77,7 +87,6 @@
+ 
+ 
+ 
+-
+ EncoderFLAC::EncoderFLAC(KIO::SlaveBase *slave) : AudioCDEncoder(slave) {
+     d = new Private();
+     d->ioslave = slave;
+@@ -110,9 +119,11 @@
+ long EncoderFLAC::readInit(long size) {
+     kDebug(7117) << "EncoderFLAC::readInit() called"<< endl;
+     d->data = 0;
++#ifdef LEGACY_FLAC
+     FLAC__stream_encoder_set_write_callback(d->encoder, WriteCallback);
+     FLAC__stream_encoder_set_metadata_callback(d->encoder, MetadataCallback);
+     FLAC__stream_encoder_set_client_data(d->encoder, d);
++#endif
+ 
+     // The options match approximely those of flac compression-level-3
+     FLAC__stream_encoder_set_do_mid_side_stereo(d->encoder, true);
+@@ -125,7 +136,13 @@
+     if (size > 0)
+         FLAC__stream_encoder_set_total_samples_estimate(d->encoder, size/4);
+ 
+-    FLAC__stream_encoder_init(d->encoder);
++#ifdef LEGACY_FLAC
++    if(FLAC__stream_encoder_init(d->encoder) != FLAC__STREAM_ENCODER_OK)
++		; // really should handle an init failure
++#else
++    if(FLAC__stream_encoder_init_stream(d->encoder, WriteCallback, NULL, NULL, MetadataCallback, d) != FLAC__STREAM_ENCODER_INIT_STATUS_OK)
++		; // really should handle an init failure
++#endif
+     return d->data;
+ }
+ 
+--- kioslave/audiocd/configure.in.in	(revision 597315)
++++ kioslave/audiocd/configure.in.in	(working copy)
+@@ -5,7 +5,7 @@
+   have_libFLAC=no
+   KDE_CHECK_HEADER(FLAC/metadata.h,
+   [
+-     KDE_CHECK_LIB(FLAC,FLAC__seekable_stream_decoder_process_single,
++     KDE_CHECK_LIB(FLAC,FLAC__stream_decoder_process_single,
+ 	          have_libFLAC=yes)
+ 
+     ])
