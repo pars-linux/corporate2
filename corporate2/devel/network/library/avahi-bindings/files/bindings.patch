@@ -1,0 +1,107 @@
+Index: avahi-0.6.23/avahi-discover-standalone/Makefile.am
+===================================================================
+--- avahi-0.6.23.orig/avahi-discover-standalone/Makefile.am
++++ avahi-0.6.23/avahi-discover-standalone/Makefile.am
+@@ -40,9 +40,9 @@ avahi_discover_standalone_CFLAGS = \
+ 
+ avahi_discover_standalone_LDADD = \
+ 	$(AM_LDADD) \
+-	../avahi-common/libavahi-common.la \
++	-lavahi-common \
+ 	../avahi-glib/libavahi-glib.la \
+-	../avahi-core/libavahi-core.la  \
++	-lavahi-core  \
+ 	$(GLIB20_LIBS) $(GTK20_LIBS) $(GLADE20_LIBS)
+ 
+ interfaces_DATA = $(interfaces)
+Index: avahi-0.6.23/avahi-glib/Makefile.am
+===================================================================
+--- avahi-0.6.23.orig/avahi-glib/Makefile.am
++++ avahi-0.6.23/avahi-glib/Makefile.am
+@@ -43,13 +43,13 @@ libavahi_glib_la_SOURCES = \
+ 	glib-malloc.h glib-malloc.c
+ 
+ libavahi_glib_la_CFLAGS = $(AM_CFLAGS) $(GLIB20_CFLAGS)
+-libavahi_glib_la_LIBADD = $(AM_LDADD) ../avahi-common/libavahi-common.la $(GLIB20_LIBS)
++libavahi_glib_la_LIBADD = $(AM_LDADD) -lavahi-common $(GLIB20_LIBS)
+ libavahi_glib_la_LDFLAGS = $(AM_LDFLAGS)  -version-info $(LIBAVAHI_GLIB_VERSION_INFO)
+ 
+ glib_watch_test_SOURCES = \
+ 	glib-watch.c glib-watch.h \
+ 	glib-watch-test.c
+ glib_watch_test_CFLAGS = $(AM_CFLAGS) $(GLIB20_CFLAGS)
+-glib_watch_test_LDADD = $(AM_LDADD) ../avahi-common/libavahi-common.la $(GLIB20_LIBS)
++glib_watch_test_LDADD = $(AM_LDADD) -lavahi-common $(GLIB20_LIBS)
+ 
+ endif
+Index: avahi-0.6.23/avahi-gobject/Makefile.am
+===================================================================
+--- avahi-0.6.23.orig/avahi-gobject/Makefile.am
++++ avahi-0.6.23/avahi-gobject/Makefile.am
+@@ -64,7 +64,7 @@ libavahi_gobject_la_SOURCES = \
+ 	$(BUILT_SOURCES)
+ 
+ libavahi_gobject_la_CFLAGS = $(AM_CFLAGS) $(GOBJECT_CFLAGS)
+-libavahi_gobject_la_LIBADD = $(AM_LDADD) ../avahi-common/libavahi-common.la ../avahi-client/libavahi-client.la ../avahi-glib/libavahi-glib.la $(GOBJECT_LIBS)
++libavahi_gobject_la_LIBADD = $(AM_LDADD) -lavahi-common -lavahi-client ../avahi-glib/libavahi-glib.la $(GOBJECT_LIBS)
+ libavahi_gobject_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBAVAHI_GOBJECT_VERSION_INFO) -export-symbols-regex '^ga_'
+ 
+ # correctly clean the generated source files
+Index: avahi-0.6.23/avahi-qt/Makefile.am
+===================================================================
+--- avahi-0.6.23.orig/avahi-qt/Makefile.am
++++ avahi-0.6.23/avahi-qt/Makefile.am
+@@ -41,7 +41,7 @@ qt-watch.moc3: qt-watch.cpp
+ 	$(MOC_QT3) $^ > $@
+ 
+ libavahi_qt3_la_CPPFLAGS = $(AM_CFLAGS) $(QT3_CFLAGS) $(VISIBILITY_HIDDEN_CFLAGS)
+-libavahi_qt3_la_LIBADD = $(AM_LDADD) ../avahi-common/libavahi-common.la $(QT3_LIBS)
++libavahi_qt3_la_LIBADD = $(AM_LDADD) -lavahi-common $(QT3_LIBS)
+ libavahi_qt3_la_LDFLAGS = $(AM_LDFLAGS) -export-dynamic -version-info $(LIBAVAHI_QT3_VERSION_INFO)
+ endif
+ 
+@@ -63,7 +63,7 @@ qt-watch.moc4: qt-watch.cpp
+ 	$(MOC_QT4) $^ > $@
+ 
+ libavahi_qt4_la_CPPFLAGS = $(AM_CFLAGS) $(QT4_CFLAGS) -DQT4 $(VISIBILITY_HIDDEN_CFLAGS)
+-libavahi_qt4_la_LIBADD = $(AM_LDADD) ../avahi-common/libavahi-common.la $(QT4_LIBS)
++libavahi_qt4_la_LIBADD = $(AM_LDADD) -lavahi-common $(QT4_LIBS)
+ libavahi_qt4_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBAVAHI_QT4_VERSION_INFO)
+ endif
+ 
+Index: avahi-0.6.23/Makefile.am
+===================================================================
+--- avahi-0.6.23.orig/Makefile.am
++++ avahi-0.6.23/Makefile.am
+@@ -53,30 +53,11 @@ EXTRA_DIST = \
+ 	doxygen_to_devhelp.xsl
+ 
+ SUBDIRS = \
+-	common \
+-	avahi-common \
+-	avahi-core \
+ 	avahi-qt \
+-	avahi-client \
+ 	avahi-glib \
+ 	avahi-gobject \
+ 	avahi-discover-standalone \
+-	avahi-daemon \
+-	avahi-sharp \
+-	initscript \
+-	avahi-dnsconfd \
+-	avahi-utils \
+-	avahi-python \
+-	examples \
+-	man \
+-	tests \
+-	service-type-database \
+-	avahi-compat-libdns_sd \
+-	avahi-compat-howl \
+-	avahi-autoipd \
+-	avahi-ui \
+-	avahi-ui-sharp \
+-	po
++	avahi-python
+ 
+ DX_INPUT = \
+ 	$(srcdir)/avahi-common/address.h \
