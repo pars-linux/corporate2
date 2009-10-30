@@ -1,0 +1,44 @@
+From 3041b9e0c01488941f4f2d736b5a9ed258b72393 Mon Sep 17 00:00:00 2001
+From: Karl Relton <karllinuxtest.relton@ntlworld.com>
+Date: Thu, 30 Jul 2009 19:04:31 +0200
+Subject: [PATCH 14/19] add a multi card reader
+
+Added a multi card reader (Jessops branded, usb vendor
+string is 'Transcend Communication, Inc.')
+---
+ .../10freedesktop/10-usb-card-readers.fdi          |   19 +++++++++++++++++++
+ 1 files changed, 19 insertions(+), 0 deletions(-)
+
+diff --git a/fdi/information/10freedesktop/10-usb-card-readers.fdi b/fdi/information/10freedesktop/10-usb-card-readers.fdi
+index 6711cb1..2974020 100644
+--- a/fdi/information/10freedesktop/10-usb-card-readers.fdi
++++ b/fdi/information/10freedesktop/10-usb-card-readers.fdi
+@@ -72,6 +72,25 @@
+         </match>
+       </match>
+ 
++      <!-- Transcend Information Inc multi-card Readers -->
++      <match key="info.category" string="storage">
++        <match key="storage.model" contains="Compact Flash">
++          <merge key="storage.drive_type" type="string">compact_flash</merge>
++        </match>
++        <match key="storage.model" contains="SD/MMC">
++          <merge key="storage.drive_type" type="string">sd_mmc</merge>
++        </match>
++        <match key="storage.model" contains="microSD">
++          <merge key="storage.drive_type" type="string">micro_sd</merge>
++        </match>
++        <match key="storage.model" contains="MS/MS-PRO">
++          <merge key="storage.drive_type" type="string">memory_stick</merge>
++        </match>
++        <match key="storage.model" contains="SM/xD-Picture">
++          <merge key="storage.drive_type" type="string">smart_media</merge>
++        </match>
++      </match>
++
+       <!-- Noname multi-card Readers (vendor: Genesys Logic) -->
+       <match key="@storage.originating_device:usb.vendor_id" int="0x05e3">
+ 	<match key="@storage.originating_device:usb.product_id" int_outof="0x070e;0x0760;0x927">
+-- 
+1.6.4.4
+

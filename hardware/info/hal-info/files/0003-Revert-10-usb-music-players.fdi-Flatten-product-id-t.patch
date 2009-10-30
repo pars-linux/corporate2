@@ -1,0 +1,196 @@
+From 8a8d78461c45456d89bbb39e47e5d6e366e79486 Mon Sep 17 00:00:00 2001
+From: Danny Kukawka <danny.kukawka@web.de>
+Date: Thu, 30 Jul 2009 17:30:41 +0200
+Subject: [PATCH 03/19] Revert "10-usb-music-players.fdi: Flatten product id tests"
+
+This reverts commit a24984bac808382951ed2fe3ee6a6700bf7e3839.
+
+Reverted this commit. It blows up the file size by ~3 KBytes
+it costed some work to reduce the file size and with this the
+size of the cache file. And since HAL is still used in the
+most distributions it should work as before.
+---
+ .../10freedesktop/10-usb-music-players.fdi         |  125 +++++++-------------
+ 1 files changed, 45 insertions(+), 80 deletions(-)
+
+diff --git a/fdi/information/10freedesktop/10-usb-music-players.fdi b/fdi/information/10freedesktop/10-usb-music-players.fdi
+index 9c3a2ff..625f87f 100644
+--- a/fdi/information/10freedesktop/10-usb-music-players.fdi
++++ b/fdi/information/10freedesktop/10-usb-music-players.fdi
+@@ -253,25 +253,19 @@
+ 	    <append key="portable_audio_player.output_formats" type="strlist">audio/x-wav</append>
+ 	    <append key="portable_audio_player.input_formats" type="strlist">audio/x-wav</append>
+ 	  </match>
+-          <!-- Samsung YP-T7F -->
+-          <match key="@storage.originating_device:usb.product_id" int="0x503d">
++          <!-- Samsung YP-J70, YP-T7F -->
++          <match key="@storage.originating_device:usb.product_id" int_outof="0x5032;0x503d">
+             <addset key="portable_audio_player.access_method.protocols" type="strlist">storage</addset>
+             <append key="portable_audio_player.output_formats" type="strlist">audio/x-ms-wma</append>
+             <append key="portable_audio_player.output_formats" type="strlist">application/ogg</append>
+             <append key="portable_audio_player.output_formats" type="strlist">audio/x-wav</append>
+             <append key="portable_audio_player.input_formats" type="strlist">audio/x-wav</append>
+             <append key="portable_audio_player.audio_folders" type="strlist">Music/</append>
+-          </match>
+ 	    <!-- Samsung YP-J70 -->
+-          <match key="@storage.originating_device:usb.product_id" int="0x5032">
+-            <addset key="portable_audio_player.access_method.protocols" type="strlist">storage</addset>
+-            <append key="portable_audio_player.output_formats" type="strlist">audio/x-ms-wma</append>
+-            <append key="portable_audio_player.output_formats" type="strlist">application/ogg</append>
+-            <append key="portable_audio_player.output_formats" type="strlist">audio/x-wav</append>
+-            <append key="portable_audio_player.input_formats" type="strlist">audio/x-wav</append>
+-            <append key="portable_audio_player.audio_folders" type="strlist">Music/</append>
+-            <append key="portable_audio_player.audio_folders" type="strlist">RECORDED/</append>
+-            <merge key="storage.requires_eject" type="bool">true</merge>
++            <match key="@storage.originating_device:usb.product_id" int="0x5032">
++              <append key="portable_audio_player.audio_folders" type="strlist">RECORDED/</append>
++              <merge key="storage.requires_eject" type="bool">true</merge>
++            </match>
+           </match>
+           <!-- Samsung YP-Z5 -->
+           <match key="@storage.originating_device:usb.product_id" int="0x5041">
+@@ -565,33 +559,8 @@
+ 
+ 	<!-- Cowon -->
+ 	<match key="@storage.originating_device:usb.vendor_id" int="0xe21">
+-	  <!-- iAUDIO M3 -->
+-	  <match key="@storage.originating_device:usb.product_id" int_outof="0x500">
+-	    <addset key="portable_audio_player.access_method.protocols" type="strlist">storage</addset>
+-	    <append key="portable_audio_player.output_formats" type="strlist">application/ogg</append>
+-	    <append key="portable_audio_player.output_formats" type="strlist">audio/x-ms-wma</append>
+-	    <append key="portable_audio_player.output_formats" type="strlist">audio/flac</append>
+-	    <append key="portable_audio_player.output_formats" type="strlist">audio/x-wav</append>
+-	    <append key="portable_audio_player.input_formats" type="strlist">audio/mpeg</append>
+-	    <append key="portable_audio_player.playlist_format" type="strlist">audio/x-mpegurl</append>
+-	    <append key="portable_audio_player.playlist_path" type="string">PLAYLIST/%File</append>
+-	  </match>
+-	  <!-- iAUDIO X5, M5, F2, 7 -->
+-	  <match key="@storage.originating_device:usb.product_id" int_outof="0x510;0x520;0x710;0x730;0x750">
+-	    <addset key="portable_audio_player.access_method.protocols" type="strlist">storage</addset>
+-	    <append key="portable_audio_player.output_formats" type="strlist">application/ogg</append>
+-	    <append key="portable_audio_player.output_formats" type="strlist">audio/x-ms-wma</append>
+-	    <append key="portable_audio_player.output_formats" type="strlist">audio/flac</append>
+-	    <append key="portable_audio_player.output_formats" type="strlist">audio/x-wav</append>
+-	    <append key="portable_audio_player.input_formats" type="strlist">audio/mpeg</append>
+-	    <append key="portable_audio_player.playlist_format" type="strlist">audio/x-mpegurl</append>
+-	    <append key="portable_audio_player.playlist_path" type="string">PLAYLIST/%File</append>
+-	    <append key="portable_audio_player.audio_folders" type="strlist">MUSIC/</append>
+-	    <append key="portable_audio_player.audio_folders" type="strlist">RECORD/</append>
+-	    <append key="portable_audio_player.audio_folders" type="strlist">VOICE/</append>
+-	  </match>
+-	  <!-- iAUDIO U3 -->
+-	  <match key="@storage.originating_device:usb.product_id" int="0x700">
++	  <!-- iAUDIO M3, X5, M5, U3 , F2, 7-->
++	  <match key="@storage.originating_device:usb.product_id" int_outof="0x500;0x510;0x520;0x700;0x710;0x730;0x750">
+ 	    <addset key="portable_audio_player.access_method.protocols" type="strlist">storage</addset>
+ 	    <append key="portable_audio_player.output_formats" type="strlist">application/ogg</append>
+ 	    <append key="portable_audio_player.output_formats" type="strlist">audio/x-ms-wma</append>
+@@ -600,22 +569,21 @@
+ 	    <append key="portable_audio_player.input_formats" type="strlist">audio/mpeg</append>
+ 	    <append key="portable_audio_player.playlist_format" type="strlist">audio/x-mpegurl</append>
+ 	    <append key="portable_audio_player.playlist_path" type="string">PLAYLIST/%File</append>
+-	    <append key="portable_audio_player.audio_folders" type="strlist">RECORDS/FM/</append>
+-	    <append key="portable_audio_player.audio_folders" type="strlist">RECORDS/LINEIN/</append>
+-	    <append key="portable_audio_player.audio_folders" type="strlist">RECORDS/VOICE/</append>
+-	  </match>
+-	  <!-- iAUDIO G3, 5 -->
+-	  <match key="@storage.originating_device:usb.product_id" int_outof="0x601;0x602;0x604">
+-	    <addset key="portable_audio_player.access_method.protocols" type="strlist">storage</addset>
+-	    <append key="portable_audio_player.output_formats" type="strlist">application/ogg</append>
+-	    <append key="portable_audio_player.output_formats" type="strlist">audio/x-ms-wma</append>
+-	    <append key="portable_audio_player.output_formats" type="strlist">audio/x-wav</append>
+-	    <append key="portable_audio_player.input_formats" type="strlist">audio/mpeg</append>
+-	    <append key="portable_audio_player.playlist_format" type="strlist">audio/x-mpegurl</append>
+-	    <append key="portable_audio_player.playlist_path" type="string">PLAYLIST/%File</append>
++	    <!-- iAUDIO X5, M5, F2, 7 -->
++	    <match key="@storage.originating_device:usb.product_id" int_outof="0x510;0x520;0x710;0x730;0x750">
++	      <append key="portable_audio_player.audio_folders" type="strlist">MUSIC/</append>
++	      <append key="portable_audio_player.audio_folders" type="strlist">RECORD/</append>
++	      <append key="portable_audio_player.audio_folders" type="strlist">VOICE/</append>
++	    </match>
++	    <!-- iAUDIO U3 -->
++	    <match key="@storage.originating_device:usb.product_id" int="0x700">
++	      <append key="portable_audio_player.audio_folders" type="strlist">RECORDS/FM/</append>
++	      <append key="portable_audio_player.audio_folders" type="strlist">RECORDS/LINEIN/</append>
++	      <append key="portable_audio_player.audio_folders" type="strlist">RECORDS/VOICE/</append>
++	    </match>
+ 	  </match>
+-	  <!-- iAUDIO G2 -->
+-	  <match key="@storage.originating_device:usb.product_id" int="0x760">
++	  <!-- iAUDIO G3, 5, G2 -->
++	  <match key="@storage.originating_device:usb.product_id" int_outof="0x601;0x602;0x604;0x760">
+ 	    <addset key="portable_audio_player.access_method.protocols" type="strlist">storage</addset>
+ 	    <append key="portable_audio_player.output_formats" type="strlist">application/ogg</append>
+ 	    <append key="portable_audio_player.output_formats" type="strlist">audio/x-ms-wma</append>
+@@ -623,20 +591,23 @@
+ 	    <append key="portable_audio_player.input_formats" type="strlist">audio/mpeg</append>
+ 	    <append key="portable_audio_player.playlist_format" type="strlist">audio/x-mpegurl</append>
+ 	    <append key="portable_audio_player.playlist_path" type="string">PLAYLIST/%File</append>
+-	    <append key="portable_audio_player.audio_folders" type="strlist">MUSIC/</append>
+-	    <append key="portable_audio_player.audio_folders" type="strlist">RECORD/</append>
+-            <append key="portable_audio_player.audio_folders" type="strlist">VOICE/</append>
+-	  </match>
+-	  <!-- iAUDIO U2 -->
+-	  <match key="@storage.originating_device:usb.product_id" int="0x600">
+-	    <append key="portable_audio_player.output_formats" type="strlist">application/ogg</append>
+-	    <append key="portable_audio_player.output_formats" type="strlist">audio/x-ms-wma</append>
+-	    <append key="portable_audio_player.output_formats" type="strlist">audio/x-wav</append>
+-	    <append key="portable_audio_player.input_formats" type="strlist">audio/mpeg</append>
+-	    <append key="portable_audio_player.audio_folders" type="strlist">MUSIC/</append>
+-	    <append key="portable_audio_player.audio_folders" type="strlist">RECORDS/FM/</append>
+-	    <append key="portable_audio_player.audio_folders" type="strlist">RECORDS/LINEIN/</append>
+-	    <append key="portable_audio_player.audio_folders" type="strlist">RECORDS/VOICE/</append>
++	    <!-- iAUDIO G2 -->
++	    <match key="@storage.originating_device:usb.product_id" int="0x760">
++	      <append key="portable_audio_player.audio_folders" type="strlist">MUSIC/</append>
++	      <append key="portable_audio_player.audio_folders" type="strlist">RECORD/</append>
++              <append key="portable_audio_player.audio_folders" type="strlist">VOICE/</append>
++	    </match>
++	    <!-- iAUDIO U2 -->
++	    <match key="@storage.originating_device:usb.product_id" int="0x600">
++	      <append key="portable_audio_player.output_formats" type="strlist">application/ogg</append>
++	      <append key="portable_audio_player.output_formats" type="strlist">audio/x-ms-wma</append>
++	      <append key="portable_audio_player.output_formats" type="strlist">audio/x-wav</append>
++	      <append key="portable_audio_player.input_formats" type="strlist">audio/mpeg</append>
++	      <append key="portable_audio_player.audio_folders" type="strlist">MUSIC/</append>
++	      <append key="portable_audio_player.audio_folders" type="strlist">RECORDS/FM/</append>
++	      <append key="portable_audio_player.audio_folders" type="strlist">RECORDS/LINEIN/</append>
++	      <append key="portable_audio_player.audio_folders" type="strlist">RECORDS/VOICE/</append>
++	    </match>
+ 	  </match>
+ 	</match>
+ 
+@@ -1008,24 +979,18 @@
+             <append key="portable_audio_player.input_formats" type="strlist">audio/mpeg</append>
+           </match>
+ 	  <!-- T30 UMS firmware v1.7 , S10 UMS firmware v1.05 -->
+-	  <match key="@storage.originating_device:usb.product_id" int_outof="0x1023">
++	  <match key="@storage.originating_device:usb.product_id" int_outof="0x1019;0x1023">
+             <addset key="portable_audio_player.access_method.protocols" type="strlist">storage</addset>
+             <append key="portable_audio_player.output_formats" type="strlist">audio/x-ms-wma</append>
+             <append key="portable_audio_player.output_formats" type="strlist">application/ogg</append>
+             <append key="portable_audio_player.input_formats" type="strlist">audio/mpeg</append>
+ 	    <append key="portable_audio_player.playlist_format" type="strlist">audio/x-iriver-pla</append>
+ 	    <append key="portable_audio_player.playlist_path" type="string">Playlists/%File</append>
+-          </match>
+-	  <!-- S10 UMS firmware v1.05 folder -->
+-	  <match key="@storage.originating_device:usb.product_id" int="0x1023">
+-            <addset key="portable_audio_player.access_method.protocols" type="strlist">storage</addset>
+-            <append key="portable_audio_player.output_formats" type="strlist">audio/x-ms-wma</append>
+-            <append key="portable_audio_player.output_formats" type="strlist">application/ogg</append>
+-            <append key="portable_audio_player.input_formats" type="strlist">audio/mpeg</append>
+-	    <append key="portable_audio_player.playlist_format" type="strlist">audio/x-iriver-pla</append>
+-	    <append key="portable_audio_player.playlist_path" type="string">Playlists/%File</append>
+-            <append key="portable_audio_player.audio_folders" type="strlist">Music/</append>
+-            <append key="portable_audio_player.audio_folders" type="strlist">Recordings/</append>
++	    <!-- S10 UMS firmware v1.05 folder -->
++	    <match key="@storage.originating_device:usb.product_id" int="0x1023">
++              <append key="portable_audio_player.audio_folders" type="strlist">Music/</append>
++              <append key="portable_audio_player.audio_folders" type="strlist">Recordings/</append>
++            </match>
+           </match>
+           <!-- iFP 100 UMS, 300 UMS, 500 UMS (supports application/ogg only after firmware upgrade),
+                N10 UMS
+-- 
+1.6.4.4
+

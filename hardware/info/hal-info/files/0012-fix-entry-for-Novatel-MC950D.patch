@@ -1,0 +1,37 @@
+From e336b04f02877eafbbd235f6ec639131ac11a566 Mon Sep 17 00:00:00 2001
+From: Danny Kukawka <danny.kukawka@web.de>
+Date: Thu, 30 Jul 2009 18:53:31 +0200
+Subject: [PATCH 12/19] fix entry for Novatel MC950D
+
+Fixed entry for the Novatel MC950D. It was wrong identified
+as CDMA, it's a GMS modem.
+
+See http://lists.freedesktop.org/archives/hal/2009-May/013307.html
+---
+ fdi/information/10freedesktop/10-modem.fdi |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/fdi/information/10freedesktop/10-modem.fdi b/fdi/information/10freedesktop/10-modem.fdi
+index c2d37af..c32e360 100644
+--- a/fdi/information/10freedesktop/10-modem.fdi
++++ b/fdi/information/10freedesktop/10-modem.fdi
+@@ -292,13 +292,13 @@
+       <!-- Novatel -->
+       <match key="@info.parent:usb.vendor_id" int="0x1410">
+         <!-- Merlin XS620/S640,S620,EX720,S720,EV620 CDMA/EV-DO,ES620/Merlin ES720/Ovation U720,ES620 SM Bus,U727 -->
+-        <match key="@info.parent:usb.product_id" int_outof="0x1100;0x1110;0x1410;0x1120;0x1130;0x2100;0x2110;0x2130;0x4100;0x5010">
++        <match key="@info.parent:usb.product_id" int_outof="0x1100;0x1110;0x1410;0x1120;0x1130;0x2100;0x2110;0x2130;0x4100">
+           <match key="@info.parent:usb.interface.number" int="0">
+             <append key="modem.command_sets" type="strlist">IS-707-A</append>
+           </match>
+         </match>
+-        <!-- U730,U740,EU870,XU870 HSDPA/3G,EU740,EU870D,MC950 -->
+-        <match key="@info.parent:usb.product_id" int_outof="0x1400;0x1410;0x1420;0x1430;0x2410;0x2420;0x4400">
++        <!-- U730,U740,EU870,XU870 HSDPA/3G,EU740,EU870D,MC950,MC950D -->
++        <match key="@info.parent:usb.product_id" int_outof="0x1400;0x1410;0x1420;0x1430;0x2410;0x2420;0x4400;0x5010">
+           <match key="@info.parent:usb.interface.number" int="0">
+             <append key="modem.command_sets" type="strlist">GSM-07.07</append>
+             <append key="modem.command_sets" type="strlist">GSM-07.05</append>
+-- 
+1.6.4.4
+
