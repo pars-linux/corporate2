@@ -20,6 +20,7 @@ def setup():
                          --enable-libjpeg \
                          --enable-zlib \
                          --enable-poppler-glib \
+                         --enable-poppler-qt \
                          --enable-poppler-qt4")
 
 def build():
