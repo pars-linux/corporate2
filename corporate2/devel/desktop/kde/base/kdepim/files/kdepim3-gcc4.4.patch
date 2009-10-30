@@ -1,0 +1,55 @@
+Index: indexlib/memvector.tcc
+===================================================================
+--- indexlib/memvector.tcc.orig	2008-02-13 10:39:38.000000000 +0100
++++ indexlib/memvector.tcc	2009-08-28 17:03:29.000000000 +0200
+@@ -30,13 +30,13 @@ template <typename T>
+ void memvector<T>::resize( size_type n_s ) {
+ 	if ( size() >= n_s ) return;
+ 
+-	data_->resize( n_s * byte_io::byte_lenght<value_type>() + byte_io::byte_lenght<unsigned>() );
++	using namespace byte_io;
++	data_->resize( n_s * byte_lenght<value_type>() + byte_lenght<unsigned>() );
+ 	iterator p_end = end();
+-	byte_io::write<unsigned>( data_->rw_base( 0 ), n_s );
+-	while ( operator !=<unsigned, unsigned>(p_end, end()) ) {
++	write<unsigned>( data_->rw_base( 0 ), n_s );
++	while ( p_end != end() ) {
+ 		*p_end = value_type();
+ 		++p_end;
+-		
+ 	}
+ }
+ 
+Index: kmail/editorwatcher.cpp
+===================================================================
+--- kmail/editorwatcher.cpp.orig	2008-02-13 10:39:37.000000000 +0100
++++ kmail/editorwatcher.cpp	2009-08-28 17:03:09.000000000 +0200
+@@ -35,27 +35,11 @@
+ #ifdef HAVE_INOTIFY
+ #include <sys/ioctl.h>
+ #include <unistd.h>
+-#include <fcntl.h>
++#include <sys/inotify.h>
+ #include <sys/syscall.h>
+ #include <linux/types.h>
+ // Linux kernel headers are documented to not compile
+ #define _S390_BITOPS_H
+-#include <linux/inotify.h>
+-
+-static inline int inotify_init (void)
+-{
+-  return syscall (__NR_inotify_init);
+-}
+-
+-static inline int inotify_add_watch (int fd, const char *name, __u32 mask)
+-{
+-  return syscall (__NR_inotify_add_watch, fd, name, mask);
+-}
+-
+-static inline int inotify_rm_watch (int fd, __u32 wd)
+-{
+-  return syscall (__NR_inotify_rm_watch, fd, wd);
+-}
+ #endif
+ 
+ using namespace KMail;

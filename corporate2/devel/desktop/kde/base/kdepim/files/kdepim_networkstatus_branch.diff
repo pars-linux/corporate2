@@ -1,0 +1,313 @@
+diff -ur kdepim-3.5.7.orig/akregator/src/actionmanagerimpl.cpp kdepim-3.5.7/akregator/src/actionmanagerimpl.cpp
+--- kdepim-3.5.7.orig/akregator/src/actionmanagerimpl.cpp	2006-05-22 21:10:40.000000000 +0300
++++ kdepim-3.5.7/akregator/src/actionmanagerimpl.cpp	2007-06-23 03:24:47.000000000 +0300
+@@ -57,7 +57,7 @@
+ #include "tabwidget.h"
+ #include "kstdaccel.h"
+ 
+-
++#include <connectionmanager.h>
+ 
+ #include <kdebug.h>
+ 
+@@ -280,6 +280,10 @@
+     else
+         d->view = view;
+ 
++    /* network status */
++    ConnectionManager::self()->registerConnectSlot( d->view, SLOT( slotFetchAllFeeds() ));
++    ConnectionManager::self()->registerDisconnectSlot( d->view, SLOT( slotAbort() ));
++
+     // tag actions
+     new KAction(i18n("&New Tag..."), "", "", d->view, SLOT(slotNewTag()), actionCollection(), "tag_new");
+ 
+diff -ur kdepim-3.5.7.orig/akregator/src/mainwindow.cpp kdepim-3.5.7/akregator/src/mainwindow.cpp
+--- kdepim-3.5.7.orig/akregator/src/mainwindow.cpp	2006-01-19 18:55:23.000000000 +0200
++++ kdepim-3.5.7/akregator/src/mainwindow.cpp	2007-06-23 03:24:47.000000000 +0300
+@@ -58,6 +58,7 @@
+ #include <private/qucomextra_p.h>
+ #include <qtimer.h>
+ 
++#include <networkstatusindicator.h>
+ 
+ namespace Akregator {
+ 
+@@ -90,6 +91,11 @@
+     m_statusLabel->setFixedHeight( statH );
+     statusBar()->addWidget (m_statusLabel, 1, false);
+ 
++    /* Indicator for desktop offline mode */
++    StatusBarNetworkStatusIndicator * indicator = new StatusBarNetworkStatusIndicator( this, "netstatusindicator" );
++    statusBar()->addWidget( indicator, 0, false );
++    indicator->init();
++
+     setupActions();
+     createGUI(0L);
+ }
+diff -ur kdepim-3.5.7.orig/akregator/src/Makefile.am kdepim-3.5.7/akregator/src/Makefile.am
+--- kdepim-3.5.7.orig/akregator/src/Makefile.am	2006-10-01 20:30:25.000000000 +0300
++++ kdepim-3.5.7/akregator/src/Makefile.am	2007-06-23 03:25:00.000000000 +0300
+@@ -21,7 +21,7 @@
+ # the application source, library search path, and link libraries
+ akregator_SOURCES = main.cpp mainwindow.cpp
+ akregator_LDFLAGS = $(KDE_RPATH) $(all_libraries)
+-akregator_LDADD = $(LIB_KPARTS) libakregatorprivate.la
++akregator_LDADD = $(LIB_KPARTS) libakregatorprivate.la -lconnectionmanager
+ #akregator_LDADD = $(LIB_KPARTS) libakregatorprivate.la $(top_builddir)/libkdepim/libkdepim.la
+ 
+ # this is where the desktop file will go
+@@ -146,7 +146,7 @@
+ 	kspeech.stub
+ 
+ libakregatorpart_la_LDFLAGS = $(KDE_RPATH) $(KDE_PLUGIN) $(LIB_KUTILS) -avoid-version -no-undefined $(all_libraries)
+-libakregatorpart_la_LIBADD = libakregatorprivate.la 
++libakregatorpart_la_LIBADD = libakregatorprivate.la -lconnectionmanager
+ 
+ # this is where the desktop file will go
+ partdesktopdir = $(kde_servicesdir)
+diff -ur kdepim-3.5.7.orig/kmail/accountmanager.cpp kdepim-3.5.7/kmail/accountmanager.cpp
+--- kdepim-3.5.7.orig/kmail/accountmanager.cpp	2006-07-22 11:14:17.000000000 +0300
++++ kdepim-3.5.7/kmail/accountmanager.cpp	2007-06-23 03:24:47.000000000 +0300
+@@ -22,6 +22,7 @@
+ #include <kdebug.h>
+ #include <kconfig.h>
+ #include <kapplication.h>
++#include <connectionmanager.h>
+ 
+ #include <qregexp.h>
+ #include <qvaluelist.h>
+@@ -183,6 +184,15 @@
+     return;
+   }
+ 
++  if ( curAccount->type() == "imap" || curAccount->type() == "cachedimap" || curAccount->type() == "pop" )
++  {
++    // Check with the network status daemon whether the network is available
++    if ( !( ConnectionManager::self()->status() == NetworkStatus::Online || ConnectionManager::self()->status() == NetworkStatus::NoNetworks ) ) {
++      emit checkedMail( false, mInteractive, mTotalNewInFolder );
++      return;
++    }
++
++  }
+   connect( curAccount, SIGNAL( finishedCheck( bool, CheckStatus ) ),
+                 this, SLOT( processNextCheck( bool ) ) );
+ 
+diff -ur kdepim-3.5.7.orig/kmail/imapaccountbase.cpp kdepim-3.5.7/kmail/imapaccountbase.cpp
+--- kdepim-3.5.7.orig/kmail/imapaccountbase.cpp	2007-05-14 10:54:39.000000000 +0300
++++ kdepim-3.5.7/kmail/imapaccountbase.cpp	2007-06-23 03:24:47.000000000 +0300
+@@ -920,7 +920,10 @@
+       QString caption = i18n("Error");
+       
+       if ( jobsKilled || errorCode == KIO::ERR_COULD_NOT_LOGIN ) {
+-        if ( errorCode == KIO::ERR_SERVER_TIMEOUT || errorCode == KIO::ERR_CONNECTION_BROKEN ) {
++        if ( ( errorCode == KIO::ERR_SERVER_TIMEOUT || errorCode == KIO::ERR_CONNECTION_BROKEN ) &&
++            /* suppress error messages about loss of connectivity whilst in offline mode */
++            GlobalSettings::self()->networkState() != GlobalSettings::EnumNetworkState::Offline )
++        {
+           msg = i18n("The connection to the server %1 was unexpectedly closed or timed out. It will be re-established automatically if possible.").
+             arg( name() );
+           KMessageBox::information( kapp->activeWindow(), msg, caption, "kmailConnectionBrokenErrorDialog" );
+@@ -965,10 +965,12 @@
+               KMessageBox::error( kapp->activeWindow(), msg, caption );
+           }
+       } else { // i.e. we have a chance to continue, ask the user about it
+-        if ( errors.count() >= 3 ) { // there is no detailedWarningContinueCancel... (#86517)
+-          QString error = prettifyQuotaError( errors[1], job );
+-          msg = QString( "<qt>") + context + error + '\n' + errors[2];
+-          caption = errors[0];
++        if ( !( errorCode == KIO::ERR_UNKNOWN_HOST && GlobalSettings::self()->networkState() == GlobalSettings::EnumNetworkState::Offline ) ) {
++            if ( errors.count() >= 3 ) { // there is no detailedWarningContinueCancel... (#86517)
++            QString error = prettifyQuotaError( errors[1], job );
++            msg = QString( "<qt>") + context + error + '\n' + errors[2];
++            caption = errors[0];
++            }
+         }
+         int ret = KMessageBox::warningContinueCancel( kapp->activeWindow(), msg, caption );
+         if ( ret == KMessageBox::Cancel ) {
+diff -ur kdepim-3.5.7.orig/kmail/kmkernel.cpp kdepim-3.5.7/kmail/kmkernel.cpp
+--- kdepim-3.5.7.orig/kmail/kmkernel.cpp	2007-06-23 03:24:24.000000000 +0300
++++ kdepim-3.5.7/kmail/kmkernel.cpp	2007-06-23 03:24:47.000000000 +0300
+@@ -28,6 +28,7 @@
+ #undef REALLY_WANT_KMSENDER
+ #include "undostack.h"
+ #include "accountmanager.h"
++#include "networkaccount.h"
+ using KMail::AccountManager;
+ #include <libkdepim/kfileio.h>
+ #include "kmversion.h"
+@@ -89,6 +90,7 @@
+ #include <fixx11h.h>
+ #include <kcmdlineargs.h>
+ #include <kstartupinfo.h>
++#include <connectionmanager.h>
+ 
+ KMKernel *KMKernel::mySelf = 0;
+ 
+@@ -1202,7 +1204,13 @@
+     return;
+ 
+   GlobalSettings::setNetworkState( GlobalSettings::EnumNetworkState::Offline );
+-  BroadcastStatus::instance()->setStatusMsg( i18n("KMail is set to be offline; all network jobs are suspended"));
++  for ( KMAccount * cur = the_acctMgr->first(); cur; cur = the_acctMgr->next() ) {
++    KMail::NetworkAccount * netAccount = dynamic_cast<KMail::NetworkAccount *>( cur );
++    if ( netAccount ) {
++      netAccount->killAllJobs( true );
++    }
++  }
++  BroadcastStatus::instance()->setStatusMsg( i18n("KMail is now offline; all network operations cancelled"));
+   emit onlineStatusChanged( (GlobalSettings::EnumNetworkState::type)GlobalSettings::networkState() );
+ }
+ 
+@@ -1212,7 +1220,7 @@
+     return;
+ 
+   GlobalSettings::setNetworkState( GlobalSettings::EnumNetworkState::Online );
+-  BroadcastStatus::instance()->setStatusMsg( i18n("KMail is set to be online; all network jobs resumed"));
++  BroadcastStatus::instance()->setStatusMsg( i18n("KMail is now online; network operations resumed"));
+   emit onlineStatusChanged( (GlobalSettings::EnumNetworkState::type)GlobalSettings::networkState() );
+ 
+   if ( kmkernel->msgSender()->sendImmediate() ) {
+@@ -1222,10 +1230,7 @@
+ 
+ bool KMKernel::isOffline()
+ {
+-  if ( GlobalSettings::self()->networkState() == GlobalSettings::EnumNetworkState::Offline )
+-    return true;
+-  else
+-    return false;
++  return ( GlobalSettings::self()->networkState() == GlobalSettings::EnumNetworkState::Offline );
+ }
+ 
+ bool KMKernel::askToGoOnline()
+@@ -1474,6 +1479,8 @@
+   if (lsf)
+     the_searchFolderMgr->remove( lsf );
+ 
++  ConnectionManager::self()->registerConnectSlot( this, SLOT( resumeNetworkJobs() ) );
++  ConnectionManager::self()->registerDisconnectSlot( this, SLOT( stopNetworkJobs() ) );
+   the_acctMgr       = new AccountManager();
+   the_filterMgr     = new KMFilterMgr();
+   the_popFilterMgr     = new KMFilterMgr(true);
+@@ -1528,6 +1535,12 @@
+ #else
+   mBackgroundTasksTimer->start( 5 * 60000, true ); // 5 minutes, singleshot
+ #endif
++
++  if ( ( ConnectionManager::self()->status() == NetworkStatus::Online || ConnectionManager::self()->status() == NetworkStatus::NoNetworks ) ) {
++    resumeNetworkJobs();
++  } else {
++    stopNetworkJobs();
++  }
+ }
+ 
+ void KMKernel::readConfig()
+diff -ur kdepim-3.5.7.orig/kmail/kmkernel.h kdepim-3.5.7/kmail/kmkernel.h
+--- kdepim-3.5.7.orig/kmail/kmkernel.h	2007-01-15 13:28:47.000000000 +0200
++++ kdepim-3.5.7/kmail/kmkernel.h	2007-06-23 03:24:47.000000000 +0300
+@@ -202,18 +202,6 @@
+   */
+   virtual void resumeBackgroundJobs();
+ 
+-  /**
+-   * Stops all network related jobs and enter offline mode
+-   * New network jobs cannot be started.
+-  */
+-  void stopNetworkJobs();
+-
+-  /**
+-   * Resumes all network related jobs and enter online mode
+-   * New network jobs can be started.
+-  */
+-  void resumeNetworkJobs();
+-
+   /** A static helper function that asks the user
+    * if they want to go online.
+    * @return true if the user wants to go online
+@@ -406,6 +394,18 @@
+ 
+   void slotConfigChanged();
+ 
++  /**
++   * Stops all network related jobs and enter offline mode
++   * New network jobs cannot be started.
++   */
++  void stopNetworkJobs();
++
++  /**
++   * Resumes all network related jobs and enter online mode
++   * New network jobs can be started.
++   */
++  void resumeNetworkJobs();
++
+ protected slots:
+   void slotDataReq(KIO::Job*,QByteArray&);
+   void slotResult(KIO::Job*);
+diff -ur kdepim-3.5.7.orig/kmail/kmmainwin.cpp kdepim-3.5.7/kmail/kmmainwin.cpp
+--- kdepim-3.5.7.orig/kmail/kmmainwin.cpp	2005-09-10 11:24:01.000000000 +0300
++++ kdepim-3.5.7/kmail/kmmainwin.cpp	2007-06-23 03:24:47.000000000 +0300
+@@ -1,4 +1,5 @@
+ 
++
+ #ifdef HAVE_CONFIG_H
+ #include <config.h>
+ #endif
+@@ -22,7 +23,7 @@
+ #include <kstringhandler.h>
+ #include <kdebug.h>
+ #include <ktip.h>
+-
++#include <networkstatusindicator.h>
+ #include "kmmainwin.moc"
+ 
+ KMMainWin::KMMainWin(QWidget *)
+@@ -71,7 +72,7 @@
+     this, SLOT(slotConfigChanged()));
+ 
+   connect(mKMMainWidget, SIGNAL(captionChangeRequest(const QString&)),
+-	  SLOT(setCaption(const QString&)) );
++      SLOT(setCaption(const QString&)) );
+ 
+   // Enable mail checks again (see destructor)
+   kmkernel->enableMailCheck();
+@@ -176,6 +177,11 @@
+   statusBar()->insertItem(i18n(" Initializing..."), 1, 1 );
+   statusBar()->setItemAlignment( 1, AlignLeft | AlignVCenter );
+   mLittleProgress->show();
++
++  /* Indicator for desktop offline mode */
++  StatusBarNetworkStatusIndicator * indicator = new StatusBarNetworkStatusIndicator( this, "netstatusindicator" );
++  statusBar()->addWidget( indicator, 0, false );
++  indicator->init();
+ }
+ 
+ /** Read configuration options after widgets are created. */
+@@ -216,4 +222,3 @@
+   KTipDialog::showTip( this );
+ }
+ 
+-
+diff -ur kdepim-3.5.7.orig/kmail/Makefile.am kdepim-3.5.7/kmail/Makefile.am
+--- kdepim-3.5.7.orig/kmail/Makefile.am	2007-05-14 10:54:39.000000000 +0300
++++ kdepim-3.5.7/kmail/Makefile.am	2007-06-23 03:24:47.000000000 +0300
+@@ -31,6 +31,7 @@
+         ../libksieve/libksieve.la ../libemailfunctions/libemailfunctions.la \
+         ../certmanager/lib/libkleopatra.la $(INDEXLIB) \
+         ../libkcal/libkcal.la \
++        -lconnectionmanager \
+         $(LIB_KHTML) $(LIB_KSPELL) $(LIB_KABC)
+ 
+ kde_module_LTLIBRARIES = kcm_kmail.la libkmailpart.la libkmail_bodypartformatter_application_octetstream.la
+diff -ur kdepim-3.5.7.orig/kmail/popaccount.cpp kdepim-3.5.7/kmail/popaccount.cpp
+--- kdepim-3.5.7.orig/kmail/popaccount.cpp	2007-05-14 10:54:39.000000000 +0300
++++ kdepim-3.5.7/kmail/popaccount.cpp	2007-06-23 03:24:47.000000000 +0300
+@@ -1015,7 +1015,9 @@
+   }
+ 
+   if (interactive && kmkernel) {
+-    KMessageBox::error(kmkernel->mainWin(), KIO::buildErrorString(error, errorMsg));
++    if ( ! ( ( error == KIO::ERR_CONNECTION_BROKEN || error == KIO::ERR_SERVER_TIMEOUT ) &&
++            GlobalSettings::self()->networkState() != GlobalSettings::EnumNetworkState::Offline ) )
++      KMessageBox::error(kmkernel->mainWin(), KIO::buildErrorString(error, errorMsg));
+   }
+ 
+ 

@@ -1,0 +1,322 @@
+Index: kaddressbook/xxportmanager.cpp
+===================================================================
+--- kaddressbook/xxportmanager.cpp	(Revision 861925)
++++ kaddressbook/xxportmanager.cpp	(Arbeitskopie)
+@@ -39,7 +39,7 @@
+ #include "xxportmanager.h"
+ 
+ KURL XXPortManager::importURL = KURL();
+-QString XXPortManager::importData = QString::null;
++QCString XXPortManager::importData = QCString();
+ 
+ XXPortManager::XXPortManager( KAB::Core *core, QObject *parent, const char *name )
+   : QObject( parent, name ), mCore( core )
+@@ -66,11 +66,11 @@
+   importURL = KURL();
+ }
+ 
+-void XXPortManager::importVCardFromData( const QString &vCard )
++void XXPortManager::importVCardFromData( const QCString &vCard )
+ {
+   importData = vCard;
+   slotImport( "vcard", "<empty>" );
+-  importData = "";
++  importData = QCString();
+ }
+ 
+ void XXPortManager::slotImport( const QString &identifier, const QString &data )
+Index: kaddressbook/interfaces/core.h
+===================================================================
+--- kaddressbook/interfaces/core.h	(Revision 861925)
++++ kaddressbook/interfaces/core.h	(Arbeitskopie)
+@@ -166,7 +166,7 @@
+     /**
+       DCOP METHOD: Imports the given vCard.
+      */
+-    virtual void importVCardFromData( const QString& vCard ) = 0;
++    virtual void importVCardFromData( const QCString& vCard ) = 0;
+ 
+     /**
+       DCOP METHOD: Opens contact editor to input a new contact.
+Index: kaddressbook/kaddressbook_part.h
+===================================================================
+--- kaddressbook/kaddressbook_part.h	(Revision 861925)
++++ kaddressbook/kaddressbook_part.h	(Arbeitskopie)
+@@ -50,7 +50,7 @@
+   public slots:
+     virtual void addEmail( QString addr );
+     virtual void importVCard( const KURL& url );
+-    virtual void importVCardFromData( const QString& vCard );
++    virtual void importVCardFromData( const QCString& vCard );
+     virtual ASYNC showContactEditor( QString uid );
+     virtual void newContact();
+     virtual void newDistributionList();
+Index: kaddressbook/kaddressbookmain.h
+===================================================================
+--- kaddressbook/kaddressbookmain.h	(Revision 861925)
++++ kaddressbook/kaddressbookmain.h	(Arbeitskopie)
+@@ -53,7 +53,7 @@
+   public slots:
+     virtual void addEmail( QString addr );
+     virtual void importVCard( const KURL& url );
+-    virtual void importVCardFromData( const QString& vCard );
++    virtual void importVCardFromData( const QCString& vCard );
+     virtual ASYNC showContactEditor( QString uid );
+     virtual void newContact();
+     virtual void newDistributionList();
+Index: kaddressbook/kaddressbook_part.cpp
+===================================================================
+--- kaddressbook/kaddressbook_part.cpp	(Revision 861925)
++++ kaddressbook/kaddressbook_part.cpp	(Arbeitskopie)
+@@ -92,7 +92,7 @@
+   mCore->importVCard( url );
+ }
+ 
+-void KAddressbookPart::importVCardFromData( const QString& vCard )
++void KAddressbookPart::importVCardFromData( const QCString& vCard )
+ {
+   mCore->importVCardFromData( vCard );
+ }
+Index: kaddressbook/xxport/vcard_xxport.h
+===================================================================
+--- kaddressbook/xxport/vcard_xxport.h	(Revision 861925)
++++ kaddressbook/xxport/vcard_xxport.h	(Arbeitskopie)
+@@ -40,8 +40,8 @@
+     KABC::AddresseeList importContacts( const QString &data ) const;
+ 
+   private:
+-    KABC::AddresseeList parseVCard( const QString &data ) const;
+-    bool doExport( const KURL &url, const QString &data );
++    KABC::AddresseeList parseVCard( const QCString &data ) const;
++    bool doExport( const KURL &url, const QCString &data );
+     void addKey( KABC::Addressee &addr, KABC::Key::Types type );
+ 
+     KABC::AddresseeList filterContacts( const KABC::AddresseeList& );
+Index: kaddressbook/xxport/vcard_xxport.cpp
+===================================================================
+--- kaddressbook/xxport/vcard_xxport.cpp	(Revision 861925)
++++ kaddressbook/xxport/vcard_xxport.cpp	(Arbeitskopie)
+@@ -118,9 +118,9 @@
+       return true;
+ 
+     if ( data == "v21" )
+-      ok = doExport( url, converter.createVCards( list, KABC::VCardConverter::v2_1 ) );
++      ok = doExport( url, converter.createVCardsRaw( list, KABC::VCardConverter::v2_1 ) );
+     else
+-      ok = doExport( url, converter.createVCards( list, KABC::VCardConverter::v3_0 ) );
++      ok = doExport( url, converter.createVCardsRaw( list, KABC::VCardConverter::v3_0 ) );
+   } else {
+     QString msg = i18n( "You have selected a list of contacts, shall they be "
+                         "exported to several files?" );
+@@ -151,9 +151,9 @@
+           tmpList.append( *it );
+ 
+           if ( data == "v21" )
+-            tmpOk = doExport( url, converter.createVCards( tmpList, KABC::VCardConverter::v2_1 ) );
++            tmpOk = doExport( url, converter.createVCardsRaw( tmpList, KABC::VCardConverter::v2_1 ) );
+           else
+-            tmpOk = doExport( url, converter.createVCards( tmpList, KABC::VCardConverter::v3_0 ) );
++            tmpOk = doExport( url, converter.createVCardsRaw( tmpList, KABC::VCardConverter::v3_0 ) );
+ 
+           ok = ok && tmpOk;
+         }
+@@ -166,9 +166,9 @@
+           return true;
+ 
+         if ( data == "v21" )
+-          ok = doExport( url, converter.createVCards( list, KABC::VCardConverter::v2_1 ) );
++          ok = doExport( url, converter.createVCardsRaw( list, KABC::VCardConverter::v2_1 ) );
+         else
+-          ok = doExport( url, converter.createVCards( list, KABC::VCardConverter::v3_0 ) );
++          ok = doExport( url, converter.createVCardsRaw( list, KABC::VCardConverter::v3_0 ) );
+       }
+     }
+   }
+@@ -206,7 +206,7 @@
+           QByteArray rawData = file.readAll();
+           file.close();
+           if ( rawData.size() > 0 )
+-            addrList += parseVCard( rawData );
++            addrList += parseVCard( QCString( rawData.data(), rawData.size() ) );
+ 
+           KIO::NetAccess::removeTempFile( fileName );
+         } else {
+@@ -243,22 +243,19 @@
+   return addrList;
+ }
+ 
+-KABC::AddresseeList VCardXXPort::parseVCard( const QString &data ) const
++KABC::AddresseeList VCardXXPort::parseVCard( const QCString &data ) const
+ {
+   KABC::VCardConverter converter;
+ 
+-  return converter.parseVCards( data );
++  return converter.parseVCardsRaw( data );
+ }
+ 
+-bool VCardXXPort::doExport( const KURL &url, const QString &data )
++bool VCardXXPort::doExport( const KURL &url, const QCString &data )
+ {
+   KTempFile tmpFile;
+   tmpFile.setAutoDelete( true );
+ 
+-  QTextStream stream( tmpFile.file() );
+-  stream.setEncoding( QTextStream::UnicodeUTF8 );
+-
+-  stream << data;
++  tmpFile.file()->writeBlock( data, data.length() );
+   tmpFile.close();
+ 
+   return KIO::NetAccess::upload( tmpFile.name(), url, parentWidget() );
+Index: kaddressbook/kaddressbookservice.cpp
+===================================================================
+--- kaddressbook/kaddressbookservice.cpp	(Revision 861925)
++++ kaddressbook/kaddressbookservice.cpp	(Arbeitskopie)
+@@ -30,7 +30,7 @@
+ {
+ }
+ 
+-void KAddressBookService::importVCardFromData( const QString& vCard )
++void KAddressBookService::importVCardFromData( const QCString& vCard )
+ {
+   mCore->importVCardFromData( vCard );
+ }
+Index: kaddressbook/kabcore.cpp
+===================================================================
+--- kaddressbook/kabcore.cpp	(Revision 861925)
++++ kaddressbook/kabcore.cpp	(Arbeitskopie)
+@@ -747,7 +747,7 @@
+   mXXPortManager->importVCard( url );
+ }
+ 
+-void KABCore::importVCardFromData( const QString &vCard )
++void KABCore::importVCardFromData( const QCString &vCard )
+ {
+   mXXPortManager->importVCardFromData( vCard );
+ }
+Index: kaddressbook/kaddressbookiface.h
+===================================================================
+--- kaddressbook/kaddressbookiface.h	(Revision 861925)
++++ kaddressbook/kaddressbookiface.h	(Arbeitskopie)
+@@ -36,7 +36,7 @@
+   k_dcop:
+     virtual void addEmail( QString addr ) = 0;
+     virtual void importVCard( const KURL& url ) = 0;
+-    virtual void importVCardFromData( const QString& vCard ) = 0;
++    virtual void importVCardFromData( const QCString& vCard ) = 0;
+ 
+     virtual ASYNC showContactEditor( QString uid ) = 0;
+ 
+Index: kaddressbook/kaddressbookservice.h
+===================================================================
+--- kaddressbook/kaddressbookservice.h	(Revision 861925)
++++ kaddressbook/kaddressbookservice.h	(Arbeitskopie)
+@@ -40,7 +40,7 @@
+ 
+       @param vCard The vCard in string representation.
+      */
+-    void importVCardFromData( const QString& vCard );
++    void importVCardFromData( const QCString& vCard );
+ 
+     /**
+       This method will add a vcard to the address book.
+Index: kaddressbook/xxportmanager.h
+===================================================================
+--- kaddressbook/xxportmanager.h	(Revision 861925)
++++ kaddressbook/xxportmanager.h	(Arbeitskopie)
+@@ -49,11 +49,11 @@
+     void saveSettings();
+ 
+     static KURL importURL;
+-    static QString importData;
++    static QCString importData;
+ 
+   public slots:
+     void importVCard( const KURL &url );
+-    void importVCardFromData( const QString &vCard );
++    void importVCardFromData( const QCString &vCard );
+ 
+   signals:
+     void modified();
+Index: kaddressbook/kabcore.h
+===================================================================
+--- kaddressbook/kabcore.h	(Revision 861925)
++++ kaddressbook/kabcore.h	(Arbeitskopie)
+@@ -301,7 +301,7 @@
+     /**
+       DCOP METHOD: Imports the given vCard.
+      */
+-    virtual void importVCardFromData( const QString& vCard );
++    virtual void importVCardFromData( const QCString& vCard );
+ 
+     /**
+       DCOP METHOD: Opens contact editor to input a new contact.
+Index: kaddressbook/kaddressbookmain.cpp
+===================================================================
+--- kaddressbook/kaddressbookmain.cpp	(Revision 861925)
++++ kaddressbook/kaddressbookmain.cpp	(Arbeitskopie)
+@@ -89,7 +89,7 @@
+   mCore->importVCard( url );
+ }
+ 
+-void KAddressBookMain::importVCardFromData( const QString& vCard )
++void KAddressBookMain::importVCardFromData( const QCString& vCard )
+ {
+   mCore->importVCardFromData( vCard );
+ }
+Index: kaddressbook/thumbnailcreator/ldifvcardcreator.cpp
+===================================================================
+--- kaddressbook/thumbnailcreator/ldifvcardcreator.cpp	(Revision 861925)
++++ kaddressbook/thumbnailcreator/ldifvcardcreator.cpp	(Arbeitskopie)
+@@ -75,7 +75,9 @@
+   text.truncate(0);
+ 
+   // read the file
+-  QString contents = file.readAll();
++  const QByteArray data = file.readAll();
++  const QString contents( data );
++  const QCString contentsRaw( data.data(), data.size() );
+   file.close();
+ 
+   // convert the file contents to a KABC::Addressee address
+@@ -83,7 +85,7 @@
+   KABC::Addressee addr;
+   KABC::VCardConverter converter;
+ 
+-  addrList = converter.parseVCards( contents );
++  addrList = converter.parseVCardsRaw( contentsRaw );
+   if ( addrList.count() == 0 )
+     if ( !KABC::LDIFConverter::LDIFToAddressee( contents, addrList ) )
+ 	return false;
+Index: libkdepim/interfaces/AddressBookServiceIface.h
+===================================================================
+--- libkdepim/interfaces/AddressBookServiceIface.h	(Revision 832457)
++++ libkdepim/interfaces/AddressBookServiceIface.h	(Arbeitskopie)
+@@ -43,7 +43,7 @@
+ 
+         @param vCard The vCard in string representation.
+        */
+-      virtual void importVCardFromData( const QString& vCard ) = 0;
++      virtual void importVCardFromData( const QCString& vCard ) = 0;
+ 
+       /**
+         This method will add a vcard to the address book.
+Index: kfile-plugins/vcf/kfile_vcf.cpp
+===================================================================
+--- kfile-plugins/vcf/kfile_vcf.cpp	(Revision 832457)
++++ kfile-plugins/vcf/kfile_vcf.cpp	(Arbeitskopie)
+@@ -64,11 +64,12 @@
+ 
+     // even the vcard thumbnail QString::fromUtf8(buf_name));creator reads the full file ...
+     // The following is partly copied from there
+-    QString contents = file.readAll();
++    const QByteArray contents = file.readAll();
++    const QCString data( contents.data(), contents.size() );
+     file.close();
+ 
+     KABC::VCardConverter converter;
+-    KABC::Addressee addr = converter.parseVCard(contents);
++    KABC::Addressee addr = converter.parseVCard( data );
+ 
+     KFileMetaInfoGroup group = appendGroup(info, "Technical");
+ 

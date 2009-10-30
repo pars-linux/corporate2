@@ -1,0 +1,184 @@
+Index: kmail/folderstorage.h
+===================================================================
+--- kmail/folderstorage.h	(revision 768418)
++++ kmail/folderstorage.h	(working copy)
+@@ -430,9 +430,6 @@
+       emmitted first. */
+   void expunged( KMFolder* );
+ 
+-  /** Emitted when the folder was closed and ticket owners have to reopen */
+-  void closed( KMFolder* );
+-  
+   /** Emitted when the serial numbers of this folder were invalidated. */
+   void invalidated( KMFolder * );
+ 
+Index: kmail/kmheaders.h
+===================================================================
+--- kmail/kmheaders.h	(revision 768418)
++++ kmail/kmheaders.h	(working copy)
+@@ -229,8 +229,6 @@
+   void msgChanged();
+   /** For when the folder has been cleared */
+   void folderCleared();
+-  /** For when the folder has been cleared */
+-  void folderClosed();
+   /** For when the message with the given message id has been added to a folder */
+   void msgAdded(int);
+   /** For when the message with the given id has been removed for a folder */
+Index: kmail/kmheaders.cpp
+===================================================================
+--- kmail/kmheaders.cpp	(revision 768418)
++++ kmail/kmheaders.cpp	(working copy)
+@@ -687,8 +687,6 @@
+                  this, SLOT(folderCleared()));
+       disconnect(mFolder, SIGNAL(expunged( KMFolder* )),
+                  this, SLOT(folderCleared()));
+-      disconnect(mFolder, SIGNAL(closed()),
+-                 this, SLOT(folderClosed()));
+       disconnect( mFolder, SIGNAL( statusMsg( const QString& ) ),
+                   BroadcastStatus::instance(), SLOT( setStatusMsg( const QString& ) ) );
+       disconnect(mFolder, SIGNAL(viewConfigChanged()), this, SLOT(reset()));
+@@ -720,8 +718,6 @@
+               this, SLOT(folderCleared()));
+       connect(mFolder, SIGNAL(expunged( KMFolder* )),
+                  this, SLOT(folderCleared()));
+-      connect(mFolder, SIGNAL(closed()),
+-                 this, SLOT(folderClosed()));
+       connect(mFolder, SIGNAL(statusMsg(const QString&)),
+               BroadcastStatus::instance(), SLOT( setStatusMsg( const QString& ) ) );
+       connect(mFolder, SIGNAL(numUnreadMsgsChanged(KMFolder*)),
+@@ -2623,13 +2619,6 @@
+     emit selected(0);
+ }
+ 
+-
+-void KMHeaders::folderClosed()
+-{
+-    mFolder->open( "kmheaders" );
+-    folderCleared();
+-}
+-
+ bool KMHeaders::writeSortOrder()
+ {
+   QString sortFile = KMAIL_SORT_FILE(mFolder);
+Index: kmail/folderstorage.cpp
+===================================================================
+--- kmail/folderstorage.cpp	(revision 768418)
++++ kmail/folderstorage.cpp	(working copy)
+@@ -85,8 +85,6 @@
+ 
+   mHasChildren = HasNoChildren;
+   mContentsType = KMail::ContentsTypeMail;
+- 
+-  connect(this, SIGNAL(closed(KMFolder*)), mFolder, SIGNAL(closed()));  
+ }
+ 
+ //-----------------------------------------------------------------------------
+@@ -654,7 +652,7 @@
+   QString oldLoc, oldIndexLoc, oldIdsLoc, newLoc, newIndexLoc, newIdsLoc;
+   QString oldSubDirLoc, newSubDirLoc;
+   QString oldName;
+-  int rc=0;
++  int rc=0, openCount=mOpenCount;
+   KMFolderDir *oldParent;
+ 
+   assert(!newName.isEmpty());
+@@ -724,6 +722,11 @@
+     }
+   }
+ 
++  if (openCount > 0)
++  {
++    open("rename");
++    mOpenCount = openCount;
++  }
+   writeConfig();
+ 
+   // delete the old entry as we get two entries with the same ID otherwise
+@@ -733,7 +736,6 @@
+   emit locationChanged( oldLoc, newLoc );
+   emit nameChanged();
+   kmkernel->folderMgr()->contentsChanged();
+-  emit closed(folder()); // let the ticket owners regain
+   return rc;
+ }
+ 
+@@ -761,7 +763,6 @@
+   KConfig* config = KMKernel::config();
+   config->deleteGroup( "Folder-" + folder()->idString() );
+ 
+-  emit closed(folder());
+   emit removed(folder(), (rc ? false : true));
+ }
+ 
+@@ -769,6 +770,8 @@
+ //-----------------------------------------------------------------------------
+ int FolderStorage::expunge()
+ {
++  int openCount = mOpenCount;
++
+   assert(!folder()->name().isEmpty());
+ 
+   clearIndex( true, mExportsSernums );   // delete and remove from dict, if needed
+@@ -786,6 +789,12 @@
+   mDirty = false;
+   needsCompact = false; //we're cleared and truncated no need to compact
+ 
++  if (openCount > 0)
++  {
++    open("expunge");
++    mOpenCount = openCount;
++  }
++
+   mUnreadMsgs = 0;
+   mTotalMsgs = 0;
+   mSize = 0;
+Index: kmail/kmfolder.h
+===================================================================
+--- kmail/kmfolder.h	(revision 768418)
++++ kmail/kmfolder.h	(working copy)
+@@ -537,10 +537,6 @@
+     folder changed. */
+   void changed();
+ 
+-  /** Emitted when the folder is closed for real - ticket holders should
+-   * discard any messages */
+-  void closed();
+-
+   /** Emitted when the contents of a folder have been cleared
+      (new search in a search folder, for example) */
+   void cleared();
+Index: kmail/kmfoldermbox.cpp
+===================================================================
+--- kmail/kmfoldermbox.cpp	(revision 768418)
++++ kmail/kmfoldermbox.cpp	(working copy)
+@@ -1223,11 +1223,17 @@
+ {
+   // This is called only when the user explicitely requests compaction,
+   // so we don't check needsCompact.
++  int openCount = mOpenCount;
+ 
+   KMail::MboxCompactionJob* job = new KMail::MboxCompactionJob( folder(), true /*immediate*/ );
+   int rc = job->executeNow( silent );
+   // Note that job autodeletes itself.
+ 
++  if (openCount > 0)
++  {
++    open("mboxcompact");
++    mOpenCount = openCount;
++  }
+   // If this is the current folder, the changed signal will ultimately call
+   // KMHeaders::setFolderInfoStatus which will override the message, so save/restore it
+   QString statusMsg = BroadcastStatus::instance()->statusMsg();
+Index: kmail/kmfolder.cpp
+===================================================================
+--- kmail/kmfolder.cpp	(revision 768418)
++++ kmail/kmfolder.cpp	(working copy)
+@@ -483,7 +483,6 @@
+ 
+ void KMFolder::close( const char *owner, bool force )
+ {
+-  // do not emit closed() in here - as this would regain too early
+   mStorage->close( owner, force );
+ }
+ 

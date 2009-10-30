@@ -1,0 +1,655 @@
+package: kdepim-3.5.10.tar.bz2
+kdemod: kdepim
+--- BRANCH_STATUS
++++ BRANCH_STATUS
+@@ -0,0 +1,2 @@
++current HEAD: 858979
++svn di between //tags/KDE/3.5.10/kdepim and //branches/KDE/3.5/kdepim
+--- kresources/scalix/kabc/scalix.desktop	
++++ kresources/scalix/kabc/scalix.desktop	
+@@ -5,6 +5,7 @@
+ Name[da]=Adressebog på Scalix-server via KMail
+ Name[de]=Adressbuch auf einem Scalix-Server via KMail
+ Name[el]=Βιβλίο διευθύνσεων σε εξυπηρετητή Scalix μέσω του KMail
++Name[es]=Libreta de direcciones en servidor Scalix por medio de KMail
+ Name[et]=Aadressiraamat Scalix-serveris (KMaili vahendusel)
+ Name[fr]=Carnet d'adresses sur serveur Scalix via KMail
+ Name[is]=Vistfangaskrá á Scalix-þjóni gegnum KMail
+--- kresources/scalix/knotes/scalix.desktop	
++++ kresources/scalix/knotes/scalix.desktop	
+@@ -5,6 +5,7 @@
+ Name[da]=Noter på Scalix-server via KMail
+ Name[de]=Notizen auf einem Scalix-Server via KMail
+ Name[el]=Σημειώσεις σε εξυπηρετητή Scalix μέσω του KMail
++Name[es]=Notas en servidor Scalix por medio de KMail
+ Name[et]=Kalender Scalix-serveris (KMaili vahendusel)
+ Name[fr]=Notes sur serveur Scalix via KMail
+ Name[is]=Minnismiðar á Scalix-þjóni gegnum KMail
+--- kresources/scalix/kcal/scalix.desktop	
++++ kresources/scalix/kcal/scalix.desktop	
+@@ -5,6 +5,7 @@
+ Name[da]=Kalender på Scalix-server via KMail
+ Name[de]=Kalender auf einem Scalix-Server via KMail
+ Name[el]=Ημερολόγιο σε εξυπηρετητή Scalix μέσω του KMail
++Name[es]=Calendario en servidor Scalix por medio de KMail
+ Name[et]=Kalender Scalix-serveris (KMaili vahendusel)
+ Name[fr]=Agenda sur serveur Scalix via KMail
+ Name[is]=Dagatal á Scalix-þjóni gegnum KMail
+--- kmail/editorwatcher.cpp	
++++ kmail/editorwatcher.cpp	
+@@ -32,7 +32,11 @@
+ #include <cassert>
+ 
+ // inotify stuff taken from kdelibs/kio/kio/kdirwatch.cpp
+-#ifdef HAVE_INOTIFY
++#ifdef HAVE_SYS_INOTIFY
++#include <sys/ioctl.h>
++#include <sys/inotify.h>
++#include <fcntl.h>
++#elif HAVE_INOTIFY
+ #include <sys/ioctl.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+--- kmail/configure.in.in	
++++ kmail/configure.in.in	
+@@ -57,8 +57,30 @@
+   AC_LANG_RESTORE
+   ])
+ 
+-  if test "$kde_cv_have_inotify" = "yes" ; then
++  AC_CACHE_VAL(kde_cv_have_sys_inotify,
++  [
++  kde_cv_have_sys_inotify=no
++  AC_LANG_SAVE
++  AC_LANG_C
++
++  AC_TRY_COMPILE(
++  [
++#include <sys/inotify.h>
++  ],
++  [
++#ifndef IN_ALL_EVENTS
++#error no inotify notification
++#endif
++  ],kde_cv_have_sys_inotify=yes,kde_cv_have_sys_inotify=no)
++
++  AC_LANG_RESTORE
++  ])
++
++  if test "$kde_cv_have_inotify" = "yes" -o "$kde_cv_have_sys_inotify" = "yes"; then
+     AC_DEFINE_UNQUOTED(HAVE_INOTIFY, 1, [Define if your system has Linux Inode Notification])
++    if test "$kde_cv_have_sys_inotify" = "yes"; then
++      AC_DEFINE_UNQUOTED(HAVE_SYS_INOTIFY, 1, [Define if your system has glibc support for inotify])
++    fi
+     AC_MSG_RESULT(yes)
+   else
+     AC_MSG_RESULT(no)
+--- kmail/accountmanager.cpp	
++++ kmail/accountmanager.cpp	
+@@ -7,6 +7,7 @@
+ #include "accountmanager.h"
+ 
+ #include "kmaccount.h"
++#include "kmacctfolder.h"
+ #include "kmacctmaildir.h"
+ #include "kmacctlocal.h"
+ #include "popaccount.h"
+@@ -239,6 +240,11 @@
+ {
+   if ( account ) {
+     mAcctList.append( account );
++    // init folder's account list
++    KMAcctFolder *folder = static_cast<KMAcctFolder*>( account->folder() );
++    if ( folder && !folder->hasAccounts() ) {
++      folder->addAccount( account );
++    }
+     emit accountAdded( account );
+     account->installTimer();
+   }
+--- kmail/kmfoldertree.cpp	
++++ kmail/kmfoldertree.cpp	
+@@ -432,6 +432,9 @@
+   connect(kmkernel->acctMgr(), SIGNAL(accountRemoved(KMAccount*)),
+           this, SLOT(slotAccountRemoved(KMAccount*)));
+ 
++  connect(kmkernel->acctMgr(), SIGNAL(accountAdded(KMAccount*)),
++          this, SLOT(slotUnhideLocalInbox()));
++
+   connect(kmkernel->searchFolderMgr(), SIGNAL(folderRemoved(KMFolder*)),
+           this, SLOT(slotFolderRemoved(KMFolder*)));
+ 
+--- kalarm/templatepickdlg.cpp	
++++ kalarm/templatepickdlg.cpp	
+@@ -1,7 +1,7 @@
+ /*
+  *  templatepickdlg.cpp  -  dialogue to choose an alarm template
+  *  Program:  kalarm
+- *  Copyright (C) 2004 by David Jarvie <software@astrojar.org.uk>
++ *  Copyright © 2004,2008 by David Jarvie <djarvie@kde.org>
+  *
+  *  This program is free software; you can redistribute it and/or modify
+  *  it under the terms of the GNU General Public License as published by
+@@ -47,7 +47,8 @@
+ 	mTemplateList->setSelectionMode(QListView::Single);
+ 	mTemplateList->refresh();      // populate the template list
+ 	connect(mTemplateList, SIGNAL(selectionChanged()), SLOT(slotSelectionChanged()));
+-	connect(mTemplateList, SIGNAL(executed(QListViewItem*)), SLOT(slotOk()));
++	// Require a real double click (even if KDE is in single-click mode) to accept the selection
++	connect(mTemplateList, SIGNAL(doubleClicked(QListViewItem*, const QPoint&, int)), SLOT(slotOk()));
+ 	topLayout->addWidget(mTemplateList);
+ 
+ 	slotSelectionChanged();        // enable or disable the OK button
+--- kalarm/kalarm.h	
++++ kalarm/kalarm.h	
+@@ -26,7 +26,7 @@
+ #include <config.h>
+ #endif
+ 
+-#define KALARM_VERSION "1.5.4"
++#define KALARM_VERSION "1.5.5"
+ #define KALARM_NAME "KAlarm"
+ 
+ #include <kdeversion.h>
+--- kalarm/Changelog	
++++ kalarm/Changelog	
+@@ -1,6 +1,9 @@
+ KAlarm Change Log
+ 
+-=== Version 1.5.4 --- 18 August 2008 ===
++=== Version 1.5.5 --- 1 September 2008 ===
++- Require a real double click to accept the selected template in pick list.
++
++=== Version 1.5.4 (KDE 3.5.10) --- 18 August 2008 ===
+ - Show background colour selector for file display alarms.
+ - Display default font correctly in alarm edit dialogue sample text.
+ - Expand font selection control when dialogue is expanded.
+--- kaddressbook/features/distributionlistng.desktop	
++++ kaddressbook/features/distributionlistng.desktop	
+@@ -6,6 +6,7 @@
+ Name[da]=Næste generations-plugin til KAB-Distribution-liste
+ Name[de]=Verteilerlisten-Modul für neues Adressbuch
+ Name[el]=Πρόσθετο επόμενης γενιάς λίστας διανομής του KAB
++Name[es]=Complemento de nueva generación KAB para listas de distribución
+ Name[et]=KAB postiloendi järgmise põlvkonna plugin
+ Name[fr]=Module de liste de diffusion nouvelle génération pour KAB
+ Name[is]=Næstu kynslóðar íforrit fyrir KAB dreifilista
+--- Makefile.am.in	
++++ Makefile.am.in	
+@@ -38,6 +38,7 @@
+ COMPILE_BEFORE_akregator = libkdepim
+ COMPILE_BEFORE_knotes = libkdepim
+ COMPILE_BEFORE_konsolekalendar = libkdepim
++COMPILE_BEFORE_kabc = libkdepim
+ 
+ AUTOMAKE_OPTIONS = foreign 1.6.1
+ DISTCLEANFILES = inst-apps
+--- kabc/kabcdistlistupdater/kabcdistlistupdater.cpp	
++++ kabc/kabcdistlistupdater/kabcdistlistupdater.cpp	
+@@ -0,0 +1,95 @@
++/*
++    This file is part of libkabc.
++    Copyright (c) 2008 Tobias Koenig <tokoe@kde.org>
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License as published by the Free Software Foundation; either
++    version 2 of the License, or (at your option) any later version.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library; see the file COPYING.LIB.  If not, write to
++    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++*/
++
++#include <kaboutdata.h>
++#include <kapplication.h>
++#include <kcmdlineargs.h>
++#include <ksimpleconfig.h>
++#include <kdebug.h>
++#include <kglobal.h>
++#include <klocale.h>
++#include <kstandarddirs.h>
++
++#include <kabc/stdaddressbook.h>
++#include <libkdepim/distributionlist.h>
++
++static const KCmdLineOptions options[] =
++{
++  { "disable-autostart", "Disable automatic startup on login", 0 },
++  KCmdLineLastOption
++};
++
++void convertDistributionLists()
++{
++  KSimpleConfig cfg( locateLocal( "data", "kabc/distlists" ) );
++  const QMap<QString, QString> entryMap = cfg.entryMap( "DistributionLists" );
++
++  if ( entryMap.isEmpty() ) // nothing to convert
++    return;
++
++  QMapConstIterator<QString, QString> it;
++  for ( it = entryMap.begin(); it != entryMap.end(); ++it ) {
++    const QString listName = it.key();
++    const QStringList entries = QStringList::split( ',', it.data(), true );
++
++    KPIM::DistributionList distList;
++    distList.setUid( KApplication::randomString( 10 ) );
++    distList.setName( listName );
++
++    if ( entries.count() > 1 ) {
++      for ( uint i = 0; i < entries.count(); i += 2 ) {
++        const QString uid = entries[ i ];
++        const QString preferredEMail = entries[ i + 1 ];
++
++        distList.insertEntry( uid, preferredEMail );
++      }
++    }
++
++    KABC::StdAddressBook::self()->insertAddressee( distList );
++  }
++
++  KABC::StdAddressBook::self()->save();
++}
++
++int main( int argc, char **argv )
++{
++  KApplication::disableAutoDcopRegistration();
++
++  KAboutData aboutData( "kabcdistlistupdater", "Converter tool for distribution lists", "0.1" );
++  aboutData.addAuthor( "Tobias Koenig", 0, "tokoe@kde.org" );
++
++  KCmdLineArgs::init( argc, argv, &aboutData );
++  KCmdLineArgs::addCmdLineOptions( options );
++
++  KApplication app( false, false );
++
++  KCmdLineArgs *args = KCmdLineArgs::parsedArgs();
++
++  if ( args->isSet( "disable-autostart" ) ) {
++    kdDebug() << "Disable autostart." << endl;
++
++    KConfig *config = app.config();
++    config->setGroup( "Startup" );
++    config->writeEntry( "EnableAutostart", false );
++  }
++
++  convertDistributionLists();
++}
++
+--- kabc/kabcdistlistupdater/Makefile.am	
++++ kabc/kabcdistlistupdater/Makefile.am	
+@@ -0,0 +1,12 @@
++INCLUDES = -I$(includedir)/kabc -I$(top_srcdir) $(all_includes)
++
++METASOURCES = AUTO
++
++bin_PROGRAMS = kabcdistlistupdater
++
++kabcdistlistupdater_LDFLAGS = $(all_libraries) $(KDE_RPATH)
++kabcdistlistupdater_LDADD = $(LIB_KABC) $(top_builddir)/libkdepim/libkdepim.la
++kabcdistlistupdater_SOURCES = kabcdistlistupdater.cpp
++
++autostart_DATA = kabcdistlistupdater.desktop
++autostartdir = $(datadir)/autostart
+--- kabc/kabcdistlistupdater/kabcdistlistupdater.desktop	
++++ kabc/kabcdistlistupdater/kabcdistlistupdater.desktop	
+@@ -0,0 +1,12 @@
++# KDE Config File
++[Desktop Entry]
++Name=kabcdistlistupdater
++Exec=kabcdistlistupdater --disable-autostart
++Icon=misc
++Type=Application
++Comment=Tool to update the old distribution lists to the new ones.
++Comment[sv]=Verktyg för att uppdatera gamla distributionslistor till nya.
++Terminal=false
++NoDisplay=true
++X-KDE-autostart-condition=kabcdistlistupdaterrc:Startup:EnableAutostart:true
++OnlyShowIn=KDE;
+--- kabc/Makefile.am	
++++ kabc/Makefile.am	
+@@ -1 +1,5 @@
+-SUBDIRS = kabc2mutt
++if compile_newdistrlists
++KABCDISTLISTUPDATER=kabcdistlistupdater
++endif
++
++SUBDIRS = kabc2mutt $(KABCDISTLISTUPDATER)
+--- kontact/plugins/akregator/akregatorplugin.desktop	
++++ kontact/plugins/akregator/akregatorplugin.desktop	
+@@ -19,6 +19,7 @@
+ Comment[da]=Feed-læserkomponent (Akregator-plugin)
+ Comment[de]=News-Leser (Akregator-Modul)
+ Comment[el]=Συστατικό ανάγνωσης ροών (Πρόσθετο του Akregator)
++Comment[es]=Componente de lectura de fuentes (complemento de Akregator)
+ Comment[et]=Uudistevoogude plugin (Akregator)
+ Comment[fr]=Composant du lecteur de flux (Module pour Akregator)
+ Comment[is]=Fréttastraumalestur (Akregator íforrit)
+--- kontact/plugins/weather/weatherplugin.desktop	
++++ kontact/plugins/weather/weatherplugin.desktop	
+@@ -21,6 +21,7 @@
+ Comment[da]=Vejrkomponent til Kontact
+ Comment[de]=Wetter-Komponente für Kontact
+ Comment[el]=Συστατικό καιρού του Kontact
++Comment[es]=Extensión de meteorología para Kontact
+ Comment[et]=Kontacti ilmaplugin
+ Comment[fr]=Composant météo pour Kontact
+ Comment[is]=Kontact veðurfréttaeining
+--- kontact/plugins/knode/knodeplugin.desktop	
++++ kontact/plugins/knode/knodeplugin.desktop	
+@@ -19,6 +19,7 @@
+ Comment[da]=Nyhedskomponent (KNode-plugin)
+ Comment[de]=News-Komponente (KNode-Modul)
+ Comment[el]=Συστατικό ανάγνωσης νέων (Πρόσθετο του KNode)
++Comment[es]=Componente de noticias (complemento de KNode)
+ Comment[et]=Uudistelugeja plugin (KNode)
+ Comment[fr]=Composant de lecteur de nouvelles (Module pour KNode)
+ Comment[is]=Fréttaeining (KNode íforrit)
+--- kontact/plugins/specialdates/kcmsdsummary.desktop	
++++ kontact/plugins/specialdates/kcmsdsummary.desktop	
+@@ -16,6 +16,7 @@
+ Name[da]=Oversigt over særlige datoer
+ Name[de]=Übersicht über besondere Termine
+ Name[el]=Επισκόπηση σημαντικών ημερομηνιών
++Name[es]=Resumen de fechas especiales
+ Name[et]=Tähtpäevade ülevaade
+ Name[fr]=Aperçu des dates importantes
+ Name[is]=Yfirlit sérstakra daga
+--- kontact/plugins/specialdates/specialdatesplugin.desktop	
++++ kontact/plugins/specialdates/specialdatesplugin.desktop	
+@@ -72,6 +72,7 @@
+ Comment[da]=Komponent til særlige datoer
+ Comment[de]=Komponente für Übersicht über besondere Termine
+ Comment[el]=Συστατικό σημαντικών ημερομηνιών
++Comment[es]=Componente de fechas especiales
+ Comment[et]=Tähtpäevade plugin
+ Comment[fr]=Composant des dates importantes
+ Comment[is]=Eining fyrir sérstaka daga
+--- kontact/plugins/kitchensync/kitchensync.desktop	
++++ kontact/plugins/kitchensync/kitchensync.desktop	
+@@ -18,6 +18,7 @@
+ Comment[da]=Synkronisergingskomponent (Kitchensync-plugin)
+ Comment[de]=Abgleich-Komponente (KitchenSync-Modul)
+ Comment[el]=Συστατικό συγχρονισμού (Πρόσθετο του Kitchensynk)
++Comment[es]=Componente de sincronización (complemento de KitchenSync)
+ Comment[et]=Sünkroniseerimise plugin (KitchenSync)
+ Comment[fr]=Composant de synchronisation (Module KitchenSync)
+ Comment[is]=Samstillingareining (KitchenSync íforrit)
+--- kontact/plugins/kpilot/kpilotplugin.desktop	
++++ kontact/plugins/kpilot/kpilotplugin.desktop	
+@@ -21,6 +21,7 @@
+ Comment[da]=Komponent til palm-værktøjer (KPilot-plugin)
+ Comment[de]=Palm-Komponente (KPilot-Modul)
+ Comment[el]=Συστατικό εργαλείων Palm (Πρόσθετο του KPilot)
++Comment[es]=Componente de herramientas de Palm (complemento KPilot)
+ Comment[et]=Palmi tööriistade plugin (KPilot)
+ Comment[fr]=Composant d'outils pour Palms (Module KPilot)
+ Comment[is]=Palm verkfæraeining (KPilot íforrit)
+--- kontact/plugins/knotes/knotesplugin.desktop	
++++ kontact/plugins/knotes/knotesplugin.desktop	
+@@ -19,6 +19,7 @@
+ Comment[da]=Notatkomponent (KNotes-plugin)
+ Comment[de]=Notizen-Komponente (KNotes-Modul)
+ Comment[el]=Συσταικό σημειώσεων (Πρόσθετο του KNotes)
++Comment[es]=Componente de notas (complemento de KNotes)
+ Comment[et]=Märkmete plugin (KNotes)
+ Comment[fr]=Composant de notes (Module KNotes)
+ Comment[is]=Minnismiðaeining (KNotes íforrit)
+--- kontact/plugins/karm/karmplugin.desktop	
++++ kontact/plugins/karm/karmplugin.desktop	
+@@ -18,6 +18,7 @@
+ Comment[da]=Time Tracker-komponent (KArm-plugin)
+ Comment[de]=Zeitplaner-Komponente (KArm-Modul)
+ Comment[el]=Συστατικό γραμμής χρόνου (Πρόσθετο του KArm)
++Comment[es]=Componente de seguimiento de tiempos (complemento de KArm)
+ Comment[et]=Ajaarvestaja plugin (KArm)
+ Comment[fr]=Composant de suivi temporel (Module pour KArm)
+ Comment[is]=Tímastjórnunareining (KArm íforrit)
+@@ -40,6 +41,7 @@
+ Name[ca]=Cronòmetre
+ Name[de]=Stoppuhr
+ Name[el]=Χρονόμετρο
++Name[es]=Temporizador
+ Name[et]=Ajaarvestaja
+ Name[fr]=Minuteur
+ Name[is]=Tímamælir
+--- kontact/plugins/kaddressbook/kaddressbookplugin.desktop	
++++ kontact/plugins/kaddressbook/kaddressbookplugin.desktop	
+@@ -21,6 +21,7 @@
+ Comment[da]=Kontaktkomponent (KAddressbook-plugin)
+ Comment[de]=Kontakte-Komponente (Adressbuch-Modul)
+ Comment[el]=Συστατικό επαφών (Πρόσθετο του KAdressbook)
++Comment[es]=Componente de contactos (complemento de KAddressbook)
+ Comment[et]=Kontaktide plugin (KDE aadressiraamat)
+ Comment[fr]=Composant des contacts (module externe KAdressBook)
+ Comment[is]=Vistfangaskráreining (KAddressBook íforrit)
+--- kontact/plugins/korganizer/kcmkorgsummary.desktop	
++++ kontact/plugins/korganizer/kcmkorgsummary.desktop	
+@@ -16,6 +16,7 @@
+ Name[da]=Oversigt over møder og gøremål
+ Name[de]=Übersicht über Termine und Aufgaben
+ Name[el]=Επισκόπηση ραντεβού και προς υλοποίηση εργασιών
++Name[es]=Resumen de citas y tareas pendientes
+ Name[et]=Kohtumised ja ülesannete ülevaade
+ Name[fr]=Aperçu des rendez-vous et des tâches
+ Name[is]=Yfirlit um fundi og verkþætti
+--- kontact/plugins/korganizer/todoplugin.desktop	
++++ kontact/plugins/korganizer/todoplugin.desktop	
+@@ -21,6 +21,7 @@
+ Comment[da]=Komponent til gøremålsliste (KOrganizer-plugin)
+ Comment[de]=Aufgabenlisten-Komponente (KOrganizer-Modul)
+ Comment[el]=Συστατικό λίστα προς υλοποίηση εργασιών (Πρόσθετο του KOrganizer)
++Comment[es]=Componente de tareas pendientes (complemento de KOrganizer)
+ Comment[et]=Ülesannete nimekirja plugin (KOrganizer)
+ Comment[fr]=Composant de la liste des tâches (Module KOrganizer)
+ Comment[is]=Verkefnaeining (KOrganizer íforrit)
+@@ -43,6 +44,7 @@
+ Name[da]=Gøremål
+ Name[de]=Aufgaben
+ Name[el]=Προς υλοποίηση εργασίες
++Name[es]=Tareas pendientes
+ Name[et]=Ülesanded
+ Name[fr]=Tâches
+ Name[is]=Verkefni
+--- kontact/plugins/korganizer/journalplugin.desktop	
++++ kontact/plugins/korganizer/journalplugin.desktop	
+@@ -21,6 +21,7 @@
+ Comment[da]=Journalkomponent (KOrganizer-plugin)
+ Comment[de]=Journal-Komponente (KOrganizer-Modul)
+ Comment[el]=Συστατικό χρονικών (Πρόσθετο του KOrganizer)
++Comment[es]=Componente de diario (Complemento de KOrganizer)
+ Comment[et]=Päevikuplugin (KOrganizer)
+ Comment[fr]= Composant de journal (Module KOrganizer)
+ Comment[is]=Dagbókareining (Journal KOrganizer íforrit)
+--- kontact/plugins/korganizer/korganizerplugin.desktop	
++++ kontact/plugins/korganizer/korganizerplugin.desktop	
+@@ -21,6 +21,7 @@
+ Comment[da]=Kalenderkomponent (KOrganizer-plugin)
+ Comment[de]=Kalender-Komponente (KOrganizer-Modul)
+ Comment[el]=Συστατικό ημερολογίου (Πρόσθετο του KOrganizer)
++Comment[es]=Componente de calendario (complemento de KOrganizer)
+ Comment[et]=Kalendriplugin (KOrganizer)
+ Comment[fr]= Composant de calendrier (Module KOrganizer)
+ Comment[is]=Dagatalseining (KOrganizer íforrit)
+--- kontact/plugins/kmail/kmailplugin.desktop	
++++ kontact/plugins/kmail/kmailplugin.desktop	
+@@ -22,6 +22,7 @@
+ Comment[da]=Post-komponent (KMail-plugin)
+ Comment[de]=E-Mail-Komponente (KMail-Modul)
+ Comment[el]=Συστατικό αλληλογραφίας (Πρόσθετο του KMail)
++Comment[es]=Componente de correo electrónico (complemento de KMail)
+ Comment[et]=E-posti plugin (KMail)
+ Comment[fr]=Composant de courriel (Module pour KMail)
+ Comment[is]=Pósteining (KMail íforrit)
+@@ -43,6 +44,7 @@
+ Name[ca]=Correu
+ Name[da]=E-mail
+ Name[el]=Αλληλογραφία
++Name[es]=Correo electrónico
+ Name[et]=E-post
+ Name[fr]=Courriel
+ Name[is]=Tölvupóstur
+--- kontact/plugins/kmail/kcmkmailsummary.desktop	
++++ kontact/plugins/kmail/kcmkmailsummary.desktop	
+@@ -16,6 +16,7 @@
+ Name[da]=Oversigt over e-mail
+ Name[de]=E-Mail-Übersicht
+ Name[el]=Επισκόπηση αλληλογραφίας
++Name[es]=Resumen de correo electrónico
+ Name[et]=E-posti ülevaade
+ Name[fr]=Aperçu du courriel
+ Name[is]=Yfirsýn á tölvupóst
+@@ -38,6 +39,7 @@
+ Comment[da]=Opsætning af post-opsummering
+ Comment[de]=Einstellungen für E-Mail-Übersicht
+ Comment[el]=Ρύθμιση σύνοψης αλληλογραφίας
++Comment[es]=Configuración del resumen de correo electrónico
+ Comment[et]=E-posti kokkuvõtte seadistus
+ Comment[fr]=Configuration du résumé des courriels
+ Comment[is]=Uppsetning póstyfirlits
+--- kontact/plugins/summary/kcmkontactsummary.desktop	
++++ kontact/plugins/summary/kcmkontactsummary.desktop	
+@@ -16,6 +16,7 @@
+ Name[da]=Elementer i opsummeringsvisning
+ Name[de]=Elemente der Zusammenfassungsansicht
+ Name[el]=Αντικείμενα προβολής σύνοψης
++Name[es]=Elementos de la vista de sumario
+ Name[et]=Kokkuvõttevaate elemendid
+ Name[it]=Elementi vista sommario
+ Name[ja]=要約ビューの項目
+--- kontact/plugins/summary/summaryplugin.desktop	
++++ kontact/plugins/summary/summaryplugin.desktop	
+@@ -17,6 +17,7 @@
+ Comment[da]=Komponent for opsummeringsvisning
+ Comment[de]=Zusammenfassungsansicht-Komponente
+ Comment[el]=Συστατικό προβολής σύνοψης
++Comment[es]=Componente Vista de resumen
+ Comment[et]=Kokkuvõttevaate plugin
+ Comment[fr]=Composant de la vue résumée
+ Comment[is]=Eining fyrir yfirlitssýn
+--- kontact/plugins/newsticker/newstickerplugin.desktop	
++++ kontact/plugins/newsticker/newstickerplugin.desktop	
+@@ -20,6 +20,7 @@
+ Comment[da]=Nyhedstelegraf-komponent
+ Comment[de]=Newsticker-Komponente
+ Comment[el]=Συστατικό προβολέα ειδήσεων
++Comment[es]=Componente de teletipo de noticias
+ Comment[et]=Uudistejälgija plugin
+ Comment[fr]=Composant Newsticker
+ Comment[is]=Fréttastrimilseining
+--- kontact/src/kontact.setdlg	
++++ kontact/src/kontact.setdlg	
+@@ -5,6 +5,7 @@
+ Name[da]=Opsummeringsvisning
+ Name[de]=Übersicht
+ Name[el]=Προβολή σύνοψης
++Name[es]=Vista de resumen
+ Name[et]=Kokkuvõttevaade
+ Name[fr]=Vue résumée
+ Name[is]=Yfirlitssýn
+@@ -27,6 +28,7 @@
+ Comment[da]=Konfiguration af Kontacts <b>Opsummeringsvisning</b>. Nogle plugins giver <i>Opsummeringsvisning</i>-elementer, vælg dem du ønsker på listen.
+ Comment[de]=Einrichtung der <b>Zusammenfassungsansicht</b> von Kontact. Einige Kontact-Module stellen Elemente für die <i>Zusammenfassungsansicht</i> zur Verfügung. Wählen Sie hier, welche Elemente angezeigt werden sollen.
+ Comment[el]=Ρύθμιση της <b>Προβολής σύνοψης</b> του  Kontact. Κάποια πρόσθετα παρέχουν αντικείμενα <i>Προβολή σύνοψης</i>· επιλέξτε αυτά που θέλετε να εμφανίζονται.
++Comment[es]=Configuración de Kontact <b>Vista de resumen</b>. Algunos complementos proveen elementos para la <i>Vista de resumen</i>, elija los que quiera listar.
+ Comment[et]=Kontacti <b>kokkuvõttevaate</b> seadistamine. Mõned pluginad pakuvad <i>kokkuvõttevaate</i> elemente. Vali nimekirjas need, mida soovid näha.
+ Comment[fr]=Configuration de Kontact <b> Vue résumée</b>. Certains modules fournissent des éléments de <i>Vue Résumée</i>, choisissez ceux que vous voulez voir listés.
+ Comment[is]=Stillingar á <b>Yfirlitssýn</b>í Kontact. Sum íforrit koma með hluti í <i>Yfirlitssýn</i>, veldu þá sem þú vilt hafa á síðunni.
+@@ -51,6 +53,7 @@
+ Name[ca]=Correu
+ Name[da]=E-mail
+ Name[el]=Αλληλογραφία
++Name[es]=Correo electrónico
+ Name[et]=E-post
+ Name[fr]=Courriel
+ Name[is]=Tölvupóstur
+@@ -73,6 +76,7 @@
+ Comment[da]=Konfiguration af Kontacts e-mail-plugin <b>KMail</b>, inkluderer et <i>Opsummeringsvisnings-element</i> og repræsenterer en <i>Kontact-komponent</i>.
+ Comment[de]=Einrichtung des E-Mail-Moduls <b>KMail</b> für Kontact. Die E-Mail-Komponente kann als <i>Kontact-Komponente<i> in die <i>Zusammenfassungsansicht</i> integriert werden.
+ Comment[el]=Η ρύθμιση του προσθέτου αλληλογραφίας <b>KMail</b> του Kontact, περιέχει ένα <i>Αντικείμενο προβολής σύνοψης</i> και αντιπροσωπεύει ένα <i>Συστατικό του Kontact</i>.
++Comment[es]=Configuración del complemento de correo-e de Kontact <b>KMail</b>, incluye una <i>Vista de resumen</i> y representa un <i>Componente de Kontact</i>.
+ Comment[et]=Kontacti e-posti plugina <b>KMaili</b> seadistamine, mis sisaldab <i>kokkuvõttevaate elementi</i>.
+ Comment[fr]=Configuration du Module de Courriel de Kontact <b>KMail</b>, inclut un <i>Élément de Vue Résumée</i> et correspond à un <i>Composant de Kontact</i>.
+ Comment[is]=Stillingar fyrir tölvupóstíforrit Kontact <b>KMail</b>, inniheldur <i>yfirlitssýnarhlut</i> sem stendur fyrir <i>Kontact einingu</i>.
+@@ -157,6 +161,7 @@
+ Comment[da]=Konfiguration af Kontacts adressebog-plugin <b>KAdressbook</b> som repræsenterer en <i>Kontact-komponent</i>.
+ Comment[de]=Einrichtung des Adressbuch-Moduls für Kontact, welches eine <i>Kontact-Komponente</i> repräsentiert.
+ Comment[el]=Ρύθμιση του πρόσθετου βιβλίου διευθύνσεων <b>KAdressbook</b> του Kontact που αντιπροσωπεύει ένα <i>Συστατικό του Kontact</i>.
++Comment[es]=Configuración del complemento de libreta de direcciones de Kontact <b> KAddressbok</b>, el cual representa un <i>Componente de Kontact</i>.
+ Comment[et]=Kontacti aadressiraamatu plugina <b>KAdressbook</b> seaditamine.
+ Comment[fr]=Configuration du Module de Carnet d'Adresses de Kontact <b> KAdressbook</b> qui correspond à un <i>Composant de Kontact</i>.
+ Comment[is]=Stillingar fyrir vistfangaskráríforrit Kontact <b>KAdressbook</b>, inniheldur <i>yfirlitssýnarhlut</i> sem stendur fyrir <i>Kontact einingu</i>.
+@@ -341,6 +346,7 @@
+ Comment[da]=Konfiguration af Kontacts kalender-plugin <b>KOrganizer</b>, inkluderer et <i>Opsummeringsvisningselement</i> og repræsenterer en <i>Kontact-komponent</i>.
+ Comment[de]=Einrichtung des Kalender-Moduls <b>KOrganizer</b> für Kontact, einschließlich der <i>Zusammenfassungsansicht</i>; repräsentiert eine <i>Kontact-Komponente</i>
+ Comment[el]=Η ρύθμιση του προσθέτου ημερολογίου του <b>KOrganizer</b> του Kontact, περιέχει ένα <i>Αντικείμενο προβολής σύνοψης</i> και αντιπροσωπεύει ένα <i>Συστατικό του Kontact</i>.
++Comment[es]=Configuración del complemento de calendario de Kontact, <b> KOrganizer</b>, incluye una <i>Vista de resumen</i> y representa un <i>Componente de Kontact</i>.
+ Comment[et]=Kontacti kalendriplugina <b>KOrganizeri</b> seadistamine, mis sisaldab <i>kokkuvõttevaate elementi</i>.
+ Comment[fr]=Configuration du Module de Calendrier de Kontact <b>KOrganizer</b>, inclut un <i>Élément de Vue Résumée</i> et correspond à un <i>Composant de Kontact</i>.
+ Comment[is]=Stillingar fyrir dagatalsíforrit Kontact <b>KOrganizer</b>, inniheldur <i>yfirlitssýnarhlut</i> sem stendur fyrir <i>Kontact einingu</i>.
+@@ -425,6 +431,7 @@
+ Comment[da]=Konfiguration af Kontacts nyheds-plugin <b>KNode</b> som repræsenterer en <i>Kontact-komponent</i>.
+ Comment[de]=Einrichtung des News-Moduls <b>KNode</b> für Kontact; repräsentiert eine <i>Kontact-Komponente</i>
+ Comment[el]=Ρύθμιση του πρόσθετου νέων <b>KNode</b> του Kontact που αντιπροσωπεύει ένα <i>Συστατικό του Kontact</i>.
++Comment[es]=Configuración del complemento de noticias de Kontact <b>KNode</b> , el cual representa un <i>Componente de Kontact</i>.
+ Comment[et]=Kontacti uudisteplugina <b>KNode</b> seadistamine.
+ Comment[fr]=Configuration du Module de Nouvelles de Kontact <b>KNode</b> qui correspond à un <i>Composant de Kontact</i>.
+ Comment[is]=Stillingar fyrir fréttastraumsíforrit Kontact <b>KNode</b>, inniheldur <i>yfirlitssýnarhlut</i> sem stendur fyrir <i>Kontact einingu</i>.
+@@ -509,6 +516,7 @@
+ Comment[da]=Komponent til vejrinformation
+ Comment[de]=Komponente für Wetterinformationen
+ Comment[el]=Συστατικό πληροφοριών καιρού
++Comment[es]=Componente de información meteorológica
+ Comment[et]=Ilmateate komponent
+ Comment[fr]=Composant d'Informations météorologiques
+ Comment[is]=Eining fyrir veðurupplýsingar
+--- korganizer/koincidencetooltip.h	
++++ korganizer/koincidencetooltip.h	
+@@ -39,7 +39,7 @@
+ class KOIncidenceToolTip : public QToolTip
+ {
+   public:
+-    KOIncidenceToolTip(QWidget * widget, QToolTipGroup * group = 0 ):QToolTip (widget, group) {}
++    KOIncidenceToolTip(QWidget * widget, QToolTipGroup * group = 0 ):QToolTip (widget, group),mText(0) {}
+ /*    ~KOIncidenceToolTip();*/
+ 
+   public:
+--- korganizer/koincidencetooltip.cpp	
++++ korganizer/koincidencetooltip.cpp	
+@@ -34,7 +34,7 @@
+ */
+ 
+ void KOIncidenceToolTip::add ( QWidget * widget, Incidence *incidence,
+-        QToolTipGroup * group, const QString & longText )
++                               QToolTipGroup * group, const QString & longText )
+ {
+   if ( !widget || !incidence ) return;
+   QToolTip::add(widget, IncidenceFormatter::toolTipString( incidence ), group, longText);
+@@ -54,7 +54,7 @@
+   KOAgendaItem *item = dynamic_cast<KOAgendaItem*>( parentWidget() );
+   if ( !item )
+     return;
+-  if ( mText.isEmpty() )
++  if ( !mText )
+     mText = IncidenceFormatter::toolTipString( item->incidence() );
+   tip( QRect( QPoint( 0, 0 ), item->size() ), mText );
+ }
+
+Property changes on: .
+___________________________________________________________________
+Modified: svnmerge-blocked
+   - /branches/kdepim/enterprise/kdepim:703472,703877,703925,704210,704221,704225-704226,704228-704229,704237,704988,704991-704992,704995,705006-705008,705190,705626,705751,705754-705758,705836,705995,706309,706493,706548-706549,706556,706560,706564,706572,706775,706802,767041,767555,767557,767947,769319,769355,771106,771252,772312,772317,775195,775203,775205-775206,775212,778002,778005-778006,778008-778009,778012,778030,778728,779449,779483,779506,779853,780453,780496,780498,780530,783128,783246-783247,784427,785479,785563,785570,788243-788244,791441-791442,793472,793539,795764,795766,798446,798449,798496,802149,802152,803260,803300,803309,803382,803398,805825,805827,810303,810305,814373,814375,816025,821379,821649,825076,825084,827945,827950,830876,830933,836276-836277,836429,837232,837782,837785,840707,840711,846420,846427
+   + /branches/kdepim/enterprise/kdepim:703472,703877,703925,704210,704221,704225-704226,704228-704229,704237,704988,704991-704992,704995,705006-705008,705190,705626,705751,705754-705758,705836,705995,706309,706493,706548-706549,706556,706560,706564,706572,706775,706802,767041,767555,767557,767947,769319,769355,771106,771252,772312,772317,775195,775203,775205-775206,775212,778002,778005-778006,778008-778009,778012,778030,778728,779449,779483,779506,779853,780453,780496,780498,780530,783128,783246-783247,784427,785479,785563,785570,788243-788244,791441-791442,793472,793539,795764,795766,798446,798449,798496,802149,802152,803260,803300,803309,803382,803398,805825,805827,810303,810305,814373,814375,816025,821379,821649,825076,825084,827945,827950,830876,830933,836276-836277,836429,837232,837782,837785,840707,840711,846420,846427,850907,850914,851185-851186,854246-854247
+Modified: svnmerge-integrated
+   - /branches/kdepim/enterprise/kdepim:1-767022,767033,767233-767554,767556,767558-767946,767948-769318,769320-769354,769356-771105,771107-771251,771253-772311,772313-772316,772318-775194,775196-775202,775204,775207-775211,775213-778001,778003-778004,778007,778010-778011,778013-778029,778031-778727,778729-779448,779450-779482,779484-779505,779507-779852,779854-779994,780211,780250-780452,780454-780495,780497,780499-780529,780531-782028,782030-783127,783129-783243,783245,783248-783477,783479-784380,784382-784426,784428-784691,784693-785478,785480-785558,787827,788582-791440,791443-792201,792203-793304,793306-793471,793473-793538,793540-795763,795765,795767-798445,798447-798448,798450-798495,798497-802148,802150-802151,802153-803259,803261-803299,803301-803308,803310-803380,803383-803397,803399-804993,804995-805347,805349-805427,805429-805459,805461-805824,805826,805828-809708,809710-810236,810238-810302,810304,810306-811205,811207-813547,813549-814372,814374,814376-816024,816026-816313,816315-816322,816324-817070,817072-817087,817089-819076,819078-821035,821037-821124,821126-821378,821380-821648,821650-822268,822270-824277,824279-825075,825077-825083,825085-826354,826356-827612,827614-827891,827893-827944,827946-827949,827951-830477,830479-830875,830877-830932,830934-836103,836105-836275,836278-836391,836393-836428,836430-837231,837233-837624,837626,840224-840428,840430-840706,840708-840710,840712-843750,843760
+   + /branches/kdepim/enterprise/kdepim:1-767022,767033,767233-767554,767556,767558-767946,767948-769318,769320-769354,769356-771105,771107-771251,771253-772311,772313-772316,772318-775194,775196-775202,775204,775207-775211,775213-778001,778003-778004,778007,778010-778011,778013-778029,778031-778727,778729-779448,779450-779482,779484-779505,779507-779852,779854-779994,780211,780250-780452,780454-780495,780497,780499-780529,780531-782028,782030-783127,783129-783243,783245,783248-783477,783479-784380,784382-784426,784428-784691,784693-785478,785480-785558,787827,788582-791440,791443-792201,792203-793304,793306-793471,793473-793538,793540-795763,795765,795767-798445,798447-798448,798450-798495,798497-802148,802150-802151,802153-803259,803261-803299,803301-803308,803310-803380,803383-803397,803399-804993,804995-805347,805349-805427,805429-805459,805461-805824,805826,805828-809708,809710-810236,810238-810302,810304,810306-811205,811207-813547,813549-814372,814374,814376-816024,816026-816313,816315-816322,816324-817070,817072-817087,817089-819076,819078-821035,821037-821124,821126-821378,821380-821648,821650-822268,822270-824277,824279-825075,825077-825083,825085-826354,826356-827612,827614-827891,827893-827944,827946-827949,827951-830477,830479-830875,830877-830932,830934-836103,836105-836275,836278-836391,836393-836428,836430-837231,837233-837624,837626,840224-840428,840430-840706,840708-840710,840712-843750,843760,858460
+Deleted: svn:mergeinfo
+Added: svn:externals
+   + admin https://svn.kde.org/home/kde/branches/KDE/3.5/kde-common/admin
+
+

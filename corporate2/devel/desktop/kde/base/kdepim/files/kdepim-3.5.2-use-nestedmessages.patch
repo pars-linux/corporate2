@@ -1,0 +1,65 @@
+diff -ur kdepim-3.5.2.orig/kmail/configuredialog.cpp kdepim-3.5.2/kmail/configuredialog.cpp
+--- kdepim-3.5.2.orig/kmail/configuredialog.cpp	2006-04-06 16:05:22.000000000 +0300
++++ kdepim-3.5.2/kmail/configuredialog.cpp	2006-04-06 15:59:23.000000000 +0300
+@@ -2038,7 +2038,7 @@
+   KConfigGroup geometry( KMKernel::config(), "Geometry" );
+ 
+   // "General Options":
+-  mNestedMessagesCheck->setChecked( geometry.readBoolEntry( "nestedMessages", false ) );
++  mNestedMessagesCheck->setChecked( geometry.readBoolEntry( "nestedMessages", true ) );
+   mMessageSizeCheck->setChecked( general.readBoolEntry( "showMessageSize", false ) );
+   mCryptoIconsCheck->setChecked( general.readBoolEntry( "showCryptoIcons", false ) );
+   mAttachmentCheck->setChecked( general.readBoolEntry( "showAttachmentIcon", true ) );
+@@ -2099,7 +2099,7 @@
+   KConfigGroup general( KMKernel::config(), "General" );
+   KConfigGroup geometry( KMKernel::config(), "Geometry" );
+ 
+-  if ( geometry.readBoolEntry( "nestedMessages", false )
++  if ( geometry.readBoolEntry( "nestedMessages", true )
+        != mNestedMessagesCheck->isChecked() ) {
+     int result = KMessageBox::warningContinueCancel( this,
+                    i18n("Changing the global threading setting will override "
+diff -ur kdepim-3.5.2.orig/kmail/kmheaders.cpp kdepim-3.5.2/kmail/kmheaders.cpp
+--- kdepim-3.5.2.orig/kmail/kmheaders.cpp	2006-04-06 16:05:22.000000000 +0300
++++ kdepim-3.5.2/kmail/kmheaders.cpp	2006-04-06 16:03:24.000000000 +0300
+@@ -536,7 +536,7 @@
+   NestingPolicy oldNestPolicy = nestingPolicy;
+   KConfig* config = KMKernel::config();
+   KConfigGroupSaver saver(config, "Geometry");
+-  mNested = config->readBoolEntry( "nestedMessages", false );
++  mNested = config->readBoolEntry( "nestedMessages", true );
+ 
+   nestingPolicy = (NestingPolicy)config->readNumEntry( "nestingPolicy", OpenUnread );
+   if ((nestingPolicy != oldNestPolicy) ||
+@@ -569,7 +569,7 @@
+ 
+   { //area for config group "Geometry"
+     KConfigGroupSaver saver(config, "Geometry");
+-    mNested = config->readBoolEntry( "nestedMessages", false );
++    mNested = config->readBoolEntry( "nestedMessages", true );
+     nestingPolicy = (NestingPolicy)config->readNumEntry( "nestingPolicy", OpenUnread );
+   }
+ 
+diff -ur kdepim-3.5.2.orig/kmail/profiles/profile-purist-rc.desktop kdepim-3.5.2/kmail/profiles/profile-purist-rc.desktop
+--- kdepim-3.5.2.orig/kmail/profiles/profile-purist-rc.desktop	2006-04-06 16:05:22.000000000 +0300
++++ kdepim-3.5.2/kmail/profiles/profile-purist-rc.desktop	2006-04-06 16:04:53.000000000 +0300
+@@ -100,7 +100,7 @@
+ 
+ # should this profile be restricted to font and color changes?
+ [Geometry]
+-nestedMessages=false
++nestedMessages=true
+ longFolderList=true
+ 
+ [General]
+--- kdepim-3.5.6/kmail/kmmainwidget.cpp	2007-03-21 23:38:45.000000000 +0200
++++ kdepim-3.5.6/kmail/kmmainwidget.cpp	2007-03-21 23:39:24.000000000 +0200
+@@ -271,7 +271,7 @@
+   mLongFolderList = geometry.readEntry( "FolderList", "long" ) != "short";
+   mReaderWindowActive = geometry.readEntry( "readerWindowMode", "below" ) != "hide";
+   mReaderWindowBelow = geometry.readEntry( "readerWindowMode", "below" ) == "below";
+-  mThreadPref = geometry.readBoolEntry( "nestedMessages", false );
++  mThreadPref = geometry.readBoolEntry( "nestedMessages", true );
+ 
+   mHtmlPref = reader.readBoolEntry( "htmlMail", true );
+   mHtmlLoadExtPref = reader.readBoolEntry( "htmlLoadExternal", false );
