@@ -1,0 +1,35 @@
+From 24d1a48b4e70ee7ac60d800d7407eec672999f95 Mon Sep 17 00:00:00 2001
+From: Danny Kukawka <danny.kukawka@web.de>
+Date: Thu, 30 Jul 2009 18:18:50 +0200
+Subject: [PATCH 09/19] fix audio folder naming for a BlackBerry 8100
+
+Fixed audio folder naming for a BlackBerry 8100 as
+pointed out by maddentim@gmail.com in fd.o#20582.
+---
+ .../10freedesktop/10-usb-music-players.fdi         |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/fdi/information/10freedesktop/10-usb-music-players.fdi b/fdi/information/10freedesktop/10-usb-music-players.fdi
+index 0e755c0..8313552 100644
+--- a/fdi/information/10freedesktop/10-usb-music-players.fdi
++++ b/fdi/information/10freedesktop/10-usb-music-players.fdi
+@@ -666,8 +666,14 @@
+             <addset key="portable_audio_player.access_method.protocols" type="strlist">storage</addset>
+             <append key="portable_audio_player.input_formats" type="strlist">audio/mp4</append>
+             <append key="portable_audio_player.input_formats" type="strlist">audio/mpeg</append>
+-            <append key="portable_audio_player.audio_folders" type="strlist">BlackBerry/music/</append>
+-            <append key="portable_audio_player.audio_folders" type="strlist">BlackBerry/videos/</append>
++	    <match key="@storage.originating_device:usb.product_id" int_outof="0x6;0x8004">
++              <append key="portable_audio_player.audio_folders" type="strlist">BlackBerry/music/</append>
++              <append key="portable_audio_player.audio_folders" type="strlist">BlackBerry/videos/</append>
++            </match>
++	    <match key="@storage.originating_device:usb.product_id" int="0x4">
++              <append key="portable_audio_player.audio_folders" type="strlist">blackberry/music/</append>
++              <append key="portable_audio_player.audio_folders" type="strlist">blackberry/videos/</append>
++            </match>
+           </match>
+ 	  <match key="@storage.originating_device:usb.product_id" int="0x8004">
+             <append key="portable_audio_player.audio_folders" type="strlist">home/user/music/</append>
+-- 
+1.6.4.4
+

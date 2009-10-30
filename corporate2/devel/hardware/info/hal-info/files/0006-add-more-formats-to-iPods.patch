@@ -1,0 +1,34 @@
+From 04214ee0529222cccb269a351336408a2d65da63 Mon Sep 17 00:00:00 2001
+From: Justin Forest <justin.forest@gmail.com>
+Date: Thu, 30 Jul 2009 17:46:47 +0200
+Subject: [PATCH 06/19] add more formats to iPods
+
+audio/x-wav and audio/x-aiff for all iPods,
+video/mp4 for Classic and Nano.
+
+fd.o#20354
+---
+ .../10freedesktop/10-usb-music-players.fdi         |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/fdi/information/10freedesktop/10-usb-music-players.fdi b/fdi/information/10freedesktop/10-usb-music-players.fdi
+index 625f87f..542eaa7 100644
+--- a/fdi/information/10freedesktop/10-usb-music-players.fdi
++++ b/fdi/information/10freedesktop/10-usb-music-players.fdi
+@@ -10,7 +10,13 @@
+           <addset key="portable_audio_player.access_method.protocols" type="strlist">storage</addset>
+           <addset key="portable_audio_player.access_method.protocols" type="strlist">ipod</addset>
+           <addset key="portable_audio_player.output_formats" type="strlist">audio/aac</addset>
++          <addset key="portable_audio_player.output_formats" type="strlist">audio/x-wav</append>
++          <addset key="portable_audio_player.output_formats" type="strlist">audio/x-aiff</append>
+           <merge key="storage.requires_eject" type="bool">true</merge>
++          <!-- iPods with video -->
++          <match key="@storage.originating_device:usb.product_id" int_outof="0x1261;0x1262">
++            <append key="portable_audio_player.output_formats" type="strlist">video/mp4</append>
++          </match>
+         </match>
+       </match>
+ 
+-- 
+1.6.4.4
+

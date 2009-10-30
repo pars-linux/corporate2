@@ -1,0 +1,33 @@
+From 90e7d7108f342a8e622a5cb8324841dca9f29745 Mon Sep 17 00:00:00 2001
+From: Danny Kukawka <danny.kukawka@web.de>
+Date: Thu, 30 Jul 2009 17:41:28 +0200
+Subject: [PATCH 04/19] add some more suspend quirks for IBM machines
+
+Added some more suspend quirks for IBM machines. Tested with
+kernel 2.6.27.19.
+
+from. bnc#488035
+---
+ .../10freedesktop/20-video-quirk-pm-ibm.fdi        |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/fdi/information/10freedesktop/20-video-quirk-pm-ibm.fdi b/fdi/information/10freedesktop/20-video-quirk-pm-ibm.fdi
+index 335310f..4d4a2b4 100644
+--- a/fdi/information/10freedesktop/20-video-quirk-pm-ibm.fdi
++++ b/fdi/information/10freedesktop/20-video-quirk-pm-ibm.fdi
+@@ -120,5 +120,12 @@
+       </match>
+ 
+     </match>
++
++    <match key="system.hardware.vendor" string="IBM CORPORATION">
++      <match key="system.hardware.product" string_outof="4800723;4800743;4800783">
++        <merge key="power_management.quirk.s3_bios" type="bool">true</merge>
++        <merge key="power_management.quirk.s3_mode" type="bool">true</merge>
++      </match>
++    </match>
+   </device>
+ </deviceinfo>
+-- 
+1.6.4.4
+

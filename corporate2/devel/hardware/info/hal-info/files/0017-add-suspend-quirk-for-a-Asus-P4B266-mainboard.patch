@@ -1,0 +1,51 @@
+From c462fd0b0f0f141979255b671083c79e743a674f Mon Sep 17 00:00:00 2001
+From: Danny Kukawka <danny.kukawka@web.de>
+Date: Sat, 1 Aug 2009 16:28:56 +0200
+Subject: [PATCH 17/19] add suspend quirk for a Asus P4B266 mainboard
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Added adopted/extended version of a patch from
+Olivier Berger <oberger@ouvaton.org> to add suspend quirk for a
+Asus P4B266 mainboard (matching also the primary video card).
+
+  system.hardware.primary_video.product = 18790  (0x4966)  (int)
+  system.hardware.primary_video.vendor = 4098  (0x1002)  (int)
+  system.hardware.product = 'System Name'  (string)
+  system.hardware.serial = 'SYS-1234567890'  (string)
+  system.hardware.uuid = ''  (string)
+  system.hardware.vendor = 'System Manufacturer'  (string)
+  system.hardware.version = 'System Version'  (string)
+  system.firmware.release_date = '08/06/2002'  (string)
+  system.firmware.vendor = 'Award Software, Inc.'  (string)
+  system.firmware.version = 'ASUS P4B266 ACPI BIOS Revision 1010'  (string)
+---
+ .../10freedesktop/20-video-quirk-pm-asus.fdi       |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/fdi/information/10freedesktop/20-video-quirk-pm-asus.fdi b/fdi/information/10freedesktop/20-video-quirk-pm-asus.fdi
+index 4022c67..fe29d1b 100644
+--- a/fdi/information/10freedesktop/20-video-quirk-pm-asus.fdi
++++ b/fdi/information/10freedesktop/20-video-quirk-pm-asus.fdi
+@@ -106,6 +106,17 @@
+       </match>
+     </match>
+     
++    <match key="system.firmware.version" prefix="ASUS P4B266 ACPI BIOS Revision">
++      <match key="system.firmware.version" contains=" 1010">
++	<match key="system.hardware.primary_video.vendor" int="0x1002">	
++	  <match key="system.hardware.primary_video.product" int="0x4966">	
++	    <merge key="power_management.quirk.s3_bios" type="bool">true</merge>
++	    <merge key="power_management.quirk.s3_mode" type="bool">true</merge>
++          </match>
++        </match>
++      </match>
++    </match>
++
+     <!-- another ASUS Mainboard, this need no quirk -->
+     <match key="system.firmware.version" prefix_outof="ASUS M2N-E ACPI BIOS Revision;ASUS Striker ACPI BIOS Revision;ASUS A7V ACPI BIOS Revision">
+       <merge key="power_management.quirk.none" type="bool">true</merge>
+-- 
+1.6.4.4
+

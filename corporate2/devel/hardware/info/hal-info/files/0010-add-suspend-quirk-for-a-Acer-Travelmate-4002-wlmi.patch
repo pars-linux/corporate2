@@ -1,0 +1,36 @@
+From 970c705b54ce1d8bcb1b470858c0d0a1d3d6f71e Mon Sep 17 00:00:00 2001
+From: Danny Kukawka <danny.kukawka@web.de>
+Date: Thu, 30 Jul 2009 18:27:58 +0200
+Subject: [PATCH 10/19] add suspend quirk for a Acer Travelmate 4002 wlmi
+
+Added suspend quirk for a Acer Travelmate 4002 wlmi as reported
+in fd.o#21059 by freedesktop@diaboflo.de
+---
+ .../10freedesktop/20-video-quirk-pm-acer.fdi       |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/fdi/information/10freedesktop/20-video-quirk-pm-acer.fdi b/fdi/information/10freedesktop/20-video-quirk-pm-acer.fdi
+index f120a4c..91ad85c 100644
+--- a/fdi/information/10freedesktop/20-video-quirk-pm-acer.fdi
++++ b/fdi/information/10freedesktop/20-video-quirk-pm-acer.fdi
+@@ -33,6 +33,17 @@
+           <merge key="power_management.quirk.none" type="bool">true</merge>
+         </match>
+ 
++	<!-- Acer TravalMate 4002 Wlmi with ATI RadeOn Mobility 9700. mashine suspends, wakes up, but "vbetool post" hangs -->
++        <match key="system.hardware.product" contains="4000">
++	  <match key="system.hardware.primary_video.product" int="20048">
++            <match key="system.hardware.primary_video.vendor" int="4098"> 
++	      <merge key="power_management.quirk.vbe_post" type="bool">true</merge>
++	      <merge key="power_management.quirk.vbemode_restore" type="bool">true</merge>
++	      <merge key="power_management.quirk.dpms_on" type="bool">true</merge>
++            </match>
++          </match>
++        </match>
++
+ 	<!-- these need the full name to prevent mixes with other machines
+              NOTE: HAL removes whitespaces at the end of the sysfs and dmidecode output,
+                    we need to do exact string matches.
+-- 
+1.6.4.4
+
