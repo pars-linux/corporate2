@@ -1,0 +1,60 @@
+Cryptsetup keeps some sectors (between the physical LUKS header
+and keyslot data) on disk untouched, unfortunatelly ext2/3/4 signature can
+be there and blkid detects filesystem here instead of LUKS.
+
+This patch wipes the first eight sectors on disk with zero during luksFormat.
+This should be probably solved by physical header padding in next version.
+---
+ lib/setup.c |   32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+Index: cryptsetup-1.0.6/lib/setup.c
+===================================================================
+--- cryptsetup-1.0.6.orig/lib/setup.c	2008-10-30 10:25:18.000000000 +0100
++++ cryptsetup-1.0.6/lib/setup.c	2008-10-30 10:55:45.000000000 +0100
+@@ -198,6 +198,34 @@ out:
+ 	return ret;
+ }
+ 
++static int wipe_device_header(const char *device, int sectors)
++{
++	char *buffer;
++	int size = sectors * SECTOR_SIZE;
++	int r = -1;
++	int devfd;
++
++	devfd = open(device, O_RDWR | O_DIRECT | O_SYNC);
++	if(devfd == -1) {
++		set_error("Can't wipe header on device %s", device);
++		return -EINVAL;
++	}
++
++	buffer = malloc(size);
++	if (!buffer) {
++		close(devfd);
++		return -ENOMEM;
++	}
++	memset(buffer, 0, size);
++
++	r = write_blockwise(devfd, buffer, size) < size ? -EIO : 0;
++
++	free(buffer);
++	close(devfd);
++
++	return r;
++}
++
+ static int parse_into_name_and_mode(const char *nameAndMode, char *name,
+ 				    char *mode)
+ {
+@@ -429,6 +457,10 @@ static int __crypt_luks_format(int arg, 
+ 		r = -EINVAL; goto out;
+ 	}
+ 
++	/* Wipe first 8 sectors - fs magic numbers etc. */
++	r = wipe_device_header(options->device, 8);
++	if(r < 0) goto out;
++
+ 	/* Set key, also writes phdr */
+ 	r = LUKS_set_key(options->device, options->key_slot==-1?0:(unsigned int)options->key_slot, password, passwordLen, &header, mk, backend);
+ 	if(r < 0) goto out; 
