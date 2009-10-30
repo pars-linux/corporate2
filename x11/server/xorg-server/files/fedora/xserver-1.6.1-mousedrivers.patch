@@ -1,0 +1,89 @@
+From eb699604d34e4564dde221e0fc28eb6559969b4f Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Fri, 15 May 2009 08:33:07 +1000
+Subject: [PATCH] xfree86: treat other drivers as mouse drivers in the config.
+
+Historically, if no input device was referenced in the ServerLayout,
+the server would pick the first "mouse" device found in the xorg.conf.
+This patch gives evdev, synaptics, vmmouse and void the same status. If
+there is a section in the config file using this driver - use it as the core
+pointer.
+
+Device selection is in driver-order, not in config-order. If a "mouse"
+device is listed after a "synaptics" device, the "mouse" device gets
+preference. This replicates the original behaviour.
+
+This code only takes effect if AllowEmptyInput is off and there is no core
+pointer in the server layout.
+
+Red Hat Bug 499792 <https://bugzilla.redhat.com/show_bug.cgi?id=499792>
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ hw/xfree86/common/xf86Config.c |   25 ++++++++++++++++---------
+ 1 files changed, 16 insertions(+), 9 deletions(-)
+
+diff --git a/hw/xfree86/common/xf86Config.c b/hw/xfree86/common/xf86Config.c
+index 2ecb639..844e04a 100644
+--- a/hw/xfree86/common/xf86Config.c
++++ b/hw/xfree86/common/xf86Config.c
+@@ -1091,8 +1091,8 @@ Bool xf86DRI2Enabled(void)
+  *  2. The "CorePointer" and "CoreKeyboard" InputDevices referred to by
+  *     the active ServerLayout.
+  *  3. The first InputDevices marked as "CorePointer" and "CoreKeyboard".
+- *  4. The first InputDevices that use the 'mouse' and 'keyboard' or 'kbd'
+- *     drivers.
++ *  4. The first InputDevices that use 'keyboard' or 'kbd' and a valid mouse
++ *     driver (mouse, synaptics, evdev, vmmouse, void)
+  *  5. Default devices with an empty (default) configuration.  These defaults
+  *     will reference the 'mouse' and 'keyboard' drivers.
+  */
+@@ -1111,6 +1111,8 @@ checkCoreInputDevices(serverLayoutPtr servlayoutp, Bool implicitLayout)
+     int count = 0;
+     MessageType from = X_DEFAULT;
+     int found = 0;
++    const char *mousedrivers[] = { "mouse", "synaptics", "evdev", "vmmouse",
++				   "void", NULL };
+ 
+     /*
+      * First check if a core pointer or core keyboard have been specified
+@@ -1220,13 +1222,15 @@ checkCoreInputDevices(serverLayoutPtr servlayoutp, Bool implicitLayout)
+ 	}
+     }
+ 
+-    /* 4. First pointer with 'mouse' as the driver. */
++    /* 4. First pointer with an allowed mouse driver. */
+     if (!foundPointer && !xf86Info.allowEmptyInput) {
++	const char **driver = mousedrivers;
+ 	confInput = xf86findInput(CONF_IMPLICIT_POINTER,
+ 				  xf86configptr->conf_input_lst);
+-	if (!confInput) {
+-	    confInput = xf86findInputByDriver("mouse",
++	while (driver && !confInput) {
++	    confInput = xf86findInputByDriver(*driver,
+ 					      xf86configptr->conf_input_lst);
++	    driver++;
+ 	}
+ 	if (confInput) {
+ 	    foundPointer = TRUE;
+@@ -1281,10 +1285,13 @@ checkCoreInputDevices(serverLayoutPtr servlayoutp, Bool implicitLayout)
+      * section ... deal.
+      */
+     for (devs = servlayoutp->inputs; devs && *devs; devs++) {
+-	if (!strcmp((*devs)->driver, "void") || !strcmp((*devs)->driver, "mouse") ||
+-            !strcmp((*devs)->driver, "vmmouse") || !strcmp((*devs)->driver, "evdev") ||
+-            !strcmp((*devs)->driver, "synaptics")) {
+-	    found = 1; break;
++	const char **driver = mousedrivers;
++	while(*driver) {
++	    if (!strcmp((*devs)->driver, *driver)) {
++		found = 1;
++		break;
++	    }
++	    driver++;
+ 	}
+     }
+     if (!found && !xf86Info.allowEmptyInput) {
+-- 
+1.6.3.rc1.2.g0164.dirty
+

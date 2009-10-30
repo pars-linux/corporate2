@@ -1,0 +1,37 @@
+From 2d58c62b54a1b24a83bf66196c0aa078db54ee58 Mon Sep 17 00:00:00 2001
+From: =?utf-8?q?Michel=20D=C3=A4nzer?= <daenzer@vmware.com>
+Date: Tue, 23 Jun 2009 16:45:39 +0200
+Subject: [PATCH 3/4] dri2: Don't crash if pPriv is NULL.
+
+---
+ hw/xfree86/dri2/dri2.c |   12 ++++++++++--
+ 1 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/hw/xfree86/dri2/dri2.c b/hw/xfree86/dri2/dri2.c
+index 580383d..3e8a7d4 100644
+--- a/hw/xfree86/dri2/dri2.c
++++ b/hw/xfree86/dri2/dri2.c
+@@ -190,10 +190,18 @@ do_get_buffers(DrawablePtr pDraw, int *width, int *height,
+     int need_fake_front = 0;
+     int have_fake_front = 0;
+     int front_format = 0;
+-    const int dimensions_match = (pDraw->width == pPriv->width)
+-	&& (pDraw->height == pPriv->height);
++    int dimensions_match;
+     int i;
+ 
++    if (!pPriv) {
++	*width = pDraw->width;
++	*height = pDraw->height;
++	*out_count = 0;
++	return NULL;
++    }
++
++    dimensions_match = (pDraw->width == pPriv->width)
++	&& (pDraw->height == pPriv->height);
+ 
+     buffers = xalloc((count + 1) * sizeof(buffers[0]));
+ 
+-- 
+1.6.3.4
+

@@ -1,0 +1,80 @@
+From f270ca8e1788453babe292bf2e67d3d30459effa Mon Sep 17 00:00:00 2001
+From: Dave Airlie <airlied@redhat.com>
+Date: Thu, 23 Apr 2009 12:02:22 +1000
+Subject: [PATCH] exa: add support for tiling to create pixmap hooks
+
+This adds support for passing w/h/d info to the pixmap creation
+hook in the driver so they can support tiling better.
+---
+ exa/exa.c |   11 +++++++----
+ exa/exa.h |    4 +++-
+ 2 files changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/exa/exa.c b/exa/exa.c
+index 9b7091d..9e284a4 100644
+--- a/exa/exa.c
++++ b/exa/exa.c
+@@ -285,7 +285,7 @@ exaCreatePixmap(ScreenPtr pScreen, int w, int h, int depth,
+     if (w > 32767 || h > 32767)
+ 	return NullPixmap;
+ 
+-    if (!pExaScr->info->CreatePixmap) {
++    if (!pExaScr->info->CreatePixmap && !pExaScr->info->CreatePixmap2) {
+         pPixmap = fbCreatePixmap (pScreen, w, h, depth, usage_hint);
+     } else {
+         driver_alloc = 1;
+@@ -319,7 +319,10 @@ exaCreatePixmap(ScreenPtr pScreen, int w, int h, int depth,
+ 	 */
+ 	pPixmap->devPrivate.ptr = NULL;
+ 
+-        pExaPixmap->driverPriv = pExaScr->info->CreatePixmap(pScreen, datasize, 0);
++	if (pExaScr->info->CreatePixmap2)
++		pExaPixmap->driverPriv = pExaScr->info->CreatePixmap2(pScreen, w, h, depth, usage_hint, bpp);
++	else
++		pExaPixmap->driverPriv = pExaScr->info->CreatePixmap(pScreen, datasize, 0);
+         if (!pExaPixmap->driverPriv) {
+              fbDestroyPixmap(pPixmap);
+              return NULL;
+@@ -964,7 +967,7 @@ exaDriverInit (ScreenPtr		pScreen,
+ 
+ 	pExaScr->SavedModifyPixmapHeader = pScreen->ModifyPixmapHeader;
+ 	pScreen->ModifyPixmapHeader = exaModifyPixmapHeader;
+-	if (!pExaScr->info->CreatePixmap) {
++        if (!(pExaScr->info->flags & EXA_HANDLES_PIXMAPS)) {
+ 	    LogMessage(X_INFO, "EXA(%d): Offscreen pixmap area of %lu bytes\n",
+ 		       pScreen->myNum,
+ 		       pExaScr->info->memorySize - pExaScr->info->offScreenBase);
+@@ -977,7 +980,7 @@ exaDriverInit (ScreenPtr		pScreen,
+     else
+         LogMessage(X_INFO, "EXA(%d): No offscreen pixmaps\n", pScreen->myNum);
+ 
+-    if (!pExaScr->info->CreatePixmap) {
++    if (!(pExaScr->info->flags & EXA_HANDLES_PIXMAPS)) {
+ 	DBG_PIXMAP(("============== %ld < %ld\n", pExaScr->info->offScreenBase,
+ 		    pExaScr->info->memorySize));
+ 	if (pExaScr->info->offScreenBase < pExaScr->info->memorySize) {
+diff --git a/exa/exa.h b/exa/exa.h
+index 5982e1a..d14b02d 100644
+--- a/exa/exa.h
++++ b/exa/exa.h
+@@ -39,7 +39,7 @@
+ #include "fb.h"
+ 
+ #define EXA_VERSION_MAJOR   2
+-#define EXA_VERSION_MINOR   4
++#define EXA_VERSION_MINOR   5
+ #define EXA_VERSION_RELEASE 0
+ 
+ typedef struct _ExaOffscreenArea ExaOffscreenArea;
+@@ -711,6 +711,8 @@ typedef struct _ExaDriver {
+                               int depth, int bitsPerPixel, int devKind,
+                               pointer pPixData);
+ 
++    void *(*CreatePixmap2)(ScreenPtr pScreen, int width, int height,
++			   int depth, int usage_hint, int bitsPerPixel);
+     /** @} */
+ } ExaDriverRec, *ExaDriverPtr;
+ 
+-- 
+1.6.0.6
+

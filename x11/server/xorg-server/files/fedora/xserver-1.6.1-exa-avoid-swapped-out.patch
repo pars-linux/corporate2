@@ -1,0 +1,26 @@
+From ddf5bfc66b8a6078fe8649e39627b78e2139c7ec Mon Sep 17 00:00:00 2001
+From: Dave Airlie <airlied@redhat.com>
+Date: Thu, 16 Apr 2009 10:28:36 +1000
+Subject: [PATCH] exa: avoid offscreen pixmap swapped out flag for driver pixmaps
+
+---
+ exa/exa_offscreen.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/exa/exa_offscreen.c b/exa/exa_offscreen.c
+index 4aaa2c1..d7198cb 100644
+--- a/exa/exa_offscreen.c
++++ b/exa/exa_offscreen.c
+@@ -371,6 +371,9 @@ exaEnableDisableFBAccess (int index, Bool enable)
+     ScreenPtr pScreen = screenInfo.screens[index];
+     ExaScreenPriv (pScreen);
+ 
++    if (pExaScr->info->flags & EXA_HANDLES_PIXMAPS)
++	return;
++
+     if (!enable && pExaScr->disableFbCount++ == 0) {
+ 	if (pExaScr->info->exa_minor < 1)
+ 	    ExaOffscreenSwapOut (pScreen);
+-- 
+1.6.0.6
+

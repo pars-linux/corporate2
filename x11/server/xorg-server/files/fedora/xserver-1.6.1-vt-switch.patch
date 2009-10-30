@@ -1,0 +1,34 @@
+From 492bfcdc7419a94bd026202b2a2c65541c2e54d2 Mon Sep 17 00:00:00 2001
+From: Adam Jackson <ajax@redhat.com>
+Date: Fri, 8 May 2009 16:06:23 -0400
+Subject: [PATCH] Fake key releases on vt leave, not just enter
+
+Fixes silly cpu usage bug while vt switched away.
+
+---
+ hw/xfree86/common/xf86Events.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/hw/xfree86/common/xf86Events.c b/hw/xfree86/common/xf86Events.c
+index d6ef93a..9923f84 100644
+--- a/hw/xfree86/common/xf86Events.c
++++ b/hw/xfree86/common/xf86Events.c
+@@ -505,10 +505,14 @@ xf86VTSwitch()
+      */
+     pInfo = xf86InputDevs;
+     while (pInfo) {
+-      if (pInfo->dev)
++      if (pInfo->dev) {
++	  xf86ReleaseKeys(pInfo->dev);
+           DisableDevice(pInfo->dev);
++      }
+       pInfo = pInfo->next;
+     }
++    xf86ReleaseKeys(inputInfo.keyboard);
++
+     xf86EnterServerState(SETUP);
+     for (i = 0; i < xf86NumScreens; i++)
+ 	xf86Screens[i]->LeaveVT(i, 0);
+-- 
+1.6.2.2
+
