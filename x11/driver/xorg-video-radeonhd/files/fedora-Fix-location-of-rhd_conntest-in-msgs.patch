@@ -1,0 +1,46 @@
+diff --git a/src/rhd_id.c b/src/rhd_id.c
+index ed20aed..0995d65 100644
+--- a/src/rhd_id.c
++++ b/src/rhd_id.c
+@@ -667,7 +667,7 @@ RHDCardIdentify(ScrnInfoPtr pScrn)
+ 	    "Your card might not work or might not work optimally.\n\t"
+ 	    "To rectify this, please contact radeonhd@opensuse.org.\n\t"
+ 	    "Include your X log, the full name of the device\n\t"
+-	    "and the rhd_conntest (found in utils/conntest) output.\n");
++	    "and the rhd_conntest (found in /usr/bin) output.\n");
+ #endif
+     return NULL;
+ }
+diff --git a/utils/conntest/README b/utils/conntest/README
+index 3b42a8f..82ce500 100644
+--- a/utils/conntest/README
++++ b/utils/conntest/README
+@@ -5,18 +5,11 @@
+ A helper utility to test the status of the connectors of the AMD GPG
+ Radeon R5xx and R6xx graphics devices.
+ 
+-Build:
+-------
+-
+- * Make sure the pciutils development files and zlib are installed.
+- * Descend into xf86-video-radeonhd/utils/conntest/
+- * Run "make".
+-
+ Usage:
+ ------
+ 
+ As root run:
+-./rhd_conntest <pci tag> [-d] [-s] [-x num]
++  rhd_conntest <pci tag> [-d] [-s] [-x num]
+ 
+ <pci tag> is in the form <bus>:<device>.<function>, the most common position
+ is 1:0.0. lspci happily provides you with this information.
+@@ -28,7 +21,7 @@ The optional argument -x <num> will dump <num> bytes of data from the
+ available DDC slaves. <num> must not be higher than 256.
+ 
+ To dump the content of the VBIOS run:
+-./rhd_conntest <pci tag> -d
++  rhd_conntest <pci tag> -d
+ This will dump the VBIOS to the file:
+   <device_id>.<subsystem_vendor_id>.<subsystem_id>.vga.rom
+ to the current directory. Should the id information be unavailable the VBIOS
