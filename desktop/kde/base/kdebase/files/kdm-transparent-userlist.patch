@@ -1,0 +1,174 @@
+diff -ur kdebase-3.5.5.orig/kdm/kfrontend/kgreeter.cpp kdebase-3.5.5/kdm/kfrontend/kgreeter.cpp
+--- kdebase-3.5.5.orig/kdm/kfrontend/kgreeter.cpp	2006-11-05 16:44:23.000000000 +0200
++++ kdebase-3.5.5/kdm/kfrontend/kgreeter.cpp	2006-11-05 16:56:50.000000000 +0200
+@@ -50,6 +50,7 @@
+ #include <qstyle.h>
+ #include <qlayout.h>
+ #include <qlabel.h>
++#include <qpainter.h>
+ #include <qpushbutton.h>
+ #include <qtooltip.h>
+ #include <qaccel.h>
+@@ -65,22 +66,38 @@
+ 
+ class UserListView : public KListView {
+   public:
+-	UserListView( QWidget *parent = 0, const char *name = 0 )
++	UserListView( bool _them, QWidget *parent = 0, const char *name = 0 )
+ 		: KListView( parent, name )
+-		, cachedSizeHint( -1, 0 )
++		, themed( _them ), cachedSizeHint( -1, 0 )
+ 	{
+ 		setSizePolicy( QSizePolicy::Preferred, QSizePolicy::Ignored );
+ 		header()->hide();
+ 		addColumn( QString::null );
+ 		setColumnAlignment( 0, AlignVCenter );
+ 		setResizeMode( QListView::LastColumn );
++		if (themed) {
++			setBackgroundMode( Qt::NoBackground );
++			viewport()->setBackgroundMode( Qt::NoBackground );
++			setFrameStyle( QFrame::NoFrame );
++		}
+ 	}
+-
++	bool themed;
+ 	mutable QSize cachedSizeHint;
+ 
+-  protected:
++	int sumHeight() const
++	{
++		int sum = 0;
++		for (QListViewItem *itm = firstChild(); itm; itm = itm->nextSibling()) {
++			sum += itm->height();
++		}
++		return sum;
++	}
++
++  public:
+ 	virtual QSize sizeHint() const
+ 	{
++		if (themed)
++			return KListView::sizeHint();
+ 		if (!cachedSizeHint.isValid()) {
+ 			constPolish();
+ 			uint maxw = 0;
+@@ -95,8 +112,21 @@
+ 		}
+ 		return cachedSizeHint;
+ 	}
+-};
++  public:
++	virtual void paintEmptyArea ( QPainter * p, const QRect & rect )
++	{
++		if (!themed)
++			return KListView::paintEmptyArea(p, rect );
++
++		const QPixmap *pm = paletteBackgroundPixmap();
++		if (!pm || pm->isNull())
++			return;
+ 
++		QRect devRect = p->xForm( rect );
++		p->drawPixmap(0, 0, *pm, devRect.left(), devRect.top() );
++	}
++	QPixmap background;
++};
+ 
+ int KGreeter::curPlugin = -1;
+ PluginList KGreeter::pluginList;
+@@ -112,12 +142,13 @@
+   , curSel( -1 )
+   , prevValid( true )
+   , needLoad( false )
++  , themed ( framed )
+ {
+ 	stsFile = new KSimpleConfig( _stsFile );
+ 	stsFile->setGroup( "PrevUser" );
+ 
+ 	if (_userList) {
+-		userView = new UserListView( this );
++		userView = new UserListView( framed, this );
+ 		connect( userView, SIGNAL(clicked( QListViewItem * )),
+ 		         SLOT(slotUserClicked( QListViewItem * )) );
+ 		//		connect( userView, SIGNAL(doubleClicked( QListViewItem * )),
+@@ -125,8 +156,6 @@
+ 	}
+ 	if (_userCompletion)
+ 		userList = new QStringList;
+-	if (userView || userList)
+-		insertUsers();
+ 
+ 	sessMenu = new QPopupMenu( this );
+ 	connect( sessMenu, SIGNAL(activated( int )),
+@@ -160,6 +189,13 @@
+ 		parent->cachedSizeHint.setWidth( -1 );
+ 	}
+ 
++	virtual void paintCell(QPainter *p, const QColorGroup &cg, int column, int width, int alignment)
++	{
++		if (((UserListView*)listView())->themed)
++			QListViewItem::paintCell(p, cg, column, width, alignment);
++		else
++			KListViewItem::paintCell(p, cg, column, width, alignment);
++	}
+ 	QString login;
+ };
+ 
+@@ -842,6 +878,9 @@
+ 	completeMenu();
+ #endif
+ 
++	if ( userView || userList )
++		insertUsers( ) ;
++
+ 	system_button = themer->findNode( "system_button" );
+ 	shutdown_button = themer->findNode( "shutdown_button" );
+ 	QAccel *accel = new QAccel( this );
+@@ -867,6 +906,7 @@
+ 	inherited::pluginSetup();
+ 
+ 	if (userView && verify->entitiesLocal() && verify->entityPresettable() && userlist_rect) {
++		userView->setMaximumHeight( userView->sumHeight() );
+ 		userlist_rect->setWidget( userView );
+ 		userView->show();
+ 	} else {
+diff -ur kdebase-3.5.5.orig/kdm/kfrontend/kgreeter.h kdebase-3.5.5/kdm/kfrontend/kgreeter.h
+--- kdebase-3.5.5.orig/kdm/kfrontend/kgreeter.h	2006-11-05 16:44:23.000000000 +0200
++++ kdebase-3.5.5/kdm/kfrontend/kgreeter.h	2006-11-05 16:45:02.000000000 +0200
+@@ -91,6 +91,7 @@
+ 	int curPrev, curSel;
+ 	bool prevValid;
+ 	bool needLoad;
++	bool themed;
+ 
+ 	static int curPlugin;
+ 	static PluginList pluginList;
+diff -ur kdebase-3.5.5.orig/kdm/kfrontend/themer/kdmitem.cpp kdebase-3.5.5/kdm/kfrontend/themer/kdmitem.cpp
+--- kdebase-3.5.5.orig/kdm/kfrontend/themer/kdmitem.cpp	2006-05-22 21:13:04.000000000 +0300
++++ kdebase-3.5.5/kdm/kfrontend/themer/kdmitem.cpp	2006-11-05 16:51:06.000000000 +0200
+@@ -35,9 +35,7 @@
+ #include <qwidget.h>
+ #include <qlayout.h>
+ #include <qimage.h>
+-#ifdef DRAW_OUTLINE
+-# include <qpainter.h>
+-#endif
++#include <qpainter.h>
+ 
+ KdmItem::KdmItem( KdmItem *parent, const QDomNode &node, const char *name )
+     : QObject( parent, name )
+@@ -258,8 +256,14 @@
+ 	if (isHidden())
+ 		return;
+ 
+-	if (myWidget || (myLayoutItem && myLayoutItem->widget()))
++	if (myWidget || (myLayoutItem && myLayoutItem->widget())) {
++		if ( myWidget && myWidget->isA( "KListView" ) ) {
++			QPixmap copy( myWidget->size() );
++			bitBlt( &copy, QPoint( 0, 0), p->device(), myWidget->geometry(), Qt::CopyROP );
++			myWidget->setPaletteBackgroundPixmap( copy );
++		}
+ 		return;
++	}
+ 
+ 	if (area.intersects( rect )) {
+ 		QRect contentsRect = area.intersect( rect );

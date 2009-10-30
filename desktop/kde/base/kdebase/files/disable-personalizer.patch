@@ -1,0 +1,23 @@
+diff -ur kdebase-3.5.5.orig/startkde kdebase-3.5.5/startkde
+--- kdebase-3.5.5.orig/startkde	2006-11-23 15:37:24.000000000 +0200
++++ kdebase-3.5.5/startkde	2006-11-23 15:42:44.000000000 +0200
+@@ -96,7 +96,6 @@
+ cat >$kdehome/share/config/startupconfigkeys <<EOF
+ kcminputrc Mouse cursorTheme ''
+ kcminputrc Mouse cursorSize ''
+-kpersonalizerrc General FirstLogin true
+ ksplashrc KSplash Theme Default
+ kcmrandrrc Display ApplyOnStartup false
+ kcmrandrrc [Screen0]
+@@ -323,11 +322,6 @@
+     echo 'startkde: Running kpersonalizer...'  1>&2
+     dcopserver
+     kwin --lock &
+-    kpersonalizer --before-session
+-    # handle kpersonalizer restarts (language change)
+-    while test $? -eq 1; do
+-        kpersonalizer --r --before-session
+-    done
+     dcopquit kwin
+     dcopserver_shutdown --wait
+ fi

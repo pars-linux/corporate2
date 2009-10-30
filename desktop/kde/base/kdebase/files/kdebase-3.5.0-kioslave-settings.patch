@@ -1,0 +1,14 @@
+diff -ur kdebase-3.4.92.orig/kioslave/settings/kio_settings.cc kdebase-3.4.92/kioslave/settings/kio_settings.cc
+--- kdebase-3.4.92.orig/kioslave/settings/kio_settings.cc	2005-10-10 18:04:01.000000000 +0300
++++ kdebase-3.4.92/kioslave/settings/kio_settings.cc	2005-10-24 02:09:41.000000000 +0300
+@@ -268,6 +268,10 @@
+ 			  case( SettingsMode ):
+ 				relPath.remove(0, 9); // length("Settings/") ==9
+ 				kdDebug() << "SettingsProtocol: adding entry settings:/" << relPath << endl;
++                // just show Tasma's categories
++                if ( !g->directoryEntryPath().contains( "tasma" ) ) {
++                    continue;
++                }
+ 				createDirEntry(entry, groupCaption, "settings:/"+relPath, "inode/directory",g->icon());
+ 				break;
+ 			  case( ProgramsMode ):

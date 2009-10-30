@@ -1,0 +1,179 @@
+Index: kioslave/media/libmediacommon/medium.cpp
+===================================================================
+--- kioslave/media/libmediacommon/medium.cpp	(revision 619490)
++++ kioslave/media/libmediacommon/medium.cpp	(working copy)
+@@ -42,6 +42,7 @@
+ 	loadUserLabel();
+ 
+ 	m_halmounted = false;
++    m_isHotplug = false;
+ }
+ 
+ Medium::Medium()
+@@ -59,8 +60,9 @@
+ 	m_properties+= QString::null; /* BASE_URL */
+ 	m_properties+= QString::null; /* MIME_TYPE */
+ 	m_properties+= QString::null; /* ICON_NAME */
+-	
++
+ 	m_halmounted = false;
++    m_isHotplug = false;
+ }
+ 
+ const Medium Medium::create(const QStringList &properties)
+Index: kioslave/media/libmediacommon/medium.h
+===================================================================
+--- kioslave/media/libmediacommon/medium.h	(revision 619490)
++++ kioslave/media/libmediacommon/medium.h	(working copy)
+@@ -82,18 +82,22 @@
+ 	void setHalMounted(bool flag) const { m_halmounted = flag; }
+ 	bool halMounted() const { return m_halmounted; }
+ 
++    void setIsHotplug( bool state ) { m_isHotplug = state; }
++    bool isHotplug() const { return m_isHotplug; }
++
+ private:
+ 	Medium();
+ 	void loadUserLabel();
+ 
+ 	QStringList m_properties;
+ 	mutable bool m_halmounted;
+-	
++    bool m_isHotplug;
++
+ friend class QValueListNode<const Medium>;
+ };
+ 
+ namespace MediaManagerUtils {
+-  static inline QMap<QString,QString> splitOptions(const QStringList & options) 
++  static inline QMap<QString,QString> splitOptions(const QStringList & options)
+     {
+       QMap<QString,QString> valids;
+ 
+Index: kioslave/media/mediamanager/mediamanager.cpp
+===================================================================
+--- kioslave/media/mediamanager/mediamanager.cpp	(revision 619490)
++++ kioslave/media/mediamanager/mediamanager.cpp	(working copy)
+@@ -330,7 +330,54 @@
+     emit mediumChanged(name);
+ }
+ 
++QString MediaManager::unmountAllSuspend()
++{
++    QPtrList<Medium> list = m_mediaList.list();
+ 
++    QPtrList<Medium>::const_iterator it = list.begin();
++    QPtrList<Medium>::const_iterator end = list.end();
++
++    QString result;
++
++    for (; it!=end; ++it)
++    {
++        if ( (*it)->isMounted() && (*it)->isHotplug() )
++        {
++            QString tmp = unmount( (*it)->id() );
++            if ( !tmp.isEmpty() ) // umount failed
++                result = tmp;
++            else
++                m_suspendResumeMountList.append( *it );
++        }
++    }
++
++    // return last error
++    return result;
++}
++
++QString MediaManager::remountAllResume()
++{
++    QPtrList<Medium>::const_iterator it = m_suspendResumeMountList.begin();
++    QPtrList<Medium>::const_iterator end = m_suspendResumeMountList.end();
++
++    QString result;
++
++    for (; it!=end; ++it)
++    {
++        if ( (*it)->needMounting() )
++        {
++            QString tmp = mount( (*it)->id() );
++            if ( !tmp.isEmpty() ) // mount failed
++                result = tmp;
++            else
++                m_suspendResumeMountList.remove(); // remove the media from the list when remount succeeds
++        }
++    }
++
++    // return last error
++    return result;
++}
++
+ extern "C" {
+     KDE_EXPORT KDEDModule *create_mediamanager(const QCString &obj)
+     {
+Index: kioslave/media/mediamanager/halbackend.cpp
+===================================================================
+--- kioslave/media/mediamanager/halbackend.cpp	(revision 619490)
++++ kioslave/media/mediamanager/halbackend.cpp	(working copy)
+@@ -445,6 +445,8 @@
+         libhal_volume_get_fstype(halVolume),			/* Filesystem type */
+         libhal_volume_is_mounted(halVolume) );			/* Mounted ? */
+ 
++    medium->setIsHotplug( libhal_drive_is_hotpluggable(halDrive) );
++
+     char* name = libhal_volume_policy_compute_display_name(halDrive, halVolume, m_halStoragePolicy);
+     QString volume_name = QString::fromUtf8(name);
+     QString media_name = volume_name;
+Index: kioslave/media/mediamanager/mediamanager.h
+===================================================================
+--- kioslave/media/mediamanager/mediamanager.h	(revision 619490)
++++ kioslave/media/mediamanager/mediamanager.h	(working copy)
+@@ -58,6 +58,20 @@
+ 	bool removableUnplug(const QString &devNode);
+ 	bool removableCamera(const QString &devNode);
+ 
++    /**
++     * Unmount manually all partitions when going to suspend
++     *
++     * @return last error if any
++     */
++	QString unmountAllSuspend();
++
++    /**
++     * Remount previously unmounted partitions in unmountAllSuspend()
++     *
++     * @return last error if any
++     */
++    QString remountAllResume();
++
+ k_dcop_signals:
+ 	void mediumAdded(const QString &name, bool allowNotification);
+ 	void mediumRemoved(const QString &name, bool allowNotification);
+@@ -70,7 +84,7 @@
+ 
+ private slots:
+ 	void loadBackends();
+-	
++
+ 	void slotMediumAdded(const QString &id, const QString &name,
+ 	                     bool allowNotification);
+ 	void slotMediumRemoved(const QString &id, const QString &name,
+@@ -85,6 +99,7 @@
+ 	HALBackend *m_halbackend;
+ 	MediaDirNotify m_dirNotify;
+ 	FstabBackend *m_fstabbackend;
++    QPtrList<Medium> m_suspendResumeMountList;
+ };
+ 
+ #endif
+Index: kioslave/media/mediamanager/halbackend.h
+===================================================================
+--- kioslave/media/mediamanager/halbackend.h	(revision 619490)
++++ kioslave/media/mediamanager/halbackend.h	(working copy)
+@@ -96,6 +96,8 @@
+ 	QString mount(const Medium *medium);
+ 	QString unmount(const QString &id);
+ 
++    static bool isHotplug( const QString & id );
++
+ private:
+ 	/**
+ 	* Append a device in the media list. This function will check if the device

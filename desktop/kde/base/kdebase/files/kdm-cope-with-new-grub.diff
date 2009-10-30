@@ -1,0 +1,27 @@
+Index: kdm/backend/bootman.c
+================================================================================
+--- kdm/backend/bootman.c
++++ kdm/backend/bootman.c
+@@ -130,19 +130,14 @@
+ static void
+ commitGrub( void )
+ {
+-	FILE *f;
+-	int pid;
+-	static const char *args[] = { 0, "--batch", "--no-floppy", 0 };
++	char buffer[PATH_MAX];
+ 
+	if (sdRec.bmstamp != mTime( GRUB_MENU ) &&
+	    setGrub( sdRec.osname, &sdRec ) != BO_OK)
+		return;
+ 
+-	args[0] = grub;
+-	if ((f = pOpen( (char **)args, 'w', &pid ))) {
+-		fprintf( f, "savedefault --default=%d --once\n", sdRec.osindex );
+-		pClose( f, pid );
+-	}
++	snprintf(buffer, PATH_MAX, "/usr/sbin/grubonce %d", sdRec.osindex); 
++	system(buffer);
+ }
+ 
+ static char *lilo;

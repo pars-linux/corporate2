@@ -1,0 +1,138 @@
+Index: kioslave/media/medianotifier/medianotifier.cpp
+===================================================================
+--- kioslave/media/medianotifier/medianotifier.cpp	(Revision 593834)
++++ kioslave/media/medianotifier/medianotifier.cpp	(Arbeitskopie)
+@@ -19,8 +19,12 @@
+ 
+ #include "medianotifier.h"
+ 
++#include <sys/vfs.h>
++
+ #include <qfile.h>
+ #include <qfileinfo.h>
++#include <qdir.h>
++#include <qcheckbox.h>
+ 
+ #include <kapplication.h>
+ #include <kglobal.h>
+@@ -44,6 +48,11 @@
+ 	
+ 	connectDCOPSignal( "kded", "mediamanager", "mediumChanged(QString, bool)",
+ 	                   "onMediumChange(QString, bool)", true );
++
++    m_freeTimer = new QTimer( this );
++    connect( m_freeTimer, SIGNAL( timeout() ), SLOT( checkFreeDiskSpace() ) );
++    m_freeTimer->start( 1000*60*3 /* 3 minutes */ );
++    m_freeDialog = 0;
+ }
+ 
+ MediaNotifier::~MediaNotifier()
+@@ -309,4 +318,71 @@
+ 	}
+ }
+ 
++void MediaNotifier::checkFreeDiskSpace()
++{
++    struct statfs sfs;
++    long total, avail;
++    unsigned long long availableMB;
++    if ( m_freeDialog )
++        return;
++
++    if ( statfs( QFile::encodeName( QDir::homeDirPath() ), &sfs ) == 0 )
++    {
++        total = sfs.f_blocks;
++        avail = ( getuid() ? sfs.f_bavail : sfs.f_bfree );
++        availableMB = (sfs.f_bavail * static_cast<unsigned long long>(sfs.f_bsize))/(1024*1024);
++
++        if (avail < 0 || total <= 0)
++            return; // we better do not say anything about it
++
++        int freeperc = static_cast<int>(100 * double(avail) / total);
++
++        if ( availableMB < 500 && freeperc < 5 && KMessageBox::shouldBeShownContinue( "dontagainfreespace" ) )    // free disk space dropped under a limit
++        {
++            m_freeDialog= new KDialogBase(
++                i18n( "Low Disk Space" ),
++                KDialogBase::Yes | KDialogBase::No,
++                KDialogBase::Yes, KDialogBase::No,
++                0, "warningYesNo", false, true,
++                i18n( "Start Konqueror" ), KStdGuiItem::cancel());
++
++            QString text = i18n( "You are running low on disk space on your home partition (currently %1MB free). You can free up some "
++                                 "space using Konqueror or click cancel to disable this warning until next session." ).arg(availableMB);
++            bool checkboxResult = false;
++            KMessageBox::createKMessageBox(m_freeDialog, QMessageBox::Warning, text, QStringList(),
++                                           i18n("Do not ask again"),
++                                           &checkboxResult, KMessageBox::Notify | KMessageBox::NoExec);
++            m_freeDialog->show();
++            connect( m_freeDialog, SIGNAL( yesClicked() ), SLOT( slotFreeContinue() ) );
++            connect( m_freeDialog, SIGNAL( noClicked() ), SLOT( slotFreeCancel() ) );
++        }
++    }
++}
++
++void MediaNotifier::slotFreeContinue()
++{
++    slotFreeFinished( KMessageBox::Continue );
++}
++
++void MediaNotifier::slotFreeCancel()
++{
++    slotFreeFinished( KMessageBox::Cancel );
++}
++
++void MediaNotifier::slotFreeFinished( KMessageBox::ButtonCode res )
++{
++    QCheckBox *checkbox = ::qt_cast<QCheckBox*>( m_freeDialog->child( 0, "QCheckBox" ) );
++    if ( checkbox && checkbox->isChecked() )
++        KMessageBox::saveDontShowAgainYesNo("dontagainfreespace", res);
++    m_freeDialog->delayedDestruct();
++    m_freeDialog = 0;
++
++    if ( res == KMessageBox::Continue ) // start Konqi
++    {
++        ( void ) new KRun( KURL::fromPathOrURL( QDir::homeDirPath() ) );
++    }
++    else                // people don't want to be bothered, at least stop the timer; there's no way to save the dontshowagain entry in this case
++        m_freeTimer->stop();
++}
++
+ #include "medianotifier.moc"
+Index: kioslave/media/medianotifier/medianotifier.h
+--- kioslave/media/medianotifier/medianotifier.h	(Revision 593834)
++++ kioslave/media/medianotifier/medianotifier.h	(Arbeitskopie)
+@@ -23,10 +23,13 @@
+ #include <kdedmodule.h>
+ #include <kfileitem.h>
+ #include <kio/job.h>
++#include <kmessagebox.h>
+ 
+ #include <qstring.h>
+ #include <qmap.h>
+ 
++class KDialogBase;
++
+ class MediaNotifier:  public KDEDModule
+ {
+ 	Q_OBJECT
+@@ -41,6 +44,10 @@
+ 
+ private slots:
+ 	void slotStatResult( KIO::Job *job );
++	void checkFreeDiskSpace();
++	void slotFreeFinished( KMessageBox::ButtonCode );
++	void slotFreeContinue();
++	void slotFreeCancel();
+ 	
+ private:
+ 	bool autostart( const KFileItem &medium );
+@@ -52,6 +59,8 @@
+ 	                   const QString &autoopenFile );
+ 
+ 	QMap<KIO::Job*,bool> m_allowNotificationMap;
++	QTimer * m_freeTimer;
++	KDialogBase * m_freeDialog;
+ };
+ #endif
+ 

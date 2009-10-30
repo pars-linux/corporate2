@@ -1,0 +1,42 @@
+diff -ur kdebase-3.4.92.orig/kcontrol/kdm//kdm-font.cpp kdebase-3.4.92/kcontrol/kdm/kdm-font.cpp
+--- kdebase-3.4.92.orig/kcontrol/kdm//kdm-font.cpp	2005-10-10 18:03:49.000000000 +0300
++++ kdebase-3.4.92/kcontrol/kdm/kdm-font.cpp	2005-10-24 01:24:36.000000000 +0300
+@@ -80,7 +80,7 @@
+   stdFontChooser->button()->setEnabled(false);
+   failFontChooser->button()->setEnabled(false);
+   greetingFontChooser->button()->setEnabled(false);
+-  aacb->setEnabled(false);
++  aacb->setEnabled(true);
+ }
+ 
+ void KDMFontWidget::configChanged()
+@@ -90,9 +90,9 @@
+ 
+ void KDMFontWidget::set_def()
+ {
+-  stdFontChooser->setFont(QFont("Sans Serif", 10));
+-  failFontChooser->setFont(QFont("Sans Serif", 10, QFont::Bold));
+-  greetingFontChooser->setFont(QFont("Serif", 20));
++  stdFontChooser->setFont(QFont("DejaVu Sans", 10));
++  failFontChooser->setFont(QFont("DejaVu Sans", 10, QFont::Bold));
++  greetingFontChooser->setFont(QFont("DejaVu Sans", 20));
+ }
+ 
+ void KDMFontWidget::save()
+@@ -121,14 +121,14 @@
+   font = greetingFontChooser->font();
+   greetingFontChooser->setFont(config->readFontEntry("GreetFont",  &font));
+ 
+-  aacb->setChecked(config->readBoolEntry("AntiAliasing"));
++  aacb->setChecked(config->readBoolEntry("AntiAliasing", true));
+ }
+ 
+ 
+ void KDMFontWidget::defaults()
+ {
+   set_def();
+-  aacb->setChecked(false);
++  aacb->setChecked(true);
+ }
+ 
+ #include "kdm-font.moc"

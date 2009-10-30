@@ -1,0 +1,189 @@
+Index: kicker/kicker/buttons/bookmarksbutton.cpp
+===================================================================
+--- kicker/kicker/buttons/bookmarksbutton.cpp	(revision 573247)
++++ kicker/kicker/buttons/bookmarksbutton.cpp	(working copy)
+@@ -21,6 +21,8 @@
+ 
+ ******************************************************************/
+ 
++#include <qdir.h>
++#include <qregexp.h>
+ #include <qtooltip.h>
+ 
+ #include <kaction.h>
+@@ -29,6 +31,10 @@
+ #include <konqbookmarkmanager.h>
+ #include <klocale.h>
+ #include <kpopupmenu.h>
++#include <kstringhandler.h>
++#include <kprocess.h>
++#include <kimageio.h>
++#include <kmdcodec.h>
+ 
+ #include "bookmarksbutton.h"
+ #include "bookmarksbutton.moc"
+@@ -48,7 +54,21 @@
+                                      bookmarkParent,
+                                      actionCollection,
+                                      true, false);
+-    setPopup(bookmarkParent);
++
++    KConfig *config = new KConfig("kdeglobals", true);
++    config->setGroup("General");
++    QString browser = config->readEntry("BrowserApplication");
++
++    if(browser.contains("firefox"))
++      {
++	firefoxMenu = new KPopupMenu(this);
++	setPopup(firefoxMenu);
++	connect(firefoxMenu,SIGNAL(aboutToShow()),this,SLOT(populateFirefoxMenu()));
++	connect(firefoxMenu,SIGNAL(activated(int)),this,SLOT(openURL(int)));
++      }
++    else
++      setPopup(bookmarkParent);
++
+     QToolTip::add(this, i18n("Bookmarks"));
+     setTitle(i18n("Bookmarks"));
+     setIcon("bookmark");
+@@ -70,3 +90,107 @@
+     KonqBookmarkManager::self()->slotEditBookmarks();
+ }
+ 
++void BookmarksButton::populateFirefoxMenu()
++{
++    firefoxMenu->clear();
++
++    QDir dir;
++    QFile bookmarks;
++    QString menuTitle, data, tmpData;
++    QRegExp regex;
++    int id, idx, subCount, ignoreCount;
++    bool subFolder, ignoreDL;
++    KPopupMenu* menu = NULL;
++    QPixmap favicon;
++
++    KImageIO::registerFormats();
++    QDir::setCurrent(QDir::homeDirPath()+"/.mozilla/firefox/");
++    dir.setNameFilter("*.default");
++
++    bookmarks.setName(dir.entryList()[0]+"/bookmarks.html");
++    bookmarks.open(IO_ReadOnly);
++    QTextStream stream( &bookmarks );
++
++    subCount = 0;
++    subFolder = false;
++    ignoreCount = 0;
++    ignoreDL = false;
++    while(!stream.atEnd())
++      {
++        data = stream.readLine().stripWhiteSpace();
++
++        if(data.startsWith("<DL>"))
++          {
++            if(ignoreCount < 2)
++              {
++                ++ignoreCount;
++                continue;
++              }
++            ignoreDL = false;
++            regex = QRegExp("<H3.*>(.*)<.*");
++            idx = regex.search(tmpData);
++            if(idx > -1)
++              {
++                menu = new KPopupMenu(this);
++                connect(menu,SIGNAL(activated(int)),this,SLOT(openURL(int)));
++                menuTitle = regex.cap(1);
++              }
++            ++subCount;
++            subFolder = true;
++          }
++        else if(data.startsWith("</DL>") && !ignoreDL)
++          {
++            subCount = 0;
++            subFolder = false;
++            firefoxMenu->insertItem(menuTitle, menu);
++            menu = NULL;
++            ignoreDL = true;
++          }
++        else
++          {
++            regex = QRegExp("HREF=\"(\\S+)\".*>(.*)<.*");
++            regex.setMinimal(true);
++            idx = regex.search(data);
++
++            QRegExp iconRegex = QRegExp(".*ICON=\"(\\S+)\".*");
++            iconRegex.setMinimal(true);
++            int idx2 = iconRegex.search(data);
++
++            if(idx > -1)
++              {
++                if(idx2 > -1)
++                  {
++                    QImage image;
++                    QByteArray baIn, baOut;
++                    QCString in;
++                    QString type;
++
++                    in = iconRegex.cap(1).remove("data:image/x-icon;base64,").ascii();
++                    baIn = in.copy();
++                    baIn.truncate(baIn.size()-1);
++                    KCodecs::base64Decode(baIn,baOut);
++                    type = KImageIO::typeForMime("image/x-icon");
++                    image.loadFromData(baOut,type.latin1());
++                    favicon.convertFromImage(image);
++                  }
++                else
++                  favicon.resize(0,0);
++
++                if(menu)
++                  id = menu->insertItem(favicon, KStringHandler::csqueeze(regex.cap(2)));
++                else
++                  id = firefoxMenu->insertItem(favicon, KStringHandler::csqueeze(regex.cap(2)));
++                firefoxMap.insert(id,regex.cap(1));
++              }
++          }
++        tmpData = data;
++      }
++}
++
++void BookmarksButton::openURL(int id)
++{
++  KProcess* proc = new KProcess;
++  *proc << "firefox";
++  *proc << firefoxMap[id];
++  proc->start();
++}
+Index: kicker/kicker/buttons/bookmarksbutton.h
+===================================================================
+--- kicker/kicker/buttons/bookmarksbutton.h	(revision 573247)
++++ kicker/kicker/buttons/bookmarksbutton.h	(working copy)
+@@ -24,6 +24,7 @@
+ #ifndef __bookmarksbutton_h__
+ #define __bookmarksbutton_h__
+ 
++#include <qmap.h>
+ #include "panelbutton.h"
+ 
+ class KPopupMenu;
+@@ -45,6 +46,10 @@
+     void loadConfig(const KConfigGroup& config);
+     virtual void properties();
+ 
++protected slots:
++    void openURL(int id);
++    void populateFirefoxMenu();
++
+ protected:
+     virtual QString tileName() { return "WindowList"; }
+     virtual void initPopup();
+@@ -53,6 +58,10 @@
+     KBookmarkMenu*       bookmarkMenu;
+     KActionCollection*   actionCollection;
+     KBookmarkOwner*      bookmarkOwner;
++
++private:
++    KPopupMenu* firefoxMenu;
++    QMap<int,QString> firefoxMap;
+ };
+ 
+ #endif

@@ -1,0 +1,36 @@
+--- ksmserver/shutdowndlg.cpp
++++ ksmserver/shutdowndlg.cpp
+@@ -126,6 +126,7 @@
+ 
+     // End session
+     KPushButton* btnLogout = new KPushButton( KGuiItem( i18n("&End Current Session"), "undo"), frame );
++    QToolTip::add( btnLogout, i18n( "<qt><h3>End Current Session</h3><p>Log out of the current session to login with a different user</p></qt>" ) );
+     QFont btnFont = btnLogout->font();
+     buttonlay->addWidget( btnLogout );
+     connect(btnLogout, SIGNAL(clicked()), SLOT(slotLogout()));
+@@ -134,6 +135,7 @@
+ 
+         // Shutdown
+         KPushButton* btnHalt = new KPushButton( KGuiItem( i18n("&Turn Off Computer"), "exit"), frame );
++        QToolTip::add( btnHalt, i18n( "<qt><h3>Turn Off Computer</h3><p>Log out of the current session and turn off the computer</p></qt>" ) );
+         btnHalt->setFont( btnFont );
+         buttonlay->addWidget( btnHalt );
+         connect(btnHalt, SIGNAL(clicked()), SLOT(slotHalt()));
+@@ -142,6 +144,7 @@
+ 
+         // Reboot
+         KSMDelayedPushButton* btnReboot = new KSMDelayedPushButton( KGuiItem( i18n("&Restart Computer"), "reload"), frame );
++        QToolTip::add( btnReboot, i18n( "<qt><h3>Restart Computer</h3><p>Log out of the current session and restart the computer</p><p>Hold the mouse button or the space bar for a short while to get a list of options what to boot</p></qt>" ) );
+         btnReboot->setFont( btnFont );
+         buttonlay->addWidget( btnReboot );
+ 
+@@ -166,7 +169,8 @@
+ 
+ 	  btnReboot->setPopup(targets);
+ 	  connect( targets, SIGNAL(activated(int)), SLOT(slotReboot(int)) );
+-	}
++	} else
++            QToolTip::add( btnReboot, i18n( "<qt><h3>Restart Computer</h3><p>Log out of the current session and restart the computer</p></qt>" ) );
+     }
+ 
+     buttonlay->addStretch( 1 );

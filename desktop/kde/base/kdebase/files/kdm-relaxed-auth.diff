@@ -1,0 +1,22 @@
+Index: kdm/backend/auth.c
+================================================================================
+--- kdm/backend/auth.c
++++ kdm/backend/auth.c
+@@ -518,6 +518,7 @@
+ 	uname( &name );
+ 	writeAddr( FamilyLocal, strlen( name.nodename ), name.nodename,
+ 	           file, auth, ok );
++	setenv("XAUTHLOCALHOSTNAME", name.nodename, 1);
+ #endif
+ 
+ #if !defined(NEED_UTSNAME) || defined(__hpux)
+@@ -1211,6 +1212,9 @@
+ 			userEnviron = setEnv( userEnviron, "XAUTHORITY", envname );
+ 			systemEnviron = setEnv( systemEnviron, "XAUTHORITY", envname );
+ 		}
++		name = getenv("XAUTHLOCALHOSTNAME");
++		if (name)		
++			userEnviron = setEnv( userEnviron, "XAUTHLOCALHOSTNAME", name);
+ 		/* a chown() used to be here, but this code runs as user anyway */
+ 	}
+ 	Debug( "done SetUserAuthorization\n" );

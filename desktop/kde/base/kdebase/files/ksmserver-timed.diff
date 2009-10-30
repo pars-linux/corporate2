@@ -1,0 +1,663 @@
+--- ksmserver/KSMServerInterface.h
++++ ksmserver/KSMServerInterface.h
+@@ -22,6 +22,8 @@
+   
+   virtual void suspendStartup( QCString ) = 0;
+   virtual void resumeStartup( QCString ) = 0;
++
++  virtual void logoutTimed( int, int, QString ) = 0;
+ };
+ 
+ #endif
+--- ksmserver/Makefile.am
++++ ksmserver/Makefile.am
+@@ -28,7 +28,7 @@
+ # Order is important for --enable-final!
+ ksmserver_la_SOURCES = main.cpp server.cpp shutdowndlg.cpp \
+ 	legacy.cpp startup.cpp shutdown.cpp client.cpp \
+-	KSMServerInterface.skel server.skel
++	KSMServerInterface.skel server.skel timed.ui
+ 
+ ksmserver_la_LDFLAGS = $(all_libraries) -avoid-version -module
+ ksmserver_la_LIBADD = ../kdmlib/libdmctl.la $(LIB_KDEUI) -llazy $(DBUS_LIBS)
+@@ -42,7 +42,7 @@
+ 
+ 
+ EXTRA_PROGRAMS = testsh
+-testsh_SOURCES = test.cpp
++testsh_SOURCES = test.cpp timed.ui
+ testsh_LDFLAGS = $(all_libraries) $(KDE_RPATH)
+ testsh_LDADD = $(LIB_KDEUI) shutdowndlg.lo ../kdmlib/libdmctl.la -llazy $(DBUS_LIBS)
+ 
+--- ksmserver/server.h
++++ ksmserver/server.h
+@@ -85,6 +85,7 @@
+     // public API
+     void restoreSession( QString sessionName );
+     void startDefaultSession();
++
+     void shutdown( KApplication::ShutdownConfirm confirm,
+                    KApplication::ShutdownType sdtype,
+                    KApplication::ShutdownMode sdmode );
+@@ -92,6 +93,11 @@
+     virtual void suspendStartup( QCString app );
+     virtual void resumeStartup( QCString app );
+ 
++    bool checkStatus( bool &logoutConfirmed, bool &maysd, 
++		      KApplication::ShutdownConfirm confirm,
++		      KApplication::ShutdownType sdtype,
++		      KApplication::ShutdownMode sdmode );
++
+ public slots:
+     void cleanUp();
+ 
+@@ -138,6 +144,11 @@
+     bool defaultSession() const; // empty session
+     void setupXIOErrorHandler();
+ 
++    void shutdownInternal( KApplication::ShutdownConfirm confirm,
++			   KApplication::ShutdownType sdtype,
++			   KApplication::ShutdownMode sdmode,
++			   QString bootOption = QString::null );
++
+     void performLegacySessionSave();
+     void storeLegacySession( KConfig* config );
+     void restoreLegacySession( KConfig* config );
+@@ -153,6 +164,7 @@
+ 
+     // public dcop interface
+     void logout( int, int, int );
++    virtual void logoutTimed( int, int, QString );
+     QStringList sessionList();
+     QString currentSession();
+     void saveCurrentSession();
+--- ksmserver/shutdown.cpp
++++ ksmserver/shutdown.cpp
+@@ -93,14 +93,16 @@
+               (KApplication::ShutdownMode)sdmode );
+ }
+ 
+-void KSMServer::shutdown( KApplication::ShutdownConfirm confirm,
+-    KApplication::ShutdownType sdtype, KApplication::ShutdownMode sdmode )
++bool KSMServer::checkStatus( bool &logoutConfirmed, bool &maysd,
++                             KApplication::ShutdownConfirm confirm,
++                             KApplication::ShutdownType sdtype,
++                             KApplication::ShutdownMode sdmode )
+ {
+     pendingShutdown.stop();
+     if( dialogActive )
+-        return;
++        return false;
+     if( state >= Shutdown ) // already performing shutdown
+-        return;
++        return false;
+     if( state != Idle ) // performing startup
+     {
+     // perform shutdown as soon as startup is finished, in order to avoid saving partial session
+@@ -111,25 +113,44 @@
+             pendingShutdown_sdtype = sdtype;
+             pendingShutdown_sdmode = sdmode;
+         }
+-        return;
++        return false;
+     }
+ 
+     KConfig *config = KGlobal::config();
+     config->reparseConfiguration(); // config may have changed in the KControl module
+ 
+     config->setGroup("General" );
+-    bool logoutConfirmed =
++    logoutConfirmed =
+         (confirm == KApplication::ShutdownConfirmYes) ? false :
+-       (confirm == KApplication::ShutdownConfirmNo) ? true :
+-                  !config->readBoolEntry( "confirmLogout", true );
+-    bool maysd = false;
++        (confirm == KApplication::ShutdownConfirmNo) ? true :
++        !config->readBoolEntry( "confirmLogout", true );
++    maysd = false;
+     if (config->readBoolEntry( "offerShutdown", true ) && DM().canShutdown())
+         maysd = true;
+     if (!maysd) {
+         if (sdtype != KApplication::ShutdownTypeNone &&
+             sdtype != KApplication::ShutdownTypeDefault &&
+             logoutConfirmed)
+-            return; /* unsupported fast shutdown */
++            return false; /* unsupported fast shutdown */
++    }
++
++    return true;
++}
++
++void KSMServer::shutdownInternal( KApplication::ShutdownConfirm confirm,
++                                  KApplication::ShutdownType sdtype,
++                                  KApplication::ShutdownMode sdmode,
++                                  QString bopt )
++{
++    bool maysd = false;
++    bool logoutConfirmed = false;
++    if ( !checkStatus( logoutConfirmed, maysd, confirm, sdtype, sdmode ) )
++        return;
++
++    KConfig *config = KGlobal::config();
++
++    config->setGroup("General" );
++    if (!maysd) {
+         sdtype = KApplication::ShutdownTypeNone;
+     } else if (sdtype == KApplication::ShutdownTypeDefault)
+         sdtype = (KApplication::ShutdownType)
+@@ -138,7 +159,6 @@
+         sdmode = KApplication::ShutdownModeInteractive;
+ 
+     dialogActive = true;
+-    QString bopt;
+     if ( !logoutConfirmed ) {
+         KSMShutdownFeedback::start(); // make the screen gray
+         logoutConfirmed =
+@@ -204,6 +224,27 @@
+     dialogActive = false;
+ }
+ 
++void KSMServer::shutdown( KApplication::ShutdownConfirm confirm,
++    KApplication::ShutdownType sdtype, KApplication::ShutdownMode sdmode )
++{
++    shutdownInternal( confirm, sdtype, sdmode );
++}
++
++#include <kmessagebox.h>
++
++void KSMServer::logoutTimed( int sdtype, int sdmode, QString bootOption )
++{
++    KSMShutdownFeedback::start(); // make the screen gray
++    bool result = KSMDelayedMessageBox::showTicker( (KApplication::ShutdownType)sdtype, bootOption );
++    KSMShutdownFeedback::stop(); // make the screen become normal again
++
++    if ( result )
++        shutdownInternal( KApplication::ShutdownConfirmNo,
++                          (KApplication::ShutdownType)sdtype,
++                          (KApplication::ShutdownMode)sdmode,
++                           bootOption );
++}
++
+ void KSMServer::pendingShutdownTimeout()
+ {
+     shutdown( pendingShutdown_confirm, pendingShutdown_sdtype, pendingShutdown_sdmode );
+--- ksmserver/shutdowndlg.cpp
++++ ksmserver/shutdowndlg.cpp
+@@ -466,3 +466,69 @@
+   popt->stop();
+   setDown(false);
+ }
++
++KSMDelayedMessageBox::KSMDelayedMessageBox( KApplication::ShutdownType sdtype, const QString &bootOption )
++    : TimedLogoutDlg( 0, 0, true, WType_Popup )
++{
++    if ( sdtype == KApplication::ShutdownTypeHalt )
++    {
++        m_title->setText( i18n( "Would you like to turn off your computer?" ) );
++        m_template = i18n( "This computer will turn off automatically\n"
++                           "after %1 seconds." );
++        m_logo->setPixmap( BarIcon( "exit", 48 ) );
++        m_remaining = 31;
++    } else if ( sdtype == KApplication::ShutdownTypeReboot )
++    {
++        if (bootOption.isEmpty())
++            m_title->setText( i18n( "Would you like to reboot your computer?" ) );
++        else
++            m_title->setText( i18n( "Would you like to reboot to \"%1\"?" ).arg(bootOption) );
++        m_template = i18n( "This computer will reboot automatically\n"
++                           "after %1 seconds." );
++        m_logo->setPixmap( BarIcon( "reload", 48 ) );
++        m_remaining = 31;
++    } else {
++        m_title->setText( i18n( "Would you like to end your current session?" ) );
++        m_template = i18n( "This session will end\n"
++                           "after %1 seconds automatically." );
++        m_logo->setPixmap( BarIcon( "previous", 48 ) );
++        m_remaining = 31;
++    }
++    updateText();
++    adjustSize();
++    if (  double( height() ) / width() < 0.25 )
++    {
++        setFixedHeight( qRound( width() * 0.3 ) );
++        adjustSize();
++    }
++    QTimer *timer = new QTimer( this );
++    timer->start( 1000 );
++    connect( timer, SIGNAL( timeout() ), SLOT( updateText() ) );
++    KDialog::centerOnScreen(this);
++}
++
++void KSMDelayedMessageBox::updateText()
++{
++    m_remaining--;
++    if ( m_remaining == 0 )
++    {
++        accept();
++        return;
++    }
++    m_text->setText( m_template.arg( m_remaining ) );
++}
++
++bool KSMDelayedMessageBox::showTicker( KApplication::ShutdownType sdtype, const QString &bootOption )
++{
++    kapp->enableStyles();
++    KSMDelayedMessageBox msg( sdtype, bootOption );
++    QSize sh = msg.sizeHint();
++    QRect rect = KGlobalSettings::desktopGeometry(QCursor::pos());
++
++    msg.move(rect.x() + (rect.width() - sh.width())/2,
++            rect.y() + (rect.height() - sh.height())/2);
++    bool result = msg.exec();
++
++    kapp->disableStyles();
++    return result;
++}
+--- ksmserver/shutdowndlg.h
++++ ksmserver/shutdowndlg.h
+@@ -17,6 +17,7 @@
+ class QPopupMenu;
+ class QTimer;
+ 
++#include "timed.h"
+ #include <kapplication.h>
+ 
+ // The (singleton) widget that makes the desktop gray.
+@@ -93,4 +94,22 @@
+   QTimer *popt;
+ };
+ 
++class QLabel;
++
++class  KSMDelayedMessageBox : public TimedLogoutDlg
++{
++    Q_OBJECT
++
++public:
++    KSMDelayedMessageBox( KApplication::ShutdownType sdtype, const QString &bootOption );
++    static bool showTicker( KApplication::ShutdownType sdtype, const QString &bootOption );
++
++protected slots:
++    void updateText();
++
++private:
++    QString m_template;
++    int m_remaining;
++};
++
+ #endif
+--- ksmserver/test.cpp
++++ ksmserver/test.cpp
+@@ -14,11 +14,16 @@
+    a.iconLoader()->addAppDir("ksmserver");
+    KSMShutdownFeedback::start();
+ 
++   // ShutdownTypeNone == Logout == 0
++   // ShutdownTypeReboot == 1
++   // ShutdownTypeHalt == 2
+    KApplication::ShutdownType sdtype = KApplication::ShutdownTypeNone;
+    QString bopt;
++   KSMDelayedMessageBox::showTicker( sdtype );
++   /*
+    (void)KSMShutdownDlg::confirmShutdown( true,
+                                           sdtype,
+-                                          bopt );
++                                          bopt );*/
+ /*   (void)KSMShutdownDlg::confirmShutdown( false,
+                                           sdtype,
+                                           bopt ); */
+--- ksmserver/timed.ui
++++ ksmserver/timed.ui
+@@ -0,0 +1,352 @@
++<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
++<class>TimedLogoutDlg</class>
++<widget class="QDialog">
++    <property name="name">
++        <cstring>TimedLogoutDlg</cstring>
++    </property>
++    <property name="geometry">
++        <rect>
++            <x>0</x>
++            <y>0</y>
++            <width>381</width>
++            <height>131</height>
++        </rect>
++    </property>
++    <property name="sizePolicy">
++        <sizepolicy>
++            <hsizetype>5</hsizetype>
++            <vsizetype>5</vsizetype>
++            <horstretch>0</horstretch>
++            <verstretch>0</verstretch>
++        </sizepolicy>
++    </property>
++    <property name="caption">
++        <string>Confirmation</string>
++    </property>
++    <vbox>
++        <property name="name">
++            <cstring>unnamed</cstring>
++        </property>
++        <property name="margin">
++            <number>0</number>
++        </property>
++        <property name="spacing">
++            <number>0</number>
++        </property>
++        <widget class="QFrame">
++            <property name="name">
++                <cstring>frame3</cstring>
++            </property>
++            <property name="sizePolicy">
++                <sizepolicy>
++                    <hsizetype>5</hsizetype>
++                    <vsizetype>5</vsizetype>
++                    <horstretch>0</horstretch>
++                    <verstretch>0</verstretch>
++                </sizepolicy>
++            </property>
++            <property name="frameShape">
++                <enum>StyledPanel</enum>
++            </property>
++            <property name="frameShadow">
++                <enum>Raised</enum>
++            </property>
++            <property name="lineWidth">
++                <number>2</number>
++            </property>
++            <property name="margin">
++                <number>0</number>
++            </property>
++            <property name="midLineWidth">
++                <number>0</number>
++            </property>
++            <hbox>
++                <property name="name">
++                    <cstring>unnamed</cstring>
++                </property>
++                <widget class="QLayoutWidget">
++                    <property name="name">
++                        <cstring>layout10</cstring>
++                    </property>
++                    <vbox>
++                        <property name="name">
++                            <cstring>unnamed</cstring>
++                        </property>
++                        <property name="margin">
++                            <number>0</number>
++                        </property>
++                        <property name="spacing">
++                            <number>0</number>
++                        </property>
++                        <widget class="QLayoutWidget">
++                            <property name="name">
++                                <cstring>layout8</cstring>
++                            </property>
++                            <hbox>
++                                <property name="name">
++                                    <cstring>unnamed</cstring>
++                                </property>
++                                <widget class="QLayoutWidget">
++                                    <property name="name">
++                                        <cstring>layout6</cstring>
++                                    </property>
++                                    <vbox>
++                                        <property name="name">
++                                            <cstring>unnamed</cstring>
++                                        </property>
++                                        <property name="margin">
++                                            <number>0</number>
++                                        </property>
++                                        <property name="spacing">
++                                            <number>0</number>
++                                        </property>
++                                        <spacer>
++                                            <property name="name">
++                                                <cstring>spacer3_2</cstring>
++                                            </property>
++                                            <property name="orientation">
++                                                <enum>Vertical</enum>
++                                            </property>
++                                            <property name="sizeType">
++                                                <enum>MinimumExpanding</enum>
++                                            </property>
++                                            <property name="sizeHint">
++                                                <size>
++                                                    <width>20</width>
++                                                    <height>2</height>
++                                                </size>
++                                            </property>
++                                        </spacer>
++                                        <widget class="QLabel">
++                                            <property name="name">
++                                                <cstring>m_logo</cstring>
++                                            </property>
++                                            <property name="sizePolicy">
++                                                <sizepolicy>
++                                                    <hsizetype>1</hsizetype>
++                                                    <vsizetype>1</vsizetype>
++                                                    <horstretch>0</horstretch>
++                                                    <verstretch>0</verstretch>
++                                                </sizepolicy>
++                                            </property>
++                                            <property name="minimumSize">
++                                                <size>
++                                                    <width>48</width>
++                                                    <height>48</height>
++                                                </size>
++                                            </property>
++                                            <property name="scaledContents">
++                                                <bool>true</bool>
++                                            </property>
++                                        </widget>
++                                        <spacer>
++                                            <property name="name">
++                                                <cstring>spacer3</cstring>
++                                            </property>
++                                            <property name="orientation">
++                                                <enum>Vertical</enum>
++                                            </property>
++                                            <property name="sizeType">
++                                                <enum>MinimumExpanding</enum>
++                                            </property>
++                                            <property name="sizeHint">
++                                                <size>
++                                                    <width>20</width>
++                                                    <height>2</height>
++                                                </size>
++                                            </property>
++                                        </spacer>
++                                    </vbox>
++                                </widget>
++                                <widget class="QLayoutWidget">
++                                    <property name="name">
++                                        <cstring>layout7</cstring>
++                                    </property>
++                                    <vbox>
++                                        <property name="name">
++                                            <cstring>unnamed</cstring>
++                                        </property>
++                                        <property name="margin">
++                                            <number>7</number>
++                                        </property>
++                                        <widget class="QLabel">
++                                            <property name="name">
++                                                <cstring>m_title</cstring>
++                                            </property>
++                                            <property name="sizePolicy">
++                                                <sizepolicy>
++                                                    <hsizetype>7</hsizetype>
++                                                    <vsizetype>0</vsizetype>
++                                                    <horstretch>0</horstretch>
++                                                    <verstretch>0</verstretch>
++                                                </sizepolicy>
++                                            </property>
++                                            <property name="font">
++                                                <font>
++                                                    <bold>1</bold>
++                                                </font>
++                                            </property>
++                                            <property name="text">
++                                                <string>Would you like to shutdown your computer?</string>
++                                            </property>
++                                            <property name="textFormat">
++                                                <enum>PlainText</enum>
++                                            </property>
++                                            <property name="alignment">
++                                                <set>AlignVCenter|AlignLeft</set>
++                                            </property>
++                                        </widget>
++                                        <widget class="QLabel">
++                                            <property name="name">
++                                                <cstring>m_text</cstring>
++                                            </property>
++                                            <property name="sizePolicy">
++                                                <sizepolicy>
++                                                    <hsizetype>7</hsizetype>
++                                                    <vsizetype>5</vsizetype>
++                                                    <horstretch>0</horstretch>
++                                                    <verstretch>0</verstretch>
++                                                </sizepolicy>
++                                            </property>
++                                            <property name="text">
++                                                <string>If you do not act, your computer will shutdown
++after X automatically.</string>
++                                            </property>
++                                            <property name="textFormat">
++                                                <enum>RichText</enum>
++                                            </property>
++                                            <property name="alignment">
++                                                <set>WordBreak|AlignVCenter</set>
++                                            </property>
++                                        </widget>
++                                        <spacer>
++                                            <property name="name">
++                                                <cstring>spacer4</cstring>
++                                            </property>
++                                            <property name="orientation">
++                                                <enum>Vertical</enum>
++                                            </property>
++                                            <property name="sizeType">
++                                                <enum>Preferred</enum>
++                                            </property>
++                                            <property name="sizeHint">
++                                                <size>
++                                                    <width>30</width>
++                                                    <height>0</height>
++                                                </size>
++                                            </property>
++                                        </spacer>
++                                    </vbox>
++                                </widget>
++                            </hbox>
++                        </widget>
++                        <widget class="QLayoutWidget">
++                            <property name="name">
++                                <cstring>layout9</cstring>
++                            </property>
++                            <hbox>
++                                <property name="name">
++                                    <cstring>unnamed</cstring>
++                                </property>
++                                <spacer>
++                                    <property name="name">
++                                        <cstring>spacer2</cstring>
++                                    </property>
++                                    <property name="orientation">
++                                        <enum>Horizontal</enum>
++                                    </property>
++                                    <property name="sizeType">
++                                        <enum>Expanding</enum>
++                                    </property>
++                                    <property name="sizeHint">
++                                        <size>
++                                            <width>90</width>
++                                            <height>20</height>
++                                        </size>
++                                    </property>
++                                </spacer>
++                                <widget class="QPushButton">
++                                    <property name="name">
++                                        <cstring>pushButton1</cstring>
++                                    </property>
++                                    <property name="text">
++                                        <string>Confirm</string>
++                                    </property>
++                                    <property name="on">
++                                        <bool>false</bool>
++                                    </property>
++                                </widget>
++                                <spacer>
++                                    <property name="name">
++                                        <cstring>spacer2_2</cstring>
++                                    </property>
++                                    <property name="orientation">
++                                        <enum>Horizontal</enum>
++                                    </property>
++                                    <property name="sizeType">
++                                        <enum>Expanding</enum>
++                                    </property>
++                                    <property name="sizeHint">
++                                        <size>
++                                            <width>90</width>
++                                            <height>20</height>
++                                        </size>
++                                    </property>
++                                </spacer>
++                                <widget class="QPushButton">
++                                    <property name="name">
++                                        <cstring>pushButton2</cstring>
++                                    </property>
++                                    <property name="sizePolicy">
++                                        <sizepolicy>
++                                            <hsizetype>1</hsizetype>
++                                            <vsizetype>5</vsizetype>
++                                            <horstretch>0</horstretch>
++                                            <verstretch>0</verstretch>
++                                        </sizepolicy>
++                                    </property>
++                                    <property name="text">
++                                        <string>Cancel</string>
++                                    </property>
++                                </widget>
++                                <spacer>
++                                    <property name="name">
++                                        <cstring>spacer2_2_2</cstring>
++                                    </property>
++                                    <property name="orientation">
++                                        <enum>Horizontal</enum>
++                                    </property>
++                                    <property name="sizeType">
++                                        <enum>Expanding</enum>
++                                    </property>
++                                    <property name="sizeHint">
++                                        <size>
++                                            <width>90</width>
++                                            <height>20</height>
++                                        </size>
++                                    </property>
++                                </spacer>
++                            </hbox>
++                        </widget>
++                    </vbox>
++                </widget>
++            </hbox>
++        </widget>
++    </vbox>
++</widget>
++<connections>
++    <connection>
++        <sender>pushButton1</sender>
++        <signal>clicked()</signal>
++        <receiver>TimedLogoutDlg</receiver>
++        <slot>accept()</slot>
++    </connection>
++    <connection>
++        <sender>pushButton2</sender>
++        <signal>clicked()</signal>
++        <receiver>TimedLogoutDlg</receiver>
++        <slot>reject()</slot>
++    </connection>
++</connections>
++<layoutdefaults spacing="6" margin="11"/>
++</UI>

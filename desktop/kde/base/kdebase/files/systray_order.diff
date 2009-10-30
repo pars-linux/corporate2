@@ -1,0 +1,150 @@
+--- kicker/applets/systemtray/systemtrayapplet.cpp.sav	2006-10-17 15:19:32.000000000 +0200
++++ kicker/applets/systemtray/systemtrayapplet.cpp	2006-10-17 16:46:29.000000000 +0200
+@@ -205,13 +205,12 @@ void SystemTrayApplet::preferences()
+     connect(m_settingsDialog, SIGNAL(finished()), this, SLOT(settingsDialogFinished()));
+ 
+     m_iconSelector = new KActionSelector(m_settingsDialog);
+-    m_iconSelector->setAvailableLabel(i18n("Visible icons:"));
+-    m_iconSelector->setSelectedLabel(i18n("Hidden icons:"));
+-    m_iconSelector->setShowUpDownButtons(false);
++    m_iconSelector->setAvailableLabel(i18n("Hidden icons:"));
++    m_iconSelector->setSelectedLabel(i18n("Visible icons:"));
+     m_settingsDialog->setMainWidget(m_iconSelector);
+ 
+-    QListBox *shownListBox = m_iconSelector->availableListBox();
+-    QListBox *hiddenListBox = m_iconSelector->selectedListBox();
++    QListBox *hiddenListBox = m_iconSelector->availableListBox();
++    QListBox *shownListBox = m_iconSelector->selectedListBox();
+ 
+     TrayEmbedList::const_iterator it = m_shownWins.begin();
+     TrayEmbedList::const_iterator itEnd = m_shownWins.end();
+@@ -253,26 +252,48 @@ void SystemTrayApplet::applySettings()
+     }
+ 
+     KConfig *conf = config();
+-    conf->setGroup("HiddenTrayIcons");
+-    QString name;
+ 
+-    // use the following snippet of code someday to implement ordering
+-    // of icons
+-    /*
+-    m_visibleIconList.clear();
+-    QListBoxItem* item = m_iconSelector->availableListBox()->firstItem();
+-    for (; item; item = item->next())
++    // Save the sort order and hidden status using the window class (WM_CLASS) rather
++    // than window name (caption) - window name is i18n-ed, so it's for example
++    // not possible to create default settings.
++    // For backwards compatibility, name is kept as it is, class is preceded by '!'.
++    QMap< QString, QString > windowNameToClass;
++    for( TrayEmbedList::ConstIterator it = m_shownWins.begin();
++         it != m_shownWins.end();
++         ++it ) {
++        KWin::WindowInfo info = KWin::windowInfo( (*it)->embeddedWinId(), NET::WMName, NET::WM2WindowClass);
++        windowNameToClass[ info.name() ] = '!' + info.windowClassClass();
++    }
++    for( TrayEmbedList::ConstIterator it = m_hiddenWins.begin();
++         it != m_hiddenWins.end();
++         ++it ) {
++        KWin::WindowInfo info = KWin::windowInfo( (*it)->embeddedWinId(), NET::WMName, NET::WM2WindowClass);
++        windowNameToClass[ info.name() ] = '!' + info.windowClassClass();
++    }
++
++    conf->setGroup("SortedTrayIcons");
++    m_sortOrderIconList.clear();
++    for(QListBoxItem* item = m_iconSelector->selectedListBox()->firstItem();
++        item;
++        item = item->next())
+     {
+-        m_visibleIconList.append(item->text());
++        if( windowNameToClass.contains(item->text()))
++            m_sortOrderIconList.append(windowNameToClass[item->text()]);
++        else
++            m_sortOrderIconList.append(item->text());
+     }
+-    conf->writeEntry("Visible", m_visibleIconList);
+-    selection.clear();*/
++    conf->writeEntry("SortOrder", m_sortOrderIconList);
+ 
++    conf->setGroup("HiddenTrayIcons");
+     m_hiddenIconList.clear();
+-    QListBoxItem* item = m_iconSelector->selectedListBox()->firstItem();
+-    for (; item; item = item->next())
++    for(QListBoxItem* item = m_iconSelector->availableListBox()->firstItem();
++        item;
++        item = item->next())
+     {
+-        m_hiddenIconList.append(item->text());
++        if( windowNameToClass.contains(item->text()))
++            m_hiddenIconList.append(windowNameToClass[item->text()]);
++        else
++            m_hiddenIconList.append(item->text());
+     }
+     conf->writeEntry("Hidden", m_hiddenIconList);
+     conf->sync();
+@@ -408,6 +429,9 @@ void SystemTrayApplet::loadSettings()
+     conf->setGroup("HiddenTrayIcons");
+     m_hiddenIconList = conf->readListEntry("Hidden");
+ 
++    conf->setGroup("SortedTrayIcons");
++    m_sortOrderIconList = conf->readListEntry("SortOrder");
++
+     //Note This setting comes from kdeglobal.
+     conf->setGroup("System Tray");
+     m_iconSize = conf->readNumEntry("systrayIconWidth", 22);
+@@ -498,7 +522,9 @@ bool SystemTrayApplet::isWinManaged(WId 
+ 
+ bool SystemTrayApplet::shouldHide(WId w)
+ {
+-    return m_hiddenIconList.find(KWin::windowInfo(w).name()) != m_hiddenIconList.end();
++    return m_hiddenIconList.find(KWin::windowInfo(w).name()) != m_hiddenIconList.end()
++        || m_hiddenIconList.find('!'+KWin::windowInfo(w,0,NET::WM2WindowClass).windowClassClass())
++            != m_hiddenIconList.end();
+ }
+ 
+ void SystemTrayApplet::updateVisibleWins()
+@@ -520,6 +546,35 @@ void SystemTrayApplet::updateVisibleWins
+             (*emb)->hide();
+         }
+     }
++    
++    QMap< QXEmbed*, QString > names; // cache window names and classes
++    QMap< QXEmbed*, QString > classes;
++    for( TrayEmbedList::const_iterator it = m_shownWins.begin();
++         it != m_shownWins.end();
++         ++it ) {
++        KWin::WindowInfo info = KWin::windowInfo((*it)->embeddedWinId(),NET::WMName,NET::WM2WindowClass);
++        names[ *it ] = info.name();
++        classes[ *it ] = '!'+info.windowClassClass();
++    }
++    TrayEmbedList newList;
++    for( QStringList::const_iterator it1 = m_sortOrderIconList.begin();
++         it1 != m_sortOrderIconList.end();
++         ++it1 ) {
++        for( TrayEmbedList::iterator it2 = m_shownWins.begin();
++             it2 != m_shownWins.end();
++             ) {
++            if( (*it1).startsWith("!") ? classes[ *it2 ] == *it1 : names[ *it2 ] == *it1 ) {
++                newList.append( *it2 ); // don't bail out, there may be multiple ones
++                it2 = m_shownWins.erase( it2 );
++            } else
++                ++it2;
++        }
++    }
++    for( TrayEmbedList::const_iterator it = m_shownWins.begin();
++         it != m_shownWins.end();
++         ++it )
++        newList.append( *it ); // append unsorted items
++    m_shownWins = newList;
+ }
+ 
+ void SystemTrayApplet::toggleExpanded()
+--- kicker/applets/systemtray/systemtrayapplet.h.sav	2006-04-13 14:02:58.000000000 +0200
++++ kicker/applets/systemtray/systemtrayapplet.h	2006-10-17 15:20:05.000000000 +0200
+@@ -93,6 +93,7 @@ private:
+     TrayEmbedList m_shownWins;
+     TrayEmbedList m_hiddenWins;
+     QStringList m_hiddenIconList;
++    QStringList m_sortOrderIconList;
+     KWinModule *kwin_module;
+     Atom net_system_tray_selection;
+     Atom net_system_tray_opcode;

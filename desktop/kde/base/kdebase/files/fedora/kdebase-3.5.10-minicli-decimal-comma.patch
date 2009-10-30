@@ -1,0 +1,17 @@
+diff -ur kdebase-3.5.10/kdesktop/minicli.cpp kdebase-3.5.10-minicli-decimal-comma/kdesktop/minicli.cpp
+--- kdebase-3.5.10/kdesktop/minicli.cpp	2007-01-15 12:32:10.000000000 +0100
++++ kdebase-3.5.10-minicli-decimal-comma/kdesktop/minicli.cpp	2008-10-08 11:49:33.000000000 +0200
+@@ -857,9 +857,12 @@
+   updateAuthLabel();
+ }
+ 
+-QString Minicli::calculate(const QString &exp)
++QString Minicli::calculate(const QString &input)
+ {
+    QString result, cmd;
++   QString exp = input;
++   //replace commas with dots so european decimals can be calculated
++   exp.replace(QChar(','), ".");
+    const QString bc = KStandardDirs::findExe("bc");
+    if ( !bc.isEmpty() )
+       cmd = QString("echo %1 | %2").arg(KProcess::quote(QString("scale=8; ")+exp), KProcess::quote(bc));

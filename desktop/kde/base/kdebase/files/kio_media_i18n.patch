@@ -1,0 +1,32 @@
+--- kdebase-3.5.10-orig/kioslave/media/mediamanager/halbackend.cpp	2008-12-06 17:20:08.000000000 +0200
++++ kdebase-3.5.10/kioslave/media/mediamanager/halbackend.cpp	2008-12-06 16:48:06.000000000 +0200
+@@ -456,7 +456,18 @@
+     char* name = libhal_volume_policy_compute_display_name(halDrive, halVolume, m_halStoragePolicy);
+     QString volume_name = QString::fromUtf8(name);
+     QString media_name = volume_name;
+-    medium->setLabel(media_name);
++    /* media_name contains something like "501M Removable Media" or "Blank CD-R"
++       The former needs special handling for correct translation
++    */
++    if (media_name.find(QRegExp("^[0-9]+\\.?[0-9]*[KMGT] (Removable )?Media$")) > -1)
++    {
++        QString pattern = media_name.section(" ", 1);
++        media_name.replace(pattern, i18n(pattern.ascii()));
++        medium->setLabel(media_name);
++    }
++    else
++        medium->setLabel(i18n(media_name.ascii()));
++
+     free(name);
+ 
+     QString mimeType;
+--- kdebase-3.5.10-orig/kioslave/media/mediamanager/halbackend.h	2008-12-06 17:20:08.000000000 +0200
++++ kdebase-3.5.10/kioslave/media/mediamanager/halbackend.h	2008-12-06 16:48:06.000000000 +0200
+@@ -34,6 +34,7 @@
+ #include <qobject.h>
+ #include <qstringlist.h>
+ #include <qstring.h>
++#include <qregexp.h>
+ 
+ #include <config.h>
+ 

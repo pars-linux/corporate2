@@ -1,0 +1,32 @@
+Index: kxkb/extension.cpp
+===================================================================
+--- kxkb/extension.cpp.orig
++++ kxkb/extension.cpp
+@@ -4,6 +4,7 @@
+ #include <qstring.h>
+ #include <qmap.h>
+ #include <qfile.h>
++#include <qdir.h>
+ 
+ #include <kdebug.h>
+ #include <kstandarddirs.h>
+@@ -110,6 +111,19 @@ bool XKBExtension::setXkbOptions(const Q
+ 
+     p.start(KProcess::Block);
+ 
++    // Pardus bug #1829
++    QString modmap = QDir::homeDirPath() + "/.Xmodmap";
++    if( QFile::exists(modmap) ) {
++        exe = KGlobal::dirs()->findExe("xmodmap");
++        if( !exe.isEmpty() ) {
++            KProcess m;
++            m << exe;
++            m << modmap;
++
++            m.start(KProcess::Block);
++        }
++    }
++
+     return p.normalExit() && (p.exitStatus() == 0);
+ }
+ 

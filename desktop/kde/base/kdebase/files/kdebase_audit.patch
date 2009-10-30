@@ -1,0 +1,200 @@
+diff -Nur kdebase-3.5.8.orig/kdm/backend/client.c kdebase-3.5.8/kdm/backend/client.c
+--- kdebase-3.5.8.orig/kdm/backend/client.c	2007-11-21 09:53:07.000000000 +0200
++++ kdebase-3.5.8/kdm/backend/client.c	2007-11-21 10:00:10.000000000 +0200
+@@ -86,6 +86,14 @@
+ #include "consolekit.h"
+ #endif
+ 
++#define  AU_FAILED 0
++#define  AU_SUCCESS 1
++#ifdef HAVE_LIBAUDIT
++#include <libaudit.h>
++#else
++#define log_to_audit_system(l,h,d,s)	do { ; } while (0)
++#endif
++
+ /*
+  * Session data, mostly what struct verify_info was for
+  */
+@@ -290,6 +298,56 @@
+ {}
+ # endif
+ 
++ /**
++ * log_to_audit_system:
++ * @login: Name of user
++ * @hostname: Name of host machine
++ * @tty: Name of display 
++ * @success: 1 for success, 0 for failure
++ *
++ * Logs the success or failure of the login attempt with the linux kernel
++ * audit system. The intent is to capture failed events where the user
++ * fails authentication or otherwise is not permitted to login. There are
++ * many other places where pam could potentially fail and cause login to 
++ * fail, but these are system failures rather than the signs of an account
++ * being hacked.
++ *
++ * Returns nothing.
++ */
++
++#ifdef HAVE_LIBAUDIT
++static void 
++log_to_audit_system (const char *loginname,
++		     const char *hostname,
++		     const char *tty,
++		     int success)
++{
++	struct passwd *pw;
++	char buf[64];
++	int audit_fd;
++
++	audit_fd = audit_open();
++	if (loginname)
++		pw = getpwnam(loginname);
++	else {
++		loginname = "unknown";
++		pw = NULL;
++	}
++	Debug("log_to_audit %p %s\n", pw, loginname);
++
++	if (pw) {
++		snprintf(buf, sizeof(buf), "uid=%d", pw->pw_uid);
++		audit_log_user_message(audit_fd, AUDIT_USER_LOGIN,
++			buf, hostname, NULL, tty, (int)success);
++	} else {
++		snprintf(buf, sizeof(buf), "acct=%s", loginname);
++		audit_log_user_message(audit_fd, AUDIT_USER_LOGIN,
++			buf, hostname, NULL, tty, (int)success);
++	}
++	close(audit_fd);
++}
++#endif
++
+ static int
+ doPAMAuth( const char *psrv, struct pam_data *pdata )
+ {
+@@ -348,6 +406,8 @@
+ 		GSendStr( curuser );
+ 	}
+ 	if (pretc != PAM_SUCCESS) {
++	        /* Log the failed login attempt */
++	        log_to_audit_system (curuser, td->remoteHost, td->name, AU_FAILED);
+ 		switch (pretc) {
+ 		case PAM_USER_UNKNOWN:
+ 		case PAM_AUTH_ERR:
+@@ -698,6 +758,8 @@
+ 	if (!p->pw_uid) {
+ 		if (!rootok && !td->allowRootLogin)
+ 			V_RET_FAIL( "Root logins are not allowed" );
++		/* Log the failed login attempt */
++		log_to_audit_system (curuser, td->remoteHost, td->name, AU_FAILED);
+ 		return 1; /* don't deny root to log in */
+ 	}
+ 
+@@ -734,6 +796,8 @@
+ 			}
+ 			if (pretc == PAM_SUCCESS)
+ 				break;
++			/* Log the failed login attempt */
++			log_to_audit_system (curuser, td->remoteHost, td->name, AU_FAILED);
+ 			/* effectively there is only PAM_AUTHTOK_ERR */
+ 			GSendInt( V_FAIL );
+ 		}
+@@ -823,6 +887,8 @@
+ 				GSendInt( V_MSG_ERR );
+ 				GSendStr( "Your account has expired;"
+ 				          " please contact your system administrator" );
++				/* Log the failed login attempt */
++				log_to_audit_system (curuser, td->remoteHost, td->name, AU_FAILED);
+ 				GSendInt( V_FAIL );
+ 				LC_RET0;
+ 			} else if (tim > (expir - warntime) && !quietlog) {
+@@ -857,6 +923,8 @@
+ 				GSendInt( V_MSG_ERR );
+ 				GSendStr( "Your account has expired;"
+ 				          " please contact your system administrator" );
++				/* Log the failed login attempt */
++				log_to_audit_system (curuser, td->remoteHost, td->name, AU_FAILED);
+ 				GSendInt( V_FAIL );
+ 				LC_RET0;
+ 			}
+@@ -916,6 +984,8 @@
+ 			close( fd );
+ 		}
+ 		GSendStr( "Logins are not allowed at the moment.\nTry again later" );
++		/* Log the failed login attempt */
++		log_to_audit_system (curuser, td->remoteHost, td->name, AU_FAILED);
+ 		GSendInt( V_FAIL );
+ 		LC_RET0;
+ 	}
+@@ -926,6 +996,8 @@
+ 		PrepErrorGreet();
+ 		GSendInt( V_MSG_ERR );
+ 		GSendStr( "You are not allowed to login at the moment" );
++		/* Log the failed login attempt */
++		log_to_audit_system (curuser, td->remoteHost, td->name, AU_FAILED);
+ 		GSendInt( V_FAIL );
+ 		LC_RET0;
+ 	}
+@@ -937,6 +1009,8 @@
+ 			Debug( "shell not in /etc/shells\n" );
+ 			endusershell();
+ 			V_RET_FAIL( "Your login shell is not listed in /etc/shells" );
++			/* Log the failed login attempt */
++			log_to_audit_system (curuser, td->remoteHost, td->name, AU_FAILED);
+ 		}
+ 		if (!strcmp( s, p->pw_shell )) {
+ 			endusershell();
+@@ -1359,6 +1433,9 @@
+ # define D_LOGIN_SETGROUP 0
+ #endif /* USE_PAM */
+ 
++	/* Login succeeded */
++	log_to_audit_system (curuser, td->remoteHost, td->name, AU_SUCCESS);
++
+ 	removeAuth = 1;
+ 	chownCtrl( &td->ctrl, curuid );
+ 	endpwent();
+diff -Nur kdebase-3.5.8.orig/kdm/backend/Makefile.am kdebase-3.5.8/kdm/backend/Makefile.am
+--- kdebase-3.5.8.orig/kdm/backend/Makefile.am	2007-11-21 09:53:07.000000000 +0200
++++ kdebase-3.5.8/kdm/backend/Makefile.am	2007-11-21 10:00:33.000000000 +0200
+@@ -4,7 +4,7 @@
+ LDFLAGS = $(USER_LDFLAGS) $(X_LDFLAGS) $(X_RPATH) $(KRB4_RPATH) $(KRB5_RPATH)
+ LDADD = $(LIB_X11) -lXau $(LIBXDMCP) $(PASSWDLIBS) $(LIBSHADOW) $(LIBGEN) \
+     $(LIB_LIBS) $(KRB4_LIBS) $(KRB5_LIBS) $(DBUS_LIBS) $(LIBSOCKET) $(LIBRESOLV) \
+-    $(LIBUCB) $(LIBUTIL) $(LIBPOSIX4)
++    $(LIBUCB) $(LIBUTIL) $(LIBPOSIX4) -laudit
+ 
+ bin_PROGRAMS = kdm
+ kdm_SOURCES = \
+diff -Nur kdebase-3.5.8.orig/kdm/configure.in.in kdebase-3.5.8/kdm/configure.in.in
+--- kdebase-3.5.8.orig/kdm/configure.in.in	2007-11-21 09:53:07.000000000 +0200
++++ kdebase-3.5.8/kdm/configure.in.in	2007-11-21 10:00:10.000000000 +0200
+@@ -288,3 +288,27 @@
+   AC_SUBST(DBUS_LIBS)
+ 
+ dnl AC_OUTPUT(kdm/kfrontend/sessions/kde.desktop)
++
++
++AC_ARG_WITH(libaudit,
++  [  --with-libaudit=[auto/yes/no]  Add Linux audit support [default=auto]],,
++  with_libaudit=auto)
++
++# Check for Linux auditing API
++#
++# libaudit detection
++if test x$with_libaudit = xno ; then
++    have_libaudit=no;
++else
++    # See if we have audit daemon library
++    AC_CHECK_LIB(audit, audit_log_user_message,
++                 have_libaudit=yes, have_libaudit=no)
++fi
++
++AM_CONDITIONAL(HAVE_LIBAUDIT, test x$have_libaudit = xyes)
++
++if test x$have_libaudit = xyes ; then
++    EXTRA_DAEMON_LIBS="$EXTRA_DAEMON_LIBS -laudit"
++    AC_DEFINE(HAVE_LIBAUDIT,1,[linux audit support])
++fi
++

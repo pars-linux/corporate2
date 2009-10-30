@@ -1,0 +1,18 @@
+diff -ur kdebase-3.4.92.orig/kdesktop/init.cc kdebase-3.4.92/kdesktop/init.cc
+--- kdebase-3.4.92.orig/kdesktop/init.cc	2005-10-10 18:04:11.000000000 +0300
++++ kdebase-3.4.92/kdesktop/init.cc	2005-10-24 02:24:46.000000000 +0300
+@@ -202,7 +202,12 @@
+     copyDirectoryFile("directory.autostart", KGlobalSettings::autostartPath(), newRelease);
+ 
+     if (emptyDesktop)
+-	copyDesktopLinks();
++    {
++        copyDesktopLinks();
++        if( QFileInfo("/dev/dsp").exists())
++            KApplication::startServiceByDesktopName("kmix", QStringList(), 0, 0, 0, "", true);
++    
++    }
+ 
+     // Take care of creating or updating trash.desktop
+     const QString trashDir = KGlobal::dirs()->localxdgdatadir() + "Trash";
+
