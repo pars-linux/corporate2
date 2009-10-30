@@ -1,0 +1,191 @@
+Index: poppler-0.10.6/glib/demo/Makefile.am
+===================================================================
+--- poppler-0.10.6.orig/glib/demo/Makefile.am
++++ poppler-0.10.6/glib/demo/Makefile.am
+@@ -36,5 +36,5 @@ poppler_glib_demo_SOURCES = 			\
+ 
+ LDADD =						\
+ 	$(top_builddir)/glib/libpoppler-glib.la	\
+-	$(top_builddir)/poppler/libpoppler.la	\
++	-lpoppler	\
+ 	$(GTK_TEST_LIBS)
+Index: poppler-0.10.6/glib/Makefile.am
+===================================================================
+--- poppler-0.10.6.orig/glib/Makefile.am
++++ poppler-0.10.6/glib/Makefile.am
+@@ -87,7 +87,7 @@ libpoppler_glib_la_SOURCES =			\
+ 	poppler-private.h
+ 
+ libpoppler_glib_la_LIBADD =				\
+-	$(top_builddir)/poppler/libpoppler.la		\
++	-lpoppler					\
+ 	$(POPPLER_GLIB_LIBS)				\
+ 	$(GDK_LIBS)					\
+ 	$(FREETYPE_LIBS)				\
+@@ -103,7 +103,7 @@ test_poppler_glib_SOURCES =			\
+        test-poppler-glib.cc
+ 
+ test_poppler_glib_LDADD =			\
+-	$(top_builddir)/poppler/libpoppler.la	\
++	-lpoppler				\
+ 	libpoppler-glib.la			\
+ 	$(POPPLER_GLIB_LIBS)			\
+ 	$(GDK_LIBS)				\
+Index: poppler-0.10.6/glib/reference/Makefile.am
+===================================================================
+--- poppler-0.10.6.orig/glib/reference/Makefile.am
++++ poppler-0.10.6/glib/reference/Makefile.am
+@@ -73,7 +73,7 @@ INCLUDES=-I$(top_srcdir)/glib -I$(top_bu
+ 	$(GDK_CFLAGS)					\
+ 	$(FREETYPE_CFLAGS)
+ 
+-GTKDOC_LIBS=$(top_builddir)/poppler/libpoppler.la	\
++GTKDOC_LIBS=-lpoppler	\
+ 	$(top_builddir)/glib/libpoppler-glib.la		\
+ 	$(POPPLER_GLIB_LIBS)				\
+ 	$(FREETYPE_LIBS)				\
+Index: poppler-0.10.6/Makefile.am
+===================================================================
+--- poppler-0.10.6.orig/Makefile.am
++++ poppler-0.10.6/Makefile.am
+@@ -29,7 +29,7 @@ if BUILD_UTILS
+ utils_subdir = utils
+ endif
+ 
+-SUBDIRS = goo fofi $(splash_subdir) poppler $(utils_subdir) $(glib_subdir) $(qt_subdir) test $(qt4_subdir)
++SUBDIRS = $(glib_subdir) $(qt_subdir) $(qt4_subdir)
+ 
+ EXTRA_DIST =					\
+ 	README-XPDF				\
+@@ -40,9 +40,7 @@ EXTRA_DIST =					\
+ 
+ pkgconfigdir = $(libdir)/pkgconfig
+ pkgconfig_DATA =				\
+-	poppler.pc				\
+ 	$(cairo_pc_file)			\
+-	$(splash_pc_file)			\
+ 	$(glib_pc_file)				\
+ 	$(qt_pc_file)                           \
+ 	$(qt4_pc_file)
+Index: poppler-0.10.6/qt/Makefile.am
+===================================================================
+--- poppler-0.10.6.orig/qt/Makefile.am
++++ poppler-0.10.6/qt/Makefile.am
+@@ -24,7 +24,7 @@ libpoppler_qt_la_SOURCES =			\
+ 	poppler-private.h
+ 
+ libpoppler_qt_la_LIBADD = 			\
+-	$(top_builddir)/poppler/libpoppler.la	\
++	-lpoppler				\
+ 	$(POPPLER_QT_LIBS)			\
+ 	$(FREETYPE_LIBS)			\
+ 	$(FONTCONFIG_LIBS)
+@@ -41,7 +41,7 @@ test_poppler_qt_SOURCES =			\
+        test-poppler-qt.cpp
+ 
+ test_poppler_qt_LDADD =				\
+-	$(top_builddir)/poppler/libpoppler.la	\
++	-lpoppler				\
+ 	libpoppler-qt.la			\
+ 	$(POPPLER_QT_LIBS)			\
+ 	$(FREETYPE_LIBS)
+Index: poppler-0.10.6/qt4/demos/Makefile.am
+===================================================================
+--- poppler-0.10.6.orig/qt4/demos/Makefile.am
++++ poppler-0.10.6/qt4/demos/Makefile.am
+@@ -7,7 +7,7 @@ INCLUDES =					\
+ 	$(POPPLER_QT4_CFLAGS)
+ 
+ LDADDS =					\
+-	$(top_builddir)/poppler/libpoppler.la	\
++	-lpoppler \
+ 	$(top_builddir)/qt4/src/libpoppler-qt4.la	\
+ 	$(FONTCONFIG_LIBS)				\
+ 	$(POPPLER_QT4_LIBS)
+Index: poppler-0.10.6/qt4/src/Makefile.am
+===================================================================
+--- poppler-0.10.6.orig/qt4/src/Makefile.am
++++ poppler-0.10.6/qt4/src/Makefile.am
+@@ -52,7 +52,7 @@ libpoppler_qt4_la_SOURCES =			\
+ 	poppler-private.h
+ 
+ libpoppler_qt4_la_LIBADD = 			\
+-	$(top_builddir)/poppler/libpoppler.la	\
++	-lpoppler				\
+ 	$(FONTCONFIG_LIBS)				\
+ 	$(POPPLER_QT4_LIBS)
+ 
+Index: poppler-0.10.6/qt4/tests/Makefile.am
+===================================================================
+--- poppler-0.10.6.orig/qt4/tests/Makefile.am
++++ poppler-0.10.6/qt4/tests/Makefile.am
+@@ -7,7 +7,7 @@ INCLUDES =					\
+ 	$(POPPLER_QT4_CFLAGS)
+ 
+ LDADDS =					\
+-	$(top_builddir)/poppler/libpoppler.la	\
++	-lpoppler				\
+ 	$(top_builddir)/qt4/src/libpoppler-qt4.la	\
+ 	$(FONTCONFIG_LIBS)				\
+ 	$(POPPLER_QT4_LIBS)
+Index: poppler-0.10.6/test/Makefile.am
+===================================================================
+--- poppler-0.10.6.orig/test/Makefile.am
++++ poppler-0.10.6/test/Makefile.am
+@@ -51,14 +51,14 @@ gtk_splash_test_SOURCES =			\
+        gtk-splash-test.cc
+ 
+ gtk_splash_test_LDADD =				\
+-	$(top_builddir)/poppler/libpoppler.la	\
++	-lpoppler	\
+ 	$(GTK_TEST_LIBS)
+ 
+ gtk_cairo_test_SOURCES =			\
+        gtk-cairo-test.cc
+ 
+ gtk_cairo_test_LDADD =					\
+-	$(top_builddir)/poppler/libpoppler.la		\
++	-lpoppler		\
+ 	$(top_builddir)/glib/libpoppler-glib.la		\
+ 	$(CAIRO_LIBS)					\
+ 	$(GTK_TEST_LIBS)				\
+@@ -69,7 +69,7 @@ pdf_inspector_SOURCES =			\
+ 
+ pdf_inspector_LDADD =					\
+ 	$(top_builddir)/poppler/libpoppler-cairo.la	\
+-	$(top_builddir)/poppler/libpoppler.la		\
++	-lpoppler		\
+ 	$(CAIRO_LIBS)					\
+ 	$(FREETYPE_LIBS)				\
+ 	$(GTK_TEST_LIBS)				\
+@@ -80,7 +80,7 @@ perf_test_SOURCES =			\
+        perf-test-preview-dummy.cc
+ 
+ perf_test_LDADD =				\
+-	$(top_builddir)/poppler/libpoppler.la	\
++	-lpoppler	\
+ 	$(FREETYPE_LIBS)					\
+ 	$(X_EXTRA_LIBS)
+ 
+@@ -88,7 +88,7 @@ pdf_fullrewrite_SOURCES = \
+ 	pdf-fullrewrite.cc
+ 
+ pdf_fullrewrite_LDADD = \
+-	$(top_builddir)/poppler/libpoppler.la
++	-lpoppler
+ 
+ EXTRA_DIST =					\
+ 	pdf-operators.c				\
+Index: poppler-0.10.6/utils/Makefile.am
+===================================================================
+--- poppler-0.10.6.orig/utils/Makefile.am
++++ poppler-0.10.6/utils/Makefile.am
+@@ -29,7 +29,7 @@ INCLUDES =					\
+ 	$(ABIWORD_CFLAGS)
+ 
+ LDADD =						\
+-	$(top_builddir)/poppler/libpoppler.la	\
++	-lpoppler	\
+ 	$(UTILS_LIBS)				\
+ 	$(FONTCONFIG_LIBS)
+ 

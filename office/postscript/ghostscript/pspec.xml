@@ -1,0 +1,267 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>ghostscript</Name>
+        <Homepage>http://www.ghostscript.com</Homepage>
+        <Packager>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv3+</License>
+        <IsA>library</IsA>
+        <Summary>A graphics library for fast image creation</Summary>
+        <Description>ESP Ghostscript is a customized version of GPL Ghostscript that includes an enhanced autoconf-based configuration script, the CUPS raster driver to support CUPS raster printer drivers, and additional patches and drivers from various Linux distributors.</Description>
+        <Archive sha1sum="4e4132713258c680a4fbec577e6dfc82b980ec01" type="tarbz2">http://ghostscript.com/releases/ghostscript-8.70.tar.bz2</Archive>
+        <BuildDependencies>
+            <Dependency>cups</Dependency>
+            <Dependency>libXt</Dependency>
+            <Dependency>jasper</Dependency>
+            <Dependency>libpaper</Dependency>
+            <Dependency>fontconfig</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <!-- Ubuntu patches -->
+            <Patch level="1">ubuntu/01_docdir-fix-for-debian.patch</Patch>
+            <Patch level="1">ubuntu/02_gs-man-fix-for-debian.patch</Patch>
+
+            <!-- Fedora patches -->
+            <Patch level="1">fedora/ghostscript-fPIC.patch</Patch>
+            <Patch level="1">fedora/ghostscript-multilib.patch</Patch>
+            <Patch level="1">fedora/ghostscript-noopt.patch</Patch>
+            <Patch level="1">fedora/ghostscript-pksmraw.patch</Patch>
+            <Patch level="1">fedora/ghostscript-runlibfileifexists.patch</Patch>
+            <Patch level="1">fedora/ghostscript-scripts.patch</Patch>
+            <Patch level="1">fedora/ghostscript-system-jasper.patch</Patch>
+            <Patch level="1">fedora/ghostscript-jbig2dec-nullderef.patch</Patch>
+            <Patch level="1">fedora/ghostscript-gs-executable.patch</Patch>
+
+            <!-- Other stuff -->
+            <Patch level="1">ghostscript-pagesize.patch</Patch>
+            <Patch level="1">link-explicitly-with-lm.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>ghostscript</Name>
+        <RuntimeDependencies>
+            <Dependency>cups</Dependency>
+            <Dependency>libXt</Dependency>
+            <Dependency>jasper</Dependency>
+            <Dependency>libpaper</Dependency>
+            <Dependency>fontconfig</Dependency>
+            <Dependency>gnu-gs-fonts-std</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/cups</Path>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="data">/usr/share/cups</Path>
+            <Path fileType="data">/usr/share/ghostscript</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/ghostscript/Resource/Init/CIDFnmap">fedora/CIDFnmap</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/ghostscript/Resource/Init/cidfmap">fedora/cidfmap</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <Package>
+        <Name>ghostscript-doc</Name>
+        <Summary>Documentation for ghostscript</Summary>
+        <Files>
+            <Path fileType="doc">/usr/share/doc/ghostscript/html</Path>
+            <Path fileType="doc">/usr/share/doc/ghostscript/examples</Path>
+        </Files>
+    </Package>
+
+    <History>
+        <Update release="25">
+            <Date>2009-08-03</Date>
+            <Version>8.70</Version>
+            <Comment>
+                - Version bump to the new upstream release 8.70,
+                - Fixes many transparency problems: color space conversion, mask contexts, patterns, etc,
+                - Fixes in font handling, especially when generating PDF
+                - Improvements in robustness, correctness, and performance
+                - New generic Esc/Page drivers: "eplmono", "eplcolor"
+                - New "cdnj500" driver for many HP DesignJet printers
+                - License is now GPLv2 or later and not GPLv2-only any more
+                - Merged all patches of the Ubuntu and Debian packages upstream
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="24">
+            <Date>2009-07-15</Date>
+            <Version>8.64</Version>
+            <Comment>Provide better colors for cdnj500 driver.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="23">
+            <Date>2009-06-26</Date>
+            <Version>8.64</Version>
+            <Comment>Sync Ubuntu patches, Fix null ptr deref in JBIG2 decoder, fix scripts so they don't get broken on install.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="22">
+            <Date>2009-05-25</Date>
+            <Version>8.64</Version>
+            <Comment>Split documentation.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="21" type="security">
+            <Date>2009-04-21</Date>
+            <Version>8.64</Version>
+            <Comment>Version bump, add missing dependencies, add fedora, ubuntu and gentoo patches and fix (CVE-2009-{0196, 0792}, CVE-2008-6679, CVE-2007-6725), (bug#{9623-9645}).</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="20" type="security">
+            <Date>2009-03-23</Date>
+            <Version>8.61</Version>
+            <Comment>Fix multiple integer overflows (CVE-2009-0583,CVE-2009-0584), (bug#9453).</Comment>
+            <Name>Pınar Yanardağ</Name>
+            <Email>pinar@pardus.org.tr</Email>
+        </Update>
+        <Update release="19" type="security">
+            <Date>2008-02-29</Date>
+            <Version>8.61</Version>
+            <Comment>Fix CVE-2008-0411</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="18">
+            <Date>2007-12-10</Date>
+            <Version>8.61</Version>
+            <Comment>Add real fix for Ghostscript bug #689577</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="17">
+            <Date>2007-12-06</Date>
+            <Version>8.61</Version>
+            <Comment>Always use buffered input to workaround Ghostscript bug #689577</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="16" type="security">
+            <Date>2007-11-23</Date>
+            <Version>8.61</Version>
+            <Comment>Stable update and use external jpeg/png/zlib</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="15" type="security">
+            <Date>2007-10-23</Date>
+            <Version>8.60</Version>
+            <Comment>Fix CVE-2007-2721</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="14">
+            <Date>2007-08-02</Date>
+            <Version>8.60</Version>
+            <Comment>Final stable release</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2007-07-17</Date>
+            <Version>8.60</Version>
+            <Comment>Update to SVN revision 8133</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2007-06-14</Date>
+            <Version>8.60</Version>
+            <Comment>Update to SVN revision 8050, ESP Ghostscript is now merged</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2007-03-30</Date>
+            <Version>8.15.1</Version>
+            <Comment>Add missing dep</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2006-09-21</Date>
+            <Version>8.15.1</Version>
+            <Comment>Add fontconfig support</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="9">
+            <Date>2006-05-02</Date>
+            <Version>8.15.1</Version>
+            <Comment>Use static Fontmap for dejavu and bitstream fonts</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2006-05-01</Date>
+            <Version>8.15.1</Version>
+            <Comment>Fix font path</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2006-04-27</Date>
+            <Version>8.15.1</Version>
+            <Comment>Fix encrypted pdf problems and some crashes (patches from OpenSUSE)</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2006-01-16</Date>
+            <Version>8.15.1</Version>
+            <Comment>Fix font paths</Comment>
+            <Name>Furkan Duman</Name>
+            <Email>coderlord@gmail.com</Email>
+        </Update>
+        <Update release="5">
+            <Date>2006-01-15</Date>
+            <Version>8.15.1</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2005-12-13</Date>
+            <Version>7.07.1</Version>
+            <Comment>Remove runtime cups dependency</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2005-12-03</Date>
+            <Version>7.07.1</Version>
+            <Comment>Add gdi support for Samsung Laser Printers</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2005-11-08</Date>
+            <Version>7.07.1</Version>
+            <Comment>fix #687 (-with-x)</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2005-08-25</Date>
+            <Version>7.07.1</Version>
+            <Comment>First release.</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
