@@ -1,0 +1,40 @@
+
+# HG changeset patch
+# User hans@rhel5-devel.localdomain
+# Date 1255332176 -7200
+# Node ID 33606f40c9caaf03632962084aec9d34b2006353
+# Parent  c195169e4df1b7e05bf1783ea04d911b6a2ccf9b
+libv4l: update upside down devices table
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+libv4l: update upside down devices table
+
+Priority: normal
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+
+--- a/v4l2-apps/libv4l/libv4lconvert/control/libv4lcontrol.c	Sun Oct 11 10:15:57 2009 +0200
++++ b/v4l2-apps/libv4l/libv4lconvert/control/libv4lcontrol.c	Mon Oct 12 09:22:56 2009 +0200
+@@ -80,6 +80,8 @@
+     V4LCONTROL_HFLIPPED|V4LCONTROL_VFLIPPED },
+   { 0x04f2, 0xb012, 0, "ASUSTeK Computer Inc.        ", "X71Vn     ",
+     V4LCONTROL_HFLIPPED|V4LCONTROL_VFLIPPED },
++  { 0x04f2, 0xb012, 0, "ASUSTeK Computer Inc.        ", "X71Q      ",
++    V4LCONTROL_HFLIPPED|V4LCONTROL_VFLIPPED },
+   { 0x04f2, 0xb012, 0, "PEGATRON CORPORATION         ", "X71SL     ",
+     V4LCONTROL_HFLIPPED|V4LCONTROL_VFLIPPED },
+   /* These 3 PACKARD BELL's seem to be Asus notebook in disguise */
+--- a/v4l2-apps/libv4l/libv4lconvert/libv4lconvert.c	Sun Oct 11 10:15:57 2009 +0200
++++ b/v4l2-apps/libv4l/libv4lconvert/libv4lconvert.c	Mon Oct 12 09:22:56 2009 +0200
+@@ -1007,7 +1007,8 @@
+   }
+ 
+   if (dest_size < dest_needed) {
+-    V4LCONVERT_ERR("destination buffer too small\n");
++    V4LCONVERT_ERR("destination buffer too small (%d < %d)\n",
++		   dest_size, dest_needed);
+     errno = EFAULT;
+     return -1;
+   }
+

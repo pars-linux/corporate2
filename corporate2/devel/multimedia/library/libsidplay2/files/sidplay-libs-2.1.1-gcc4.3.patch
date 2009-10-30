@@ -1,0 +1,101 @@
+--- sidplay-libs-2.1.1/libsidplay/include/sidplay/SmartPtr.h.gcc	2004-06-14 22:08:04.000000000 +0200
++++ sidplay-libs-2.1.1/libsidplay/include/sidplay/SmartPtr.h	2006-07-05 16:40:34.000000000 +0200
+@@ -223,6 +223,14 @@
+ 			status = false;
+ 		}
+ 	}
++ protected:
++	
++	T* bufBegin;
++	T* bufEnd;
++	T* pBufCurrent;
++	ulint_smartpt bufLen;
++	bool status;
++
+ };
+ 
+ #endif  /* SMARTPTR_H */
+--- sidplay-libs-2.1.1/libsidutils/include/sidplay/utils/SidUsage.h.gcc	2004-06-14 22:08:08.000000000 +0200
++++ sidplay-libs-2.1.1/libsidutils/include/sidplay/utils/SidUsage.h	2006-07-05 16:40:34.000000000 +0200
+@@ -33,7 +33,7 @@
+     uint_least16_t length;  // usage scan length
+ 
+     // Copy common parts of basic usage to extended usage.
+-    sid2_usage_t &sid2_usage_t::operator= (const sid_usage_t &usage)
++    sid2_usage_t &operator= (const sid_usage_t &usage)
+     {
+         *((sid_usage_t *) this) = usage;
+         return *this;
+diff -p -up sidplay-libs-2.1.1/builders/hardsid-builder/src/hardsid-builder.cpp~ sidplay-libs-2.1.1/builders/hardsid-builder/src/hardsid-builder.cpp
+--- sidplay-libs-2.1.1/builders/hardsid-builder/src/hardsid-builder.cpp~	2004-06-14 22:07:57.000000000 +0200
++++ sidplay-libs-2.1.1/builders/hardsid-builder/src/hardsid-builder.cpp	2008-07-07 09:15:15.000000000 +0200
+@@ -55,6 +55,7 @@
+ 
+ #include "hardsid.h"
+ #include "hardsid-emu.h"
++#include <cstring>
+ 
+ 
+ #ifdef HAVE_MSWINDOWS
+diff -p -up sidplay-libs-2.1.1/builders/resid-builder/src/resid-builder.cpp~ sidplay-libs-2.1.1/builders/resid-builder/src/resid-builder.cpp
+--- sidplay-libs-2.1.1/builders/resid-builder/src/resid-builder.cpp~	2004-06-14 22:07:58.000000000 +0200
++++ sidplay-libs-2.1.1/builders/resid-builder/src/resid-builder.cpp	2008-07-07 09:14:44.000000000 +0200
+@@ -45,6 +45,7 @@
+ 
+ #include "resid.h"
+ #include "resid-emu.h"
++#include <cstring>
+ 
+ // Error String(s)
+ const char *ReSIDBuilder::ERR_FILTER_DEFINITION = "RESID ERROR: Filter definition is not valid (see docs).";
+diff -p -up sidplay-libs-2.1.1/builders/resid-builder/src/resid.cpp~ sidplay-libs-2.1.1/builders/resid-builder/src/resid.cpp
+--- sidplay-libs-2.1.1/builders/resid-builder/src/resid.cpp~	2004-06-14 22:07:58.000000000 +0200
++++ sidplay-libs-2.1.1/builders/resid-builder/src/resid.cpp	2008-07-07 09:14:18.000000000 +0200
+@@ -24,7 +24,7 @@
+ 
+ #include "resid.h"
+ #include "resid-emu.h"
+-
++#include <cstring>
+ 
+ char ReSID::m_credit[];
+ 
+diff -p -up sidplay-libs-2.1.1/libsidplay/src/sidtune/SidTune.cpp~ sidplay-libs-2.1.1/libsidplay/src/sidtune/SidTune.cpp
+--- sidplay-libs-2.1.1/libsidplay/src/sidtune/SidTune.cpp~	2004-06-14 22:08:02.000000000 +0200
++++ sidplay-libs-2.1.1/libsidplay/src/sidtune/SidTune.cpp	2008-07-07 09:12:18.000000000 +0200
+@@ -294,7 +294,7 @@ bool SidTune::loadFile(const char* fileN
+     createAtrr |= std::ios::binary;
+ #endif
+ 
+-    std::fstream myIn(fileName,createAtrr);
++    std::fstream myIn(fileName,(std::_Ios_Openmode) createAtrr);
+     // As a replacement for !is_open(), bad() and the NOT-operator don't seem
+     // to work on all systems.
+ #if defined(DONT_HAVE_IS_OPEN)
+@@ -962,7 +962,7 @@ bool SidTune::saveC64dataFile( const cha
+             createAttr |= std::ios::trunc;
+         else
+             createAttr |= std::ios::app;
+-        std::ofstream fMyOut( fileName, createAttr );
++        std::ofstream fMyOut( fileName, (std::_Ios_Openmode) createAttr );
+         if ( !fMyOut || fMyOut.tellp()>0 )
+         { 
+             info.statusString = SidTune::txt_cantCreateFile;
+@@ -1007,7 +1007,7 @@ bool SidTune::saveSIDfile( const char* f
+             createAttr |= std::ios::trunc;
+         else
+             createAttr |= std::ios::app;
+-        std::ofstream fMyOut( fileName, createAttr );
++        std::ofstream fMyOut( fileName, (std::_Ios_Openmode) createAttr );
+         if ( !fMyOut || fMyOut.tellp()>0 )
+         { 
+             info.statusString = SidTune::txt_cantCreateFile;
+@@ -1046,7 +1046,7 @@ bool SidTune::savePSIDfile( const char* 
+             createAttr |= std::ios::trunc;
+         else
+             createAttr |= std::ios::app;
+-        std::ofstream fMyOut( fileName, createAttr );
++        std::ofstream fMyOut( fileName, (std::_Ios_Openmode) createAttr );
+         if ( !fMyOut || fMyOut.tellp()>0 )
+         {
+             info.statusString = SidTune::txt_cantCreateFile;

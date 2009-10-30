@@ -1,0 +1,43 @@
+--- alleggl/src/gui.c.orig	2007-05-15 14:57:40.000000000 +0200
++++ alleggl/src/gui.c	2007-06-17 20:22:51.754820163 +0200
+@@ -189,7 +189,7 @@
+ 	AGL_LOG(2, "allegro_gl_draw_mouse\n");
+ 
+ 	/* don't draw the mouse if it's not in our window */
+-	if (!_mouse_on || allegro_gl_mouse.hidden) return;
++	if (allegro_gl_mouse.hidden) return;
+ 
+ 	if (__algl_user_draw_mouse) {
+ 
+--- alleggl/src/x.c.orig	2007-02-16 12:18:24.000000000 +0100
++++ alleggl/src/x.c	2007-06-17 20:43:28.201281231 +0200
+@@ -186,11 +186,6 @@
+ 		_xwin.cursor = None;
+ 	}
+ 
+-	if (_xwin.xcursor_image != None) {
+-		XcursorImageDestroy(_xwin.xcursor_image);
+-		_xwin.xcursor_image = None;
+-	}
+-
+ 	pixmap = XCreatePixmap(_xwin.display, _xwin.window, 1, 1, 1);
+ 	if (pixmap != None) {
+ 		GC temp_gc;
+@@ -211,7 +206,7 @@
+ 		XFreePixmap(_xwin.display, pixmap);
+ 	}
+ 	else {
+-		_xwin.cursor = XCreateFontCursor(_xwin.display, _xwin.cursor_shape);
++		_xwin.cursor = XCreateFontCursor(_xwin.display, 0 /* ??? */);
+ 		XDefineCursor(_xwin.display, _xwin.window, _xwin.cursor);
+ 	}
+ }
+@@ -1298,7 +1293,7 @@
+ 			XFreePixmap(_xwin.display, pixmap);
+ 		}
+ 		else {
+-			_xwin.cursor = XCreateFontCursor(_xwin.display, _xwin.cursor_shape);
++			_xwin.cursor = XCreateFontCursor(_xwin.display, 0 /* ??? */);
+ 			XDefineCursor(_xwin.display, _xwin.window, _xwin.cursor);
+ 		}
+ 	}

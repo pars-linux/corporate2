@@ -1,0 +1,40 @@
+Index: transkode/src/common/commondefs.cpp
+===================================================================
+--- transkode.orig/src/common/commondefs.cpp
++++ transkode/src/common/commondefs.cpp
+@@ -18,6 +18,8 @@
+  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+  ***************************************************************************/
+ 
++#include <stdlib.h>
++
+ #include "commondefs.h"
+ 
+ #include <qthread.h>
+Index: transkode/src/plugins/processhandler.cpp
+===================================================================
+--- transkode.orig/src/plugins/processhandler.cpp
++++ transkode/src/plugins/processhandler.cpp
+@@ -18,6 +18,8 @@
+  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+  ***************************************************************************/
+ 
++#include <stdlib.h>
++
+ #ifdef HAVE_CONFIG_H
+ 	#include <config.h>
+ #endif
+Index: transkode/src/configdialog/Makefile.in
+===================================================================
+--- transkode.orig/src/configdialog/Makefile.in
++++ transkode/src/configdialog/Makefile.in
+@@ -804,7 +804,8 @@ $(srcdir)/informationdialog.ui.h: inform
+ #>+ 75
+ streamsettings.cpp: $(srcdir)/streamsettings.ui streamsettings.h streamsettings.moc
+ 	rm -f streamsettings.cpp
+-	echo '#include <kdialog.h>' > streamsettings.cpp
++	echo '#include <stdlib.h>' > streamsettings.cpp
++	echo '#include <kdialog.h>' >> streamsettings.cpp
+ 	echo '#include <klocale.h>' >> streamsettings.cpp
+ 	$(UIC) -tr ${UIC_TR} -i streamsettings.h $(srcdir)/streamsettings.ui > streamsettings.cpp.temp ; ret=$$?; \
+ 	$(PERL) -pe "s,${UIC_TR}( \"\" ),QString::null,g" streamsettings.cpp.temp | $(PERL) -pe "s,${UIC_TR}( \"\"\, \"\" ),QString::null,g" | $(PERL) -pe "s,image([0-9][0-9]*)_data,img\$$1_streamsettings,g" | $(PERL) -pe "s,: QWizard\(,: KWizard(,g" >> streamsettings.cpp ;\

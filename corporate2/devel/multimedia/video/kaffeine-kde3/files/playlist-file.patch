@@ -1,0 +1,40 @@
+--- kaffeine/src/input/audiobrowser/playlist.cpp.orig	2008-12-29 13:14:45.000000000 +0200
++++ kaffeine/src/input/audiobrowser/playlist.cpp	2008-12-29 13:16:20.000000000 +0200
+@@ -881,7 +881,6 @@
+ 		}
+ 		++it;
+ 	}
+-
+ 	/* fallback */
+ 	return getFirst();
+ }
+@@ -919,15 +918,20 @@
+ 
+ 	m_list->setSorting(-1);
+ 	QListViewItemIterator it(m_list);
++	QListViewItem* it_del=NULL;
++
+ 	while (it.current())
+ 	{
+ 		if (dynamic_cast<PlaylistItem*>(*it)->url() == mrl.url())
+ 		{
+ 			kdDebug() << "PlayList: Source '" << mrl.url() << "' still exists. Skipped." << endl;
+-			return after;
++            it_del=it.current();
++            break;
+ 		}
+ 		++it;
+ 	}
++    if(it_del!= NULL)
++        m_list->takeItem(it_del);
+ 
+ 	if (mrl.mime().isNull())
+ 	{
+@@ -962,7 +966,6 @@
+ 		m_playTimeVisible += timeStringToMs(tmp->length());
+ 		m_countVisible++;
+ 	}
+-
+ 	return tmp;
+ }
+ 

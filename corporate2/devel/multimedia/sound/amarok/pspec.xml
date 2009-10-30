@@ -1,0 +1,320 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>amarok</Name>
+        <Homepage>http://amarok.kde.org/</Homepage>
+        <Packager>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <Icon>amarok2</Icon>
+        <IsA>app:gui</IsA>
+        <Summary>Amarok audio player</Summary>
+        <Description>Amarok is a feature-rich audio player for the KDE desktop.</Description>
+        <Archive sha1sum="7603f991aa92810669e71278f9abc20a2180f97d" type="tarbz2">mirrors://kde/stable/amarok/2.2.0/src/amarok-2.2.0.tar.bz2</Archive>
+        <BuildDependencies>
+            <Dependency versionFrom="4.2">kdebase-runtime</Dependency>
+            <Dependency versionFrom="4.2">kdelibs-devel</Dependency>
+            <Dependency versionFrom="4.2">kdemultimedia</Dependency>
+            <Dependency versionFrom="1.0.0">taglib-extras</Dependency>
+            <Dependency versionFrom="0.7">libgpod</Dependency>
+            <Dependency versionFrom="1.5">mpeg4ip</Dependency>
+            <Dependency versionFrom="5.0.51b" releaseFrom="38">mysql-lib</Dependency>
+            <Dependency releaseFrom="2">libmp4v2</Dependency>
+            <Dependency versionFrom="0.3.0">libmtp</Dependency>
+            <Dependency>liblastfm-devel</Dependency>
+            <Dependency>qtscriptgenerator</Dependency>
+            <Dependency>strigi-devel</Dependency>
+            <Dependency>loudmouth</Dependency>
+            <Dependency>automoc4</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <!-- <Patch>include-po.patch</Patch> -->
+            <Patch>skipqtbindingstext.patch</Patch>
+            <!-- <Patch>fix-append-play-service-actions.diff</Patch> -->
+            <!-- Fix for lyric display problem: http://ascending.wordpress.com/2009/08/09/why-open-source-rocks-and-the-music-industry-does-not/ -->
+            <!-- <Patch level="1">amarok-parse-lyricwiki-website.patch</Patch> -->
+
+            <!-- Strip ads from song lyrics, fixed in 2.2.1, kde#209185 -->
+            <Patch level="1">strip-ads-from-lyrics-text-git-2d111e.diff</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>amarok</Name>
+        <RuntimeDependencies>
+            <Dependency versionFrom="4.2">kdebase-runtime</Dependency>
+            <Dependency versionFrom="4.2">kdemultimedia</Dependency>
+            <Dependency versionFrom="1.0.0">taglib-extras</Dependency>
+            <Dependency versionFrom="0.7">libgpod</Dependency>
+            <Dependency versionFrom="1.5">mpeg4ip</Dependency>
+            <Dependency versionFrom="5.0.51b" releaseFrom="38">mysql-lib</Dependency>
+            <Dependency releaseFrom="2">libmp4v2</Dependency>
+            <Dependency versionFrom="0.3.0">libmtp</Dependency>
+            <Dependency>liblastfm</Dependency>
+            <Dependency>qtscriptgenerator</Dependency>
+            <Dependency>strigi</Dependency>
+            <Dependency>loudmouth</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>amarok-kde4</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/4/bin</Path>
+            <Path fileType="library">/usr/kde/4/lib</Path>
+            <Path fileType="man">/usr/kde/4/man</Path>
+            <Path fileType="data">/usr/kde/4/share</Path>
+            <Path fileType="data">/usr/share/icons</Path>
+            <Path fileType="doc">/usr/kde/4/share/doc</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/usr/kde/4/share/apps/amarok/images/splash_screen.jpg">amarok-splash.jpg</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+    <History>
+        <Update release="32">
+            <Date>2009-10-02</Date>
+            <Version>2.2.0</Version>
+            <Comment>Fix advertisement string shown in song lyrics, patch from git, kde#209185</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="31">
+            <Date>2009-09-12</Date>
+            <Version>2.2.0</Version>
+            <Comment>Bump to last version, Sunjammer</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="30">
+            <Date>2009-09-12</Date>
+            <Version>2.2_21092009</Version>
+            <Comment>Updated, some patches were already included</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="29">
+            <Date>2009-08-11</Date>
+            <Version>2.2_997731</Version>
+            <Comment>Fix lyric fetch problem caused by disagreement between music publishers and LyricWiki.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="28">
+            <Date>2009-07-17</Date>
+            <Version>2.2_997731</Version>
+            <Comment>Fix Dolphin service menu of Amarok.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="27">
+            <Date>2009-07-17</Date>
+            <Version>2.2_997731</Version>
+            <Comment>Fix "Missing libgpod library" message during cmake configuration.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="26">
+            <Date>2009-07-16</Date>
+            <Version>2.2_997731</Version>
+            <Comment>
+                * Added translations
+                * Added qtbindings patch again, seems its removed from source
+                * Added liblastfm-devel build dep.
+            </Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="25">
+            <Date>2009-06-17</Date>
+            <Version>2.1_979577</Version>
+            <Comment>Disable wikipedia applet, it causes crashes</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="24">
+            <Date>2009-06-03</Date>
+            <Version>2.1_979577</Version>
+            <Comment>To svn, remove patch (included to source), added system wide icons</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="23">
+            <Date>2009-05-27</Date>
+            <Version>2.1_973437</Version>
+            <Comment>To svn, removed WorkDir, added patch to skip qtbindings test in cmake</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="22">
+            <Date>2009-05-22</Date>
+            <Version>2.0.96</Version>
+            <Comment>Beta 2</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="21">
+            <Date>2009-05-06</Date>
+            <Version>2.0.2_964135</Version>
+            <Comment>Bump again</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="20">
+            <Date>2009-04-20</Date>
+            <Version>2.0.2_956558</Version>
+            <Comment>Bump to svn</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="19">
+            <Date>2009-04-06</Date>
+            <Version>2.0.2_950304</Version>
+            <Comment>Bump to svn, added libmtp and taglib-extras deps</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="18">
+            <Date>2009-03-05</Date>
+            <Version>2.0.2</Version>
+            <Comment>Bump to 2.0.2</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="17">
+            <Date>2009-02-17</Date>
+            <Version>2.0.1.1</Version>
+            <Comment>
+                - add loudmouth dep
+                - add patch to open ogg files from dolphin
+                - add patch to link pthread and dl to sqlcollection
+                - add strigi dep
+            </Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="16">
+            <Date>2009-02-09</Date>
+            <Version>2.0.1.1</Version>
+            <Comment>kdelibs4-devel dep added.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="15" type="security">
+            <Date>2009-01-11</Date>
+            <Version>2.0.1.1</Version>
+            <Comment>Bugfix Release Magellan and fix bug#9012.</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="14">
+            <Date>2009-01-07</Date>
+            <Version>2.0.1</Version>
+            <Comment>
+                Update to 2.0.1
+                write strict dep. to latest kde4, fixes #8949
+                Fix package name in translations.xml
+                use cmaketools not autotools
+            </Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2009-01-02</Date>
+            <Version>2.0</Version>
+            <Comment>Update dependencies to latest kde4</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2008-12-10</Date>
+            <Version>2.0</Version>
+            <Comment>2.0 Release</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2008-12-03</Date>
+            <Version>1.94_891963</Version>
+            <Comment>Update to svn release, prior to 2.0</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2008-11-02</Date>
+            <Version>1.94</Version>
+            <Comment>New stable release</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="9">
+            <Date>2008-10-31</Date>
+            <Version>1.92.2_877963</Version>
+            <Comment>
+                Added dep. kdemultimedia4
+                fixed mysql-lib to meet dep. needs so don't need mysql-server
+            </Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2008-10-30</Date>
+            <Version>1.92.2_877963</Version>
+            <Comment>Sync with svn, nice changes with last.fm integration</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2008-10-24</Date>
+            <Version>1.92.2</Version>
+            <Comment>New release</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2008-10-01</Date>
+            <Version>1.92</Version>
+            <Comment>New release, using mysql</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2008-09-04</Date>
+            <Version>1.90_856998</Version>
+            <Comment>Sync from SVN</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2008-08-22</Date>
+            <Version>1.90</Version>
+            <Comment>Beta 1</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2008-07-22</Date>
+            <Version>1.86</Version>
+            <Comment>Aulanerk, alpha2</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2008-07-15</Date>
+            <Version>1.83</Version>
+            <Comment>First Alpha.</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2008-07-03</Date>
+            <Version>1.80</Version>
+            <Comment>First release.</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+    </History>
+</PISI>

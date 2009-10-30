@@ -1,0 +1,25 @@
+From ad2d9386518c851d8ebfae6f8e02ac81679957e3 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 29 Apr 2009 01:46:12 +0200
+Subject: [PATCH 115/127] idxset: add enumeration macro PA_IDXSET_FOREACH
+
+---
+ src/pulsecore/idxset.h |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/src/pulsecore/idxset.h b/src/pulsecore/idxset.h
+index 7531ea3..6b9ff47 100644
+--- a/src/pulsecore/idxset.h
++++ b/src/pulsecore/idxset.h
+@@ -103,4 +103,8 @@ unsigned pa_idxset_size(pa_idxset*s);
+ /* Return TRUE of the idxset is empty */
+ pa_bool_t pa_idxset_isempty(pa_idxset *s);
+ 
++
++#define PA_IDXSET_FOREACH(e, s, idx) \
++    for ((e) = pa_idxset_first((s), &(idx)); (e); (e) = pa_idxset_next((s), &(idx)))
++
+ #endif
+-- 
+1.6.3
+

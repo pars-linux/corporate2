@@ -1,0 +1,131 @@
+=== modified file 'src/alaw.c'
+--- src/alaw.c	2009-02-07 04:20:17 +0000
++++ src/alaw.c	2009-05-28 10:25:46 +0000
+@@ -69,7 +69,7 @@
+ 	else
+ 		psf->datalength = 0 ;
+ 
+-	psf->sf.frames = psf->datalength / psf->blockwidth ;
++	psf->sf.frames = psf->blockwidth > 0 ? psf->datalength / psf->blockwidth : 0 ;
+ 
+ 	return 0 ;
+ } /* alaw_init */
+
+=== modified file 'src/float32.c'
+--- src/float32.c	2009-03-25 07:22:03 +0000
++++ src/float32.c	2009-05-28 10:25:46 +0000
+@@ -241,7 +241,7 @@
+ 	else
+ 		psf->datalength = 0 ;
+ 
+-	psf->sf.frames = psf->datalength / psf->blockwidth ;
++	psf->sf.frames = psf->blockwidth > 0 ? psf->datalength / psf->blockwidth : 0 ;
+ 
+ 	return 0 ;
+ } /* float32_init */
+
+=== modified file 'src/htk.c'
+--- src/htk.c	2009-02-07 04:20:17 +0000
++++ src/htk.c	2009-05-28 10:25:46 +0000
+@@ -195,10 +195,17 @@
+ 		return SFE_HTK_NOT_WAVEFORM ;
+ 
+ 	psf->sf.channels = 1 ;
+-	psf->sf.samplerate = 10000000 / sample_period ;
+ 
+-	psf_log_printf (psf, "HTK Waveform file\n  Sample Count  : %d\n  Sample Period : %d => %d Hz\n",
+-				sample_count, sample_period, psf->sf.samplerate) ;
++	if (sample_period > 0)
++	{	psf->sf.samplerate = 10000000 / sample_period ;
++		psf_log_printf (psf, "HTK Waveform file\n  Sample Count  : %d\n  Sample Period : %d => %d Hz\n",
++					sample_count, sample_period, psf->sf.samplerate) ;
++		}
++	else
++	{	psf->sf.samplerate = 16000 ;
++		psf_log_printf (psf, "HTK Waveform file\n  Sample Count  : %d\n  Sample Period : %d (should be > 0) => Guessed sample rate %d Hz\n",
++					sample_count, sample_period, psf->sf.samplerate) ;
++		} ;
+ 
+ 	psf->sf.format = SF_FORMAT_HTK | SF_FORMAT_PCM_16 ;
+ 	psf->bytewidth = 2 ;
+
+=== modified file 'src/pcm.c'
+--- src/pcm.c	2009-02-07 04:20:17 +0000
++++ src/pcm.c	2009-05-28 10:25:46 +0000
+@@ -271,7 +271,7 @@
+ 	else
+ 		psf->datalength = 0 ;
+ 
+-	psf->sf.frames = psf->datalength / psf->blockwidth ;
++	psf->sf.frames = psf->blockwidth > 0 ? psf->datalength / psf->blockwidth : 0 ;
+ 
+ 	return 0 ;
+ } /* pcm_init */
+
+=== modified file 'src/sds.c'
+--- src/sds.c	2009-02-07 04:20:17 +0000
++++ src/sds.c	2009-05-28 10:25:46 +0000
+@@ -219,21 +219,40 @@
+ 	if (marker != 0xF07E || byte != 0x01)
+ 		return SFE_SDS_NOT_SDS ;
+ 
+-	psf_log_printf (psf, "Midi Sample Dump Standard (.sds)\nF07E\n Midi Channel  : %d\n", channel) ;
+-
+-	bytesread += psf_binheader_readf (psf, "e213", &sample_no, &bitwidth, &samp_period) ;
+-
++	bytesread += psf_binheader_readf (psf, "e2", &sample_no) ;
+ 	sample_no = SDS_3BYTE_TO_INT_DECODE (sample_no) ;
++
++	psf_log_printf (psf, "Midi Sample Dump Standard (.sds)\nF07E\n"
++						" Midi Channel  : %d\n Sample Number : %d\n",
++						channel, sample_no) ;
++
++	bytesread += psf_binheader_readf (psf, "e13", &bitwidth, &samp_period) ;
++
+ 	samp_period = SDS_3BYTE_TO_INT_DECODE (samp_period) ;
+ 
+ 	psds->bitwidth = bitwidth ;
+ 
+-	psf->sf.samplerate = 1000000000 / samp_period ;
+-
+-	psf_log_printf (psf, 	" Sample Number : %d\n"
+-							" Bit Width     : %d\n"
++	if (psds->bitwidth > 1)
++		psf_log_printf (psf, " Bit Width     : %d\n", psds->bitwidth) ;
++	else
++	{	psf_log_printf (psf, " Bit Width     : %d (should be > 1)\n", psds->bitwidth) ;
++		return SFE_SDS_BAD_BIT_WIDTH ;
++		} ;
++
++	if (samp_period > 0)
++	{	psf->sf.samplerate = 1000000000 / samp_period ;
++
++		psf_log_printf (psf, " Sample Period : %d\n"
+ 							" Sample Rate   : %d\n",
+-			sample_no, psds->bitwidth, psf->sf.samplerate) ;
++							samp_period, psf->sf.samplerate) ;
++		}
++	else
++	{	psf->sf.samplerate = 16000 ;
++
++		psf_log_printf (psf, " Sample Period : %d (should be > 0)\n"
++							" Sample Rate   : %d (guessed)\n",
++							samp_period, psf->sf.samplerate) ;
++		} ;
+ 
+ 	bytesread += psf_binheader_readf (psf, "e3331", &data_length, &sustain_loop_start, &sustain_loop_end, &loop_type) ;
+ 
+
+=== modified file 'src/ulaw.c'
+--- src/ulaw.c	2009-02-07 04:20:17 +0000
++++ src/ulaw.c	2009-05-28 10:25:46 +0000
+@@ -59,7 +59,7 @@
+ 	else
+ 		psf->datalength = 0 ;
+ 
+-	psf->sf.frames = psf->datalength / psf->blockwidth ;
++	psf->sf.frames = psf->blockwidth > 0 ? psf->datalength / psf->blockwidth : 0 ;
+ 
+ 	return 0 ;
+ } /* ulaw_init */
+
