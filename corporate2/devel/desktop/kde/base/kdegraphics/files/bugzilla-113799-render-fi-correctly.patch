@@ -1,0 +1,44 @@
+diff -ru kdegraphics-3.4.2.orig/kpdf/xpdf/xpdf/GfxFont.cc kdegraphics-3.4.2/kpdf/xpdf/xpdf/GfxFont.cc
+--- kdegraphics-3.4.2.orig/kpdf/xpdf/xpdf/GfxFont.cc	2005-07-20 12:00:36.000000000 +0200
++++ kdegraphics-3.4.2/kpdf/xpdf/xpdf/GfxFont.cc	2005-08-31 20:00:18.000000000 +0200
+@@ -1448,7 +1448,8 @@
+   int /*unicodeCmap, macRomanCmap, msSymbolCmap, */cmap;
+ //   GBool useMacRoman, useUnicode;
+ //   char *charName;
+-  Unicode u;
++  Unicode u[64];
++  const int ulen = sizeof(u) / sizeof(Unicode);
+   int /*code, */i;
+   int mapsize;
+   int cidlen;
+@@ -1472,7 +1473,7 @@
+ 
+   while (cidlen < ctu->getMapLen()) {
+     int n;
+-    if ((n = ctu->mapToUnicode((CharCode)cidlen, &u, 1)) == 0) {
++    if ((n = ctu->mapToUnicode((CharCode)cidlen, u, ulen)) == 0) {
+       cidlen++;
+       continue;
+     }
+@@ -1481,7 +1482,20 @@
+ 	mapsize *= 2;
+       map = (Gushort *)grealloc(map, mapsize * sizeof(Gushort));
+     }
+-    map[cidlen] = ff->mapCodeToGID(cmap, u);
++    if (n == 1)
++      map[cidlen] = ff->mapCodeToGID(cmap, u[0]);
++    else {
++      char str[n + 1];
++      Unicode u2;
++      for (i = 0; i < n; i++)
++	str[i] = u[i];
++      str[i] = 0;
++      u2 = globalParams->mapNameToUnicode(str);
++      if (u2)
++	map[cidlen] = ff->mapCodeToGID(cmap, u2);
++      else
++	map[cidlen] = cidlen; /* FIXME */
++    }
+     cidlen++;
+   }
+ 
