@@ -1,0 +1,52 @@
+--- certmanager/lib/backends/qgpgme/qgpgmebackend.cpp	2006/05/16 21:20:15	541642
++++ certmanager/lib/backends/qgpgme/qgpgmebackend.cpp	2009/06/25 12:27:26	987046
+@@ -54,7 +54,7 @@
+     mOpenPGPProtocol( 0 ),
+     mSMIMEProtocol( 0 )
+ {
+-
++  GpgME::initializeLibrary();
+ }
+ 
+ Kleo::QGpgMEBackend::~QGpgMEBackend() {
+Index: libkdenetwork/gpgmepp/context.cpp
+===================================================================
+--- libkdenetwork/gpgmepp/context.cpp	(revision 986744)
++++ libkdenetwork/gpgmepp/context.cpp	(revision 986745)
+@@ -53,6 +53,10 @@
+ 
+ namespace GpgME {
+ 
++  void initializeLibrary() {
++    gpgme_check_version( 0 );
++  }
++
+   const char * Error::source() const {
+     return gpgme_strsource( (gpgme_error_t)mErr );
+   }
+Index: libkdenetwork/gpgmepp/Makefile.am
+===================================================================
+--- libkdenetwork/gpgmepp/Makefile.am	(revision 986744)
++++ libkdenetwork/gpgmepp/Makefile.am	(revision 986745)
+@@ -46,7 +46,7 @@
+ #   (Interfaces added/removed/changed:  CURRENT++, REVISION=0)
+ #   (Interfaces added:                  AGE++)
+ #   (Interfaces removed/changed:        AGE=0)
+-libgpgme___la_LDFLAGS = -no-undefined -version-info 3:0:3
++libgpgme___la_LDFLAGS = -no-undefined -version-info 4:0:4
+ libgpgme___la_LIBADD = $(GPGME_LIBS)
+ libgpgme___la_DEPENDENCIES = $(GPGME_LIBS_DEP)
+ 
+Index: libkdenetwork/gpgmepp/context.h
+===================================================================
+--- libkdenetwork/gpgmepp/context.h	(revision 986744)
++++ libkdenetwork/gpgmepp/context.h	(revision 986745)
+@@ -287,6 +287,8 @@
+   //
+   //
+ 
++  KDE_EXPORT void initializeLibrary();
++
+   KDE_EXPORT GpgME::Error setDefaultLocale( int category, const char * value );
+ 
+   KDE_EXPORT Context * wait( GpgME::Error & e, bool hang=true );

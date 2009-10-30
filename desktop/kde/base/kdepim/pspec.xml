@@ -1,0 +1,518 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>kdepim</Name>
+        <Homepage>http://www.kde.org/</Homepage>
+        <Packager>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <IsA>app:gui</IsA>
+        <Summary>KDE PIM applications</Summary>
+        <Description>kdepim contains KDE Personal Information Management applications like KMail, KNode, and KOrganizer.</Description>
+        <Archive type="tarbz2" sha1sum="537da60fe3564ecc0ed2802e744fbf96386909a9">mirrors://kde/stable/3.5.10/src/kdepim-3.5.10.tar.bz2</Archive>
+        <BuildDependencies>
+            <Dependency versionFrom="3.5.10">kdebase</Dependency>
+            <Dependency>libopensync</Dependency>
+            <Dependency>cyrus-sasl</Dependency>
+            <Dependency>pilot-link</Dependency>
+            <Dependency>gnokii</Dependency>
+            <Dependency>libmal</Dependency>
+            <Dependency>gpgme</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <!-- Branch diff -->
+            <Patch>3_5_BRANCH.diff</Patch>
+
+            <Patch level="1">kdepim-3.5.0-kmail-imapfetchmaxsize.patch</Patch>
+            <Patch level="1">kdepim-3.5-kmail-enablehtml.patch</Patch>
+            <Patch level="1">kdepim-3.5.0-kontact-showSidePane.patch</Patch>
+            <Patch level="1">kdepim-3.5.2-use-nestedmessages.patch</Patch>
+            <Patch level="1">kdepim-3.5.2-kontact-remove-whatsthis-button.patch</Patch>
+            <Patch>kdepim-3.5-kmail_remove_charsets.diff</Patch>
+            <Patch>kdepim-3.5.10-kmail-deletion-map-fixes.patch</Patch>
+            <Patch>kdepim-3.5.10-qgpgme-call-initlib.patch</Patch>
+            <Patch level="1">kdepim-3.5.10-kioslave-sieve-fix-cyrus-detection.patch</Patch>
+
+
+            <!-- SUSE fixes -->
+            <Patch>kmail-crash.diff</Patch>
+            <Patch>kmail_allow_tls_login_auth.diff</Patch>
+            <Patch>install-headers.diff</Patch>
+            <Patch>start-kpilot-instead-complain.diff</Patch>
+            <Patch>bug-382959_kdepim_fix_vcardparser.patch</Patch>
+
+            <!-- Fix automake version -->
+            <Patch level="1">fix-automake-version.patch</Patch>
+
+            <!-- Fix build with gcc 4.4 -->
+            <Patch>kdepim3-gcc4.4.patch</Patch>
+
+            <!-- FIXME: Barış will correct that one :)
+            <Patch>kpart-accountwizard.patch</Patch>
+            -->
+
+            <!-- http://bugs.pardus.org.tr/show_bug.cgi?id=5037 -->
+            <Patch level="1">akregator_feeds.patch</Patch>
+
+            <Patch>knode_threaded_crash.diff</Patch>
+
+            <!-- http://websvn.kde.org/branches/work/~wstephens/ -->
+            <Patch level="1">kdepim_networkstatus_branch.diff</Patch>
+
+            <Patch>kitchensync-defaults.diff</Patch>
+            <Patch>kitchensync-xmldiffalgo.diff</Patch>
+            <Patch>unbreak-imap-filtering.patch</Patch>
+
+            <!-- Desktop file translation fix for knode (#5667) -->
+            <Patch>privacy_desktop.patch</Patch>
+
+            <!-- When automatic domain name is added, kmail bloats
+            the to: header, e.g. Foo <bar> is converted to
+            Foo@domain <bar> instead of Foo <bar@domain>. This patch
+            fixes this issue -->
+            <Patch level="1">fix-buggy-kmail-header.patch</Patch>
+
+            <!-- kubuntu patches -->
+
+            <!-- Fixes potential crash in Kmail -->
+            <Patch level="1">kubuntu_19_fix_gcal_crash.diff</Patch>
+            <Patch level="1">kubuntu_02_kmail_file_execution.diff</Patch>
+            <Patch level="1">kubuntu_17_upstream_r860376.diff</Patch>
+
+            <!-- Prevents incidence loss under certain conditions as the UID map wasn't being reloaded. -->
+            <Patch>kubuntu_20_upstream_r882942.diff</Patch>
+
+            <!-- Prevents KMail crashing due to certain malicious base64-encoded mail parts. -->
+            <Patch>kubuntu_21_upstream_r882976.diff</Patch>
+
+            <!-- Enable korgac to be launched by KOrganizer (Fixes #6488) -->
+            <Patch>korgac_no_autostart.patch</Patch>
+        </Patches>
+    </Source>
+    <Package>
+        <Name>kdepim</Name>
+        <RuntimeDependencies>
+            <Dependency versionFrom="3.5.10">kdebase</Dependency>
+            <Dependency>libopensync</Dependency>
+            <Dependency>cyrus-sasl</Dependency>
+            <Dependency>pilot-link</Dependency>
+            <Dependency>libmal</Dependency>
+            <Dependency>gpgme</Dependency>
+            <Dependency>gnupg</Dependency>
+            <Dependency>gnokii</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin</Path>
+            <Path fileType="library">/usr/kde/3.5/lib</Path>
+            <Path fileType="data">/usr/kde/3.5/share</Path>
+            <Path fileType="header">/usr/kde/3.5/include</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/konqueror/servicemenus/email.desktop" permission="0644" owner="root">email.desktop</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+    <History>
+        <Update release="56" type="security">
+            <Date>2009-03-05</Date>
+            <Version>3.5.10</Version>
+            <Comment>Added 3 more ubuntu patches for various bugfixes.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="55">
+            <Date>2008-12-01</Date>
+            <Version>3.5.10</Version>
+            <Comment>
+                - Add new patches which:
+                    - Fixes a potential crash in Kmail,
+                    - Makes sure that the inbox folder doesn't stay hidden if content is added,
+                    - Prevents incidence loss under certain conditions as the UID map wasn't being reloaded,
+                    - Prevents KMail crashing due to certain malicious base64-encoded mail parts,
+                - Don't delete korgac desktop file, instead avoid it from autostarting by default (Fixes #6488).
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="54">
+            <Date>2008-11-07</Date>
+            <Version>3.5.10</Version>
+            <Comment>Fix buggy "To:" header generation issue</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="53">
+            <Date>2008-10-16</Date>
+            <Version>3.5.10</Version>
+            <Comment>Desktop file translation fix for #5667.</Comment>
+            <Name>Semen Cirit</Name>
+            <Email>semen@pardus.org.tr</Email>
+        </Update>
+        <Update release="52">
+            <Date>2008-08-26</Date>
+            <Version>3.5.10</Version>
+            <Comment>Stable update</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="51">
+            <Date>2008-04-16</Date>
+            <Version>3.5.9</Version>
+            <Comment>Bug fix due to #7116</Comment>
+            <Name>Pınar Yanardağ</Name>
+            <Email>pinar@pardus.org.tr</Email>
+        </Update>
+        <Update release="50">
+            <Date>2008-02-20</Date>
+            <Version>3.5.9</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="49">
+            <Date>2007-10-09</Date>
+            <Version>3.5.8</Version>
+            <Comment>Update to new snapshot</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="48">
+            <Date>2007-10-07</Date>
+            <Version>3.5.7</Version>
+            <Comment>Fix KDE bug #150389</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="47">
+            <Date>2007-09-28</Date>
+            <Version>3.5.7</Version>
+            <Comment>New Enterprise snapshot</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="46">
+            <Date>2007-09-21</Date>
+            <Version>3.5.7</Version>
+            <Comment>Depend libopensyn and enable kitchensync</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="45">
+            <Date>2007-09-21</Date>
+            <Version>3.5.7</Version>
+            <Comment>New Enterprise snapshot</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="44">
+            <Date>2007-09-11</Date>
+            <Version>3.5.7</Version>
+            <Comment>Try to fix POP3 problems</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="43">
+            <Date>2007-09-03</Date>
+            <Version>3.5.7</Version>
+            <Comment>Revert enterprise branch merge</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="42">
+            <Date>2007-08-31</Date>
+            <Version>3.5.7</Version>
+            <Comment>Branch update to fix some POP3 problems</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="41">
+            <Date>2007-08-28</Date>
+            <Version>3.5.7</Version>
+            <Comment>Update to 3.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="40">
+            <Date>2007-06-23</Date>
+            <Version>3.5.7</Version>
+            <Comment>Add networkstatus properties to akregator</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="39">
+            <Date>2007-06-17</Date>
+            <Version>3.5.7</Version>
+            <Comment>Grab networkstatus branch patch set from KDE SVN and some crash fixes from OpenSuse</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="38">
+            <Date>2007-05-14</Date>
+            <Version>3.5.7</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="37">
+            <Date>2007-04-30</Date>
+            <Version>3.5.6</Version>
+            <Comment>Enable Gnokii</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="36">
+            <Date>2007-04-15</Date>
+            <Version>3.5.6</Version>
+            <Comment>Re-sync with 3.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="35">
+            <Date>2007-03-21</Date>
+            <Version>3.5.6</Version>
+            <Comment>Sync with 3.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="34">
+            <Date>2007-02-28</Date>
+            <Version>3.5.6</Version>
+            <Comment>Kpilot Fix</Comment>
+            <Name>Gökmen GÖKSEL</Name>
+            <Email>gokmen@pardus.org.tr</Email>
+        </Update>
+        <Update release="33">
+            <Date>2007-02-19</Date>
+            <Version>3.5.6</Version>
+            <Comment>Fix #5037</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="32">
+            <Date>2007-01-27</Date>
+            <Version>3.5.6</Version>
+            <Comment>Fix http://bugs.kde.org/show_bug.cgi?id=140660</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="31">
+            <Date>2007-01-17</Date>
+            <Version>3.5.6</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="30">
+            <Date>2006-11-19</Date>
+            <Version>3.5.5</Version>
+            <Comment>Depend on new gpgme/gnupg for S/MIME support</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="29">
+            <Date>2006-10-31</Date>
+            <Version>3.5.5</Version>
+            <Comment>Disable unneeded debugging</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="28">
+            <Date>2006-10-21</Date>
+            <Version>3.5.5</Version>
+            <Comment>Sync with 3.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="27">
+            <Date>2006-10-03</Date>
+            <Version>3.5.5</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="26">
+            <Date>2006-09-22</Date>
+            <Version>3.5.4</Version>
+            <Comment>Sync to 3.5 branch only including kmail and imap4 kioslave</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="25">
+            <Date>2006-09-12</Date>
+            <Version>3.5.4</Version>
+            <Comment>Sync to 3.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="24">
+            <Date>2006-08-14</Date>
+            <Version>3.5.4</Version>
+            <Comment>Sync KMail to 3.5.5 branch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="23">
+            <Date>2006-07-25</Date>
+            <Version>3.5.4</Version>
+            <Comment>New stable release</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="22">
+            <Date>2006-07-08</Date>
+            <Version>3.5.3</Version>
+            <Comment>Use networkstatus for whole KMail</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="21">
+            <Date>2006-07-06</Date>
+            <Version>3.5.3</Version>
+            <Comment>Merge some upstream fixes for KMail, add networkstatus support for KMail</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="20">
+            <Date>2006-06-30</Date>
+            <Version>3.5.3</Version>
+            <Comment>Install networkstatus</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="19">
+            <Date>2006-04-24</Date>
+            <Version>3.5.3</Version>
+            <Comment>new version</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="18">
+            <Date>2006-04-06</Date>
+            <Version>3.5.2</Version>
+            <Comment>Use nested messages, bug #1467. Remove whatstis button, bug #1352.</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="17">
+            <Date>2006-03-28</Date>
+            <Version>3.5.2</Version>
+            <Comment>Send files with kmail service menu added</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="16">
+            <Date>2006-03-22</Date>
+            <Version>3.5.2</Version>
+            <Comment>New stable release</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="15">
+            <Date>2006-02-01</Date>
+            <Version>3.5.1</Version>
+            <Comment>New stable relase</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="14">
+            <Date>2006-01-31</Date>
+            <Version>3.5.0</Version>
+            <Comment>Add showSidePane patch, which adds an option for hiding Side Pane</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2005-12-12</Date>
+            <Version>3.5.0</Version>
+            <Comment>Backport David Faure&apos;s IMAP slowness fixes</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2005-12-10</Date>
+            <Version>3.5.0</Version>
+            <Comment>Disable Kandy and Korn</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2005-12-09</Date>
+            <Version>3.5.0</Version>
+            <Comment>Update KMail to 1.9.1</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2005-12-06</Date>
+            <Version>3.5.0</Version>
+            <Comment>fix #892</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="9">
+            <Date>2005-11-29</Date>
+            <Version>3.5.0</Version>
+            <Comment>Version bump to stable release</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2005-11-26</Date>
+            <Version>3.5.0_rc2</Version>
+            <Comment>--enable-indexlib disabled, see #904</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2005-11-24</Date>
+            <Version>3.5.0_rc2</Version>
+            <Comment>imapfetchmaxsize patch added</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2005-11-24</Date>
+            <Version>3.5.0_rc2</Version>
+            <Comment>compiles with --enable-indexlib</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2005-11-21</Date>
+            <Version>3.5.0_rc2</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2005-11-18</Date>
+            <Version>3.5.0_rc1</Version>
+            <Comment>remove korganizer from autostart</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2005-11-15</Date>
+            <Version>3.5.0_rc1</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2005-10-15</Date>
+            <Version>3.5.0_beta2</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2005-09-05</Date>
+            <Version>3.4.2</Version>
+            <Comment>First release.</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>

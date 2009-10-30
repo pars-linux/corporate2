@@ -1,0 +1,38 @@
+--- kdepim-3.4.0.orig/kmail/kmfolderimap.cpp	2005-02-23 13:08:52.000000000 +0200
++++ kdepim-3.4.0/kmail/kmfolderimap.cpp	2005-03-22 21:10:50.000000000 +0200
+@@ -77,6 +77,14 @@
+ 
+   connect (this, SIGNAL( folderComplete( KMFolderImap*, bool ) ),
+            this, SLOT( slotCompleteMailCheckProgress()) );
++
++
++  KConfig *config = new KConfig ("kmailrc");
++  config->setGroup("General");
++
++  fetchMaxSize = config->readNumEntry("ImapFetchMaxSize", 5000);
++
++  delete config;
+ }
+ 
+ KMFolderImap::~KMFolderImap()
+--- kdepim-3.4.0.orig/kmail/kmfolderimap.h	2005-02-04 01:12:07.000000000 +0200
++++ kdepim-3.4.0/kmail/kmfolderimap.h	2005-03-22 21:10:50.000000000 +0200
+@@ -530,6 +530,7 @@
+   ProgressItem *mAddMessageProgressItem;
+   // to-be-added folders
+   QStringList mFoldersPendingCreation;
++  int fetchMaxSize;
+
+   // push all flags to the server instead of just the changed once
+   // when doing a flag change the next time
+--- kdepim-3.5.6/kmail/kmfolderimap.cpp	2007-04-15 23:14:02.000000000 +0300
++++ kdepim-3.5.6/kmail/kmfolderimap.cpp	2007-04-15 23:18:03.000000000 +0300
+@@ -1635,7 +1635,7 @@
+   KMFolderImap* kmfi = folder? dynamic_cast<KMFolderImap*>(folder->storage()) : 0;
+   if ( jt == FolderJob::tGetMessage && partSpecifier == "STRUCTURE" &&
+        account() && account()->loadOnDemand() &&
+-       ( msg->msgSizeServer() > 5000 || msg->msgSizeServer() == 0 ) &&
++       ( msg->msgSizeServer() > fetchMaxSize || msg->msgSizeServer() == 0 ) &&
+        ( msg->signatureState() == KMMsgNotSigned ||
+          msg->signatureState() == KMMsgSignatureStateUnknown ) &&
+        ( msg->encryptionState() == KMMsgNotEncrypted ||

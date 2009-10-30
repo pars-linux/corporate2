@@ -1,0 +1,436 @@
+Index: kitchensync/libqopensync/syncchange.cpp
+===================================================================
+--- kitchensync/libqopensync/syncchange.cpp	(revision 706780)
++++ kitchensync/libqopensync/syncchange.cpp	(working copy)
+@@ -22,6 +22,8 @@
+ #include <opensync/file.h>
+ #include <opensync/opensync.h>
+ 
++#include <kdebug.h>
++
+ #include "syncchange.h"
+ 
+ using namespace QSync;
+@@ -78,8 +80,10 @@
+     fileFormat *format = (fileFormat*)osync_change_get_data( mSyncChange );
+     if ( format )
+       content = QString::fromUtf8( format->data, format->size );
+-  } else
+-    content = QString::fromUtf8( osync_change_get_data( mSyncChange ), size );
++  } else {
++//    content = QString::fromUtf8( osync_change_get_data( mSyncChange ), size );
++    content = QString::fromUtf8( osync_change_get_printable( mSyncChange ) );
++  }
+ 
+   return content;
+ }
+Index: kitchensync/src/xmldiffalgo.h
+===================================================================
+--- kitchensync/src/xmldiffalgo.h	(revision 0)
++++ kitchensync/src/xmldiffalgo.h	(revision 0)
+@@ -0,0 +1,53 @@
++/*
++    This file is part of KitchenSync 
++
++    Copyright (c) 2006 Daniel Gollub <dgollub@suse.de>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License as published by the Free Software Foundation; either
++    version 2 of the License, or (at your option) any later version.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library; see the file COPYING.LIB.  If not, write to
++    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++*/
++
++#ifndef KSYNC_XMLDIFFALGO_H
++#define KSYNC_XMLDIFFALGO_H
++
++#include <qdom.h>
++#include <libkdepim/diffalgo.h>
++
++using namespace KPIM;
++
++namespace KSync {
++
++class XmlDiffAlgo : public DiffAlgo
++{
++  public:
++    XmlDiffAlgo( const QString &leftXml, const QString &rightXml );
++    XmlDiffAlgo( const QDomDocument &leftXml, const QDomDocument &rightXml );
++
++    void run();
++
++  private:
++    void appendConflictNodes(QDomElement &leftElement, QDomElement &rightElement);
++    void appendSingleNodes(QDomElement &element, bool isLeft);
++
++
++    void compareNode(QDomElement &leftElement, QDomElement &rightElement);
++
++    QDomDocument mLeftXml;
++    QDomDocument mRightXml;
++};
++
++}
++
++#endif
+Index: kitchensync/src/singleconflictdialog.cpp
+===================================================================
+--- kitchensync/src/singleconflictdialog.cpp	(revision 706780)
++++ kitchensync/src/singleconflictdialog.cpp	(working copy)
+@@ -21,12 +21,15 @@
+ #include <kdialog.h>
+ #include <klocale.h>
+ 
++#include <kdebug.h>
++
+ #include <qlabel.h>
+ #include <qlayout.h>
+ #include <qpushbutton.h>
+ 
+ #include "addresseediffalgo.h"
+ #include "genericdiffalgo.h"
++#include "xmldiffalgo.h"
+ #include "htmldiffalgodisplay.h"
+ #include "memberinfo.h"
+ 
+@@ -43,10 +46,13 @@
+ 
+   if ( format == "file" ) {
+     mDiffAlgo = new KSync::GenericDiffAlgo( leftChange.data(), rightChange.data() );
+-  } else if ( format == "vcard" ) {
+-  } else if ( format == "calendar" ) {
+-  } else if ( format == "xml-contact" ) {
++  } else if ( format == "vcard21" || format == "vcard30" ) {
+     mDiffAlgo = new KSync::AddresseeDiffAlgo( leftChange.data(), rightChange.data() );
++  } else if ( format == "vevent10" || format == "vevent20" ) {
++//    mDiffAlgo = new KSync::CalendarDiffAlgo( leftChange.data(), rightChange.data() );
++  } else if ( format == "xml-contact" || format == "xml-note"
++	   || format == "xml-event" || format == "xml-todo") { 
++    mDiffAlgo = new KSync::XmlDiffAlgo( leftChange.data(), rightChange.data() );
+   }
+ 
+   MemberInfo miLeft( leftChange.member() );
+@@ -68,14 +74,14 @@
+ 
+ void SingleConflictDialog::useFirstChange()
+ {
+-  mMapping.solve( mMapping.changeAt( 0 ) );
++  mMapping.solve( mMapping.changeAt( 1 ) );
+ 
+   accept();
+ }
+ 
+ void SingleConflictDialog::useSecondChange()
+ {
+-  mMapping.solve( mMapping.changeAt( 1 ) );
++  mMapping.solve( mMapping.changeAt( 0 ) );
+ 
+   accept();
+ }
+@@ -99,6 +105,7 @@
+   QGridLayout *layout = new QGridLayout( this, 3, 4, KDialog::marginHint(), KDialog::spacingHint() );
+ 
+   layout->addMultiCellWidget( new QLabel( i18n( "A conflict has appeared, please solve it manually." ), this ), 0, 0, 0, 3 );
++
+   mDiffAlgoDisplay = new KSync::HTMLDiffAlgoDisplay( this );
+ 
+   layout->addMultiCellWidget( mDiffAlgoDisplay, 1, 1, 0, 3 );
+Index: kitchensync/src/htmldiffalgodisplay.cpp
+===================================================================
+--- kitchensync/src/htmldiffalgodisplay.cpp	(revision 706780)
++++ kitchensync/src/htmldiffalgodisplay.cpp	(working copy)
+@@ -95,3 +95,12 @@
+                .arg( textToHTML( leftValue ) )
+                .arg( textToHTML( rightValue ) ) );
+ }
++
++void HTMLDiffAlgoDisplay::matchingField( const QString &id, const QString &leftValue,
++                                          const QString &rightValue )
++{
++  mText.append( QString( "<tr><td align=\"right\"><b>%1:</b></td><td bgcolor=\"#9cff83\">%2</td><td></td><td bgcolor=\"#9cff83\">%3</td></tr>" )
++               .arg( id )
++               .arg( textToHTML( leftValue ) )
++               .arg( textToHTML( rightValue ) ) );
++}
+Index: kitchensync/src/xmldiffalgo.cpp
+===================================================================
+--- kitchensync/src/xmldiffalgo.cpp	(revision 0)
++++ kitchensync/src/xmldiffalgo.cpp	(revision 0)
+@@ -0,0 +1,161 @@
++/*
++    This file is part of KitchenSync.
++
++    Copyright (c) 2006 Daniel Gollub <dgollub@suse.de> 
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Library General Public
++    License as published by the Free Software Foundation; either
++    version 2 of the License, or (at your option) any later version.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Library General Public License for more details.
++
++    You should have received a copy of the GNU Library General Public License
++    along with this library; see the file COPYING.LIB.  If not, write to
++    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
++    Boston, MA 02110-1301, USA.
++*/
++
++#include "xmldiffalgo.h"
++
++#include <kdebug.h>
++
++using namespace KSync;
++
++static bool compareString( const QString &left, const QString &right )
++{
++  if ( left.isEmpty() && right.isEmpty() )
++    return true;
++  else
++    return left == right;
++}
++
++XmlDiffAlgo::XmlDiffAlgo( const QString &leftXml, const QString &rightXml )
++{
++  kdDebug() << __func__ << " " << __LINE__ << endl;
++
++  mLeftXml.setContent( leftXml );
++  mRightXml.setContent( rightXml );
++
++}
++
++XmlDiffAlgo::XmlDiffAlgo( const QDomDocument &leftXml, const QDomDocument &rightXml )
++  : mLeftXml( leftXml ), mRightXml( rightXml )
++{
++  kdDebug() << __func__ << " " << __LINE__ << endl;
++}
++
++void XmlDiffAlgo::appendSingleNodes(QDomElement &element, bool isLeft)
++{
++  QDomNode node;
++
++  for ( node = element.firstChild(); !node.isNull(); node = node.nextSibling() ) {
++    QDomElement child = node.toElement();
++
++    if (isLeft)
++      additionalLeftField( node.nodeName(), child.text() );
++    else
++      additionalRightField( node.nodeName(), child.text() );
++  }
++
++}
++
++void XmlDiffAlgo::appendConflictNodes(QDomElement &leftElement, QDomElement &rightElement)
++{
++  QDomNode left, right;
++  QDomElement leftChild, rightChild;
++
++  for ( left = leftElement.firstChild(); !left.isNull(); left = left.nextSibling() ) {
++    leftChild = left.toElement();
++
++    for ( right = rightElement.firstChild(); !right.isNull(); right = right.nextSibling() ) {
++      rightChild = right.toElement();
++
++      if ( leftChild.tagName() != rightChild.tagName() )
++        continue;
++
++      if (leftChild.text().isEmpty() || rightChild.text().isEmpty())
++        continue;
++
++      QString id = leftChild.tagName();
++      if (id == "Content")
++        id = left.parentNode().nodeName();
++
++      conflictField( id, leftChild.text(), rightChild.text() );
++
++      left.parentNode().removeChild( left );
++      left = leftElement.firstChild();
++
++      right.parentNode().removeChild( right );
++      right = rightElement.firstChild();
++
++    }
++  }
++}
++
++void XmlDiffAlgo::compareNode(QDomElement &leftElement, QDomElement &rightElement)
++{
++  QDomNode left, right;
++  QDomElement leftChild, rightChild;
++  QDomNodeList nlist;
++top:;
++
++  for ( left = leftElement.firstChild(); !left.isNull(); left = left.nextSibling() ) {
++    leftChild = left.toElement();
++
++    for ( right = rightElement.firstChild(); !right.isNull(); right = right.nextSibling() ) {
++      rightChild = right.toElement();
++
++      if (leftChild.tagName() != rightChild.tagName())
++        continue;
++
++      if ( left.childNodes().count() > 1 && right.childNodes().count() > 1 ) {
++        compareNode( leftChild, rightChild );
++
++        if ( !left.hasChildNodes() && !right.hasChildNodes() ) {
++          left.parentNode().removeChild( left );
++          right.parentNode().removeChild( right );
++          goto top;
++        }
++
++        break;
++      }
++
++      if ( leftChild.text() == rightChild.text() ) {
++        QString id = leftChild.tagName();
++
++        if ( id == "Content" )
++          id = left.parentNode().nodeName(); 
++ 
++	if ( id != "Type" )
++          matchingField( id, leftChild.text(), rightChild.text() );
++
++        left.parentNode().removeChild( left );
++        right.parentNode().removeChild( right );
++        goto top;
++      }
++    }
++  }
++
++  appendConflictNodes(rightElement, leftElement);
++
++  appendSingleNodes(rightElement, false);
++  appendSingleNodes(leftElement, true);
++}
++
++void XmlDiffAlgo::run()
++{
++  kdDebug() << __func__ << endl;	
++  begin();
++
++  QDomElement leftElement = mLeftXml.documentElement();
++  QDomElement rightElement = mRightXml.documentElement();
++
++  compareNode( leftElement, rightElement );
++
++  end();
++}
++
+Index: kitchensync/src/Makefile.am
+===================================================================
+--- kitchensync/src/Makefile.am	(revision 706780)
++++ kitchensync/src/Makefile.am	(working copy)
+@@ -24,7 +24,7 @@
+                             pluginpicker.cpp configgui.cpp configguiblank.cpp configguifile.cpp \
+                             memberinfo.cpp groupconfigcommon.cpp kwidgetlist.cpp \
+                             configguipalm.cpp conflictdialog.cpp singleconflictdialog.cpp \
+-                            addresseediffalgo.cpp calendardiffalgo.cpp \
++                            addresseediffalgo.cpp calendardiffalgo.cpp xmldiffalgo.cpp \
+                             htmldiffalgodisplay.cpp genericdiffalgo.cpp multiconflictdialog.cpp \
+                             configguiirmc.cpp \
+                             configguisyncmlobex.cpp configguisyncmlhttp.cpp configguiopie.cpp  \
+Index: kitchensync/src/htmldiffalgodisplay.h
+===================================================================
+--- kitchensync/src/htmldiffalgodisplay.h	(revision 706780)
++++ kitchensync/src/htmldiffalgodisplay.h	(working copy)
+@@ -42,6 +42,8 @@
+     void additionalRightField( const QString &id, const QString &value );
+     void conflictField( const QString &id, const QString &leftValue,
+                         const QString &rightValue );
++    void matchingField( const QString &id, const QString &leftValue,
++                        const QString &rightValue );
+ 
+   private:
+     QString mLeftTitle;
+Index: libkdepim/diffalgo.h
+===================================================================
+--- libkdepim/diffalgo.h	(revision 691339)
++++ libkdepim/diffalgo.h	(working copy)
+@@ -73,6 +73,13 @@
+      */
+     virtual void conflictField( const QString &id, const QString &leftValue,
+                                 const QString &rightValue ) = 0;
++
++    /**
++      Adds a match between two fields.
++     */
++    virtual void matchingField( const QString &id, const QString &leftValue,
++                                const QString &rightValue ) = 0;
++
+ };
+ 
+ 
+@@ -124,7 +131,13 @@
+      */
+     void conflictField( const QString &id, const QString &leftValue,
+                         const QString &rightValue );
++    /**
++      Adds a match between two fields.
++     */
++    void matchingField( const QString &id, const QString &leftValue,
++                        const QString &rightValue );
+ 
++
+     void addDisplay( DiffAlgoDisplay *display );
+     void removeDisplay( DiffAlgoDisplay *display );
+ 
+Index: libkdepim/htmldiffalgodisplay.cpp
+===================================================================
+--- libkdepim/htmldiffalgodisplay.cpp	(revision 691339)
++++ libkdepim/htmldiffalgodisplay.cpp	(working copy)
+@@ -95,3 +95,12 @@
+                .arg( textToHTML( leftValue ) )
+                .arg( textToHTML( rightValue ) ) );
+ }
++
++void HTMLDiffAlgoDisplay::matchingField( const QString &id, const QString &leftValue,
++                                          const QString &rightValue )
++{
++  mText.append( QString( "<tr><td align=\"right\"><b>%1:</b></td><td bgcolor=\"#9cff83\">%2</td><td></td><td bgcolor=\"#9cff83\">%3</td></tr>" )
++               .arg( id )
++               .arg( textToHTML( leftValue ) )
++               .arg( textToHTML( rightValue ) ) );
++}
+Index: libkdepim/diffalgo.cpp
+===================================================================
+--- libkdepim/diffalgo.cpp	(revision 691339)
++++ libkdepim/diffalgo.cpp	(working copy)
+@@ -73,6 +73,14 @@
+     (*it)->conflictField( id, leftValue, rightValue );
+ }
+ 
++void DiffAlgo::matchingField( const QString &id, const QString &leftValue,
++                                 const QString &rightValue )
++{
++  QValueList<DiffAlgoDisplay*>::Iterator it;
++  for ( it = mDisplays.begin(); it != mDisplays.end(); ++it )
++    (*it)->matchingField( id, leftValue, rightValue );
++}
++
+ void DiffAlgo::addDisplay( DiffAlgoDisplay *display )
+ {
+   if ( mDisplays.find( display ) == mDisplays.end() )
+Index: libkdepim/htmldiffalgodisplay.h
+===================================================================
+--- libkdepim/htmldiffalgodisplay.h	(revision 691339)
++++ libkdepim/htmldiffalgodisplay.h	(working copy)
+@@ -41,6 +41,8 @@
+     void additionalRightField( const QString &id, const QString &value );
+     void conflictField( const QString &id, const QString &leftValue,
+                         const QString &rightValue );
++    void matchingField( const QString &id, const QString &leftValue,
++                        const QString &rightValue );
+ 
+   private:
+     QString mLeftTitle;

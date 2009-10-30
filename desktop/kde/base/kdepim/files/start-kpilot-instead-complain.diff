@@ -1,0 +1,25 @@
+--- kpilot/kpilot/pilotDaemon.cc
++++ kpilot/kpilot/pilotDaemon.cc	2005/05/24 12:22:52
+@@ -53,6 +53,7 @@
+ #include <kservice.h>
+ #include <kapplication.h>
+ #include <khelpmenu.h>
++#include <kprocess.h>
+ 
+ #include "pilotAppCategory.h"
+ 
+@@ -1332,7 +1333,14 @@
+ 				<< endl;
+ 			if (!p->isSet("fail-silently"))
+ 			{
++// simply do it instead of complains
++#if 0
+ 				KPilotConfig::sorryVersionOutdated(KPilotSettings::configVersion());
++#else
++				KProcess p;
++				p << "kpilot";
++				p.start(KProcess::DontCare);
++#endif
+ 			}
+ 			return 1;
+ 		}

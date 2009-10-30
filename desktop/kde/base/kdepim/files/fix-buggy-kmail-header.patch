@@ -1,0 +1,18 @@
+Index: kdepim-3.5.10/kmail/kmmessage.cpp
+===================================================================
+--- kdepim-3.5.10.orig/kmail/kmmessage.cpp
++++ kdepim-3.5.10/kmail/kmmessage.cpp
+@@ -3896,7 +3896,12 @@ QString KMMessage::expandAliases( const 
+       KConfigGroup general( KMKernel::config(), "General" );
+       QString defaultdomain = general.readEntry( "Default domain" );
+       if( !defaultdomain.isEmpty() ) {
+-        expandedRecipients += receiver + "@" + defaultdomain;
++        if (receiver.contains(QRegExp("<.*>")) != 0 ) {
++            expandedRecipients += receiver.replace(QRegExp("<(.*)>"), "<\\1@" + defaultdomain + ">");
++        }
++        else {
++          expandedRecipients += receiver + "@" + defaultdomain;
++        }
+       }
+       else {
+         expandedRecipients += guessEmailAddressFromLoginName( receiver );

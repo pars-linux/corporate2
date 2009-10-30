@@ -1,0 +1,74 @@
+diff -ur kdepim-3.5.0.orig/kmail/configuredialog.cpp kdepim-3.5.0/kmail/configuredialog.cpp
+--- kdepim-3.5.0.orig/kmail/configuredialog.cpp	2005-11-09 00:33:29.000000000 +0200
++++ kdepim-3.5.0/kmail/configuredialog.cpp	2005-12-06 13:48:48.000000000 +0200
+@@ -1812,7 +1812,7 @@
+ };
+ static const EnumConfigEntry mimeTreeMode = {
+   "Reader", "MimeTreeMode", I18N_NOOP("Message Structure Viewer"),
+-  mimeTreeModes, DIM(mimeTreeModes), 1
++  mimeTreeModes, DIM(mimeTreeModes), 0
+ };
+ 
+ 
+@@ -3626,7 +3626,7 @@
+ void SecurityPage::GeneralTab::doLoadOther() {
+   const KConfigGroup reader( KMKernel::config(), "Reader" );
+ 
+-  mHtmlMailCheck->setChecked( reader.readBoolEntry( "htmlMail", false ) );
++  mHtmlMailCheck->setChecked( reader.readBoolEntry( "htmlMail", true ) );
+   mExternalReferences->setChecked( reader.readBoolEntry( "htmlLoadExternal", false ) );
+   mAutomaticallyImportAttachedKeysCheck->setChecked( reader.readBoolEntry( "AutoImportKeys", false ) );
+ 
+@@ -3670,7 +3670,7 @@
+   KConfigGroup reader( KMKernel::config(), "Reader" );
+   KConfigGroup mdn( KMKernel::config(), "MDN" );
+ 
+-  if (reader.readBoolEntry( "htmlMail", false ) != mHtmlMailCheck->isChecked())
++  if (reader.readBoolEntry( "htmlMail", true ) != mHtmlMailCheck->isChecked())
+   {
+     if (KMessageBox::warningContinueCancel(this, i18n("Changing the global "
+       "HTML setting will override all folder specific values."), QString::null,
+diff -ur kdepim-3.5.0.orig/kmail/kmcomposerui.rc kdepim-3.5.0/kmail/kmcomposerui.rc
+--- kdepim-3.5.0.orig/kmail/kmcomposerui.rc	2005-09-10 11:24:01.000000000 +0300
++++ kdepim-3.5.0/kmail/kmcomposerui.rc	2005-12-06 13:43:55.000000000 +0200
+@@ -94,7 +94,7 @@
+   <Action name="sign_message" />
+   <Action name="encrypt_message" />
+  </ToolBar>
+- <ToolBar noMerge="1" enable="0" name="htmlToolBar" ><text>HTML Toolbar</text>
++ <ToolBar noMerge="1" enable="1" name="htmlToolBar" ><text>HTML Toolbar</text>
+   <Action name="text_list" />
+   <Action name="text_font" />
+   <Action name="text_size" />
+diff -ur kdepim-3.5.0.orig/kmail/kmreaderwin.cpp kdepim-3.5.0/kmail/kmreaderwin.cpp
+--- kdepim-3.5.0.orig/kmail/kmreaderwin.cpp	2005-09-10 11:24:01.000000000 +0300
++++ kdepim-3.5.0/kmail/kmreaderwin.cpp	2005-12-06 13:47:32.000000000 +0200
+@@ -911,7 +911,7 @@
+   if ( mToggleFixFontAction )
+     mToggleFixFontAction->setChecked( mUseFixedFont );
+ 
+-  mHtmlMail = reader.readBoolEntry( "htmlMail", false );
++  mHtmlMail = reader.readBoolEntry( "htmlMail", true );
+   mHtmlLoadExternal = reader.readBoolEntry( "htmlLoadExternal", false );
+ 
+   setHeaderStyleAndStrategy( HeaderStyle::create( reader.readEntry( "header-style", "fancy" ) ),
+@@ -934,7 +934,7 @@
+   reader.writeEntry( "showColorbar", mShowColorbar );
+ 
+   mMimeTreeAtBottom = reader.readEntry( "MimeTreeLocation", "bottom" ) != "top";
+-  const QString s = reader.readEntry( "MimeTreeMode", "smart" );
++  const QString s = reader.readEntry( "MimeTreeMode", "never" );
+   if ( s == "never" )
+     mMimeTreeMode = 0;
+   else if ( s == "always" )
+--- kdepim-3.5.6/kmail/kmmainwidget.cpp	2007-03-21 23:36:53.000000000 +0200
++++ kdepim-3.5.6/kmail/kmmainwidget.cpp	2007-03-21 23:37:38.000000000 +0200
+@@ -273,7 +273,7 @@
+   mReaderWindowBelow = geometry.readEntry( "readerWindowMode", "below" ) == "below";
+   mThreadPref = geometry.readBoolEntry( "nestedMessages", false );
+ 
+-  mHtmlPref = reader.readBoolEntry( "htmlMail", false );
++  mHtmlPref = reader.readBoolEntry( "htmlMail", true );
+   mHtmlLoadExtPref = reader.readBoolEntry( "htmlLoadExternal", false );
+ }
+ 

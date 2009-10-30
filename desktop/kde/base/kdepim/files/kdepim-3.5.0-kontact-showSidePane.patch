@@ -1,0 +1,51 @@
+diff -ur /var/tmp/pisi/kdepim-3.5.0-13/work/kdepim-3.5.0/kontact/src/iconsidepane.cpp kdepim-3.5.0/kontact/src/iconsidepane.cpp
+--- /var/tmp/pisi/kdepim-3.5.0-13/work/kdepim-3.5.0/kontact/src/iconsidepane.cpp	2006-01-29 04:45:34.000000000 +0200
++++ kdepim-3.5.0/kontact/src/iconsidepane.cpp	2006-01-29 04:45:26.318930528 +0200
+@@ -546,6 +546,10 @@
+            SIGNAL( pluginSelected( Kontact::Plugin* ) ) );
+ 
+   setAcceptDrops( true );
++
++  if ( !Kontact::Prefs::self()->showSidePane() ) {
++    hide();
++  }
+ }
+ 
+ IconSidePane::~IconSidePane()
+diff -ur /var/tmp/pisi/kdepim-3.5.0-13/work/kdepim-3.5.0/kontact/src/kcmkontact.cpp kdepim-3.5.0/kontact/src/kcmkontact.cpp
+--- /var/tmp/pisi/kdepim-3.5.0-13/work/kdepim-3.5.0/kontact/src/kcmkontact.cpp	2006-01-29 04:45:34.000000000 +0200
++++ kdepim-3.5.0/kontact/src/kcmkontact.cpp	2006-01-29 04:00:12.324520392 +0200
+@@ -70,7 +70,6 @@
+ {
+   QBoxLayout *topLayout = new QVBoxLayout( this );
+   QBoxLayout *pluginStartupLayout = new QHBoxLayout( topLayout );
+-  topLayout->addStretch();
+ 
+   KPrefsWidBool *forceStartupPlugin = addWidBool( Kontact::Prefs::self()->forceStartupPluginItem(), this );
+   pluginStartupLayout->addWidget( forceStartupPlugin->checkBox() );
+@@ -81,6 +80,10 @@
+   pluginStartupLayout->addWidget( selection->comboBox() );
+   selection->comboBox()->setEnabled( false );
+ 
++  KPrefsWidBool *showSidePane = addWidBool( Kontact::Prefs::self()->showSidePaneItem(), this );
++  topLayout->addWidget( showSidePane->checkBox() );
++  topLayout->addStretch();
++
+   connect( forceStartupPlugin->checkBox(), SIGNAL( toggled( bool ) ),
+            selection->comboBox(), SLOT( setEnabled( bool ) ) );
+   load();
+diff -ur /var/tmp/pisi/kdepim-3.5.0-13/work/kdepim-3.5.0/kontact/src/kontact.kcfg kdepim-3.5.0/kontact/src/kontact.kcfg
+--- /var/tmp/pisi/kdepim-3.5.0-13/work/kdepim-3.5.0/kontact/src/kontact.kcfg	2006-01-29 04:45:34.000000000 +0200
++++ kdepim-3.5.0/kontact/src/kontact.kcfg	2006-01-29 03:10:44.463703816 +0200
+@@ -17,6 +17,11 @@
+     <entry type="String" name="ForcedStartupPlugin">
+     </entry>
+ 
++    <entry type="Bool" name="ShowSidePane">
++      <default>true</default>
++      <label>Show side pane</label>
++    </entry>
++
+     <entry type="IntList" name="SidePaneSplitter">
+       <default>1</default>
+     </entry>

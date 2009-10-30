@@ -1,0 +1,16 @@
+diff -Nur -x '*.orig' -x '*~' kdepim-3.5.10/korganizer/koagendaview.cpp kdepim-3.5.10.new/korganizer/koagendaview.cpp
+--- kdepim-3.5.10/korganizer/koagendaview.cpp	2008-08-19 20:16:06.000000000 +0200
++++ kdepim-3.5.10.new/korganizer/koagendaview.cpp	2008-10-26 12:53:53.000000000 +0100
+@@ -368,6 +368,12 @@
+ 
+   if ( cal )
+     cal->registerObserver( this );
++  CalendarResources *calres = dynamic_cast<CalendarResources*>( cal );
++  if ( calres ) {
++    connect( calres, SIGNAL(signalResourceAdded(ResourceCalendar *)), SLOT(resourcesChanged()) );
++    connect( calres, SIGNAL(signalResourceModified( ResourceCalendar *)), SLOT(resourcesChanged()) );
++    connect( calres, SIGNAL(signalResourceDeleted(ResourceCalendar *)), SLOT(resourcesChanged()) );
++  }
+ }
+ 
+ 
