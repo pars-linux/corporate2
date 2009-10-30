@@ -1,0 +1,153 @@
+package: kdesdk-3.5.10.tar.bz2
+kdemod: kdesdk
+--- BRANCH_STATUS
++++ BRANCH_STATUS
+@@ -0,0 +1,2 @@
++current HEAD: 957058
++svn di between //tags/KDE/3.5.10/kdesdk and //branches/KDE/3.5/kdesdk
+--- poxml/antlr/antlr/CharScanner.hpp	
++++ poxml/antlr/antlr/CharScanner.hpp	
+@@ -42,6 +42,7 @@
+ #include "antlr/BitSet.hpp"
+ #include "antlr/LexerSharedInputState.hpp"
+ #include <map>
++#include <cstdio>
+ 
+ ANTLR_BEGIN_NAMESPACE(antlr)
+ 
+--- kcachegrind/kcachegrind/callgraphview.cpp	
++++ kcachegrind/kcachegrind/callgraphview.cpp	
+@@ -2073,13 +2073,12 @@
+       continue;
+     }
+ 
+-    // artifical calls should be blue
+-    bool isArtifical = false;
+-    TraceFunction* caller = e->fromNode()->function();
+-    TraceFunction* called = e->toNode()->function();
+-    if (caller->cycle() == caller) isArtifical = true;
+-    if (called->cycle() == called) isArtifical = true;
+-    QColor arrowColor = isArtifical ? Qt::blue : Qt::black;
++    // calls into/out of cycles are special: make them blue
++    QColor arrowColor = Qt::black;
++    TraceFunction* caller = e->fromNode() ? e->fromNode()->function() : 0;
++    TraceFunction* called = e->toNode() ? e->toNode()->function() : 0;
++    if ( (caller && (caller->cycle() == caller)) ||
++         (called && (called->cycle() == called)) ) arrowColor = Qt::blue;
+ 
+     sItem = new CanvasEdge(e, _canvas);
+     e->setCanvasEdge(sItem);
+--- cervisia/repositories.cpp	
++++ cervisia/repositories.cpp	
+@@ -29,17 +29,29 @@
+ #include "cervisiapart.h"
+ 
+ 
++static QString fileNameCvs()
++{
++    return QDir::homeDirPath() + "/.cvspass";
++}
++
++
++static QString fileNameCvsnt()
++{
++    return QDir::homeDirPath() + "/.cvs/cvspass";
++}
++
++
+ // old .cvspass format:
+ //    user@host:/path Acleartext_password
+ //
+ // new .cvspass format (since cvs 1.11.1):
+ //    /1 user@host:port/path Aencoded_password
+ //
+-QStringList Repositories::readCvsPassFile()
++static QStringList readCvsPassFile()
+ {
+     QStringList list;
+-    
+-    QFile f(QDir::homeDirPath() + "/.cvspass");
++
++    QFile f(fileNameCvs());
+     if (f.open(IO_ReadOnly))
+         {
+             QTextStream stream(&f);
+@@ -55,13 +67,46 @@
+ 			    list.append(line.section(' ', 1, 1));
+ 		    }
+ 		}
+-            f.close();
+ 	}
+ 
+     return list;
+ }
+ 
+ 
++// .cvs/cvspass format
++//    user@host:port/path=Aencoded_password
++//
++static QStringList readCvsntPassFile()
++{
++    QStringList list;
++
++    QFile file(fileNameCvsnt());
++    if (file.open(IO_ReadOnly))
++    {
++        QTextStream stream(&file);
++        while (!stream.atEnd())
++        {
++            const QString line(stream.readLine());
++
++            const int pos(line.find("=A"));
++            if (pos >= 0)
++                list.append(line.left(pos));
++        }
++    }
++
++    return list;
++}
++
++
++QStringList Repositories::readCvsPassFile()
++{
++    return (QFileInfo(fileNameCvs()).lastModified()
++            < QFileInfo(fileNameCvsnt()).lastModified())
++        ? readCvsntPassFile()
++        : ::readCvsPassFile();
++}
++
++
+ QStringList Repositories::readConfigFile()
+ {
+     QStringList list;
+--- cervisia/ChangeLog	
++++ cervisia/ChangeLog	
+@@ -1,3 +1,8 @@
++2008-08-15  André Wöbbeking  <Woebbeking@kde.org>
++
++	* Fix BR #162523:
++	  Allow cvsnt users to login to repositories.
++
+ 2008-06-18  André Wöbbeking  <Woebbeking@kde.org>
+ 
+ 	* Fix BR #164216:
+--- cervisia/cvsservice/cvsloginjob.cpp	
++++ cervisia/cvsservice/cvsloginjob.cpp	
+@@ -104,7 +104,8 @@
+         }
+ 
+         // process asks for the password
+-        if( line.contains(PASS_PHRASE) )
++        // search case insensitive as cvs and cvsnt use different capitalization
++        if( line.contains(PASS_PHRASE, false) )
+         {
+             kdDebug(8051) << "process waits for the password." << endl;
+ 
+
+Property changes on: .
+___________________________________________________________________
+Deleted: svn:mergeinfo
+Added: svn:externals
+   + admin https://svn.kde.org/home/kde/branches/KDE/3.5/kde-common/admin
+
+
