@@ -1,0 +1,343 @@
+Index: searchbar.h
+===================================================================
+--- konq-plugins/searchbar/searchbar.h	(revision 552886)
++++ konq-plugins/searchbar/searchbar.h	(working copy)
+@@ -1,4 +1,6 @@
+ /* This file is part of the KDE project
++   Copyright (C) 2005 by Tobi Vollebregt <tobivollebregt@gmail.com>
++   Copyright (C) 2004 by Vinay Khaitan <vkhaitan@iitk.ac.in>
+    Copyright (C) 2004 Arend van Beelen jr. <arend@auton.nl>
+ 
+    This program is free software; you can redistribute it and/or
+@@ -32,6 +34,7 @@
+ class KHTMLPart;
+ class KProcess;
+ class QPopupMenu;
++class QTimer;
+ 
+ /**
+  * Combo box which catches mouse clicks on the pixmap.
+@@ -149,6 +152,22 @@
+ 		void updateComboVisibility();
+ 
+ 		void focusSearchbar();
++
++		// Google Suggest private slots
++		void selectGoogleSuggestMode();
++		void gsStartDelay();
++		void gsMakeCompletionList();
++		void gsDataArrived(KIO::Job*, const QByteArray& data);
++		void gsJobFinished(KIO::Job* job);
++		void gsSetCompletedText(const QString& text);
++		void gsPutTextInBox(const QString& text);
++
++	signals:
++
++		// Google Suggest signals
++
++		void gsCompleteDelayed();
++
+ 	private:
+ 		void nextSearchEntry();
+ 		void previousSearchEntry();
+@@ -157,12 +176,20 @@
+ 		SearchBarCombo        *m_searchCombo;
+                 KWidgetAction         *m_searchComboAction;
+ 		QPopupMenu            *m_popupMenu;
++		KSelectAction         *m_googleMenu;
+ 		QPixmap                m_searchIcon;
+ 		SearchModes            m_searchMode;
+ 		QString                m_providerName;
+ 		bool                   m_urlEnterLock;
+ 		QString                m_currentEngine;
+ 		QStringList            m_searchEngines;
++
++		// Google Suggest private members
++
++		QTimer                 m_gsTimer;
++		QString                m_gsData;
++		enum GoogleMode        {GoogleOnly,ForAll,Never};
++		GoogleMode             m_googleMode;
+ };
+ 
+ #endif // SEARCHBAR_PLUGIN
+Index: searchbar.cpp
+===================================================================
+--- konq-plugins/searchbar/searchbar.cpp	(revision 552890)
++++ konq-plugins/searchbar/searchbar.cpp	(working copy)
+@@ -1,4 +1,6 @@
+ /* This file is part of the KDE project
++   Copyright (C) 2005 by Tobi Vollebregt <tobivollebregt@gmail.com>
++   Copyright (C) 2004 by Vinay Khaitan <vkhaitan@iitk.ac.in>
+    Copyright (C) 2004 Arend van Beelen jr. <arend@auton.nl>
+ 
+    This program is free software; you can redistribute it and/or
+@@ -33,10 +35,13 @@
+ #include <klocale.h>
+ #include <kmimetype.h>
+ #include <kprocess.h>
++#include <kprotocolinfo.h>
+ #include <kprotocolmanager.h>
+ #include <kstandarddirs.h>
+ #include <kurifilter.h>
+ 
++#include <kio/job.h>
++
+ #include <kparts/mainwindow.h>
+ #include <kparts/partmanager.h>
+ 
+@@ -57,7 +62,9 @@
+   KParts::Plugin(parent, name),
+   m_searchCombo(0),
+   m_searchMode(UseSearchProvider),
+-  m_urlEnterLock(false)
++  m_urlEnterLock(false),
++  m_gsTimer(this),
++  m_googleMode(GoogleOnly)
+ {
+ 	m_searchCombo = new SearchBarCombo(0L, "search combo");
+ 	m_searchCombo->setDuplicatesEnabled(false);
+@@ -65,8 +72,10 @@
+ 	m_searchCombo->setFixedWidth(180);
+ 	m_searchCombo->setLineEdit(new KLineEdit(m_searchCombo));
+ 	m_searchCombo->lineEdit()->installEventFilter(this);
++	m_searchCombo->listBox()->setFocusProxy(m_searchCombo);
+ 
+ 	m_popupMenu = 0;
++	m_googleMenu = 0;
+ 
+ 	m_searchComboAction = new KWidgetAction(m_searchCombo, i18n("Search Bar"), 0,
+ 	                                                     0, 0, actionCollection(), "toolbar_search_bar");
+@@ -95,6 +104,11 @@
+ 		                 SLOT  (partChanged      (KParts::Part*)));
+ 		partChanged(partMan->activePart());
+ 	}
++
++	connect(this, SIGNAL(gsCompleteDelayed()), SLOT(gsStartDelay()));
++	connect(&m_gsTimer, SIGNAL(timeout()), SLOT(gsMakeCompletionList()));
++	connect(m_searchCombo->listBox(), SIGNAL(highlighted(const QString&)), SLOT(gsSetCompletedText(const QString&)));
++	connect(m_searchCombo, SIGNAL(activated(const QString&)), SLOT(gsPutTextInBox(const QString&)));
+ }
+ 
+ SearchBarPlugin::~SearchBarPlugin()
+@@ -103,6 +117,7 @@
+ 	config->setGroup("SearchBar");
+ 	config->writeEntry("Mode", (int) m_searchMode);
+ 	config->writeEntry("CurrentEngine", m_currentEngine);
++	config->writeEntry("GoogleSuggestMode", m_googleMode);
+ 
+ 	delete m_searchCombo;
+ 	m_searchCombo = 0L;
+@@ -120,6 +135,14 @@
+ 	if( o==m_searchCombo->lineEdit() && e->type() == QEvent::KeyPress ) 
+ 	{
+ 		QKeyEvent *k = (QKeyEvent *)e;
++		QString text = k->text();
++		if(!text.isEmpty())
++		{
++			if(k->key() != Qt::Key_Return && k->key() != Key_Enter && k->key() != Key_Escape)
++			{
++				emit gsCompleteDelayed();
++			}
++		}
+ 		if(k->state() & ControlButton)
+ 		{
+ 			if(k->key()==Key_Down)
+@@ -133,6 +156,36 @@
+ 				return true;
+ 			}
+ 		}
++		else
++		{
++			if (k->key() == Key_Up || k->key() == Key_Down)
++			{
++				if(m_searchCombo->listBox()->isVisible())
++				{
++					qApp->sendEvent(m_searchCombo->listBox(), e);
++					return true;
++				}
++			}
++		}
++		if (k->key() == Key_Enter || k->key() == Key_Return)
++		{
++			/*- Fix a bug which caused the searchbar to search for the completed
++			    input instead of the literal input when enter was pressed and
++			    the listbox was visible.
++			if(m_searchCombo->listBox()->isVisible())
++			{
++				qApp->sendEvent(m_searchCombo->listBox(),e);
++			}*/
++		}
++		if (k->key() == Key_Escape)
++		{
++			m_searchCombo->listBox()->hide();
++			if (m_searchCombo->lineEdit()->hasSelectedText())
++			{
++				m_searchCombo->lineEdit()->setText(m_searchCombo->currentText().left(m_searchCombo->lineEdit()->selectionStart()));
++			}
++			m_gsTimer.stop();
++		}
+ 	}
+ 	return false;
+ }
+@@ -197,11 +250,16 @@
+ 	setIcon();
+ }
+ 
+-void SearchBarPlugin::startSearch(const QString &search)
++void SearchBarPlugin::startSearch(const QString &_search)
+ {
+-	if(m_urlEnterLock || search.isEmpty() || !m_part)
++	if(m_urlEnterLock || _search.isEmpty() || !m_part)
+ 		return;
+ 
++	m_gsTimer.stop();
++	m_searchCombo->listBox()->hide();
++
++	QString search = _search.section('(', 0, 0).stripWhiteSpace();
++
+ 	if(m_searchMode == FindInThisPage)
+ 	{
+ 		m_part->findText(search, 0);
+@@ -355,10 +413,16 @@
+ 		}
+ 
+ 		m_popupMenu->insertSeparator();
++		m_googleMenu = new KSelectAction(i18n("Use Google Suggest"), SmallIconSet("ktip"), 0, this, SLOT(selectGoogleSuggestMode()), m_popupMenu);
++		QStringList google_modes;
++                google_modes << i18n("For Google Only") << i18n("For All Searches") << i18n("Never");
++		m_googleMenu->setItems(google_modes);
++		m_googleMenu->plug(m_popupMenu);
+ 		m_popupMenu->insertItem(SmallIcon("enhanced_browsing"), i18n("Select Search Engines..."),
+ 			this, SLOT(selectSearchEngines()), 0, 1000);
+ 		connect(m_popupMenu, SIGNAL(activated(int)), SLOT(useSearchProvider(int)));
+ 	}
++	m_googleMenu->setCurrentItem(m_googleMode);
+ 	m_popupMenu->popup(m_searchCombo->mapToGlobal(QPoint(0, m_searchCombo->height() + 1)), 0);
+ }
+ 
+@@ -441,6 +505,7 @@
+ 	config->setGroup("SearchBar");
+ 	m_searchMode = (SearchModes) config->readNumEntry("Mode", (int) UseSearchProvider);
+ 	m_currentEngine = config->readEntry("CurrentEngine", engine);
++	m_googleMode=(GoogleMode)config->readNumEntry("GoogleSuggestMode", GoogleOnly);
+ 
+ 	if ( m_currentEngine.isEmpty() )
+ 	    m_currentEngine = "google";
+@@ -553,4 +618,116 @@
+ 	}
+ }
+ 
++// Google Suggest code
++
++void SearchBarPlugin::selectGoogleSuggestMode()
++{
++	m_googleMode = (GoogleMode)m_googleMenu->currentItem();
++	KConfig *config = kapp->config();
++	config->setGroup("SearchBar");
++	config->writeEntry("GoogleSuggestMode", m_googleMode);
++	config->sync();
++}
++
++// adapted and modified by Tobi Vollebregt
++// original code from Googlebar by Vinay Khaitan
++
++void SearchBarPlugin::gsStartDelay()
++{
++	m_gsTimer.stop();
++	m_searchCombo->listBox()->hide();
++	// FIXME: make configurable
++	m_gsTimer.start(500, true);
++}
++
++void SearchBarPlugin::gsMakeCompletionList()
++{
++	if ((m_googleMode==GoogleOnly && m_currentEngine != "google") || m_googleMode==Never)
++		return;
++
++	if (!m_searchCombo->currentText().isEmpty())
++	{
++		KIO::TransferJob* tj =
++				KIO::get(KURL("http://www.google.com/complete/search?hl=en&js=true&qu=" + m_searchCombo->currentText()), false, false);
++		connect(tj, SIGNAL(data(KIO::Job*, const QByteArray&)), this, SLOT(gsDataArrived(KIO::Job*, const QByteArray&)));
++		connect(tj, SIGNAL(result(KIO::Job*)), this, SLOT(gsJobFinished(KIO::Job*)));
++	}
++}
++
++void SearchBarPlugin::gsDataArrived(KIO::Job*, const QByteArray& data)
++{
++	m_gsData += QString::fromUtf8(data.data());
++}
++
++static QString reformatNumber(const QString& number)
++{
++	static const char suffix[] = { 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y' };
++	QString s = number.stripWhiteSpace();
++	uint c = 0;
++	for (int i = s.length() - 1; i > 0 && s[i] == '0'; --i) ++c;
++	c /= 3;
++	if (c >= sizeof(suffix)/sizeof(suffix[0]))
++		c = sizeof(suffix)/sizeof(suffix[0]) - 1;
++	s = s.left(s.length() - c * 3) + suffix[c];
++	return s;
++}
++
++void SearchBarPlugin::gsJobFinished(KIO::Job* job)
++{
++	if (((KIO::TransferJob*)job)->error() == 0)
++	{
++		QString temp;
++		temp = m_gsData.mid(m_gsData.find('(') + 1, m_gsData.findRev(')') - m_gsData.find('(') - 1);
++		temp = temp.mid(temp.find('(') + 1, temp.find(')') - temp.find('(') - 1);
++		temp.remove('"');
++		QStringList compList1 = QStringList::split(',', temp);
++		temp = m_gsData.mid(m_gsData.find(')') + 1, m_gsData.findRev(')') - m_gsData.find('(') - 1);
++		temp = temp.mid(temp.find('(') + 1, temp.find(')') - temp.find('(') - 1);
++		temp.remove('"');
++		temp.remove(',');
++		temp.remove('s');
++		QStringList compList2 = QStringList::split("reult", temp);
++		QStringList finalList;
++		for(uint j = 0; j < compList1.count(); j++)
++		{
++			if (m_googleMode!=ForAll || m_currentEngine == "google")
++				finalList.append(compList1[j].stripWhiteSpace() + " (" + reformatNumber(compList2[j]) + ")");
++			else
++				finalList.append(compList1[j].stripWhiteSpace());
++		}
++		//store text so that we can restore it if it gets erased after GS returns no results
++		temp = m_searchCombo->currentText();
++		m_searchCombo->listBox()->clear();
++		m_searchCombo->listBox()->insertStringList(finalList);
++		m_searchCombo->setIcon(m_searchIcon);
++		//restore text
++		m_searchCombo->lineEdit()->setText(temp);
++		if (finalList.count() != 0 && !m_gsTimer.isActive())
++		{
++			m_searchCombo->popup();
++		}
++	}
++	m_gsData = "";
++}
++
++void SearchBarPlugin::gsSetCompletedText(const QString& text)
++{
++	QString currentText;
++	if (m_searchCombo->lineEdit()->hasSelectedText())
++		currentText = m_searchCombo->currentText().left(m_searchCombo->lineEdit()->selectionStart());
++	else
++		currentText = m_searchCombo->currentText();
++	if (currentText == text.left(currentText.length()))
++	{
++		m_searchCombo->lineEdit()->setText(text.left(text.find('(') - 1));
++		m_searchCombo->lineEdit()->setCursorPosition(currentText.length());
++		m_searchCombo->lineEdit()->setSelection(currentText.length(), m_searchCombo->currentText().length() - currentText.length());
++	}
++}
++
++void SearchBarPlugin::gsPutTextInBox(const QString& text)
++{
++	m_searchCombo->lineEdit()->setText(text.section('(', 0, 0).stripWhiteSpace());
++}
++
+ #include "searchbar.moc"

@@ -1,0 +1,21 @@
+diff -Naur kdeaddons-3.5.10-orig/konq-plugins/akregator/akregatorplugin.cpp kdeaddons-3.5.10/konq-plugins/akregator/akregatorplugin.cpp
+--- kdeaddons-3.5.10-orig/konq-plugins/akregator/akregatorplugin.cpp	2008-11-27 22:20:10.000000000 +0200
++++ kdeaddons-3.5.10/konq-plugins/akregator/akregatorplugin.cpp	2008-11-27 22:22:52.000000000 +0200
+@@ -103,10 +103,13 @@
+ 
+ bool AkregatorMenu::isFeedUrl(const QString &url)
+ {
+-    if (url.contains(".htm", false) != 0) return false;
+-    if (url.contains("rss", false) != 0) return true;
+-    if (url.contains("rdf", false) != 0) return true;
+-    if (url.contains("xml", false) != 0) return true;
++    if (url.endsWith(".htm", false) || url.endsWith(".html", false))
++        return false;
++
++    if (url.endsWith(".rss", false)) return true;
++    if (url.endsWith(".rdf", false)) return true;
++    if (url.endsWith(".xml", false)) return true;
++
+     return false;
+ }
+ 
