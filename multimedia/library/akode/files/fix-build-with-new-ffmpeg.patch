@@ -1,0 +1,22 @@
+Index: akode-2.0.2/akode/plugins/ffmpeg_decoder/ffmpeg_decoder.cpp
+===================================================================
+--- akode-2.0.2.orig/akode/plugins/ffmpeg_decoder/ffmpeg_decoder.cpp
++++ akode-2.0.2/akode/plugins/ffmpeg_decoder/ffmpeg_decoder.cpp
+@@ -47,7 +47,7 @@ extern "C" {
+         aKode::File *file = (aKode::File*)opaque;
+         return file->write((char*)buf, size);
+     }
+-    static offset_t akode_seek(void* opaque, offset_t pos, int whence)
++    static int64_t akode_seek(void* opaque, int64_t pos, int whence)
+     {
+         aKode::File *file = (aKode::File*)opaque;
+         return file->seek(pos, whence);
+@@ -316,7 +316,7 @@ bool FFMPEGDecoder::readFrame(AudioFrame
+     assert(d->packet.stream_index == d->audioStream);
+ 
+ retry:
+-    int len = avcodec_decode_audio( d->ic->streams[d->audioStream]->codec,
++    int len = avcodec_decode_audio2( d->ic->streams[d->audioStream]->codec,
+                                     (short*)d->buffer, &d->buffer_size,
+                                     d->packetData, d->packetSize );
+ 
