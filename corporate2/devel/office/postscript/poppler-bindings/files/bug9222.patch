@@ -1,0 +1,17 @@
+Index: poppler-0.10.6/poppler/JBIG2Stream.cc
+===================================================================
+--- poppler-0.10.6.orig/poppler/JBIG2Stream.cc
++++ poppler-0.10.6/poppler/JBIG2Stream.cc
+@@ -1849,6 +1849,12 @@ GBool JBIG2Stream::readSymbolDictSeg(Gui
+     goto syntaxError;
+   }
+ 
++  for ( ; j < numExSyms; ++j) {
++    // this should never happen but happens on PDF we don't parse
++    // correctly like bug #19702
++    symbolDict->setBitmap(j, NULL);
++  }
++
+   for (i = 0; i < numNewSyms; ++i) {
+     delete bitmaps[numInputSyms + i];
+   }
