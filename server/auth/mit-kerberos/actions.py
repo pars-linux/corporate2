@@ -1,35 +1,80 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2008 TUBITAK/UEKAE
+# Copyright 2005-2009 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-WorkDir="krb5-%s/src" % get.srcVERSION()
+WorkDir="krb5-%s" % get.srcVERSION()
+
+def rename_man_pages():
+    manpages = ["appl/bsd/klogind.M",
+                "appl/bsd/kshd.M",
+                "appl/sample/sserver/sserver.M",
+                "appl/telnet/telnetd/telnetd.8",
+                "appl/gssftp/ftpd/ftpd.M",
+                "config-files/kdc.conf.M",
+                "config-files/krb5.conf.M",
+                "kadmin/cli/kadmin.M",
+                "slave/kpropd.M",
+                "slave/kprop.M"]
+    for manpage in manpages:
+        shelltools.move(manpage, "%s.in" % manpage)
 
 def setup():
-    shelltools.export("CFLAGS","-I/usr/include/et -fPIC %s" % get.CFLAGS())
+    shelltools.cd("src")
 
+    # Rebuild configure scripts
+    shelltools.chmod("rebuild-configure-scripts.sh")
+    shelltools.system("./rebuild-configure-scripts.sh")
+
+    # Rename man pages to regenerate them
+    rename_man_pages()
+
+    shelltools.export("CFLAGS", "-I/usr/include/et -fPIC -fno-strict-aliasing %s" % get.CFLAGS())
+
+    # Fix pthread linking
     pisitools.dosed("configure", "-lthread", "-lpthread")
     pisitools.dosed("configure", "-pthread", "-lpthread")
-    autotools.configure("--with-krb4 \
-                         --without-tcl \
-                         --enable-shared \
-                         --localstatedir=/etc \
-                         --with-system-et \
+
+    autotools.configure("--with-system-et \
                          --with-system-ss \
+                         --with-pam \
+                         --with-netlib=-lresolv \
+                         --without-selinux \
+                         --without-tcl \
+                         --localstatedir=/var/lib/kerberos \
+                         --disable-rpath \
+                         --enable-shared \
+                         --enable-pkinit \
+                         --enable-dns \
                          --enable-dns-for-realm")
 
+    # Fix krb5-config script to remove rpaths and CFLAGS
+    pisitools.dosed("krb5-config", "^CC_LINK=.*", "CC_LINK='$(CC) $(PROG_LIBPATH)'")
+
 def build():
-    autotools.make()
+    autotools.make("-C src/")
+
+def check():
+    import tempfile
+    tmpdir = tempfile.mkdtemp(prefix='pisitest')
+    autotools.make("-C src/ check TMPDIR=%s -j1" % tmpdir)
+    shelltools.system("rm -rf %s" % tmpdir)
 
 def install():
+    shelltools.cd("src")
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+
+    # Install additional headers
+    shelltools.cd("include")
+    shelltools.system("find kadm5 krb5 gssrpc gssapi -name '*.h' | cpio -pdm  %s/usr/include" % get.installDIR())
+    shelltools.cd("..")
 
     # Add "k" prefix to some apps and manpages to resolve conflicts
     for app in ["telnetd","ftpd"]:
@@ -40,5 +85,9 @@ def install():
         pisitools.rename("/usr/share/man/man1/%s.1" % app, "k%s.1" % app)
         pisitools.rename("/usr/bin/%s" % app, "k%s" % app)
 
-    # TODO comar service for kadmind and krb5kdc
+    # Install info and docs
+    pisitools.doinfo("../doc/*.info")
+    pisitools.dodoc("../README")
+
+    # Remove examples
     pisitools.removeDir("/usr/share/examples")
