@@ -1,0 +1,33 @@
+diff -Nurp patched/man/radeon.man working/man/radeon.man
+--- patched/man/radeon.man	2009-01-02 14:44:39.000000000 -0800
++++ working/man/radeon.man	2009-01-02 15:22:15.000000000 -0800
+@@ -338,7 +338,7 @@ XAA is the traditional acceleration arch
+ stable.  EXA is a newer acceleration architecture with better performance for
+ the Render and Composite extensions, but the rendering code for it is newer and
+ possibly unstable.  The default is
+-.B XAA.
++.B EXA.
+ .TP
+ .BI "Option \*qAccelDFS\*q \*q" boolean \*q
+ Use or don't use accelerated EXA DownloadFromScreen hook when possible (only
+diff -Nurp patched/src/radeon_driver.c working/src/radeon_driver.c
+--- patched/src/radeon_driver.c	2009-01-02 14:44:39.000000000 -0800
++++ working/src/radeon_driver.c	2009-01-02 15:03:02.000000000 -0800
+@@ -1998,13 +1998,16 @@ static Bool RADEONPreInitAccel(ScrnInfoP
+ 	from = X_DEFAULT;
+ #if defined(USE_EXA)
+ #if defined(USE_XAA)
++        /* If Acceleration is enabled, default to EXA rather than XAA */
++        info->useEXA = TRUE;
++
+ 	optstr = (char *)xf86GetOptValString(info->Options, OPTION_ACCELMETHOD);
+ 	if (optstr != NULL) {
+ 	    if (xf86NameCmp(optstr, "EXA") == 0) {
+ 		from = X_CONFIG;
+-		info->useEXA = TRUE;
+ 	    } else if (xf86NameCmp(optstr, "XAA") == 0) {
+ 		from = X_CONFIG;
++		info->useEXA = FALSE;
+ 	    }
+ 	}
+ #else /* USE_XAA */
