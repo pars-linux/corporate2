@@ -1,0 +1,35 @@
+--- krdc/vnc/sockets.c
++++ krdc/vnc/sockets.c
+@@ -101,7 +101,9 @@ ReadFromRFBServer(char *out, unsigned in
+ 	    perror("krdc: read");
+ 	    return False;
+ 	  }
+-	} else { 
++	} else if (errno == EINTR)
++	  continue;
++	else { 
+ 	  fprintf(stderr,"VNC server closed connection\n");
+ 	  return False;
+ 	}
+@@ -138,7 +140,9 @@ ReadFromRFBServer(char *out, unsigned in
+ 	    perror("krdc: read");
+ 	    return False;
+ 	  }
+-	} else { 
++	} else if (errno == EINTR)
++	  continue;
++	else { 
+ 	  fprintf(stderr,"VNC server closed connection\n");
+ 	  return False;
+ 	}
+@@ -187,7 +191,9 @@ WriteExact(int sock, const char *_buf, i
+ 	  perror("krdc: write");
+ 	  return False;
+ 	}
+-      } else {
++      } else if (errno == EINTR)
++	continue;
++      else { 
+ 	fprintf(stderr,"write failed\n");
+ 	return False;
+       }

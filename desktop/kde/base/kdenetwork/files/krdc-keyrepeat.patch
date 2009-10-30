@@ -1,0 +1,55 @@
+diff -ur kdenetwork-3.5.1.orig/krdc/krdc.cpp kdenetwork-3.5.1/krdc/krdc.cpp
+--- kdenetwork-3.5.1.orig/krdc/krdc.cpp	2005-11-09 00:28:00.000000000 +0200
++++ kdenetwork-3.5.1/krdc/krdc.cpp	2006-02-18 18:10:52.000000000 +0200
+@@ -29,6 +29,7 @@
+ #include <ktoolbar.h>
+ #include <ktoolbarbutton.h>
+ #include <kpopupmenu.h>
++#include <kprocess.h>
+ #include <kmessagebox.h>
+ #include <kwin.h>
+ #include <kstartupinfo.h>
+@@ -111,6 +112,11 @@
+ 	setMouseTracking(true);
+ 
+ 	KStartupInfo::appStarted();
++
++    // http://bugs.kde.org/show_bug.cgi?id=84204
++    proc = new KProcess();
++    *proc << "xset r off";
++    proc->start();
+ }
+ 
+ bool KRDC::start()
+@@ -345,6 +351,11 @@
+ 
+ KRDC::~KRDC()
+ {
++    // http://bugs.kde.org/show_bug.cgi?id=84204
++    proc = new KProcess();
++    *proc << "xset r on";
++    proc->start();
++
+ 	// kill explicitly to avoid xlib calls by the threads after closing the window!
+ 	if (m_view)
+ 		delete m_view;
+diff -ur kdenetwork-3.5.1.orig/krdc/krdc.h kdenetwork-3.5.1/krdc/krdc.h
+--- kdenetwork-3.5.1.orig/krdc/krdc.h	2005-09-10 11:20:13.000000000 +0300
++++ kdenetwork-3.5.1/krdc/krdc.h	2006-02-18 18:12:03.000000000 +0200
+@@ -37,6 +37,7 @@
+ class KToolBar;
+ class QPopupMenu;
+ class QDockArea;
++class KProcess;
+ 
+ enum WindowMode {
+ 	WINDOW_MODE_AUTO,
+@@ -70,6 +71,8 @@
+ 	KProgress *m_progress;             // progress bar for the dialog
+ 	KRemoteView *m_view;                  // the remote widget (e.g. KVncView)
+ 
++    KProcess *proc;
++
+ 	SmartPtr<KeyCaptureDialog> m_keyCaptureDialog; // dialog for key capturing
+ 	KFullscreenPanel *m_fsToolbar;     // toolbar for fullscreen (0 in normal mode)
+ 	QWidget *m_fsToolbarWidget;        // qt designer widget for fs toolbar

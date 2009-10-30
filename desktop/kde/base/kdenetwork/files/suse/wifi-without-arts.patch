@@ -1,0 +1,24 @@
+--- /suse/dmueller/src/kde/3.5/kdenetwork/wifi/Makefile.am	2005-09-05 21:58:29.000000000 +0200
++++ wifi/Makefile.am	2006-02-06 11:49:31.000000000 +0100
+@@ -5,6 +5,8 @@
+ EXTRA_DIST = $(xdg_apps_DATA)
+ INCLUDES = $(all_includes)
+ 
++KDE_CXXFLAGS = -DWITHOUT_ARTS
++
+ SUBDIRS = kcmwifi kwireless pixmaps locations
+ 
+ bin_PROGRAMS = kwifimanager
+@@ -25,11 +27,7 @@
+ 
+ kwifimanager_LDFLAGS = $(all_libraries)
+ 
+-if include_ARTS
+-ARTS_LIBS = -lartsflow -lmcop
+-endif
+-
+-kwifimanager_LDADD = $(ARTS_LIBS) -liw $(LIB_KDEUI)
++kwifimanager_LDADD = -liw $(LIB_KDEUI)
+ 
+ noinst_HEADERS = 	interface_wireless.h \
+ 			interface_wireless_wirelessextensions.h \

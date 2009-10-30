@@ -1,0 +1,54 @@
+--- krdc/events.h
++++ krdc/events.h
+@@ -201,4 +201,20 @@ public:
+ 	{};
+ };
+ 
++const int EnableClientCursorEventType = 41011;
++
++class EnableClientCursorEvent : public QCustomEvent
++{
++private:
++	int m_enable;
++public:
++	EnableClientCursorEvent(int enable) :
++		QCustomEvent(EnableClientCursorEventType),
++		m_enable(enable)
++	{};
++	~EnableClientCursorEvent() {
++	}
++	int enable() const { return m_enable; };
++};
++
+ #endif
+--- krdc/vnc/kvncview.cpp
++++ krdc/vnc/kvncview.cpp
+@@ -74,7 +74,7 @@ KVncView::KVncView(QWidget *parent,
+   m_cthread(this, m_wthread, m_quitFlag),
+   m_wthread(this, m_quitFlag),
+   m_quitFlag(false),
+-  m_enableFramebufferLocking(false),
++  m_enableFramebufferLocking(true),
+   m_scaling(false),
+   m_remoteMouseTracking(false),
+   m_viewOnly(false),
+@@ -518,6 +518,10 @@ void KVncView::customEvent(QCustomEvent
+ 		if (m_cursorState != DOT_CURSOR_ON)
+ 			showDotCursor(show ? DOT_CURSOR_AUTO : DOT_CURSOR_OFF);
+ 	}
++	else if (e->type() == EnableClientCursorEventType) {
++		EnableClientCursorEvent *ecce = (EnableClientCursorEvent*) e;
++		enableClientCursor(ecce->enable());
++	}
+ }
+ 
+ void KVncView::mouseEvent(QMouseEvent *e) {
+@@ -800,7 +804,7 @@ extern void DrawAnyScreenRegionX11Thread
+ }
+ 
+ extern void EnableClientCursor(int enable) {
+-	kvncview->enableClientCursor(enable);
++	QApplication::postEvent(kvncview, new EnableClientCursorEvent(enable));
+ }
+ 
+ extern void LockFramebuffer() {

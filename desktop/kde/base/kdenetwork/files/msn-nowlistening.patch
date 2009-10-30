@@ -1,0 +1,30 @@
+Index: kopete/protocols/msn/msnnotifysocket.cpp
+===================================================================
+--- kopete/protocols/msn/msnnotifysocket.cpp (revision 525797)
++++ kopete/protocols/msn/msnnotifysocket.cpp (working copy)
+@@ -44,6 +44,7 @@
+ #include <qfile.h>
+ #include <kconfig.h>
+ #include <knotification.h>
++#include <kapplication.h>
+ 
+ #include "kopeteuiglobal.h"
+ #include "kopeteglobal.h"
+@@ -1016,8 +1017,15 @@
+ 
+ 	if( type == QString::fromUtf8("Music") )
+ 	{
+-		// the  "♫" is encoded in utf8 (and should be in utf8)
+-		currentMedia = i18n("Now Listening: ♫ %1 ♫").arg(currentMedia);
++                KConfig* config = kapp->config();
++                config->setGroup("Now Listening Plugin");
++                QString header = config->readEntry("Header");
++                QString musicChar = QString::fromUtf8("♫");
++                if(!header.isNull())
++                  currentMedia = QString("%1 %2 %3 %4").arg(header).arg(musicChar).arg(currentMedia).arg(musicChar);
++                else
++                  // the  "♫" is encoded in utf8 (and should be in utf8)
++                  currentMedia = i18n("Now Listening: ♫ %1 ♫").arg(currentMedia);
+ 	}
+ 
+ 	kdDebug(1414) << "Current Media received: " << currentMedia << endl;

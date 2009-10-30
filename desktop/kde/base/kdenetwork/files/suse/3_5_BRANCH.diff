@@ -1,0 +1,60 @@
+package: kdenetwork-3.5.10.tar.bz2
+kdemod: kdenetwork
+--- BRANCH_STATUS
++++ BRANCH_STATUS
+@@ -0,0 +1,2 @@
++current HEAD: 865247
++svn di between //tags/KDE/3.5.10/kdenetwork and //branches/KDE/3.5/kdenetwork
+--- kopete/protocols/groupwise/gwaccount.cpp	
++++ kopete/protocols/groupwise/gwaccount.cpp	
+@@ -294,7 +294,7 @@
+ 	// not implemented: error
+ 	QObject::connect( m_clientStream, SIGNAL( error(int) ), SLOT( slotCSError(int) ) );
+ 
+-	m_client = new Client( this, CMSGPRES_GW_6_5 );
++	m_client = new Client( 0, CMSGPRES_GW_6_5 );
+ 
+ 	// NB these are prefixed with QObject:: to avoid any chance of a clash with our connect() methods.
+ 	// we connected successfully
+--- kopete/protocols/groupwise/libgroupwise/tasks/getdetailstask.cpp	
++++ kopete/protocols/groupwise/libgroupwise/tasks/getdetailstask.cpp	
+@@ -104,10 +104,27 @@
+ 		const Field::FieldListIterator end = fl.end();
+ 		for ( Field::FieldListIterator it = fl.begin(); it != end; ++it )
+ 		{
+-			Field::SingleField * propField = static_cast<Field::SingleField *>( *it );
+-			QString propName = propField->tag();
+-			QString propValue = propField->value().toString();
+-			propMap.insert( propName, propValue );
++			Field::SingleField * propField = dynamic_cast<Field::SingleField *>( *it );
++			if ( propField ) {
++				QString propName = propField->tag();
++				QString propValue = propField->value().toString();
++				propMap.insert( propName, propValue );
++			} else {
++				Field::MultiField * mf2;
++				if ( ( mf2 = dynamic_cast<Field::MultiField *>( *it ) ) ) {
++					Field::FieldList fl2 = mf2->fields();
++					const Field::FieldListIterator end = fl2.end();
++					for ( Field::FieldListIterator it2 = fl2.begin(); it2 != end; ++it2 )
++					{
++						propField = dynamic_cast<Field::SingleField *>( *it2 );
++						if ( propField ) {
++							QString propName = propField->tag();
++							QString propValue = propField->value().toString();
++							propMap.insert( propName, propValue );
++						}
++					}
++				}
++			}
+ 		}
+ 	}
+ 	if ( !propMap.empty() )
+
+Property changes on: .
+___________________________________________________________________
+Deleted: svn:mergeinfo
+Added: svn:externals
+   + admin https://svn.kde.org/home/kde/branches/KDE/3.5/kde-common/admin
+
+
