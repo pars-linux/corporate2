@@ -6,7 +6,7 @@ import subprocess
 
 from zorg.config import getDeviceInfo
 
-version = "185.18.36"
+version = "190.42"
 driver = "nvidia-current"
 base = "/usr/lib/xorg/%s" % driver
 
