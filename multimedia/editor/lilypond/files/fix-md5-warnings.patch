@@ -1,0 +1,27 @@
+Index: lilypond-2.12.2/scripts/lilypond-book.py
+===================================================================
+--- lilypond-2.12.2.orig/scripts/lilypond-book.py
++++ lilypond-2.12.2/scripts/lilypond-book.py
+@@ -29,12 +29,12 @@ TODO:
+ '''
+ 
+ import glob
+-import md5
+ import os
+ import re
+ import stat
+ import sys
+ import tempfile
++import hashlib
+ 
+ """
+ @relocate-preamble@
+@@ -1234,7 +1234,7 @@ class LilypondSnippet (Snippet):
+ 
+     def get_checksum (self):
+         if not self.checksum:
+-            hash = md5.md5 (self.relevant_contents (self.full_ly ()))
++            hash = hashlib.md5 (self.relevant_contents (self.full_ly ()))
+ 
+             ## let's not create too long names.
+             self.checksum = hash.hexdigest ()[:10]

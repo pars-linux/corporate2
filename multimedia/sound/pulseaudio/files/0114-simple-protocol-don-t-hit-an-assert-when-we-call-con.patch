@@ -1,0 +1,25 @@
+From 0660bc2dbd9c77792b6f42fea507b4cd8b4e860b Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 29 Apr 2009 04:13:07 +0200
+Subject: [PATCH 114/127] simple-protocol: don't hit an assert when we call connection_unlink() early
+
+---
+ src/pulsecore/protocol-simple.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/src/pulsecore/protocol-simple.c b/src/pulsecore/protocol-simple.c
+index 44fe597..776d74b 100644
+--- a/src/pulsecore/protocol-simple.c
++++ b/src/pulsecore/protocol-simple.c
+@@ -130,7 +130,7 @@ static void connection_unlink(connection *c) {
+         c->io = NULL;
+     }
+ 
+-    pa_assert_se(pa_idxset_remove_by_data(c->protocol->connections, c, NULL) == c);
++    pa_idxset_remove_by_data(c->protocol->connections, c, NULL);
+     c->protocol = NULL;
+     connection_unref(c);
+ }
+-- 
+1.6.3
+

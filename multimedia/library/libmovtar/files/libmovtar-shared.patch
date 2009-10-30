@@ -1,0 +1,39 @@
+--- libmovtar-0.1.3/Makefile.am.orig	Mon Apr 29 16:34:52 2002
++++ libmovtar-0.1.3/Makefile.am	Sat Dec 21 18:04:38 2002
+@@ -4,19 +4,20 @@
+ EXTRA_PROGRAMS = movtar_play
+ bin_PROGRAMS = @MOVTAR_PLAY@ movtar_split movtar_unify movtar_index movtar_setinfo movtar_yuv422
+ bin_SCRIPTS = movtar-config
+-lib_LIBRARIES = libmovtar.a
+-libmovtar_a_SOURCES = movtar.c tar.c 
++lib_LTLIBRARIES = libmovtar.la
++libmovtar_la_SOURCES = movtar.c tar.c 
++libmovtar_la_LIBADD = @GLIB_LIBS@
+ INCLUDES = @GLIB_CFLAGS@ @JPEG_INCLUDE@ @RTJPEG_INCLUDE@ @SDL_INCLUDE@
+ include_HEADERS = movtar.h
+ 
+-movtar_play_LDADD = @SDL_LIBS@ @JPEG_LIBS@ ./libmovtar.a @RTJPEG_OBJS@ @GLIB_LIBS@
++movtar_play_LDADD = @SDL_LIBS@ @JPEG_LIBS@ libmovtar.la @RTJPEG_OBJS@
+ 
+-movtar_unify_LDADD = ./libmovtar.a @JPEG_LIBS@ @RTJPEG_OBJS@ @GLIB_LIBS@
++movtar_unify_LDADD = libmovtar.la @JPEG_LIBS@ @RTJPEG_OBJS@
+ movtar_unify_COMPILE = -DRTJPEG
+ 
+ movtar_yuv422_LDADD = @JPEG_LIBS@
+ 
+-LDADD = ./libmovtar.a @GLIB_LIBS@
++LDADD = libmovtar.la
+ 
+ EXTRA_DIST = README.movtar.implement movtar.m4 autogen.sh .cvsignore
+ 
+--- libmovtar-0.1.3/configure.in.orig	Sat Apr 27 23:57:49 2002
++++ libmovtar-0.1.3/configure.in	Sat Dec 21 18:11:56 2002
+@@ -12,7 +12,7 @@
+ 
+ dnl Checks for programs.
+ AC_PROG_CC
+-AC_PROG_RANLIB
++AC_PROG_LIBTOOL
+ 
+ AC_HEADER_STDC
+ 

@@ -1,0 +1,47 @@
+From 9333e89f66231e64aac539c1cc0e5f8398a25a12 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Sat, 29 Aug 2009 06:11:02 +0200
+Subject: [PATCH 5/5] native: make sure clients cannot trigger an assert by sending us invalid volume info
+
+---
+ src/pulsecore/protocol-native.c |   14 ++++++++++----
+ 1 files changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/src/pulsecore/protocol-native.c b/src/pulsecore/protocol-native.c
+index 1ac26c0..d52b872 100644
+--- a/src/pulsecore/protocol-native.c
++++ b/src/pulsecore/protocol-native.c
+@@ -3322,12 +3322,19 @@ static void command_set_volume(
+ 
+     CHECK_VALIDITY(c->pstream, si || sink || source, tag, PA_ERR_NOENTITY);
+ 
+-    if (sink)
++    if (sink) {
++        CHECK_VALIDITY(c->pstream, pa_cvolume_compatible(&volume, &sink->sample_spec), tag, PA_ERR_INVALID);
++
+         pa_sink_set_volume(sink, &volume, TRUE, TRUE, TRUE);
+-    else if (source)
++    } else if (source) {
++        CHECK_VALIDITY(c->pstream, pa_cvolume_compatible(&volume, &source->sample_spec), tag, PA_ERR_INVALID);
++
+         pa_source_set_volume(source, &volume);
+-    else if (si)
++    } else if (si) {
++        CHECK_VALIDITY(c->pstream, pa_cvolume_compatible(&volume, &si->sample_spec), tag, PA_ERR_INVALID);
++
+         pa_sink_input_set_volume(si, &volume, TRUE, TRUE);
++    }
+ 
+     pa_pstream_send_simple_ack(c->pstream, tag);
+ }
+@@ -3368,7 +3375,6 @@ static void command_set_mute(
+     switch (command) {
+ 
+         case PA_COMMAND_SET_SINK_MUTE:
+-
+             if (idx != PA_INVALID_INDEX)
+                 sink = pa_idxset_get_by_index(c->protocol->core->sinks, idx);
+             else
+-- 
+1.6.4.2
+

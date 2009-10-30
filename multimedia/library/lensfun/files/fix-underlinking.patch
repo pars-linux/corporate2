@@ -1,0 +1,13 @@
+Index: lensfun-0.2.3/build/mak/compiler/gcc.mak
+===================================================================
+--- lensfun-0.2.3.orig/build/mak/compiler/gcc.mak
++++ lensfun-0.2.3/build/mak/compiler/gcc.mak
+@@ -73,7 +73,7 @@ endef
+ LINK.GCC.AR = $(GCC.AR) $(GCC.ARFLAGS) $@ $^
+ LINK.GCC.EXEC = $(GCC.LD) -o $@ $(GCC.LDFLAGS) $(LDFLAGS) $1 $^ $(GCC.LDFLAGS.LIBS) $(LDFLAGS.LIBS) $2
+ define LINK.GCC.SO
+-	$(GCC.LD) -o $@.$(SHARED.$3) -Wl,"-soname=$(notdir $@).$(basename $(basename $(SHARED.$3)))" $(GCC.LDFLAGS.SHARED) $(GCC.LDFLAGS) $(LDFLAGS) $1 $^ $(GCC.LDFLAGS.LIBS) $(LDFLAGS.LIBS) $2
++	$(GCC.LD) -o $@.$(SHARED.$3) -Wl,"-soname=$(notdir $@).$(basename $(basename $(SHARED.$3)))" $(GCC.LDFLAGS.SHARED) $(GCC.LDFLAGS) $(LDFLAGS) $^ $1 $2 $(GCC.LDFLAGS.LIBS) $(LDFLAGS.LIBS)
+ 	ln -fs $(notdir $@.$(SHARED.$3)) $@.$(basename $(basename $(SHARED.$3)))
+ 	ln -fs $(notdir $@.$(basename $(basename $(SHARED.$3)))) $@
+ endef

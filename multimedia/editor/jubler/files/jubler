@@ -1,0 +1,28 @@
+#! /bin/sh
+#
+# The startup wrapper for jubler
+#
+# Copyright 2008 TUBITAK/UEKAE
+# Licensed under the GNU General Public License, version 2.
+# See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+
+if [ -z "${JAVA_HOME}" ] ; then
+	JAVA_HOME=/opt/sun-jdk
+fi
+
+JAVA_BIN=${JAVA_HOME}/bin/java
+
+if [ ! -x ${JAVA_BIN} ] ; then
+	echo "Failed to find executable '${JAVA_BIN}'" > /dev/stderr
+	exit -1
+fi
+
+JUBLER_JAR=/usr/share/java/jubler.jar
+JUBLER_RUN="${JAVA_BIN} -jar ${JUBLER_JAR}"
+
+if [ ! -f ${JUBLER_JAR} ] ; then
+   echo "Failed to find library '${JUBLER_JAR}'" > /dev/stderr
+   exit -1
+fi
+
+${JUBLER_RUN} $@ 

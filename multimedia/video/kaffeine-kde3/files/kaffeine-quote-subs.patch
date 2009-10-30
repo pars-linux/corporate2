@@ -1,0 +1,30 @@
+--- kaffeine/src/input/audiobrowser/playlist.cpp
++++ kaffeine/src/input/audiobrowser/playlist.cpp
+@@ -1895,7 +1895,12 @@
+ 		{
+ 			QString subList;
+ 			for(unsigned int i=0; i<tmp->subtitles().count(); i++)
+-				subList += tmp->subtitles()[i] + "&";
++			{
++				QString sub = tmp->subtitles()[i];
++				sub.replace('%', "%25");
++				sub.replace('&', "%26");
++				subList += sub + "&";
++			}
+ 
+ 			entry.setAttribute("subs", subList);
+ 		}
+--- kaffeine/src/player-parts/kaffeine-part/playlistimport.cpp
++++ kaffeine/src/player-parts/kaffeine-part/playlistimport.cpp
+@@ -69,7 +69,11 @@
+ 		int currentSub = -1;
+ 
+ 		if ((!att.value("subs").isNull()) && (!att.value("subs").isEmpty()))
++		{
+ 			subs =  QStringList::split("&",att.value("subs"),false);
++			subs.gres("%26", "&");
++			subs.gres("%25", "%");
++		}
+ 		if ((!att.value("subs").isNull()) && (!att.value("subs").isEmpty()))
+ 		{
+ 			bool ok;

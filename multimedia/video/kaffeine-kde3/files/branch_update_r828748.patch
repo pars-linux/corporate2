@@ -1,0 +1,1852 @@
+Index: src/player-parts/xine-part/kxinewidget.cpp
+===================================================================
+--- kaffeine/src/player-parts/xine-part/kxinewidget.cpp	(revision828748)
++++ kaffeine/src/player-parts/xine-part/kxinewidget.cpp	(revision920379)
+@@ -1858,7 +1858,7 @@
+ 
+ void KXineWidget::setDvb( const QString &pipeName, const QString &chanName, int haveVideo )
+ {
+-	m_trackURL = pipeName;
++	m_trackURL = /*"fifo://"+*/pipeName;
+ 	m_trackTitle = chanName;
+ 	dvbHaveVideo = haveVideo;
+ }
+Index: src/kaffeine.cpp
+===================================================================
+--- kaffeine/src/kaffeine.cpp	(revision828748)
++++ kaffeine/src/kaffeine.cpp	(revision920379)
+@@ -307,8 +307,10 @@
+ 	}
+ 	loadTMP(urls);
+ 
+-	if (args->isSet("fullscreen"))
++	if (args->isSet("fullscreen")) {
++		inplug->showPlayer();
+ 		fullscreen();
++	}
+ 
+ 	if (args->isSet("minimal"))
+ 		minimal();
+@@ -1210,8 +1212,6 @@
+ 			inplug->fullscreen( false );
+ 		}
+ 
+-		inplug->showPlayer();
+-
+ 		if (m_haveKWin)
+ 			KWin::clearState(winId(), NET::FullScreen);
+ 		else
+Index: src/input/dvb/scandialog.cpp
+===================================================================
+--- kaffeine/src/input/dvb/scandialog.cpp	(revision828748)
++++ kaffeine/src/input/dvb/scandialog.cpp	(revision920379)
+@@ -109,13 +109,15 @@
+ 	foundList->clear();
+ 	foundList->setAllColumnsShowFocus( true );
+ 	foundList->setSelectionMode( QListView::Extended );
+-	channelsList->setSorting( 0 );
++	channelsList->setSorting( 1 ); // sort by source 1st than channel name 
++	channelsList->setAllColumnsShowFocus( true ); 
++	channelsList->setSelectionMode( QListView::Extended );
+ 
+ 	ChannelDesc *chan;
+ 	QListViewItem *it;
+ 	for ( int i=0; i<(int)chandesc->count(); i++ ) {
+ 		chan = chandesc->at(i);
+-		it = new QListViewItem( channelsList, chan->name );
++	it = new QListViewItem( channelsList, chan->name, chan->tp.source );
+ 		if ( !chan->pix.isNull() )
+ 			it->setPixmap( 0, chan->pix );
+ 		else {
+Index: src/input/dvb/dvbconfig.h
+===================================================================
+--- kaffeine/src/input/dvb/dvbconfig.h	(revision828748)
++++ kaffeine/src/input/dvb/dvbconfig.h	(revision920379)
+@@ -28,6 +28,7 @@
+ #include <qtoolbutton.h>
+ #include <qbuttongroup.h>
+ #include <qlistview.h>
++#include <qcheckbox.h>
+ 
+ #include <kdialogbase.h>
+ #include <kpushbutton.h>
+@@ -37,6 +38,8 @@
+ 
+ #include <linux/dvb/frontend.h>
+ 
++#define MAX_DEVICES 8
++
+ using namespace KIO;
+ 
+ class MSpinBox : public QSpinBox
+@@ -133,6 +136,10 @@
+ 	double usalsLatitude, usalsLongitude;
+ 	bool hasCAM;
+ 	int camMaxService;
++	int secMini;
++	int secTwice;
++	int priority;
++	int doS2;
+ };
+ 
+ 
+@@ -155,6 +162,7 @@
+ 
+ 	DVBconfig( const QString &dvbConf );
+ 	~DVBconfig();
++	void readFirst();
+ 	void readConfig();
+ 	void saveConfig();
+ 	int readDvbChanOrder();
+@@ -185,6 +193,8 @@
+ 	QValueList<int> splitSizes;
+ 	QString defaultCharset;
+ 	double usalsLatitude, usalsLongitude;
++	int probeMfe;
++	int ringBufSize;
+ 
+ private:
+ 
+@@ -214,28 +224,33 @@
+ 
+ 	QLineEdit *recordDirLe, *shiftDirLe, *broadcastLe, *filenameFormatLe;
+ 	QSpinBox *beginSpin, *endSpin, *instantDurationSpin, *bportSpin, *sportSpin, *sizeFileSpin;
+-	MSpinBox *satNumber[8];
+-	QComboBox *sat0[8];
+-	QComboBox *sat1[8];
+-	QComboBox *sat2[8];
+-	QComboBox *sat3[8];
+-	MPushButton *src0[8];
+-	MPushButton *src1[8];
+-	MPushButton *src2[8];
+-	MPushButton *src3[8];
+-	MComboBox *rotor0[8];
+-	MComboBox *rotor1[8];
+-	MComboBox *rotor2[8];
+-	MComboBox *rotor3[8];
+-	MPushButton *lnb0[8];
+-	MPushButton *lnb1[8];
+-	MPushButton *lnb2[8];
+-	MPushButton *lnb3[8];
++	MSpinBox *satNumber[MAX_DEVICES];
++	QCheckBox *secMini[MAX_DEVICES], *secTwice[MAX_DEVICES];
++	QCheckBox *doS2[MAX_DEVICES];
++	QComboBox *sat0[MAX_DEVICES];
++	QComboBox *sat1[MAX_DEVICES];
++	QComboBox *sat2[MAX_DEVICES];
++	QComboBox *sat3[MAX_DEVICES];
++	MPushButton *src0[MAX_DEVICES];
++	MPushButton *src1[MAX_DEVICES];
++	MPushButton *src2[MAX_DEVICES];
++	MPushButton *src3[MAX_DEVICES];
++	MComboBox *rotor0[MAX_DEVICES];
++	MComboBox *rotor1[MAX_DEVICES];
++	MComboBox *rotor2[MAX_DEVICES];
++	MComboBox *rotor3[MAX_DEVICES];
++	MPushButton *lnb0[MAX_DEVICES];
++	MPushButton *lnb1[MAX_DEVICES];
++	MPushButton *lnb2[MAX_DEVICES];
++	MPushButton *lnb3[MAX_DEVICES];
+ 	KPushButton *updateBtn, *dumpBtn;
+ 	QToolButton *recordDirBtn, *shiftDirBtn, *helpNameBtn;
+ 	DVBconfig *dvbConfig;
+ 	QComboBox *charsetComb;
+ 	QPtrList<QSpinBox> timeoutSpin;
++	QPtrList<QSpinBox> priority;
++	QCheckBox *probeMfe;
++	QSpinBox *ringBufSize;
+ 
+ private slots:
+ 
+Index: src/input/dvb/dvbout.h
+===================================================================
+--- kaffeine/src/input/dvb/dvbout.h	(revision828748)
++++ kaffeine/src/input/dvb/dvbout.h	(revision920379)
+@@ -44,7 +44,7 @@
+ 	DVBout( ChannelDesc chan, int anum, int tnum, KaffeineDvbPlugin *p );
+ 	~DVBout();
+ 	void process( unsigned char *buf, int size );
+-	bool goLive( const QString &name );
++	bool goLive( const QString &name, int ringBufSize );
+ 	void preStopLive();
+ 	void stopLive();
+ 	bool goBroadcast( Ts2Rtp *r );
+@@ -102,6 +102,7 @@
+ 	int fileNumber;
+ 	QString fileName;
+ 	long long int fileMaxSize;
++	int wbufSize;
+ 
+ signals:
+ 
+Index: src/input/dvb/channeleditorui.ui
+===================================================================
+--- kaffeine/src/input/dvb/channeleditorui.ui	(revision828748)
++++ kaffeine/src/input/dvb/channeleditorui.ui	(revision920379)
+@@ -9,7 +9,7 @@
+             <x>0</x>
+             <y>0</y>
+             <width>477</width>
+-            <height>533</height>
++            <height>541</height>
+         </rect>
+     </property>
+     <property name="caption">
+@@ -19,7 +19,7 @@
+         <property name="name">
+             <cstring>unnamed</cstring>
+         </property>
+-        <widget class="Line" row="1" column="0">
++        <widget class="Line" row="0" column="1">
+             <property name="name">
+                 <cstring>line2</cstring>
+             </property>
+@@ -35,7 +35,7 @@
+         </widget>
+         <widget class="QLayoutWidget" row="0" column="0">
+             <property name="name">
+-                <cstring>layout9</cstring>
++                <cstring>layout7</cstring>
+             </property>
+             <vbox>
+                 <property name="name">
+@@ -432,22 +432,6 @@
+                                 <cstring>transmissionComb</cstring>
+                             </property>
+                         </widget>
+-                        <widget class="QLabel" row="3" column="0">
+-                            <property name="name">
+-                                <cstring>textLabel11</cstring>
+-                            </property>
+-                            <property name="sizePolicy">
+-                                <sizepolicy>
+-                                    <hsizetype>4</hsizetype>
+-                                    <vsizetype>5</vsizetype>
+-                                    <horstretch>0</horstretch>
+-                                    <verstretch>0</verstretch>
+-                                </sizepolicy>
+-                            </property>
+-                            <property name="text">
+-                                <string>Bandwidth:</string>
+-                            </property>
+-                        </widget>
+                         <widget class="QLabel" row="2" column="0">
+                             <property name="name">
+                                 <cstring>textLabel10</cstring>
+@@ -480,11 +464,6 @@
+                                 <string>Transmission:</string>
+                             </property>
+                         </widget>
+-                        <widget class="QComboBox" row="3" column="1">
+-                            <property name="name">
+-                                <cstring>bandwidthComb</cstring>
+-                            </property>
+-                        </widget>
+                         <widget class="QComboBox" row="2" column="1">
+                             <property name="name">
+                                 <cstring>coderateHComb</cstring>
+@@ -511,11 +490,6 @@
+                                 <string>FEC low:</string>
+                             </property>
+                         </widget>
+-                        <widget class="QComboBox" row="3" column="3">
+-                            <property name="name">
+-                                <cstring>guardComb</cstring>
+-                            </property>
+-                        </widget>
+                         <widget class="QLabel" row="3" column="2">
+                             <property name="name">
+                                 <cstring>textLabel7</cstring>
+@@ -595,6 +569,58 @@
+                                 <string>Inversion:</string>
+                             </property>
+                         </widget>
++                        <widget class="QLabel" row="3" column="0">
++                            <property name="name">
++                                <cstring>textLabel11</cstring>
++                            </property>
++                            <property name="sizePolicy">
++                                <sizepolicy>
++                                    <hsizetype>4</hsizetype>
++                                    <vsizetype>5</vsizetype>
++                                    <horstretch>0</horstretch>
++                                    <verstretch>0</verstretch>
++                                </sizepolicy>
++                            </property>
++                            <property name="text">
++                                <string>Bandwidth:</string>
++                            </property>
++                        </widget>
++                        <widget class="QComboBox" row="3" column="1">
++                            <property name="name">
++                                <cstring>bandwidthComb</cstring>
++                            </property>
++                        </widget>
++                        <widget class="QLabel" row="4" column="0">
++                            <property name="name">
++                                <cstring>textLabel1_3</cstring>
++                            </property>
++                            <property name="text">
++                                <string>Type:</string>
++                            </property>
++                        </widget>
++                        <widget class="QComboBox" row="4" column="1">
++                            <property name="name">
++                                <cstring>stypeComb</cstring>
++                            </property>
++                        </widget>
++                        <widget class="QComboBox" row="4" column="3">
++                            <property name="name">
++                                <cstring>rolloffComb</cstring>
++                            </property>
++                        </widget>
++                        <widget class="QLabel" row="4" column="2">
++                            <property name="name">
++                                <cstring>textLabel2_4</cstring>
++                            </property>
++                            <property name="text">
++                                <string>Roll off:</string>
++                            </property>
++                        </widget>
++                        <widget class="QComboBox" row="3" column="3">
++                            <property name="name">
++                                <cstring>guardComb</cstring>
++                            </property>
++                        </widget>
+                     </grid>
+                 </widget>
+                 <spacer>
+@@ -610,7 +636,7 @@
+                     <property name="sizeHint">
+                         <size>
+                             <width>20</width>
+-                            <height>98</height>
++                            <height>166</height>
+                         </size>
+                     </property>
+                 </spacer>
+Index: src/input/dvb/dvbsi.h
+===================================================================
+--- kaffeine/src/input/dvb/dvbsi.h	(revision828748)
++++ kaffeine/src/input/dvb/dvbsi.h	(revision920379)
+@@ -36,6 +36,7 @@
+ 	bool getSection( int pid, int tid, int timeout=5000 );
+ 	bool tableNIT( unsigned char* buf );
+ 	void satelliteDesc( unsigned char* buf, Transponder *trans );
++	void S2satelliteDesc( unsigned char* buf, Transponder *trans );
+ 	void cableDesc( unsigned char* buf, Transponder *trans );
+ 	void terrestrialDesc( unsigned char* buf, Transponder *trans );
+ 	void freqListDesc( unsigned char* buf, Transponder *trans );
+Index: src/input/dvb/channeldesc.h
+===================================================================
+--- kaffeine/src/input/dvb/channeldesc.h	(revision828748)
++++ kaffeine/src/input/dvb/channeldesc.h	(revision920379)
+@@ -101,6 +101,8 @@
+ 	fe_code_rate_t coderateH;
+ 	fe_bandwidth_t bandwidth;
+ 	int snr;
++	fe_rolloff_t rolloff;
++	char S2;
+ };
+ 
+ class ChannelDesc
+Index: src/input/dvb/channeleditor.cpp
+===================================================================
+--- kaffeine/src/input/dvb/channeleditor.cpp	(revision828748)
++++ kaffeine/src/input/dvb/channeleditor.cpp	(revision920379)
+@@ -143,6 +143,9 @@
+ 		else channel->tp.pol = 'h';
+ 		channel->tp.coderateH = (fe_code_rate_t)(FEC_NONE+coderateHComb->currentItem());
+ 		channel->tp.inversion = (fe_spectral_inversion_t)(INVERSION_OFF+inversionComb->currentItem());
++		channel->tp.modulation = (fe_modulation_t)(QPSK+modulationComb->currentItem());
++		channel->tp.S2 = stypeComb->currentItem();
++		channel->tp.rolloff = (fe_rolloff_t)(ROLLOFF_35+rolloffComb->currentItem() );
+ 	}
+ 	else if ( channel->tp.type==FE_QAM ) {
+ 		channel->tp.freq = freqSpin->value();
+@@ -165,13 +168,7 @@
+ 	else {
+ 		channel->tp.freq = freqSpin->value();
+ 		channel->tp.inversion = (fe_spectral_inversion_t)(INVERSION_OFF+inversionComb->currentItem());
+-		switch (modulationComb->currentItem()) {
+-		case 0: channel->tp.modulation = QAM_64; break;
+-		case 1: channel->tp.modulation = QAM_256; break;
+-		case 2: channel->tp.modulation = VSB_8; break;
+-		case 3: channel->tp.modulation = VSB_16; break;
+-		default: channel->tp.modulation = QAM_AUTO; break;
+-		}
++		channel->tp.modulation = (fe_modulation_t)(QPSK+modulationComb->currentItem());
+ 	}
+ 
+ 	done( Accepted );
+@@ -187,10 +184,15 @@
+ 	inversionComb->setCurrentItem( INVERSION_OFF+channel->tp.inversion );
+ 	coderateHComb->insertStringList( coderateList() );
+ 	coderateHComb->setCurrentItem( FEC_NONE+channel->tp.coderateH );
++	modulationComb->insertStringList( modulationList() );
++	modulationComb->setCurrentItem( QPSK+channel->tp.modulation );
++	stypeComb->insertStringList( stypeList() );
++	stypeComb->setCurrentItem( channel->tp.S2 );
++	rolloffComb->insertStringList( rolloffList() );
++	rolloffComb->setCurrentItem( ROLLOFF_35+channel->tp.rolloff );
+ 	transmissionComb->setEnabled( false );
+ 	coderateLComb->setEnabled( false );
+ 	bandwidthComb->setEnabled( false );
+-	modulationComb->setEnabled( false );
+ 	hierarchyComb->setEnabled( false );
+ 	guardComb->setEnabled( false );
+ }
+@@ -211,6 +213,8 @@
+ 	bandwidthComb->setEnabled( false );
+ 	hierarchyComb->setEnabled( false );
+ 	guardComb->setEnabled( false );
++	stypeComb->setEnabled( false );
++	rolloffComb->setEnabled( false );
+ }
+ 
+ void ChannelEditor::initT()
+@@ -234,6 +238,8 @@
+ 	guardComb->setCurrentItem( GUARD_INTERVAL_1_32+channel->tp.guard );
+ 	srSpin->setEnabled( false );
+ 	polGroup->setEnabled( false );
++	stypeComb->setEnabled( false );
++	rolloffComb->setEnabled( false );
+ }
+ 
+ void ChannelEditor::initA()
+@@ -241,14 +247,8 @@
+ 	freqSpin->setValue( channel->tp.freq );
+ 	inversionComb->insertStringList( inversionList() );
+ 	inversionComb->setCurrentItem( INVERSION_OFF+channel->tp.inversion );
+-	modulationComb->insertStringList( modulationListAtsc() );
+-	switch (channel->tp.modulation) {
+-	case QAM_64: modulationComb->setCurrentItem(0); break;
+-	case QAM_256: modulationComb->setCurrentItem(1); break;
+-	case VSB_8: modulationComb->setCurrentItem(2); break;
+-	case VSB_16: modulationComb->setCurrentItem(3); break;
+-	default: modulationComb->setCurrentItem(4); break;
+-	}
++	modulationComb->insertStringList( modulationList() );
++	modulationComb->setCurrentItem( QPSK+channel->tp.modulation );
+ 	srSpin->setEnabled( false );
+ 	polGroup->setEnabled( false );
+ 	transmissionComb->setEnabled( false );
+@@ -257,6 +257,8 @@
+ 	bandwidthComb->setEnabled( false );
+ 	hierarchyComb->setEnabled( false );
+ 	guardComb->setEnabled( false );
++	stypeComb->setEnabled( false );
++	rolloffComb->setEnabled( false );
+ }
+ 
+ QStringList ChannelEditor::inversionList()
+@@ -271,7 +273,7 @@
+ {
+ 	QStringList list;
+ 
+-	list<<"NONE"<<"1/2"<<"2/3"<<"3/4"<<"4/5"<<"5/6"<<"6/7"<<"7/8"<<"8/9"<<"AUTO";
++	list<<"NONE"<<"1/2"<<"2/3"<<"3/4"<<"4/5"<<"5/6"<<"6/7"<<"7/8"<<"8/9"<<"AUTO"<<"3/5"<<"9/10";
+ 	return list;
+ }
+ 
+@@ -279,18 +281,10 @@
+ {
+ 	QStringList list;
+ 
+-	list<<"QPSK"<<"QAM 16"<<"QAM 32"<<"QAM 64"<<"QAM 128"<<"QAM 256"<<"AUTO";
++	list<<"QPSK"<<"QAM 16"<<"QAM 32"<<"QAM 64"<<"QAM 128"<<"QAM 256"<<"AUTO"<<"VSB-8"<<"VSB-16"<<"8PSK"<<"16APSK"<<"DQPSK";
+ 	return list;
+ }
+ 
+-QStringList ChannelEditor::modulationListAtsc()
+-{
+-	QStringList list;
+-
+-	list<<"QAM 64"<<"QAM 256"<<"VSB 8"<<"VSB 16"<<"AUTO";
+-	return list;
+-}
+-
+ QStringList ChannelEditor::transmissionList()
+ {
+ 	QStringList list;
+@@ -323,6 +317,22 @@
+ 	return list;
+ }
+ 
++QStringList ChannelEditor::stypeList()
++{
++	QStringList list;
++
++	list<<"DVB-S"<<"DVB-S2";
++	return list;
++}
++
++QStringList ChannelEditor::rolloffList()
++{
++	QStringList list;
++
++	list<<"35"<<"20"<<"25"<<"AUTO";
++	return list;
++}
++
+ ChannelEditor::~ChannelEditor()
+ {
+ }
+Index: src/input/dvb/dvbstream.h
+===================================================================
+--- kaffeine/src/input/dvb/dvbstream.h	(revision828748)
++++ kaffeine/src/input/dvb/dvbstream.h	(revision920379)
+@@ -62,10 +62,11 @@
+ 	void setPlug( KaffeineDvbPlugin *p );
+ 	QStringList getSources( bool all=false );
+ 	bool canSource( ChannelDesc *chan );
++	int getPriority();
+ 	bool tuneDvb( ChannelDesc *chan, bool dvr=true );
+ 	void stopFrontend();
+ 	virtual void run();
+-	int goLive( ChannelDesc *chan, const QString &pipeName );
++	int goLive( ChannelDesc *chan, const QString &pipeName, int ringBufSize );
+ 	void preStopLive();
+ 	void stopLive( ChannelDesc *chan );
+ 	void stop();
+@@ -92,7 +93,6 @@
+ 	void probeCam();
+ 	void showCamDialog();
+ 
+-	unsigned char thBuf[188*10];
+ 	struct pollfd pfd;
+ 	DVBevents *dvbEvents;
+ 
+@@ -144,6 +144,7 @@
+ 	QString timeShiftFileName;
+ 	DvbCam *cam;
+ 	bool camProbed;
++	int diseqcTwice;
+ 	KaffeineDvbPlugin *plug;
+ 
+ signals:
+Index: src/input/dvb/scandialogui.ui
+===================================================================
+--- kaffeine/src/input/dvb/scandialogui.ui	(revision828748)
++++ kaffeine/src/input/dvb/scandialogui.ui	(revision920379)
+@@ -66,9 +66,28 @@
+                                             <bool>true</bool>
+                                         </property>
+                                     </column>
++				    <column> 
++			            <property name="text"> 
++					<string>Source</string> 
++				    </property> 
++				<property name="clickable"> 
++					<bool>true</bool> 
++					</property> 
++					<property name="resizable"> 
++					<bool>true</bool> 
++					</property> 
++					</column>
+                                     <property name="name">
+                                         <cstring>channelsList</cstring>
+                                     </property>
++				     <property name="sizePolicy"> 
++					     <sizepolicy> 
++						     <hsizetype>7</hsizetype> 
++						     <vsizetype>3</vsizetype> 
++						     <horstretch>0</horstretch> 
++						     <verstretch>0</verstretch> 
++						     </sizepolicy> 
++					 </property>
+                                     <property name="rootIsDecorated">
+                                         <bool>false</bool>
+                                     </property>
+Index: src/input/dvb/plugins/epg/kaffeinedvbsection.cpp
+===================================================================
+--- kaffeine/src/input/dvb/plugins/epg/kaffeinedvbsection.cpp	(revision828748)
++++ kaffeine/src/input/dvb/plugins/epg/kaffeinedvbsection.cpp	(revision920379)
+@@ -141,6 +141,9 @@
+ 	if ( inSize<1 )
+ 		return false;
+ 	cd = iconv_open( "UTF8", table );
++	//check if charset unknown
++	if( cd == (iconv_t)(-1) )
++		return false;
+ 	inBuf = s.data();
+ 	outBuf = buffer;
+ 	outBuf[0] = 0;
+Index: src/input/dvb/dvbconfig.cpp
+===================================================================
+--- kaffeine/src/input/dvb/dvbconfig.cpp	(revision828748)
++++ kaffeine/src/input/dvb/dvbconfig.cpp	(revision920379)
+@@ -127,6 +127,10 @@
+ 	tuningTimeout = 1500;
+ 	hasCAM = false;
+ 	camMaxService = 1;
++	secMini = 0;
++	secTwice = 0;
++	priority = 10;
++	doS2 = 0;
+ }
+ 
+ 
+@@ -152,6 +156,7 @@
+ 	sizeFile = 0;
+ 	categories.setAutoDelete( true );
+ 	devList.setAutoDelete( true );
++	readFirst();
+ 	startup();
+ 	readConfig();
+ }
+@@ -205,6 +210,7 @@
+ 	int i=0, j=0, res, fdFrontend=0;
+ 	struct dvb_frontend_info info;
+ 	bool as;
++	QTime t1;
+ 
+ 	QStringList list, flist;
+ 	QString s, t;
+@@ -218,6 +224,11 @@
+ 		for ( j=0; j<(int)flist.count(); j++ ) {
+ 			s = list[i];
+ 			t = flist[j];
++			if ( devList.count()==MAX_DEVICES )
++				break;
++			if ( !probeMfe && t!="frontend0" )
++				continue;
++			t1 = QTime::currentTime();
+ 			fdFrontend = open( QString("/dev/dvb/%1/%2").arg( s ).arg( t ).ascii(), O_RDWR);
+ 			if ( fdFrontend>0 ) {
+ 				if ( !(res = ioctl( fdFrontend, FE_GET_INFO, &info ) < 0) ) {
+@@ -230,13 +241,14 @@
+ 						as = true;
+ 					else
+ 						as = false;
+-					fprintf(stderr,"/dev/dvb/%s/%s : opened ( %s )\n", s.ascii(), t.ascii(), info.name );
++					fprintf(stderr,"/dev/dvb/%s/%s : opened ( %s ) (%dms)\n", s.ascii(), t.ascii(), info.name, t1.msecsTo(QTime::currentTime()) );
+ 					devList.append( new Device( s.replace("adapter","").toInt(), t.replace("frontend","").toInt(), info.type, info.name, as ) );
+ 				}
+ 				close( fdFrontend );
+ 			}
+-			else
+-				perror( QString("/dev/dvb/%1/%2").arg( s ).arg( t ).ascii() );
++			else {
++				perror( QString("/dev/dvb/%1/%2  %3/%4").arg( s ).arg( t ).arg( errno ).arg( -EBUSY ).ascii() );
++			}
+ 		}
+ 	}
+ 
+@@ -402,6 +414,14 @@
+ 
+ 
+ 
++void DVBconfig::readFirst()
++{
++	config->setGroup( "DVB Options" );
++	probeMfe = config->readNumEntry( "ProbeMFE", 1 );
++}
++
++
++
+ void DVBconfig::readConfig()
+ {
+ 	QSize size;
+@@ -432,6 +452,8 @@
+ 	for ( i=0; i<(int)devList.count(); i++ ) {
+ 		devList.at(i)->source = config->readEntry( QString("DVB%1").arg(i), "" );
+ 		devList.at(i)->tuningTimeout = config->readNumEntry( QString("DVB%1_TIMEOUT").arg(i), 1500 );
++		devList.at(i)->camMaxService = config->readNumEntry( QString("DVB%1_CAM_MAX").arg(i), 1 );
++		devList.at(i)->priority = config->readNumEntry( QString("DVB%1_PRIORITY").arg(i), 10 );
+ 		if ( devList.at(i)->type!=FE_QPSK )
+ 			continue;
+ 		devList.at(i)->numLnb = config->readNumEntry( QString("DVB%1_NLNB").arg(i), 1 );
+@@ -445,7 +467,9 @@
+ 			devList.at(i)->lnb[j].speed13v = config->readDoubleNumEntry( QString("DVB%1_LNB%2_speed13v").arg(i).arg(j), 2.5 );
+ 			devList.at(i)->lnb[j].speed18v = config->readDoubleNumEntry( QString("DVB%1_LNB%2_speed18v").arg(i).arg(j), 1.5 );
+ 		}
+-		devList.at(i)->camMaxService = config->readNumEntry( QString("DVB%1_CAM_MAX").arg(i), 1 );
++		devList.at(i)->secMini = config->readNumEntry( QString("DVB%1_SEC_MINI").arg(i), 0 );
++		devList.at(i)->secTwice = config->readNumEntry( QString("DVB%1_SEC_TWICE").arg(i), 0 );
++		devList.at(i)->doS2 = config->readNumEntry( QString("DVB%1_DOS2").arg(i), 0 );
+ 	}
+ 	j = config->readNumEntry( "NumCategories", 0 );
+ 	for ( i=0; i<j; i++ )
+@@ -462,6 +486,9 @@
+ 		devList.at(i)->usalsLatitude = usalsLatitude;
+ 		devList.at(i)->usalsLongitude = usalsLongitude;
+ 	}
++	ringBufSize = config->readNumEntry( "RingBufSize", 2 );
++	if ( ringBufSize<2 )
++		ringBufSize = 2;
+ }
+ 
+ 
+@@ -483,9 +510,12 @@
+ 	config->writeEntry( "BroadcastAddress", broadcastAddress );
+ 	config->writeEntry( "BroadcastPort", broadcastPort );
+ 	config->writeEntry( "SenderPort", senderPort );
++	config->writeEntry( "ProbeMFE", probeMfe );
+ 	for ( i=0; i<(int)devList.count(); i++ ) {
+ 		config->writeEntry( QString("DVB%1").arg(i), devList.at(i)->source );
+ 		config->writeEntry( QString("DVB%1_TIMEOUT").arg(i), devList.at(i)->tuningTimeout );
++		config->writeEntry( QString("DVB%1_PRIORITY").arg(i), devList.at(i)->priority );
++		config->writeEntry( QString("DVB%1_CAM_MAX").arg(i), devList.at(i)->camMaxService );
+ 		if ( devList.at(i)->type!=FE_QPSK )
+ 			continue;
+ 		config->writeEntry( QString("DVB%1_NLNB").arg(i), devList.at(i)->numLnb );
+@@ -499,7 +529,9 @@
+ 			config->writeEntry( QString("DVB%1_LNB%2_speed13v").arg(i).arg(j), devList.at(i)->lnb[j].speed13v );
+ 			config->writeEntry( QString("DVB%1_LNB%2_speed18v").arg(i).arg(j), devList.at(i)->lnb[j].speed18v );
+ 		}
+-		config->writeEntry( QString("DVB%1_CAM_MAX").arg(i), devList.at(i)->camMaxService );
++		config->writeEntry( QString("DVB%1_SEC_MINI").arg(i), devList.at(i)->secMini );
++		config->writeEntry( QString("DVB%1_SEC_TWICE").arg(i), devList.at(i)->secTwice );
++		config->writeEntry( QString("DVB%1_DOS2").arg(i), devList.at(i)->doS2 );
+ 	}
+ 	config->writeEntry( "NumCategories", categories.count() );
+ 	for ( i=0; i<(int)categories.count(); i++ ) {
+@@ -515,6 +547,7 @@
+ 	config->writeEntry( "UsalsLatitude", usalsLatitude );
+ 	config->writeEntry( "UsalsLongitude", usalsLongitude );
+ 	config->writeEntry( "SizeFile", sizeFile );
++	config->writeEntry( "RingBufSize", ringBufSize );
+ 	config->sync();
+ }
+ 
+@@ -550,7 +583,7 @@
+ 	QSpinBox *spin;
+ 	KPushButton *usals;
+ 	QWidget *swidg;
+-	QStringList rotorList; rotorList<<i18n("No rotor")<<i18n("USALS rotor")<<i18n("Positions rotor");
++	QStringList rotorList; rotorList<<i18n("No rotor")<<i18n("USALS rotor")<<i18n("Positions rotor")<<i18n("External positionner");
+ 
+ 	dvbConfig = dc;
+ 	timeoutSpin.setAutoDelete( true );
+@@ -588,6 +621,14 @@
+ 		else
+ 			grid->addMultiCellWidget( dvbType, gridLine, gridLine, 1, 3 );
+ 		++gridLine;
++		
++		lab = new QLabel( i18n("Tuner priority (0=Don't use):"), gb );
++		grid->addWidget( lab, gridLine, 0 );
++		spin = new QSpinBox( 0, 99, 1, gb );
++		spin->setValue( dvbConfig->devList.at(i)->priority );
++		priority.append( spin );
++		grid->addWidget( spin, gridLine, 1 );
++		++gridLine;
+ 
+ 		lab = new QLabel( i18n("Tuner timeout :"), gb );
+ 		grid->addWidget( lab, gridLine, 0 );
+@@ -600,6 +641,11 @@
+ 		++gridLine;
+ 
+ 		if ( dvbConfig->devList.at(i)->type==FE_QPSK ) {
++			doS2[i] = new QCheckBox( i18n("S2 capable device"), gb );
++			doS2[i]->setChecked( dvbConfig->devList.at(i)->doS2 );
++			grid->addWidget( doS2[i], gridLine, 0 );
++			++gridLine;
++			
+ 			lab = new QLabel( i18n("Number of LNBs:"), gb );
+ 			grid->addWidget( lab, gridLine, 0 );
+ 			satNumber[i] = new MSpinBox( gb, i );
+@@ -611,6 +657,16 @@
+ 			grid->addWidget( usals, gridLine, 2 );
+ 
+ 			++gridLine;
++			
++			secMini[i] = new QCheckBox( i18n("Mini DiSEqC (A-B)."), gb );
++			secMini[i]->setChecked( dvbConfig->devList.at(i)->secMini );
++			secMini[i]->setEnabled( false );
++			grid->addWidget( secMini[i], gridLine, 1 );
++			secTwice[i] = new QCheckBox( i18n("Send DiSEqC commands twice."), gb );
++			secTwice[i]->setChecked( dvbConfig->devList.at(i)->secTwice );
++			grid->addWidget( secTwice[i], gridLine, 0 );
++			
++			++gridLine;
+ 
+ 			lnb0[i] = new MPushButton( gb, i, 0 );
+ 			lnb0[i]->setGuiItem( KGuiItem(i18n("LNB 1 settings..."), icon->loadIconSet("hwinfo", KIcon::Small) ) );
+@@ -881,9 +937,19 @@
+ 	vb = new QVBoxLayout( page, 6, 6 );
+ 	gb = new QGroupBox( "", page );
+ 	grid = new QGridLayout( gb, 1, 1, 20, 6 );
++	
++	probeMfe = new QCheckBox( i18n("Probe Multiple-Frontends (Restart required)."), gb );
++	probeMfe->setChecked( dvbConfig->probeMfe );
++	grid->addWidget( probeMfe, 0, 0 );
++	
++	lab = new QLabel( i18n("LiveShow ringbuffer size (MB) :"), gb );
++	grid->addWidget( lab, 1, 0 );
++	ringBufSize = new QSpinBox( 2, 99, 1, gb );
++	ringBufSize->setValue( dvbConfig->ringBufSize );
++	grid->addWidget( ringBufSize, 1, 1 );
+ 
+ 	lab = new QLabel( i18n("Default charset (restart needed):"), gb );
+-	grid->addWidget( lab, 0, 0 );
++	grid->addWidget( lab, 2, 0 );
+ 	charsetComb = new QComboBox( gb );
+ 	charsetComb->insertItem( "ISO8859-1" );
+ 	charsetComb->insertItem( "ISO6937" );
+@@ -891,19 +957,19 @@
+ 		charsetComb->setCurrentItem( 0 );
+ 	else if ( dvbConfig->defaultCharset=="ISO6937" )
+ 		charsetComb->setCurrentItem( 1 );
+-	grid->addWidget( charsetComb, 0, 1 );
++	grid->addWidget( charsetComb, 2, 1 );
+ 
+ 	lab = new QLabel( i18n("Update scan data:"), gb );
+-	grid->addWidget( lab, 1, 0 );
++	grid->addWidget( lab, 3, 0 );
+ 	updateBtn = new KPushButton( gb );
+ 	updateBtn->setGuiItem( KGuiItem(i18n("Download"), icon->loadIconSet("khtml_kget", KIcon::Small) ) );
+-	grid->addWidget( updateBtn, 1, 1 );
++	grid->addWidget( updateBtn, 3, 1 );
+ 
+ 	lab = new QLabel( i18n("Dump epg's events to \n~/kaffeine_dvb_events.tx:"), gb );
+-	grid->addWidget( lab, 2, 0 );
++	grid->addWidget( lab, 4, 0 );
+ 	dumpBtn = new KPushButton( gb );
+ 	dumpBtn->setGuiItem( KGuiItem(i18n("Dump"), icon->loadIconSet("filesave", KIcon::Small) ) );
+-	grid->addWidget( dumpBtn, 2, 1 );
++	grid->addWidget( dumpBtn, 4, 1 );
+ 
+ 	vb->addWidget( gb );
+ 	vb->addItem( new QSpacerItem( 20, 20, QSizePolicy::Ignored, QSizePolicy::Ignored ) );
+@@ -1067,6 +1133,8 @@
+ 	rotor1[devNum]->setEnabled( value > 1 );
+ 	rotor2[devNum]->setEnabled( value > 2 );
+ 	rotor3[devNum]->setEnabled( value > 3 );
++
++	secMini[devNum]->setEnabled( value==2 );
+ }
+ 
+ 
+@@ -1131,6 +1199,9 @@
+ 		switch (dvbConfig->devList.at(i)->type) {
+ 		case FE_QPSK: {
+ 			dvbConfig->devList.at(i)->numLnb = satNumber[i]->value();
++			dvbConfig->devList.at(i)->secMini = secMini[i]->isChecked();
++			dvbConfig->devList.at(i)->secTwice = secTwice[i]->isChecked();
++			dvbConfig->devList.at(i)->doS2 = doS2[i]->isChecked();
+ 			if ( dvbConfig->devList.at(i)->lnb[3].rotorType==0 ) {
+ 				dvbConfig->devList.at(i)->lnb[3].source.clear();
+ 				dvbConfig->devList.at(i)->lnb[3].source.append(sat3[i]->currentText());
+@@ -1168,6 +1239,7 @@
+ 		}
+ 		dvbConfig->devList.at(i)->source = s;
+ 		dvbConfig->devList.at(i)->tuningTimeout = timeoutSpin.at(i)->value();
++		dvbConfig->devList.at(i)->priority = priority.at(i)->value();
+ 	}
+ 
+ 	dvbConfig->recordDir = recordDirLe->text();
+@@ -1185,6 +1257,8 @@
+ 	dvbConfig->broadcastAddress = broadcastLe->text().stripWhiteSpace();
+ 	dvbConfig->broadcastPort = bportSpin->value();
+ 	dvbConfig->senderPort = sportSpin->value();
++	dvbConfig->probeMfe = probeMfe->isChecked();
++	dvbConfig->ringBufSize = ringBufSize->value();
+ 	dvbConfig->saveConfig();
+ 	done( Accepted );
+ }
+@@ -1431,22 +1505,24 @@
+ 	vb->addWidget( resetBtn );
+ 	vb->addItem( new QSpacerItem( 20, 20, QSizePolicy::Fixed, QSizePolicy::Fixed ) );
+ 
+-	grid = new QGridLayout( 0, 1, 1 );
+-	lab = new QLabel( i18n("13V rotor speed:"), page );
+-	grid->addWidget( lab, 0, 0 );
+-	speed13 = new QLineEdit( page );
+-	speed13->setText( QString().setNum( dev->lnb[lnbNum].speed13v ) );
+-	grid->addWidget( speed13, 0, 1 );
+-	lab = new QLabel( i18n("sec./ °"), page );
+-	grid->addWidget( lab, 0, 2 );
+-	lab = new QLabel( i18n("18V rotor speed:"), page );
+-	grid->addWidget( lab, 1, 0 );
+-	speed18 = new QLineEdit( page );
+-	speed18->setText( QString().setNum( dev->lnb[lnbNum].speed18v ) );
+-	grid->addWidget( speed18, 1, 1 );
+-	lab = new QLabel( i18n("sec./ °"), page );
+-	grid->addWidget( lab, 1, 2 );
+-	vb->addLayout( grid );
++	if ( dev->lnb[lnbNum].rotorType!=3 ) {
++		grid = new QGridLayout( 0, 1, 1 );
++		lab = new QLabel( i18n("13V rotor speed:"), page );
++		grid->addWidget( lab, 0, 0 );
++		speed13 = new QLineEdit( page );
++		speed13->setText( QString().setNum( dev->lnb[lnbNum].speed13v ) );
++		grid->addWidget( speed13, 0, 1 );
++		lab = new QLabel( i18n("sec./ °"), page );
++		grid->addWidget( lab, 0, 2 );
++		lab = new QLabel( i18n("18V rotor speed:"), page );
++		grid->addWidget( lab, 1, 0 );
++		speed18 = new QLineEdit( page );
++		speed18->setText( QString().setNum( dev->lnb[lnbNum].speed18v ) );
++		grid->addWidget( speed18, 1, 1 );
++		lab = new QLabel( i18n("sec./ °"), page );
++		grid->addWidget( lab, 1, 2 );
++		vb->addLayout( grid );
++	}
+ 
+ 	vb->addItem( new QSpacerItem( 20, 20, QSizePolicy::Ignored, QSizePolicy::Ignored ) );
+ 
+@@ -1490,8 +1566,14 @@
+ {
+ 	QListViewItem *it;
+ 
+-	dev->lnb[lnbNum].speed18v = speed18->text().toDouble();
+-	dev->lnb[lnbNum].speed13v = speed13->text().toDouble();
++	if ( dev->lnb[lnbNum].rotorType!=3 ) {
++		dev->lnb[lnbNum].speed18v = speed18->text().toDouble();
++		dev->lnb[lnbNum].speed13v = speed13->text().toDouble();
++	}
++	else {
++		dev->lnb[lnbNum].speed18v = 0;
++		dev->lnb[lnbNum].speed13v = 0;
++	}
+ 	dev->lnb[lnbNum].source.clear();
+ 	dev->lnb[lnbNum].position.clear();
+ 	for ( it=listView->firstChild(); it; it=it->nextSibling() ) {
+Index: src/input/dvb/dvbout.cpp
+===================================================================
+--- kaffeine/src/input/dvb/dvbout.cpp	(revision828748)
++++ kaffeine/src/input/dvb/dvbout.cpp	(revision920379)
+@@ -258,20 +258,19 @@
+ 		liveFile.writeBlock( (char*)tspmt, TS_SIZE );
+ 		mutex.lock();
+ 		haveLive = false;
+-		mutex.unlock();
+-		if ( !wait(100) ) {
++		if ( !wait(1000) ) {
+ 			terminate();
+ 			wait();
+ 		}
+-		mutex.lock();
+-		haveLive = true;
+ 		if ( close( fdPipe )<0 )
+ 			perror("close out pipe: ");
+ 		else
+ 			fprintf(stderr,"out pipe closed\n");
+ 		fdPipe = 0;
++		if ( wDist>0 )
++			liveFile.writeBlock( (char*)(wBuf+(wRead*TS_SIZE*NTS)), TS_SIZE*NTS*wDist );
++		timeShifting = true;
+ 		mutex.unlock();
+-		timeShifting = true;
+ 		//emit shifting( timeShifting );
+ 	}
+ 	return true;
+@@ -286,7 +285,7 @@
+ 
+ 
+ 
+-bool DVBout::goLive( const QString &name )
++bool DVBout::goLive( const QString &name, int ringBufSize )
+ {
+ 	if ( fdPipe ) return false;
+ 
+@@ -299,7 +298,8 @@
+ 	writePmt();
+ 	if ( !pids.contains(8192) )
+ 		patpmt = wpatpmt = true;
+-	wBuf = new unsigned char[TS_SIZE*NTS*100];
++	wbufSize = ringBufSize*1024*1024/(TS_SIZE*NTS);
++	wBuf = new unsigned char[TS_SIZE*NTS*wbufSize];
+ 	if ( !wBuf ) fprintf( stderr, "\nNO WBUF !!!\n\n" );
+ 	wRead = wWrite = wDist = 0;
+ 	start();
+@@ -326,7 +326,7 @@
+ 		emit shifting( timeShifting );
+ 	}
+ 	mutex.unlock();
+-	if ( !wait(500) ) {
++	if ( !wait(1000) ) {
+ 		terminate();
+ 		wait();
+ 	}
+@@ -469,15 +469,17 @@
+ 						beginLive = !beginLive;
+ 						start();
+ 					}
+-					if ( wDist<95 ) {
++					if ( wDist<wbufSize ) {
+ 						memcpy( wBuf+(wWrite*TS_SIZE*NTS), thBuf, TS_SIZE*NTS );
+ 						wpatpmt = patpmt;
+ 						++wDist;
+ 						++wWrite;
+-						if ( wWrite>99 )
++						if ( wWrite==wbufSize )
+ 							wWrite = 0;
+-						//fprintf(stderr,"WDIST = %d\n",wDist);
+ 					}
++					else {
++						fprintf(stderr,"Live ringbuffer full!! (%d)\n",wDist);
++					}
+ 				}
+ 				else if ( timeShifting ) {
+ 					if ( patpmt ) {
+@@ -540,11 +542,12 @@
+ 				write( fdPipe, wBuf+(wRead*TS_SIZE*NTS), TS_SIZE*NTS );
+ 				--wDist;
+ 				++wRead;
+-				if ( wRead>99 )
++				if ( wRead==wbufSize )
+ 					wRead = 0;
+ 			}
+-			else
++			else {
+ 				usleep( 100 );
++			}
+ 		}
+ 		return;
+ 	}
+Index: src/input/dvb/dvbsi.cpp
+===================================================================
+--- kaffeine/src/input/dvb/dvbsi.cpp	(revision828748)
++++ kaffeine/src/input/dvb/dvbsi.cpp	(revision920379)
+@@ -46,6 +46,7 @@
+ // These values are taken from ATSC A/65C Sec 4.1
+ #define PSIP_TABLE_TYPE_MGT     0xc7
+ #define PSIP_TABLE_TYPE_TVCT    0xc8
++#define PSIP_TABLE_TYPE_CVCT    0xc9
+ 
+ NitSection::NitSection( QPtrList<Transponder> *tp, bool *end, bool *ok, int anum, int tnum ) : KaffeineDVBsection( anum, tnum )
+ {
+@@ -173,6 +174,9 @@
+ 					fprintf(stderr,"     Found frequency list.\n");
+ 					freqListDesc( buf, trans );
+ 					break;
++				case 0x79 :
++					S2satelliteDesc( buf, trans );
++					break;
+ 				default :
+ 					break;
+ 			}
+@@ -226,22 +230,57 @@
+ 		trans->pol = 'v';
+ 	else
+ 		trans->pol = 'h';
++	switch ( getBits(buf,70,2) ) {
++		case 0 : trans->modulation = QAM_AUTO; break;
++		case 1 : trans->modulation = QPSK; break;
++		case 2 : trans->modulation = PSK_8; break;
++		case 3 : trans->modulation = QAM_16; break;
++	}
+ 	s = t.setNum( getBits(buf,72,28), 16 );
+ 	trans->sr = s.toInt();
+ 	trans->sr /=10;
+ 	switch ( getBits(buf,100,4) ) {
++		case 0 : trans->coderateH = FEC_AUTO; break;
+ 		case 1 : trans->coderateH = FEC_1_2; break;
+ 		case 2 : trans->coderateH = FEC_2_3; break;
+ 		case 3 : trans->coderateH = FEC_3_4; break;
+ 		case 4 : trans->coderateH = FEC_5_6; break;
+ 		case 5 : trans->coderateH = FEC_7_8; break;
+ 		case 6 : trans->coderateH = FEC_8_9; break;
+-		case 7 : trans->coderateH = FEC_NONE; break;
++		case 7 : trans->coderateH = FEC_3_5; break;
++		case 8 : trans->coderateH = FEC_4_5; break;
++		case 9 : trans->coderateH = FEC_9_10; break;
++		case 15 : trans->coderateH = FEC_NONE; break;
+ 	}
++	if ( getBits(buf,69,1) ) {
++		fprintf(stderr,"!!!!!!!!!!!!!!!!!! Found S2 MODULATION SYSTEM !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
++		trans->S2 = 1;
++		switch ( getBits(buf,67,2) ) {
++			case 0 : trans->rolloff = ROLLOFF_35; break;
++			case 1 : trans->rolloff = ROLLOFF_25; break;
++			case 2 : trans->rolloff = ROLLOFF_20; break;
++		}
++	}
+ }
+ 
+ 
+ 
++void NitSection::S2satelliteDesc( unsigned char* buf, Transponder *trans )
++{
++	fprintf(stderr,"!!!!!!!!!!!!!!!!!! Found S2 DESCRIPTOR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
++	int scrambling_sequence_selector = getBits(buf,16,1);
++	int multiple_input_stream_flag = getBits(buf,17,1);
++	int backwards_compatibility_indicator = getBits(buf,18,1);
++	int scrambling_sequence_index = 0;
++	if ( scrambling_sequence_selector )
++		scrambling_sequence_index = getBits(buf,30,18);
++	int input_stream_identifier = 0;
++	if ( multiple_input_stream_flag )
++		input_stream_identifier = getBits(buf,48,8);
++}
++
++
++
+ void NitSection::cableDesc( unsigned char* buf, Transponder *trans )
+ {
+ 	QString s, t;
+@@ -261,13 +300,17 @@
+ 	trans->sr = s.toInt();
+ 	trans->sr /=10;
+ 	switch ( getBits(buf,100,4) ) {
++		case 0 : trans->coderateH = FEC_AUTO; break;
+ 		case 1 : trans->coderateH = FEC_1_2; break;
+ 		case 2 : trans->coderateH = FEC_2_3; break;
+ 		case 3 : trans->coderateH = FEC_3_4; break;
+ 		case 4 : trans->coderateH = FEC_5_6; break;
+ 		case 5 : trans->coderateH = FEC_7_8; break;
+ 		case 6 : trans->coderateH = FEC_8_9; break;
+-		case 7 : trans->coderateH = FEC_NONE; break;
++		case 7 : trans->coderateH = FEC_3_5; break;
++		case 8 : trans->coderateH = FEC_4_5; break;
++		case 9 : trans->coderateH = FEC_9_10; break;
++		case 15 : trans->coderateH = FEC_NONE; break;
+ 	}
+ }
+ 
+@@ -713,12 +756,12 @@
+ 
+ 		if (table_type == 0x0000 || table_type == 0x0001) {
+ 			// TVCT table found
+-			vct_table = table_type;
++			vct_table = PSIP_TABLE_TYPE_TVCT;
+ 			vct_found = true;
+ 		} else if (table_type == 0x0002 ||
+ 			   table_type == 0x0003) {
+ 			// CVCT table found
+-			vct_table = table_type;
++			vct_table = PSIP_TABLE_TYPE_CVCT;
+ 			vct_found = true;
+ 		}
+ 		t_entry += (11 + table_number_des_length);
+@@ -931,7 +974,7 @@
+ 	};
+ 
+ 	// Now look at the TVCT for info on the individual channels found
+-	if (parseVCT(PSIP_BASE_PID, PSIP_TABLE_TYPE_TVCT,
++	if (parseVCT(PSIP_BASE_PID, vct_table,
+ 		     PSIP_MAX_CYCLE_TIME_VCT) == false) {
+ 		fprintf(stderr, "Could not parse VCT in stream.  Cannot continue\n");
+ 		return false;
+@@ -981,10 +1024,6 @@
+ 			indexChannels = j;
+ 			fprintf(stderr,"Transponders: %d/%d\n", i+1, transponders.count() );
+ 			fprintf(stderr,"scanMode=%d\n", scanMode);
+-			if ( scanMode ) {
+-				nitEnded = false;
+-				ns = new NitSection( &transponders, &nitEnded, &ok, adapter, tuner ); //NIT
+-			}
+ 			if ( chan.tp.type == FE_ATSC ) {
+ 				// Separate out the ATSC scanning so that we
+ 				// don't interfere with existing DVB support
+@@ -993,6 +1032,11 @@
+ 			}
+ 			else {
+ 				printf("it's dvb %d!\n", chan.tp.type);
++				if ( scanMode ) {
++					nitEnded = false;
++					ns = new NitSection( &transponders, &nitEnded, &ok, adapter, tuner ); //NIT
++				}
++
+ 				getSection( 0x11, 0x42 );       //SDT
+ 			}
+ 			if ( !isRunning ) {
+Index: src/input/dvb/channeldesc.cpp
+===================================================================
+--- kaffeine/src/input/dvb/channeldesc.cpp	(revision828748)
++++ kaffeine/src/input/dvb/channeldesc.cpp	(revision920379)
+@@ -115,6 +115,8 @@
+ 	coderateH=FEC_AUTO;
+ 	bandwidth=BANDWIDTH_AUTO;
+ 	snr = 0;
++	rolloff = ROLLOFF_AUTO;
++	S2 = 0;
+ }
+ 
+ Transponder::Transponder( const Transponder &trans )
+@@ -134,6 +136,8 @@
+ 	coderateL=trans.coderateL;
+ 	coderateH=trans.coderateH;
+ 	bandwidth=trans.bandwidth;
++	rolloff = trans.rolloff;
++	S2 = trans.S2;
+ }
+ 
+ bool Transponder::sameAs( Transponder *trans )
+Index: src/input/dvb/channeleditor.h
+===================================================================
+--- kaffeine/src/input/dvb/channeleditor.h	(revision828748)
++++ kaffeine/src/input/dvb/channeleditor.h	(revision920379)
+@@ -53,11 +53,12 @@
+ 	QStringList inversionList();
+ 	QStringList coderateList();
+ 	QStringList modulationList();
+-	QStringList modulationListAtsc();
+ 	QStringList transmissionList();
+ 	QStringList bandwidthList();
+ 	QStringList hierarchyList();
+ 	QStringList guardList();
++	QStringList stypeList();
++	QStringList rolloffList();
+ 
+ 	ChannelDesc *channel;
+ 	QPtrList<ChannelDesc> *chandesc;
+Index: src/input/dvb/dvbstream.cpp
+===================================================================
+--- kaffeine/src/input/dvb/dvbstream.cpp	(revision828748)
++++ kaffeine/src/input/dvb/dvbstream.cpp	(revision920379)
+@@ -154,6 +154,8 @@
+ 		else
+ 			return false;
+ 	}
++	if ( chan->tp.S2 && !dvbDevice->doS2 )
++		return false;
+ 	int i;
+ 	for ( i=0; i<dvbDevice->numLnb; i++ ) {
+ 		if ( dvbDevice->lnb[i].source.contains(chan->tp.source) )
+@@ -164,6 +166,13 @@
+ 
+ 
+ 
++int DvbStream::getPriority()
++{
++	return dvbDevice->priority;
++}
++
++
++
+ int DvbStream::getSatPos( const QString &src )
+ {
+ 	int i;
+@@ -185,7 +194,7 @@
+ 		fprintf(stderr,"openFe: fdFrontend != 0\n");
+ 		return false;
+ 	}
+-	fdFrontend = open( frontendName.ascii(), O_RDWR );
++	fdFrontend = open( frontendName.ascii(), O_RDWR /*| O_NONBLOCK*/ );
+ 	if ( fdFrontend<0 ) {
+ 		perror("openFe:");
+ 		fdFrontend = 0;
+@@ -319,7 +328,6 @@
+ {
+ 	unsigned long lof=0;
+ 	int res, hiband=0;
+-	struct dvb_frontend_parameters feparams;
+ 	struct dvb_frontend_info fe_info;
+ 	fe_status_t status;
+ 	unsigned long freq=chan->tp.freq;
+@@ -328,6 +336,14 @@
+ 	int rotorMove = 0;
+ 	int loop=0, i;
+ 
++	struct dtv_property cmdargs[20];
++	struct dtv_properties cmdseq;
++	int inversion;
++	int bandwidth;
++	
++	if ( chan->tp.S2 && !dvbDevice->doS2 )
++		return false;
++
+ 	closeFe();
+ 	if ( !openFe() )
+ 		return false;
+@@ -344,18 +360,45 @@
+ 	freq*=1000;
+ 	srate*=1000;
+ 
++	QTime t1 = QTime::currentTime();
++
++	if ( chan->tp.inversion==INVERSION_AUTO ) {
++		if ( fe_info.caps & FE_CAN_INVERSION_AUTO )
++			inversion = chan->tp.inversion;
++		else {
++			fprintf(stderr,"Can NOT inversion_auto\n");
++			inversion = INVERSION_OFF;
++		}
++	}
++	else
++		inversion=chan->tp.inversion;
++
+ 	switch( fe_info.type ) {
+ 		case FE_OFDM : {
++			QString s = fe_info.name;
++			//if ( s.contains("TerraTec/qanu USB2.0 Highspeed DVB-T Receiver") ) // cinergyT2 hack
++			//	freq+=167000;
+ 			if (freq < 1000000)
+ 				freq*=1000UL;
+-			feparams.frequency=freq;
+-			feparams.u.ofdm.bandwidth=chan->tp.bandwidth;
+-			feparams.u.ofdm.code_rate_HP=chan->tp.coderateH;
+-			feparams.u.ofdm.code_rate_LP=chan->tp.coderateL;
+-			feparams.u.ofdm.constellation=chan->tp.modulation;
+-			feparams.u.ofdm.transmission_mode=chan->tp.transmission;
+-			feparams.u.ofdm.guard_interval=chan->tp.guard;
+-			feparams.u.ofdm.hierarchy_information=chan->tp.hierarchy;
++			cmdargs[0].cmd = DTV_DELIVERY_SYSTEM; cmdargs[0].u.data = SYS_DVBT;
++			cmdargs[1].cmd = DTV_FREQUENCY; cmdargs[1].u.data = freq;
++			cmdargs[2].cmd = DTV_MODULATION; cmdargs[2].u.data = chan->tp.modulation;
++			cmdargs[3].cmd = DTV_CODE_RATE_HP; cmdargs[3].u.data = chan->tp.coderateH;
++			cmdargs[4].cmd = DTV_CODE_RATE_LP; cmdargs[4].u.data = chan->tp.coderateL;
++			cmdargs[5].cmd = DTV_GUARD_INTERVAL; cmdargs[5].u.data = chan->tp.guard;
++			cmdargs[6].cmd = DTV_TRANSMISSION_MODE; cmdargs[6].u.data = chan->tp.transmission;
++			cmdargs[7].cmd = DTV_HIERARCHY; cmdargs[7].u.data = chan->tp.hierarchy;
++			if ( chan->tp.bandwidth==BANDWIDTH_8_MHZ )
++				bandwidth = 8000000;
++			else if ( chan->tp.bandwidth==BANDWIDTH_7_MHZ )
++				bandwidth = 7000000;
++			else if ( chan->tp.bandwidth==BANDWIDTH_6_MHZ )
++				bandwidth = 6000000;
++			cmdargs[8].cmd = DTV_BANDWIDTH_HZ; cmdargs[8].u.data = bandwidth;
++			cmdargs[9].cmd = DTV_INVERSION; cmdargs[9].u.data = inversion;
++			cmdargs[10].cmd = DTV_TUNE;
++			cmdseq.num = 11;
++			cmdseq.props = cmdargs;
+ 			fprintf(stderr,"tuning DVB-T to %lu Hz\n", freq);
+ 			fprintf(stderr,"inv:%d bw:%d fecH:%d fecL:%d mod:%d tm:%d gi:%d hier:%d\n", chan->tp.inversion,
+ 				chan->tp.bandwidth, chan->tp.coderateH, chan->tp.coderateL, chan->tp.modulation,
+@@ -363,11 +406,16 @@
+ 			break;
+ 		}
+ 		case FE_QAM : {
++			cmdargs[0].cmd = DTV_DELIVERY_SYSTEM; cmdargs[0].u.data = SYS_DVBC_ANNEX_AC;
++			cmdargs[1].cmd = DTV_FREQUENCY; cmdargs[1].u.data = freq;
++			cmdargs[2].cmd = DTV_MODULATION; cmdargs[2].u.data = chan->tp.modulation;
++			cmdargs[3].cmd = DTV_SYMBOL_RATE; cmdargs[3].u.data = srate;
++			cmdargs[4].cmd = DTV_INNER_FEC; cmdargs[4].u.data = chan->tp.coderateH;
++			cmdargs[5].cmd = DTV_INVERSION; cmdargs[5].u.data = inversion;
++			cmdargs[6].cmd = DTV_TUNE;
++			cmdseq.num = 7;
++			cmdseq.props = cmdargs;
+ 			fprintf(stderr,"tuning DVB-C to %lu\n", freq);
+-			feparams.frequency=freq;
+-			feparams.u.qam.symbol_rate = srate;
+-			feparams.u.qam.fec_inner = chan->tp.coderateH;
+-			feparams.u.qam.modulation = chan->tp.modulation;
+ 			fprintf(stderr,"inv:%d sr:%lu fecH:%d mod:%d\n", chan->tp.inversion,
+ 				srate, chan->tp.coderateH, chan->tp.modulation );
+ 			break;
+@@ -395,51 +443,71 @@
+ 						lof = (dvbDevice->lnb[lnbPos].loFreq*1000);
+ 				}
+ 				if ( freq<lof )
+-					feparams.frequency = ( lof-freq );
++					freq = ( lof-freq );
+ 				else
+-					feparams.frequency = ( freq-lof );
++					freq = ( freq-lof );
+ 			}
+-			else
+-				feparams.frequency=freq;
+-
+-			feparams.u.qpsk.symbol_rate=srate;
+-			feparams.u.qpsk.fec_inner=chan->tp.coderateH;
+-			fprintf(stderr,"inv:%d fecH:%d\n", chan->tp.inversion, chan->tp.coderateH );
++			fprintf(stderr,"inv:%d fecH:%d mod:%d\n", chan->tp.inversion, chan->tp.coderateH, chan->tp.modulation );
+ 			if ( setDiseqc( lnbPos, chan, hiband, rotorMove, dvr )!=0 ) {
+ 				closeFe();
+ 				return false;
+ 			}
++			fprintf( stderr, "Diseqc settings time = %d ms\n", t1.msecsTo( QTime::currentTime() ) );
++			t1 = QTime::currentTime();
++			if ( chan->tp.S2 ) {
++				fprintf(stderr,"\nTHIS IS DVB-S2 >>>>>>>>>>>>>>>>>>>\n");
++				cmdargs[0].cmd = DTV_DELIVERY_SYSTEM; cmdargs[0].u.data = SYS_DVBS2;
++				cmdargs[1].cmd = DTV_FREQUENCY; cmdargs[1].u.data = freq;
++				cmdargs[2].cmd = DTV_MODULATION; cmdargs[2].u.data = chan->tp.modulation;
++				cmdargs[3].cmd = DTV_SYMBOL_RATE; cmdargs[3].u.data = srate;
++				cmdargs[4].cmd = DTV_INNER_FEC; cmdargs[4].u.data = chan->tp.coderateH;
++				cmdargs[5].cmd = DTV_PILOT; cmdargs[5].u.data = PILOT_AUTO;
++				cmdargs[6].cmd = DTV_ROLLOFF; cmdargs[6].u.data = chan->tp.rolloff;
++				cmdargs[7].cmd = DTV_INVERSION; cmdargs[7].u.data = inversion;
++				cmdargs[8].cmd = DTV_TUNE;
++				cmdseq.num = 9;
++				cmdseq.props = cmdargs;
++			}
++			else {
++				cmdargs[0].cmd = DTV_DELIVERY_SYSTEM; cmdargs[0].u.data = SYS_DVBS;
++				cmdargs[1].cmd = DTV_FREQUENCY; cmdargs[1].u.data = freq;
++				cmdargs[2].cmd = DTV_MODULATION; cmdargs[2].u.data = chan->tp.modulation;
++				if ( chan->tp.modulation==QAM_AUTO )
++					cmdargs[2].u.data = QPSK;
++				cmdargs[3].cmd = DTV_SYMBOL_RATE; cmdargs[3].u.data = srate;
++				cmdargs[4].cmd = DTV_INNER_FEC; cmdargs[4].u.data = chan->tp.coderateH;
++				cmdargs[5].cmd = DTV_INVERSION; cmdargs[5].u.data = inversion;
++				cmdargs[6].cmd = DTV_TUNE;
++				cmdseq.num = 7;
++				cmdseq.props = cmdargs;
++			}
+ 			break;
+ 		}
+ 		case FE_ATSC : {
++			cmdargs[0].cmd = DTV_DELIVERY_SYSTEM; cmdargs[0].u.data = SYS_ATSC;
++			cmdargs[1].cmd = DTV_FREQUENCY; cmdargs[1].u.data = freq;
++			cmdargs[2].cmd = DTV_MODULATION; cmdargs[2].u.data = chan->tp.modulation;
++			cmdargs[3].cmd = DTV_INVERSION; cmdargs[3].u.data = inversion;
++			cmdargs[4].cmd = DTV_TUNE;
++			cmdseq.num = 5;
++			cmdseq.props = cmdargs;
+ 			fprintf(stderr,"tuning ATSC to %lu\n", freq);
+-			feparams.frequency=freq;
+-			feparams.u.vsb.modulation = chan->tp.modulation;
+ 			fprintf(stderr,"inv:%d mod:%d\n", chan->tp.inversion, chan->tp.modulation );
+ 			break;
+ 		}
+ 	}
+-	if ( chan->tp.inversion==INVERSION_AUTO ) {
+-		if ( fe_info.caps & FE_CAN_INVERSION_AUTO )
+-			feparams.inversion=chan->tp.inversion;
+-		else {
+-			fprintf(stderr,"Can NOT inversion_auto\n");
+-			feparams.inversion=INVERSION_OFF;
+-		}
+-	}
+-	else
+-		feparams.inversion=chan->tp.inversion;
+ 
+ 	if ( rotorMove )
+ 		loop = 2;
+ 
+ 	while ( loop>-1 ) {
+-		if (ioctl(fdFrontend,FE_SET_FRONTEND,&feparams) < 0) {
+-			perror("ERROR tuning \n");
++		if ( ioctl( fdFrontend, FE_SET_PROPERTY, &cmdseq )<0 ) {
++			perror("ERROR tuning\n");
+ 			closeFe();
+ 			return false;
+ 		}
+-		for ( i=0; i<(dvbDevice->tuningTimeout/100); i++ ) {
++		QTime lockTime = QTime::currentTime();
++		do {
+ 			usleep( 100000 );
+ 			fprintf( stderr, "." );
+ 			if ( ioctl( fdFrontend, FE_READ_STATUS, &status )==-1 ) {
+@@ -451,7 +519,7 @@
+ 				loop = 0;
+ 				break;
+ 			}
+-		}
++		} while ( lockTime.msecsTo( QTime::currentTime() )<=dvbDevice->tuningTimeout );
+ 		fprintf(stderr,"\n");
+ 		--loop;
+ 	}
+@@ -462,6 +530,8 @@
+ 		return false;
+ 	}
+ 
++	fprintf( stderr, "Tuning time = %d ms\n", t1.msecsTo( QTime::currentTime() ) );
++
+ 	if ( rotorMove )
+ 		dvbDevice->lnb[lnbPos].currentSource = chan->tp.source;
+ 
+@@ -507,6 +577,23 @@
+ 	int i;
+ 	int voltage18 = ( (chan->tp.pol=='H')||(chan->tp.pol=='h') );
+ 	int ci = 4 * switchPos + 2 * hiband + (voltage18 ? 1 : 0);
++	bool secMini = false;
++	bool hasRotor = false;
++	bool hasSwitch = true;
++	
++	if ( dvbDevice->numLnb<2 )
++		hasSwitch = false;
++		
++	if ( dvbDevice->lnb[switchPos].rotorType!=0 && dvbDevice->lnb[switchPos].rotorType!=3 )
++		hasRotor = true;
++		
++	if ( dvbDevice->numLnb==2 && dvbDevice->secMini )
++		secMini = true;
++		
++	if ( dvbDevice->secTwice )
++		diseqcTwice = 2;
++	else
++		diseqcTwice = 1;
+ 
+ 	fprintf( stderr, "DiSEqC: switch pos %i, %sV, %sband (index %d)\n", switchPos, voltage18 ? "18" : "13", hiband ? "hi" : "lo", ci );
+ 	if ( ci < 0 || ci >= (int)(sizeof(switchCmd)/sizeof(struct dvb_diseqc_master_cmd)) )
+@@ -518,15 +605,27 @@
+ 	if ( ioctl(fdFrontend, FE_SET_VOLTAGE, ci%2 ? SEC_VOLTAGE_18 : SEC_VOLTAGE_13) )
+ 		perror("FE_SET_VOLTAGE failed");
+ 
+-	fprintf( stderr, "DiSEqC: %02x %02x %02x %02x %02x %02x\n", switchCmd[ci].msg[0], switchCmd[ci].msg[1], switchCmd[ci].msg[2], switchCmd[ci].msg[3], switchCmd[ci].msg[4], switchCmd[ci].msg[5] );
+-	for ( i=0; i<2; ++i ) {
+-		usleep(15*1000);
+-		if ( ioctl(fdFrontend, FE_DISEQC_SEND_MASTER_CMD, &switchCmd[ci]) )
+-			perror("FE_DISEQC_SEND_MASTER_CMD failed");
++	if ( hasSwitch ) {
++		if ( !secMini ) {
++			fprintf( stderr, "DiSEqC: %02x %02x %02x %02x %02x %02x\n", switchCmd[ci].msg[0], switchCmd[ci].msg[1], switchCmd[ci].msg[2], switchCmd[ci].msg[3], switchCmd[ci].msg[4], 	switchCmd[ci].msg[5] );
++			for ( i=0; i<diseqcTwice; ++i ) {
++				usleep(15*1000);
++				if ( ioctl(fdFrontend, FE_DISEQC_SEND_MASTER_CMD, &switchCmd[ci]) )
++					perror("FE_DISEQC_SEND_MASTER_CMD failed");
++			}
++		}
++		else {
++			fprintf( stderr, "DiSEqC: mini_diseqc\n" );
++			for ( i=0; i<diseqcTwice; ++i ) {
++				usleep(15*1000);
++				if ( ioctl(fdFrontend, FE_DISEQC_SEND_BURST, (ci/4)%2 ? SEC_MINI_B : SEC_MINI_A) )
++					perror("FE_DISEQC_SEND_BURST failed");
++			}
++		}
+ 	}
+ 
+ 	QString msg;
+-	if ( dvbDevice->lnb[switchPos].rotorType!=0 && chan->tp.source!=dvbDevice->lnb[switchPos].currentSource ) {
++	if ( hasRotor && chan->tp.source!=dvbDevice->lnb[switchPos].currentSource ) {
+ 		int i, index=-1;
+ 		double angle=0.0, oldAngle=0.0;
+ 		fprintf( stderr, "Driving rotor to %s\n", chan->tp.source.ascii() );
+@@ -586,16 +685,12 @@
+ 		}
+ 	}
+ 
+-	for ( i=0; i<2; ++i ) {
++	if ( (ci/2)%2 ) {
+ 		usleep(15*1000);
+-		if ( ioctl(fdFrontend, FE_DISEQC_SEND_BURST, (ci/4)%2 ? SEC_MINI_B : SEC_MINI_A) )
+-			perror("FE_DISEQC_SEND_BURST failed");
++		if ( ioctl(fdFrontend, FE_SET_TONE, SEC_TONE_ON) )
++			perror("FE_SET_TONE failed");
+ 	}
+ 
+-	usleep(15*1000);
+-	if ( ioctl(fdFrontend, FE_SET_TONE, (ci/2)%2 ? SEC_TONE_ON : SEC_TONE_OFF) )
+-		perror("FE_SET_TONE failed");
+-
+ 	return 0;
+ }
+ 
+@@ -692,7 +787,7 @@
+ 	};
+ 
+ 	int i;
+-	for ( i=0; i<2; ++i ) {
++	for ( i=0; i<diseqcTwice; ++i ) {
+ 		usleep(15*1000);
+ 		if ( ioctl( fdFrontend, FE_DISEQC_SEND_MASTER_CMD, &cmds[cmd] ) )
+ 			perror("Rotor : FE_DISEQC_SEND_MASTER_CMD failed");
+@@ -814,28 +909,33 @@
+ 
+ void DvbStream::run()
+ {
+-	unsigned char buf[188];
++	int READSIZE = 188*20;
++	int BUFSIZE = 188*100;
++	int WSIZE = 188*64;
++	unsigned char buf[READSIZE];
++	unsigned char thBuf[BUFSIZE];
+ 	int n, i, thWrite=0;
+-	int WSIZE=188*8;
+ 	DVBout *o=0;
+ 
+ 	signal( SIGPIPE, SIG_IGN );
+ 
+ 	while ( isRunning ) {
+ 		if ( poll( &pfd, 1, 100 ) ) {
+-			n = read( fdDvr, buf, 188 );
+-			if ( n==188 ) {
++			n = read( fdDvr, buf, READSIZE );
++			if ( n && !(n%188) ) {
++				//fprintf( stderr, "DVR0: read : %d\n", n );
+ 				memcpy( thBuf+thWrite, buf, n );
+ 				thWrite+=n;
+-				if ( thWrite==WSIZE ) {
++				if ( thWrite>=WSIZE ) {
+ 					for ( i=0; i<(int)out.count(); i++ )
+-						out.at(i)->process( thBuf, WSIZE );
++						out.at(i)->process( thBuf, thWrite );
+ 					thWrite = 0;
+ 				}
+ 			}
++			else
++				fprintf( stderr, "DVR0: read failed : %d\n", n );
++			    
+ 		}
+-		else
+-			usleep(1000);
+ 
+ 		if ( waitPause>0 ) {
+ 			o = 0;
+@@ -1208,7 +1308,7 @@
+ 
+ 
+ 
+-int DvbStream::goLive( ChannelDesc *chan, const QString &pipeName )
++int DvbStream::goLive( ChannelDesc *chan, const QString &pipeName, int ringBufSize )
+ {
+ 	int i;
+ 	bool stop=false;
+@@ -1260,7 +1360,7 @@
+ 	else
+ 		i = 0;
+ 
+-	o->goLive( pipeName );
++	o->goLive( pipeName, ringBufSize );
+ 	fprintf(stderr,"NOUT: %d\n", out.count() );
+ 
+ 	if ( chan->fta && cam  )
+Index: src/input/dvb/dvbpanel.cpp
+===================================================================
+--- kaffeine/src/input/dvb/dvbpanel.cpp	(revision828748)
++++ kaffeine/src/input/dvb/dvbpanel.cpp	(revision920379)
+@@ -55,8 +55,14 @@
+ 
+ #define CHANICONSIZE 28
+ 
++#define MODE_FREE 0
++#define MODE_LIVE 100
++#define MODE_BROADCAST 200
++#define MODE_RECORD 300
++#define MODE_CANTDO 400
+ 
+ 
++
+ DIconViewItem::DIconViewItem( DvbPanel *pan, QIconView *parent, const QString &text, const QPixmap &icon )
+ 	: KIconViewItem( parent, text, icon )
+ {
+@@ -1113,6 +1119,7 @@
+ 		return;
+ 	rtp->setSocket( dvbConfig->broadcastAddress, dvbConfig->broadcastPort, dvbConfig->senderPort );
+ 	cleaner->setPaths( dvbConfig->shiftDir, dvbConfig->recordDir );
++	fillChannelList();
+ }
+ 
+ 
+@@ -1132,6 +1139,8 @@
+ 	Transponder t;
+ 
+ 	for ( i=0; i<(int)dvb.count(); i++ ) {
++		if ( !dvb.at(i)->getPriority() ) // priority==0==don't use
++			continue;
+ 		list = dvb.at(i)->getSources();
+ 		for ( j=0; j<(int)list.count(); j++ ) {
+ 			if ( dvb.at(i)->hasRec() || dvb.at(i)->hasBroadcast() )
+@@ -1219,15 +1228,15 @@
+ DvbStream* DvbPanel::getWorkingDvb( int mode, ChannelDesc *chan )
+ {
+ 	int i, ret;
+-	QValueList<int> working; //  notTuned=0, hasLive=1, hasBroadcast=2, hasRec=3, can'tDoChannel=4
++	QValueList<int> working; //  free=0, hasLive=100, hasBroadcast=200, hasRec=300, can'tDoChannel=400
+ 
+ 	for ( i=0; i<(int)dvb.count(); i++ )
+-		working.append( 0 );
++		working.append( 100-dvb.at(i)->getPriority() );
+ 
+ 	// fill in working status
+ 	for ( i=0; i<(int)dvb.count(); i++ ) {
+-		if ( !dvb.at(i)->canSource( chan ) ) {
+-			working[i] = 4;
++		if ( !dvb.at(i)->canSource( chan ) || working[i]==100 ) {
++			working[i] = MODE_CANTDO;
+ 			continue;
+ 		}
+ 		if ( dvb.at(i)->isTuned() ) {
+@@ -1235,14 +1244,18 @@
+ 				return dvb.at(i); // use that one since it's already tuned on the good mplex
+ 			}
+ 			else if ( dvb.at(i)->hasRec() )
+-				working[i] = 3;
++				working[i] += MODE_RECORD;
+ 			else if ( dvb.at(i)->hasBroadcast() )
+-				working[i] = 2;
+-			else
+-				working[i] = 1;
++				working[i] += MODE_BROADCAST;
++			else {
++				if ( mode==MODE_LIVE )
++					working[i] += MODE_FREE;
++				else
++					working[i] += MODE_LIVE;
++			}
+ 		}
+ 		else
+-			working[i] = 0;
++			working[i] += MODE_FREE;
+ 	}
+ 	ret = 0;
+ 	// search for least working card
+@@ -1280,7 +1293,7 @@
+ 		return;
+ 	}
+ 
+-	d = getWorkingDvb( 2, list.at(0) );
++	d = getWorkingDvb( MODE_BROADCAST, list.at(0) );
+ 
+ 	if ( d )
+ 		ret = d->canStartBroadcast( live, list.at(0) );
+@@ -1324,7 +1337,7 @@
+ 			}
+ 			if ( !chan )
+ 				continue;
+-			d = getWorkingDvb( 3, chan );
++			d = getWorkingDvb( MODE_RECORD, chan );
+ 			live = false;
+ 			if ( d )
+ 				ret = d->canStartTimer( live, chan );
+@@ -1834,7 +1847,7 @@
+ 		QTimer::singleShot( 2000, this, SLOT(playLastChannel()) );
+ 		return;
+ 	}
+-	d = getWorkingDvb( 2, list.at(0) );
++	d = getWorkingDvb( MODE_BROADCAST, list.at(0) );
+ 	if ( d )
+ 		ret = d->canStartBroadcast( live, list.at(0) );
+ 	else
+@@ -1935,20 +1948,15 @@
+ void DvbPanel::dvbZap( ChannelDesc *chan )
+ {
+ 	int i;
+-	DvbStream *d=0;
++	DvbStream *d;
+ 
+ 	if ( currentFifo.isEmpty() || isTuning )
+ 		return;
+ 
+ 	isTuning = true;
+ 	emit setTimeShiftFilename( "" );
++	d = getWorkingDvb( MODE_LIVE, chan );
+ 	for ( i=0; i<(int)dvb.count(); i++ ) {
+-		if ( dvb.at(i)->getCurrentTransponder()==chan->tp ) {
+-			d = dvb.at(i);
+-			break;
+-		}
+-	}
+-	for ( i=0; i<(int)dvb.count(); i++ ) {
+ 		if ( dvb.at(i)->hasLive() ) {
+ 			dvb.at(i)->preStopLive();
+ 			emit dvbPause( false );
+@@ -1981,40 +1989,20 @@
+ {
+ 	QString s, t;
+ 	int i;
+-	DvbStream *d1=d, *d2=0;
+ 
+ 	emit setCurrentPlugin( this );
+ 
+ 	fprintf( stderr, "Tuning to: %s / autocount: %lu\n", chan->name.latin1(), autocount );
+ 	QTime tm;
+ 	tm.start();
+-	if ( !d1 ) {
+-		for ( i=0; i<(int)dvb.count(); i++ ) {
+-			if ( !dvb.at(i)->canSource( chan ) )
+-				continue;
+-			if ( dvb.at(i)->isTuned() ) {
+-				if ( dvb.at(i)->getCurrentTransponder()==chan->tp ) {
+-					d1 = dvb.at(i);
+-					break;
+-				}
+-				else d2 = dvb.at(i);
+-			}
+-			else {
+-				d1 = dvb.at(i);
+-				break;
+-			}
+-		}
+-		if ( !d1 && d2 )
+-			d1 = d2;
+-	}
+ 
+-	if ( !d1 ) {
++	if ( !d ) {
+ 		emit dvbStop();
+ 		isTuning = false;
+ 		return;
+ 	}
+ 
+-	int ret = d1->goLive( chan, currentFifo );
++	int ret = d->goLive( chan, currentFifo, dvbConfig->ringBufSize );
+ 
+ 	switch ( ret ) {
+ 		case DvbStream::ErrIsRecording :
+@@ -2053,7 +2041,7 @@
+ 			resetSearch();
+ 		}
+ 
+-		if ( d1->liveIsRecording() )
++		if ( d->liveIsRecording() )
+ 			recordBtn->setOn( true );
+ 		else
+ 			recordBtn->setOn( false );
+@@ -2263,6 +2251,8 @@
+ 				case 67 : chan->tp.coderateH = FEC_6_7; break;
+ 				case 78 : chan->tp.coderateH = FEC_7_8; break;
+ 				case 89 : chan->tp.coderateH = FEC_8_9; break;
++				case 35 : chan->tp.coderateH = FEC_3_5; break;
++				case 910 : chan->tp.coderateH = FEC_9_10; break;
+ 				case -1 : chan->tp.coderateH = FEC_AUTO;
+ 			}
+ 			s = s.right( s.length()-pos-1 );
+@@ -2283,6 +2273,9 @@
+ 				case 256 : chan->tp.modulation = QAM_256; break;
+ 				case 108 : chan->tp.modulation = VSB_8; break;
+ 				case 116 : chan->tp.modulation = VSB_16; break;
++				case 1000 : chan->tp.modulation = PSK_8; break;
++				case 1001 : chan->tp.modulation = APSK_16; break;
++				case 1003 : chan->tp.modulation = DQPSK; break;
+ 				case -1 : chan->tp.modulation = QAM_AUTO;
+ 			}
+ 			s = s.right( s.length()-pos-1 );
+@@ -2297,6 +2290,8 @@
+ 				case 67 : chan->tp.coderateL = FEC_6_7; break;
+ 				case 78 : chan->tp.coderateL = FEC_7_8; break;
+ 				case 89 : chan->tp.coderateL = FEC_8_9; break;
++				case 35 : chan->tp.coderateH = FEC_3_5; break;
++				case 910 : chan->tp.coderateH = FEC_9_10; break;
+ 				case -1 : chan->tp.coderateL = FEC_AUTO;
+ 			}
+ 			s = s.right( s.length()-pos-1 );
+@@ -2364,6 +2359,17 @@
+ 			s = s.right( s.length()-pos-1 );
+ 			pos = s.find("|");
+ 			chan->tp.nid = s.left(pos).toUShort();
++			s = s.right( s.length()-pos-1 );
++			pos = s.find("|");
++			switch ( s.left(pos).toInt() ) {
++				case 20 : chan->tp.rolloff = ROLLOFF_20; break;
++				case 25 : chan->tp.rolloff = ROLLOFF_25; break;
++				case 35 : chan->tp.rolloff = ROLLOFF_35; break;
++				case -1 : chan->tp.rolloff = ROLLOFF_AUTO;
++			}
++			s = s.right( s.length()-pos-1 );
++			pos = s.find("|");
++			chan->tp.S2 = s.left(pos).toInt();
+ 
+ 			if ( chan->tp.source.isEmpty() ) {
+ 				delete chan;
+@@ -2475,6 +2481,8 @@
+ 				case FEC_6_7 : tt<< "67|"; break;
+ 				case FEC_7_8 : tt<< "78|"; break;
+ 				case FEC_8_9 : tt<< "89|"; break;
++				case FEC_3_5 : tt<< "35|"; break;
++				case FEC_9_10 : tt<< "910|"; break;
+ 				case FEC_AUTO : tt<< "-1|";
+ 			}
+ 			switch ( chan->tp.inversion ) {
+@@ -2491,6 +2499,9 @@
+ 				case QAM_256 : tt<< "256|"; break;
+ 				case VSB_8 : tt<< "108|"; break;
+ 				case VSB_16 : tt<< "116|"; break;
++				case PSK_8 : tt<< "1000|"; break;
++				case APSK_16 : tt<< "1001|"; break;
++				case DQPSK : tt<< "1003|"; break;
+ 				case QAM_AUTO : tt<< "-1|";
+ 			}
+ 			switch ( chan->tp.coderateL ) {
+@@ -2503,6 +2514,8 @@
+ 				case FEC_6_7 : tt<< "67|"; break;
+ 				case FEC_7_8 : tt<< "78|"; break;
+ 				case FEC_8_9 : tt<< "89|"; break;
++				case FEC_3_5 : tt<< "35|"; break;
++				case FEC_9_10 : tt<< "910|"; break;
+ 				case FEC_AUTO : tt<< "-1|";
+ 			}
+ 			switch ( chan->tp.bandwidth ) {
+@@ -2541,7 +2554,15 @@
+ 			}
+ 			tt<< "|";
+ 			tt<< chan->category+"|";
+-			tt<< s.setNum(chan->tp.nid)+"|\n";
++			tt<< s.setNum(chan->tp.nid)+"|";
++			switch ( chan->tp.rolloff ) {
++				case ROLLOFF_20 : tt<< "20|"; break;
++				case ROLLOFF_25 : tt<< "25|"; break;
++				case ROLLOFF_35 : tt<< "35|"; break;
++				case ROLLOFF_AUTO : tt<< "-1|";
++			}
++			tt<< s.setNum(chan->tp.S2)+"|";
++			tt<< "\n";
+ 		}
+ 		ret = true;
+ 		f.close();

@@ -1,0 +1,187 @@
+diff -Nur libmovtar-0.1.3-old/rtjpeg/format.c libmovtar-0.1.3/rtjpeg/format.c
+--- libmovtar-0.1.3-old/rtjpeg/format.c	2008-04-04 17:03:55.000000000 +0300
++++ libmovtar-0.1.3/rtjpeg/format.c	2008-04-04 17:07:29.000000000 +0300
+@@ -28,7 +28,7 @@
+         ((unsigned long)(a) >>24) )
+ 
+ 
+-const static __u8 *__rtj_magic = "RTJPEG20";
++const static uint8_t *__rtj_magic = "RTJPEG20";
+ 
+ void rtj_init_header( struct rtj_header *hdr )
+ {
+@@ -47,9 +47,9 @@
+ 
+ #else /* little-endian */
+ 
+-  __u32 packbuffer[132];
++  uint32_t packbuffer[132];
+   int i = 2;
+-  __u32 *ptr2pack = (__u32*) hdr;
++  uint32_t *ptr2pack = (uint32_t*) hdr;
+   
+   /* copy ident, it is already correctly packed */
+   memcpy( packbuffer, ptr2pack, 8 );
+@@ -81,8 +81,8 @@
+ 
+   int tmp;
+ 
+-  __u32 *trgptr = (__u32*) hdr;
+-  __u32 *endptr;
++  uint32_t *trgptr = (uint32_t*) hdr;
++  uint32_t *endptr;
+   
+   long pos = ftell(f);
+   
+@@ -98,7 +98,7 @@
+   trgptr += 2; /* skip desc */
+ 
+   while ( trgptr != endptr ) {
+-    __u32 tmp = SWAP_WORD( *trgptr ); /* unpack header */
++    uint32_t tmp = SWAP_WORD( *trgptr ); /* unpack header */
+     *trgptr = tmp;
+     trgptr++;
+   }
+diff -Nur libmovtar-0.1.3-old/rtjpeg/format.h libmovtar-0.1.3/rtjpeg/format.h
+--- libmovtar-0.1.3-old/rtjpeg/format.h	2008-04-04 17:03:55.000000000 +0300
++++ libmovtar-0.1.3/rtjpeg/format.h	2008-04-04 17:07:29.000000000 +0300
+@@ -39,10 +39,10 @@
+ #define RTJ_TBLSIZE 128
+ 
+ struct rtj_header {
+-  __u8 desc[8]; /* RTJPEG20 */
+-  __u32 width;
+-  __u32 height;
+-  __u32 tbls[RTJ_TBLSIZE];
++  uint8_t desc[8]; /* RTJPEG20 */
++  uint32_t width;
++  uint32_t height;
++  uint32_t tbls[RTJ_TBLSIZE];
+ };
+ 
+ 
+diff -Nur libmovtar-0.1.3-old/rtjpeg/pnm2rtj.c libmovtar-0.1.3/rtjpeg/pnm2rtj.c
+--- libmovtar-0.1.3-old/rtjpeg/pnm2rtj.c	2008-04-04 17:03:55.000000000 +0300
++++ libmovtar-0.1.3/rtjpeg/pnm2rtj.c	2008-04-04 17:07:29.000000000 +0300
+@@ -35,8 +35,8 @@
+   unsigned char *in_rgb, *buf, *rgb;
+   struct rtj_header hdr;
+   char t[256];
+-  __s8 *strm;
+-  __u8 Q;
++  int8_t *strm;
++  uint8_t Q;
+  
+   if(argc!=3)
+     {
+diff -Nur libmovtar-0.1.3-old/rtjpeg/README libmovtar-0.1.3/rtjpeg/README
+--- libmovtar-0.1.3-old/rtjpeg/README	2008-04-04 17:03:55.000000000 +0300
++++ libmovtar-0.1.3/rtjpeg/README	2008-04-04 17:07:29.000000000 +0300
+@@ -82,7 +82,7 @@
+ =================
+ (some functions may not yet be implemented for all module types)
+ 
+-extern void RTjpeg_init_Q(__u8 Q);
++extern void RTjpeg_init_Q(uint8_t Q);
+ ----------------------------------
+ Change the quality factor for future compressions/decompressions to Q.
+ Q=255 ==> IJG jpeg 75% (max)
+@@ -90,7 +90,7 @@
+ Q=32 (min usable)
+ Q=1 (abstract art)
+ 
+-extern void RTjpeg_init_compress(__u32 *buf, int width, int height, __u8 Q);
++extern void RTjpeg_init_compress(uint32_t *buf, int width, int height, uint8_t Q);
+ ----------------------------------------------------------------------------
+ Initialise the compressor.
+   *buf is a pointer to 128 ints.  The de-quantizer values are stored in this
+@@ -100,13 +100,13 @@
+   height is the height of the Y component of the image.
+   Q is the quality factor (see above)
+ 
+-extern void RTjpeg_init_decompress(__u32 *buf, int width, int height);
++extern void RTjpeg_init_decompress(uint32_t *buf, int width, int height);
+ ----------------------------------------------------------------------
+ Initialise decompressor (and color convertor).
+   *buf is a pointer to the 128 ints produced by init_compress.
+   width and height, as before.
+ 
+-extern int RTjpeg_compress(__s8 *sp, unsigned char *bp);
++extern int RTjpeg_compress(int8_t *sp, unsigned char *bp);
+ --------------------------------------------------------
+ Compress the image.
+   *sp is a pointer to the output data (for safety, this buffer should be as 
+@@ -114,7 +114,7 @@
+   *bp is a pointer to the input data (YUV420P format).
+   RETURN: the number of bytes actually used for the output stream.
+ 
+-extern void RTjpeg_decompress(__s8 *sp, __u8 *bp);
++extern void RTjpeg_decompress(int8_t *sp, uint8_t *bp);
+ --------------------------------------------------
+ Decompress the image.
+   as before (no RETURN).
+@@ -123,7 +123,7 @@
+ ----------------------------------------
+ Initialise interframe compression.
+ 
+-extern int RTjpeg_mcompress(__s8 *sp, unsigned char *bp, __u16 lmask, __u16 cmask);
++extern int RTjpeg_mcompress(int8_t *sp, unsigned char *bp, uint16_t lmask, uint16_t cmask);
+ -----------------------------------------------------------------------------------
+ Perform interframe compression.
+  *sp, *bp as for compress
+@@ -141,32 +141,32 @@
+ test multiple compression factors for compressed block size. Remember to
+ call mcompress with test mode = 0 BEFORE transmitting an encoded block.)
+ 
+-extern void RTjpeg_yuvrgb(__u8 *buf, __u8 *rgb);
++extern void RTjpeg_yuvrgb(uint8_t *buf, uint8_t *rgb);
+ ------------------------------------------------
+ Convert decompressed YUV420P data to RGB data
+   *buf pointer to YUV420P data
+   *rgb pointer to RGB data
+ 
+-extern void RTjpeg_yuvrgb32(__u8 *buf, __u8 *rgb);
++extern void RTjpeg_yuvrgb32(uint8_t *buf, uint8_t *rgb);
+ --------------------------------------------------
+ convert to RGB32 data (display order)
+ 
+-extern void RTjpeg_yuvrgb24(__u8 *buf, __u8 *rgb);
++extern void RTjpeg_yuvrgb24(uint8_t *buf, uint8_t *rgb);
+ --------------------------------------------------
+ convert to RGB24 (display order)
+ 
+-extern void RTjpeg_yuvrgb16(__u8 *buf, __u8 *rgb);
++extern void RTjpeg_yuvrgb16(uint8_t *buf, uint8_t *rgb);
+ --------------------------------------------------
+ convert to RGB 565
+ 
+-extern void RTjpeg_yuvrgb8(__u8 *buf, __u8 *rgb);
++extern void RTjpeg_yuvrgb8(uint8_t *buf, uint8_t *rgb);
+ -------------------------------------------------
+ convert to grey-scale (grin)
+ 
+-extern void RTjpeg_double32(__u32 *buf);
+-extern void RTjpeg_double24(__u8 *buf);
+-extern void RTjpeg_double16(__u16 *buf);
+-extern void RTjpeg_double8(__u8 *buf);
++extern void RTjpeg_double32(uint32_t *buf);
++extern void RTjpeg_double24(uint8_t *buf);
++extern void RTjpeg_double16(uint16_t *buf);
++extern void RTjpeg_double8(uint8_t *buf);
+ --------------------------------------
+ convert the image pointed to by *buf to double size (size is determined by
+ with and height from init_decompress).
+diff -Nur libmovtar-0.1.3-old/rtjpeg/rtjshow.c libmovtar-0.1.3/rtjpeg/rtjshow.c
+--- libmovtar-0.1.3-old/rtjpeg/rtjshow.c	2008-04-04 17:03:55.000000000 +0300
++++ libmovtar-0.1.3/rtjpeg/rtjshow.c	2008-04-04 17:07:29.000000000 +0300
+@@ -56,8 +56,8 @@
+   FILE* f;
+   struct stat st;
+   struct rtj_header hdr;
+-  __u8 *source;
+-  __u8 *target;
++  uint8_t *source;
++  uint8_t *target;
+   
+   if ( argc != 2 ) {
+     print_help();

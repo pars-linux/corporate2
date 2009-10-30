@@ -1,0 +1,54 @@
+diff -Naur smile/mainfrm.cpp smile_patched/mainfrm.cpp
+--- smile/mainfrm.cpp	2008-11-13 17:58:40.000000000 +0200
++++ smile_patched/mainfrm.cpp	2009-01-07 00:41:30.000000000 +0200
+@@ -175,19 +175,21 @@
+ 
+ mainfrm::mainfrm(QWidget *parent) : QMainWindow(parent)
+ {
++    applicationDirPath = "/usr/share/smile";
++
+ 	qDebug() << "LOCALE : " << QLocale::system().name().left(2);
+ 	if ( QLocale::system().name().left(2) != "fr" )
+ 	{
+ 		QString wlpack = QLocale::system().name();
+ 		qDebug() << "LOADING LANGUAGE ... smile_" + wlpack.left(2);
+ 		QTranslator *qtTranslator = new QTranslator(this);
+-		if (qtTranslator->load("smile_" + wlpack.left(2), qApp->applicationDirPath()) == true )
++		if (qtTranslator->load("smile_" + wlpack.left(2), applicationDirPath) == true )
+ 		{
+ 			qApp->installTranslator(qtTranslator);
+ 		}
+ 		else
+ 		{
+-			if (qtTranslator->load("smile_en", qApp->applicationDirPath()) == true )
++			if (qtTranslator->load("smile_en", applicationDirPath) == true )
+ 			{
+ 				qApp->installTranslator(qtTranslator);
+ 			}
+@@ -1331,13 +1333,13 @@
+ 				program = "xcopy";
+ 				arguments << "/e";
+ 				arguments << "/s";
+-				arguments << QApplication::applicationDirPath() + "\BIB_ManSlide\\";
++				arguments << applicationDirPath + "\BIB_ManSlide\\";
+ 				arguments << tempfolder->text();
+ 			#else
+ 				program = "cp";
+ 				arguments << "-r";
+ 				arguments << "-f";
+-				arguments << QApplication::applicationDirPath() + "/BIB_ManSlide/";
++				arguments << applicationDirPath + "/BIB_ManSlide/";
+ 				arguments << tempfolder->text();
+ 			#endif
+ 			ispreview = 4;
+diff -Naur smile/mainfrm.h smile_patched/mainfrm.h
+--- smile/mainfrm.h	2008-11-13 17:58:40.000000000 +0200
++++ smile_patched/mainfrm.h	2009-01-07 00:38:57.000000000 +0200
+@@ -66,6 +66,7 @@
+ 		QString table_transitions[50];
+ 		QImage table_image_transition[50];
+ 		QImage table_preview_transition[130];
++        QString applicationDirPath;
+ 		QString wgcpast;
+ 		QString wpathprojet;
+ 		QString outfilename;

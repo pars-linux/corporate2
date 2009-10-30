@@ -1,0 +1,28 @@
+diff -Naur ardour-2.8.2-orig/SConstruct ardour-2.8.2/SConstruct
+--- ardour-2.8.2-orig/SConstruct	2009-09-18 11:20:57.857414498 +0300
++++ ardour-2.8.2/SConstruct	2009-09-18 11:22:29.788332958 +0300
+@@ -33,6 +33,7 @@
+ opts.AddOptions(
+     ('ARCH', 'Set architecture-specific compilation flags by hand (all flags as 1 argument)',''),
+     ('CFLAGS', 'Set custom CFLAGS',''),
++    ('LDFLAGS', 'Set custom LDFLAGS',''),
+     ('WINDOWS_KEY', 'Set X Modifier (Mod1,Mod2,Mod3,Mod4,Mod5) for "Windows" key', 'Mod4><Super'),
+     BoolOption('AUDIOUNITS', 'Compile with Apple\'s AudioUnit library. (experimental)', 0),
+     BoolOption('COREAUDIO', 'Compile with Apple\'s CoreAudio library', 0),
+@@ -82,6 +83,7 @@
+             self.Append (CPPPATH = other.get('CPPPATH', []))
+             self.Append (LINKFLAGS = other.get('LINKFLAGS', []))
+             self.Append (CCFLAGS = other.get('CCFLAGS', []))
++            self.Append (LDCFLAGS = other.get('LDCFLAGS', []))
+ 	self.Replace(LIBPATH = list(Set(self.get('LIBPATH', []))))
+ 	self.Replace(CPPPATH = list(Set(self.get('CPPPATH',[]))))
+         #doing LINKFLAGS breaks -framework
+@@ -806,6 +808,8 @@
+         "-pipe"
+     ]
+ 
++if env['LDFLAGS'] != '':
++    env.Append(LINKFLAGS=" ".join (env['LDFLAGS'].split()))
+ 
+ if env['DEBUG'] == 1:
+     env.Append(CCFLAGS=" ".join (debug_flags))

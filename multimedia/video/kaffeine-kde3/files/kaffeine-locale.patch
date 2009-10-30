@@ -1,0 +1,53 @@
+--- kaffeine/src/player-parts/xine-part/kxinewidget.cpp	2006-11-27 11:40:42.304266049 +0200
++++ kaffeine/src/player-parts/xine-part/kxinewidget.cpp	2006-11-27 11:48:11.622719702 +0200
+@@ -34,6 +34,7 @@
+ 
+ #include <xine/xineutils.h>
+ 
++#include <locale.h>
+ #include <cmath>
+ 
+ #include "kxinewidget.h"
+@@ -1107,6 +1108,9 @@
+ 
+ 	/** set xine parameters **/
+ 
++    char *locale_data = setlocale( LC_CTYPE, "");
++    setlocale( LC_CTYPE, "C" );
++
+ 	const char* const* drivers = NULL;
+ 	drivers = xine_list_audio_output_plugins(m_xineEngine);
+ 	int i = 0;
+@@ -1211,6 +1215,7 @@
+ 	if (!m_videoDriver)
+ 	{
+ 		emit signalXineFatal(i18n("All Video Drivers failed to initialize!"));
++        setlocale( LC_CTYPE, locale_data );
+ 		return false;
+ 	}
+ 
+@@ -1229,6 +1234,7 @@
+ 	if (!m_audioDriver)
+ 	{
+ 		emit signalXineFatal(i18n("All Audio Drivers failed to initialize!"));
++        setlocale( LC_CTYPE, locale_data );
+ 		return false;
+ 	}
+ 
+@@ -1238,6 +1244,7 @@
+ 	if (!m_xineStream)
+ 	{
+ 		emit signalXineFatal(i18n("Can't create a new xine Stream!"));
++        setlocale( LC_CTYPE, locale_data );
+ 		return false;
+ 	}
+ 
+@@ -1270,6 +1277,8 @@
+ 	emit signalXineStatus(i18n("Ready"));
+ 	emit signalXineReady();
+ 
++    setlocale( LC_CTYPE, locale_data );
++
+ 	/** something to play? **/
+ 	slotPlay();
+ 

@@ -1,0 +1,27 @@
+
+# HG changeset patch
+# User hans@rhel5-devel.localdomain
+# Date 1255248957 -7200
+# Node ID c195169e4df1b7e05bf1783ea04d911b6a2ccf9b
+# Parent  40cd939a9b2f9fe575cec6829208373e0e70de2f
+libv4l: Fix a bug in sw autogain for cams whose exposure minimum != 0
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+libv4l: Fix a bug in sw autogain for cams whose exposure minimum != 0
+
+Priority: normal
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+
+--- a/v4l2-apps/libv4l/libv4lconvert/processing/autogain.c	Fri Oct 09 10:53:28 2009 +0200
++++ b/v4l2-apps/libv4l/libv4lconvert/processing/autogain.c	Sun Oct 11 10:15:57 2009 +0200
+@@ -65,6 +65,7 @@
+   /* If we have a fine grained exposure control only avoid the last 10 steps */
+   if (exposure_low > 10)
+     exposure_low = 10;
++  exposure_low += expoctrl.minimum;
+ 
+   ctrl.id = V4L2_CID_GAIN;
+   gainctrl.id = V4L2_CID_GAIN;
+

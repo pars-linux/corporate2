@@ -1,0 +1,240 @@
+
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!-- ViewVC :: http://www.viewvc.org/ -->
+<head>
+<title>[pkgs] View of /rpms/dvgrab/devel/dvgrab-3.4-set-proper-retval-on-failure.patch</title>
+<meta name="generator" content="ViewVC 1.0.7" />
+<link rel="stylesheet" href="/viewvc-static/styles.css" type="text/css" />
+
+</head>
+<body>
+<div class="vc_navheader">
+
+<form method="get" action="/viewvc/">
+
+<table style="padding:0.1em;">
+<tr>
+<td>
+<strong>
+
+<a href="/viewvc/">
+
+[pkgs]</a>
+/
+
+<a href="/viewvc/rpms/">
+
+rpms</a>
+/
+
+<a href="/viewvc/rpms/dvgrab/">
+
+dvgrab</a>
+/
+
+<a href="/viewvc/rpms/dvgrab/devel/">
+
+devel</a>
+/
+
+<a href="/viewvc/rpms/dvgrab/devel/dvgrab-3.4-set-proper-retval-on-failure.patch?view=log">
+
+dvgrab-3.4-set-proper-retval-on-failure.patch</a>
+
+
+</strong>
+
+</td>
+<td style="text-align:right;">
+
+
+<strong>Repository:</strong>
+<select name="root" onchange="submit()">
+
+
+<option value="*viewroots*">Repository Listing</option>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<optgroup label="CVS Repositories"><option>core</option><option>dirsec</option><option>docs</option><option>elvis</option><option>extras</option><option>fedora</option><option>l10n</option><option>legacy</option><option selected="selected">pkgs</option></optgroup>
+
+
+</select>
+<input type="submit" value="Go" />
+
+</td>
+</tr>
+</table>
+
+</form>
+
+</div>
+<div style="float: right; padding: 5px;"><a href="http://www.viewvc.org/"><img src="/viewvc-static/images/logo.png" alt="ViewVC logotype" width="128" height="48" /></a></div>
+<h1>View of /rpms/dvgrab/devel/dvgrab-3.4-set-proper-retval-on-failure.patch</h1>
+
+<p style="margin:0;">
+
+<a href="/viewvc/rpms/dvgrab/devel/"><img src="/viewvc-static/images/back_small.png" width="16" height="16" alt="Parent Directory" /> Parent Directory</a>
+
+| <a href="/viewvc/rpms/dvgrab/devel/dvgrab-3.4-set-proper-retval-on-failure.patch?view=log#rev1.1"><img src="/viewvc-static/images/log.png" width="16" height="16" alt="Revision Log" /> Revision Log</a>
+
+
+
+
+</p>
+
+<hr />
+<div class="vc_summary">
+Revision <strong>1.1</strong> -
+(<a href="/viewvc/rpms/dvgrab/devel/dvgrab-3.4-set-proper-retval-on-failure.patch?revision=1.1"><strong>download</strong></a>)
+
+(<a href="/viewvc/rpms/dvgrab/devel/dvgrab-3.4-set-proper-retval-on-failure.patch?annotate=1.1"><strong>annotate</strong></a>)
+
+<br /><em>Thu Mar 19 20:26:04 2009 UTC</em>
+(6 weeks, 1 day ago)
+by <em>jwilson</em>
+
+
+<br />Branch: <strong>MAIN</strong>
+
+
+<br />CVS Tags: <strong>F-11-split, dvgrab-3_4-2_fc11, HEAD</strong>
+
+
+
+
+
+
+
+
+<pre class="vc_log">* Thu Mar 19 2009 Jarod Wilson &lt;<a href="mailto:jarod&#64;redhat.com">jarod&#64;redhat.com</a>&gt; - 3.4-2
+- Set retval to 1 if we get an error, to make life easier for folks
+  who wrap dvgrab to tell if something went wrong (#486061).
+</pre>
+
+</div>
+<div id="vc_markup"><pre>Set retval to 1 if we get an error, to make life easier for folks
+who wrap dvgrab to tell if something went wrong (rhbz #486061).
+
+Signed-off-by: Jarod Wilson &lt;<a href="mailto:jarod&#64;redhat.com">jarod&#64;redhat.com</a>&gt;
+
+--- dvgrab-3.4/main.cc.orig	2009-03-19 16:12:55.417171454 -0400
++++ dvgrab-3.4/main.cc	2009-03-19 16:12:22.321109256 -0400
+@@ -93,6 +93,8 @@ int rt_raisepri (int pri)
+ 
+ int main( int argc, char *argv[] )
+ {
++	int ret = 0;
++
+ 	fcntl( fileno( stderr ), F_SETFL, O_NONBLOCK );
+ 	try
+ 	{
+@@ -137,13 +139,15 @@ int main( int argc, char *argv[] )
+ 	{
+ 		fprintf( stderr, "Error: %s\n", s.c_str() );
+ 		fflush( stderr );
++		ret = 1;
+ 	}
+ 	catch ( ... )
+ 	{
+ 		fprintf( stderr, "Error: unknown\n" );
+ 		fflush( stderr );
++		ret = 1;
+ 	}
+ 
+ 	fprintf( stderr, "\n" );
+-	return 0;
++	return ret;
+ }
+</pre></div>
+
+<hr />
+<table>
+<tr>
+<td><address><a href="mailto:webmaster@fedoraproject.org">webmaster@fedoraproject.org</a></address></td>
+<td style="text-align: right;"><strong><a href="/viewvc-static/help_rootview.html">ViewVC Help</a></strong></td>
+</tr>
+<tr>
+<td>Powered by <a href="http://viewvc.tigris.org/">ViewVC 1.0.7</a></td>
+<td style="text-align: right;">&nbsp;</td>
+</tr>
+</table>
+</body>
+</html>
+

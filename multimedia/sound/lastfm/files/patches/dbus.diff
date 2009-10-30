@@ -1,0 +1,177 @@
+--- src/container.cpp
++++ src/container.cpp
+@@ -55,6 +55,7 @@
+ #include "volumeslider.h"
+ #include "WebService.h"
+ #include "WebService/Request.h"
++#include "dbusinterface.h"
+ 
+ #include <QShortcut>
+ #include <QLabel>
+@@ -94,6 +95,11 @@
+     applyMenuTweaks();
+     setupConnections();
+     restoreState();
++
++#ifdef LINUX
++    m_dbusInterface = new DBusInterface();
++#endif
++
+ }
+ 
+ 
+@@ -1758,7 +1764,8 @@
+         case Event::TrackMetaDataAvailable:
+         {
+             MetaData metadata = data.value<MetaData>();
+-
++ 
++            m_dbusInterface->setNewSong(metadata);
+             updateWindowTitle( metadata );
+             ui.metaDataWidget->setTrackMetaData( metadata );
+ 
+--- src/container.h	2008-06-18 14:46:56.000000000 +0300
++++ src/container.h	2008-08-18 07:07:34.000000000 +0300
+@@ -115,6 +115,10 @@
+         QStyle* m_styleOverrides;
+         #endif
+ 
++#ifdef LINUX
++        class DBusInterface* m_dbusInterface;
++#endif
++
+     private slots:
+         void setupTrayIcon();
+         void about();
+--- src/src.pro
++++ src/src.pro
+@@ -10,6 +10,7 @@
+ unix {
+     # precompiled headers breaks icecream builds for some reason :(
+     system( test `ps aux | grep iceccd | wc -l` -gt 1 ): CONFIG -= precompile_header
++    CONFIG += qdbus
+ }
+ 
+ #universal binaries cannot be built from precompiled headers
+@@ -205,10 +206,12 @@
+              wizardshell_mac.ui
+ 
+     HEADERS += simplewizard_mac.h \
+-               winstyleoverrides.h
++               winstyleoverrides.h \
++               dbusinterface.h
+ 
+     SOURCES += simplewizard_mac.cpp \
+-               winstyleoverrides.cpp
++               winstyleoverrides.cpp \
++               dbusinterface.cpp
+ 
+     LIBS += -lmad -lfftw3f
+
+--- /dev/null
++++ src/dbusinterface.cpp	2007-06-24 19:52:23.000000000 -0700
+@@ -0,0 +1,51 @@
++/***************************************************************************
++ *   Copyright (C) 2007 by                                                 *
++ *      İsmail Dönmez <ismail@pardus.org.tr>                               *
++ *                                                                         *
++ *   This program is free software; you can redistribute it and/or modify  *
++ *   it under the terms of the GNU General Public License as published by  *
++ *   the Free Software Foundation; either version 2 of the License, or     *
++ *   (at your option) any later version.                                   *
++ *                                                                         *
++ *   This program is distributed in the hope that it will be useful,       *
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++ *   GNU General Public License for more details.                          *
++ *                                                                         *
++ *   You should have received a copy of the GNU General Public License     *
++ *   along with this program; if not, write to the                         *
++ *   Free Software Foundation, Inc.,                                       *
++ *   51 Franklin Steet, Fifth Floor, Boston, MA  02111-1307, USA.          *
++ ***************************************************************************/
++
++#include <QtDBus/QtDBus>
++
++#include "dbusinterface.h"
++
++DBusInterface::DBusInterface()
++{
++  QDBusConnection::sessionBus().registerService("com.lastfm.DBusInterface");
++  QDBusConnection::sessionBus().registerObject("/", this, QDBusConnection::ExportAllSlots);
++}
++
++void DBusInterface::setNewSong(const MetaData& metaData )
++{
++  m_artist = metaData.artist();
++  m_album  = metaData.album();
++  m_track  = metaData.track();
++}
++
++QString DBusInterface::currentArtist()
++{
++  return m_artist;
++}
++
++QString DBusInterface::currentAlbum()
++{
++  return m_album;
++}
++
++QString DBusInterface::currentTrack()
++{
++  return m_track;
++}
+
+--- /dev/null
++++ src/dbusinterface.h	2007-06-24 19:30:06.000000000 -0700
+@@ -0,0 +1,49 @@
++/***************************************************************************
++ *   Copyright (C) 2007 by                                                 *
++ *      İsmail Dönmez <ismail@pardus.org.tr>                               *
++ *                                                                         *
++ *   This program is free software; you can redistribute it and/or modify  *
++ *   it under the terms of the GNU General Public License as published by  *
++ *   the Free Software Foundation; either version 2 of the License, or     *
++ *   (at your option) any later version.                                   *
++ *                                                                         *
++ *   This program is distributed in the hope that it will be useful,       *
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++ *   GNU General Public License for more details.                          *
++ *                                                                         *
++ *   You should have received a copy of the GNU General Public License     *
++ *   along with this program; if not, write to the                         *
++ *   Free Software Foundation, Inc.,                                       *
++ *   51 Franklin Steet, Fifth Floor, Boston, MA  02111-1307, USA.          *
++ ***************************************************************************/
++
++#ifndef DBUSINTERFACE_H
++#define DBUSINTERFACE_H
++
++#ifdef LINUX
++
++#include <QtCore/QObject>
++#include "metadata.h"
++
++class DBusInterface: public QObject
++{
++ Q_OBJECT
++
++ public:
++  DBusInterface();
++  void setNewSong(const MetaData& );
++
++ public slots:
++  Q_SCRIPTABLE QString currentArtist();
++  Q_SCRIPTABLE QString currentAlbum();
++  Q_SCRIPTABLE QString currentTrack();
++
++ private:
++  QString m_artist, m_album, m_track;
++
++};
++
++#endif // LINUX
++
++#endif // DBUSINTERFACE_H

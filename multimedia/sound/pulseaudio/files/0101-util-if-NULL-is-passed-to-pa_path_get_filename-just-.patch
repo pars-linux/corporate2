@@ -1,0 +1,40 @@
+From c7ec01326190a0bcdcca77307728a7dabb9fb1d2 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Sun, 19 Apr 2009 19:02:16 +0200
+Subject: [PATCH 101/127] util: if NULL is passed to pa_path_get_filename() just hand it through
+
+---
+ src/pulse/util.c |    3 ++-
+ src/pulse/util.h |    2 +-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/pulse/util.c b/src/pulse/util.c
+index 54a188d..6f1e40a 100644
+--- a/src/pulse/util.c
++++ b/src/pulse/util.c
+@@ -219,7 +219,8 @@ char *pa_get_binary_name(char *s, size_t l) {
+ char *pa_path_get_filename(const char *p) {
+     char *fn;
+ 
+-    pa_assert(p);
++    if (!p)
++        return NULL;
+ 
+     if ((fn = strrchr(p, PA_PATH_SEP_CHAR)))
+         return fn+1;
+diff --git a/src/pulse/util.h b/src/pulse/util.h
+index f6dd40c..ad85653 100644
+--- a/src/pulse/util.h
++++ b/src/pulse/util.h
+@@ -51,7 +51,7 @@ char *pa_get_home_dir(char *s, size_t l);
+ char *pa_get_binary_name(char *s, size_t l);
+ 
+ /** Return a pointer to the filename inside a path (which is the last
+- * component). */
++ * component). If passed NULL will return NULL. */
+ char *pa_path_get_filename(const char *p);
+ 
+ /** Wait t milliseconds */
+-- 
+1.6.3
+

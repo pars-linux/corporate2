@@ -1,0 +1,159 @@
+diff -u -N phonon-4.3.1/gstreamer/CMakeLists.txt phonon-4.3.1-new/gstreamer/CMakeLists.txt
+--- phonon-4.3.1/gstreamer/CMakeLists.txt	2009-02-27 07:15:42.000000000 -0300
++++ phonon-4.3.1-new/gstreamer/CMakeLists.txt	2009-03-18 10:55:58.000000000 -0300
+@@ -16,9 +16,22 @@
+ project(phonon-gstreamer)
+ include(ConfigureChecks.cmake)
+ 
++# configure plugin api
++
++set(USE_INSTALL_PLUGIN TRUE)
++
++if(USE_INSTALL_PLUGIN)
++    set(PLUGIN_INSTALL_API TRUE)
++endif(USE_INSTALL_PLUGIN)
++
++configure_file(phonon-config-gstreamer.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/phonon-config-gstreamer.h )
++
+ if (BUILD_PHONON_GSTREAMER)
+-   include_directories(${GSTREAMER_INCLUDE_DIR} ${GLIB2_INCLUDE_DIR}
+-      ${LIBXML2_INCLUDE_DIR})
++   include_directories(
++       ${CMAKE_CURRENT_BINARY_DIR}
++       ${GSTREAMER_INCLUDE_DIR} 
++       ${GLIB2_INCLUDE_DIR}
++       ${LIBXML2_INCLUDE_DIR})
+    add_definitions(-DPHONON_BACKEND_VERSION_4_2)
+ 
+    set(phonon_gstreamer_SRCS
+@@ -63,10 +76,14 @@
+       ${PHONON_LIBS} ${OPENGL_gl_LIBRARY}
+       ${GSTREAMER_LIBRARIES} ${GSTREAMER_BASE_LIBRARY} ${GSTREAMER_INTERFACE_LIBRARY}
+       ${GSTREAMER_PLUGIN_VIDEO_LIBRARIES} ${GSTREAMER_PLUGIN_AUDIO_LIBRARIES}
+-      ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES})
++      ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES}
++      )
+    if(ALSA_FOUND)
+       target_link_libraries(phonon_gstreamer ${ASOUND_LIBRARY})
+    endif(ALSA_FOUND)
++   if(USE_INSTALL_PLUGIN)
++       target_link_libraries(phonon_gstreamer ${GSTREAMER_PLUGIN_PBUTILS_LIBRARIES})
++   endif(USE_INSTALL_PLUGIN)
+ 
+    install(TARGETS phonon_gstreamer DESTINATION ${PLUGIN_INSTALL_DIR}/plugins/phonon_backend)
+    install(FILES gstreamer.desktop DESTINATION ${SERVICES_INSTALL_DIR}/phononbackends)
+Subdiretórios idênticos: phonon-4.3.1/gstreamer/gstreamer e phonon-4.3.1-new/gstreamer/gstreamer
+Subdiretórios idênticos: phonon-4.3.1/gstreamer/includes e phonon-4.3.1-new/gstreamer/includes
+Subdiretórios idênticos: phonon-4.3.1/gstreamer/lib e phonon-4.3.1-new/gstreamer/lib
+diff -u -N phonon-4.3.1/gstreamer/mediaobject.cpp phonon-4.3.1-new/gstreamer/mediaobject.cpp
+--- phonon-4.3.1/gstreamer/mediaobject.cpp	2009-03-18 11:42:42.000000000 -0300
++++ phonon-4.3.1-new/gstreamer/mediaobject.cpp	2009-03-18 11:39:00.000000000 -0300
+@@ -17,6 +17,7 @@
+ 
+ #include <cmath>
+ #include <gst/interfaces/propertyprobe.h>
++#include <gst/pbutils/install-plugins.h>
+ #include "common.h"
+ #include "mediaobject.h"
+ #include "videowidget.h"
+@@ -24,6 +25,7 @@
+ #include "backend.h"
+ #include "streamreader.h"
+ #include "phononsrc.h"
++#include "phonon-config-gstreamer.h"
+ 
+ #include <QtCore>
+ #include <QtCore/QTimer>
+@@ -136,6 +138,12 @@
+     return QString();
+ }
+ 
++void
++pluginInstallationDone( GstInstallPluginsReturn res, gpointer userData )
++{
++    // Nothing inside yet
++}
++
+ void MediaObject::saveState()
+ {
+     //Only first resumeState is respected
+@@ -193,15 +201,37 @@
+ void MediaObject::noMorePadsAvailable ()
+ {
+     if (m_missingCodecs.size() > 0) {
++
+         bool canPlay = (m_hasAudio || m_videoStreamFound);
+         Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
++#ifdef PLUGIN_INSTALL_API
++        GstInstallPluginsContext *ctx = gst_install_plugins_context_new ();
++        gchar *details[2];
++        details[0] = m_missingCodecs[0].toLocal8Bit().data();
++        details[1] = NULL;
++        GstInstallPluginsReturn status;
++        
++        status = gst_install_plugins_async( details, ctx, pluginInstallationDone, NULL );
++        gst_install_plugins_context_free ( ctx );
++
++        if ( status != GST_INSTALL_PLUGINS_STARTED_OK )
++        {
++            if( status == GST_INSTALL_PLUGINS_HELPER_MISSING )
++                setError(QString(tr("Missing codec helper script assistant.")), Phonon::FatalError );
++            else
++                setError(QString(tr("Plugin codec installation failed for codec: %0"))
++                        .arg(m_missingCodecs[0].split("|")[3]), error);
++        }
++        m_missingCodecs.clear();
++#else
++        QString codecs = m_missingCodecs.join(", ");
+         if (error == Phonon::NormalError && m_hasVideo && !m_videoStreamFound) {
+             m_hasVideo = false;
+             emit hasVideoChanged(false);
+         }
+-        QString codecs = m_missingCodecs.join(", ");
+         setError(QString(tr("A required codec is missing. You need to install the following codec(s) to play this content: %0")).arg(codecs), error);
+         m_missingCodecs.clear();
++#endif
+     }
+ }
+ 
+@@ -220,11 +250,12 @@
+ {
+     Q_UNUSED(decodebin);
+     Q_UNUSED(pad);
++	 
+     MediaObject *media = static_cast<MediaObject*>(data);
+     Q_ASSERT(media);
+ 
+     QString value = "unknown codec";
+-
++	 
+     // These functions require GStreamer > 0.10.12
+     static Ptr_gst_pb_utils_init p_gst_pb_utils_init = 0;
+     static Ptr_gst_pb_utils_get_codec_description p_gst_pb_utils_get_codec_description = 0;
+@@ -244,7 +275,16 @@
+         GstStructure *str = gst_caps_get_structure (caps, 0);
+         value = QString::fromUtf8(gst_structure_get_name (str));
+     }
+-    media->addMissingCodecName(value);
++
++#ifdef PLUGIN_INSTALL_API
++    QString plugins = QString("gstreamer|0.10|%0|%1|decoder-%2")
++        .arg( qApp->applicationName() )
++        .arg( value )
++        .arg( QString::fromUtf8(gst_caps_to_string (caps) ) );
++    media->addMissingCodecName( plugins );
++#else
++    media->addMissingCodecName( value );
++#endif
+ }
+ 
+ static void notifyVideoCaps(GObject *obj, GParamSpec *, gpointer data)
+Subdiretórios idênticos: phonon-4.3.1/gstreamer/phonon e phonon-4.3.1-new/gstreamer/phonon
+diff -u -N phonon-4.3.1/gstreamer/phonon-config-gstreamer.h.cmake phonon-4.3.1-new/gstreamer/phonon-config-gstreamer.h.cmake
+--- phonon-4.3.1/gstreamer/phonon-config-gstreamer.h.cmake	1969-12-31 21:00:00.000000000 -0300
++++ phonon-4.3.1-new/gstreamer/phonon-config-gstreamer.h.cmake	2009-03-18 10:30:50.000000000 -0300
+@@ -0,0 +1,4 @@
++/* GStreamer install plugin definitions */
++
++/* If api-plugin is defined */
++#cmakedefine PLUGIN_INSTALL_API 1

@@ -1,0 +1,163 @@
+diff --git a/gstreamer/audiooutput.cpp b/gstreamer/audiooutput.cpp
+index ea2569a..e468854 100644
+--- a/gstreamer/audiooutput.cpp
++++ b/gstreamer/audiooutput.cpp
+@@ -140,7 +140,10 @@ bool AudioOutput::setOutputDevice(int newDevice)
+         // Save previous state
+         GstState oldState = GST_STATE(m_audioSink);
+         const QByteArray oldDeviceValue = GstHelper::property(m_audioSink, "device");
+-        const QByteArray deviceId = deviceList.at(newDevice).gstId;
++        // Due to Pulseaudio related cosmetic hacks in devicemanager.cpp we have to fix up the "device"
++        const QByteArray deviceId = (deviceList.at(newDevice).gstId == "PulseAudio Sound Server"
++                                     ? "default"
++                                     : deviceList.at(newDevice).gstId);
+         m_device = newDevice;
+ 
+         // We test if the device can be opened by checking if it can go from NULL to READY state
+diff --git a/gstreamer/backend.cpp b/gstreamer/backend.cpp
+index 249815a..14488ab 100644
+--- a/gstreamer/backend.cpp
++++ b/gstreamer/backend.cpp
+@@ -277,7 +277,7 @@ QHash<QByteArray, QVariant> Backend::objectDescriptionProperties(ObjectDescripti
+             if (index >= 0 && index < audioDevices.size()) {
+                 ret.insert("name", audioDevices[index].gstId);
+                 ret.insert("description", audioDevices[index].description);
+-                ret.insert("icon", QLatin1String("audio-card"));
++                ret.insert("icon", audioDevices[index].icon);
+             }
+         }
+         break;
+diff --git a/gstreamer/devicemanager.cpp b/gstreamer/devicemanager.cpp
+index 02d76f5..57b89a8 100644
+--- a/gstreamer/devicemanager.cpp
++++ b/gstreamer/devicemanager.cpp
+@@ -16,6 +16,8 @@
+ */
+ 
+ #include <gst/interfaces/propertyprobe.h>
++#include <QSettings>
++#include <QCoreApplication>
+ #include "devicemanager.h"
+ #include "backend.h"
+ #include "gsthelper.h"
+@@ -47,9 +49,14 @@ AudioDevice::AudioDevice(DeviceManager *manager, const QByteArray &gstId)
+     //get an id
+     static int counter = 0;
+     id = counter++;
++    icon = "audio-card";
+     //get name from device
+     if (gstId == "default") {
+         description = "Default audio device";
++    } else if (gstId == "PulseAudio Sound Server") {
++        // Cosmetic hack 
++        description = QObject::tr("Pass all audio through the PulseAudio Sound Server.\n\nYou can use pavucontrol to adjust which audio device(s) streams use.").toUtf8();
++        icon = "audio-backend-pulseaudio";
+     } else {
+         GstElement *aSink= manager->createAudioSink();
+ 
+@@ -78,6 +85,13 @@ DeviceManager::DeviceManager(Backend *backend)
+     m_audioSink = qgetenv("PHONON_GST_AUDIOSINK");
+     if (m_audioSink.isEmpty()) {
+         m_audioSink = settings.value(QLatin1String("audiosink"), "Auto").toByteArray().toLower();
++        // Detect Pulse according to Mandriva config system so we can apply some cosmetic hacks
++        if (m_audioSink == "auto") {
++            QSettings pulseconf("/etc/conf.d/pulseaudio", QSettings::NativeFormat);
++            if (pulseconf.value( "PULSE_SERVER_TYPE", "None" ) == "personal") {
++                m_audioSink = "pulsesink";
++            }
++        }
+     }
+ 
+     m_videoSinkWidget = qgetenv("PHONON_GST_VIDEOMODE");
+@@ -308,8 +322,13 @@ void DeviceManager::updateDeviceList()
+     QList<QByteArray> list;
+ 
+     if (audioSink) {
+-        list = GstHelper::extractProperties(audioSink, "device");
+-        list.prepend("default");
++        if (m_audioSink == "pulsesink") {
++            // If we're using pulse, just hide all other devices.
++            list.append("PulseAudio Sound Server");
++        } else {
++            list = GstHelper::extractProperties(audioSink, "device");
++            list.prepend("default");
++        }
+ 
+         for (int i = 0 ; i < list.size() ; ++i) {
+             QByteArray gstId = list.at(i);
+diff --git a/gstreamer/devicemanager.h b/gstreamer/devicemanager.h
+index ca64909..4cc5508 100644
+--- a/gstreamer/devicemanager.h
++++ b/gstreamer/devicemanager.h
+@@ -42,6 +42,7 @@ public :
+     int id;
+     QByteArray gstId;
+     QByteArray description;
++    QString icon;
+ };
+ 
+ class DeviceManager : public QObject {
+diff --git a/xine/backend.cpp b/xine/backend.cpp
+index e1b4ea9..ec51c93 100644
+--- a/xine/backend.cpp
++++ b/xine/backend.cpp
+@@ -547,9 +547,11 @@ QHash<QByteArray, QVariant> Backend::audioOutputProperties(int audioDevice)
+             ret.insert("description", that->m_audioOutputInfos[i].description);
+ 
+             const QString iconName = that->m_audioOutputInfos[i].icon;
+-            if (!iconName.isEmpty()) {
++            if (!iconName.isEmpty())
++                ret.insert("icon", iconName);
++            else
+                 ret.insert("icon", QLatin1String("audio-card"));
+-            }
++
+             ret.insert("available", that->m_audioOutputInfos[i].available);
+ 
+             ret.insert("initialPreference", that->m_audioOutputInfos[i].initialPreference);
+@@ -609,6 +611,29 @@ void Backend::checkAudioOutputs()
+ 
+         // This will list the audio drivers, not the actual devices.
+         const char *const *outputPlugins = xine_list_audio_output_plugins(m_xine);
++
++        // Detect Pulse according to Mandriva config system so we can apply some cosmetic hacks
++        bool using_pulse = false;
++        QSettings pulseconf("/etc/conf.d/pulseaudio", QSettings::NativeFormat);
++        if (pulseconf.value( "PULSE_SERVER_TYPE", "None" ) == "personal")
++            using_pulse = true;
++
++        if (using_pulse) {
++            // Assume failure
++            using_pulse = false;
++            for (int i = 0; outputPlugins[i]; ++i) {
++                if (0 == strcmp(outputPlugins[i], "pulseaudio")) {
++                    // Yay!
++                    using_pulse = true;
++                    addAudioOutput(nextIndex++, 100, tr("PulseAudio"),
++                            xine_get_audio_driver_plugin_description(m_xine, outputPlugins[i]),
++                            /*icon name */"audio-backend-pulseaudio", outputPlugins[i]);
++                    // No need to check any more, so quit our loop.
++                    break;
++                }
++            }
++        }
++        if (!using_pulse)
+         for (int i = 0; outputPlugins[i]; ++i) {
+             debug() << Q_FUNC_INFO << "outputPlugin: " << outputPlugins[i];
+             if (0 == strcmp(outputPlugins[i], "alsa")) {
+@@ -643,14 +668,9 @@ void Backend::checkAudioOutputs()
+                             "work, and its design focuses on two key areas: synchronous "
+                             "execution of all clients, and low latency operation.</p></html>"),
+                             /*icon name */"audio-backend-jack", outputPlugins[i]);
+-            } else if (0 == strcmp(outputPlugins[i], "arts")) {
+-                addAudioOutput(nextIndex++, -100, tr("aRts"),
+-                        tr("<html><p>aRts is the old soundserver and media framework that was used "
+-                            "in KDE2 and KDE3. Its use is discuraged.</p></html>"),
+-                        /*icon name */"audio-backend-arts", outputPlugins[i]);
+             } else if (0 == strcmp(outputPlugins[i], "pulseaudio")) {
+                 addAudioOutput(nextIndex++, 10, tr("PulseAudio"),
+-                        xine_get_audio_driver_plugin_description(m_xine, outputPlugins[i]),
++                        tr("Pass all audio through the PulseAudio Sound Server.\n\nYou can use pavucontrol to adjust which audio device(s) streams use."),
+                         /*icon name */"audio-backend-pulseaudio", outputPlugins[i]);
+             } else if (0 == strcmp(outputPlugins[i], "esd")) {
+                 addAudioOutput(nextIndex++, 8, tr("Esound (ESD)"),
