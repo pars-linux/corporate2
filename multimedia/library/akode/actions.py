@@ -12,11 +12,11 @@ from pisi.actionsapi import kde
 def setup():
     kde.configure("--with-libsamplerate \
                    --with-alsa \
-                   --without-jack \
                    --with-flac \
                    --with-libmad \
                    --with-vorbis \
                    --with-speex \
+                   --without-jack \
                    --without-polypaudio")
 
 def build():
