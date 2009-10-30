@@ -1,0 +1,48 @@
+Index: playlist.cpp
+===================================================================
+--- juk/playlist.cpp	(revision 900000)
++++ juk/playlist.cpp	(revision 1031521)
+@@ -758,7 +758,7 @@
+ 	    kdDebug(65432) << "Error while trying to refresh the tag.  "
+ 			   << "This file has probably been removed."
+ 			   << endl;
+-	    delete (*it)->collectionItem();
++	    clearItem((*it)->collectionItem());
+ 	}
+ 
+ 	processEvents();
+Index: tagrenameroptions.cpp
+===================================================================
+--- juk/tagrenameroptions.cpp	(revision 900000)
++++ juk/tagrenameroptions.cpp	(revision 1031521)
+@@ -51,6 +51,8 @@
+     switch(category.category) {
+     case Title:
+     case Artist:
++    case Genre:
++    case Year:
+     case Album:
+     case Track:
+         disabled = false;
+Index: collectionlist.cpp
+===================================================================
+--- juk/collectionlist.cpp	(revision 900000)
++++ juk/collectionlist.cpp	(revision 1031521)
+@@ -164,7 +164,7 @@
+ 	    if(item->file().fileInfo().exists())
+ 		item->repaint();
+ 	    else
+-		delete item;
++		clearItem(item);
+ 	}
+     }
+ 
+@@ -472,7 +472,7 @@
+ 	it != m_children.end();
+ 	++it)
+     {
+-	delete *it;
++        (*it)->playlist()->clearItem(*it);
+     }
+ 
+     CollectionList *l = CollectionList::instance();

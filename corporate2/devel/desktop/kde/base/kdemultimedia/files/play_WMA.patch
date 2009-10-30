@@ -1,0 +1,79 @@
+diff -ur kdemultimedia-3.5.0.orig/juk/mediafiles.cpp kdemultimedia-3.5.0/juk/mediafiles.cpp
+--- kdemultimedia-3.5.0.orig/juk/mediafiles.cpp	2005-09-10 11:20:03.000000000 +0300
++++ kdemultimedia-3.5.0/juk/mediafiles.cpp	2005-12-23 02:23:54.000000000 +0200
+@@ -38,6 +38,7 @@
+     static const char flacType[] = "audio/x-flac";
+     static const char mpcType[]  = "audio/x-musepack";
+     static const char m3uType[]  = "audio/mpegurl";
++    static const char wmaType[] = "audio/x-ms-wma";
+ 
+     static const char vorbisType[]  = "audio/x-vorbis";
+     static const char oggflacType[] = "audio/x-oggflac";
+@@ -76,7 +77,7 @@
+ {
+     KMimeType::Ptr result = KMimeType::findByPath(fileName, 0, true);
+ 
+-    return result->is(mp3Type) || result->is(oggType) || result->is(flacType)
++    return result->is(mp3Type) || result->is(oggType) || result->is(flacType) || result->is(wmaType)
+ #ifdef TAGLIB_1_3
+                                || result->is(mpcType)
+ #endif
+@@ -125,11 +126,17 @@
+     return result->is(oggflacType);
+ }
+ 
++bool MediaFiles::isWMA(const QString &fileName)
++{
++    KMimeType::Ptr result = KMimeType::findByPath(fileName, 0, false);
++    return result->is(wmaType);
++}
++
+ QStringList MediaFiles::mimeTypes()
+ {
+     QStringList l;
+ 
+-    l << mp3Type << oggType << flacType << m3uType << vorbisType
++    l << mp3Type << oggType << flacType << m3uType << vorbisType << wmaType
+ #ifdef TAGLIB_1_2
+     << oggflacType
+ #endif
+diff -ur kdemultimedia-3.5.0.orig/juk/mediafiles.h kdemultimedia-3.5.0/juk/mediafiles.h
+--- kdemultimedia-3.5.0.orig/juk/mediafiles.h	2005-09-10 11:20:03.000000000 +0300
++++ kdemultimedia-3.5.0/juk/mediafiles.h	2005-12-23 02:23:54.000000000 +0200
+@@ -75,6 +75,11 @@
+     bool isOggFLAC(const QString &fileName);
+ 
+     /**
++     * Returns true if fileName is an WMA file.
++     */
++    bool isWMA(const QString &fileName);
++
++    /**
+      * Returns a list of absolute local filenames, mapped from \p urlList.
+      * Any URLs in urlList that aren't really local files will be stripped
+      * from the result (so result.size() may be < urlList.size()).
+diff -ur kdemultimedia-3.5.0.orig/juk/tag.cpp kdemultimedia-3.5.0/juk/tag.cpp
+--- kdemultimedia-3.5.0.orig/juk/tag.cpp	2005-09-10 11:20:03.000000000 +0300
++++ kdemultimedia-3.5.0/juk/tag.cpp	2005-12-23 02:24:27.000000000 +0200
+@@ -25,6 +25,8 @@
+ #include <taglib/xiphcomment.h>
+ #include <taglib/id3v2framefactory.h>
+ 
++#include <taglib/wmafile.h>
++
+ #if (TAGLIB_MAJOR_VERSION > 1) || \
+       ((TAGLIB_MAJOR_VERSION == 1) && (TAGLIB_MINOR_VERSION >= 2))
+ #include <taglib/oggflacfile.h>
+@@ -85,7 +87,11 @@
+         if(file.isValid())
+             setup(&file);
+     }
+-
++    else if(MediaFiles::isWMA(fileName)) {
++        TagLib::WMA::File file(QFile::encodeName(fileName).data());
++        if(file.isValid())
++            setup(&file);
++    }
+     else {
+         kdError(65432) << "Couldn't resolve the mime type of \"" <<
+             fileName << "\" -- this shouldn't happen." << endl;
