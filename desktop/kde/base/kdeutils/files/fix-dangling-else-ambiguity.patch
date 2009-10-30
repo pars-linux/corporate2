@@ -1,0 +1,20 @@
+Index: kdeutils-3.5.10/ark/arkwidget.cpp
+===================================================================
+--- kdeutils-3.5.10.orig/ark/arkwidget.cpp
++++ kdeutils-3.5.10/ark/arkwidget.cpp
+@@ -566,11 +566,15 @@ ArkWidget::addToArchive( const KURL::Lis
+ 
+         // TODO: remote Archives should be handled by createArchive
+         if ( archive.isLocalFile() )
++        {
+             if ( !createArchive( archive.path() ) )
+                  return false;
++        }
+         else
++        {
+             if ( !createArchive( tmpDir() + archive.fileName() ) )
+                  return false;
++        }
+     return true;
+ 
+     }
