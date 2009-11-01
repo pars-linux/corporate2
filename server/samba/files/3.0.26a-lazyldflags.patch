@@ -1,0 +1,27 @@
+Index: samba-3.3.9/source/Makefile.in
+===================================================================
+--- samba-3.3.9.orig/source/Makefile.in
++++ samba-3.3.9/source/Makefile.in
+@@ -121,6 +121,8 @@ DATADIR = @datadir@
+ INSTALLPERMS_BIN = 0755
+ INSTALLPERMS_DATA = 0644
+ 
++LAZYLDFLAGS=-Wl,-z,now
++
+ # set these to where to find various files
+ # These can be overridden by command line switches (see smbd(8))
+ # or in smb.conf (see smb.conf(5))
+@@ -1380,11 +1382,11 @@ bin/smbspool@EXEEXT@: $(BINARY_PREREQS) 
+ 
+ bin/mount.cifs@EXEEXT@: $(BINARY_PREREQS) $(CIFS_MOUNT_OBJ)
+ 	@echo Linking $@
+-	@$(CC) $(FLAGS) -o $@ $(CIFS_MOUNT_OBJ) $(DYNEXP) $(LDFLAGS)
++	@$(CC) $(FLAGS) -o $@ $(CIFS_MOUNT_OBJ) $(DYNEXP) $(LDFLAGS) $(POPT_LIBS) $(LAZYLDFLAGS)
+ 
+ bin/umount.cifs@EXEEXT@: $(BINARY_PREREQS) $(CIFS_UMOUNT_OBJ)
+ 	@echo Linking $@
+-	@$(CC) $(FLAGS) -o $@ $(CIFS_UMOUNT_OBJ) $(DYNEXP) $(LDFLAGS)
++	@$(CC) $(FLAGS) -o $@ $(CIFS_UMOUNT_OBJ) $(DYNEXP) $(LDFLAGS) $(POPT_LIBS) $(LAZYLDFLAGS)
+ 
+ bin/cifs.upcall@EXEEXT@: $(BINARY_PREREQS) $(CIFS_UPCALL_OBJ) $(LIBSMBCLIENT_OBJ1) @BUILD_POPT@ @LIBTALLOC_SHARED@ @LIBTDB_SHARED@ @LIBWBCLIENT_SHARED@
+ 	@echo Linking $@
