@@ -1,0 +1,36 @@
+diff -p -up ./db/sb.c.underlinking ./db/sb.c
+diff -p -up ./libxcmd/Makefile.underlinking ./libxcmd/Makefile
+--- ./libxcmd/Makefile.underlinking	2008-08-05 09:54:54.000000000 +0200
++++ ./libxcmd/Makefile	2008-08-05 09:55:15.000000000 +0200
+@@ -10,6 +10,8 @@ LT_CURRENT = 0
+ LT_REVISION = 0
+ LT_AGE = 0
+ 
++LTLIBS = $(LIBXFS)
++
+ CFILES = command.c input.c paths.c projects.c help.c quit.c
+ 
+ ifeq ($(HAVE_GETMNTENT),yes)
+diff -p -up ./libxfs/Makefile.underlinking ./libxfs/Makefile
+--- ./libxfs/Makefile.underlinking	2007-07-18 06:49:50.000000000 +0200
++++ ./libxfs/Makefile	2008-08-05 09:48:03.000000000 +0200
+@@ -31,6 +31,7 @@ LSRCFILES = $(shell echo $(PCFILES) | se
+ # -DXACT_DEBUG		transaction state changes
+ #
+ #LCFLAGS +=
++LTLIBS = $(LIBPTHREAD)
+ 
+ FCFLAGS = -I.
+ 
+diff -p -up ./libxlog/Makefile.underlinking ./libxlog/Makefile
+--- ./libxlog/Makefile.underlinking	2007-01-23 06:57:07.000000000 +0100
++++ ./libxlog/Makefile	2008-08-05 10:25:50.000000000 +0200
+@@ -9,6 +9,8 @@ LTLIBRARY = libxlog.la
+ LT_CURRENT = 0
+ LT_REVISION = 0
+ LT_AGE = 0
++LTLIBS = $(LIBXFS) $(LIBUUID) 
++LOADERFLAGS =  -Wl,--as-needed
+ 
+ CFILES = xfs_log_recover.c util.c
+ 
