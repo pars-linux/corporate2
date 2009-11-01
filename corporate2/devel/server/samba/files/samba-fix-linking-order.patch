@@ -1,0 +1,22 @@
+Index: samba-3.3.2/source/Makefile.in
+===================================================================
+--- samba-3.3.2/source/Makefile.in
++++ samba-3.3.2/source/Makefile.in	2009-03-28 00:15:53.000000000 +0200
+@@ -1345,7 +1345,7 @@
+ 
+ bin/rpcclient@EXEEXT@: $(BINARY_PREREQS) $(RPCCLIENT_OBJ) @BUILD_POPT@ @LIBTALLOC_SHARED@ @LIBTDB_SHARED@ @LIBWBCLIENT_SHARED@
+ 	@echo Linking $@
+-	@$(CC) $(FLAGS) -o $@ $(LDFLAGS) $(PASSDB_LIBS) $(RPCCLIENT_OBJ) \
++	@$(CC) $(FLAGS) -o $@ $(LDFLAGS) $(RPCCLIENT_OBJ) $(PASSDB_LIBS) \
+ 		$(DYNEXP) $(TERMLDFLAGS) $(TERMLIBS) $(LIBS) $(POPT_LIBS) \
+ 		$(KRB5LIBS) $(LDAP_LIBS) $(LIBTALLOC_LIBS) $(LIBTDB_LIBS) \
+ 		$(WINBIND_LIBS)
+@@ -1761,7 +1761,7 @@
+ 
+ $(LIBWBCLIENT_SHARED_TARGET_SONAME): $(BINARY_PREREQS) $(LIBWBCLIENT_OBJ) $(LIBWBCLIENT_SYMS) @LIBTALLOC_SHARED@
+ 	@echo Linking shared library $@
+-	@$(SHLD_DSO) $(LIBTALLOC_LIBS) $(LIBWBCLIENT_OBJ) \
++	@$(SHLD_DSO) $(LIBWBCLIENT_OBJ) $(LIBTALLOC_LIBS) \
+ 		@SONAMEFLAG@`basename $@`
+ 
+ $(LIBWBCLIENT_SHARED_TARGET): $(LIBWBCLIENT_SHARED_TARGET_SONAME)
