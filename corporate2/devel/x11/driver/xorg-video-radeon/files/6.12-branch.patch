@@ -1,0 +1,74 @@
+diff --git a/configure.ac b/configure.ac
+index f081c67..a19a308 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -88,14 +88,21 @@ sdkdir=$(pkg-config --variable=sdkdir xorg-server)
+ AC_HEADER_STDC
+ 
+ if test "$DRI" != no; then
+-	AC_CHECK_FILE([${sdkdir}/dri.h],
+-                      [have_dri_h="yes"], [have_dri_h="no"])
+-	AC_CHECK_FILE([${sdkdir}/sarea.h],
+-                      [have_sarea_h="yes"], [have_sarea_h="no"])
+-	AC_CHECK_FILE([${sdkdir}/dristruct.h],
+-                      [have_dristruct_h="yes"], [have_dristruct_h="no"])
+-	AC_CHECK_FILE([${sdkdir}/damage.h],
+-                      [have_damage_h="yes"], [have_damage_h="no"])
++	PKG_CHECK_MODULES(DRI, [libdrm >= 2.2 xf86driproto])
++	save_CPPFLAGS="$CPPFLAGS"
++	CPPFLAGS="$XORG_CFLAGS $DRI_CFLAGS"
++	AC_CHECK_HEADER([dri.h],
++                      [have_dri_h="yes"], [have_dri_h="no"],[-])
++	AC_CHECK_HEADER([sarea.h],
++                      [have_sarea_h="yes"], [have_sarea_h="no"],[-])
++	AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[
++#include <xorg-server.h>
++#include <dristruct.h>
++                      ]])],
++                      [have_dristruct_h="yes"], [have_dristruct_h="no"],[-])
++	AC_CHECK_HEADER([damage.h],
++                      [have_damage_h="yes"], [have_damage_h="no"],[-])
++	CPPFLAGS="$save_CPPFLAGS"
+ fi
+ 
+ AC_MSG_CHECKING([whether to include DRI support])
+@@ -112,7 +119,6 @@ AC_MSG_RESULT([$DRI])
+ 
+ AM_CONDITIONAL(DRI, test x$DRI = xyes)
+ if test "$DRI" = yes; then
+-	PKG_CHECK_MODULES(DRI, [libdrm >= 2.2 xf86driproto])
+         AC_DEFINE(XF86DRI,1,[Enable DRI driver support])
+         AC_DEFINE(XF86DRI_DEVEL,1,[Enable developmental DRI driver support])
+ 	if test "$have_damage_h" = yes; then
+diff --git a/src/radeon_driver.c b/src/radeon_driver.c
+index 551cb7f..c726f8f 100644
+--- a/src/radeon_driver.c
++++ b/src/radeon_driver.c
+@@ -1362,6 +1362,18 @@ static void RADEONInitMemoryMap(ScrnInfoPtr pScrn)
+     if (aper_size > mem_size)
+ 	mem_size = aper_size;
+ 
++    /* don't map the whole FB in the internal address space.
++     * we don't currently use fb space larger than the aperture
++     * size and on cards with more than 512 MB of vram, this can overflow
++     * the internal top of gart calculation on some systems.
++     * Limit it to cards with more than 512 MB as this causes problems
++     * on some other cards due to the way the ddx and drm set up the
++     * internal memory map.
++     * See fdo bug 24301.
++     */
++    if (mem_size > 0x20000000)
++	mem_size = aper_size;
++
+ #ifdef XF86DRI
+     /* Apply memory map limitation if using an old DRI */
+     if (info->directRenderingEnabled && !info->dri->newMemoryMap) {
+@@ -3727,6 +3739,8 @@ Bool RADEONScreenInit(int scrnIndex, ScreenPtr pScreen,
+     memset(info->FB + pScrn->fbOffset, 0,
+            pScrn->virtualY * pScrn->displayWidth * info->CurrentLayout.pixel_bytes);
+ 
++    pScrn->pScreen = pScreen;
++
+     /* set the modes with desired rotation, etc. */
+     if (!xf86SetDesiredModes (pScrn))
+ 	return FALSE;
