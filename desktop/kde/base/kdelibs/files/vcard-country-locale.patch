@@ -1,34 +1,48 @@
 Index: kabc/address.cpp
 ===================================================================
---- kabc/address.cpp	(revision 606117)
-+++ kabc/address.cpp	(working copy)
-@@ -28,6 +28,7 @@
- #include <kstaticdeleter.h>
+--- kabc/address.cpp.orig
++++ kabc/address.cpp
+@@ -29,11 +29,21 @@
  
  #include <qfile.h>
-+#include <pardus.h>
  
++#include <unicode/unistr.h>
++
  using namespace KABC;
  
-@@ -373,7 +374,7 @@
+ QMap<QString, QString> *Address::mISOMap = 0;
+ static KStaticDeleter< QMap<QString, QString> > isoMapDeleter;
+ 
++QString toUpper(const QString& value)
++{
++  UnicodeString us(FALSE /* Not NUL-terminated */, (const UChar *)value.unicode(), (int32_t)value.length());
++  us = us.toUpper();
++
++  return QString((const QChar*)us.getBuffer(),us.length());
++}
++
+ Address::Address() :
+   mEmpty( true ), mType( 0 )
+ {
+@@ -373,7 +383,7 @@ QString Address::formattedAddress( const
      entry.setGroup( "KCM Locale" );
      QString cpos = entry.readEntry( "AddressCountryPosition" );
      if ( "BELOW" == cpos || cpos.isEmpty() ) {
 -      ret = ret + "\n\n" + country().upper();
-+      ret = ret + "\n\n" + Pardus::upper(country());
++      ret = ret + "\n\n" + toUpper(country());
      } else if ( "below" == cpos ) {
        ret = ret + "\n\n" + country();
      } else if ( "ABOVE" == cpos ) {
 Index: kabc/Makefile.am
 ===================================================================
---- kabc/Makefile.am	(revision 606117)
-+++ kabc/Makefile.am	(working copy)
-@@ -22,7 +22,7 @@
+--- kabc/Makefile.am.orig
++++ kabc/Makefile.am
+@@ -22,7 +22,7 @@ CLEANFILES = addressee.h addressee.cpp f
  lib_LTLIBRARIES = libkabc.la
  libkabc_la_LDFLAGS = $(KDE_RPATH) $(all_libraries) -version-info 3:0:2 -no-undefined
  libkabc_la_LIBADD = vcard/libvcard.la vcardparser/libvcards.la $(LIB_KIO) \
 -                    $(top_builddir)/kresources/libkresources.la
-+                    $(top_builddir)/kresources/libkresources.la -lpardus
++                    $(top_builddir)/kresources/libkresources.la -licuuc
  libkabc_la_COMPILE_FIRST = addressee.h
  
  libkabc_la_SOURCES = \
