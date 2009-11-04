@@ -1,0 +1,71 @@
+? bluetooth-session-register.diff
+? cscope.out
+? pilot-link-0.12.0.tar.gz
+? bindings/Python/setup-standalone.py
+? src/pilot-csd
+? src/pilot-debugsh
+? src/pilot-dlpsh
+? src/pilot-foto-treo600
+? src/pilot-foto-treo650
+? src/pilot-getram
+? src/pilot-getrom
+? src/pilot-getromtoken
+? src/pilot-hinotes
+? src/pilot-install-datebook
+? src/pilot-install-expenses
+? src/pilot-install-hinote
+? src/pilot-install-memo
+? src/pilot-install-netsync
+? src/pilot-install-todo
+? src/pilot-install-todos
+? src/pilot-install-user
+? src/pilot-memos
+? src/pilot-nredir
+? src/pilot-read-expenses
+? src/pilot-read-ical
+? src/pilot-read-notepad
+? src/pilot-read-palmpix
+? src/pilot-read-screenshot
+? src/pilot-read-todos
+? src/pilot-read-veo
+? src/pilot-reminders
+Index: libpisock/bluetooth.c
+===================================================================
+RCS file: /cvs/pilot-link/pilot-link_src/libpisock/bluetooth.c,v
+retrieving revision 1.3
+diff -a -u -p -r1.3 bluetooth.c
+--- libpisock/bluetooth.c	8 Feb 2007 17:08:52 -0000	1.3
++++ libpisock/bluetooth.c	28 Dec 2007 12:31:24 -0000
+@@ -167,19 +167,19 @@ add_hotsync(sdp_session_t *session,
+ }
+ 
+ static int
+-register_sdp (uint32_t *handle, int *channel, sdp_session_t *sess)
++register_sdp (uint32_t *handle, int *channel, sdp_session_t **sess)
+ {
+ 	svc_info_t si;
+ 	bdaddr_t interface;
+ 
+ 	bacpy (&interface, BDADDR_ANY);
+-	sess = sdp_connect (&interface, BDADDR_LOCAL, 0);
++	*sess = sdp_connect (&interface, BDADDR_LOCAL, 0);
+ 
+-	if (!sess)
++	if (*sess == NULL)
+ 		return -1;
+ 	memset (&si, 0, sizeof(si));
+ 	si.name = "HOTSYNC";
+-	return add_hotsync (sess, 0, &interface, &si, handle, channel);
++	return add_hotsync (*sess, 0, &interface, &si, handle, channel);
+ }
+ 
+ static int
+@@ -325,7 +325,7 @@ pi_bluetooth_protocol (pi_device_t *dev)
+ static void
+ pi_bluetooth_register_hotsync_sdp (struct pi_bluetooth_data *data)
+ {
+-	if (register_sdp (&data->handle, &data->channel, data->sess) < 0) {
++	if (register_sdp (&data->handle, &data->channel, &data->sess) < 0) {
+ 		data->channel = -1;
+ 		data->handle = 0;
+ 		data->sess = NULL;
