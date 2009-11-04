@@ -1,0 +1,20 @@
+--- Jamroot	2008-03-25 21:47:24.000000000 +0100
++++ Jamroot.oden	2008-05-20 14:16:45.000000000 +0200
+@@ -332,9 +332,16 @@ rule tag ( name : type ? : property-set 
+         }
+         else
+         {
+-            return [ common.format-name
++            local result = [ common.format-name
+                 <base> <threading> <runtime> -$(BUILD_ID)
+                 : $(name) : $(type) : $(property-set) ] ;
++            if $(type) = SHARED_LIB &&
++              ! ( [ $(property-set).get <target-os> ] in windows cygwin darwin aix )
++            {
++                result = $(result).$(BOOST_VERSION)  ;
++            }
++
++            return $(result) ;
+         }
+     }
+ }

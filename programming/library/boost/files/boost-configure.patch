@@ -1,0 +1,24 @@
+Index: configure
+===================================================================
+--- configure.orig
++++ configure
+@@ -9,7 +9,7 @@
+ 
+ BJAM=""
+ TOOLSET=""
+-BJAM_CONFIG=""
++BJAM_CONFIG="-d2 --layout=system link=shared runtime-link=shared variant=release threading=single,multi debug-symbols=on"
+ BUILD=""
+ PREFIX=/usr/local
+ EPREFIX=
+@@ -346,8 +346,8 @@ includedir=$INCLUDEDIR
+ LIBS=$LIBS
+ 
+ all: .dummy
+-	@echo "\$(BJAM) \$(BJAM_CONFIG) --user-config=user-config.jam \$(LIBS)"
+-	@\$(BJAM) \$(BJAM_CONFIG) --user-config=user-config.jam \$(LIBS) || \\
++	@echo "\$(BJAM) \$(BJAM_CONFIG) --user-config=user-config.jam \$(LIBS) stage"
++	@\$(BJAM) \$(BJAM_CONFIG) --user-config=user-config.jam \$(LIBS) stage || \\
+ 	echo "Not all Boost libraries built properly."
+ 
+ clean: .dummy

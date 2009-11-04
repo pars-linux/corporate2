@@ -1,0 +1,37 @@
+The first chunk removes the toolset and boost version from the library 
+names.  
+
+The second chunk removes a rule that creates an unversioned
+hard link; e.g. foo.so --> foo-1_35.so.1.35.0.  However, there is
+also a rule that creates a softlink foo-1_35.so --> foo-1_35.so.1.35.0.
+
+After removing the boost version, both links are the same.
+We keep the softlink.
+--- upstream-boost-1.35.0/Jamroot	2008-03-25 15:47:24.000000000 -0500
++++ boost-1.35.0/Jamroot	2008-04-13 19:19:07.000000000 -0500
+@@ -309,7 +309,7 @@
+         if $(layout) = versioned
+         {
+             local result = [ common.format-name
+-                <base> <toolset> <threading> <runtime> -$(BOOST_VERSION_TAG)
++                <base> <threading> <runtime> 
+                 -$(BUILD_ID)
+                 : $(name) : $(type) : $(property-set) ] ;
+             
+@@ -445,13 +445,9 @@
+         return $(result) ;
+     }    
+             
+-    generate stage-unversioned : stage-proper : 
+-      <generating-rule>@make-unversioned-links ;
+-    explicit stage-unversioned ;
+-    
+-    generate install-unversioned : install-proper : 
+-      <generating-rule>@make-unversioned-links ;
+-    explicit install-unversioned ;
++    # Create do-nothing aliases
++    alias stage-unversioned ;
++    alias install-unversioned ;
+ }
+ else
+ {
