@@ -1,0 +1,112 @@
+commit 4b8a2fd25a4227f0b1411bee12add2d5c887c6a2
+Author: Dodji Seketeli <dodji@redhat.com>
+Date:   Mon Oct 5 13:45:38 2009 +0200
+
+    Add a wrapper for inotify_init1 (vgbz #202315)
+    
+    	* coregrind/m_syswrap/priv_syswrap-linux.h: Declare the
+    	sys_inotify_init1 wrapper.
+    	* coregrind/m_syswrap/syswrap-linux.c: Add pre/post handlers for
+    	the sys_inotify_init1 syscall.
+    	* coregrind/m_syswrap/syswrap-amd64-linux.c: Insert the
+    	sys_inotify_init1 wrapper in the wrappers table for the amd64 arch.
+    	* coregrind/m_syswrap/syswrap-x86-linux.c: Likewise for the x86_32
+    	arch.
+
+diff --git a/coregrind/m_syswrap/priv_syswrap-linux.h b/coregrind/m_syswrap/priv_syswrap-linux.h
+index fed3ba6..894678d 100644
+--- a/coregrind/m_syswrap/priv_syswrap-linux.h
++++ b/coregrind/m_syswrap/priv_syswrap-linux.h
+@@ -116,6 +116,7 @@ DECL_TEMPLATE(linux, sys_set_mempolicy);
+ DECL_TEMPLATE(linux, sys_get_mempolicy);
+ 
+ DECL_TEMPLATE(linux, sys_inotify_init);
++DECL_TEMPLATE(linux, sys_inotify_init1);
+ DECL_TEMPLATE(linux, sys_inotify_add_watch);
+ DECL_TEMPLATE(linux, sys_inotify_rm_watch);
+ 
+diff --git a/coregrind/m_syswrap/syswrap-amd64-linux.c b/coregrind/m_syswrap/syswrap-amd64-linux.c
+index 605d844..bb28073 100644
+--- a/coregrind/m_syswrap/syswrap-amd64-linux.c
++++ b/coregrind/m_syswrap/syswrap-amd64-linux.c
+@@ -1374,8 +1374,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
+    LINX_(__NR_eventfd2,          sys_eventfd2),         // 290
+    LINXY(__NR_epoll_create1,     sys_epoll_create1),    // 291
+    //   (__NR_dup3,              sys_ni_syscall)        // 292
+-   LINXY(__NR_pipe2,             sys_pipe2)             // 293
+-   //   (__NR_inotify_init1,     sys_ni_syscall)        // 294
++   LINXY(__NR_pipe2,             sys_pipe2),            // 293
++   LINXY(__NR_inotify_init1,     sys_inotify_init1),     // 294
+ };
+ 
+ const UInt ML_(syscall_table_size) = 
+diff --git a/coregrind/m_syswrap/syswrap-linux.c b/coregrind/m_syswrap/syswrap-linux.c
+index 7f81262..895bc54 100644
+--- a/coregrind/m_syswrap/syswrap-linux.c
++++ b/coregrind/m_syswrap/syswrap-linux.c
+@@ -1526,6 +1526,24 @@ POST(sys_inotify_init)
+    }
+ }
+ 
++PRE(sys_inotify_init1)
++{
++   PRINT("sys_inotify_init ( %ld )", ARG1);
++   PRE_REG_READ1(long, "inotify_init", int, flag);
++}
++
++POST(sys_inotify_init1)
++{
++   vg_assert(SUCCESS);
++   if (!ML_(fd_allowed)(RES, "inotify_init", tid, True)) {
++      VG_(close)(RES);
++      SET_STATUS_Failure( VKI_EMFILE );
++   } else {
++      if (VG_(clo_track_fds))
++         ML_(record_fd_open_nameless) (tid, RES);
++   }
++}
++
+ PRE(sys_inotify_add_watch)
+ {
+    PRINT( "sys_inotify_add_watch ( %ld, %#lx, %lx )", ARG1,ARG2,ARG3);
+diff --git a/coregrind/m_syswrap/syswrap-x86-linux.c b/coregrind/m_syswrap/syswrap-x86-linux.c
+index 90eb512..180e36b 100644
+--- a/coregrind/m_syswrap/syswrap-x86-linux.c
++++ b/coregrind/m_syswrap/syswrap-x86-linux.c
+@@ -2253,8 +2253,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
+    LINXY(__NR_epoll_create1,     sys_epoll_create1),     // 329
+ 
+    //   (__NR_dup3,              sys_ni_syscall)        // 330
+-   LINXY(__NR_pipe2,             sys_pipe2)             // 331
+-   //   (__NR_inotify_init1,     sys_ni_syscall)        // 332
++   LINXY(__NR_pipe2,             sys_pipe2),            // 331
++   LINX_(__NR_inotify_init1,     sys_inotify_init1)     // 332
+ };
+ 
+ const UInt ML_(syscall_table_size) = 
+--- valgrind-3.5.0/coregrind/m_syswrap/syswrap-ppc32-linux.c.jj	2009-10-09 12:52:04.000000000 +0200
++++ valgrind-3.5.0/coregrind/m_syswrap/syswrap-ppc32-linux.c	2009-10-12 16:14:33.000000000 +0200
+@@ -1866,8 +1866,8 @@ const SyscallTableEntry ML_(syscall_tabl
+    LINX_(__NR_eventfd2,          sys_eventfd2),         // 314
+    LINXY(__NR_epoll_create1,     sys_epoll_create1),    // 315
+    //   (__NR_dup3,              sys_ni_syscall)        // 316
+-   LINXY(__NR_pipe2,             sys_pipe2)             // 317
+-   //   (__NR_inotify_init1,     sys_ni_syscall)        // 318
++   LINXY(__NR_pipe2,             sys_pipe2),            // 317
++   LINX_(__NR_inotify_init1,     sys_inotify_init1)     // 318
+ };
+ 
+ const UInt ML_(syscall_table_size) = 
+--- valgrind-3.5.0/coregrind/m_syswrap/syswrap-ppc64-linux.c.jj	2009-10-09 12:52:04.000000000 +0200
++++ valgrind-3.5.0/coregrind/m_syswrap/syswrap-ppc64-linux.c	2009-10-12 16:14:55.000000000 +0200
+@@ -1506,8 +1506,8 @@ const SyscallTableEntry ML_(syscall_tabl
+    LINX_(__NR_eventfd2,          sys_eventfd2),         // 314
+    LINXY(__NR_epoll_create1,     sys_epoll_create1),    // 315
+    //   (__NR_dup3,              sys_ni_syscall)        // 316
+-   LINXY(__NR_pipe2,             sys_pipe2)             // 317
+-   //   (__NR_inotify_init1,     sys_ni_syscall)        // 318
++   LINXY(__NR_pipe2,             sys_pipe2),            // 317
++   LINX_(__NR_inotify_init1,     sys_inotify_init1)     // 318
+ };
+ 
+ const UInt ML_(syscall_table_size) = 

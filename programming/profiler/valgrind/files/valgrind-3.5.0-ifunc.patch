@@ -1,0 +1,811 @@
+commit 3bd6e2ed7544778a5bbb0acaf69b103d7907185e
+Author: Dodji Seketeli <dodji@redhat.com>
+Date:   Wed Oct 7 16:09:30 2009 +0200
+
+    Candidate patch for vgbz 206013
+    
+    This patch
+    
+    1/ Intercepts the call to the indirect function of type STT_GNU_IFUNC
+       and gets the returned function pointer
+    2/ Redirects the returned function pointer to whatever function the
+       indirect function was redirected to.
+    
+    To do this, we first makes valgrind recognize STT_GNU_IFUNC functions.
+    Then we wrap all indirect functions by a magic wrapper that does 1/ and 2/
+    
+    Please find below a detailed GNU style ChangeLog accompanying the patch.
+    
+    	* coregrind/m_debuginfo/priv_storage.h (struct DiSym): Add an
+    	isIndirectFunc field to indicate if the symbol is an indirect
+    	function.
+    	* coregrind/m_debuginfo/readelf.c (get_elf_symbol_info):
+    	Return a boolean to say if the symbol is an indirect function.
+    	This is only on non-ppc64 linux systems only.
+    	(read_elf_symtab__normal): Add indirect function flag to symbols.
+    	(read_elf_symtab__ppc64_linux): Ignore indirect function stuff for
+    	linux ppc64 for now.
+    	* include/pub_tool_debuginfo.h (VG_(DebugInfo_syms_getidx)): Return a
+    	boolean to say if the symbol is an indirect function.
+    	* coregrind/m_debuginfo/debuginfo.c (VG_(DebugInfo_syms_getidx)):
+    	Likewise.
+    	* coregrind/pub_core_demangle.h (VG_(maybe_Z_demangle)): Add a boolean
+    	indicated if the demangled symbol is an indirect function redirection
+    	specification.
+    	* coregrind/m_demangle/demangle.c (VG_(demangle)): Ignore indirect
+    	functions demangling here.
+    	(VG_(maybe_Z_demangle)): Add support for demangling indirect functions
+    	wrapping/redirecting.
+    	* include/pub_tool_redir.h: Add macros to define an indirection
+    	function wrap or replacement.
+    	* coregrind/m_redir.c (struct Spec): Add isIFunc to flag the
+    	redirection specification as being related to an indirect function.
+    	(struct Active): Likewise.
+    	(iFuncToDirectFuncSet): New ordered set that holds
+    	indirect function -> target mappings. Target here is the function
+    	which the indirection function points to. The type of the mapping is
+    	the struct IFuncToDirectFuncEntry.
+    	(VG_(redir_notify_new_DebugInfo)): Update the list of redirection
+    	specifications whenever a redirection specification symbol related
+    	to an indirection (set with e.g VG_WRAP_I_FUNCTION_ZZ) appears.
+    	function appears.
+    	(VG_(redir_change_ifunc_target)): New function.
+    	(generate_and_add_actives): Apply indirect function redirections
+    	to indirect functions only. Also, consider cases where we are
+    	requested a strlen -> vg_strlen redirection. Now, if strlen happens to
+    	be an indirect function pointing to strlen_target, we need be able to
+    	later set a strlen_target --> vg_strlen redirection. Here "later"
+    	means once we have intercepted the strlen call by the runtime linker
+    	to get the pointer to strlen_target. So we now store the strlen ->
+    	vg_strlen redirection request in the iFuncToDirectFuncSet set so that
+    	we can get it later. For a given ifunc symbol that is loaded, activate
+    	the ifunc --> standard func redirection only if there is a
+    	standard func --> standard func redirection matching the ifunc
+    	symbol.
+    	* coregrind/m_scheduler/scheduler.c (do_client_request): Add a new
+    	VG_USERREQ__CHANGE_IFUNC_REDIR_TARGET.
+    	* coregrind/pub_core_clreq.h (enum Vg_InternalClientRequest): Add
+    	VG_USERREQ__CHANGE_IFUNC_REDIR_TARGET.
+    	* coregrind/vg_preloaded.c:
+    	(VG_WRAP_I_FUNCTION_ZZ(VG_Z_LIBC_SONAME, Za) (void)): New indirect
+    	function redirection.
+    	* memcheck/mc_replace_strmem.c: Add a bunch of __GI_* replacement
+    	functions.
+
+diff --git a/coregrind/m_debuginfo/debuginfo.c b/coregrind/m_debuginfo/debuginfo.c
+index eed2ab1..c9a2e4e 100644
+--- a/coregrind/m_debuginfo/debuginfo.c
++++ b/coregrind/m_debuginfo/debuginfo.c
+@@ -3435,14 +3435,16 @@ void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si,
+                                   /*OUT*/Addr*   tocptr,
+                                   /*OUT*/UInt*   size,
+                                   /*OUT*/HChar** name,
+-                                  /*OUT*/Bool*   isText )
++                                  /*OUT*/Bool*   isText,
++                                  /*OUT*/Bool*   isIFunc)
+ {
+    vg_assert(idx >= 0 && idx < si->symtab_used);
+-   if (avma)   *avma   = si->symtab[idx].addr;
+-   if (tocptr) *tocptr = si->symtab[idx].tocptr;
+-   if (size)   *size   = si->symtab[idx].size;
+-   if (name)   *name   = (HChar*)si->symtab[idx].name;
+-   if (isText) *isText = si->symtab[idx].isText;
++   if (avma)    *avma   = si->symtab[idx].addr;
++   if (tocptr)  *tocptr = si->symtab[idx].tocptr;
++   if (size)    *size   = si->symtab[idx].size;
++   if (name)    *name   = (HChar*)si->symtab[idx].name;
++   if (isText)  *isText = si->symtab[idx].isText;
++   if (isIFunc) *isIFunc = si->symtab[idx].isIndirectFunc;
+ }
+ 
+ 
+diff --git a/coregrind/m_debuginfo/priv_storage.h b/coregrind/m_debuginfo/priv_storage.h
+index f6e6e82..53223ad 100644
+--- a/coregrind/m_debuginfo/priv_storage.h
++++ b/coregrind/m_debuginfo/priv_storage.h
+@@ -57,6 +57,7 @@ typedef
+       // positive number larger than 1 is never used to represent True.
+       UInt  size;   /* size in bytes */
+       Bool  isText;
++      Bool  isIndirectFunc; /* true if symbol is of STT_GNU_IFUNC type */
+    }
+    DiSym;
+ 
+diff --git a/coregrind/m_debuginfo/readelf.c b/coregrind/m_debuginfo/readelf.c
+index 02cea02..51f3ddd 100644
+--- a/coregrind/m_debuginfo/readelf.c
++++ b/coregrind/m_debuginfo/readelf.c
+@@ -214,7 +214,8 @@ Bool get_elf_symbol_info (
+                                   used on entry */
+         Bool*  from_opd_out,   /* ppc64-linux only: did we deref an
+                                   .opd entry? */
+-        Bool*  is_text_out     /* is this a text symbol? */
++        Bool*  is_text_out,    /* is this a text symbol? */
++        Bool*  is_indirect_function /* is this a  STT_GNU_IFUNC function ?*/
+      )
+ {
+    Bool plausible;
+@@ -232,6 +233,8 @@ Bool get_elf_symbol_info (
+    *sym_size_out   = (Int)sym->st_size;
+    *sym_tocptr_out = 0; /* unknown/inapplicable */
+    *from_opd_out   = False;
++   if (is_indirect_function)
++       *is_indirect_function = False;
+ 
+    /* Figure out if we're interested in the symbol.  Firstly, is it of
+       the right flavour?  */
+@@ -243,6 +246,9 @@ Bool get_elf_symbol_info (
+         &&
+         (ELFXX_ST_TYPE(sym->st_info) == STT_FUNC 
+          || ELFXX_ST_TYPE(sym->st_info) == STT_OBJECT
++#ifdef STT_GNU_IFUNC
++         || ELFXX_ST_TYPE(sym->st_info) == STT_GNU_IFUNC
++#endif
+         );
+ 
+    /* Work out the svma and bias for each section as it will appear in
+@@ -324,6 +330,13 @@ Bool get_elf_symbol_info (
+       *is_text_out = True;
+       *sym_avma_out += text_bias;
+    }
++#ifdef STT_GNU_IFUNC
++   if (is_indirect_function
++       && *is_text_out
++       && ELFXX_ST_TYPE(sym->st_info) == STT_GNU_IFUNC) {
++       *is_indirect_function = True;
++   }
++#endif
+ 
+ #  if defined(VGP_ppc64_linux)
+    /* Allow STT_NOTYPE in the very special case where we're running on
+@@ -570,7 +583,7 @@ void read_elf_symtab__normal(
+    Char      *sym_name, *sym_name_really;
+    Int        sym_size;
+    Addr       sym_tocptr;
+-   Bool       from_opd, is_text;
++   Bool       from_opd, is_text, is_indirect_func = False;
+    DiSym      risym;
+    ElfXX_Sym *sym;
+ 
+@@ -602,13 +615,14 @@ void read_elf_symtab__normal(
+                               &sym_avma_really,
+                               &sym_size,
+                               &sym_tocptr,
+-                              &from_opd, &is_text)) {
++                              &from_opd, &is_text, &is_indirect_func)) {
+ 
+          risym.addr   = sym_avma_really;
+          risym.size   = sym_size;
+          risym.name   = ML_(addStr) ( di, sym_name_really, -1 );
+          risym.tocptr = sym_tocptr;
+          risym.isText = is_text;
++         risym.isIndirectFunc = is_indirect_func;
+          vg_assert(risym.name != NULL);
+          vg_assert(risym.tocptr == 0); /* has no role except on ppc64-linux */
+          ML_(addSym) ( di, &risym );
+@@ -713,7 +727,7 @@ void read_elf_symtab__ppc64_linux(
+                               &sym_avma_really,
+                               &sym_size,
+                               &sym_tocptr,
+-                              &from_opd, &is_text)) {
++                              &from_opd, &is_text,NULL)) {
+ 
+          /* Check if we've seen this (name,addr) key before. */
+          key.addr = sym_avma_really;
+diff --git a/coregrind/m_demangle/demangle.c b/coregrind/m_demangle/demangle.c
+index 262fcfc..3ae050a 100644
+--- a/coregrind/m_demangle/demangle.c
++++ b/coregrind/m_demangle/demangle.c
+@@ -100,7 +100,8 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
+       interested in that). */
+    if (do_z_demangling) {
+       if (VG_(maybe_Z_demangle)( orig, NULL,0,/*soname*/
+-                                 z_demangled, N_ZBUF, NULL)) {
++                                 z_demangled, N_ZBUF, NULL,
++                                 NULL)) {
+          orig = z_demangled;
+       }
+    }
+@@ -146,7 +147,8 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
+ Bool VG_(maybe_Z_demangle) ( const HChar* sym, 
+                              /*OUT*/HChar* so, Int soLen,
+                              /*OUT*/HChar* fn, Int fnLen,
+-                             /*OUT*/Bool* isWrap )
++                             /*OUT*/Bool* isWrap,
++                             /*OUT*/Bool* isIFunc)
+ {
+ #  define EMITSO(ch)                           \
+       do {                                     \
+@@ -167,15 +169,20 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
+          }                                     \
+       } while (0)
+ 
+-   Bool error, oflow, valid, fn_is_encoded, is_VG_Z_prefixed;
+-   Int  soi, fni, i;
++   Bool error, oflow, valid, indirect, fn_is_encoded,
++        is_VG_Z_prefixed;
++   Int  soi, fni, i, encoded_index, wrap_index, soname_index;
+ 
+    vg_assert(soLen > 0 || (soLen == 0 && so == NULL));
+    vg_assert(fnLen > 0);
+    error = False;
+    oflow = False;
++   indirect = False;
+    soi = 0;
+    fni = 0;
++   encoded_index = 5;
++   wrap_index = 3;
++   soname_index = 7;
+ 
+    valid =     sym[0] == '_'
+            &&  sym[1] == 'v'
+@@ -184,29 +191,46 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
+            &&  sym[4] == 'Z'
+            && (sym[5] == 'Z' || sym[5] == 'U')
+            &&  sym[6] == '_';
+-   if (!valid)
+-      return False;
+ 
+-   fn_is_encoded = sym[5] == 'Z';
++   if (!valid) {
++      valid =     sym[0] == '_'
++              &&  sym[1] == 'v'
++              &&  sym[2] == 'g'
++              &&  sym[3] == 'i'
++              && (sym[4] == 'r' || sym[4] == 'w' || sym[4] == 'n')
++              &&  sym[5] == 'Z'
++              && (sym[6] == 'Z' || sym[6] == 'U')
++              &&  sym[7] == '_';
++      if (!valid)
++         return False;
++      encoded_index = 6;
++      wrap_index = 4;
++      soname_index = 8;
++      indirect = True;
++   }
++
++   fn_is_encoded = sym[encoded_index] == 'Z';
+ 
+    if (isWrap)
+-      *isWrap = sym[3] == 'w';
++      *isWrap = sym[wrap_index] == 'w';
++   if (isIFunc)
++      *isIFunc = indirect;
+ 
+    /* Now check the soname prefix isn't "VG_Z_", as described in
+       pub_tool_redir.h. */
++   i = soname_index;
+    is_VG_Z_prefixed =
+-      sym[ 7] == 'V' &&
+-      sym[ 8] == 'G' &&
+-      sym[ 9] == '_' &&
+-      sym[10] == 'Z' &&
+-      sym[11] == '_';
++      sym[i] == 'V' &&
++      sym[i+1] == 'G' &&
++      sym[i+2] == '_' &&
++      sym[i+3] == 'Z' &&
++      sym[i+4] == '_';
+    if (is_VG_Z_prefixed) {
+       vg_assert2(0, "symbol with a 'VG_Z_' prefix: %s.\n"
+                     "see pub_tool_redir.h for an explanation.", sym);
+    }
+ 
+    /* Now scan the Z-encoded soname. */
+-   i = 7;
+    while (True) {
+ 
+       if (sym[i] == '_')
+diff --git a/coregrind/m_redir.c b/coregrind/m_redir.c
+index 98a502f..cf968bd 100644
+--- a/coregrind/m_redir.c
++++ b/coregrind/m_redir.c
+@@ -223,6 +223,7 @@ typedef
+       HChar* from_fnpatt;  /* from fnname pattern  */
+       Addr   to_addr;      /* where redirecting to */
+       Bool   isWrap;       /* wrap or replacement? */
++      Bool   isIFunc;      /* an indirect function? */
+       const HChar** mandatory; /* non-NULL ==> abort V and print the
+                                   strings if from_sopatt is loaded but
+                                   from_fnpatt cannot be found */
+@@ -252,7 +253,6 @@ typedef
+    to record abovementioned preloaded specifications.) */
+ static TopSpec* topSpecs = NULL;
+ 
+-
+ /*------------------------------------------------------------*/
+ /*--- CURRENTLY ACTIVE REDIRECTIONS                        ---*/
+ /*------------------------------------------------------------*/
+@@ -268,12 +268,20 @@ typedef
+       TopSpec* parent_spec; /* the TopSpec which supplied the Spec */
+       TopSpec* parent_sym;  /* the TopSpec which supplied the symbol */
+       Bool     isWrap;      /* wrap or replacement? */
++      Bool     isIFunc;
+    }
+    Active;
+ 
++typedef
++   struct {
++       Addr indirect_func;
++       Addr direct_func;
++   }
++   IFuncToDirectFuncEntry;
++
+ /* The active set is a fast lookup table */
+ static OSet* activeSet = NULL;
+-
++static OSet* iFuncToDirectFuncSet = NULL;
+ 
+ /*------------------------------------------------------------*/
+ /*--- FWDses                                               ---*/
+@@ -317,7 +325,7 @@ void generate_and_add_actives (
+ 
+ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
+ {
+-   Bool         ok, isWrap;
++   Bool         ok, isWrap, isIFuncRedirect = False;
+    Int          i, nsyms;
+    Spec*        specList;
+    Spec*        spec;
+@@ -350,10 +358,16 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
+ 
+    nsyms = VG_(DebugInfo_syms_howmany)( newsi );
+    for (i = 0; i < nsyms; i++) {
+-      VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc, 
+-                                            NULL, &sym_name, &isText );
+-      ok = VG_(maybe_Z_demangle)( sym_name, demangled_sopatt, N_DEMANGLED,
+-                                  demangled_fnpatt, N_DEMANGLED, &isWrap );
++      VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr,
++                                  &sym_toc, NULL, &sym_name,
++                                  &isText, NULL );
++      ok = VG_(maybe_Z_demangle)( sym_name,
++                                  demangled_sopatt,
++                                  N_DEMANGLED,
++                                  demangled_fnpatt,
++                                  N_DEMANGLED,
++                                  &isWrap,
++                                  &isIFuncRedirect );
+       /* ignore data symbols */
+       if (!isText)
+          continue;
+@@ -378,6 +392,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
+       vg_assert(spec->from_fnpatt);
+       spec->to_addr = sym_addr;
+       spec->isWrap = isWrap;
++      spec->isIFunc = isIFuncRedirect;
+       /* check we're not adding manifestly stupid destinations */
+       vg_assert(is_plausible_guest_addr(sym_addr));
+       spec->next = specList;
+@@ -388,12 +403,15 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
+ 
+    if (check_ppcTOCs) {
+       for (i = 0; i < nsyms; i++) {
+-         VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc, 
+-                                               NULL, &sym_name, &isText );
++         VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr,
++                                     &sym_toc, NULL,
++                                     &sym_name, &isText,
++                                     NULL );
+          ok = isText
+               && VG_(maybe_Z_demangle)( 
+                     sym_name, demangled_sopatt, N_DEMANGLED,
+-                    demangled_fnpatt, N_DEMANGLED, &isWrap );
++                    demangled_fnpatt, N_DEMANGLED, &isWrap,
++                    NULL );
+          if (!ok)
+             /* not a redirect.  Ignore. */
+             continue;
+@@ -470,6 +488,42 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
+ 
+ #undef N_DEMANGLED
+ 
++/* Consider the redirection old_from --> somefunction;
++   In that redirection, old_from is the address of an indirect function.
++   The target of that redirection was certainly a function declared with
++   VG_WRAP_I_FUNCTION_ZZ (look in vg_preloaded.c for instance).
++   This function then setups a new redirection new_from -> ifunc_target,
++   where ifunc_target is the target of the indirect function which address
++   is old_from.  */
++void VG_(redir_change_ifunc_target)(Addr old_from,
++                                    Addr new_from)
++{
++    Active *old, new;
++    IFuncToDirectFuncEntry *e;
++
++    old = VG_(OSetGen_Lookup)(activeSet, &old_from);
++    vg_assert(old);
++    vg_assert(old->isIFunc);
++    /* We must have got here only if there was an ifunc symbol
++       that matches an active direct function --> direct function
++       redirection. Otherwise, it is not necessary to call this function.  */
++    vg_assert(iFuncToDirectFuncSet);
++
++    e = VG_(OSetGen_Lookup)(iFuncToDirectFuncSet, &old_from);
++    /* Same comment as for vg_assert(iFuncToDirectFuncSet) above.  */
++    vg_assert(e);
++
++    new = *old;
++    new.from_addr = new_from;
++    new.to_addr = e->direct_func;
++    if (VG_(clo_trace_redir))
++        VG_(message) (Vg_DebugMsg, "changed redir (%lx)[indired]->(%lx) "
++                       "to (%lx) -> (%lx))\n",
++                       old_from, old->to_addr,
++                       new_from, e->direct_func);
++    new.isIFunc = False;
++    maybe_add_active (new);
++}
+ 
+ /* Do one element of the basic cross product: add to the active set,
+    all matches resulting from comparing all the given specs against
+@@ -487,7 +541,7 @@ void generate_and_add_actives (
+      )
+ {
+    Spec*  sp;
+-   Bool   anyMark, isText;
++   Bool   anyMark, isText, isIFunc = False;
+    Active act;
+    Int    nsyms, i;
+    Addr   sym_addr;
+@@ -513,7 +567,7 @@ void generate_and_add_actives (
+    nsyms = VG_(DebugInfo_syms_howmany)( di );
+    for (i = 0; i < nsyms; i++) {
+       VG_(DebugInfo_syms_getidx)( di, i, &sym_addr, NULL, NULL,
+-                                         &sym_name, &isText );
++                                  &sym_name, &isText, &isIFunc );
+ 
+       /* ignore data symbols */
+       if (!isText)
+@@ -533,13 +587,61 @@ void generate_and_add_actives (
+          if (!sp->mark)
+             continue; /* soname doesn't match */
+          if (VG_(string_match)( sp->from_fnpatt, sym_name )) {
++            if (!isIFunc && sp->isIFunc)
++                continue;
++            sp->done = True;
++            if (isIFunc && !sp->isIFunc) {
++                IFuncToDirectFuncEntry *e;
++                 /* So we are facing an indirect function
++                    that matches a direct function -> direct function
++                    redirection spec.
++                    We need to store that mapping in iFuncToDirectFuncSet so
++                    that later once the indirect function's relocations are
++                    processed by the dynamic linker on the client, we
++                    can set up a redirection from the target of the indirect
++                    function to sp->to_addr.  */
++                if (!iFuncToDirectFuncSet) {
++                    iFuncToDirectFuncSet =
++                        VG_(OSetGen_Create)(offsetof (IFuncToDirectFuncEntry,
++                                                      indirect_func),
++                                            NULL /*ptr compare*/,
++                                            dinfo_zalloc,
++                                            "redir.ri.2",
++                                            dinfo_free);
++                    vg_assert (iFuncToDirectFuncSet);
++                }
++                e = VG_(OSetGen_Lookup)(iFuncToDirectFuncSet, &sym_addr);
++                if (e)
++                    continue;
++                e = VG_(OSetGen_AllocNode)(iFuncToDirectFuncSet,
++                                           sizeof (IFuncToDirectFuncEntry));
++                vg_assert (e);
++                e->indirect_func = sym_addr;
++                e->direct_func = sp->to_addr;
++                VG_(OSetGen_Insert)(iFuncToDirectFuncSet, e);
++                continue;
++            }
++
++            /* Consider special ifunc --> direct function redirections only when
++               there already is an direct function --> direct function
++               redirection that matches an ifunc symbol. Otherwise, we would
++               grow the active set unnecessarily.  */
++            if (isIFunc && sp->isIFunc) {
++                IFuncToDirectFuncEntry *e = NULL;
++                if (iFuncToDirectFuncSet)
++                    e = VG_(OSetGen_Lookup)(iFuncToDirectFuncSet, &sym_addr);
++                if (!e)
++                    continue;
++            }
++
+             /* got a new binding.  Add to collection. */
+             act.from_addr   = sym_addr;
+             act.to_addr     = sp->to_addr;
+             act.parent_spec = parent_spec;
+             act.parent_sym  = parent_sym;
+             act.isWrap      = sp->isWrap;
+-            sp->done = True;
++            if (isIFunc)
++                act.isIFunc = True;
+             maybe_add_active( act );
+          }
+       } /* for (sp = specs; sp; sp = sp->next) */
+diff --git a/coregrind/m_scheduler/scheduler.c b/coregrind/m_scheduler/scheduler.c
+index 295e0ab..4083034 100644
+--- a/coregrind/m_scheduler/scheduler.c
++++ b/coregrind/m_scheduler/scheduler.c
+@@ -89,6 +89,7 @@
+ #include "pub_core_debuginfo.h"     // VG_(di_notify_pdb_debuginfo)
+ #include "priv_sema.h"
+ #include "pub_core_scheduler.h"     // self
++#include "pub_core_redir.h"
+ 
+ 
+ /* ---------------------------------------------------------------------
+@@ -1399,6 +1400,11 @@ void do_client_request ( ThreadId tid )
+             SET_CLREQ_RETVAL( tid, count );
+          break; }
+ 
++      case VG_USERREQ__CHANGE_IFUNC_REDIR_TARGET: {
++         VG_(redir_change_ifunc_target)( arg[1], arg[2] );
++         SET_CLREQ_RETVAL( tid, 0);
++         break; }
++
+       case VG_USERREQ__PRINTF_BACKTRACE: {
+          Int count =
+             VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (void*)arg[2] );
+diff --git a/coregrind/pub_core_clreq.h b/coregrind/pub_core_clreq.h
+index 563904b..f881ffe 100644
+--- a/coregrind/pub_core_clreq.h
++++ b/coregrind/pub_core_clreq.h
+@@ -50,6 +50,11 @@ typedef
+       /* Internal equivalent of VALGRIND_PRINTF . */
+       VG_USERREQ__INTERNAL_PRINTF   = 0x3103,
+ 
++      /* Update an indirect function redirection.
++         Read VG_(redir_change_ifunc_target) in
++         coregrind/m_redir.c for more. */
++      VG_USERREQ__CHANGE_IFUNC_REDIR_TARGET = 0x3104,
++
+    } Vg_InternalClientRequest;
+ 
+ // Function for printing from code within Valgrind, but which runs on the
+diff --git a/coregrind/pub_core_demangle.h b/coregrind/pub_core_demangle.h
+index bac72c0..738cbc1 100644
+--- a/coregrind/pub_core_demangle.h
++++ b/coregrind/pub_core_demangle.h
+@@ -59,7 +59,8 @@ extern
+ Bool VG_(maybe_Z_demangle) ( const HChar* sym, 
+                              /*OUT*/HChar* so, Int soLen,
+                              /*OUT*/HChar* fn, Int fnLen,
+-                             /*OUT*/Bool* isWrap );
++                             /*OUT*/Bool* isWrap,
++			     /*OUT*/Bool* isIFunc );
+ 
+ #endif   // __PUB_CORE_DEMANGLE_H
+ 
+diff --git a/coregrind/pub_core_redir.h b/coregrind/pub_core_redir.h
+index c993c27..025789d 100644
+--- a/coregrind/pub_core_redir.h
++++ b/coregrind/pub_core_redir.h
+@@ -59,6 +59,9 @@ extern void VG_(redir_notify_delete_DebugInfo)( DebugInfo* );
+ extern void VG_(redir_initialise)( void );
+ 
+ 
++extern void VG_(redir_change_ifunc_target)( Addr old_from,
++                                            Addr new_from );
++
+ //--------------------------------------------------------------------
+ // Queries
+ //--------------------------------------------------------------------
+diff --git a/coregrind/vg_preloaded.c b/coregrind/vg_preloaded.c
+index 6f0f049..41986d2 100644
+--- a/coregrind/vg_preloaded.c
++++ b/coregrind/vg_preloaded.c
+@@ -68,6 +68,33 @@ void VG_NOTIFY_ON_LOAD(freeres)( void )
+    *(int *)0 = 'x';
+ }
+ 
++/* Wrap all indirect functions defined in glibc by this one.
++   This function then calls the original indirect function, gets its result
++   (which is a pointer to the function that should really be used in lieu
++   of the indirect function) and then asks valgrind core
++   (running on the real CPU) to update the redirection "ifunc -> this function".
++
++*/
++void * VG_WRAP_I_FUNCTION_ZZ(Za, Za) (void);
++void * VG_WRAP_I_FUNCTION_ZZ(Za, Za) (void)
++{
++    OrigFn fn;
++    Addr result = 0;
++    int res;
++
++    VALGRIND_GET_ORIG_FN(fn);
++    CALL_FN_W_v(result, fn);
++
++    /* Ask the valgrind core running on the real CPU (as opposed to this
++       code which runs on the emulated CPU) to update the redirection that
++       led to this function. This client request eventually gives control to
++       the function VG_(redir_change_ifunc_target) in m_redir.c  */
++    VALGRIND_DO_CLIENT_REQUEST(res, 0,
++                               VG_USERREQ__CHANGE_IFUNC_REDIR_TARGET,
++                               fn.nraddr, result, 0, 0, 0);
++    return result;
++}
++
+ #elif defined(VGO_darwin)
+ 
+ /* ---------------------------------------------------------------------
+diff --git a/include/pub_tool_debuginfo.h b/include/pub_tool_debuginfo.h
+index a02b790..85129ce 100644
+--- a/include/pub_tool_debuginfo.h
++++ b/include/pub_tool_debuginfo.h
+@@ -212,7 +212,8 @@ void VG_(DebugInfo_syms_getidx)  ( const DebugInfo *di,
+                                    /*OUT*/Addr*   tocptr,
+                                    /*OUT*/UInt*   size,
+                                    /*OUT*/HChar** name,
+-                                   /*OUT*/Bool*   isText );
++                                   /*OUT*/Bool*   isText,
++                                   /*OUT*/Bool*   isIFunc);
+ 
+ /* A simple enumeration to describe the 'kind' of various kinds of
+    segments that arise from the mapping of object files. */
+diff --git a/include/pub_tool_redir.h b/include/pub_tool_redir.h
+index 3d3b516..ec3e00a 100644
+--- a/include/pub_tool_redir.h
++++ b/include/pub_tool_redir.h
+@@ -51,6 +51,16 @@
+    sure you use the VG_REPLACE_FN_ macros and not the VG_WRAP_FN_
+    macros.
+ 
++   Indirect functions
++   ~~~~~~~~~~~~~~~~~
++
++   An indirect function is an ELF function symbol whose st_info is STT_GNU_IFUNC
++   instead of STT_FUNC. To make a long story short, it points to a target
++   function which control is eventually transfered to.
++   More on those at http://www.x86-64.org/pipermail/discuss/2009-June/010553.html.
++   Replacing or wrapping indirect functions need special care.
++   More about it below in "indirect function wrapping and replacing".
++
+    Replacement
+    ~~~~~~~~~~~
+    To write a replacement function, do this:
+@@ -126,7 +136,8 @@
+    ~~~~~~~~~~
+    Z-encoding details: the scheme is like GHC's.  It is just about
+    readable enough to make a preprocessor unnecessary.  First the
+-   "_vgrZU_" or "_vgrZZ_" prefix is added, and then the following
++   "_vgrZU_" or "_vgrZZ_" or (for indirect functions) "_vgirZU_"/"_vgirZZ_"
++   prefix is added, and then the following
+    characters are transformed.
+ 
+      *         -->  Za    (asterisk)
+@@ -143,6 +154,21 @@
+      Z         -->  ZZ    (Z)
+ 
+    Everything else is left unchanged.
++
++   Indirect function wrapping
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~
++
++   VG_WRAP_I_FUNCTION_ZZ is a macro (similar to VG_WRAP_FUNCTION_ZZ) that
++   wraps indirect functions (a.k.a. ifunc) only. It does not have any effect on
++   regular (STT_FUNC) functions. In other words this macros registers an
++   ifunc --> regular function redirection. It does it in a special way though.
++   The ifunc --> regular function redirection is registered iff there is a
++   regular function --> regular function redirection that matches the ifunc symbol
++   pattern of this macro.
++   Beware, the use of VG_WRAP_I_FUNCTION_ZZ in coregrind/vg_preloaded.c makes
++   the wrapping function match all the indirect functions of all libraries.
++   So no other use of that macro should be necessary.
++
+ */
+ 
+ /* If you change these, the code in VG_(maybe_Z_demangle) needs to be
+@@ -158,6 +184,7 @@
+ 
+ #define VG_WRAP_FUNCTION_ZU(soname,fnname) VG_CONCAT4(_vgwZU_,soname,_,fnname)
+ #define VG_WRAP_FUNCTION_ZZ(soname,fnname) VG_CONCAT4(_vgwZZ_,soname,_,fnname)
++#define VG_WRAP_I_FUNCTION_ZZ(soname,fnname) VG_CONCAT4(_vgiwZZ_,soname,_,fnname)
+ 
+ /* --------- Some handy Z-encoded names. --------- */
+ 
+diff --git a/memcheck/mc_replace_strmem.c b/memcheck/mc_replace_strmem.c
+index c15717a..abd838f 100644
+--- a/memcheck/mc_replace_strmem.c
++++ b/memcheck/mc_replace_strmem.c
+@@ -116,6 +116,7 @@ Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
+ STRRCHR(VG_Z_LIBC_SONAME,   strrchr)
+ STRRCHR(VG_Z_LIBC_SONAME,   rindex)
+ #if defined(VGO_linux)
++STRRCHR(VG_Z_LIBC_SONAME,   __GI_strrchr)
+ STRRCHR(VG_Z_LD_LINUX_SO_2, rindex)
+ #elif defined(VGO_darwin)
+ STRRCHR(VG_Z_DYLD,          strrchr)
+@@ -140,6 +141,7 @@ STRRCHR(VG_Z_DYLD,          rindex)
+ STRCHR(VG_Z_LIBC_SONAME,          strchr)
+ STRCHR(VG_Z_LIBC_SONAME,          index)
+ #if defined(VGO_linux)
++STRCHR(VG_Z_LIBC_SONAME,          __GI_strchr)
+ STRCHR(VG_Z_LD_LINUX_SO_2,        strchr)
+ STRCHR(VG_Z_LD_LINUX_SO_2,        index)
+ STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, strchr)
+@@ -172,7 +174,9 @@ STRCHR(VG_Z_DYLD,                 index)
+    }
+ 
+ STRCAT(VG_Z_LIBC_SONAME, strcat)
+-
++#if defined(VGO_linux)
++STRCAT(VG_Z_LIBC_SONAME, __GI_strcat)
++#endif
+ 
+ #define STRNCAT(soname, fnname) \
+    char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+@@ -257,6 +261,9 @@ STRLCAT(VG_Z_DYLD,        strlcat)
+    }
+ 
+ STRNLEN(VG_Z_LIBC_SONAME, strnlen)
++#if defined(VGO_linux)
++STRNLEN(VG_Z_LIBC_SONAME, __GI_strnlen)
++#endif
+    
+ 
+ // Note that this replacement often doesn't get used because gcc inlines
+@@ -274,6 +281,7 @@ STRNLEN(VG_Z_LIBC_SONAME, strnlen)
+ 
+ STRLEN(VG_Z_LIBC_SONAME,          strlen)
+ #if defined(VGO_linux)
++STRLEN(VG_Z_LIBC_SONAME,          __GI_strlen)
+ STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
+ STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
+ #endif
+@@ -301,7 +309,9 @@ STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
+    }
+ 
+ STRCPY(VG_Z_LIBC_SONAME, strcpy)
+-#if defined(VGO_darwin)
++#if defined(VGO_linux)
++STRCPY(VG_Z_LIBC_SONAME, __GI_strcpy)
++#elif defined(VGO_darwin)
+ STRCPY(VG_Z_DYLD,        strcpy)
+ #endif
+ 
+@@ -327,7 +337,9 @@ STRCPY(VG_Z_DYLD,        strcpy)
+    }
+ 
+ STRNCPY(VG_Z_LIBC_SONAME, strncpy)
+-#if defined(VGO_darwin)
++#if defined(VGO_linux)
++STRNCPY(VG_Z_LIBC_SONAME, __GI_strncpy)
++#elif defined(VGO_darwin)
+ STRNCPY(VG_Z_DYLD,        strncpy)
+ #endif
+ 
+@@ -384,7 +396,9 @@ STRLCPY(VG_Z_DYLD,        strlcpy)
+    }
+ 
+ STRNCMP(VG_Z_LIBC_SONAME, strncmp)
+-#if defined(VGO_darwin)
++#if defined(VGO_linux)
++STRNCMP(VG_Z_LIBC_SONAME, __GI_strncmp)
++#elif defined(VGO_darwin)
+ STRNCMP(VG_Z_DYLD,        strncmp)
+ #endif
+ 
+@@ -411,6 +425,7 @@ STRNCMP(VG_Z_DYLD,        strncmp)
+ 
+ STRCMP(VG_Z_LIBC_SONAME,          strcmp)
+ #if defined(VGO_linux)
++STRCMP(VG_Z_LIBC_SONAME,          __GI_strcmp)
+ STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
+ STRCMP(VG_Z_LD64_SO_1,            strcmp)
+ #endif
+@@ -557,6 +572,7 @@ MEMCMP(VG_Z_DYLD,        bcmp)
+ 
+ STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
+ #if defined(VGO_linux)
++STPCPY(VG_Z_LIBC_SONAME,          __GI_stpcpy)
+ STPCPY(VG_Z_LD_LINUX_SO_2,        stpcpy)
+ STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
+ #elif defined(VGO_darwin)
+@@ -709,7 +725,9 @@ GLIBC232_STRCHRNUL(VG_Z_LIBC_SONAME, strchrnul)
+    }
+ 
+ GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, rawmemchr)
+-
++#if defined (VGO_linux)
++GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
++#endif
+ 
+ /* glibc variant of strcpy that checks the dest is big enough.
+    Copied from glibc-2.5/debug/test-strcpy_chk.c. */
