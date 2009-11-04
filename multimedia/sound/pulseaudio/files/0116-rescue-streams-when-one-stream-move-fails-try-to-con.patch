@@ -1,0 +1,48 @@
+From d7b3dbff6cf97f63d88cb82d70cbcb10f6c1d36e Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 17 Apr 2009 20:30:09 +0200
+Subject: [PATCH 116/127] rescue-streams: when one stream move fails try to continue with the remaining ones
+
+---
+ src/modules/module-rescue-streams.c |   16 ++++++----------
+ 1 files changed, 6 insertions(+), 10 deletions(-)
+
+diff --git a/src/modules/module-rescue-streams.c b/src/modules/module-rescue-streams.c
+index 4f616e0..7c99a9b 100644
+--- a/src/modules/module-rescue-streams.c
++++ b/src/modules/module-rescue-streams.c
+@@ -77,12 +77,10 @@ static pa_hook_result_t sink_hook_callback(pa_core *c, pa_sink *sink, void* user
+     }
+ 
+     while ((i = pa_idxset_first(sink->inputs, NULL))) {
+-        if (pa_sink_input_move_to(i, target, FALSE) < 0) {
++        if (pa_sink_input_move_to(i, target, FALSE) < 0)
+             pa_log_warn("Failed to move sink input %u \"%s\" to %s.", i->index, pa_proplist_gets(i->proplist, PA_PROP_APPLICATION_NAME), target->name);
+-            return PA_HOOK_OK;
+-        }
+-
+-        pa_log_info("Sucessfully moved sink input %u \"%s\" to %s.", i->index, pa_proplist_gets(i->proplist, PA_PROP_APPLICATION_NAME), target->name);
++        else
++            pa_log_info("Sucessfully moved sink input %u \"%s\" to %s.", i->index, pa_proplist_gets(i->proplist, PA_PROP_APPLICATION_NAME), target->name);
+     }
+ 
+ 
+@@ -121,12 +119,10 @@ static pa_hook_result_t source_hook_callback(pa_core *c, pa_source *source, void
+     pa_assert(target != source);
+ 
+     while ((o = pa_idxset_first(source->outputs, NULL))) {
+-        if (pa_source_output_move_to(o, target, FALSE) < 0) {
++        if (pa_source_output_move_to(o, target, FALSE) < 0)
+             pa_log_warn("Failed to move source output %u \"%s\" to %s.", o->index, pa_proplist_gets(o->proplist, PA_PROP_APPLICATION_NAME), target->name);
+-            return PA_HOOK_OK;
+-        }
+-
+-        pa_log_info("Sucessfully moved source output %u \"%s\" to %s.", o->index, pa_proplist_gets(o->proplist, PA_PROP_APPLICATION_NAME), target->name);
++        else
++            pa_log_info("Sucessfully moved source output %u \"%s\" to %s.", o->index, pa_proplist_gets(o->proplist, PA_PROP_APPLICATION_NAME), target->name);
+     }
+ 
+ 
+-- 
+1.6.3
+

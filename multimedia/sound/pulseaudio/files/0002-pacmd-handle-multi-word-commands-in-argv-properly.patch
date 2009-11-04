@@ -1,0 +1,25 @@
+From 81eeb0667edddf587981f99631370dbcd00be3f2 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 14 Aug 2009 04:12:36 +0200
+Subject: [PATCH 2/5] pacmd: handle multi word commands in argv[] properly
+
+---
+ src/utils/pacmd.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/src/utils/pacmd.c b/src/utils/pacmd.c
+index d94f266..46c44c2 100644
+--- a/src/utils/pacmd.c
++++ b/src/utils/pacmd.c
+@@ -106,7 +106,7 @@ int main(int argc, char*argv[]) {
+             size_t k;
+ 
+             k = PA_MIN(sizeof(ibuf) - ibuf_length, strlen(argv[i]));
+-            memcpy(ibuf + ibuf_length, argv[1], k);
++            memcpy(ibuf + ibuf_length, argv[i], k);
+             ibuf_length += k;
+ 
+             if (ibuf_length < sizeof(ibuf)) {
+-- 
+1.6.4.2
+
