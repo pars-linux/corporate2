@@ -1,0 +1,55 @@
+From 276f58f77952e4983d3e701686bce96b1bdd7fed Mon Sep 17 00:00:00 2001
+From: =?utf-8?q?Ozan=20=C3=87a=C4=9Flayan?= <ozan@pardus.org.tr>
+Date: Tue, 23 Jun 2009 12:38:53 +0300
+Subject: [PATCH] Avision backend: Mark FCPA 620C with AV_LIGHT_CHECK_BOGUS
+
+backend/avision.c: Mark Fujitsu ScanPartner 620C with
+AV_LIGHT_CHECK_BOGUS as it currently refuses to work through avision
+after 90 tries:
+
+scanimage --device=avision:/dev/sg0 --source ADF --mode Color
+
+[sanei_debug] Setting debug level of avision to 7.
+[avision] sane_init:(Version: 1.0 Build: 290)
+[avision] sane_init: parsing config line ""
+..
+..
+[avision] sane_start: media_check ok
+[avision] wait_4_light: getting light status.
+[avision] wait_4_light: read bytes 1
+[avision] wait_4_light: command is 0. Result is needs warm up test
+[avision] wait_4_light: setting light status.
+[avision] wait_4_light: read bytes 1
+[avision] wait_4_light: command is 0. Result is needs warm up test
+[avision] wait_4_light: setting light status.
+[avision] wait_4_light: read bytes 1
+[avision] wait_4_light: command is 0. Result is needs warm up test
+[avision] wait_4_light: setting light status.
+[avision] wait_4_light: read bytes 1
+[avision] wait_4_light: command is 0. Result is needs warm up test
+[avision] wait_4_light: setting light status.
+[avision] wait_4_light: read bytes 1
+[avision] wait_4_light: command is 0. Result is needs warm up test
+[avision] wait_4_light: setting light status.
+
+Tested and verified that it now works with Flatbed and ADF mode.
+---
+ backend/avision.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/backend/avision.c b/backend/avision.c
+index 2664664..2e5d672 100644
+--- a/backend/avision.c
++++ b/backend/avision.c
+@@ -801,7 +801,7 @@ static Avision_HWEntry Avision_Device_List [] =
+     { "FCPA", "ScanPartner 620C",
+       0, 0,
+       "Fujitsu", "ScanPartner 620C",
+-      0},
++      AV_LIGHT_CHECK_BOGUS},
+     /* status="good" */
+     
+     { "FCPA", "ScanPartner Jr",
+-- 
+1.6.3
+
