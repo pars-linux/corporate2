@@ -28,4 +28,6 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
+    pisitools.removeDir("/usr/share/gtk-doc")
+
     pisitools.dodoc("AUTHORS", "ChangeLog", "HACKING", "NEWS", "README")
