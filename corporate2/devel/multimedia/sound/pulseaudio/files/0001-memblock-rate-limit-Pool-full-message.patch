@@ -1,0 +1,26 @@
+From 05f239a74a18fbda2406e2fc306a0f6c1b764d8a Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 12 Aug 2009 21:40:38 +0200
+Subject: [PATCH 1/5] memblock: rate limit 'Pool full' message
+
+---
+ src/pulsecore/memblock.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/src/pulsecore/memblock.c b/src/pulsecore/memblock.c
+index 6cc0ff3..cb70f27 100644
+--- a/src/pulsecore/memblock.c
++++ b/src/pulsecore/memblock.c
+@@ -255,7 +255,8 @@ static struct mempool_slot* mempool_allocate_slot(pa_mempool *p) {
+             slot = (struct mempool_slot*) ((uint8_t*) p->memory.ptr + (p->block_size * (size_t) idx));
+ 
+         if (!slot) {
+-            pa_log_info("Pool full");
++            if (pa_log_ratelimit())
++                pa_log_debug("Pool full");
+             pa_atomic_inc(&p->stat.n_pool_full);
+             return NULL;
+         }
+-- 
+1.6.4.2
+
