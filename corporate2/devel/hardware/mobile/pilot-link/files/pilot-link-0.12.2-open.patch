@@ -1,0 +1,51 @@
+--- pilot-link-0.12.2/libpisock/serial.c.pom	2006-10-12 16:21:22.000000000 +0200
++++ pilot-link-0.12.2/libpisock/serial.c	2007-08-29 16:31:25.000000000 +0200
+@@ -286,7 +286,7 @@ pi_serial_connect(pi_socket_t *ps, struc
+ 		data->establishrate = data->rate = 57600;
+ 	}
+ 
+-	if ((err = data->impl.open(ps, pa, addrlen)) < 0)
++	if ((err = (data->impl.open)(ps, pa, addrlen)) < 0)
+ 		return err;	/* errno already set */
+ 
+ 	ps->raddr 	= malloc(addrlen);
+@@ -362,7 +362,7 @@ pi_serial_bind(pi_socket_t *ps, struct s
+ 	}
+ 
+ begin:
+-	if ((err = data->impl.open(ps, pa, addrlen)) < 0) {
++	if ((err = (data->impl.open)(ps, pa, addrlen)) < 0) {
+ 		int 	save_errno = errno;
+ #ifdef MAXPATHLEN
+ 		char	realport[MAXPATHLEN];
+--- pilot-link-0.12.2/libpisock/usb.c.pom	2007-02-09 15:26:09.000000000 +0100
++++ pilot-link-0.12.2/libpisock/usb.c	2007-08-29 16:23:42.000000000 +0200
+@@ -267,7 +267,7 @@ pi_usb_connect(pi_socket_t *ps, struct s
+ 		data->establishrate = data->rate = 57600;
+ 	}
+ 
+-	result = data->impl.open(ps, pa, addrlen);
++	result = (data->impl.open)(ps, pa, addrlen);
+ 	if (result < 0)
+ 		goto fail;
+ 
+@@ -343,7 +343,7 @@ pi_usb_bind(pi_socket_t *ps, struct sock
+ 		data->establishrate = data->rate = 57600;
+ 	}
+ 
+-	result = data->impl.open(ps, pa, addrlen);
++	result = (data->impl.open)(ps, pa, addrlen);
+ 	if (result < 0)
+ 		return result;
+ 
+--- pilot-link-0.12.2/src/pilot-schlep.c.pom	2006-10-12 16:21:21.000000000 +0200
++++ pilot-link-0.12.2/src/pilot-schlep.c	2007-08-29 16:44:40.000000000 +0200
+@@ -38,7 +38,7 @@ static int Fetch(int sd, char *filename)
+ 		fd;
+ 	pi_buffer_t *buffer;
+ 
+-	fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC);
++	fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+ 	if (fd < 0)
+ 		return -1;
+ 
