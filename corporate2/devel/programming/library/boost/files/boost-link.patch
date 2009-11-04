@@ -1,0 +1,21 @@
+--- boost_1_37_0/libs/python/build/Jamfile.v2.orig	2007-11-25 18:38:02.000000000 +0000
++++ boost_1_37_0/libs/python/build/Jamfile.v2	2008-11-06 12:56:51.000000000 +0000
+@@ -29,6 +29,8 @@
+ rule cond ( test ? : yes * : no * ) { if $(test) { return $(yes) ; } else { return $(no) ; } }
+ rule unless ( test ? : yes * : no * ) { if ! $(test) { return $(yes) ; } else { return $(no) ; } }
+ 
++lib pythonlib : : <name>PARDUS_PYTHON <link>shared ;
++
+ lib boost_python
+     : # sources
+     numeric.cpp
+@@ -60,6 +62,9 @@
+     import.cpp
+     exec.cpp
+     object/function_doc_signature.cpp
++
++    pythonlib
++
+     :   # requirements
+         <link>static:<define>BOOST_PYTHON_STATIC_LIB 
+         <define>BOOST_PYTHON_SOURCE

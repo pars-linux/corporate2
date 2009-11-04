@@ -1,0 +1,31 @@
+Index: tools/build/v2/tools/gcc.jam
+===================================================================
+--- tools/build/v2/tools/gcc.jam.orig
++++ tools/build/v2/tools/gcc.jam
+@@ -89,7 +89,7 @@ rule init ( version ? : command * : opti
+ {
+     # Information about the gcc command...
+     #   The command.
+-    local command = [ common.get-invocation-command gcc : g++ : $(command) ] ;
++    local command = [ common.get-invocation-command gcc : PARDUS_CXX_ : $(command) ] ;
+     #   The root directory of the tool install.
+     local root = [ feature.get-values <root> : $(options) ] ;
+     #   The bin directory where to find the command to execute.
+@@ -299,7 +299,7 @@ toolset.flags gcc.compile PCH_FILE <pch>
+ 
+ # Declare flags and action for compilation.
+ toolset.flags gcc.compile OPTIONS <optimization>off   : -O0 ;
+-toolset.flags gcc.compile OPTIONS <optimization>speed : -O3 ;
++toolset.flags gcc.compile OPTIONS <optimization>speed : PARDUS_CXXFLAGS ;
+ toolset.flags gcc.compile OPTIONS <optimization>space : -Os ;
+ 
+ toolset.flags gcc.compile OPTIONS <inlining>off  : -fno-inline ;
+@@ -654,7 +654,7 @@ rule init-link-flags ( toolset linker co
+         toolset.flags $(toolset).link FINDLIBS-ST-PFX $(condition)/<runtime-link>shared
+             : -Wl,-Bstatic : unchecked ;
+         toolset.flags $(toolset).link FINDLIBS-SA-PFX $(condition)/<runtime-link>shared
+-            : -Wl,-Bdynamic : unchecked ;
++            : -Wl,-Bdynamic PARDUS_LDFLAGS : unchecked ;
+ 
+         # On windows allow mixing of static and dynamic libs with static
+         # runtime.
