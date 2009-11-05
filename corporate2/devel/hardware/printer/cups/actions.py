@@ -68,7 +68,6 @@ def install():
 
     # cleanups
     pisitools.removeDir("/etc/pam.d")
-    pisitools.removeDir("/usr/share/applications")
 
     # Serial backend needs to run as root
     shelltools.chmod("%s/usr/lib/cups/backend/serial" % get.installDIR(), 0700)
