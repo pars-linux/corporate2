@@ -1,0 +1,45 @@
+--- Makefile.in	2007-12-24 04:48:22.000000000 +0200
++++ Makefile.in	2007-12-24 04:47:58.000000000 +0200
+@@ -508,22 +508,10 @@
+ ###################################
+ 
+ Makefile: $(srcdir)/Makefile.in $(host_makefile_frag) config.status
+-	@echo "Rebuilding the Makefile..."
+-	$(SHELL) ./config.status
+ 
+ # Let "make -f Makefile.in" produce a configure file
+ configure: $(srcdir)/configure.in $(srcdir)/Makefile.in \
+ 		$(srcdir)/expect_cf.h.in $(srcdir)/aclocal.m4
+-	@echo "Rebuilding configure..."
+-	if [ x"${srcdir}" = x"@srcdir@" ] ; then \
+-	  srcdir=. ; export srcdir ; \
+-	else true ; fi ; \
+-	(cd $${srcdir}; autoconf)
+-
+-config.status: $(srcdir)/configure
+-	@echo "Rebuilding config.status..."
+-	$(SHELL) ./config.status --recheck
+-
+ check:
+ 	@if [ -f testsuite/Makefile ]; then \
+ 	   cd testsuite && $(MAKE) $(FLAGS_TO_PASS) check; \
+--- testsuite/Makefile.in	2002-02-12 04:00:58.000000000 +0200
++++ testsuite/Makefile.in.t	2007-12-24 04:48:07.000000000 +0200
+@@ -93,17 +93,4 @@
+ Makefile : $(srcdir)/Makefile.in $(host_makefile_frag)
+ 	$(SHELL) ./config.status
+ 
+-# Original aclocal.m4 comes from DejaGnu
+-# CYGNUS LOCAL: this hack lets "make -f Makefile.in" produce a configure file
+-configure: force
+-	@echo "Rebuilding configure..."
+-	if [ x"${srcdir}" = x"@srcdir@" ] ; then \
+-	  srcdir=. ; export srcdir ; \
+-	else true ; fi ; \
+-	(cd $${srcdir}; autoconf --localdir=$${srcdir}/..)
+-     
+-config.status: $(srcdir)/configure
+-	@echo "Rebuilding config.status..."
+-	$(SHELL) ./config.status --recheck
+-
+ force:
