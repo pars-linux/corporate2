@@ -1,0 +1,89 @@
+Index: texlive-20080816-source/texk/texlive/Makefile.in
+===================================================================
+--- texlive-20080816-source.orig/texlive-20080816-source/texk/texlive/Makefile.in
++++ texlive-20080816-source/texlive-20080816-source/texk/texlive/Makefile.in
+@@ -14,53 +14,15 @@ LINKED_SCRIPTS = \
+   texmf/scripts/a2ping/a2ping.pl \
+   texmf/scripts/epstopdf/epstopdf.pl \
+   texmf/scripts/pkfix/pkfix.pl \
+-  texmf/scripts/ps2eps/ps2eps.pl \
+-  texmf/scripts/simpdftex/simpdftex \
+   texmf/scripts/tetex/e2pall.pl \
+   texmf/scripts/tetex/texdoctk.pl \
+   texmf/scripts/texlive/getnonfreefonts.pl \
+   texmf/scripts/texlive/rungs.tlu \
+   texmf/scripts/texlive/texdoc.tlu \
+-  texmf/scripts/texlive/tlmgr.pl \
+-  texmf-dist/scripts/bengali/ebong.py \
+   texmf-dist/scripts/dviasm/dviasm.py \
+-  texmf-dist/scripts/epspdf/epspdf \
+-  texmf-dist/scripts/epspdf/epspdftk \
+-  texmf-dist/scripts/glossaries/makeglossaries \
+   texmf-dist/scripts/mkjobtexmf/mkjobtexmf.pl \
+-  texmf-dist/scripts/oberdiek/pdfatfi.pl \
+   texmf-dist/scripts/pdfcrop/pdfcrop.pl \
+-  texmf-dist/scripts/perltex/perltex.pl \
+-  texmf-dist/scripts/ppower4/pdfthumb.texlua \
+-  texmf-dist/scripts/ppower4/ppower4.texlua \
+-  texmf-dist/scripts/pst-pdf/ps4pdf \
+-  texmf-dist/scripts/pst2pdf/pst2pdf.pl \
+   texmf-dist/scripts/texcount/TeXcount.pl \
+-  texmf-dist/scripts/thumbpdf/thumbpdf.pl \
+-  texmf-dist/scripts/vpe/vpe.pl \
+-  texmf-dist/scripts/context/ruby/texmfstart.rb \
+-  texmf-dist/scripts/context/stubs/unix/context \
+-  texmf-dist/scripts/context/stubs/unix/ctxtools \
+-  texmf-dist/scripts/context/stubs/unix/exatools \
+-  texmf-dist/scripts/context/stubs/unix/luatools \
+-  texmf-dist/scripts/context/stubs/unix/makempy \
+-  texmf-dist/scripts/context/stubs/unix/mpstools \
+-  texmf-dist/scripts/context/stubs/unix/mptopdf \
+-  texmf-dist/scripts/context/stubs/unix/mtxrun \
+-  texmf-dist/scripts/context/stubs/unix/mtxtools \
+-  texmf-dist/scripts/context/stubs/unix/pdftools \
+-  texmf-dist/scripts/context/stubs/unix/pdftrimwhite \
+-  texmf-dist/scripts/context/stubs/unix/pstopdf \
+-  texmf-dist/scripts/context/stubs/unix/rlxtools \
+-  texmf-dist/scripts/context/stubs/unix/runtools \
+-  texmf-dist/scripts/context/stubs/unix/texexec \
+-  texmf-dist/scripts/context/stubs/unix/texfind \
+-  texmf-dist/scripts/context/stubs/unix/texfont \
+-  texmf-dist/scripts/context/stubs/unix/texshow \
+-  texmf-dist/scripts/context/stubs/unix/textools \
+-  texmf-dist/scripts/context/stubs/unix/texutil \
+-  texmf-dist/scripts/context/stubs/unix/tmftools \
+-  texmf-dist/scripts/context/stubs/unix/xmltools \
+ 
+ manpgs = getnonfreefonts getnonfreefonts-sys
+ 
+@@ -108,13 +70,13 @@ install-exec:
+ 	  target=$$target; \
+ 	  rm -f $$target; \
+ 	  case "$(scriptdir)" in \
+-	    */bin)   d=..;; \
+-	    */bin/*) d=../..;; \
++	    */bin)   d=../share;; \
++	    */bin/*) d=../../share;; \
+ 	    *) echo "$(scriptdir): strange directory for linked scripts" >&2;\
+ 	      exit 1;; \
+ 	  esac; \
+-	  $(SHELL) $(srcdir)/../mkinstalldirs $(prefix)/`dirname $$s`; \
+-	  $(INSTALL_SCRIPT) $(srcdir)/linked_scripts/`basename $$s` $(prefix)/$$s; \
++	  $(SHELL) $(srcdir)/../mkinstalldirs $(prefix)/share/`dirname $$s`; \
++	  $(INSTALL_SCRIPT) $(srcdir)/linked_scripts/`basename $$s` $(prefix)/share/$$s; \
+ 	  ln -s $$d/$$s $$target; \
+ 	done
+ 	rm -f $(scriptdir)/getnonfreefonts-sys
+Index: texlive-20080816-source/texk/tetex/Makefile.in
+===================================================================
+--- texlive-20080816-source.orig/texlive-20080816-source/texk/tetex/Makefile.in
++++ texlive-20080816-source/texk/texlive-20080816-source/tetex/Makefile.in
+@@ -11,7 +11,7 @@ man5dir = $(mandir)/man5
+ 
+ SCRIPTS = \
+   allcm allneeded dvi2fax dvired fmtutil fmtutil-sys fontinst \
+-  kpsetool kpsewhere ps2frag ps4pdf pslatex rubibtex rumakeindex \
++  kpsetool kpsewhere ps2frag pslatex rubibtex rumakeindex \
+   texconfig texconfig-dialog texconfig-sys \
+   texlinks updmap updmap-sys
+ 

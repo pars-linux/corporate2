@@ -1,0 +1,3099 @@
+diff -ur texlive-20080816-source/texk/web2c/pdftexdir.orig/epdf.h texlive-20080816-source/texk/web2c/pdftexdir/epdf.h
+--- texlive-20080816-source/texlive-20080816-source/texk/web2c/pdftexdir.orig/epdf.h	2008-11-21 19:40:30.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/texk/web2c/pdftexdir/epdf.h	2008-11-21 19:51:16.000000000 +0300
+@@ -78,7 +78,7 @@
+     extern char notdef[];
+ 
+     extern int is_subsetable(struct fm_entry *);
+-    extern struct fm_entry *lookup_fontmap(char *);
++    extern struct fm_entry *lookup_fontmap(const char *);
+     extern integer get_fontfile(struct fm_entry *);
+     extern integer get_fontname(struct fm_entry *);
+     extern integer pdfnewobjnum(void);
+@@ -116,7 +116,7 @@
+     extern int get_fn_objnum(struct fd_entry *);
+ 
+ /* write_enc.c */
+-    extern void epdf_write_enc(char **, integer);
++    extern void epdf_write_enc(const char **, integer);
+ 
+ /* utils.c */
+     extern char *convertStringToPDFString(char *in, int len);
+diff -ur texlive-20080816-source/texk/web2c/pdftexdir.orig/mapfile.c texlive-20080816-source/texk/web2c/pdftexdir/mapfile.c
+--- texlive-20080816-source/texlive-20080816-source/texk/web2c/pdftexdir.orig/mapfile.c	2008-11-21 19:40:30.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/texk/web2c/pdftexdir/mapfile.c	2008-11-21 19:56:54.000000000 +0300
+@@ -645,10 +645,11 @@
+  * used for Type1 font replacement when embedding of PDF files
+  */
+ 
+-fm_entry *lookup_fontmap(char *ps_name)
++fm_entry *lookup_fontmap(const char *ps_name)
+ {
+     fm_entry *fm, *fm2, tmp;
+-    char *a, *b, *c, *d, *e, *s;
++    char *a, *b, *c, *d, *e;
++    const char *s;
+     int i, sl, ex;
+     struct avl_traverser t, t2;
+     if (tfm_tree == NULL)
+@@ -705,7 +706,7 @@
+             }
+         }
+     }
+-    tmp.ps_name = s;
++    tmp.ps_name = (char*)s;
+ 
+     fm = (fm_entry *) avl_t_find(&t, ps_tree, &tmp);
+     if (fm == NULL)
+diff -ur texlive-20080816-source/texk/web2c/pdftexdir.orig/pdftoepdf.cc texlive-20080816-source/texk/web2c/pdftexdir/pdftoepdf.cc
+--- texlive-20080816-source/texlive-20080816-source/texk/web2c/pdftexdir.orig/pdftoepdf.cc	2008-11-21 19:40:30.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/texk/web2c/pdftexdir/pdftoepdf.cc	2008-11-21 19:57:43.000000000 +0300
+@@ -281,7 +281,7 @@
+ 
+ static void copyObject(Object *);
+ 
+-static void copyName(char *s)
++static void copyName(const char *s)
+ {
+     pdf_puts("/");
+     for (; *s != 0; s++) {
+@@ -316,7 +316,7 @@
+ static void copyFontDict(Object * obj, InObj * r)
+ {
+     int i, l;
+-    char *key;
++    const char *key;
+     if (!obj->isDict())
+         pdftex_fail("PDF inclusion: invalid dict type <%s>",
+                     obj->getTypeName());
+@@ -369,7 +369,7 @@
+ 
+ #define REPLACE_TYPE1C true
+ 
+-static void copyFont(char *tag, Object * fontRef)
++static void copyFont(const char *tag, Object * fontRef)
+ {
+     PdfObject fontdict, subtype, basefont, fontdescRef, fontdesc, charset,
+         fontfile, ffsubtype, stemV;
+@@ -441,7 +441,7 @@
+     pdf_puts(">>\n");
+ }
+ 
+-static void copyOtherResources(Object * obj, char *key)
++static void copyOtherResources(Object * obj, const char *key)
+ {
+     // copies all other resources (write_epdf handles Fonts and ProcSets),
+     // but gives a warning if an object is not a dictionary.
+@@ -626,7 +626,7 @@
+ static void writeEncodings()
+ {
+     UsedEncoding *r, *n;
+-    char *glyphNames[256], *s;
++    const char *glyphNames[256], *s;
+     int i;
+     for (r = encodingList; r != 0; r = r->next) {
+         for (i = 0; i < 256; i++) {
+@@ -809,7 +809,7 @@
+     PdfObject contents, obj1, obj2;
+     PdfObject metadata, pieceinfo, separationInfo;
+     Object info;
+-    char *key;
++    const char *key;
+     char s[256];
+     int i, l;
+     int rotate;
+diff -ur texlive-20080816-source/texk/web2c/pdftexdir.orig/ptexlib.h texlive-20080816-source/texk/web2c/pdftexdir/ptexlib.h
+--- texlive-20080816-source/texlive-20080816-source/texk/web2c/pdftexdir.orig/ptexlib.h	2008-11-21 19:40:30.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/texk/web2c/pdftexdir/ptexlib.h	2008-11-21 19:44:10.000000000 +0300
+@@ -172,7 +172,7 @@
+ extern void epdf_free(void);
+ 
+ /* mapfile.c */
+-extern fm_entry *lookup_fontmap(char *);
++extern fm_entry *lookup_fontmap(const char *);
+ extern boolean hasfmentry(internalfontnumber);
+ extern void fm_free(void);
+ extern void fm_read_info(void);
+diff -ur texlive-20080816-source/texk/web2c/pdftexdir.orig/writeenc.c texlive-20080816-source/texk/web2c/pdftexdir/writeenc.c
+--- texlive-20080816-source/texlive-20080816-source/texk/web2c/pdftexdir.orig/writeenc.c	2008-11-21 19:40:30.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/texk/web2c/pdftexdir/writeenc.c	2008-11-21 19:51:40.000000000 +0300
+@@ -111,7 +111,7 @@
+     pdfenddict();
+ }
+ 
+-void write_enc(char **glyph_names, struct avl_table *tx_tree, integer fe_objnum)
++void write_enc(const char **glyph_names, struct avl_table *tx_tree, integer fe_objnum)
+ {
+     int i_old, *p;
+     struct avl_traverser t;
+diff -ur texlive-20080816-source/libs/xpdf.orig/fofi/FoFiBase.cc texlive-20080816-source/libs/xpdf/fofi/FoFiBase.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/fofi/FoFiBase.cc	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/fofi/FoFiBase.cc	2008-11-21 17:12:15.000000000 +0300
+@@ -20,7 +20,7 @@
+ // FoFiBase
+ //------------------------------------------------------------------------
+ 
+-FoFiBase::FoFiBase(char *fileA, int lenA, GBool freeFileDataA) {
++FoFiBase::FoFiBase(const char *fileA, int lenA, GBool freeFileDataA) {
+   fileData = file = (Guchar *)fileA;
+   len = lenA;
+   freeFileData = freeFileDataA;
+@@ -32,7 +32,7 @@
+   }
+ }
+ 
+-char *FoFiBase::readFile(char *fileName, int *fileLen) {
++const char *FoFiBase::readFile(const char *fileName, int *fileLen) {
+   FILE *f;
+   char *buf;
+   int n;
+diff -ur texlive-20080816-source/libs/xpdf.orig/fofi/FoFiBase.h texlive-20080816-source/libs/xpdf/fofi/FoFiBase.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/fofi/FoFiBase.h	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/fofi/FoFiBase.h	2008-11-21 17:11:30.000000000 +0300
+@@ -19,7 +19,7 @@
+ 
+ //------------------------------------------------------------------------
+ 
+-typedef void (*FoFiOutputFunc)(void *stream, char *data, int len);
++typedef void (*FoFiOutputFunc)(void *stream, const char *data, int len);
+ 
+ //------------------------------------------------------------------------
+ // FoFiBase
+@@ -32,8 +32,8 @@
+ 
+ protected:
+ 
+-  FoFiBase(char *fileA, int lenA, GBool freeFileDataA);
+-  static char *readFile(char *fileName, int *fileLen);
++  FoFiBase(const char *fileA, int lenA, GBool freeFileDataA);
++  static const char *readFile(const char *fileName, int *fileLen);
+ 
+   // S = signed / U = unsigned
+   // 8/16/32/Var = word length, in bytes
+diff -ur texlive-20080816-source/libs/xpdf.orig/fofi/FoFiEncodings.cc texlive-20080816-source/libs/xpdf/fofi/FoFiEncodings.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/fofi/FoFiEncodings.cc	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/fofi/FoFiEncodings.cc	2008-11-21 17:57:18.000000000 +0300
+@@ -19,7 +19,7 @@
+ // Type 1 and 1C font data
+ //------------------------------------------------------------------------
+ 
+-char *fofiType1StandardEncoding[256] = {
++const char *fofiType1StandardEncoding[256] = {
+   NULL,
+   NULL,
+   NULL,
+@@ -278,7 +278,7 @@
+   NULL
+ };
+ 
+-char *fofiType1ExpertEncoding[256] = {
++const char *fofiType1ExpertEncoding[256] = {
+   NULL,
+   NULL,
+   NULL,
+@@ -541,7 +541,7 @@
+ // Type 1C font data
+ //------------------------------------------------------------------------
+ 
+-char *fofiType1CStdStrings[391] = {
++const char *fofiType1CStdStrings[391] = {
+   ".notdef",
+   "space",
+   "exclam",
+diff -ur texlive-20080816-source/libs/xpdf.orig/fofi/FoFiEncodings.h texlive-20080816-source/libs/xpdf/fofi/FoFiEncodings.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/fofi/FoFiEncodings.h	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/fofi/FoFiEncodings.h	2008-11-21 17:56:55.000000000 +0300
+@@ -21,14 +21,14 @@
+ // Type 1 and 1C font data
+ //------------------------------------------------------------------------
+ 
+-extern char *fofiType1StandardEncoding[256];
+-extern char *fofiType1ExpertEncoding[256];
++extern const char *fofiType1StandardEncoding[256];
++extern const char *fofiType1ExpertEncoding[256];
+ 
+ //------------------------------------------------------------------------
+ // Type 1C font data
+ //------------------------------------------------------------------------
+ 
+-extern char *fofiType1CStdStrings[391];
++extern const char *fofiType1CStdStrings[391];
+ extern Gushort fofiType1CISOAdobeCharset[229];
+ extern Gushort fofiType1CExpertCharset[166];
+ extern Gushort fofiType1CExpertSubsetCharset[87];
+diff -ur texlive-20080816-source/libs/xpdf.orig/fofi/FoFiTrueType.cc texlive-20080816-source/libs/xpdf/fofi/FoFiTrueType.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/fofi/FoFiTrueType.cc	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/fofi/FoFiTrueType.cc	2008-11-21 17:36:50.000000000 +0300
+@@ -143,7 +143,7 @@
+ //------------------------------------------------------------------------
+ 
+ struct T42Table {
+-  char *tag;			// 4-byte tag
++  const char *tag;		// 4-byte tag
+   GBool required;		// required by the TrueType spec?
+ };
+ 
+@@ -173,7 +173,7 @@
+ 
+ // Glyph names in some arbitrary standard order that Apple uses for
+ // their TrueType fonts.
+-static char *macGlyphNames[258] = {
++static const char *macGlyphNames[258] = {
+   ".notdef",        "null",           "CR",             "space",
+   "exclam",         "quotedbl",       "numbersign",     "dollar",
+   "percent",        "ampersand",      "quotesingle",    "parenleft",
+@@ -245,7 +245,7 @@
+ // FoFiTrueType
+ //------------------------------------------------------------------------
+ 
+-FoFiTrueType *FoFiTrueType::make(char *fileA, int lenA) {
++FoFiTrueType *FoFiTrueType::make(const char *fileA, int lenA) {
+   FoFiTrueType *ff;
+ 
+   ff = new FoFiTrueType(fileA, lenA, gFalse);
+@@ -256,9 +256,9 @@
+   return ff;
+ }
+ 
+-FoFiTrueType *FoFiTrueType::load(char *fileName) {
++FoFiTrueType *FoFiTrueType::load(const char *fileName) {
+   FoFiTrueType *ff;
+-  char *fileA;
++  const char *fileA;
+   int lenA;
+ 
+   if (!(fileA = FoFiBase::readFile(fileName, &lenA))) {
+@@ -272,7 +272,7 @@
+   return ff;
+ }
+ 
+-FoFiTrueType::FoFiTrueType(char *fileA, int lenA, GBool freeFileDataA):
++FoFiTrueType::FoFiTrueType(const char *fileA, int lenA, GBool freeFileDataA):
+   FoFiBase(fileA, lenA, freeFileDataA)
+ {
+   tables = NULL;
+@@ -388,7 +388,7 @@
+   return gid;
+ }
+ 
+-int FoFiTrueType::mapNameToGID(char *name) {
++int FoFiTrueType::mapNameToGID(const char *name) {
+   if (!nameToGID) {
+     return 0;
+   }
+@@ -408,7 +408,7 @@
+   if (!checkRegion(tables[i].offset, tables[i].len)) {
+     return NULL;
+   }
+-  if (!(ff = FoFiType1C::make((char *)file + tables[i].offset,
++  if (!(ff = FoFiType1C::make((const char *)file + tables[i].offset,
+ 			      tables[i].len))) {
+     return NULL;
+   }
+@@ -441,7 +441,7 @@
+   return 3;
+ }
+ 
+-void FoFiTrueType::convertToType42(char *psName, char **encoding,
++void FoFiTrueType::convertToType42(const char *psName, const char **encoding,
+ 				   Gushort *codeToGID,
+ 				   FoFiOutputFunc outputFunc,
+ 				   void *outputStream) {
+@@ -481,7 +481,7 @@
+   (*outputFunc)(outputStream, "FontName currentdict end definefont pop\n", 40);
+ }
+ 
+-void FoFiTrueType::convertToType1(char *psName, char **newEncoding,
++void FoFiTrueType::convertToType1(const char *psName, const char **newEncoding,
+ 				  GBool ascii, FoFiOutputFunc outputFunc,
+ 				  void *outputStream) {
+   FoFiType1C *ff;
+@@ -494,7 +494,7 @@
+   if (!checkRegion(tables[i].offset, tables[i].len)) {
+     return;
+   }
+-  if (!(ff = FoFiType1C::make((char *)file + tables[i].offset,
++  if (!(ff = FoFiType1C::make((const char *)file + tables[i].offset,
+ 			      tables[i].len))) {
+     return;
+   }
+@@ -502,7 +502,7 @@
+   delete ff;
+ }
+ 
+-void FoFiTrueType::convertToCIDType2(char *psName,
++void FoFiTrueType::convertToCIDType2(const char *psName,
+ 				     Gushort *cidMap, int nCIDs,
+ 				     GBool needVerticalMetrics,
+ 				     FoFiOutputFunc outputFunc,
+@@ -632,7 +632,7 @@
+ 		56);
+ }
+ 
+-void FoFiTrueType::convertToCIDType0(char *psName,
++void FoFiTrueType::convertToCIDType0(const char *psName,
+ 				     FoFiOutputFunc outputFunc,
+ 				     void *outputStream) {
+   FoFiType1C *ff;
+@@ -645,7 +645,7 @@
+   if (!checkRegion(tables[i].offset, tables[i].len)) {
+     return;
+   }
+-  if (!(ff = FoFiType1C::make((char *)file + tables[i].offset,
++  if (!(ff = FoFiType1C::make((const char *)file + tables[i].offset,
+ 			      tables[i].len))) {
+     return;
+   }
+@@ -653,7 +653,7 @@
+   delete ff;
+ }
+ 
+-void FoFiTrueType::convertToType0(char *psName, Gushort *cidMap, int nCIDs,
++void FoFiTrueType::convertToType0(const char *psName, Gushort *cidMap, int nCIDs,
+ 				  GBool needVerticalMetrics,
+ 				  FoFiOutputFunc outputFunc,
+ 				  void *outputStream) {
+@@ -736,7 +736,7 @@
+   (*outputFunc)(outputStream, "FontName currentdict end definefont pop\n", 40);
+ }
+ 
+-void FoFiTrueType::convertToType0(char *psName,
++void FoFiTrueType::convertToType0(const char *psName,
+ 				  FoFiOutputFunc outputFunc,
+ 				  void *outputStream) {
+   FoFiType1C *ff;
+@@ -749,7 +749,7 @@
+   if (!checkRegion(tables[i].offset, tables[i].len)) {
+     return;
+   }
+-  if (!(ff = FoFiType1C::make((char *)file + tables[i].offset,
++  if (!(ff = FoFiType1C::make((const char *)file + tables[i].offset,
+ 			      tables[i].len))) {
+     return;
+   }
+@@ -758,7 +758,7 @@
+ }
+ 
+ void FoFiTrueType::writeTTF(FoFiOutputFunc outputFunc,
+-			    void *outputStream, char *name,
++			    void *outputStream, const char *name,
+ 			    Gushort *codeToGID) {
+   // this substitute cmap table maps char codes 0000-ffff directly to
+   // glyphs 0000-ffff
+@@ -930,7 +930,7 @@
+   if (!missingCmap && !missingName && !missingPost && !missingOS2 &&
+       !unsortedLoca && !badCmapLen && !abbrevHMTX && nZeroLengthTables == 0 &&
+       !name && !codeToGID) {
+-    (*outputFunc)(outputStream, (char *)file, len);
++    (*outputFunc)(outputStream, (const char *)file, len);
+     goto done1;
+   }
+ 
+@@ -1279,14 +1279,14 @@
+   for (i = 0; i < nNewTables; ++i) {
+     if (newTables[i].tag == headTag) {
+       if (checkRegion(newTables[i].origOffset, newTables[i].len)) {
+-	(*outputFunc)(outputStream, (char *)file + newTables[i].origOffset, 8);
++	(*outputFunc)(outputStream, (const char *)file + newTables[i].origOffset, 8);
+ 	checksumBuf[0] = fileChecksum >> 24;
+ 	checksumBuf[1] = fileChecksum >> 16;
+ 	checksumBuf[2] = fileChecksum >> 8;
+ 	checksumBuf[3] = fileChecksum;
+ 	(*outputFunc)(outputStream, checksumBuf, 4);
+ 	(*outputFunc)(outputStream,
+-		      (char *)file + newTables[i].origOffset + 12,
++		      (const char *)file + newTables[i].origOffset + 12,
+ 		      newTables[i].len - 12);
+       } else {
+ 	for (j = 0; j < newTables[i].len; ++j) {
+@@ -1330,7 +1330,7 @@
+ 	if (n > 0) {
+ 	  k = locaTable[j].origOffset;
+ 	  if (checkRegion(pos + k, n)) {
+-	    (*outputFunc)(outputStream, (char *)file + pos + k, n);
++	    (*outputFunc)(outputStream, (const char *)file + pos + k, n);
+ 	  } else {
+ 	    for (k = 0; k < n; ++k) {
+ 	      (*outputFunc)(outputStream, "\0", 1);
+@@ -1343,7 +1343,7 @@
+       }
+     } else {
+       if (checkRegion(newTables[i].origOffset, newTables[i].len)) {
+-	(*outputFunc)(outputStream, (char *)file + newTables[i].origOffset,
++	(*outputFunc)(outputStream, (const char *)file + newTables[i].origOffset,
+ 		      newTables[i].len);
+       } else {
+ 	for (j = 0; j < newTables[i].len; ++j) {
+@@ -1366,10 +1366,10 @@
+   gfree(locaTable);
+ }
+ 
+-void FoFiTrueType::cvtEncoding(char **encoding,
++void FoFiTrueType::cvtEncoding(const char **encoding,
+ 			       FoFiOutputFunc outputFunc,
+ 			       void *outputStream) {
+-  char *name;
++  const char *name;
+   GString *buf;
+   int i;
+ 
+@@ -1395,11 +1395,11 @@
+   (*outputFunc)(outputStream, "readonly def\n", 13);
+ }
+ 
+-void FoFiTrueType::cvtCharStrings(char **encoding,
++void FoFiTrueType::cvtCharStrings(const char **encoding,
+ 				  Gushort *codeToGID,
+ 				  FoFiOutputFunc outputFunc,
+ 				  void *outputStream) {
+-  char *name;
++  const char *name;
+   GString *buf;
+   char buf2[16];
+   int i, k;
+@@ -1980,7 +1980,7 @@
+ 	if (!ok || !checkRegion(stringPos + 1, m)) {
+ 	  goto err;
+ 	}
+-	name = new GString((char *)&file[stringPos + 1], m);
++	name = new GString((const char *)&file[stringPos + 1], m);
+ 	nameToGID->removeInt(name);
+ 	nameToGID->add(name, i);
+ 	++stringIdx;
+@@ -2010,7 +2010,7 @@
+   }
+ }
+ 
+-int FoFiTrueType::seekTable(char *tag) {
++int FoFiTrueType::seekTable(const char *tag) {
+   Guint tagI;
+   int i;
+ 
+diff -ur texlive-20080816-source/libs/xpdf.orig/fofi/FoFiTrueType.h texlive-20080816-source/libs/xpdf/fofi/FoFiTrueType.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/fofi/FoFiTrueType.h	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/fofi/FoFiTrueType.h	2008-11-21 17:33:33.000000000 +0300
+@@ -31,10 +31,10 @@
+ public:
+ 
+   // Create a FoFiTrueType object from a memory buffer.
+-  static FoFiTrueType *make(char *fileA, int lenA);
++  static FoFiTrueType *make(const char *fileA, int lenA);
+ 
+   // Create a FoFiTrueType object from a file on disk.
+-  static FoFiTrueType *load(char *fileName);
++  static FoFiTrueType *load(const char *fileName);
+ 
+   virtual ~FoFiTrueType();
+ 
+@@ -61,7 +61,7 @@
+   // Returns the GID corresponding to <name> according to the post
+   // table.  Returns 0 if there is no mapping for <name> or if the
+   // font does not have a post table.
+-  int mapNameToGID(char *name);
++  int mapNameToGID(const char *name);
+ 
+   // Return the mapping from CIDs to GIDs, and return the number of
+   // CIDs in *<nCIDs>.  This is only useful for CID fonts.  (Only
+@@ -84,7 +84,7 @@
+   // If <encoding> is NULL, the encoding is unknown or undefined.  The
+   // <codeToGID> array specifies the mapping from char codes to GIDs.
+   // (Not useful for OpenType CFF fonts.)
+-  void convertToType42(char *psName, char **encoding,
++  void convertToType42(const char *psName, const char **encoding,
+ 		       Gushort *codeToGID,
+ 		       FoFiOutputFunc outputFunc, void *outputStream);
+ 
+@@ -95,7 +95,7 @@
+   // otherwise it will be left as binary data.  If <psName> is
+   // non-NULL, it will be used as the PostScript font name.  (Only
+   // useful for OpenType CFF fonts.)
+-  void convertToType1(char *psName, char **newEncoding, GBool ascii,
++  void convertToType1(const char *psName, const char **newEncoding, GBool ascii,
+ 		      FoFiOutputFunc outputFunc, void *outputStream);
+ 
+   // Convert to a Type 2 CIDFont, suitable for embedding in a
+@@ -103,14 +103,14 @@
+   // name (so we don't need to depend on the 'name' table in the
+   // font).  The <cidMap> array maps CIDs to GIDs; it has <nCIDs>
+   // entries.  (Not useful for OpenType CFF fonts.)
+-  void convertToCIDType2(char *psName, Gushort *cidMap, int nCIDs,
++  void convertToCIDType2(const char *psName, Gushort *cidMap, int nCIDs,
+ 			 GBool needVerticalMetrics,
+ 			 FoFiOutputFunc outputFunc, void *outputStream);
+ 
+   // Convert to a Type 0 CIDFont, suitable for embedding in a
+   // PostScript file.  <psName> will be used as the PostScript font
+   // name.  (Only useful for OpenType CFF fonts.)
+-  void convertToCIDType0(char *psName,
++  void convertToCIDType0(const char *psName,
+ 			 FoFiOutputFunc outputFunc, void *outputStream);
+ 
+   // Convert to a Type 0 (but non-CID) composite font, suitable for
+@@ -118,14 +118,14 @@
+   // PostScript font name (so we don't need to depend on the 'name'
+   // table in the font).  The <cidMap> array maps CIDs to GIDs; it has
+   // <nCIDs> entries.  (Not useful for OpenType CFF fonts.)
+-  void convertToType0(char *psName, Gushort *cidMap, int nCIDs,
++  void convertToType0(const char *psName, Gushort *cidMap, int nCIDs,
+ 		      GBool needVerticalMetrics,
+ 		      FoFiOutputFunc outputFunc, void *outputStream);
+ 
+   // Convert to a Type 0 (but non-CID) composite font, suitable for
+   // embedding in a PostScript file.  <psName> will be used as the
+   // PostScript font name.  (Only useful for OpenType CFF fonts.)
+-  void convertToType0(char *psName,
++  void convertToType0(const char *psName,
+ 		      FoFiOutputFunc outputFunc, void *outputStream);
+ 
+   // Write a clean TTF file, filling in missing tables and correcting
+@@ -135,15 +135,15 @@
+   // complete and correct, it will be written unmodified.  (Not useful
+   // for OpenType CFF fonts.)
+   void writeTTF(FoFiOutputFunc outputFunc, void *outputStream,
+-		char *name = NULL, Gushort *codeToGID = NULL);
++		const char *name = NULL, Gushort *codeToGID = NULL);
+ 
+ private:
+ 
+-  FoFiTrueType(char *fileA, int lenA, GBool freeFileDataA);
+-  void cvtEncoding(char **encoding,
++  FoFiTrueType(const char *fileA, int lenA, GBool freeFileDataA);
++  void cvtEncoding(const char **encoding,
+ 		   FoFiOutputFunc outputFunc,
+ 		   void *outputStream);
+-  void cvtCharStrings(char **encoding,
++  void cvtCharStrings(const char **encoding,
+ 		      Gushort *codeToGID,
+ 		      FoFiOutputFunc outputFunc,
+ 		      void *outputStream);
+@@ -156,7 +156,7 @@
+   Guint computeTableChecksum(Guchar *data, int length);
+   void parse();
+   void readPostTable();
+-  int seekTable(char *tag);
++  int seekTable(const char *tag);
+ 
+   TrueTypeTable *tables;
+   int nTables;
+diff -ur texlive-20080816-source/libs/xpdf.orig/fofi/FoFiType1.cc texlive-20080816-source/libs/xpdf/fofi/FoFiType1.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/fofi/FoFiType1.cc	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/fofi/FoFiType1.cc	2008-11-21 18:08:22.000000000 +0300
+@@ -22,12 +22,12 @@
+ // FoFiType1
+ //------------------------------------------------------------------------
+ 
+-FoFiType1 *FoFiType1::make(char *fileA, int lenA) {
++FoFiType1 *FoFiType1::make(const char *fileA, int lenA) {
+   return new FoFiType1(fileA, lenA, gFalse);
+ }
+ 
+-FoFiType1 *FoFiType1::load(char *fileName) {
+-  char *fileA;
++FoFiType1 *FoFiType1::load(const char *fileName) {
++  const char *fileA;
+   int lenA;
+ 
+   if (!(fileA = FoFiBase::readFile(fileName, &lenA))) {
+@@ -36,7 +36,7 @@
+   return new FoFiType1(fileA, lenA, gTrue);
+ }
+ 
+-FoFiType1::FoFiType1(char *fileA, int lenA, GBool freeFileDataA):
++FoFiType1::FoFiType1(const char *fileA, int lenA, GBool freeFileDataA):
+   FoFiBase(fileA, lenA, freeFileDataA)
+ {
+   name = NULL;
+@@ -48,46 +48,46 @@
+   int i;
+ 
+   if (name) {
+-    gfree(name);
++    gfree(const_cast<char*>(name));
+   }
+   if (encoding && encoding != fofiType1StandardEncoding) {
+     for (i = 0; i < 256; ++i) {
+-      gfree(encoding[i]);
++      gfree(const_cast<char*>(encoding[i]));
+     }
+     gfree(encoding);
+   }
+ }
+ 
+-char *FoFiType1::getName() {
++const char *FoFiType1::getName() {
+   if (!parsed) {
+     parse();
+   }
+   return name;
+ }
+ 
+-char **FoFiType1::getEncoding() {
++const char **FoFiType1::getEncoding() {
+   if (!parsed) {
+     parse();
+   }
+   return encoding;
+ }
+ 
+-void FoFiType1::writeEncoded(char **newEncoding,
++void FoFiType1::writeEncoded(const char **newEncoding,
+ 			     FoFiOutputFunc outputFunc, void *outputStream) {
+   char buf[512];
+-  char *line, *line2, *p;
++  const char *line, *line2, *p;
+   int i;
+ 
+   // copy everything up to the encoding
+-  for (line = (char *)file;
++  for (line = (const char *)file;
+        line && strncmp(line, "/Encoding", 9);
+        line = getNextLine(line)) ;
+   if (!line) {
+     // no encoding - just copy the whole font file
+-    (*outputFunc)(outputStream, (char *)file, len);
++    (*outputFunc)(outputStream, (const char *)file, len);
+     return;
+   }
+-  (*outputFunc)(outputStream, (char *)file, line - (char *)file);
++  (*outputFunc)(outputStream, (const char *)file, line - (const char *)file);
+ 
+   // write the new encoding
+   (*outputFunc)(outputStream, "/Encoding 256 array\n", 20);
+@@ -150,12 +150,12 @@
+ 
+     // copy everything after the encoding
+     if (line) {
+-      (*outputFunc)(outputStream, line, ((char *)file + len) - line);
++      (*outputFunc)(outputStream, line, ((const char *)file + len) - line);
+     }
+   }
+ }
+ 
+-char *FoFiType1::getNextLine(char *line) {
++const char *FoFiType1::getNextLine(const char *line) {
+   while (line < (char *)file + len && *line != '\x0a' && *line != '\x0d') {
+     ++line;
+   }
+@@ -172,7 +172,8 @@
+ }
+ 
+ void FoFiType1::parse() {
+-  char *line, *line1, *p, *p2;
++  const char *line, *line1;
++  char *p, *p2;
+   char buf[256];
+   char c;
+   int n, code, i, j;
+@@ -197,7 +198,7 @@
+       encoding = fofiType1StandardEncoding;
+     } else if (!encoding &&
+ 	       !strncmp(line, "/Encoding 256 array", 19)) {
+-      encoding = (char **)gmallocn(256, sizeof(char *));
++      encoding = (const char **)gmallocn(256, sizeof(char *));
+       for (j = 0; j < 256; ++j) {
+ 	encoding[j] = NULL;
+       }
+diff -ur texlive-20080816-source/libs/xpdf.orig/fofi/FoFiType1C.cc texlive-20080816-source/libs/xpdf/fofi/FoFiType1C.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/fofi/FoFiType1C.cc	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/fofi/FoFiType1C.cc	2008-11-21 18:10:14.000000000 +0300
+@@ -28,7 +28,7 @@
+ // FoFiType1C
+ //------------------------------------------------------------------------
+ 
+-FoFiType1C *FoFiType1C::make(char *fileA, int lenA) {
++FoFiType1C *FoFiType1C::make(const char *fileA, int lenA) {
+   FoFiType1C *ff;
+ 
+   ff = new FoFiType1C(fileA, lenA, gFalse);
+@@ -39,9 +39,9 @@
+   return ff;
+ }
+ 
+-FoFiType1C *FoFiType1C::load(char *fileName) {
++FoFiType1C *FoFiType1C::load(const char *fileName) {
+   FoFiType1C *ff;
+-  char *fileA;
++  const char *fileA;
+   int lenA;
+ 
+   if (!(fileA = FoFiBase::readFile(fileName, &lenA))) {
+@@ -55,7 +55,7 @@
+   return ff;
+ }
+ 
+-FoFiType1C::FoFiType1C(char *fileA, int lenA, GBool freeFileDataA):
++FoFiType1C::FoFiType1C(const char *fileA, int lenA, GBool freeFileDataA):
+   FoFiBase(fileA, lenA, freeFileDataA)
+ {
+   name = NULL;
+@@ -75,7 +75,7 @@
+       encoding != fofiType1StandardEncoding &&
+       encoding != fofiType1ExpertEncoding) {
+     for (i = 0; i < 256; ++i) {
+-      gfree(encoding[i]);
++      gfree(const_cast<char*>(encoding[i]));
+     }
+     gfree(encoding);
+   }
+@@ -93,11 +93,11 @@
+   }
+ }
+ 
+-char *FoFiType1C::getName() {
+-  return name ? name->getCString() : (char *)NULL;
++const char *FoFiType1C::getName() {
++  return name ? name->getCString() : (const char *)NULL;
+ }
+ 
+-char **FoFiType1C::getEncoding() {
++const char **FoFiType1C::getEncoding() {
+   return encoding;
+ }
+ 
+@@ -129,7 +129,7 @@
+   return map;
+ }
+ 
+-void FoFiType1C::convertToType1(char *psName, char **newEncoding, GBool ascii,
++void FoFiType1C::convertToType1(const char *psName, const char **newEncoding, GBool ascii,
+ 				FoFiOutputFunc outputFunc,
+ 				void *outputStream) {
+   int psNameLen;
+@@ -138,7 +138,7 @@
+   Type1CIndexVal val;
+   GString *buf;
+   char buf2[256];
+-  char **enc;
++  const char **enc;
+   GBool ok;
+   int i;
+ 
+@@ -429,7 +429,7 @@
+   (*outputFunc)(outputStream, "cleartomark\n", 12);
+ }
+ 
+-void FoFiType1C::convertToCIDType0(char *psName,
++void FoFiType1C::convertToCIDType0(const char *psName,
+ 				   FoFiOutputFunc outputFunc,
+ 				   void *outputStream) {
+   int *cidMap;
+@@ -755,7 +755,7 @@
+   gfree(cidMap);
+ }
+ 
+-void FoFiType1C::convertToType0(char *psName,
++void FoFiType1C::convertToType0(const char *psName,
+ 				FoFiOutputFunc outputFunc,
+ 				void *outputStream) {
+   int *cidMap;
+@@ -1066,7 +1066,7 @@
+   gfree(cidMap);
+ }
+ 
+-void FoFiType1C::eexecCvtGlyph(Type1CEexecBuf *eb, char *glyphName,
++void FoFiType1C::eexecCvtGlyph(Type1CEexecBuf *eb, const char *glyphName,
+ 			       int offset, int nBytes,
+ 			       Type1CIndex *subrIdx,
+ 			       Type1CPrivateDict *pDict) {
+@@ -1789,10 +1789,10 @@
+       n = 5;
+     }
+   }
+-  charBuf->append((char *)buf, n);
++  charBuf->append((const char *)buf, n);
+ }
+ 
+-void FoFiType1C::eexecWrite(Type1CEexecBuf *eb, char *s) {
++void FoFiType1C::eexecWrite(Type1CEexecBuf *eb, const char *s) {
+   Guchar *p;
+   Guchar x;
+ 
+@@ -1808,7 +1808,7 @@
+ 	eb->line = 0;
+       }
+     } else {
+-      (*eb->outputFunc)(eb->outputStream, (char *)&x, 1);
++      (*eb->outputFunc)(eb->outputStream, (const char *)&x, 1);
+     }
+   }
+ }
+@@ -1831,7 +1831,7 @@
+ 	eb->line = 0;
+       }
+     } else {
+-      (*eb->outputFunc)(eb->outputStream, (char *)&x, 1);
++      (*eb->outputFunc)(eb->outputStream, (const char *)&x, 1);
+     }
+   }
+ }
+@@ -1866,7 +1866,7 @@
+   if (!parsedOk) {
+     return gFalse;
+   }
+-  name = new GString((char *)&file[val.pos], val.len);
++  name = new GString((const char *)&file[val.pos], val.len);
+ 
+   // read the top dict for the first font
+   readTopDict();
+@@ -2267,7 +2267,7 @@
+     encoding = fofiType1ExpertEncoding;
+ 
+   } else {
+-    encoding = (char **)gmallocn(256, sizeof(char *));
++    encoding = (const char **)gmallocn(256, sizeof(char *));
+     for (i = 0; i < 256; ++i) {
+       encoding[i] = NULL;
+     }
+@@ -2290,7 +2290,7 @@
+ 	  return;
+ 	}
+ 	if (encoding[c]) {
+-	  gfree(encoding[c]);
++	  gfree(const_cast<char*>(encoding[c]));
+ 	}
+ 	encoding[c] = copyString(getString(charset[i], buf, &parsedOk));
+       }
+@@ -2309,7 +2309,7 @@
+ 	for (j = 0; j <= nLeft && nCodes < nGlyphs; ++j) {
+ 	  if (c < 256) {
+ 	    if (encoding[c]) {
+-	      gfree(encoding[c]);
++	      gfree(const_cast<char*>(encoding[c]));
+ 	    }
+ 	    encoding[c] = copyString(getString(charset[nCodes], buf,
+ 					       &parsedOk));
+@@ -2335,7 +2335,7 @@
+ 	  return;
+ 	}
+ 	if (encoding[c]) {
+-	  gfree(encoding[c]);
++	  gfree(const_cast<char*>(encoding[c]));
+ 	}
+ 	encoding[c] = copyString(getString(sid, buf, &parsedOk));
+       }
+@@ -2593,7 +2593,7 @@
+       if ((n = val.len) > 255) {
+ 	n = 255;
+       }
+-      strncpy(buf, (char *)&file[val.pos], n);
++      strncpy(buf, (const char *)&file[val.pos], n);
+       buf[n] = '\0';
+     } else {
+       buf[0] = '\0';
+diff -ur texlive-20080816-source/libs/xpdf.orig/fofi/FoFiType1C.h texlive-20080816-source/libs/xpdf/fofi/FoFiType1C.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/fofi/FoFiType1C.h	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/fofi/FoFiType1C.h	2008-11-21 18:10:41.000000000 +0300
+@@ -135,19 +135,19 @@
+ public:
+ 
+   // Create a FoFiType1C object from a memory buffer.
+-  static FoFiType1C *make(char *fileA, int lenA);
++  static FoFiType1C *make(const char *fileA, int lenA);
+ 
+   // Create a FoFiType1C object from a file on disk.
+-  static FoFiType1C *load(char *fileName);
++  static FoFiType1C *load(const char *fileName);
+ 
+   virtual ~FoFiType1C();
+ 
+   // Return the font name.
+-  char *getName();
++  const char *getName();
+ 
+   // Return the encoding, as an array of 256 names (any of which may
+   // be NULL).  This is only useful with 8-bit fonts.
+-  char **getEncoding();
++  const char **getEncoding();
+ 
+   // Return the mapping from CIDs to GIDs, and return the number of
+   // CIDs in *<nCIDs>.  This is only useful for CID fonts.
+@@ -159,25 +159,25 @@
+   // font.  If <ascii> is true the eexec section will be hex-encoded,
+   // otherwise it will be left as binary data.  If <psName> is non-NULL,
+   // it will be used as the PostScript font name.
+-  void convertToType1(char *psName, char **newEncoding, GBool ascii,
++  void convertToType1(const char *psName, const char **newEncoding, GBool ascii,
+ 		      FoFiOutputFunc outputFunc, void *outputStream);
+ 
+   // Convert to a Type 0 CIDFont, suitable for embedding in a
+   // PostScript file.  <psName> will be used as the PostScript font
+   // name.
+-  void convertToCIDType0(char *psName,
++  void convertToCIDType0(const char *psName,
+ 			 FoFiOutputFunc outputFunc, void *outputStream);
+ 
+   // Convert to a Type 0 (but non-CID) composite font, suitable for
+   // embedding in a PostScript file.  <psName> will be used as the
+   // PostScript font name.
+-  void convertToType0(char *psName,
++  void convertToType0(const char *psName,
+ 		      FoFiOutputFunc outputFunc, void *outputStream);
+ 
+ private:
+ 
+-  FoFiType1C(char *fileA, int lenA, GBool freeFileDataA);
+-  void eexecCvtGlyph(Type1CEexecBuf *eb, char *glyphName,
++  FoFiType1C(const char *fileA, int lenA, GBool freeFileDataA);
++  void eexecCvtGlyph(Type1CEexecBuf *eb, const char *glyphName,
+ 		     int offset, int nBytes,
+ 		     Type1CIndex *subrIdx,
+ 		     Type1CPrivateDict *pDict);
+@@ -187,7 +187,7 @@
+   void cvtGlyphWidth(GBool useOp, GString *charBuf,
+ 		     Type1CPrivateDict *pDict);
+   void cvtNum(double x, GBool isFP, GString *charBuf);
+-  void eexecWrite(Type1CEexecBuf *eb, char *s);
++  void eexecWrite(Type1CEexecBuf *eb, const char *s);
+   void eexecWriteCharstring(Type1CEexecBuf *eb, Guchar *s, int n);
+   GBool parse();
+   void readTopDict();
+@@ -204,7 +204,7 @@
+   char *getString(int sid, char *buf, GBool *ok);
+ 
+   GString *name;
+-  char **encoding;
++  const char **encoding;
+ 
+   Type1CIndex nameIdx;
+   Type1CIndex topDictIdx;
+diff -ur texlive-20080816-source/libs/xpdf.orig/fofi/FoFiType1.h texlive-20080816-source/libs/xpdf/fofi/FoFiType1.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/fofi/FoFiType1.h	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/fofi/FoFiType1.h	2008-11-21 17:01:07.000000000 +0300
+@@ -26,33 +26,33 @@
+ public:
+ 
+   // Create a FoFiType1 object from a memory buffer.
+-  static FoFiType1 *make(char *fileA, int lenA);
++  static FoFiType1 *make(const char *fileA, int lenA);
+ 
+   // Create a FoFiType1 object from a file on disk.
+-  static FoFiType1 *load(char *fileName);
++  static FoFiType1 *load(const char *fileName);
+ 
+   virtual ~FoFiType1();
+ 
+   // Return the font name.
+-  char *getName();
++  const char *getName();
+ 
+   // Return the encoding, as an array of 256 names (any of which may
+   // be NULL).
+-  char **getEncoding();
++  const char **getEncoding();
+ 
+   // Write a version of the Type 1 font file with a new encoding.
+-  void writeEncoded(char **newEncoding,
++  void writeEncoded(const char **newEncoding,
+ 		    FoFiOutputFunc outputFunc, void *outputStream);
+ 
+ private:
+ 
+-  FoFiType1(char *fileA, int lenA, GBool freeFileDataA);
++  FoFiType1(const char *fileA, int lenA, GBool freeFileDataA);
+ 
+-  char *getNextLine(char *line);
++  const char *getNextLine(const char *line);
+   void parse();
+ 
+-  char *name;
+-  char **encoding;
++  const char *name;
++  const char **encoding;
+   GBool parsed;
+ };
+ 
+diff -ur texlive-20080816-source/libs/xpdf.orig/goo/gfile.cc texlive-20080816-source/libs/xpdf/goo/gfile.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/goo/gfile.cc	2008-05-08 17:40:41.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/goo/gfile.cc	2008-11-21 16:55:23.000000000 +0300
+@@ -83,7 +83,7 @@
+ 
+ #elif defined(__EMX__) || defined(WIN32)
+   //---------- OS/2+EMX and Win32 ----------
+-  char *s;
++  const char *s;
+   GString *ret;
+ 
+   if ((s = getenv("HOME")))
+@@ -102,7 +102,7 @@
+ 
+ #else
+   //---------- Unix ----------
+-  char *s;
++  const char *s;
+   struct passwd *pw;
+   GString *ret;
+ 
+@@ -140,7 +140,7 @@
+   return new GString();
+ }
+ 
+-GString *appendToPath(GString *path, char *fileName) {
++GString *appendToPath(GString *path, const char *fileName) {
+ #if defined(VMS)
+   //---------- VMS ----------
+   //~ this should handle everything necessary for file
+@@ -306,7 +306,7 @@
+ #endif
+ }
+ 
+-GString *grabPath(char *fileName) {
++GString *grabPath(const char *fileName) {
+ #ifdef VMS
+   //---------- VMS ----------
+   char *p;
+@@ -355,7 +355,7 @@
+ #endif
+ }
+ 
+-GBool isAbsolutePath(char *path) {
++GBool isAbsolutePath(const char *path) {
+ #ifdef VMS
+   //---------- VMS ----------
+   return strchr(path, ':') ||
+@@ -461,7 +461,7 @@
+ #endif
+ }
+ 
+-time_t getModTime(char *fileName) {
++time_t getModTime(const char *fileName) {
+ #ifdef WIN32
+   //~ should implement this, but it's (currently) only used in xpdf
+   return 0;
+@@ -476,10 +476,10 @@
+ }
+ 
+ #ifndef PDF_PARSER_ONLY
+-GBool openTempFile(GString **name, FILE **f, char *mode, char *ext) {
++GBool openTempFile(GString **name, FILE **f, const char *mode, const char *ext) {
+ #if defined(WIN32)
+   //---------- Win32 ----------
+-  char *tempDir;
++  const char *tempDir;
+   GString *s, *s2;
+   char buf[32];
+   FILE *f2;
+@@ -586,7 +586,7 @@
+ }
+ #endif
+ 
+-GBool executeCommand(char *cmd) {
++GBool executeCommand(const char *cmd) {
+ #ifdef VMS
+   return system(cmd) ? gTrue : gFalse;
+ #else
+@@ -627,7 +627,7 @@
+ // GDir and GDirEntry
+ //------------------------------------------------------------------------
+ 
+-GDirEntry::GDirEntry(char *dirPath, char *nameA, GBool doStat) {
++GDirEntry::GDirEntry(const char *dirPath, const char *nameA, GBool doStat) {
+ #ifdef VMS
+   char *p;
+ #elif defined(WIN32)
+@@ -666,7 +666,7 @@
+   delete name;
+ }
+ 
+-GDir::GDir(char *name, GBool doStatA) {
++GDir::GDir(const char *name, GBool doStatA) {
+   path = new GString(name);
+   doStat = doStatA;
+ #if defined(WIN32)
+diff -ur texlive-20080816-source/libs/xpdf.orig/goo/gfile.h texlive-20080816-source/libs/xpdf/goo/gfile.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/goo/gfile.h	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/goo/gfile.h	2008-11-21 16:54:13.000000000 +0300
+@@ -60,14 +60,14 @@
+ 
+ // Append a file name to a path string.  <path> may be an empty
+ // string, denoting the current directory).  Returns <path>.
+-extern GString *appendToPath(GString *path, char *fileName);
++extern GString *appendToPath(GString *path, const char *fileName);
+ 
+ // Grab the path from the front of the file name.  If there is no
+ // directory component in <fileName>, returns an empty string.
+-extern GString *grabPath(char *fileName);
++extern GString *grabPath(const char *fileName);
+ 
+ // Is this an absolute path or file name?
+-extern GBool isAbsolutePath(char *path);
++extern GBool isAbsolutePath(const char *path);
+ 
+ // Make this path absolute by prepending current directory (if path is
+ // relative) or prepending user's directory (if path starts with '~').
+@@ -75,7 +75,7 @@
+ 
+ // Get the modification time for <fileName>.  Returns 0 if there is an
+ // error.
+-extern time_t getModTime(char *fileName);
++extern time_t getModTime(const char *fileName);
+ 
+ // Create a temporary file and open it for writing.  If <ext> is not
+ // NULL, it will be used as the file name extension.  Returns both the
+@@ -83,10 +83,10 @@
+ // should be done to the returned file pointer; the file may be
+ // reopened later for reading, but not for writing.  The <mode> string
+ // should be "w" or "wb".  Returns true on success.
+-extern GBool openTempFile(GString **name, FILE **f, char *mode, char *ext);
++extern GBool openTempFile(GString **name, FILE **f, const char *mode, const char *ext);
+ 
+ // Execute <command>.  Returns true on success.
+-extern GBool executeCommand(char *cmd);
++extern GBool executeCommand(const char *cmd);
+ 
+ // Just like fgets, but handles Unix, Mac, and/or DOS end-of-line
+ // conventions.
+@@ -99,7 +99,7 @@
+ class GDirEntry {
+ public:
+ 
+-  GDirEntry(char *dirPath, char *nameA, GBool doStat);
++  GDirEntry(const char *dirPath, const char *nameA, GBool doStat);
+   ~GDirEntry();
+   GString *getName() { return name; }
+   GBool isDir() { return dir; }
+@@ -113,7 +113,7 @@
+ class GDir {
+ public:
+ 
+-  GDir(char *name, GBool doStatA = gTrue);
++  GDir(const char *name, GBool doStatA = gTrue);
+   ~GDir();
+   GDirEntry *getNextEntry();
+   void rewind();
+diff -ur texlive-20080816-source/libs/xpdf.orig/goo/GHash.cc texlive-20080816-source/libs/xpdf/goo/GHash.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/goo/GHash.cc	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/goo/GHash.cc	2008-11-21 18:02:24.000000000 +0300
+@@ -145,7 +145,7 @@
+   return p->val.i;
+ }
+ 
+-void *GHash::lookup(char *key) {
++void *GHash::lookup(const char *key) {
+   GHashBucket *p;
+   int h;
+ 
+@@ -155,7 +155,7 @@
+   return p->val.p;
+ }
+ 
+-int GHash::lookupInt(char *key) {
++int GHash::lookupInt(const char *key) {
+   GHashBucket *p;
+   int h;
+ 
+@@ -211,7 +211,7 @@
+   return val;
+ }
+ 
+-void *GHash::remove(char *key) {
++void *GHash::remove(const char *key) {
+   GHashBucket *p;
+   GHashBucket **q;
+   void *val;
+@@ -234,7 +234,7 @@
+   return val;
+ }
+ 
+-int GHash::removeInt(char *key) {
++int GHash::removeInt(const char *key) {
+   GHashBucket *p;
+   GHashBucket **q;
+   int val;
+@@ -344,7 +344,7 @@
+   return NULL;
+ }
+ 
+-GHashBucket *GHash::find(char *key, int *h) {
++GHashBucket *GHash::find(const char *key, int *h) {
+   GHashBucket *p;
+ 
+   *h = hash(key);
+@@ -368,8 +368,8 @@
+   return (int)(h % size);
+ }
+ 
+-int GHash::hash(char *key) {
+-  char *p;
++int GHash::hash(const char *key) {
++  const char *p;
+   unsigned int h;
+ 
+   h = 0;
+diff -ur texlive-20080816-source/libs/xpdf.orig/goo/GHash.h texlive-20080816-source/libs/xpdf/goo/GHash.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/goo/GHash.h	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/goo/GHash.h	2008-11-21 18:01:31.000000000 +0300
+@@ -34,12 +34,12 @@
+   void replace(GString *key, int val);
+   void *lookup(GString *key);
+   int lookupInt(GString *key);
+-  void *lookup(char *key);
+-  int lookupInt(char *key);
++  void *lookup(const char *key);
++  int lookupInt(const char *key);
+   void *remove(GString *key);
+   int removeInt(GString *key);
+-  void *remove(char *key);
+-  int removeInt(char *key);
++  void *remove(const char *key);
++  int removeInt(const char *key);
+   int getLength() { return len; }
+   void startIter(GHashIter **iter);
+   GBool getNext(GHashIter **iter, GString **key, void **val);
+@@ -50,9 +50,9 @@
+ 
+   void expand();
+   GHashBucket *find(GString *key, int *h);
+-  GHashBucket *find(char *key, int *h);
++  GHashBucket *find(const char *key, int *h);
+   int hash(GString *key);
+-  int hash(char *key);
++  int hash(const char *key);
+ 
+   GBool deleteKeys;		// set if key strings should be deleted
+   int size;			// number of buckets
+diff -ur texlive-20080816-source/libs/xpdf.orig/goo/gmem.cc texlive-20080816-source/libs/xpdf/goo/gmem.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/goo/gmem.cc	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/goo/gmem.cc	2008-11-21 16:34:54.000000000 +0300
+@@ -255,7 +255,7 @@
+ }
+ #endif
+ 
+-char *copyString(char *s) {
++char *copyString(const char *s) {
+   char *s1;
+ 
+   s1 = (char *)gmalloc(strlen(s) + 1);
+diff -ur texlive-20080816-source/libs/xpdf.orig/goo/gmem.h texlive-20080816-source/libs/xpdf/goo/gmem.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/goo/gmem.h	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/goo/gmem.h	2008-11-21 16:34:49.000000000 +0300
+@@ -70,7 +70,7 @@
+ /*
+  * Allocate memory and copy a string into it.
+  */
+-extern char *copyString(char *s);
++extern char *copyString(const char *s);
+ 
+ #ifdef __cplusplus
+ }
+diff -ur texlive-20080816-source/libs/xpdf.orig/goo/GString.cc texlive-20080816-source/libs/xpdf/goo/GString.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/goo/GString.cc	2008-05-08 17:40:41.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/goo/GString.cc	2008-11-21 17:56:15.000000000 +0300
+@@ -101,7 +101,7 @@
+   fmtSpace
+ };
+ 
+-static char *formatStrings[] = {
++static const char *formatStrings[] = {
+   "d", "x", "o", "b", "ud", "ux", "uo", "ub",
+   "ld", "lx", "lo", "lb", "uld", "ulx", "ulo", "ulb",
+   "f", "g",
+@@ -192,7 +192,7 @@
+   return new GString(p, len);
+ }
+ 
+-GString *GString::format(char *fmt, ...) {
++GString *GString::format(const char *fmt, ...) {
+   va_list argList;
+   GString *s;
+ 
+@@ -203,7 +203,7 @@
+   return s;
+ }
+ 
+-GString *GString::formatv(char *fmt, va_list argList) {
++GString *GString::formatv(const char *fmt, va_list argList) {
+   GString *s;
+ 
+   s = new GString();
+@@ -254,7 +254,7 @@
+   return this;
+ }
+ 
+-GString *GString::appendf(char *fmt, ...) {
++GString *GString::appendf(const char *fmt, ...) {
+   va_list argList;
+ 
+   va_start(argList, fmt);
+@@ -263,7 +263,7 @@
+   return this;
+ }
+ 
+-GString *GString::appendfv(char *fmt, va_list argList) {
++GString *GString::appendfv(const char *fmt, va_list argList) {
+   GStringFormatArg *args;
+   int argsLen, argsSize;
+   GStringFormatArg arg;
+@@ -272,7 +272,8 @@
+   GStringFormatType ft;
+   char buf[65];
+   int len, i;
+-  char *p0, *p1, *str;
++  const char *p0, *p1;
++  char *str;
+ 
+   argsLen = 0;
+   argsSize = 8;
+diff -ur texlive-20080816-source/libs/xpdf.orig/goo/GString.h texlive-20080816-source/libs/xpdf/goo/GString.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/goo/GString.h	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/goo/GString.h	2008-11-21 17:54:17.000000000 +0300
+@@ -67,8 +67,8 @@
+   //     t -- GString *
+   //     w -- blank space; arg determines width
+   // To get literal curly braces, use {{ or }}.
+-  static GString *format(char *fmt, ...);
+-  static GString *formatv(char *fmt, va_list argList);
++  static GString *format(const char *fmt, ...);
++  static GString *formatv(const char *fmt, va_list argList);
+ 
+   // Destructor.
+   ~GString();
+@@ -95,8 +95,8 @@
+   GString *append(const char *str, int lengthA);
+ 
+   // Append a formatted string.
+-  GString *appendf(char *fmt, ...);
+-  GString *appendfv(char *fmt, va_list argList);
++  GString *appendf(const char *fmt, ...);
++  GString *appendfv(const char *fmt, va_list argList);
+ 
+   // Insert a character or string.
+   GString *insert(int i, char c);
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/BuiltinFont.cc texlive-20080816-source/libs/xpdf/xpdf/BuiltinFont.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/BuiltinFont.cc	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/BuiltinFont.cc	2008-11-21 13:56:48.000000000 +0300
+@@ -39,7 +39,7 @@
+   gfree(tab);
+ }
+ 
+-GBool BuiltinFontWidths::getWidth(char *name, Gushort *width) {
++GBool BuiltinFontWidths::getWidth(const char *name, Gushort *width) {
+   int h;
+   BuiltinFontWidth *p;
+ 
+@@ -53,8 +53,8 @@
+   return gFalse;
+ }
+ 
+-int BuiltinFontWidths::hash(char *name) {
+-  char *p;
++int BuiltinFontWidths::hash(const char *name) {
++  const char *p;
+   unsigned int h;
+ 
+   h = 0;
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/BuiltinFont.h texlive-20080816-source/libs/xpdf/xpdf/BuiltinFont.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/BuiltinFont.h	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/BuiltinFont.h	2008-11-21 17:16:00.000000000 +0300
+@@ -23,8 +23,8 @@
+ //------------------------------------------------------------------------
+ 
+ struct BuiltinFont {
+-  char *name;
+-  char **defaultBaseEnc;
++  const char *name;
++  const char **defaultBaseEnc;
+   short ascent;
+   short descent;
+   short bbox[4];
+@@ -34,7 +34,7 @@
+ //------------------------------------------------------------------------
+ 
+ struct BuiltinFontWidth {
+-  char *name;
++  const char *name;
+   Gushort width;
+   BuiltinFontWidth *next;
+ };
+@@ -44,11 +44,11 @@
+ 
+   BuiltinFontWidths(BuiltinFontWidth *widths, int sizeA);
+   ~BuiltinFontWidths();
+-  GBool getWidth(char *name, Gushort *width);
++  GBool getWidth(const char *name, Gushort *width);
+ 
+ private:
+ 
+-  int hash(char *name);
++  int hash(const char *name);
+ 
+   BuiltinFontWidth **tab;
+   int size;
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/CharCodeToUnicode.cc texlive-20080816-source/libs/xpdf/xpdf/CharCodeToUnicode.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/CharCodeToUnicode.cc	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/CharCodeToUnicode.cc	2008-11-21 16:51:29.000000000 +0300
+@@ -189,7 +189,7 @@
+ 
+ CharCodeToUnicode *CharCodeToUnicode::parseCMap(GString *buf, int nBits) {
+   CharCodeToUnicode *ctu;
+-  char *p;
++  const char *p;
+ 
+   ctu = new CharCodeToUnicode(NULL);
+   p = buf->getCString();
+@@ -198,7 +198,7 @@
+ }
+ 
+ void CharCodeToUnicode::mergeCMap(GString *buf, int nBits) {
+-  char *p;
++  const char *p;
+ 
+   p = buf->getCString();
+   parseCMap1(&getCharFromString, &p, nBits);
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/CMap.cc texlive-20080816-source/libs/xpdf/xpdf/CMap.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/CMap.cc	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/CMap.cc	2008-11-21 17:42:34.000000000 +0300
+@@ -184,7 +184,7 @@
+ #endif
+ }
+ 
+-void CMap::useCMap(CMapCache *cache, char *useName) {
++void CMap::useCMap(CMapCache *cache, const char *useName) {
+   GString *useNameStr;
+   CMap *subCMap;
+ 
+@@ -327,7 +327,7 @@
+   return !collection->cmp(collectionA) && !cMapName->cmp(cMapNameA);
+ }
+ 
+-CID CMap::getCID(char *s, int len, int *nUsed) {
++CID CMap::getCID(const char *s, int len, int *nUsed) {
+   CMapVectorEntry *vec;
+   int n, i;
+ 
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/CMap.h texlive-20080816-source/libs/xpdf/xpdf/CMap.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/CMap.h	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/CMap.h	2008-11-21 17:42:44.000000000 +0300
+@@ -51,7 +51,7 @@
+   // Return the CID corresponding to the character code starting at
+   // <s>, which contains <len> bytes.  Sets *<nUsed> to the number of
+   // bytes used by the char code.
+-  CID getCID(char *s, int len, int *nUsed);
++  CID getCID(const char *s, int len, int *nUsed);
+ 
+   // Return the writing mode (0=horizontal, 1=vertical).
+   int getWMode() { return wMode; }
+@@ -60,7 +60,7 @@
+ 
+   CMap(GString *collectionA, GString *cMapNameA);
+   CMap(GString *collectionA, GString *cMapNameA, int wModeA);
+-  void useCMap(CMapCache *cache, char *useName);
++  void useCMap(CMapCache *cache, const char *useName);
+   void copyVector(CMapVectorEntry *dest, CMapVectorEntry *src);
+   void addCodeSpace(CMapVectorEntry *vec, Guint start, Guint end,
+ 		    Guint nBytes);
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/Dict.cc texlive-20080816-source/libs/xpdf/xpdf/Dict.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/Dict.cc	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/Dict.cc	2008-11-21 16:51:02.000000000 +0300
+@@ -34,13 +34,13 @@
+   int i;
+ 
+   for (i = 0; i < length; ++i) {
+-    gfree(entries[i].key);
++    gfree(const_cast<char*>(entries[i].key));
+     entries[i].val.free();
+   }
+   gfree(entries);
+ }
+ 
+-void Dict::add(char *key, Object *val) {
++void Dict::add(const char *key, Object *val) {
+   if (length == size) {
+     if (length == 0) {
+       size = 8;
+@@ -54,7 +54,7 @@
+   ++length;
+ }
+ 
+-inline DictEntry *Dict::find(char *key) {
++inline DictEntry *Dict::find(const char *key) {
+   int i;
+ 
+   for (i = 0; i < length; ++i) {
+@@ -64,25 +64,25 @@
+   return NULL;
+ }
+ 
+-GBool Dict::is(char *type) {
++GBool Dict::is(const char *type) {
+   DictEntry *e;
+ 
+   return (e = find("Type")) && e->val.isName(type);
+ }
+ 
+-Object *Dict::lookup(char *key, Object *obj) {
++Object *Dict::lookup(const char *key, Object *obj) {
+   DictEntry *e;
+ 
+   return (e = find(key)) ? e->val.fetch(xref, obj) : obj->initNull();
+ }
+ 
+-Object *Dict::lookupNF(char *key, Object *obj) {
++Object *Dict::lookupNF(const char *key, Object *obj) {
+   DictEntry *e;
+ 
+   return (e = find(key)) ? e->val.copy(obj) : obj->initNull();
+ }
+ 
+-char *Dict::getKey(int i) {
++const char *Dict::getKey(int i) {
+   return entries[i].key;
+ }
+ 
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/Dict.h texlive-20080816-source/libs/xpdf/xpdf/Dict.h
+--- texlive-20080816-source/ive-20080816-source/bs/xpdf.orig/xpdf/Dict.h	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/Dict.h	2008-11-21 16:40:19.000000000 +0300
+@@ -22,7 +22,7 @@
+ //------------------------------------------------------------------------
+ 
+ struct DictEntry {
+-  char *key;
++  const char *key;
+   Object val;
+ };
+ 
+@@ -43,18 +43,18 @@
+   int getLength() { return length; }
+ 
+   // Add an entry.  NB: does not copy key.
+-  void add(char *key, Object *val);
++  void add(const char *key, Object *val);
+ 
+   // Check if dictionary is of specified type.
+-  GBool is(char *type);
++  GBool is(const char *type);
+ 
+   // Look up an entry and return the value.  Returns a null object
+   // if <key> is not in the dictionary.
+-  Object *lookup(char *key, Object *obj);
+-  Object *lookupNF(char *key, Object *obj);
++  Object *lookup(const char *key, Object *obj);
++  Object *lookupNF(const char *key, Object *obj);
+ 
+   // Iterative accessors.
+-  char *getKey(int i);
++  const char *getKey(int i);
+   Object *getVal(int i, Object *obj);
+   Object *getValNF(int i, Object *obj);
+ 
+@@ -71,7 +71,7 @@
+   int length;			// number of entries in dictionary
+   int ref;			// reference count
+ 
+-  DictEntry *find(char *key);
++  DictEntry *find(const char *key);
+ };
+ 
+ #endif
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/Error.cc texlive-20080816-source/libs/xpdf/xpdf/Error.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/Error.cc	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/Error.cc	2008-11-21 16:47:31.000000000 +0300
+@@ -18,7 +18,7 @@
+ #include "GlobalParams.h"
+ #include "Error.h"
+ 
+-void CDECL error(int pos, char *msg, ...) {
++void CDECL error(int pos, const char *msg, ...) {
+   va_list args;
+ 
+   // NB: this can be called before the globalParams object is created
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/Error.h texlive-20080816-source/libs/xpdf/xpdf/Error.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/Error.h	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/Error.h	2008-11-21 16:46:51.000000000 +0300
+@@ -18,6 +18,6 @@
+ #include <stdio.h>
+ #include "config.h"
+ 
+-extern void CDECL error(int pos, char *msg, ...);
++extern void CDECL error(int pos, const char *msg, ...);
+ 
+ #endif
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/FontEncodingTables.cc texlive-20080816-source/libs/xpdf/xpdf/FontEncodingTables.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/FontEncodingTables.cc	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/FontEncodingTables.cc	2008-11-21 17:14:54.000000000 +0300
+@@ -10,7 +10,7 @@
+ #include <stdlib.h>
+ #include "FontEncodingTables.h"
+ 
+-char *macRomanEncoding[256] = {
++const char *macRomanEncoding[256] = {
+   NULL,
+   NULL,
+   NULL,
+@@ -269,7 +269,7 @@
+   "caron"
+ };
+ 
+-char *macExpertEncoding[256] = {
++const char *macExpertEncoding[256] = {
+   NULL,
+   NULL,
+   NULL,
+@@ -528,7 +528,7 @@
+   NULL
+ };
+ 
+-char *winAnsiEncoding[256] = {
++const char *winAnsiEncoding[256] = {
+   NULL,
+   NULL,
+   NULL,
+@@ -787,7 +787,7 @@
+   "ydieresis"
+ };
+ 
+-char *standardEncoding[256] = {
++const char *standardEncoding[256] = {
+   NULL,
+   NULL,
+   NULL,
+@@ -1046,7 +1046,7 @@
+   NULL
+ };
+ 
+-char *expertEncoding[256] = {
++const char *expertEncoding[256] = {
+   NULL,
+   NULL,
+   NULL,
+@@ -1305,7 +1305,7 @@
+   "Ydieresissmall"
+ };
+ 
+-char *symbolEncoding[256] = {
++const char *symbolEncoding[256] = {
+   NULL,
+   NULL,
+   NULL,
+@@ -1564,7 +1564,7 @@
+   NULL
+ };
+ 
+-char *zapfDingbatsEncoding[256] = {
++const char *zapfDingbatsEncoding[256] = {
+   NULL,
+   NULL,
+   NULL,
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/FontEncodingTables.h texlive-20080816-source/libs/xpdf/xpdf/FontEncodingTables.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/FontEncodingTables.h	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/FontEncodingTables.h	2008-11-21 17:14:25.000000000 +0300
+@@ -9,12 +9,12 @@
+ #ifndef FONTENCODINGTABLES_H
+ #define FONTENCODINGTABLES_H
+ 
+-extern char *macRomanEncoding[];
+-extern char *macExpertEncoding[];
+-extern char *winAnsiEncoding[];
+-extern char *standardEncoding[];
+-extern char *expertEncoding[];
+-extern char *symbolEncoding[];
+-extern char *zapfDingbatsEncoding[];
++extern const char *macRomanEncoding[];
++extern const char *macExpertEncoding[];
++extern const char *winAnsiEncoding[];
++extern const char *standardEncoding[];
++extern const char *expertEncoding[];
++extern const char *symbolEncoding[];
++extern const char *zapfDingbatsEncoding[];
+ 
+ #endif
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/Function.cc texlive-20080816-source/libs/xpdf/xpdf/Function.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/Function.cc	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/Function.cc	2008-11-21 17:03:35.000000000 +0300
+@@ -749,7 +749,7 @@
+ // Note: 'if' and 'ifelse' are parsed separately.
+ // The rest are listed here in alphabetical order.
+ // The index in this table is equivalent to the entry in PSOp.
+-char *psOpNames[] = {
++const char *psOpNames[] = {
+   "abs",
+   "add",
+   "and",
+@@ -1086,7 +1086,7 @@
+ 
+ GBool PostScriptFunction::parseCode(Stream *str, int *codePtr) {
+   GString *tok;
+-  char *p;
++  const char *p;
+   GBool isReal;
+   int opPtr, elsePtr;
+   int a, b, mid, cmp;
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/GfxFont.cc texlive-20080816-source/libs/xpdf/xpdf/GfxFont.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/GfxFont.cc	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/GfxFont.cc	2008-11-21 17:41:14.000000000 +0300
+@@ -33,8 +33,8 @@
+ //------------------------------------------------------------------------
+ 
+ struct StdFontMapEntry {
+-  char *altName;
+-  char *properName;
++  const char *altName;
++  const char *properName;
+ };
+ 
+ // Acrobat 4.0 and earlier substituted Base14-compatible fonts without
+@@ -100,7 +100,7 @@
+ // GfxFont
+ //------------------------------------------------------------------------
+ 
+-GfxFont *GfxFont::makeFont(XRef *xref, char *tagA, Ref idA, Dict *fontDict) {
++GfxFont *GfxFont::makeFont(XRef *xref, const char *tagA, Ref idA, Dict *fontDict) {
+   GString *nameA;
+   GfxFont *font;
+   Object obj1;
+@@ -136,7 +136,7 @@
+   return font;
+ }
+ 
+-GfxFont::GfxFont(char *tagA, Ref idA, GString *nameA) {
++GfxFont::GfxFont(const char *tagA, Ref idA, GString *nameA) {
+   ok = gFalse;
+   tag = new GString(tagA);
+   id = idA;
+@@ -331,8 +331,8 @@
+ }
+ 
+ void GfxFont::findExtFontFile() {
+-  static char *type1Exts[] = { ".pfa", ".pfb", ".ps", "", NULL };
+-  static char *ttExts[] = { ".ttf", NULL };
++  static const char *type1Exts[] = { ".pfa", ".pfb", ".ps", "", NULL };
++  static const char *ttExts[] = { ".ttf", NULL };
+ 
+   if (name) {
+     if (type == fontType1) {
+@@ -343,7 +343,7 @@
+   }
+ }
+ 
+-char *GfxFont::readExtFontFile(int *len) {
++const char *GfxFont::readExtFontFile(int *len) {
+   FILE *f;
+   char *buf;
+ 
+@@ -363,7 +363,7 @@
+   return buf;
+ }
+ 
+-char *GfxFont::readEmbFontFile(XRef *xref, int *len) {
++const char *GfxFont::readEmbFontFile(XRef *xref, int *len) {
+   char *buf;
+   Object obj1, obj2;
+   Stream *str;
+@@ -404,20 +404,20 @@
+ // Gfx8BitFont
+ //------------------------------------------------------------------------
+ 
+-Gfx8BitFont::Gfx8BitFont(XRef *xref, char *tagA, Ref idA, GString *nameA,
++Gfx8BitFont::Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GString *nameA,
+ 			 GfxFontType typeA, Dict *fontDict):
+   GfxFont(tagA, idA, nameA)
+ {
+   GString *name2;
+   BuiltinFont *builtinFont;
+-  char **baseEnc;
++  const char **baseEnc;
+   GBool baseEncFromFontFile;
+-  char *buf;
++  const char *buf;
+   int len;
+   FoFiType1 *ffT1;
+   FoFiType1C *ffT1C;
+   int code, code2;
+-  char *charName;
++  const char *charName;
+   GBool missing, hex;
+   Unicode toUnicode[256];
+   CharCodeToUnicode *utu, *ctu2;
+@@ -627,7 +627,7 @@
+     }
+   }
+   if (buf) {
+-    gfree(buf);
++    gfree(const_cast<char*>(buf));
+   }
+ 
+   // get default base encoding
+@@ -677,7 +677,7 @@
+ 	} else if (obj3.isName()) {
+ 	  if (code >= 0 && code < 256) {
+ 	    if (encFree[code]) {
+-	      gfree(enc[code]);
++	      gfree(const_cast<char*>(enc[code]));
+ 	    }
+ 	    enc[code] = copyString(obj3.getName());
+ 	    encFree[code] = gTrue;
+@@ -895,7 +895,7 @@
+ 
+   for (i = 0; i < 256; ++i) {
+     if (encFree[i] && enc[i]) {
+-      gfree(enc[i]);
++      gfree(const_cast<char*>(enc[i]));
+     }
+   }
+   ctu->decRefCnt();
+@@ -907,7 +907,7 @@
+   }
+ }
+ 
+-int Gfx8BitFont::getNextChar(char *s, int len, CharCode *code,
++int Gfx8BitFont::getNextChar(const char *s, int len, CharCode *code,
+ 			     Unicode *u, int uSize, int *uLen,
+ 			     double *dx, double *dy, double *ox, double *oy) {
+   CharCode c;
+@@ -929,7 +929,7 @@
+   int cmapPlatform, cmapEncoding;
+   int unicodeCmap, macRomanCmap, msSymbolCmap, cmap;
+   GBool useMacRoman, useUnicode;
+-  char *charName;
++  const char *charName;
+   Unicode u;
+   int code, i, n;
+ 
+@@ -1074,7 +1074,7 @@
+          ((GfxFontCIDWidthExcepV *)w2)->first;
+ }
+ 
+-GfxCIDFont::GfxCIDFont(XRef *xref, char *tagA, Ref idA, GString *nameA,
++GfxCIDFont::GfxCIDFont(XRef *xref, const char *tagA, Ref idA, GString *nameA,
+ 		       Dict *fontDict):
+   GfxFont(tagA, idA, nameA)
+ {
+@@ -1411,7 +1411,7 @@
+   }
+ }
+ 
+-int GfxCIDFont::getNextChar(char *s, int len, CharCode *code,
++int GfxCIDFont::getNextChar(const char *s, int len, CharCode *code,
+ 			    Unicode *u, int uSize, int *uLen,
+ 			    double *dx, double *dy, double *ox, double *oy) {
+   CID cid;
+@@ -1556,7 +1556,7 @@
+   gfree(fonts);
+ }
+ 
+-GfxFont *GfxFontDict::lookup(char *tag) {
++GfxFont *GfxFontDict::lookup(const char *tag) {
+   int i;
+ 
+   for (i = 0; i < numFonts; ++i) {
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/GfxFont.h texlive-20080816-source/libs/xpdf/xpdf/GfxFont.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/GfxFont.h	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/GfxFont.h	2008-11-21 17:38:32.000000000 +0300
+@@ -89,9 +89,9 @@
+ public:
+ 
+   // Build a GfxFont object.
+-  static GfxFont *makeFont(XRef *xref, char *tagA, Ref idA, Dict *fontDict);
++  static GfxFont *makeFont(XRef *xref, const char *tagA, Ref idA, Dict *fontDict);
+ 
+-  GfxFont(char *tagA, Ref idA, GString *nameA);
++  GfxFont(const char *tagA, Ref idA, GString *nameA);
+ 
+   virtual ~GfxFont();
+ 
+@@ -104,7 +104,7 @@
+   Ref *getID() { return &id; }
+ 
+   // Does this font match the tag?
+-  GBool matches(char *tagA) { return !tag->cmp(tagA); }
++  GBool matches(const char *tagA) { return !tag->cmp(tagA); }
+ 
+   // Get base font name.
+   GString *getName() { return name; }
+@@ -152,8 +152,8 @@
+   virtual int getWMode() { return 0; }
+ 
+   // Read an external or embedded font file into a buffer.
+-  char *readExtFontFile(int *len);
+-  char *readEmbFontFile(XRef *xref, int *len);
++  const char *readExtFontFile(int *len);
++  const char *readEmbFontFile(XRef *xref, int *len);
+ 
+   // Get the next char from a string <s> of <len> bytes, returning the
+   // char <code>, its Unicode mapping <u>, its displacement vector
+@@ -161,7 +161,7 @@
+   // is the number of entries available in <u>, and <uLen> is set to
+   // the number actually used.  Returns the number of bytes used by
+   // the char code.
+-  virtual int getNextChar(char *s, int len, CharCode *code,
++  virtual int getNextChar(const char *s, int len, CharCode *code,
+ 			  Unicode *u, int uSize, int *uLen,
+ 			  double *dx, double *dy, double *ox, double *oy) = 0;
+ 
+@@ -196,23 +196,23 @@
+ class Gfx8BitFont: public GfxFont {
+ public:
+ 
+-  Gfx8BitFont(XRef *xref, char *tagA, Ref idA, GString *nameA,
++  Gfx8BitFont(XRef *xref, const char *tagA, Ref idA, GString *nameA,
+ 	      GfxFontType typeA, Dict *fontDict);
+ 
+   virtual ~Gfx8BitFont();
+ 
+-  virtual int getNextChar(char *s, int len, CharCode *code,
++  virtual int getNextChar(const char *s, int len, CharCode *code,
+ 			  Unicode *u, int uSize, int *uLen,
+ 			  double *dx, double *dy, double *ox, double *oy);
+ 
+   // Return the encoding.
+-  char **getEncoding() { return enc; }
++  const char **getEncoding() { return enc; }
+ 
+   // Return the Unicode map.
+   CharCodeToUnicode *getToUnicode();
+ 
+   // Return the character name associated with <code>.
+-  char *getCharName(int code) { return enc[code]; }
++  const char *getCharName(int code) { return enc[code]; }
+ 
+   // Returns true if the PDF font specified an encoding.
+   GBool getHasEncoding() { return hasEncoding; }
+@@ -238,7 +238,7 @@
+ 
+ private:
+ 
+-  char *enc[256];		// char code --> char name
++  const char *enc[256];		// char code --> char name
+   char encFree[256];		// boolean for each char name: if set,
+ 				//   the string is malloc'ed
+   CharCodeToUnicode *ctu;	// char code --> Unicode
+@@ -256,14 +256,14 @@
+ class GfxCIDFont: public GfxFont {
+ public:
+ 
+-  GfxCIDFont(XRef *xref, char *tagA, Ref idA, GString *nameA,
++  GfxCIDFont(XRef *xref, const char *tagA, Ref idA, GString *nameA,
+ 	     Dict *fontDict);
+ 
+   virtual ~GfxCIDFont();
+ 
+   virtual GBool isCIDFont() { return gTrue; }
+ 
+-  virtual int getNextChar(char *s, int len, CharCode *code,
++  virtual int getNextChar(const char *s, int len, CharCode *code,
+ 			  Unicode *u, int uSize, int *uLen,
+ 			  double *dx, double *dy, double *ox, double *oy);
+ 
+@@ -305,7 +305,7 @@
+   ~GfxFontDict();
+ 
+   // Get the specified font.
+-  GfxFont *lookup(char *tag);
++  GfxFont *lookup(const char *tag);
+ 
+   // Iterative access.
+   int getNumFonts() { return numFonts; }
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/GfxState.cc texlive-20080816-source/libs/xpdf/xpdf/GfxState.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/GfxState.cc	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/GfxState.cc	2008-11-21 17:12:54.000000000 +0300
+@@ -35,7 +35,7 @@
+ //------------------------------------------------------------------------
+ 
+ struct GfxBlendModeInfo {
+-  char *name;
++  const char *name;
+   GfxBlendMode mode;
+ };
+ 
+@@ -66,7 +66,7 @@
+ 
+ // NB: This must match the GfxColorSpaceMode enum defined in
+ // GfxState.h
+-static char *gfxColorSpaceModeNames[] = {
++static const char *gfxColorSpaceModeNames[] = {
+   "DeviceGray",
+   "CalGray",
+   "DeviceRGB",
+@@ -157,7 +157,7 @@
+   return nGfxColorSpaceModes;
+ }
+ 
+-char *GfxColorSpace::getColorSpaceModeName(int idx) {
++const char *GfxColorSpace::getColorSpaceModeName(int idx) {
+   return gfxColorSpaceModeNames[idx];
+ }
+ 
+@@ -949,7 +949,7 @@
+   int indexHighA;
+   Object obj1;
+   int x;
+-  char *s;
++  const char *s;
+   int n, i, j;
+ 
+   if (arr->getLength() != 4) {
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/GfxState.h texlive-20080816-source/libs/xpdf/xpdf/GfxState.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/GfxState.h	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/GfxState.h	2008-11-21 17:08:48.000000000 +0300
+@@ -164,7 +164,7 @@
+   static int getNumColorSpaceModes();
+ 
+   // Return the name of the <idx>th color space mode.
+-  static char *getColorSpaceModeName(int idx);
++  static const char *getColorSpaceModeName(int idx);
+ 
+ private:
+ };
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/GlobalParams.cc texlive-20080816-source/libs/xpdf/xpdf/GlobalParams.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/GlobalParams.cc	2008-05-08 17:40:41.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/GlobalParams.cc	2008-11-21 17:29:19.000000000 +0300
+@@ -117,9 +117,9 @@
+ //------------------------------------------------------------------------
+ 
+ static struct {
+-  char *name;
+-  char *t1FileName;
+-  char *ttFileName;
++  const char *name;
++  const char *t1FileName;
++  const char *ttFileName;
+ } displayFontTab[] = {
+   {"Courier",               "n022003l.pfb", "cour.ttf"},
+   {"Courier-Bold",          "n022004l.pfb", "courbd.ttf"},
+@@ -139,13 +139,13 @@
+ };
+ 
+ #ifdef WIN32
+-static char *displayFontDirs[] = {
++static const char *displayFontDirs[] = {
+   "c:/windows/fonts",
+   "c:/winnt/fonts",
+   NULL
+ };
+ #else
+-static char *displayFontDirs[] = {
++static const char *displayFontDirs[] = {
+   "/usr/share/ghostscript/fonts",
+   "/usr/local/share/ghostscript/fonts",
+   "/usr/share/fonts/default/Type1",
+@@ -205,7 +205,7 @@
+   GBool bold, italic;
+ 
+   static WinFontInfo *make(GString *nameA, GBool boldA, GBool italicA,
+-			   HKEY regKey, char *winFontDir);
++			   HKEY regKey, const char *winFontDir);
+   WinFontInfo(GString *nameA, GBool boldA, GBool italicA,
+ 	      GString *fileNameA);
+   virtual ~WinFontInfo();
+@@ -213,7 +213,7 @@
+ };
+ 
+ WinFontInfo *WinFontInfo::make(GString *nameA, GBool boldA, GBool italicA,
+-			       HKEY regKey, char *winFontDir) {
++			       HKEY regKey, const char *winFontDir) {
+   GString *regName;
+   GString *fileNameA;
+   char buf[MAX_PATH];
+@@ -280,7 +280,7 @@
+ class WinFontList {
+ public:
+ 
+-  WinFontList(char *winFontDirA);
++  WinFontList(const char *winFontDirA);
+   ~WinFontList();
+   WinFontInfo *find(GString *font);
+ 
+@@ -297,12 +297,12 @@
+   GList *fonts;			// [WinFontInfo]
+   HDC dc;			// (only used during enumeration)
+   HKEY regKey;			// (only used during enumeration)
+-  char *winFontDir;		// (only used during enumeration)
++  const char *winFontDir;	// (only used during enumeration)
+ };
+ 
+-WinFontList::WinFontList(char *winFontDirA) {
++WinFontList::WinFontList(const char *winFontDirA) {
+   OSVERSIONINFO version;
+-  char *path;
++  const char *path;
+ 
+   fonts = new GList();
+   dc = GetDC(NULL);
+@@ -463,7 +463,7 @@
+ // KeyBinding
+ //------------------------------------------------------------------------
+ 
+-KeyBinding::KeyBinding(int codeA, int modsA, int contextA, char *cmd0) {
++KeyBinding::KeyBinding(int codeA, int modsA, int contextA, const char *cmd0) {
+   code = codeA;
+   mods = modsA;
+   context = contextA;
+@@ -472,7 +472,7 @@
+ }
+ 
+ KeyBinding::KeyBinding(int codeA, int modsA, int contextA,
+-		       char *cmd0, char *cmd1) {
++		       const char *cmd0, const char *cmd1) {
+   code = codeA;
+   mods = modsA;
+   context = contextA;
+@@ -501,7 +501,7 @@
+ class Plugin {
+ public:
+ 
+-  static Plugin *load(char *type, char *name);
++  static Plugin *load(const char *type, const char *name);
+   ~Plugin();
+ 
+ private:
+@@ -515,7 +515,7 @@
+ #endif
+ };
+ 
+-Plugin *Plugin::load(char *type, char *name) {
++Plugin *Plugin::load(const char *type, const char *name) {
+   GString *path;
+   Plugin *plugin;
+   XpdfPluginVecTable *vt;
+@@ -677,7 +677,7 @@
+   displayCIDFonts = new GHash();
+   displayNamedCIDFonts = new GHash();
+ #if HAVE_PAPER_H
+-  char *paperName;
++  const char *paperName;
+   const struct paper *paperType;
+   paperinit();
+   if ((paperName = systempapername())) {
+@@ -771,7 +771,7 @@
+ 
+ }
+ 
+-GlobalParams::GlobalParams(char *cfgFileName) {
++GlobalParams::GlobalParams(const char *cfgFileName) {
+   UnicodeMap *map;
+   GString *fileName;
+   FILE *f;
+@@ -811,7 +811,7 @@
+   displayCIDFonts = new GHash();
+   displayNamedCIDFonts = new GHash();
+ #if HAVE_PAPER_H
+-  char *paperName;
++  const char *paperName;
+   const struct paper *paperType;
+   paperinit();
+   if ((paperName = systempapername())) {
+@@ -1096,7 +1096,7 @@
+   }
+ }
+ 
+-void GlobalParams::parseLine(char *buf, GString *fileName, int line) {
++void GlobalParams::parseLine(const char *buf, GString *fileName, int line) {
+   GList *tokens;
+   GString *cmd, *incFile;
+   char *p1, *p2;
+@@ -1531,7 +1531,7 @@
+   psFonts->add(param->pdfFontName, param);
+ }
+ 
+-void GlobalParams::parsePSFont16(char *cmdName, GList *fontList,
++void GlobalParams::parsePSFont16(const char *cmdName, GList *fontList,
+ 				 GList *tokens, GString *fileName, int line) {
+   PSFontParam *param;
+   int wMode;
+@@ -1692,9 +1692,9 @@
+ 
+ GBool GlobalParams::parseKey(GString *modKeyStr, GString *contextStr,
+ 			     int *code, int *mods, int *context,
+-			     char *cmdName,
++			     const char *cmdName,
+ 			     GList *tokens, GString *fileName, int line) {
+-  char *p0;
++  const char *p0;
+ 
+   *mods = xpdfKeyModNone;
+   p0 = modKeyStr->getCString();
+@@ -1821,7 +1821,7 @@
+ }
+ #endif
+ 
+-void GlobalParams::parseCommand(char *cmdName, GString **val,
++void GlobalParams::parseCommand(const char *cmdName, GString **val,
+ 				GList *tokens, GString *fileName, int line) {
+   if (tokens->getLength() != 2) {
+     error(-1, "Bad '%s' config file command (%s:%d)",
+@@ -1834,7 +1834,7 @@
+   *val = ((GString *)tokens->get(1))->copy();
+ }
+ 
+-void GlobalParams::parseYesNo(char *cmdName, GBool *flag,
++void GlobalParams::parseYesNo(const char *cmdName, GBool *flag,
+ 			      GList *tokens, GString *fileName, int line) {
+   GString *tok;
+ 
+@@ -1850,7 +1850,7 @@
+   }
+ }
+ 
+-GBool GlobalParams::parseYesNo2(char *token, GBool *flag) {
++GBool GlobalParams::parseYesNo2(const char *token, GBool *flag) {
+   if (!strcmp(token, "yes")) {
+     *flag = gTrue;
+   } else if (!strcmp(token, "no")) {
+@@ -1861,7 +1861,7 @@
+   return gTrue;
+ }
+ 
+-void GlobalParams::parseInteger(char *cmdName, int *val,
++void GlobalParams::parseInteger(const char *cmdName, int *val,
+ 				GList *tokens, GString *fileName, int line) {
+   GString *tok;
+   int i;
+@@ -1892,7 +1892,7 @@
+   *val = atoi(tok->getCString());
+ }
+ 
+-void GlobalParams::parseFloat(char *cmdName, double *val,
++void GlobalParams::parseFloat(const char *cmdName, double *val,
+ 			      GList *tokens, GString *fileName, int line) {
+   GString *tok;
+   int i;
+@@ -1992,12 +1992,12 @@
+ 
+ //------------------------------------------------------------------------
+ 
+-void GlobalParams::setBaseDir(char *dir) {
++void GlobalParams::setBaseDir(const char *dir) {
+   delete baseDir;
+   baseDir = new GString(dir);
+ }
+ 
+-void GlobalParams::setupBaseFonts(char *dir) {
++void GlobalParams::setupBaseFonts(const char *dir) {
+   GString *fontName;
+   GString *fileName;
+ #ifdef WIN32
+@@ -2109,7 +2109,7 @@
+ // accessors
+ //------------------------------------------------------------------------
+ 
+-CharCode GlobalParams::getMacRomanCharCode(char *charName) {
++CharCode GlobalParams::getMacRomanCharCode(const char *charName) {
+   // no need to lock - macRomanReverseMap is constant
+   return macRomanReverseMap->lookup(charName);
+ }
+@@ -2123,7 +2123,7 @@
+   return s;
+ }
+ 
+-Unicode GlobalParams::mapNameToUnicode(char *charName) {
++Unicode GlobalParams::mapNameToUnicode(const char *charName) {
+   // no need to lock - nameToUnicode is constant
+   return nameToUnicode->lookup(charName);
+ }
+@@ -2456,9 +2456,9 @@
+   return tiny;
+ }
+ 
+-GString *GlobalParams::findFontFile(GString *fontName, char **exts) {
++GString *GlobalParams::findFontFile(GString *fontName, const char **exts) {
+   GString *dir, *fileName;
+-  char **ext;
++  const char **ext;
+   FILE *f;
+   int i;
+ 
+@@ -2745,7 +2745,7 @@
+   unlockGlobalParams;
+ }
+ 
+-void GlobalParams::setPSFile(char *file) {
++void GlobalParams::setPSFile(const char *file) {
+   lockGlobalParams;
+   if (psFile) {
+     delete psFile;
+@@ -2754,7 +2754,7 @@
+   unlockGlobalParams;
+ }
+ 
+-GBool GlobalParams::setPSPaperSize(char *size) {
++GBool GlobalParams::setPSPaperSize(const char *size) {
+   lockGlobalParams;
+   if (!strcmp(size, "match")) {
+     psPaperWidth = psPaperHeight = -1;
+@@ -2884,14 +2884,14 @@
+   unlockGlobalParams;
+ }
+ 
+-void GlobalParams::setTextEncoding(char *encodingName) {
++void GlobalParams::setTextEncoding(const char *encodingName) {
+   lockGlobalParams;
+   delete textEncoding;
+   textEncoding = new GString(encodingName);
+   unlockGlobalParams;
+ }
+ 
+-GBool GlobalParams::setTextEOL(char *s) {
++GBool GlobalParams::setTextEOL(const char *s) {
+   lockGlobalParams;
+   if (!strcmp(s, "unix")) {
+     textEOL = eolUnix;
+@@ -2919,7 +2919,7 @@
+   unlockGlobalParams;
+ }
+ 
+-void GlobalParams::setInitialZoom(char *s) {
++void GlobalParams::setInitialZoom(const char *s) {
+   lockGlobalParams;
+   delete initialZoom;
+   initialZoom = new GString(s);
+@@ -2932,7 +2932,7 @@
+   unlockGlobalParams;
+ }
+ 
+-GBool GlobalParams::setEnableT1lib(char *s) {
++GBool GlobalParams::setEnableT1lib(const char *s) {
+   GBool ok;
+ 
+   lockGlobalParams;
+@@ -2941,7 +2941,7 @@
+   return ok;
+ }
+ 
+-GBool GlobalParams::setEnableFreeType(char *s) {
++GBool GlobalParams::setEnableFreeType(const char *s) {
+   GBool ok;
+ 
+   lockGlobalParams;
+@@ -2951,7 +2951,7 @@
+ }
+ 
+ 
+-GBool GlobalParams::setAntialias(char *s) {
++GBool GlobalParams::setAntialias(const char *s) {
+   GBool ok;
+ 
+   lockGlobalParams;
+@@ -2960,7 +2960,7 @@
+   return ok;
+ }
+ 
+-GBool GlobalParams::setVectorAntialias(char *s) {
++GBool GlobalParams::setVectorAntialias(const char *s) {
+   GBool ok;
+ 
+   lockGlobalParams;
+@@ -3037,7 +3037,7 @@
+ #endif
+ }
+ 
+-XpdfSecurityHandler *GlobalParams::getSecurityHandler(char *name) {
++XpdfSecurityHandler *GlobalParams::getSecurityHandler(const char *name) {
+ #ifdef ENABLE_PLUGINS
+   XpdfSecurityHandler *hdlr;
+   int i;
+@@ -3075,7 +3075,7 @@
+ // plugins
+ //------------------------------------------------------------------------
+ 
+-GBool GlobalParams::loadPlugin(char *type, char *name) {
++GBool GlobalParams::loadPlugin(const char *type, const char *name) {
+   Plugin *plugin;
+ 
+   if (!(plugin = Plugin::load(type, name))) {
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/GlobalParams.h texlive-20080816-source/libs/xpdf/xpdf/GlobalParams.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/GlobalParams.h	2008-05-08 17:40:41.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/GlobalParams.h	2008-11-21 17:27:00.000000000 +0300
+@@ -172,8 +172,8 @@
+ 				//   together)
+   GList *cmds;			// list of commands [GString]
+ 
+-  KeyBinding(int codeA, int modsA, int contextA, char *cmd0);
+-  KeyBinding(int codeA, int modsA, int contextA, char *cmd0, char *cmd1);
++  KeyBinding(int codeA, int modsA, int contextA, const char *cmd0);
++  KeyBinding(int codeA, int modsA, int contextA, const char *cmd0, const char *cmd1);
+   KeyBinding(int codeA, int modsA, int contextA, GList *cmdsA);
+   ~KeyBinding();
+ };
+@@ -232,26 +232,26 @@
+ 
+   // Initialize the global parameters by attempting to read a config
+   // file.
+-  GlobalParams(char *cfgFileName);
++  GlobalParams(const char *cfgFileName);
+ 
+   // Initialize it without reading the config
+   GlobalParams();
+ 
+   ~GlobalParams();
+ 
+-  void setBaseDir(char *dir);
+-  void setupBaseFonts(char *dir);
++  void setBaseDir(const char *dir);
++  void setupBaseFonts(const char *dir);
+ 
+ #ifndef PDF_PARSER_ONLY
+-  void parseLine(char *buf, GString *fileName, int line);
++  void parseLine(const char *buf, GString *fileName, int line);
+ #endif
+ 
+   //----- accessors
+ 
+-  CharCode getMacRomanCharCode(char *charName);
++  CharCode getMacRomanCharCode(const char *charName);
+ 
+   GString *getBaseDir();
+-  Unicode mapNameToUnicode(char *charName);
++  Unicode mapNameToUnicode(const char *charName);
+   UnicodeMap *getResidentUnicodeMap(GString *encodingName);
+   FILE *getUnicodeMapFile(GString *encodingName);
+   FILE *findCMapFile(GString *collection, GString *cMapName);
+@@ -281,7 +281,7 @@
+   EndOfLineKind getTextEOL();
+   GBool getTextPageBreaks();
+   GBool getTextKeepTinyChars();
+-  GString *findFontFile(GString *fontName, char **exts);
++  GString *findFontFile(GString *fontName, const char **exts);
+   GString *getInitialZoom();
+   GBool getContinuousView();
+   GBool getEnableT1lib();
+@@ -314,8 +314,8 @@
+   //----- functions to set parameters
+ 
+   void addDisplayFont(DisplayFontParam *param);
+-  void setPSFile(char *file);
+-  GBool setPSPaperSize(char *size);
++  void setPSFile(const char *file);
++  GBool setPSPaperSize(const char *size);
+   void setPSPaperWidth(int width);
+   void setPSPaperHeight(int height);
+   void setPSImageableArea(int llx, int lly, int urx, int ury);
+@@ -332,16 +332,16 @@
+   void setPSPreload(GBool preload);
+   void setPSOPI(GBool opi);
+   void setPSASCIIHex(GBool hex);
+-  void setTextEncoding(char *encodingName);
+-  GBool setTextEOL(char *s);
++  void setTextEncoding(const char *encodingName);
++  GBool setTextEOL(const char *s);
+   void setTextPageBreaks(GBool pageBreaks);
+   void setTextKeepTinyChars(GBool keep);
+-  void setInitialZoom(char *s);
++  void setInitialZoom(const char *s);
+   void setContinuousView(GBool cont);
+-  GBool setEnableT1lib(char *s);
+-  GBool setEnableFreeType(char *s);
+-  GBool setAntialias(char *s);
+-  GBool setVectorAntialias(char *s);
++  GBool setEnableT1lib(const char *s);
++  GBool setEnableFreeType(const char *s);
++  GBool setAntialias(const char *s);
++  GBool setVectorAntialias(const char *s);
+   void setScreenType(ScreenType t);
+   void setScreenSize(int size);
+   void setScreenDotRadius(int r);
+@@ -356,7 +356,7 @@
+   //----- security handlers
+ 
+   void addSecurityHandler(XpdfSecurityHandler *handler);
+-  XpdfSecurityHandler *getSecurityHandler(char *name);
++  XpdfSecurityHandler *getSecurityHandler(const char *name);
+ 
+ private:
+ 
+@@ -378,7 +378,7 @@
+   void parsePSImageableArea(GList *tokens, GString *fileName, int line);
+   void parsePSLevel(GList *tokens, GString *fileName, int line);
+   void parsePSFont(GList *tokens, GString *fileName, int line);
+-  void parsePSFont16(char *cmdName, GList *fontList,
++  void parsePSFont16(const char *cmdName, GList *fontList,
+ 		     GList *tokens, GString *fileName, int line);
+   void parseTextEncoding(GList *tokens, GString *fileName, int line);
+   void parseTextEOL(GList *tokens, GString *fileName, int line);
+@@ -390,21 +390,21 @@
+   void parseUnbind(GList *tokens, GString *fileName, int line);
+   GBool parseKey(GString *modKeyStr, GString *contextStr,
+ 		 int *code, int *mods, int *context,
+-		 char *cmdName,
++		 const char *cmdName,
+ 		 GList *tokens, GString *fileName, int line);
+ #endif
+-  void parseCommand(char *cmdName, GString **val,
++  void parseCommand(const char *cmdName, GString **val,
+ 		    GList *tokens, GString *fileName, int line);
+-  void parseYesNo(char *cmdName, GBool *flag,
++  void parseYesNo(const char *cmdName, GBool *flag,
+ 		  GList *tokens, GString *fileName, int line);
+-  GBool parseYesNo2(char *token, GBool *flag);
+-  void parseInteger(char *cmdName, int *val,
++  GBool parseYesNo2(const char *token, GBool *flag);
++  void parseInteger(const char *cmdName, int *val,
+ 		    GList *tokens, GString *fileName, int line);
+-  void parseFloat(char *cmdName, double *val,
++  void parseFloat(const char *cmdName, double *val,
+ 		  GList *tokens, GString *fileName, int line);
+   UnicodeMap *getUnicodeMap2(GString *encodingName);
+ #ifdef ENABLE_PLUGINS
+-  GBool loadPlugin(char *type, char *name);
++  GBool loadPlugin(const char *type, const char *name);
+ #endif
+ 
+   //----- static tables
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/Link.cc texlive-20080816-source/libs/xpdf/xpdf/Link.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/Link.cc	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/Link.cc	2008-11-21 17:19:11.000000000 +0300
+@@ -626,7 +626,7 @@
+ // LinkUnknown
+ //------------------------------------------------------------------------
+ 
+-LinkUnknown::LinkUnknown(char *actionA) {
++LinkUnknown::LinkUnknown(const char *actionA) {
+   action = new GString(actionA);
+ }
+ 
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/Link.h texlive-20080816-source/libs/xpdf/xpdf/Link.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/Link.h	2007-07-12 01:13:59.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/Link.h	2008-11-21 17:18:48.000000000 +0300
+@@ -284,7 +284,7 @@
+ public:
+ 
+   // Build a LinkUnknown with the specified action type.
+-  LinkUnknown(char *actionA);
++  LinkUnknown(const char *actionA);
+ 
+   // Destructor.
+   virtual ~LinkUnknown();
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/NameToCharCode.cc texlive-20080816-source/libs/xpdf/xpdf/NameToCharCode.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/NameToCharCode.cc	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/NameToCharCode.cc	2008-11-21 17:19:46.000000000 +0300
+@@ -19,7 +19,7 @@
+ //------------------------------------------------------------------------
+ 
+ struct NameToCharCodeEntry {
+-  char *name;
++  const char *name;
+   CharCode c;
+ };
+ 
+@@ -41,13 +41,13 @@
+ 
+   for (i = 0; i < size; ++i) {
+     if (tab[i].name) {
+-      gfree(tab[i].name);
++      gfree(const_cast<char*>(tab[i].name));
+     }
+   }
+   gfree(tab);
+ }
+ 
+-void NameToCharCode::add(char *name, CharCode c) {
++void NameToCharCode::add(const char *name, CharCode c) {
+   NameToCharCodeEntry *oldTab;
+   int h, i, oldSize;
+ 
+@@ -89,7 +89,7 @@
+   ++len;
+ }
+ 
+-CharCode NameToCharCode::lookup(char *name) {
++CharCode NameToCharCode::lookup(const char *name) {
+   int h;
+ 
+   h = hash(name);
+@@ -104,8 +104,8 @@
+   return 0;
+ }
+ 
+-int NameToCharCode::hash(char *name) {
+-  char *p;
++int NameToCharCode::hash(const char *name) {
++  const char *p;
+   unsigned int h;
+ 
+   h = 0;
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/NameToCharCode.h texlive-20080816-source/libs/xpdf/xpdf/NameToCharCode.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/NameToCharCode.h	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/NameToCharCode.h	2008-11-21 17:05:25.000000000 +0300
+@@ -27,12 +27,12 @@
+   NameToCharCode();
+   ~NameToCharCode();
+ 
+-  void add(char *name, CharCode c);
+-  CharCode lookup(char *name);
++  void add(const char *name, CharCode c);
++  CharCode lookup(const char *name);
+ 
+ private:
+ 
+-  int hash(char *name);
++  int hash(const char *name);
+ 
+   NameToCharCodeEntry *tab;
+   int size;
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/NameToUnicodeTable.h texlive-20080816-source/libs/xpdf/xpdf/NameToUnicodeTable.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/NameToUnicodeTable.h	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/NameToUnicodeTable.h	2008-11-21 16:18:19.000000000 +0300
+@@ -8,7 +8,7 @@
+ 
+ static struct {
+   Unicode u;
+-  char *name;
++  const char *name;
+ } nameToUnicodeTab[] = {
+   {0x0021, "!"},
+   {0x0023, "#"},
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/Object.cc texlive-20080816-source/libs/xpdf/xpdf/Object.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/Object.cc	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/Object.cc	2008-11-21 17:23:26.000000000 +0300
+@@ -24,7 +24,7 @@
+ // Object
+ //------------------------------------------------------------------------
+ 
+-char *objTypeNames[numObjTypes] = {
++const char *objTypeNames[numObjTypes] = {
+   "boolean",
+   "integer",
+   "real",
+@@ -112,7 +112,7 @@
+     delete string;
+     break;
+   case objName:
+-    gfree(name);
++    gfree(const_cast<char*>(name));
+     break;
+   case objArray:
+     if (!array->decRef()) {
+@@ -130,7 +130,7 @@
+     }
+     break;
+   case objCmd:
+-    gfree(cmd);
++    gfree(const_cast<char*>(cmd));
+     break;
+   default:
+     break;
+@@ -141,7 +141,7 @@
+   type = objNone;
+ }
+ 
+-char *Object::getTypeName() {
++const char *Object::getTypeName() {
+   return objTypeNames[type];
+ }
+ 
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/Object.h texlive-20080816-source/libs/xpdf/xpdf/Object.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/Object.h	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/Object.h	2008-11-21 17:49:30.000000000 +0300
+@@ -89,7 +89,7 @@
+     { initObj(objReal); real = realA; return this; }
+   Object *initString(GString *stringA)
+     { initObj(objString); string = stringA; return this; }
+-  Object *initName(char *nameA)
++  Object *initName(const char *nameA)
+     { initObj(objName); name = copyString(nameA); return this; }
+   Object *initNull()
+     { initObj(objNull); return this; }
+@@ -99,7 +99,7 @@
+   Object *initStream(Stream *streamA);
+   Object *initRef(int numA, int genA)
+     { initObj(objRef); ref.num = numA; ref.gen = genA; return this; }
+-  Object *initCmd(char *cmdA)
++  Object *initCmd(const char *cmdA)
+     { initObj(objCmd); cmd = copyString(cmdA); return this; }
+   Object *initError()
+     { initObj(objError); return this; }
+@@ -135,11 +135,11 @@
+   GBool isNone() { return type == objNone; }
+ 
+   // Special type checking.
+-  GBool isName(char *nameA)
++  GBool isName(const char *nameA)
+     { return type == objName && !strcmp(name, nameA); }
+-  GBool isDict(char *dictType);
+-  GBool isStream(char *dictType);
+-  GBool isCmd(char *cmdA)
++  GBool isDict(const char *dictType);
++  GBool isStream(const char *dictType);
++  GBool isCmd(const char *cmdA)
+     { return type == objCmd && !strcmp(cmd, cmdA); }
+ 
+   // Accessors.  NB: these assume object is of correct type.
+@@ -148,14 +148,14 @@
+   double getReal() { return real; }
+   double getNum() { return type == objInt ? (double)intg : real; }
+   GString *getString() { return string; }
+-  char *getName() { return name; }
++  const char *getName() { return name; }
+   Array *getArray() { return array; }
+   Dict *getDict() { return dict; }
+   Stream *getStream() { return stream; }
+   Ref getRef() { return ref; }
+   int getRefNum() { return ref.num; }
+   int getRefGen() { return ref.gen; }
+-  char *getCmd() { return cmd; }
++  const char *getCmd() { return cmd; }
+ 
+   // Array accessors.
+   int arrayGetLength();
+@@ -165,16 +165,16 @@
+ 
+   // Dict accessors.
+   int dictGetLength();
+-  void dictAdd(char *key, Object *val);
+-  GBool dictIs(char *dictType);
+-  Object *dictLookup(char *key, Object *obj);
+-  Object *dictLookupNF(char *key, Object *obj);
+-  char *dictGetKey(int i);
++  void dictAdd(const char *key, Object *val);
++  GBool dictIs(const char *dictType);
++  Object *dictLookup(const char *key, Object *obj);
++  Object *dictLookupNF(const char *key, Object *obj);
++  const char *dictGetKey(int i);
+   Object *dictGetVal(int i, Object *obj);
+   Object *dictGetValNF(int i, Object *obj);
+ 
+   // Stream accessors.
+-  GBool streamIs(char *dictType);
++  GBool streamIs(const char *dictType);
+   void streamReset();
+   void streamClose();
+   int streamGetChar();
+@@ -185,7 +185,7 @@
+   Dict *streamGetDict();
+ 
+   // Output.
+-  char *getTypeName();
++  const char *getTypeName();
+   void print(FILE *f = stdout);
+ 
+   // Memory testing.
+@@ -199,12 +199,12 @@
+     int intg;			//   integer
+     double real;		//   real
+     GString *string;		//   string
+-    char *name;			//   name
++    const char *name;		//   name
+     Array *array;		//   array
+     Dict *dict;			//   dictionary
+     Stream *stream;		//   stream
+     Ref ref;			//   indirect reference
+-    char *cmd;			//   command
++    const char *cmd;		//   command
+   };
+ 
+ #ifdef DEBUG_MEM
+@@ -240,22 +240,22 @@
+ inline int Object::dictGetLength()
+   { return dict->getLength(); }
+ 
+-inline void Object::dictAdd(char *key, Object *val)
++inline void Object::dictAdd(const char *key, Object *val)
+   { dict->add(key, val); }
+ 
+-inline GBool Object::dictIs(char *dictType)
++inline GBool Object::dictIs(const char *dictType)
+   { return dict->is(dictType); }
+ 
+-inline GBool Object::isDict(char *dictType)
++inline GBool Object::isDict(const char *dictType)
+   { return type == objDict && dictIs(dictType); }
+ 
+-inline Object *Object::dictLookup(char *key, Object *obj)
++inline Object *Object::dictLookup(const char *key, Object *obj)
+   { return dict->lookup(key, obj); }
+ 
+-inline Object *Object::dictLookupNF(char *key, Object *obj)
++inline Object *Object::dictLookupNF(const char *key, Object *obj)
+   { return dict->lookupNF(key, obj); }
+ 
+-inline char *Object::dictGetKey(int i)
++inline const char *Object::dictGetKey(int i)
+   { return dict->getKey(i); }
+ 
+ inline Object *Object::dictGetVal(int i, Object *obj)
+@@ -270,10 +270,10 @@
+ 
+ #include "Stream.h"
+ 
+-inline GBool Object::streamIs(char *dictType)
++inline GBool Object::streamIs(const char *dictType)
+   { return stream->getDict()->is(dictType); }
+ 
+-inline GBool Object::isStream(char *dictType)
++inline GBool Object::isStream(const char *dictType)
+   { return type == objStream && streamIs(dictType); }
+ 
+ inline void Object::streamReset()
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/Page.cc texlive-20080816-source/libs/xpdf/xpdf/Page.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/Page.cc	2008-05-08 17:40:41.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/Page.cc	2008-11-21 17:43:25.000000000 +0300
+@@ -184,7 +184,7 @@
+   resources.free();
+ }
+ 
+-GBool PageAttrs::readBox(Dict *dict, char *key, PDFRectangle *box) {
++GBool PageAttrs::readBox(Dict *dict, const char *key, PDFRectangle *box) {
+   PDFRectangle tmp;
+   double t;
+   Object obj1, obj2;
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/Page.h texlive-20080816-source/libs/xpdf/xpdf/Page.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/Page.h	2008-05-08 17:40:41.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/Page.h	2008-11-21 17:43:36.000000000 +0300
+@@ -114,7 +114,7 @@
+ 
+ private:
+ 
+-  GBool readBox(Dict *dict, char *key, PDFRectangle *box);
++  GBool readBox(Dict *dict, const char *key, PDFRectangle *box);
+ 
+   PDFRectangle mediaBox;
+   PDFRectangle cropBox;
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/Stream.cc texlive-20080816-source/libs/xpdf/xpdf/Stream.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/Stream.cc	2008-03-23 19:38:33.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/Stream.cc	2008-11-21 17:50:08.000000000 +0300
+@@ -85,7 +85,7 @@
+   return buf;
+ }
+ 
+-GString *Stream::getPSFilter(int psLevel, char *indent) {
++GString *Stream::getPSFilter(int psLevel, const char *indent) {
+   return new GString();
+ }
+ 
+@@ -133,7 +133,7 @@
+   return str;
+ }
+ 
+-Stream *Stream::makeFilter(char *name, Stream *str, Object *params) {
++Stream *Stream::makeFilter(const char *name, Stream *str, Object *params) {
+   int pred;			// parameters
+   int colors;
+   int bits;
+@@ -878,7 +878,7 @@
+   return buf;
+ }
+ 
+-GString *ASCIIHexStream::getPSFilter(int psLevel, char *indent) {
++GString *ASCIIHexStream::getPSFilter(int psLevel, const char *indent) {
+   GString *s;
+ 
+   if (psLevel < 2) {
+@@ -959,7 +959,7 @@
+   return b[index];
+ }
+ 
+-GString *ASCII85Stream::getPSFilter(int psLevel, char *indent) {
++GString *ASCII85Stream::getPSFilter(int psLevel, const char *indent) {
+   GString *s;
+ 
+   if (psLevel < 2) {
+@@ -1145,7 +1145,7 @@
+   return code;
+ }
+ 
+-GString *LZWStream::getPSFilter(int psLevel, char *indent) {
++GString *LZWStream::getPSFilter(int psLevel, const char *indent) {
+   GString *s;
+ 
+   if (psLevel < 2 || pred) {
+@@ -1186,7 +1186,7 @@
+   eof = gFalse;
+ }
+ 
+-GString *RunLengthStream::getPSFilter(int psLevel, char *indent) {
++GString *RunLengthStream::getPSFilter(int psLevel, const char *indent) {
+   GString *s;
+ 
+   if (psLevel < 2) {
+@@ -1834,7 +1834,7 @@
+   return (inputBuf >> (inputBits - n)) & (0xffff >> (16 - n));
+ }
+ 
+-GString *CCITTFaxStream::getPSFilter(int psLevel, char *indent) {
++GString *CCITTFaxStream::getPSFilter(int psLevel, const char *indent) {
+   GString *s;
+   char s1[50];
+ 
+@@ -3289,7 +3289,7 @@
+   return (c1 << 8) + c2;
+ }
+ 
+-GString *DCTStream::getPSFilter(int psLevel, char *indent) {
++GString *DCTStream::getPSFilter(int psLevel, const char *indent) {
+   GString *s;
+ 
+   if (psLevel < 2) {
+@@ -4051,7 +4051,7 @@
+   return c;
+ }
+ 
+-GString *FlateStream::getPSFilter(int psLevel, char *indent) {
++GString *FlateStream::getPSFilter(int psLevel, const char *indent) {
+   GString *s;
+ 
+   if (psLevel < 3 || pred) {
+@@ -4466,7 +4466,7 @@
+ }
+ 
+ GBool ASCIIHexEncoder::fillBuf() {
+-  static char *hex = "0123456789abcdef";
++  static const char *hex = "0123456789abcdef";
+   int c;
+ 
+   if (eof) {
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/Stream.h texlive-20080816-source/libs/xpdf/xpdf/Stream.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/Stream.h	2008-05-08 17:40:41.000000000 +0400
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/Stream.h	2008-11-21 17:50:23.000000000 +0300
+@@ -154,7 +154,7 @@
+   virtual void setPos(Guint pos, int dir = 0) = 0;
+ 
+   // Get PostScript command for the filter(s).
+-  virtual GString *getPSFilter(int psLevel, char *indent);
++  virtual GString *getPSFilter(int psLevel, const char *indent);
+ 
+   // Does this stream type potentially contain non-printable chars?
+   virtual GBool isBinary(GBool last = gTrue) = 0;
+@@ -185,7 +185,7 @@
+ 
+ private:
+ 
+-  Stream *makeFilter(char *name, Stream *str, Object *params);
++  Stream *makeFilter(const char *name, Stream *str, Object *params);
+ 
+   int ref;			// reference count
+ };
+@@ -440,7 +440,7 @@
+   virtual int getChar()
+     { int c = lookChar(); buf = EOF; return c; }
+   virtual int lookChar();
+-  virtual GString *getPSFilter(int psLevel, char *indent);
++  virtual GString *getPSFilter(int psLevel, const char *indent);
+   virtual GBool isBinary(GBool last = gTrue);
+ 
+ private:
+@@ -463,7 +463,7 @@
+   virtual int getChar()
+     { int ch = lookChar(); ++index; return ch; }
+   virtual int lookChar();
+-  virtual GString *getPSFilter(int psLevel, char *indent);
++  virtual GString *getPSFilter(int psLevel, const char *indent);
+   virtual GBool isBinary(GBool last = gTrue);
+ 
+ private:
+@@ -489,7 +489,7 @@
+   virtual int getChar();
+   virtual int lookChar();
+   virtual int getRawChar();
+-  virtual GString *getPSFilter(int psLevel, char *indent);
++  virtual GString *getPSFilter(int psLevel, const char *indent);
+   virtual GBool isBinary(GBool last = gTrue);
+ 
+ private:
+@@ -533,7 +533,7 @@
+     { return (bufPtr >= bufEnd && !fillBuf()) ? EOF : (*bufPtr++ & 0xff); }
+   virtual int lookChar()
+     { return (bufPtr >= bufEnd && !fillBuf()) ? EOF : (*bufPtr & 0xff); }
+-  virtual GString *getPSFilter(int psLevel, char *indent);
++  virtual GString *getPSFilter(int psLevel, const char *indent);
+   virtual GBool isBinary(GBool last = gTrue);
+ 
+ private:
+@@ -564,7 +564,7 @@
+   virtual int getChar()
+     { int c = lookChar(); buf = EOF; return c; }
+   virtual int lookChar();
+-  virtual GString *getPSFilter(int psLevel, char *indent);
++  virtual GString *getPSFilter(int psLevel, const char *indent);
+   virtual GBool isBinary(GBool last = gTrue);
+ 
+ private:
+@@ -637,7 +637,7 @@
+   virtual void close();
+   virtual int getChar();
+   virtual int lookChar();
+-  virtual GString *getPSFilter(int psLevel, char *indent);
++  virtual GString *getPSFilter(int psLevel, const char *indent);
+   virtual GBool isBinary(GBool last = gTrue);
+   Stream *getRawStream() { return str; }
+ 
+@@ -740,7 +740,7 @@
+   virtual int getChar();
+   virtual int lookChar();
+   virtual int getRawChar();
+-  virtual GString *getPSFilter(int psLevel, char *indent);
++  virtual GString *getPSFilter(int psLevel, const char *indent);
+   virtual GBool isBinary(GBool last = gTrue);
+ 
+ private:
+@@ -793,7 +793,7 @@
+   virtual void reset() {}
+   virtual int getChar() { return EOF; }
+   virtual int lookChar() { return EOF; }
+-  virtual GString *getPSFilter(int psLevel, char *indent)  { return NULL; }
++  virtual GString *getPSFilter(int psLevel, const char *indent)  { return NULL; }
+   virtual GBool isBinary(GBool last = gTrue) { return gFalse; }
+ };
+ 
+@@ -810,7 +810,7 @@
+   virtual void reset();
+   virtual int getChar();
+   virtual int lookChar();
+-  virtual GString *getPSFilter(int psLevel, char *indent) { return NULL; }
++  virtual GString *getPSFilter(int psLevel, const char *indent) { return NULL; }
+   virtual GBool isBinary(GBool last = gTrue);
+   virtual GBool isEncoder() { return gTrue; }
+ 
+@@ -835,7 +835,7 @@
+     { return (bufPtr >= bufEnd && !fillBuf()) ? EOF : (*bufPtr++ & 0xff); }
+   virtual int lookChar()
+     { return (bufPtr >= bufEnd && !fillBuf()) ? EOF : (*bufPtr & 0xff); }
+-  virtual GString *getPSFilter(int psLevel, char *indent) { return NULL; }
++  virtual GString *getPSFilter(int psLevel, const char *indent) { return NULL; }
+   virtual GBool isBinary(GBool last = gTrue) { return gFalse; }
+   virtual GBool isEncoder() { return gTrue; }
+ 
+@@ -865,7 +865,7 @@
+     { return (bufPtr >= bufEnd && !fillBuf()) ? EOF : (*bufPtr++ & 0xff); }
+   virtual int lookChar()
+     { return (bufPtr >= bufEnd && !fillBuf()) ? EOF : (*bufPtr & 0xff); }
+-  virtual GString *getPSFilter(int psLevel, char *indent) { return NULL; }
++  virtual GString *getPSFilter(int psLevel, const char *indent) { return NULL; }
+   virtual GBool isBinary(GBool last = gTrue) { return gFalse; }
+   virtual GBool isEncoder() { return gTrue; }
+ 
+@@ -895,7 +895,7 @@
+     { return (bufPtr >= bufEnd && !fillBuf()) ? EOF : (*bufPtr++ & 0xff); }
+   virtual int lookChar()
+     { return (bufPtr >= bufEnd && !fillBuf()) ? EOF : (*bufPtr & 0xff); }
+-  virtual GString *getPSFilter(int psLevel, char *indent) { return NULL; }
++  virtual GString *getPSFilter(int psLevel, const char *indent) { return NULL; }
+   virtual GBool isBinary(GBool last = gTrue) { return gTrue; }
+   virtual GBool isEncoder() { return gTrue; }
+ 
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/UnicodeMap.cc texlive-20080816-source/libs/xpdf/xpdf/UnicodeMap.cc
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/UnicodeMap.cc	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/UnicodeMap.cc	2008-11-21 17:20:50.000000000 +0300
+@@ -121,7 +121,7 @@
+ #endif
+ }
+ 
+-UnicodeMap::UnicodeMap(char *encodingNameA, GBool unicodeOutA,
++UnicodeMap::UnicodeMap(const char *encodingNameA, GBool unicodeOutA,
+ 		       UnicodeMapRange *rangesA, int lenA) {
+   encodingName = new GString(encodingNameA);
+   unicodeOut = unicodeOutA;
+@@ -136,7 +136,7 @@
+ #endif
+ }
+ 
+-UnicodeMap::UnicodeMap(char *encodingNameA, GBool unicodeOutA,
++UnicodeMap::UnicodeMap(const char *encodingNameA, GBool unicodeOutA,
+ 		       UnicodeMapFunc funcA) {
+   encodingName = new GString(encodingNameA);
+   unicodeOut = unicodeOutA;
+diff -ur texlive-20080816-source/libs/xpdf.orig/xpdf/UnicodeMap.h texlive-20080816-source/libs/xpdf/xpdf/UnicodeMap.h
+--- texlive-20080816-source/texlive-20080816-source/libs/xpdf.orig/xpdf/UnicodeMap.h	2006-01-16 03:09:26.000000000 +0300
++++ texlive-20080816-source/texlive-20080816-source/libs/xpdf/xpdf/UnicodeMap.h	2008-11-21 17:20:34.000000000 +0300
+@@ -53,12 +53,12 @@
+   static UnicodeMap *parse(GString *encodingNameA);
+ 
+   // Create a resident UnicodeMap.
+-  UnicodeMap(char *encodingNameA, GBool unicodeOutA,
++  UnicodeMap(const char *encodingNameA, GBool unicodeOutA,
+ 	     UnicodeMapRange *rangesA, int lenA);
+ 
+   // Create a resident UnicodeMap that uses a function instead of a
+   // list of ranges.
+-  UnicodeMap(char *encodingNameA, GBool unicodeOutA,
++  UnicodeMap(const char *encodingNameA, GBool unicodeOutA,
+ 	     UnicodeMapFunc funcA);
+ 
+   ~UnicodeMap();
