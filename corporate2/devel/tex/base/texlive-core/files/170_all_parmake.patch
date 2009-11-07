@@ -1,0 +1,16 @@
+Improve dependencies, .res files are needed when building package-resfiles.
+See https://bugs.gentoo.org/show_bug.cgi?id=242142
+
+Index: texlive-20080816-source/libs/icu-xetex/extra/uconv/Makefile.in
+===================================================================
+--- texlive-20080816-source.orig/texlive-20080816-source/libs/icu-xetex/extra/uconv/Makefile.in
++++ texlive-20080816-source/texlive-20080816-source/libs/icu-xetex/extra/uconv/Makefile.in
+@@ -137,7 +137,7 @@ $(UCONVMSG_LIB): resfiles
+ endif
+ 
+ 
+-package-resfiles: $(RESDIR)/$(RESDIR).lst pkgdata.inc
++package-resfiles: $(RESDIR)/$(RESDIR).lst pkgdata.inc $(RESFILES)
+ 	$(INVOKE) $(PKGDATA_INVOKE_OPTS) $(BINDIR)/pkgdata -p $(MSGNAME) $(PKGDATA_OPTS) -m $(PKGMODE) -s $(RESDIR) -d $(RESDIR) -T $(RESDIR) $(RESDIR)/$(RESDIR).lst
+ 
+ $(RESDIR)/$(RESDIR).lst: Makefile $(srcdir)/resfiles.mk
