@@ -31,7 +31,7 @@ def setup():
                          --disable-pygtk \
                          --enable-shared \
                          --enable-qt3 \
-                         --enable-qt4 \
+                         --disable-qt4 \
                          --enable-gtk \
                          --enable-glib \
                          --enable-gobject \
