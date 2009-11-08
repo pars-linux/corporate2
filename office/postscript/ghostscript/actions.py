@@ -39,11 +39,9 @@ def setup():
                        --enable-shared")
 
 def build():
-    autotools.make("-j1")
-    autotools.make("-j1 so")
+    autotools.make("-j1 so all")
+    autotools.make("-j1 -C ijs/")
 
-    shelltools.cd("ijs/")
-    autotools.make("-j1")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
