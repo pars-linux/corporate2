@@ -31,8 +31,11 @@ def setup():
                          --enable-rename \
                          --enable-schedutils \
                          --enable-write \
-                         --with-fsprobe=builtin \
                          --with-audit \
+                         --disable-switch_root \
+                         --disable-fsck \
+                         --disable-libuuid \
+                         --disable-uuidd \
                          --disable-init \
                          --disable-kill \
                          --disable-last \
@@ -41,9 +44,9 @@ def setup():
                          --disable-mesg \
                          --disable-reset \
                          --disable-rpath \
+                         --disable-static \
                          --disable-use-tty-group \
-                         --disable-wall \
-                         --disable-static')
+                         --disable-wall')
 
 def build():
     autotools.make()
@@ -51,8 +54,5 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    pisitools.dosym("/lib/libblkid.so.1", "/usr/lib/libblkid.so")
-
     pisitools.dodoc("AUTHORS", "COPYING", "DEPRECATED", "README*", "TODO", "docs/*")
     pisitools.insinto("/%s/%s" % (get.docDIR(), get.srcNAME()), "example.files")
-
