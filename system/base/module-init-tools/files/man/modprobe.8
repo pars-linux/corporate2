@@ -12,7 +12,7 @@ modprobe \- program to add and remove modules from the Linux Kernel
 .sp
 \fBmodprobe\fR [ \fB-c\fR ] 
 .sp
-\fBmodprobe\fR [ \fB--dump-modversions\fR ] 
+\fBmodprobe\fR [ \fB--dump-modversions\fR ]  [ \fB\fIfilename\fB\fR\fI...\fR ] 
 .SH "DESCRIPTION"
 .PP
 \fBmodprobe\fR intelligently adds or removes a
@@ -105,14 +105,6 @@ There is usually no reason to remove modules, but some
 buggy modules require it. Your kernel may not support
 removal of modules.
 .TP
-\fB-w --wait\fR
-This option is applicable only with the -r or --remove option.
-It causes modprobe to block in the kernel (within the kernel
-module handling code itself) waiting for the specified module's
-reference count to reach zero. Default operation is for modprobe
-to operate like rmmod, which exits with EWOULDBLOCK if the
-module's reference count is non-zero.
-.TP
 \fB-V --version\fR
 Show version of program and exit.
 .TP
@@ -186,7 +178,7 @@ Set the kernel version, rather than using
 \fBuname\fR(2) to decide on the kernel version (which dictates where to
 find the modules).
 .TP
-\fB-D --show-depends\fR
+\fB--show-depends\fR
 List the dependencies of a module (or alias), including
 the module itself. This produces a (possibly empty) set
 of module filenames, one per line, each starting with
@@ -195,6 +187,9 @@ of module filenames, one per line, each starting with
 \fBmodinfo\fR(8)
 can be used to extract dependencies of a module from the
 module itself, but knows nothing of aliases or install commands.
+.TP
+\fB--resolve-alias\fR
+Print all module names matching an alias.
 .TP
 \fB-o --name\fR
 This option tries to rename the module which is being
