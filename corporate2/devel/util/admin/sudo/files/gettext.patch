@@ -1,0 +1,44 @@
+--- check.c	2007-07-06 22:52:13.000000000 +0300
++++ check.c	2007-07-29 14:10:15.000000000 +0300
+@@ -62,6 +62,11 @@
+ 
+ #include "sudo.h"
+ 
++/* gettext support */
++#include <locale.h>
++#include <libintl.h>
++#define _(STRING) gettext(STRING)
++
+ #ifndef lint
+ __unused static const char rcsid[] = "$Sudo: check.c,v 1.223.2.9 2007/07/06 19:52:13 millert Exp $";
+ #endif /* lint */
+@@ -139,13 +144,13 @@
+ 	    fwrite(buf, nread, 1, stderr);
+ 	fclose(fp);
+     } else {
+-	(void) fputs("\n\
++      (void) fputs(_("\n\
+ We trust you have received the usual lecture from the local System\n\
+ Administrator. It usually boils down to these three things:\n\
+ \n\
+     #1) Respect the privacy of others.\n\
+     #2) Think before you type.\n\
+-    #3) With great power comes great responsibility.\n\n",
++    #3) With great power comes great responsibility.\n\n"),
+     stderr);
+     }
+ }
+--- sudo.c	2007-07-22 22:21:01.000000000 +0300
++++ sudo.c	2007-07-29 14:34:12.000000000 +0300
+@@ -178,6 +178,11 @@
+     if ((Argc = argc) < 1)
+ 	usage(1);
+ 
++    /* gettext support */
++    setlocale(LC_ALL, "");
++    bindtextdomain("sudo", "/usr/share/locale");
++    textdomain("sudo");
++
+     /* Must be done as the first thing... */
+ #if defined(HAVE_GETPRPWNAM) && defined(HAVE_SET_AUTH_PARAMETERS)
+     (void) set_auth_parameters(Argc, Argv);
