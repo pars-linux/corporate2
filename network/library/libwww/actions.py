@@ -25,6 +25,7 @@ def setup():
                          --with-regex")
 
 def build():
+    pisitools.dosed("Library/src/Makefile", "-L/usr/lib", "-L/usr/lib -L./.libs")
     autotools.make("-j1")
 
 def install():
