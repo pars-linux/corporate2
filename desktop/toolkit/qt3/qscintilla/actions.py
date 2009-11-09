@@ -27,7 +27,7 @@ def install():
 
     # execute install target of build system
     shelltools.cd("qt/")
-    autotools.make("all staticlib") # there is only an install target foolish qmake
+    autotools.make("-j1 all staticlib") # there is only an install target foolish qmake
 
     # installs not managed by the build system
     pisitools.insinto("%s/include" % get.qtDIR(), "qextscintilla*.h")
