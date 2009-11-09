@@ -17,8 +17,7 @@ def setup():
 
     autotools.rawConfigure("--shared \
                             --release \
-                            --prefix /usr \
-                            --with-doxywizard")
+                            --prefix /usr")
 
 def build():
     autotools.make()
