@@ -21,6 +21,9 @@ def setup():
 def build():
     autotools.make("all")
 
+def check():
+    autotools.make("check")
+
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
@@ -82,8 +85,8 @@ def install():
     # Remove gtk-doc
     pisitools.removeDir("/usr/share/gtk-doc")
 
-    # FIXME: Remove keymap and hid2hci stuff for now
-    for p in ["keymap", "hid2hci"]:
+    # FIXME: Remove keymap stuff for now
+    for p in ["keymap"]:
         pisitools.remove("/lib/udev/%s" % p)
         pisitools.remove("/lib/udev/rules.d/*%s*.rules" % p)
 
