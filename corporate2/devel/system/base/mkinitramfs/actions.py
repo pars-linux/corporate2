@@ -8,7 +8,7 @@
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 
-WorkDir = "busybox-1.14.1"
+WorkDir = "busybox-1.14.4"
 
 def build():
     autotools.make("-j1")
