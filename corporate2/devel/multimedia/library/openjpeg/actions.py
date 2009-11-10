@@ -25,8 +25,7 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    pisitools.insinto("/usr/include/openjpeg", "%s/usr/include/*.h" % get.installDIR())
-    pisitools.remove("/usr/include/*.h")
+    pisitools.dosym("../openjpeg.h", "/usr/include/openjpeg/openjpeg.h")
 
     pisitools.dohtml("html/*")
     pisitools.dodoc("ChangeLog", "README.linux", "license.txt")
