@@ -17,6 +17,7 @@ GetWorkdir = "%s/%s" % (get.workDIR(), WorkDir)
 
 
 def setup():
+    libtools.libtoolize()
     shelltools.export("LC_ALL","C")
     shelltools.cd("%s/source/texk/web2c" % GetWorkdir)
 
@@ -84,11 +85,9 @@ def setup():
                         --disable-multiplatform \
                         --disable-shared")
 
-    for i in ["libs/dummy", "libs/obsdcompat"]:
+    for i in ["libs/dummy", "libs/obsdcompat", "texk/kpathsea"]:
         shelltools.cd("%s/source/%s" % (GetWorkdir, i))
         autotools.configure()
-    shelltools.cd("%s/source/texk/kpathsea" % GetWorkdir)
-    autotools.configure("--disable-shared")
 
 
 def build():
