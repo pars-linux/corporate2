@@ -12,24 +12,21 @@
         <IsA>library</IsA>
         <Summary>PDF rendering library</Summary>
         <Description>poppler is a PDF rendering library based on xpdf.</Description>
-        <Archive sha1sum="891284d3fcac9bb250218e3439e596778c7f5edb" type="targz">http://poppler.freedesktop.org/poppler-0.10.7.tar.gz</Archive>
+        <Archive sha1sum="0c8514f789eaab4e91ba1a841f58f8bee95e4a43" type="targz">http://poppler.freedesktop.org/poppler-0.12.1.tar.gz</Archive>
         <BuildDependencies>
+            <Dependency releaseFrom="7">openjpeg</Dependency>
             <Dependency>fontconfig</Dependency>
         </BuildDependencies>
         <Patches>
-            <!-- Adds new output mode to the PostScript output device, so that the original page sizes
-            of PDF documents with multiple page sizes stay conserved (LP: #382379) -->
-            <!--<Patch level="1">10_pdftops-multiple-page-size-support.patch</Patch>-->
-
-            <!-- Fixed bug in copying ASCII85-encoded binary data from the PDF input file which produced
-            broken PostScript (LP: #335397) -->
-            <Patch level="1">15_poppler-ps-output-broken-binary-encoding-fix.patch</Patch>
+            <Patch level="1">poppler-0.12.1-CVE-2009-3607.patch</Patch>
+            <Patch level="1">poppler-0.12.1-objstream.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>poppler</Name>
         <RuntimeDependencies>
+            <Dependency>openjpeg</Dependency>
             <Dependency>fontconfig</Dependency>
         </RuntimeDependencies>
         <Files>
@@ -43,6 +40,13 @@
     </Package>
 
     <History>
+        <Update release="31">
+            <Date>2009-11-10</Date>
+            <Version>0.12.1</Version>
+            <Comment>Version bump to 0.12.1</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="30">
             <Date>2009-06-27</Date>
             <Version>0.10.7</Version>
