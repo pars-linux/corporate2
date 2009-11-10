@@ -1,0 +1,319 @@
+From: Robert O'Callahan
+Subject: Lockdown feature for Gecko
+References:
+
+
+Index: extensions/cookie/nsCookiePermission.cpp
+===================================================================
+--- extensions/cookie/nsCookiePermission.cpp.orig
++++ extensions/cookie/nsCookiePermission.cpp
+@@ -86,6 +86,7 @@ static const char kCookiesPrefsMigrated[
+ // obsolete pref names for migration
+ static const char kCookiesLifetimeEnabled[] = "network.cookie.lifetime.enabled";
+ static const char kCookiesLifetimeBehavior[] = "network.cookie.lifetime.behavior";
++static const char kCookiesHonorExceptions[] = "network.cookie.honorExceptions";
+ static const char kCookiesAskPermission[] = "network.cookie.warnAboutCookies";
+ 
+ static const char kPermissionType[] = "cookie";
+@@ -125,6 +126,7 @@ nsCookiePermission::Init()
+     prefBranch->AddObserver(kCookiesLifetimePolicy, this, PR_FALSE);
+     prefBranch->AddObserver(kCookiesLifetimeDays, this, PR_FALSE);
+     prefBranch->AddObserver(kCookiesAlwaysAcceptSession, this, PR_FALSE);
++    prefBranch->AddObserver(kCookiesHonorExceptions, this, PR_FALSE);
+ #ifdef MOZ_MAIL_NEWS
+     prefBranch->AddObserver(kCookiesDisabledForMailNews, this, PR_FALSE);
+ #endif
+@@ -182,6 +184,10 @@ nsCookiePermission::PrefChanged(nsIPrefB
+       NS_SUCCEEDED(aPrefBranch->GetBoolPref(kCookiesAlwaysAcceptSession, &val)))
+     mCookiesAlwaysAcceptSession = val;
+ 
++  if (PREF_CHANGED(kCookiesHonorExceptions) &&
++      NS_SUCCEEDED(aPrefBranch->GetBoolPref(kCookiesHonorExceptions, &val)))
++    mCookiesHonorExceptions = val;
++
+ #ifdef MOZ_MAIL_NEWS
+   if (PREF_CHANGED(kCookiesDisabledForMailNews) &&
+       NS_SUCCEEDED(aPrefBranch->GetBoolPref(kCookiesDisabledForMailNews, &val)))
+@@ -232,6 +238,11 @@ nsCookiePermission::CanAccess(nsIURI
+ #endif // MOZ_MAIL_NEWS
+   
+   // finally, check with permission manager...
++  if (!mCookiesHonorExceptions) {
++    *aResult = ACCESS_DEFAULT;
++    return NS_OK;
++  }
++
+   nsresult rv = mPermMgr->TestPermission(aURI, kPermissionType, (PRUint32 *) aResult);
+   if (NS_SUCCEEDED(rv)) {
+     switch (*aResult) {
+Index: extensions/cookie/nsCookiePermission.h
+===================================================================
+--- extensions/cookie/nsCookiePermission.h.orig
++++ extensions/cookie/nsCookiePermission.h
+@@ -61,6 +61,7 @@ public:
+ #ifdef MOZ_MAIL_NEWS
+     , mCookiesDisabledForMailNews(PR_TRUE)
+ #endif
++    , mCookiesHonorExceptions(PR_TRUE)
+     {}
+   virtual ~nsCookiePermission() {}
+ 
+@@ -76,7 +77,7 @@ private:
+ #ifdef MOZ_MAIL_NEWS
+   PRPackedBool mCookiesDisabledForMailNews;
+ #endif
+-
++  PRPackedBool mCookiesHonorExceptions;
+ };
+ 
+ // {EF565D0A-AB9A-4A13-9160-0644CDFD859A}
+Index: extensions/permissions/nsContentBlocker.cpp
+===================================================================
+--- extensions/permissions/nsContentBlocker.cpp.orig
++++ extensions/permissions/nsContentBlocker.cpp
+@@ -76,6 +76,7 @@ NS_IMPL_ISUPPORTS3(nsContentBlocker,
+ nsContentBlocker::nsContentBlocker()
+ {
+   memset(mBehaviorPref, BEHAVIOR_ACCEPT, NUMBER_OF_TYPES);
++  memset(mHonorExceptions, PR_TRUE, NUMBER_OF_TYPES);
+ }
+ 
+ nsresult
+@@ -92,6 +93,11 @@ nsContentBlocker::Init()
+   rv = prefService->GetBranch("permissions.default.", getter_AddRefs(prefBranch));
+   NS_ENSURE_SUCCESS(rv, rv);
+ 
++  nsCOMPtr<nsIPrefBranch> honorExceptionsPrefBranch;
++  rv = prefService->GetBranch("permissions.honorExceptions.",
++                              getter_AddRefs(honorExceptionsPrefBranch));
++  NS_ENSURE_SUCCESS(rv, rv);
++
+   // Migrate old image blocker pref
+   nsCOMPtr<nsIPrefBranch> oldPrefBranch;
+   oldPrefBranch = do_QueryInterface(prefService);
+@@ -121,8 +127,15 @@ nsContentBlocker::Init()
+   mPrefBranchInternal = do_QueryInterface(prefBranch, &rv);
+   NS_ENSURE_SUCCESS(rv, rv);
+ 
++  mHonorExceptionsPrefBranchInternal =
++    do_QueryInterface(honorExceptionsPrefBranch, &rv);
++  NS_ENSURE_SUCCESS(rv, rv);
++
+   rv = mPrefBranchInternal->AddObserver("", this, PR_TRUE);
+-  PrefChanged(prefBranch, nsnull);
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  rv = mHonorExceptionsPrefBranchInternal->AddObserver("", this, PR_TRUE);
++  PrefChanged(nsnull);
+ 
+   return rv;
+ }
+@@ -131,19 +144,22 @@ nsContentBlocker::Init()
+ #define LIMIT(x, low, high, default) ((x) >= (low) && (x) <= (high) ? (x) : (default))
+ 
+ void
+-nsContentBlocker::PrefChanged(nsIPrefBranch *aPrefBranch,
+-                              const char    *aPref)
++nsContentBlocker::PrefChanged(const char *aPref)
+ {
+-  PRInt32 val;
+-
+-#define PREF_CHANGED(_P) (!aPref || !strcmp(aPref, _P))
+-
+-  for(PRUint32 i = 0; i < NUMBER_OF_TYPES; ++i) {
+-    if (PREF_CHANGED(kTypeString[i]) &&
+-        NS_SUCCEEDED(aPrefBranch->GetIntPref(kTypeString[i], &val)))
+-      mBehaviorPref[i] = LIMIT(val, 1, 3, 1);
++  for (PRUint32 i = 0; i < NUMBER_OF_TYPES; ++i) {
++    if (!aPref || !strcmp(kTypeString[i], aPref)) {
++      PRInt32 val;
++      PRBool b;
++      if (mPrefBranchInternal &&
++          NS_SUCCEEDED(mPrefBranchInternal->GetIntPref(kTypeString[i], &val))) {
++        mBehaviorPref[i] = LIMIT(val, 1, 3, 1);
++      }
++      if (mHonorExceptionsPrefBranchInternal &&
++          NS_SUCCEEDED(mHonorExceptionsPrefBranchInternal->GetBoolPref(kTypeString[i], &b))) {
++        mHonorExceptions[i] = b;
++      }
++    }
+   }
+-
+ }
+ 
+ // nsIContentPolicy Implementation
+@@ -268,11 +284,13 @@ nsContentBlocker::TestPermission(nsIURI
+   // default prefs.
+   // Don't forget the aContentType ranges from 1..8, while the
+   // array is indexed 0..7
+-  PRUint32 permission;
+-  nsresult rv = mPermissionManager->TestPermission(aCurrentURI, 
+-                                                   kTypeString[aContentType - 1],
+-                                                   &permission);
+-  NS_ENSURE_SUCCESS(rv, rv);
++  PRUint32 permission = 0;
++  if (mHonorExceptions[aContentType - 1]) {
++    nsresult rv = mPermissionManager->TestPermission(aCurrentURI,
++                                                     kTypeString[aContentType - 1],
++                                                     &permission);
++    NS_ENSURE_SUCCESS(rv, rv);
++  }
+ 
+   // If there is nothing on the list, use the default.
+   if (!permission) {
+@@ -298,7 +316,7 @@ nsContentBlocker::TestPermission(nsIURI
+       return NS_OK;
+ 
+     PRBool trustedSource = PR_FALSE;
+-    rv = aFirstURI->SchemeIs("chrome", &trustedSource);
++    nsresult rv = aFirstURI->SchemeIs("chrome", &trustedSource);
+     NS_ENSURE_SUCCESS(rv,rv);
+     if (!trustedSource) {
+       rv = aFirstURI->SchemeIs("resource", &trustedSource);
+@@ -363,8 +381,6 @@ nsContentBlocker::Observe(nsISupports
+ {
+   NS_ASSERTION(!strcmp(NS_PREFBRANCH_PREFCHANGE_TOPIC_ID, aTopic),
+                "unexpected topic - we only deal with pref changes!");
+-
+-  if (mPrefBranchInternal)
+-    PrefChanged(mPrefBranchInternal, NS_LossyConvertUTF16toASCII(aData).get());
++  PrefChanged(NS_LossyConvertUTF16toASCII(aData).get());
+   return NS_OK;
+ }
+Index: extensions/permissions/nsContentBlocker.h
+===================================================================
+--- extensions/permissions/nsContentBlocker.h.orig
++++ extensions/permissions/nsContentBlocker.h
+@@ -66,7 +66,7 @@ public:
+ private:
+   ~nsContentBlocker() {}
+ 
+-  void PrefChanged(nsIPrefBranch *, const char *);
++  void PrefChanged(const char *);
+   nsresult TestPermission(nsIURI *aCurrentURI,
+                           nsIURI *aFirstURI,
+                           PRInt32 aContentType,
+@@ -75,7 +75,9 @@ private:
+ 
+   nsCOMPtr<nsIPermissionManager> mPermissionManager;
+   nsCOMPtr<nsIPrefBranch2> mPrefBranchInternal;
++  nsCOMPtr<nsIPrefBranch2> mHonorExceptionsPrefBranchInternal;
+   PRUint8 mBehaviorPref[NUMBER_OF_TYPES];
++  PRPackedBool mHonorExceptions[NUMBER_OF_TYPES];
+ };
+ 
+ #define NS_CONTENTBLOCKER_CID \
+Index: modules/libpref/src/init/all.js
+===================================================================
+--- modules/libpref/src/init/all.js.orig
++++ modules/libpref/src/init/all.js
+@@ -798,6 +798,7 @@ pref("network.automatic-ntlm-auth.truste
+ pref("network.ntlm.send-lm-response", false);
+ 
+ pref("permissions.default.image",           1); // 1-Accept, 2-Deny, 3-dontAcceptForeign
++pref("permissions.honorExceptions.image",   true);
+ 
+ #ifndef XP_MACOSX
+ #ifdef XP_UNIX
+@@ -825,6 +826,7 @@ pref("network.proxy.no_proxies_on",
+ pref("network.proxy.failover_timeout",      1800); // 30 minutes
+ pref("network.online",                      true); //online/offline
+ pref("network.cookie.cookieBehavior",       0); // 0-Accept, 1-dontAcceptForeign, 2-dontUse
++pref("network.cookie.honorExceptions",      true);
+ pref("network.cookie.disableCookieForMailNews", true); // disable all cookies for mail
+ pref("network.cookie.lifetimePolicy",       0); // accept normally, 1-askBeforeAccepting, 2-acceptForSession,3-acceptForNDays
+ pref("network.cookie.alwaysAcceptSessionCookies", false);
+Index: widget/src/gtk2/nsWindow.cpp
+===================================================================
+--- widget/src/gtk2/nsWindow.cpp.orig
++++ widget/src/gtk2/nsWindow.cpp
+@@ -81,6 +81,7 @@
+ #include "nsIServiceManager.h"
+ #include "nsIStringBundle.h"
+ #include "nsGfxCIID.h"
++#include "nsIPrefService.h"
+ 
+ #ifdef ACCESSIBILITY
+ #include "nsIAccessibilityService.h"
+@@ -91,7 +92,6 @@
+ static PRBool sAccessibilityChecked = PR_FALSE;
+ /* static */
+ PRBool nsWindow::sAccessibilityEnabled = PR_FALSE;
+-static const char sSysPrefService [] = "@mozilla.org/system-preference-service;1";
+ static const char sAccEnv [] = "GNOME_ACCESSIBILITY";
+ static const char sAccessibilityKey [] = "config.use_system_prefs.accessibility";
+ #endif
+@@ -3992,18 +3992,18 @@ nsWindow::NativeCreate(nsIWidget
+             sAccessibilityEnabled = atoi(envValue) != 0;
+             LOG(("Accessibility Env %s=%s\n", sAccEnv, envValue));
+         }
+-        //check gconf-2 setting
++        //check preference setting
+         else {
+-            nsCOMPtr<nsIPrefBranch> sysPrefService =
+-                do_GetService(sSysPrefService, &rv);
+-            if (NS_SUCCEEDED(rv) && sysPrefService) {
+-
+-                // do the work to get gconf setting.
+-                // will be done soon later.
+-                sysPrefService->GetBoolPref(sAccessibilityKey,
++            nsCOMPtr<nsIPrefService> prefService =
++               do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
++            if (NS_SUCCEEDED(rv) && prefService) {
++                nsCOMPtr<nsIPrefBranch> prefBranch;
++                rv = prefService->GetBranch(nsnull, getter_AddRefs(prefBranch));
++                if (NS_SUCCEEDED(rv) && prefBranch) {
++                    prefBranch->GetBoolPref(sAccessibilityKey,
+                                             &sAccessibilityEnabled);
++                }
+             }
+-
+         }
+     }
+     if (sAccessibilityEnabled) {
+Index: xpinstall/src/nsXPInstallManager.cpp
+===================================================================
+--- xpinstall/src/nsXPInstallManager.cpp.orig
++++ xpinstall/src/nsXPInstallManager.cpp
+@@ -290,6 +290,7 @@ nsXPInstallManager::InitManagerInternal(
+         //-----------------------------------------------------
+         // Get permission to install
+         //-----------------------------------------------------
++        nsCOMPtr<nsIPrefBranch> pref(do_GetService(NS_PREFSERVICE_CONTRACTID));
+ 
+ #ifdef ENABLE_SKIN_SIMPLE_INSTALLATION_UI
+         if ( mChromeType == CHROME_SKIN )
+@@ -299,17 +300,26 @@ nsXPInstallManager::InitManagerInternal(
+ 
+             // skins get a simpler/friendlier dialog
+             // XXX currently not embeddable
+-            OKtoInstall = ConfirmChromeInstall( mParentWindow, packageList );
++            PRBool themesDisabled = PR_FALSE;
++            if (pref)
++                pref->GetBoolPref("config.lockdown.disable_themes", &themesDisabled);
++            OKtoInstall = !themesDisabled &&
++               ConfirmChromeInstall( mParentWindow, packageList );
+         }
+         else
+         {
+ #endif
+-            rv = dlgSvc->ConfirmInstall( mParentWindow,
+-                                         packageList,
+-                                         numStrings,
+-                                         &OKtoInstall );
+-            if (NS_FAILED(rv))
+-                OKtoInstall = PR_FALSE;
++            PRBool extensionsDisabled = PR_FALSE;
++            if (pref)
++                pref->GetBoolPref("config.lockdown.disable_extensions", &extensionsDisabled);
++            if (!extensionsDisabled) {
++                rv = dlgSvc->ConfirmInstall( mParentWindow,
++                                             packageList,
++                                             numStrings,
++                                             &OKtoInstall );
++                if (NS_FAILED(rv))
++                    OKtoInstall = PR_FALSE;
++            }
+ #ifdef ENABLE_SKIN_SIMPLE_INSTALLATION_UI
+         }
+ #endif

@@ -1,0 +1,32 @@
+---
+ toolkit/components/url-classifier/Makefile.in                      |    3 
+ toolkit/components/url-classifier/pref/url-classifier.js           |    8 +
+ toolkit/components/url-classifier/src/nsUrlClassifierDBService.cpp |   62 +++++++---
+ 3 files changed, 59 insertions(+), 14 deletions(-)
+
+Index: mozilla/toolkit/components/url-classifier/pref/url-classifier.js
+===================================================================
+--- /dev/null
++++ mozilla/toolkit/components/url-classifier/pref/url-classifier.js
+@@ -0,0 +1,8 @@
++
++// Maximum size of the sqlite3 cache during an update, in bytes
++#ifdef MOZ_WIDGET_GTK2
++pref("urlclassifier.updatecachemax", 104857600);
++#else
++pref("urlclassifier.updatecachemax", -1);
++#endif
++
+Index: mozilla/toolkit/components/url-classifier/Makefile.in
+===================================================================
+--- mozilla.orig/toolkit/components/url-classifier/Makefile.in
++++ mozilla/toolkit/components/url-classifier/Makefile.in
+@@ -49,5 +49,8 @@ ifdef ENABLE_TESTS
+ TOOL_DIRS     += tests
+ endif
+ 
++PREF_JS_EXPORTS = $(srcdir)/pref/url-classifier.js
++GARBAGE += $(addprefix $(DIST)/bin/defaults/pref/,url-classifier.js)
++
+ include $(topsrcdir)/config/rules.mk
+ 
