@@ -64,14 +64,14 @@ def install():
     # Conflicts with perl-Module-Build
     pisitools.remove("/usr/bin/config_data")
 
-    pisitools.dosym("/usr/bin/perl5.10.0", "/usr/bin/perl")
-    pisitools.dosym("/usr/bin/sperl5.10.0", "/usr/bin/suidperl")
+    pisitools.dosym("/usr/bin/perl5.10.1", "/usr/bin/perl")
+    pisitools.dosym("/usr/bin/sperl5.10.1", "/usr/bin/suidperl")
 
     # Perl5 library
-    pisitools.dosym("/usr/lib/perl5/5.10.0/i686-linux-thread-multi/CORE/libperl.so.1.5.8", "/usr/lib/libperl.so")
-    pisitools.dosym("/usr/lib/perl5/5.10.0/i686-linux-thread-multi/CORE/libperl.so.1.5.8", "/usr/lib/libperl.so.1")
-    pisitools.dosym("/usr/lib/perl5/5.10.0/i686-linux-thread-multi/CORE/libperl.so.1.5.8", "/usr/lib/libperl.so.1.5")
-    pisitools.dosym("/usr/lib/perl5/5.10.0/i686-linux-thread-multi/CORE/libperl.so.1.5.8", "/usr/lib/libperl.so.1.5.8")
+    pisitools.dosym("/usr/lib/perl5/5.10.1/i686-linux-thread-multi/CORE/libperl.so.1.5.8", "/usr/lib/libperl.so")
+    pisitools.dosym("/usr/lib/perl5/5.10.1/i686-linux-thread-multi/CORE/libperl.so.1.5.8", "/usr/lib/libperl.so.1")
+    pisitools.dosym("/usr/lib/perl5/5.10.1/i686-linux-thread-multi/CORE/libperl.so.1.5.8", "/usr/lib/libperl.so.1.5")
+    pisitools.dosym("/usr/lib/perl5/5.10.1/i686-linux-thread-multi/CORE/libperl.so.1.5.8", "/usr/lib/libperl.so.1.5.8")
 
     # Remove duplicated docs
     pisitools.remove("/usr/share/man/man3/Digest::MD5.3pm")
@@ -109,4 +109,4 @@ def install():
                        --htmldir="%s/usr/share/doc/%s/html" \
                        --libpods="perlfunc:perlguts:perlvar:perlrun:perlop"' % (get.curDIR(), get.installDIR(), get.srcNAME()))
 
-    pisitools.dodoc("Changes*", "Artistic", "Copying", "README", "Todo*", "AUTHORS")
+    pisitools.dodoc("Changes*", "Artistic", "Copying", "README", "AUTHORS")
