@@ -22,5 +22,6 @@ def install():
     autotools.install()
 
     pisitools.removeDir("/usr/lib/mozilla/plugins")
+    pisitools.removeDir("/usr/share/gtk-doc")
 
     pisitools.dodoc("COPYING", "AUTHORS", "ChangeLog", "README")
