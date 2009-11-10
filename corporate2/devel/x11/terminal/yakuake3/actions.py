@@ -7,6 +7,7 @@
 
 from pisi.actionsapi import kde
 
+WorkDir="yakuake-2.8.1"
 def setup():
     kde.configure()
 
