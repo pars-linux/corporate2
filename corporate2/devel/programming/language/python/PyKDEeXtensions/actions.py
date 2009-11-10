@@ -6,8 +6,11 @@
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from pisi.actionsapi import pythonmodules
+from pisi.actionsapi import shelltools
 
 WorkDir = "pykdeextensions-0.4.0"
+
+shelltools.export("HOME", get.workDIR())
 
 def install():
     pythonmodules.install()
