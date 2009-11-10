@@ -10,7 +10,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
-    autotools.automake()
+    autotools.autoreconf("-vif")
     autotools.configure("--disable-static \
                          --enable-python \
                          --with-xft2 \
