@@ -7,6 +7,7 @@
 
 from pisi.actionsapi import pythonmodules
 from pisi.actionsapi import shelltools
+from pisi.actionsapi import get
 
 WorkDir = "pykdeextensions-0.4.0"
 
