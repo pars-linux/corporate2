@@ -1,0 +1,79 @@
+From: Robert O'Callahan
+Subject: Lockdown feature for Toolkit UI
+References:
+
+diff --git a/toolkit/components/passwordmgr/content/passwordManager.js b/toolkit/components/passwordmgr/content/passwordManager.js
+--- a/toolkit/components/passwordmgr/content/passwordManager.js
++++ b/toolkit/components/passwordmgr/content/passwordManager.js
+@@ -120,8 +120,17 @@ function LoadSignons() {
+   // disable "remove all signons" button if there are no signons
+   var element = document.getElementById("removeAllSignons");
+   var toggle = document.getElementById("togglePasswords");
++  try {
++    var viewLocked = Components.classes["@mozilla.org/preferences-service;1"]
++      .getService(Components.interfaces.nsIPrefBranch)
++      .getBoolPref("config.lockdown.showsavedpasswords");
++  } catch (e) {
++    var viewLocked = false;
++  }
+   if (signons.length == 0 || gSelectUserInUse) {
+     element.setAttribute("disabled","true");
++    toggle.setAttribute("disabled","true");
++  } else if (viewLocked) {
+     toggle.setAttribute("disabled","true");
+   } else {
+     element.removeAttribute("disabled");
+@@ -167,6 +176,18 @@ function DeleteAllSignons() {
+ }
+ 
+ function TogglePasswordVisible() {
++  try {
++    var viewLocked = Components.classes["@mozilla.org/preferences-service;1"]
++      .getService(Components.interfaces.nsIPrefBranch)
++      .getBoolPref("config.lockdown.showsavedpasswords");
++  } catch (e) {
++    var viewLocked = false;
++  }
++  // at that point if viewLocked is true, we shouldn't reach this code,
++  // but better be safe than sorry.
++  if (viewLocked) {
++    return;
++  }
+   if (showingPasswords || ConfirmShowPasswords()) {
+     showingPasswords = !showingPasswords;
+     document.getElementById("togglePasswords").label = kSignonBundle.getString(showingPasswords ? "hidePasswords" : "showPasswords");
+diff --git a/toolkit/components/printing/content/printdialog.js b/toolkit/components/printing/content/printdialog.js
+--- a/toolkit/components/printing/content/printdialog.js
++++ b/toolkit/components/printing/content/printdialog.js
+@@ -50,6 +50,7 @@ var gWebBrowserPrint   = null;
+ var gWebBrowserPrint   = null;
+ var gPrintSetInterface = Components.interfaces.nsIPrintSettings;
+ var doDebug            = false;
++var gPrefService       = null;
+ 
+ //---------------------------------------------------
+ function initDialog()
+@@ -87,11 +88,23 @@ function initDialog()
+   dialog.fpDialog        = document.getElementById("fpDialog");
+ 
+   dialog.enabled         = false;
++
++  gPrefService = Components.classes["@mozilla.org/preferences-service;1"]
++      .getService(Components.interfaces.nsIPrefService).getBranch(null);
++  if (gPrefService.getBoolPref("config.lockdown.savepage")) {
++    dialog.fileCheck.setAttribute("disabled", "true");
++  }
++  if (gPrefService.getBoolPref("config.lockdown.printing")) {
++    dialog.printButton.setAttribute("disabled", "true");
++  }
+ }
+ 
+ //---------------------------------------------------
+ function checkInteger(element)
+ {
++  if (gPrefService.getBoolPref("config.lockdown.printing"))
++    return;
++
+   var value = element.value;
+   if (value && value.length > 0) {
+     value = value.replace(/[^0-9]/g,"");

@@ -1,0 +1,286 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>xulrunner</Name>
+        <Homepage>http://mozilla.org</Homepage>
+        <Packager>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Packager>
+        <License>MPL-1.1</License>
+        <IsA>library</IsA>
+        <Summary>XUL Runtime for Gecko Applications</Summary>
+        <Description>xulrunner provides the XUL Runtime environment for Gecko applications.</Description>
+        <Archive sha1sum="759a2604dcab518386ed13f28158d7af2c0afd0b" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/mozilla-1.9.1.4.tar.lzma</Archive>
+        <BuildDependencies>
+            <Dependency releaseFrom="26">nss</Dependency>
+            <Dependency releaseFrom="24">nspr</Dependency>
+            <Dependency versionFrom="3.6.16">sqlite</Dependency>
+            <Dependency>cairo</Dependency>
+            <Dependency>pango</Dependency>
+            <Dependency>libIDL</Dependency>
+            <Dependency>gtk2</Dependency>
+            <Dependency>mit-kerberos</Dependency>
+            <Dependency>hunspell</Dependency>
+            <Dependency>startup-notification</Dependency>
+            <Dependency>gnome-vfs</Dependency>
+            <Dependency>libgnomeui</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">mozilla-191-path.patch</Patch>
+            <Patch level="1">xulrunner-version.patch</Patch>
+            <Patch level="1">mozilla-ps-pdf-simplify-operators.patch</Patch>
+            <Patch>pardus-nsplugin-path.patch</Patch>
+            <Patch>xulrunner-mozconfig.patch</Patch>
+
+            <!-- SuSe patches -->
+            <Patch>suse/locale.patch</Patch>
+            <Patch compressionType="bz2">suse/mozilla-system-hunspell.patch.bz2</Patch>
+            <!--<Patch>suse/gecko-lockdown.patch</Patch>-->
+            <Patch>suse/mozilla-helper-app.patch</Patch>
+            <Patch level="1">suse/toolkit-ui-lockdown.patch</Patch>
+            <Patch level="1">suse/mozilla-pkgconfig.patch</Patch>
+
+            <!-- Ubuntu patches -->
+            <Patch level="1">ubuntu/bz461277_att344402_eliminate_deprecated_gtk_type_macros.patch</Patch>
+            <Patch level="1">ubuntu/bz466923_att350251_password_prompt_branding_fallback.patch</Patch>
+            <Patch level="1">ubuntu/bz467738_att351145_lockPref_everywhere.patch</Patch>
+            <Patch level="1">ubuntu/bz467766_att351173-dont-reset-user-prefs-on-upgrade.patch</Patch>
+            <Patch level="1">ubuntu/bzXXX_no_zlib_export_if_native.patch</Patch>
+            <Patch level="1">ubuntu/bzXXX_pc_honour_system_nspr_nss.patch</Patch>
+            <Patch level="1">ubuntu/bzXXX_urlclassifier_prefs_in_toolkit.patch</Patch>
+            <Patch level="1">ubuntu/dont_install_so_in_dev.patch</Patch>
+            <Patch level="1">ubuntu/fix_ftbfs_with_cairo_fb.patch</Patch>
+
+            <!-- Pardus -->
+            <Patch>zemberek-firefox3.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>xulrunner</Name>
+        <RuntimeDependencies>
+            <Dependency releaseFrom="26">nss</Dependency>
+            <Dependency releaseFrom="24">nspr</Dependency>
+            <Dependency versionFrom="3.6.16">sqlite</Dependency>
+            <Dependency>cairo</Dependency>
+            <Dependency>pango</Dependency>
+            <Dependency>gtk2</Dependency>
+            <Dependency>mit-kerberos</Dependency>
+            <Dependency>hunspell</Dependency>
+            <Dependency>startup-notification</Dependency>
+            <Dependency>gnome-vfs</Dependency>
+            <Dependency>libgnomeui</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <!-- We have moved sdk libraries to base package -->
+            <Package releaseTo="10">xulrunner-devel</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="config">/etc/gre.d</Path>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="library">/usr/lib/xulrunner-1.9</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile target="/usr/lib/xulrunner-1.9/defaults/pref/xulrunner-pardus.js" permission="0644" owner="root">default-prefs.js</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <Package>
+        <Name>xulrunner-devel</Name>
+        <Summary>IDL and header files for xulrunner</Summary>
+        <RuntimeDependencies>
+            <Dependency>xulrunner</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="executable">/usr/bin/xp*</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
+            <Path fileType="data">/usr/share/idl</Path>
+            <Path fileType="library">/usr/lib/xulrunner-devel*</Path>
+        </Files>
+    </Package>
+
+    <History>
+        <Update release="23" type="security">
+            <Date>2009-10-30</Date>
+            <Version>1.9.1.4</Version>
+            <Comment>Version bump to latest security release, #11473:
+                 * MFSA 2009-64 Crashes with evidence of memory corruption (rv:1.9.1.4/ 1.9.0.15)
+                 * MFSA 2009-63 Upgrade media libraries to fix memory safety bugs
+                 * MFSA 2009-62 Download filename spoofing with RTL override
+                 * MFSA 2009-61 Cross-origin data theft through document.getSelection()
+                 * MFSA 2009-59 Heap buffer overflow in string to number conversion
+                 * MFSA 2009-57 Chrome privilege escalation in XPCVariant::VariantDataToJS()
+                 * MFSA 2009-56 Heap buffer overflow in GIF color map parser
+                 * MFSA 2009-55 Crash in proxy auto-configuration regexp parsing
+                 * MFSA 2009-54 Crash with recursive web-worker calls
+                 * MFSA 2009-53 Local downloaded file tampering
+                 * MFSA 2009-52 Form history vulnerable to stealing 
+            </Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="22" type="security">
+            <Date>2009-09-10</Date>
+            <Version>1.9.1.3</Version>
+            <Comment>Version bump to latest security release, CVE-2009-3070, #11144.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="21" type="security">
+            <Date>2009-08-10</Date>
+            <Version>1.9.1.2</Version>
+            <Comment>Version bump to latest security release.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="20">
+            <Date>2009-07-27</Date>
+            <Version>1.9.1.1</Version>
+            <Comment>Add jemalloc fix from Mozilla bugzilla for Flash fullscreen crash bug.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="19">
+            <Date>2009-07-17</Date>
+            <Version>1.9.1.1</Version>
+            <Comment>Remove postRemove script, it's very dangerous while using delta.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="18">
+            <Date>2009-07-17</Date>
+            <Version>1.9.1.1</Version>
+            <Comment>Version bump to latest release</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="17">
+            <Date>2009-07-17</Date>
+            <Version>1.9.1</Version>
+            <Comment>Enable libgnomeui.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="16">
+            <Date>2009-06-30</Date>
+            <Version>1.9.1</Version>
+            <Comment>Bump to 1.9.1 release.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="15">
+            <Date>2009-06-19</Date>
+            <Version>1.9.1_rc1</Version>
+            <Comment>Keep debug symbols, we need them in debug packages.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="14">
+            <Date>2009-06-13</Date>
+            <Version>1.9.1_rc1</Version>
+            <Comment>Version bump to 3.5rc1</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2009-05-27</Date>
+            <Version>1.9.1_beta4</Version>
+            <Comment>
+                * Enable gnome-vfs to enable users to open downloaded files by double-clicking in Firefox.
+                * Switch to system cairo to partially fix font rendering problems of Firefox.
+            </Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2009-05-26</Date>
+            <Version>1.9.1_beta4</Version>
+            <Comment>Move spellchecking stuff from Firefox package to here.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2009-05-04</Date>
+            <Version>1.9.1_beta4</Version>
+            <Comment>Switch to 1.9.1 branch which means Firefox 3.5</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2009-04-30</Date>
+            <Version>1.9.0.10</Version>
+            <Comment>Move sdk libraries to base package. Some appliactions need them.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="9">
+            <Date>2009-04-30</Date>
+            <Version>1.9.0.10</Version>
+            <Comment>Version bump.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2009-04-27</Date>
+            <Version>1.9.0.9</Version>
+            <Comment>Version bump.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2009-03-17</Date>
+            <Version>1.9.0.7</Version>
+            <Comment>Version bump.</Comment>
+            <Name>Burak Çalışkan</Name>
+            <Email>burakclskn@gmail.com</Email>
+        </Update>
+        <Update release="6">
+            <Date>2009-02-11</Date>
+            <Version>1.9.0.6</Version>
+            <Comment>Version bump.</Comment>
+            <Name>Burak Çalışkan</Name>
+            <Email>burakclskn@gmail.com</Email>
+        </Update>
+        <Update release="5">
+            <Date>2009-02-01</Date>
+            <Version>1.9.0.5</Version>
+            <Comment>
+                - Fix wrong file permissions
+                - Add default nsplugin directory
+            </Comment>
+            <Name>Burak Çalışkan</Name>
+            <Email>burakclskn@gmail.com</Email>
+        </Update>
+        <Update release="4">
+            <Date>2009-01-06</Date>
+            <Version>1.9.0.5</Version>
+            <Comment>Version bump.</Comment>
+            <Name>Burak Çalışkan</Name>
+            <Email>burakclskn@gmail.com</Email>
+        </Update>
+        <Update release="3">
+            <Date>2008-11-18</Date>
+            <Version>1.9.0.4</Version>
+            <Comment>Version bump.</Comment>
+            <Name>Burak Çalışkan</Name>
+            <Email>burakclskn@gmail.com</Email>
+        </Update>
+        <Update release="2">
+            <Date>2008-10-04</Date>
+            <Version>1.9.0.3</Version>
+            <Comment>Version bump.</Comment>
+            <Name>Burak Çalışkan</Name>
+            <Email>burakclskn@gmail.com</Email>
+        </Update>
+        <Update release="1">
+            <Date>2008-08-08</Date>
+            <Version>1.9.0.1</Version>
+            <Comment>First release.</Comment>
+            <Name>Burak Çalışkan</Name>
+            <Email>burakclskn@gmail.com</Email>
+        </Update>
+    </History>
+</PISI>
