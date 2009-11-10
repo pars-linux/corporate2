@@ -15,13 +15,13 @@ WorkDir="poppler-%s" % get.srcVERSION()
 def setup():
     autotools.autoreconf("-fi")
     autotools.configure("--disable-static \
+                         --disable-zlib \
                          --enable-cairo-output \
                          --enable-xpdf-headers \
-                         --enable-libjpeg \
-                         --enable-zlib \
                          --enable-poppler-glib \
+                         --enable-libopenjpeg \
                          --enable-poppler-qt \
-                         --enable-poppler-qt4")
+                         --disable-poppler-qt4")
 
 def build():
     shelltools.cd("poppler")
