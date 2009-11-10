@@ -9,7 +9,7 @@ from pisi.actionsapi import kde
 
 WorkDir="yakuake-2.8.1"
 def setup():
-    kde.configure()
+    kde.configure("--without-arts")
 
 def build():
     kde.make()
