@@ -42,6 +42,23 @@
             <Patch level="1">sane-backends-1.0.20-man-utf8.patch</Patch>
             <Patch level="1">sane-backends-1.0.20-epson-expression800.patch</Patch>
 
+            <!-- Suse fixes from post 1.0.20 -->
+
+            <!-- Fix a possible for loop overflow -->
+            <Patch level="1">suse/fix-hp3900_config.c.patch</Patch>
+
+            <!-- Fix option sizes in backend/hp3900_sane.c to fix possible frontend crashes -->
+            <Patch level="1">suse/fix-hp3900_sane-string-option-sizes.diff</Patch>
+
+            <!--Add a missing call to free() in backend/lexmark_low.c -->
+            <Patch level="1">suse/fix-lexmark_low-memory-leak.patch</Patch>
+
+            <!-- Fix undefined 'foo = ++foo modulo bar' operations -->
+            <Patch level="1">suse/fix-mustek_pp_ccd300.c.patch</Patch>
+
+            <!-- Backport post 1.0.20 xerox_mfp changes for newer Samsung printers -->
+            <Patch level="1">suse/sane-backends-1.0.20-xerox_mfp.diff</Patch>
+
             <!-- Link with avahi libraries -->
             <Patch level="1">link-with-avahi.patch</Patch>
         </Patches>
@@ -62,6 +79,7 @@
             <Path fileType="localedata">/usr/share/locale</Path>
             <Path fileType="executable">/usr/sbin</Path>
             <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="executable">/usr/libexec</Path>
             <Path fileType="header">/usr/include/sane</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="doc">/usr/share/doc</Path>
@@ -83,6 +101,16 @@
    </Package>
 
    <History>
+        <Update release="15">
+            <Date>2009-11-10</Date>
+            <Version>1.0.20</Version>
+            <Comment>
+                - Add missing HAL callout,
+                - Grab some post 1.0.20 fixes from Suse to improve hardware support.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="14">
             <Date>2009-06-15</Date>
             <Version>1.0.20</Version>

@@ -1,0 +1,139 @@
+backport post 1.0.20 xerox_mfp changes 
+Index: sane-backends-1.0.20/backend/xerox_mfp.conf.in
+===================================================================
+--- sane-backends-1.0.20.orig/backend/xerox_mfp.conf.in
++++ sane-backends-1.0.20/backend/xerox_mfp.conf.in
+@@ -5,3 +5,25 @@ usb 0x413c 0x5124
+ 
+ #Xerox Phaser 6110MFP
+ usb 0x0924 0x3d5d
++
++#Samsung CLX-3170fn
++usb 0x04e8 0x342a
++
++#Samsung SCX-4200
++usb 0x04e8 0x341b
++
++#Samsung SCX4725-FN
++usb 0x04e8 0x341f
++
++#Samsung SCX-4500
++usb 0x04e8 0x3426
++
++# Samsung SCX-4500W
++usb 0x04e8 0x342b
++
++# Samsung SCX-4300
++usb 0x04e8 0x342e
++
++#Xerox WorkCentre 3119 Series
++usb 0x0924 0x4265
++
+Index: sane-backends-1.0.20/doc/descriptions/xerox_mfp.desc
+===================================================================
+--- sane-backends-1.0.20.orig/doc/descriptions/xerox_mfp.desc
++++ sane-backends-1.0.20/doc/descriptions/xerox_mfp.desc
+@@ -1,23 +1,25 @@
+ :backend "xerox_mfp"
+-:version "1.0-9"
++:version "1.0-11"
+ :manpage "sane-xerox_mfp"
+-:comment "Could be compatible with other Samsung manufactured devices"
+ :devicetype :scanner
+-:new :yes
+ 
+ :mfg "Xerox"
+ :url "http://www.office.xerox.com/"
+ 
++:model "Phaser 6110MFP"
++:interface "USB"
++:usbid "0x0924" "0x3d5d"
++:status :good
++
+ :model "Phaser 3200MFP"
+ :interface "USB"
+ :usbid "0x0924" "0x3da4"
+-:status :good
++:status :complete
+ :url "http://www.office.xerox.com/multifunction-printer/multifunction-under-30ppm/phaser-3200mfp/spec-enus.html"
+-:comment "All features of device I know of"
+ 
+-:model "Phaser 6110MFP"
++:model "WorkCentre 3119 Series"
+ :interface "USB"
+-:usbid "0x0924" "0x3d5d"
++:usbid "0x0924" "0x4265"
+ :status :good
+ 
+ :mfg "Dell"
+@@ -28,3 +30,30 @@
+ :usbid "0x413c" "0x5124"
+ :status :good
+ 
++:mfg "Samsung"
++:url "http://www.samsung.com"
++
++:model "SCX-4200"
++:interface "USB"
++:usbid "0x04e8" "0x341b"
++:status :good
++
++:model "SCX4725-FN"
++:interface "USB"
++:usbid "0x04e8" "0x341f"
++:status :good
++
++:model "SCX-4500"
++:interface "USB"
++:usbid "0x04e8" "0x3426"
++:status :good
++
++:model "CLX-3170fn"
++:interface "USB"
++:usbid "0x04e8" "0x342a"
++:status :good
++
++:model "SCX-4300"
++:interface "USB"
++:usbid "0x04e8" "0x342e"
++:status :good
+Index: sane-backends-1.0.20/backend/xerox_mfp.c
+===================================================================
+--- sane-backends-1.0.20.orig/backend/xerox_mfp.c
++++ sane-backends-1.0.20/backend/xerox_mfp.c
+@@ -26,7 +26,7 @@
+ #include <sane/sanei_backend.h>
+ #include "xerox_mfp.h"
+ 
+-#define BACKEND_BUILD 10
++#define BACKEND_BUILD 11
+ #define XEROX_CONFIG_FILE "xerox_mfp.conf"
+ 
+ static const SANE_Device **devlist = NULL;	/* sane_get_devices array */
+@@ -802,7 +802,7 @@ sane_control_option (SANE_Handle h, SANE
+   }
+ 
+   DBG (4, "%s: %d, <%d> => %08x, %x\n", __FUNCTION__, opt, act,
+-       *(SANE_Word *)val, info? *info : 0);
++       val? *(SANE_Word *)val : 0, info? *info : 0);
+   return SANE_STATUS_GOOD;
+ }
+ 
+@@ -1319,14 +1319,15 @@ sane_start (SANE_Handle h)
+     dev->reserved++;
+   }
+ 
+-  if (!dev_set_window(dev))
++  if (!dev_set_window(dev) ||
++      (dev->state && dev->state != SANE_STATUS_DEVICE_BUSY))
+     return dev_stop(dev);
+ 
+   if (!dev_cmd_wait(dev, CMD_OBJECT_POSITION))
+     return dev_stop(dev);
+ 
+   if (!dev_cmd(dev, CMD_READ) ||
+-      dev->state != SANE_STATUS_DEVICE_BUSY)
++      (dev->state && dev->state != SANE_STATUS_DEVICE_BUSY))
+     return dev_stop(dev);
+ 
+   dev->scanning = 1;
