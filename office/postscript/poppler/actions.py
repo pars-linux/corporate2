@@ -13,11 +13,12 @@ def setup():
     autotools.configure("--disable-static \
                          --enable-xpdf-headers \
                          --disable-cairo-output \
-                         --disable-poppler-qt\
+                         --disable-poppler-qt \
                          --disable-poppler-qt4 \
                          --disable-poppler-glib \
+                         --disable-zlib \
                          --enable-libjpeg \
-                         --enable-zlib")
+                         --enable-libopenjpeg")
 
 def build():
     autotools.make()
