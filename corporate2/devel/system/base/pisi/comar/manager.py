@@ -11,6 +11,11 @@
 # Please read the COPYING file.
 #
 
+# Disable cyclic garbage collector of Python to avoid comar segmentation
+# faults under high load (#11110)
+import gc
+gc.disable()
+
 import os
 import locale
 import string
