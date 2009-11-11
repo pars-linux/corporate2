@@ -15,11 +15,13 @@ from pisi.actionsapi import cmaketools
 WorkDir = "luatex-beta-%s" % get.srcVERSION()
 GetWorkdir = "%s/%s" % (get.workDIR(), WorkDir)
 
-
 def setup():
+    shelltools.cd("source")
+    autotools.autoreconf()
     libtools.libtoolize()
+
     shelltools.export("LC_ALL","C")
-    shelltools.cd("%s/source/texk/web2c" % GetWorkdir)
+    shelltools.cd("texk/web2c")
 
     autotools.configure("--disable-cxx-runtime-hack \
                         --disable-afm2pl    \
@@ -85,10 +87,11 @@ def setup():
                         --disable-multiplatform \
                         --disable-shared")
 
+    shelltools.cd("../../..")
     for i in ["libs/dummy", "libs/obsdcompat", "texk/kpathsea"]:
-        shelltools.cd("%s/source/%s" % (GetWorkdir, i))
+        shelltools.cd("source/%s" % i)
         autotools.configure()
-
+        shelltools.cd("../../..")
 
 def build():
     for i in ["libs/dummy", "libs/obsdcompat", "texk/kpathsea"]:
@@ -101,5 +104,5 @@ def build():
 def install():
     shelltools.cd("%s/source/texk/web2c" % GetWorkdir)
 
-    autotools.rawInstall("DESTDIR=%s bin_PROGRAMS='luatex' SUBDIRS='' nodist_man_MANS=''" % get.installDIR()) 
+    autotools.rawInstall("DESTDIR=%s bin_PROGRAMS='luatex' SUBDIRS='' nodist_man_MANS=''" % get.installDIR())
     pisitools.dodoc("%s/README" % GetWorkdir, "%s/manual/*.pdf" % GetWorkdir)
