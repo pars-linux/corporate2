@@ -26,7 +26,4 @@ def check():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    for i in ["", "-python"]:
-        pisitools.rename("/%s/libxslt%s-%s" % (get.docDIR(), i, get.srcVERSION()), "libxslt%s" % i)
-
     pisitools.dodoc("AUTHORS", "ChangeLog", "Copyright", "FEATURES", "NEWS", "README", "TODO")
