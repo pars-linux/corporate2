@@ -11,8 +11,9 @@
         <License>LGPLv2.1</License>
         <Summary>The GIMP Toolkit version 2</Summary>
         <Description>GTK+ is a multi-platform toolkit for creating graphical user interfaces. Offering a complete set of widgets, GTK+ is suitable for projects ranging from small one-off projects to complete application suites.</Description>
-        <Archive sha1sum="f69cb48311d60664bac7cf68351c175c7a214ae6" type="tarbz2">mirrors://gnome/gtk+/2.16/gtk+-2.16.6.tar.bz2</Archive>
+        <Archive sha1sum="a5432017a3116cb66460150d089e8aedbe756641" type="tarbz2">mirrors://gnome/gtk+/2.18/gtk+-2.18.3.tar.bz2</Archive>
         <BuildDependencies>
+            <Dependency versionFrom="2.21.3">glib2</Dependency>
             <Dependency>atk</Dependency>
             <Dependency>cups</Dependency>
             <Dependency>pango</Dependency>
@@ -29,14 +30,9 @@
             <Dependency>libXcomposite</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">cups-auth.patch</Patch>
-
             <!-- Upstream added a warning message for XID collisions for being able
             to debug related crashes but the warning floods .xsession-errors. (#10078) -->
             <Patch level="1">remove-spurious-xid-warnings.patch</Patch>
-
-            <!-- Show a default network printer in case of an absent default local one -->
-            <Patch>default_printer.patch</Patch>
 
             <!-- Fix wrong 'may not be connected' warnings for a printer -->
             <Patch>gtk2-remove-connecting-reason.patch</Patch>
@@ -46,6 +42,7 @@
     <Package>
         <Name>gtk2</Name>
         <RuntimeDependencies>
+            <Dependency versionFrom="2.21.3">glib2</Dependency>
             <Dependency>atk</Dependency>
             <Dependency>cups</Dependency>
             <Dependency>pango</Dependency>
@@ -61,13 +58,6 @@
             <Dependency>libXinerama</Dependency>
             <Dependency>libXcomposite</Dependency>
         </RuntimeDependencies>
-        <Conflicts>
-            <Package>gtk1</Package>
-            <Package>gdk-pixbuf</Package>
-        </Conflicts>
-        <Replaces>
-            <Package>gail</Package>
-        </Replaces>
         <Files>
             <Path fileType="config">/etc</Path>
             <Path fileType="executable">/usr/bin</Path>
@@ -111,6 +101,13 @@
     </Package>
 
     <History>
+        <Update release="57">
+            <Date>2009-11-11</Date>
+            <Version>2.18.3</Version>
+            <Comment>Bump to 2.18.3</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="56">
             <Date>2009-10-30</Date>
             <Version>2.16.6</Version>
