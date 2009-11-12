@@ -14,6 +14,9 @@ def setup():
     # Fixup version
     shelltools.echo(".version", get.srcVERSION().split("_")[0])
 
+    # Disable emacs scripts
+    shelltools.export("EMACS", "no")
+
     autotools.configure()
 
 def build():
