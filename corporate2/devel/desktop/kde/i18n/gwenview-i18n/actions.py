@@ -9,7 +9,7 @@ from pisi.actionsapi import kde
 from pisi.actionsapi import pisitools
 
 def setup():
-    kde.configure()
+    kde.configure("--without-arts")
 
 def build():
     kde.make()

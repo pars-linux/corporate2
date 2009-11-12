@@ -11,7 +11,7 @@ from pisi.actionsapi import kde
 WorkDir="kde-i18n-pt_BR-%s" % get.srcVERSION()
 
 def setup():
-    kde.configure()
+    kde.configure("--without-arts")
 
 def build():
     kde.make()
