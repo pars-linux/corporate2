@@ -1,3 +1,205 @@
+commit 6387ab4c1d0ff71e556b1c96f21b4e765a6c8e5a
+Author: Matthias Hopf <mhopf@suse.de>
+Date:   Thu Nov 12 14:57:40 2009 +0100
+
+    PM: Validate known good configurations as well.
+    
+    In some AtomBIOSes voltage values are broken (e.g. 0xff01).
+
+commit d6b4718350be61fba6b060f35941436ae2f236bd
+Author: Matthias Hopf <mhopf@suse.de>
+Date:   Thu Nov 12 14:52:46 2009 +0100
+
+    Correct copyright information.
+
+commit d0b936dbfc165fe441c4af6d429332234fa8b18e
+Author: Matthias Hopf <mhopf@suse.de>
+Date:   Wed Nov 11 16:04:28 2009 +0100
+
+    Change wording for amount of mapped memory.
+
+commit 5a01ea3d79909268a6febf428ca65f30626c3bcd
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Wed Nov 11 12:32:42 2009 +0100
+
+    DMS59: Marking 0x7183, 0x1002, 0x0D02 as such.
+    
+    Reported by Dmitry Rybin.
+
+commit 6a2c0f04a1cd67b7b84590e8cc67844d8a03a8a4
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Tue Nov 10 10:20:41 2009 +0100
+
+    AtomBIOS/PM: Add size checks to Voltage Info parser.
+    
+    Some VoltageInfo tables seem to be inconsistent. Check sizes
+    so that we don't accidentally read beyond the end of the BIOS.
+
+commit 2949564e1b2ab751067ef7864adc1afeab055c3f
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Mon Nov 9 23:42:35 2009 +0100
+
+    AtomBIOS/PM: Detect wrong size value in VoltageObj table.
+    
+    Some Voltage Object tables contain a size of 0. If this isn't caught
+    the driver will hang in an endless loop.
+
+commit fb1f84dd62cfd4e2a550ccc90006f4e75c1b6b86
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Fri Nov 6 13:18:13 2009 +0100
+
+    DRI: Get number of pipes from DRM if possible.
+
+commit 40fa33f05df863ed98cb43539f237cb90a3a5e38
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Fri Nov 6 15:38:33 2009 +0100
+
+    2D/3D: Fix Lockups on R5XX when running DRI clients with EXA/Textured Video.
+    
+    Don't read out or set pipe parameters when engine is active.
+    Doing so might lock up the engine.
+    This fixes a long standing issue with 2D acceleration on R5xx.
+
+commit f3df2394eba2926467eea98c7568544f6a821fbe
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Fri Nov 6 13:16:10 2009 +0100
+
+    Accel: Insert proper waits for 2D/3D engine idles when switching between the two contexts.
+
+commit af5f1e1abc11a2182705527421c30ad99b7dc60e
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Fri Nov 6 13:15:04 2009 +0100
+
+    I2C: Fix I2C readout.
+    
+    The Radeon driver attempts to save/restore the hw scaler registers
+    by reading/writing the range of registers which address the video scaler.
+    While doing so it also touches the TAP Control index/data registers.
+    Uncontrolled touching of the data register seems to have an adverse
+    effect on the ability to run HW supported I2C read out. This running
+    RadeonHD after running the Radeon driver results in no DDC data.
+    The reason for this has not been understood however it has been found
+    experimentally that reading back the scaler data register is able to
+    'fix' this issue.
+    We put this hacky workaround in the code until we obtain a better
+    understanding of the issue.
+
+commit a76cee0a96f25ef229fb0d6fbf6dbe535845e6f8
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Fri Nov 6 12:52:34 2009 +0100
+
+    Scaler: Add support to send TV mode the HW scaler.
+    
+    AtomBIOS takes in a TV mode to determine the correct multi tab
+    values. Although TV mode support has not been completed this patch
+    adds support for this.
+    It also replaces scaler register values by their symbolic names.
+
+commit 737f25912526fe69878cb01c1d150eda32da5383
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Fri Oct 30 09:44:06 2009 +0100
+
+    Backlight: Some cosmetics to ACPI backlight support.
+
+commit 209505b3af2558920578a8572a9930b413380190
+Author: Jung-uk Kim <jkim@FreeBSD.org>
+Date:   Fri Oct 30 09:37:07 2009 +0100
+
+    Backlight: ACPI backlight support for FreeBSD
+    
+    This patch adds support for FreeBSD and DragonFlyBSD via acpi_video(4).
+    
+    Signed-off-by: Egbert Eich <eich@freedesktop.org>
+
+commit 5cd4cca8c00db39f6fcfae27d142451eb5de0ebb
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Thu Oct 29 11:44:37 2009 +0100
+
+    Monitor/Panel: Move mode line sanitization code.
+    
+    Mode line sanitization may change the HSync and VRefresh values.
+    Therefore it needs to be done before the Panel H/V ranges are
+    determined.
+    Also report if a mode had to be sanitized.
+
+commit 5092f1539e75596373de13472c9ceb5d32c58b6a
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Wed Oct 28 10:08:20 2009 +0100
+
+    Mode: Be more verbose on reporting mode rejections.
+
+commit cee33c18a5f66c805c9df9f960a073ac0c62947a
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Wed Oct 28 10:07:52 2009 +0100
+
+    DIG: Improve code readability by using names for bits.
+
+commit 8b89b94d50f08b672cacb6f053dc8dd7ea754183
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Mon Oct 26 15:56:51 2009 +0100
+
+    Add Fallback DAC Load Detection Method for chips >= RV620.
+    
+    There are two methods of doing DAC load detection on DCE3.x chips: one
+    works 'on the fly' ie doesn't produce noticeable flickering but
+    doesn't work as reliably on some chips RS780 especially in connection
+    with a KVM switch where it may produce a false negative, the other may
+    produce some visible artefacts but also seems to work reliably with KVM
+    switches. It's the one used in most AtomBIOSes.
+    We now use both methods: if the 'on the fly' one produces a negative
+    result we fall back to the other one and let it decide wether something
+    is connected or not.
+
+commit 7f896deecf82bca550c57d8079ec10c041926548
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Mon Oct 26 15:56:28 2009 +0100
+
+    Print out value of MC status register if it is busy when tested.
+
+commit a838114e998a779ce64b894bf8cc34f93647c001
+Author: Egbert Eich <eich@freedesktop.org>
+Date:   Mon Oct 19 17:36:16 2009 +0200
+
+    Fix backlight readout thru AtomBIOS.
+    
+    The correct value was not read out as 'Set' was called instead of 'Get'.
+
+commit eef20d73e0527acd00b49c893e406b8e986899a9
+Author: Alex Deucher <alexdeucher@gmail.com>
+Date:   Thu Oct 15 12:38:37 2009 -0400
+
+    rs880: fix gart type
+    
+    rs880 needs to be treated as pcie just like rs780.
+    Fixes DRI init.
+
+commit bfb6e13736fcd215acf7a5a3bfcf558c180ebc41
+Author: Yang Zhao <yang@yangman.ca>
+Date:   Mon Oct 12 19:08:14 2009 -0700
+
+    configure: Remove check for GL/gl.h
+    
+    Check was introduced by 69d4dabe27aba0ed6aff52d210b045876ed36fce,
+    supposedly to work around an old Ubuntu bug.  We use GL/glxtokens.h and
+    GL/glxint.h but not GL/gl.h, which is not part of glproto anyway.
+    
+    Removing the check.  If this end up causing problems, we can add
+    explicit checks for the proper headers.
+
+commit 34d975dbbeca76748e08a54ab724f176c7e1cf8e
+Author: Matthias Hopf <mhopf@suse.de>
+Date:   Mon Oct 12 14:52:01 2009 +0200
+
+    Fix compilation with xf86_ansic.h
+
+commit 42a81085042606cd812732a13b66527d37fc625c
+Author: Matthias Hopf <mhopf@suse.de>
+Date:   Thu Oct 8 19:19:30 2009 +0200
+
+    pm: Recalculate I2C clock on engine clock setting.
+    
+    On pre-R6xx the DDC clock is derived from the engine clock, thus changing the
+    engine clock implies that the DDC clock is to be updated as well.
 diff --git a/configure.ac b/configure.ac
 index 3615a9b..712e8e2 100644
 --- a/configure.ac
@@ -13,11 +215,276 @@ index 3615a9b..712e8e2 100644
  AC_MSG_CHECKING([whether to enable DRI support])
  AC_MSG_RESULT($USE_DRI)
  test "x$USE_DRI" = xyes && AC_DEFINE(USE_DRI, 1, [Build support for DRI])
+diff --git a/src/r5xx_accel.c b/src/r5xx_accel.c
+index d7b94e0..b4483c1 100644
+--- a/src/r5xx_accel.c
++++ b/src/r5xx_accel.c
+@@ -73,7 +73,9 @@
+ #include "r5xx_accel.h"
+ #include "r5xx_regs.h"
+ #include "r5xx_3dregs.h"
+-
++#ifdef USE_DRI
++#include "rhd_dri.h"
++#endif
+ /*
+  * Used by both XAA and EXA code.
+  */
+@@ -353,15 +355,12 @@ void
+ R5xx2DStart(ScrnInfoPtr pScrn)
+ {
+     RHDPtr rhdPtr = RHDPTR(pScrn);
++    CARD32 pipe;
+ 
+     RHDFUNC(pScrn);
+ 
+-    if ((rhdPtr->ChipSet != RHD_RS690) &&
+-	(rhdPtr->ChipSet != RHD_RS600) &&
+-	(rhdPtr->ChipSet != RHD_RS740)) {
+-	CARD8 pipe = (RHDRegRead(rhdPtr, R400_GB_PIPE_SELECT) >> 4) & 0xF0;
+-	RHDWritePLL(pScrn, R500_DYN_SCLK_PWMEM_PIPE, pipe | 0x01);
+-    }
++    pipe = (RHDRegRead(rhdPtr, R400_GB_PIPE_SELECT) >> 4) & 0xF0;
++    RHDWritePLL(pScrn, R500_DYN_SCLK_PWMEM_PIPE, pipe | 0x01);
+ 
+     RHDRegMask(pScrn, R5XX_GB_TILE_CONFIG, 0, R5XX_ENABLE_TILING);
+     RHDRegWrite(pScrn, R5XX_WAIT_UNTIL,
+@@ -421,6 +420,21 @@ R5xx2DFBValid(RHDPtr rhdPtr, CARD16 Width, CARD16 Height, int bpp,
+ }
+ 
+ /*
++ * Map the number of GB Pipes the hardware has.
++ */
++static int
++R5xxGBPipesCount(ScrnInfoPtr pScrn)
++{
++#ifdef USE_DRI
++    union rhdValue val;
++
++    if (RHDDRIGetHWParam(pScrn, RHD_NUM_GB_PIPES, &val))
++	return val.Int;
++#endif
++    return ((RHDRegRead(pScrn, R400_GB_PIPE_SELECT) >> 12) & 0x03) + 1;
++}
++
++/*
+  * Handlers for rhdPtr->ThreeDInfo.
+  */
+ void
+@@ -438,6 +452,8 @@ R5xx3DInit(ScrnInfoPtr pScrn)
+ 
+     R5xx3D = (struct R5xx3D *) xnfcalloc(1, sizeof(struct R5xx3D));
+     R5xx3D->XHas3DEngineState = FALSE;
++    /* set this up here; not when the engine is running! */
++    R5xx3D->num_gb_pipes = R5xxGBPipesCount(pScrn);
+     rhdPtr->ThreeDPrivate = R5xx3D;
+ }
+ 
+diff --git a/src/r5xx_accel.h b/src/r5xx_accel.h
+index 3e642be..48189f7 100644
+--- a/src/r5xx_accel.h
++++ b/src/r5xx_accel.h
+@@ -90,6 +90,7 @@ struct R5xx3D {
+     /* Size of tiles ... set to 65536x65536 if not tiling in that direction */
+     Bool src_tile_width;
+     Bool src_tile_height;
++    int num_gb_pipes;
+ };
+ 
+ void R5xx3DInit(ScrnInfoPtr pScrn);
+diff --git a/src/r5xx_exa.c b/src/r5xx_exa.c
+index 36e91ad..1570ed2 100644
+--- a/src/r5xx_exa.c
++++ b/src/r5xx_exa.c
+@@ -205,7 +205,8 @@ R5xxEXASolid(PixmapPtr pPix, int x1, int y1, int x2, int y2)
+ static void
+ R5xxEXADoneSolid(PixmapPtr pPix)
+ {
+-    ;
++    struct RhdCS *CS = RHDPTRE(pPix->drawable.pScreen)->CS;
++    R5xxEngineWaitIdle2D(CS);
+ }
+ 
+ /*
+@@ -315,7 +316,8 @@ R5xxEXACopy(PixmapPtr pDst, int srcX, int srcY, int dstX, int dstY, int w, int h
+ static void
+ R5xxEXADoneCopy(PixmapPtr pDst)
+ {
+-    ;
++    struct RhdCS *CS = RHDPTRE(pDst->drawable.pScreen)->CS;
++    R5xxEngineWaitIdle2D(CS);
+ }
+ 
+ /*
+@@ -481,6 +483,7 @@ R5xxEXAUploadToScreenCP(PixmapPtr pDst, int x, int y, int w, int h,
+     }
+ 
+     exaMarkSync(pDst->drawable.pScreen);
++    R5xxEngineWaitIdle2D(CS);
+     return TRUE;
+ }
+ 
+@@ -676,6 +679,7 @@ R5xxEXADownloadFromScreenCP(PixmapPtr pSrc, int x, int y, int w, int h,
+     /* since we had a full idle every time, we make sure we don't do
+        yet another system call here */
+     ExaPrivate->exaMarkerSynced = ExaPrivate->exaSyncMarker;
++    R5xxEngineWaitIdle2D(CS);
+ 
+     return TRUE;
+ }
+diff --git a/src/radeon_3d.c b/src/radeon_3d.c
+index d70052a..b3052e7 100644
+--- a/src/radeon_3d.c
++++ b/src/radeon_3d.c
+@@ -65,15 +65,7 @@
+ 
+ # define HAS_TCL info->has_tcl
+ 
+-# define R5XXPowerPipes(p) {}
+-
+-/* Map the number of GB Pipes the hardware has. */
+-static int
+-R5xxGBPipesCount(ScrnInfoPtr pScrn)
+-{
+-    return ((RHDRegRead(pScrn, R400_GB_PIPE_SELECT) >> 12) & 0x03) + 1;
+-}
+-#define NUM_GB_PIPES R5xxGBPipesCount(pScrn)
++#define NUM_GB_PIPES info->num_gb_pipes
+ 
+ /* Map the number of FPUs the VPS has. */
+ static int
+@@ -136,16 +128,17 @@ R5xxPVSFPUCount(ScrnInfoPtr pScrn)
+ /*
+  * Map the macros.
+  */
+-#define ACCEL_PREAMBLE() struct RhdCS *CS = rhdPtr->CS
++#define ACCEL_PREAMBLE() struct RhdCS *CS = rhdPtr->CS; \
++                         if (pScrn->pScreen) \
++                             RHDDRIContextClaim(pScrn)
++
+ 
+ #define BEGIN_ACCEL(Count) RHDCSGrab(CS, 2 * (Count))
+ #define OUT_ACCEL_REG(Reg, Value) RHDCSRegWrite(CS, (Reg), (Value))
+ #define FINISH_ACCEL()
+ 
+ #ifdef USE_DRI
+-#define END_ACCEL() RHDCSAdvance(CS); \
+-                    if (pScrn->pScreen) \
+-                        RHDDRIContextClaim(pScrn)
++#define END_ACCEL() RHDCSAdvance(CS);
+ #else
+ #define END_ACCEL() RHDCSAdvance(CS)
+ #endif
+@@ -164,13 +157,7 @@ R5xxPVSFPUCount(ScrnInfoPtr pScrn)
+ 
+ #define HAS_TCL IS_R500_3D
+ 
+-/* Map the number of GB Pipes the hardware has. */
+-static int
+-R5xxGBPipesCount(ScrnInfoPtr pScrn)
+-{
+-    return ((RHDRegRead(pScrn, R400_GB_PIPE_SELECT) >> 12) & 0x03) + 1;
+-}
+-#define NUM_GB_PIPES R5xxGBPipesCount(pScrn)
++#define NUM_GB_PIPES accel_state->num_gb_pipes
+ 
+ /* Map the number of FPUs the VPS has. */
+ static int
+@@ -202,19 +189,6 @@ R5xxPVSFPUCount(ScrnInfoPtr pScrn)
+ }
+ #define NUM_PVS_FPUS R5xxPVSFPUCount(pScrn)
+ 
+-/*
+- *
+- */
+-static void
+-R5XXPowerPipes(ScrnInfoPtr pScrn)
+-{
+-    CARD32 tmp = RHDRegRead(pScrn, R400_GB_PIPE_SELECT);
+-    RHDWritePLL(pScrn, R500_DYN_SCLK_PWMEM_PIPE, (1 | ((tmp >> 8) & 0xf) << 4));
+-}
+-/* for radeon, this is done elsewhere, so use:
+- * #define R5XXPowerPipes(x)
+- */
+-
+ #endif /* IS_RADEON_DRIVER */
+ 
+ #if defined(IS_RADEON_DRIVER) || defined(IS_QUICK_AND_DIRTY)
+@@ -239,6 +213,9 @@ R5xx3DSetup(int scrnIndex)
+     accel_state->texW[1] = 1;
+     accel_state->texH[1] = 1;
+ 
++    RHDDRIContextClaim(pScrn);
++
++
+ #ifdef IS_RADEON_DRIVER
+     if (IS_R300_3D || IS_R500_3D) {
+ #endif
+@@ -248,9 +225,6 @@ R5xx3DSetup(int scrnIndex)
+ 	OUT_ACCEL_REG(RADEON_WAIT_UNTIL, RADEON_WAIT_2D_IDLECLEAN | RADEON_WAIT_3D_IDLECLEAN);
+ 	FINISH_ACCEL();
+ 
+-	if (IS_R500_3D)
+-	    R5XXPowerPipes(pScrn);
+-
+ 	gb_tile_config = (R300_ENABLE_TILING | R300_TILE_SIZE_16);
+ 
+ 	switch(num_gb_pipes) {
+diff --git a/src/radeon_textured_videofuncs.c b/src/radeon_textured_videofuncs.c
+index b51e145..06458ea 100644
+--- a/src/radeon_textured_videofuncs.c
++++ b/src/radeon_textured_videofuncs.c
+@@ -125,6 +125,7 @@ do {								\
+ # define ADVANCE_RING() RHDCSAdvance(CS)
+ 
+ # define OUT_VIDEO_RING_F(x) OUT_RING(F_TO_DW(x))
++# define RADEON_SWITCH_TO_3D()  R5xxEngineWaitIdle2D(rhdPtr->CS)
+ 
+ #define VTX_DWORD_COUNT 4
+ 
+@@ -244,6 +245,8 @@ FUNC_NAME(RADEONDisplayTexturedVideo)(ScrnInfoPtr pScrn, RADEONPortPrivPtr pPriv
+     if (!accel_state->XHas3DEngineState)
+ 	RADEONInit3DEngine(pScrn);
+ 
++    RADEON_SWITCH_TO_3D();
++
+     /* we can probably improve this */
+     BEGIN_VIDEO(2);
+ #ifdef IS_RADEON_DRIVER
+diff --git a/src/rhd.h b/src/rhd.h
+index efa6bc2..95103af 100644
+--- a/src/rhd.h
++++ b/src/rhd.h
+@@ -216,6 +216,16 @@ enum AccelMethod {
+     RHD_ACCEL_DEFAULT = 5 /* keep as highest. */
+ };
+ 
++union rhdValue {
++  CARD8 Card8;
++  CARD16 Card16;
++  CARD32 Card32;
++  char Char;
++  short Short;
++  int Int;
++  char *String;
++};
++
+ typedef struct RHDRec {
+     int                 scrnIndex;
+ 
 diff --git a/src/rhd_acpi.c b/src/rhd_acpi.c
-index 3831925..78751e5 100644
+index 3831925..971218a 100644
 --- a/src/rhd_acpi.c
 +++ b/src/rhd_acpi.c
-@@ -28,6 +28,7 @@
+@@ -2,6 +2,7 @@
+  * Copyright 2009  Luc Verhaegen <libv@exsuse.de>
+  * Copyright 2009  Matthias Hopf <mhopf@novell.com>
+  * Copyright 2009  Egbert Eich   <eich@novell.com>
++ * Copyright 2009  Jung-uk Kim   <jkim@FreeBSD.org>
+  *
+  * Permission is hereby granted, free of charge, to any person obtaining a
+  * copy of this software and associated documentation files (the "Software"),
+@@ -28,6 +29,7 @@
  
  #if HAVE_XF86_ANSIC_H
  # include "xf86_ansic.h"
@@ -25,6 +492,266 @@ index 3831925..78751e5 100644
  #else
  # include <unistd.h>
  # include <sys/types.h>
+@@ -47,6 +49,70 @@
+ #include "rhd_acpi.h"
+ 
+ 
++#if defined(__FreeBSD__) || defined(__DragonFly__)
++
++#include <stdlib.h>
++#include <sys/sysctl.h>
++
++#define	ACPI_VIDEO_LEVELS	"hw.acpi.video.lcd0.levels"
++#define	ACPI_VIDEO_BRIGHTNESS	"hw.acpi.video.lcd0.brightness"
++
++/*
++ * Get/Set LCD backlight brightness via acpi_video(4).
++ */
++static Bool
++rhdDoBacklight(struct rhdOutput *Output, Bool do_write, int *val)
++{
++    int *levels;
++    size_t len;
++    int level, max_val, num_levels;
++    int i;
++    RHDFUNC(Output);
++
++    if (sysctlbyname(ACPI_VIDEO_LEVELS, NULL, &len, NULL, 0) != 0 || len == 0)
++	return FALSE;
++    levels = (int *)malloc(len);
++    if (levels == NULL)
++	return FALSE;
++    if (sysctlbyname(ACPI_VIDEO_LEVELS, levels, &len, NULL, 0) != 0) {
++	free(levels);
++	return FALSE;
++    }
++
++    num_levels = len / sizeof(*levels);
++    for (i = 0, max_val = 0; i < num_levels; i++)
++	if (levels[i] > max_val)
++	    max_val = levels[i];
++
++    if (do_write) {
++	int d1 = max_val * RHD_BACKLIGHT_PROPERTY_MAX + 1;
++	for (i = 0, level = -1; i < num_levels; i++) {
++	    int d2 = abs(*val * max_val - levels[i] * RHD_BACKLIGHT_PROPERTY_MAX);
++	    if (d2 < d1) {
++		level = levels[i];
++		d1 = d2;
++	    }
++	}
++	free(levels);
++	if (level < 0)
++	    return FALSE;
++	if (sysctlbyname(ACPI_VIDEO_BRIGHTNESS, NULL, 0, &level, sizeof(level)) != 0)
++	    return FALSE;
++	RHDDebug(Output->scrnIndex, "%s: Wrote value %i (ACPI %i)\n", __func__, *val, level);
++    } else {
++	free(levels);
++	len = sizeof(level);
++	if (sysctlbyname(ACPI_VIDEO_BRIGHTNESS, &level, &len, NULL, 0) != 0)
++	    return FALSE;
++	*val = level * RHD_BACKLIGHT_PROPERTY_MAX / max_val;
++	RHDDebug(Output->scrnIndex, "%s: Read value %i (ACPI %i)\n", __func__, *val, level);
++    }
++
++    return TRUE;
++}
++
++#elif defined(__linux__)
++
+ #define ACPI_PATH "/sys/class/backlight"
+ 
+ /*
+@@ -120,6 +186,20 @@ rhdDoBacklight(struct rhdOutput *Output, Bool do_write, int *val)
+ 
+     return FALSE;
+ }
++#else
++
++/*
++ * Stub
++ */
++static Bool
++rhdDoBacklight(struct rhdOutput *Output, Bool do_write, int *val)
++{
++    if (do_write)
++	&val = -1;
++    return FALSE;
++}
++
++#endif
+ 
+ /*
+  * RhdACPIGetBacklightControl(): return backlight value in range 0..255;
+@@ -128,13 +208,12 @@ rhdDoBacklight(struct rhdOutput *Output, Bool do_write, int *val)
+ int
+ RhdACPIGetBacklightControl(struct rhdOutput *Output)
+ {
+-#ifdef __linux__
+     int ret;
++
+     RHDFUNC(Output);
+-    if (rhdDoBacklight(Output, FALSE, &ret))
+-	return ret;
+-#endif
+-    return -1;
++
++    rhdDoBacklight(Output, FALSE, &ret);
++    return ret;
+ }
+ 
+ /*
+@@ -144,7 +223,6 @@ void
+ RhdACPISetBacklightControl(struct rhdOutput *Output, int val)
+ {
+     RHDFUNC(Output);
+-#ifdef __linux__
++
+     rhdDoBacklight(Output, TRUE, &val);
+-#endif
+ }
+diff --git a/src/rhd_atombios.c b/src/rhd_atombios.c
+index 26e32fc..02070dd 100644
+--- a/src/rhd_atombios.c
++++ b/src/rhd_atombios.c
+@@ -887,7 +887,7 @@ rhdAtomASICInitVersion(atomBiosHandlePtr handle)
+  *
+  */
+ Bool
+-rhdAtomSetScaler(atomBiosHandlePtr handle, enum atomScaler scalerID, enum atomScaleMode mode)
++rhdAtomSetScaler(atomBiosHandlePtr handle, enum atomScaler scalerID, enum atomScaleMode mode, enum AtomTVMode tvMode)
+ {
+     ENABLE_SCALER_PARAMETERS scaler;
+     AtomBiosArgRec data;
+@@ -917,6 +917,38 @@ rhdAtomSetScaler(atomBiosHandlePtr handle, enum atomScaler scalerID, enum atomSc
+ 	    scaler.ucEnable = ATOM_SCALER_MULTI_EX;
+ 	    break;
+     }
++    switch (tvMode) {
++	case ATOM_TVMODE_NTSC:
++	    scaler.ucTVStandard = ATOM_TV_NTSC;
++	    break;
++	case  ATOM_TVMODE_NTSCJ:
++	    scaler.ucTVStandard = ATOM_TV_NTSCJ;
++	    break;
++	case ATOM_TVMODE_PAL:
++	    scaler.ucTVStandard = ATOM_TV_PAL;
++	    break;
++	case ATOM_TVMODE_PALM:
++	    scaler.ucTVStandard = ATOM_TV_PALM;
++	    break;
++	case ATOM_TVMODE_PALCN:
++	    scaler.ucTVStandard = ATOM_TV_PALCN;
++	    break;
++	case  ATOM_TVMODE_PALN:
++	    scaler.ucTVStandard = ATOM_TV_PALN;
++	    break;
++	case ATOM_TVMODE_PAL60:
++	    scaler.ucTVStandard = ATOM_TV_PAL60;
++	    break;
++	case ATOM_TVMODE_SECAM:
++	    scaler.ucTVStandard = ATOM_TV_SECAM;
++	    break;
++	case ATOM_TVMODE_CV:
++	    scaler.ucTVStandard = ATOM_TV_CV;
++	    break;
++	case ATOM_TVMODE_NONE:
++	    scaler.ucTVStandard = 0;
++	    break;
++    }
+ 
+     data.exec.dataSpace = NULL;
+     data.exec.index = GetIndexIntoMasterTable(COMMAND, EnableScaler);
+@@ -5357,10 +5389,11 @@ rhdAtomChipLimits(atomBiosHandlePtr handle, AtomBiosRequestID func, AtomBiosArgP
+ {
+     atomDataTablesPtr atomDataPtr = handle->atomDataPtr;
+     AtomBiosArgRec		    execData;
+-    ATOM_VOLTAGE_OBJECT_INFO	   *voltage;
++    ATOM_VOLTAGE_OBJECT	           *voltage;
+     AtomChipLimits		   *lim = &data->chipLimits;
+     CARD8    crev, frev;
+     uint16_t FirmwareInfoRev = 0;
++    unsigned short voltage_object_size;
+ 
+     RHDFUNC(handle);
+     memset (lim, 0, sizeof (*lim));
+@@ -5409,18 +5442,31 @@ rhdAtomChipLimits(atomBiosHandlePtr handle, AtomBiosRequestID func, AtomBiosArgP
+ 	return ATOM_NOT_IMPLEMENTED;
+     }
+ 
+-    if ( (voltage = atomDataPtr->VoltageObjectInfo) ) {
+-	char *last = ((char *) voltage) + voltage->sHeader.usStructureSize;
+-	while ((char *) &voltage->asVoltageObj[0].ucVoltageType < last) {
+-	    if (voltage->asVoltageObj[0].ucVoltageType == SET_VOLTAGE_TYPE_ASIC_VDDC) {
+-		lim->Minimum.VDDCVoltage = voltage->asVoltageObj[0].asFormula.usVoltageBaseLevel;
++    if (rhdAtomGetTableRevisionAndSize (
++	    (ATOM_COMMON_TABLE_HEADER *)(atomDataPtr->VoltageObjectInfo),
++	    &crev,&frev,&voltage_object_size)) {
++	int size = 0;
++
++	if ((voltage_object_size > handle->BIOSImageSize)
++	    || ((unsigned long)(atomDataPtr->VoltageObjectInfo->asVoltageObj) + voltage_object_size >
++		((unsigned long)handle->BIOSBase + handle->BIOSImageSize))) {
++	    xf86DrvMsg(handle->scrnIndex, X_ERROR,
++		       "%s: Voltage Object information is bogus\n",__func__);
++	}
++	voltage = atomDataPtr->VoltageObjectInfo->asVoltageObj;
++	while (voltage->ucSize) { /* last element ? */
++	    size += voltage->ucSize;
++	    if (size > voltage_object_size)              /* past end of table */
++		break;
++	    if (voltage->ucVoltageType == SET_VOLTAGE_TYPE_ASIC_VDDC) {
++		lim->Minimum.VDDCVoltage = voltage->asFormula.usVoltageBaseLevel;
+ 		lim->Maximum.VDDCVoltage = lim->Minimum.VDDCVoltage +
+-		    voltage->asVoltageObj[0].asFormula.usVoltageStep *
+-		    (voltage->asVoltageObj[0].asFormula.ucNumOfVoltageEntries - 1) /
+-		    (voltage->asVoltageObj[0].asFormula.ucFlag & 0x01 ? 2 : 1);
++		    voltage->asFormula.usVoltageStep *
++		    (voltage->asFormula.ucNumOfVoltageEntries - 1) /
++		    (voltage->asFormula.ucFlag & 0x01 ? 2 : 1);
+ 		break;
+ 	    }
+-	    voltage = (ATOM_VOLTAGE_OBJECT_INFO *) (((char *) voltage) + voltage->asVoltageObj[0].ucSize);
++	    voltage = (ATOM_VOLTAGE_OBJECT *) (((char *) voltage) + voltage->ucSize);
+ 	}
+     } else
+ 	xf86DrvMsg (handle->scrnIndex, X_INFO, "No VoltageObjectInfo table\n");
+diff --git a/src/rhd_atombios.h b/src/rhd_atombios.h
+index 16c24f5..6c73deb 100644
+--- a/src/rhd_atombios.h
++++ b/src/rhd_atombios.h
+@@ -152,6 +152,7 @@ struct AtomDacCodeTableData
+ };
+ 
+ typedef enum AtomTVMode {
++    ATOM_TVMODE_NONE = 0,
+     ATOM_TVMODE_NTSC = 1 << 0,
+     ATOM_TVMODE_NTSCJ = 1 << 1,
+     ATOM_TVMODE_PAL = 1 << 2,
+@@ -526,7 +527,7 @@ extern Bool rhdAtomASICInit(atomBiosHandlePtr handle);
+ extern struct atomCodeTableVersion rhdAtomASICInitVersion(atomBiosHandlePtr handle);
+ #   endif
+ extern Bool rhdAtomSetScaler(atomBiosHandlePtr handle, enum atomScaler scaler,
+-		 enum atomScaleMode mode);
++			     enum atomScaleMode mode, enum AtomTVMode tvMode);
+ extern struct atomCodeTableVersion rhdAtomSetScalerVersion(atomBiosHandlePtr handle);
+ extern Bool rhdAtomDigTransmitterControl(atomBiosHandlePtr handle, enum atomTransmitter id,
+ 					 enum atomTransmitterAction action,
+diff --git a/src/rhd_atomcrtc.c b/src/rhd_atomcrtc.c
+index 72b3d8d..e1a92e4 100644
+--- a/src/rhd_atomcrtc.c
++++ b/src/rhd_atomcrtc.c
+@@ -136,7 +136,8 @@ rhdAtomScaleSet(struct rhdCrtc *Crtc, enum rhdCrtcScaleType Type,
+ 	    ScaleMode = atomScaleExpand;
+ 	    break;
+     }
+-    rhdAtomSetScaler(rhdPtr->atomBIOS, Scaler, ScaleMode);
++    ScaleMode = atomScaleDisable;
++    rhdAtomSetScaler(rhdPtr->atomBIOS, Scaler, ScaleMode, ATOM_TVMODE_NONE);
+ 
+     data.Address = NULL;
+     RHDAtomBiosFunc(rhdPtr->scrnIndex, rhdPtr->atomBIOS, ATOM_SET_REGISTER_LIST_LOCATION, &data);
 diff --git a/src/rhd_atomout.c b/src/rhd_atomout.c
 index 9d50ade..5f3db26 100644
 --- a/src/rhd_atomout.c
@@ -38,11 +765,379 @@ index 9d50ade..5f3db26 100644
  
      return level;
  }
+diff --git a/src/rhd_crtc.c b/src/rhd_crtc.c
+index ea0728c..5181474 100644
+--- a/src/rhd_crtc.c
++++ b/src/rhd_crtc.c
+@@ -756,7 +756,7 @@ DxScaleSet(struct rhdCrtc *Crtc, enum rhdCrtcScaleType Type,
+ 	    ErrorF("None\n");
+ 	    RHDRegWrite(Crtc, RegOff + D1SCL_ENABLE, 0);
+ 	    RHDRegWrite(Crtc, RegOff + D1SCL_TAP_CONTROL, 0);
+-	    RHDRegWrite(Crtc, RegOff + D1MODE_CENTER, 0);
++	    RHDRegWrite(Crtc, RegOff + D1MODE_CENTER, 2);
+ 	    break;
+ 	case RHD_CRTC_SCALE_TYPE_CENTER: /* center of the actual mode */
+ 	    ErrorF("Center\n");
+@@ -773,7 +773,7 @@ DxScaleSet(struct rhdCrtc *Crtc, enum rhdCrtcScaleType Type,
+ 		RHDRegWrite(Crtc, RegOff + D1MODE_CENTER, 0);
+ 
+ 	    RHDRegWrite(Crtc, RegOff + D1SCL_UPDATE, 0);
+-	    RHDRegWrite(Crtc, RegOff + D1SCL_DITHER, 0);
++	    RHDRegWrite(Crtc, RegOff + D1SCL_FLIP_CONTROL, 0);
+ 
+ 	    RHDRegWrite(Crtc, RegOff + D1SCL_ENABLE, 1);
+ 	    RHDRegWrite(Crtc, RegOff + D1SCL_HVSCALE, 0x00010001); /* both h/v */
+@@ -980,9 +980,9 @@ D1ViewPortStart(struct rhdCrtc *Crtc, CARD16 X, CARD16 Y)
+     X = (X + 0x02) & ~0x03;
+     Y &= ~0x01;
+ 
+-    RHDRegMask(Crtc, D1SCL_UPDATE, 0x00010000, 0x0001000);
++    RHDRegMask(Crtc, D1SCL_UPDATE, DXSCL_UPDATE_LOCK, DXSCL_UPDATE_LOCK);
+     RHDRegWrite(Crtc, D1MODE_VIEWPORT_START, (X << 16) | Y);
+-    RHDRegMask(Crtc, D1SCL_UPDATE, 0, 0x0001000);
++    RHDRegMask(Crtc, D1SCL_UPDATE, 0, DXSCL_UPDATE_LOCK);
+ 
+     Crtc->X = X;
+     Crtc->Y = Y;
+@@ -1000,9 +1000,9 @@ D2ViewPortStart(struct rhdCrtc *Crtc, CARD16 X, CARD16 Y)
+     X = (X + 0x02) & ~0x03;
+     Y &= ~0x01;
+ 
+-    RHDRegMask(Crtc, D2SCL_UPDATE, 0x00010000, 0x0001000);
++    RHDRegMask(Crtc, D2SCL_UPDATE, DXSCL_UPDATE_LOCK, DXSCL_UPDATE_LOCK);
+     RHDRegWrite(Crtc, D2MODE_VIEWPORT_START, (X << 16) | Y);
+-    RHDRegMask(Crtc, D2SCL_UPDATE, 0, 0x0001000);
++    RHDRegMask(Crtc, D2SCL_UPDATE, 0, DXSCL_UPDATE_LOCK);
+ 
+     Crtc->X = X;
+     Crtc->Y = Y;
+diff --git a/src/rhd_cs.c b/src/rhd_cs.c
+index 14cbe68..ec28358 100644
+--- a/src/rhd_cs.c
++++ b/src/rhd_cs.c
+@@ -223,7 +223,6 @@ DRMCPFlush(struct RhdCS *CS)
+ 	while ((CS->Wptr * 4) & 0x3c) {
+ 	    RHDCSGrab(CS, 1);
+ 	    RHDCSWrite(CS, CP_PACKET2());
+-	    RHDCSAdvance(CS);
+ 	}
+     }
+ 
+@@ -260,7 +259,6 @@ DRMCPBufferDiscard(struct RhdCS *CS)
+ 	while ((CS->Wptr * 4) & 0x3c){
+ 	    RHDCSGrab(CS, 1);
+ 	    RHDCSWrite(CS, CP_PACKET2());
+-	    RHDCSAdvance(CS);
+ 	}
+     }
+ 
+diff --git a/src/rhd_dac.c b/src/rhd_dac.c
+index 8d05fe5..62f5a4a 100644
+--- a/src/rhd_dac.c
++++ b/src/rhd_dac.c
+@@ -614,12 +614,11 @@ DACBRestore(struct rhdOutput *Output)
+ }
+ 
+ /* ----------------------------------------------------------- */
+-
+ /*
+  *
+  */
+ static CARD32
+-DACSenseRV620(struct rhdOutput *Output, CARD32 offset, Bool TV)
++DACSenseRV620_MethA(struct rhdOutput *Output, CARD32 offset, Bool TV)
+ {
+     CARD32 ret;
+     CARD32 DetectControl, AutodetectIntCtl, ForceData,
+@@ -665,29 +664,113 @@ DACSenseRV620(struct rhdOutput *Output, CARD32 offset, Bool TV)
+ /*
+  *
+  */
++static CARD32
++DACSenseRV620_MethB(struct rhdOutput *Output, CARD32 offset, Bool TV)
++{
++    CARD32 CompEnable, Control1, Control2, DetectControl, Enable;
++    CARD8 ret;
++
++    RHDFUNC(Output);
++
++    CompEnable = RHDRegRead(Output, offset + RV620_DACA_COMPARATOR_ENABLE);
++    Control1 = RHDRegRead(Output, offset + RV620_DACA_MACRO_CNTL);
++    Control2 = RHDRegRead(Output, offset + RV620_DACA_CONTROL2);
++    DetectControl = RHDRegRead(Output, offset + RV620_DACA_AUTODETECT_CONTROL);
++    Enable = RHDRegRead(Output, offset + RV620_DACA_ENABLE);
++
++    RHDRegWrite(Output, offset + RV620_DACA_ENABLE, 1);
++    /* ack autodetect */
++    //    RHDRegMask(Output, offset + RV620_DACA_AUTODETECT_INT_CONTROL, 0x01, 0x01);
++    RHDRegMask(Output, offset + RV620_DACA_AUTODETECT_CONTROL, 0, 0x00000003);
++    RHDRegMask(Output, offset + RV620_DACA_CONTROL2, 0, 0x00000001);
++    RHDRegMask(Output, offset + RV620_DACA_CONTROL2, 0, 0x00ff0000);
++
++    if (offset) { /* We can do TV on DACA but only DACB has mux for separate connector */
++	if (TV)
++	    RHDRegMask(Output, offset + RV620_DACA_CONTROL2, 0x00000100, 0x00000100);
++	else
++	    RHDRegMask(Output, offset + RV620_DACA_CONTROL2, 0, 0x00000100);
++    }
++    RHDRegWrite(Output, offset + RV620_DACA_FORCE_DATA, 0);
++    RHDRegMask(Output, offset + RV620_DACA_CONTROL2, 0x00000001, 0x0000001);
++
++    RHDRegMask(Output, offset + RV620_DACA_COMPARATOR_ENABLE, 0x00070000, 0x00070101);
++    RHDRegWrite(Output, offset + RV620_DACA_MACRO_CNTL, offset ? 0x00052202 : 0x00052102);
++    RHDRegMask(Output, offset + RV620_DACA_POWERDOWN, 0, 0x00000001); /* Shut down Bandgap Voltage Reference Power */
++    usleep(5);
++
++    RHDRegMask(Output, offset + RV620_DACA_POWERDOWN, 0, 0x01010100); /* Shut down RGB */
++
++    RHDRegWrite(Output, offset + RV620_DACA_FORCE_DATA, 0x1e6); /* 486 out of 1024 */
++    usleep(200);
++
++    RHDRegMask(Output, offset + RV620_DACA_POWERDOWN, 0x01010100, 0x01010100); /* Enable RGB */
++    usleep(88);
++
++    RHDRegMask(Output, offset + RV620_DACA_POWERDOWN, 0, 0x01010100); /* Shut down RGB */
++
++    RHDRegMask(Output, offset + RV620_DACA_COMPARATOR_ENABLE, 0x00000100, 0x00000100);
++    usleep(100);
++
++    /* Get RGB detect values
++     * If only G is detected, we could have a monochrome monitor,
++     * but we don't bother with this at the moment.
++     */
++    ret = (RHDRegRead(Output, offset + RV620_DAC_COMPARATOR_OUTPUT) & 0x0E0000) >> 17;
++
++    RHDRegMask(Output, offset + RV620_DACA_COMPARATOR_ENABLE, CompEnable, 0x00FFFFFF);
++    RHDRegWrite(Output, offset + RV620_DACA_MACRO_CNTL, Control1);
++    RHDRegMask(Output, offset + RV620_DACA_CONTROL2, Control2, 0x000001FF);
++    RHDRegMask(Output, offset + RV620_DACA_AUTODETECT_CONTROL, DetectControl, 0x000000FF);
++    RHDRegMask(Output, offset + RV620_DACA_ENABLE, Enable, 0x000000FF);
++
++    RHDDebug(Output->scrnIndex, "%s: DAC: 0x0%1X\n", __func__, ret);
++
++    return ret;
++}
++
++/*
++ *
++ */
+ static enum rhdSensedOutput
+ DACASenseRV620(struct rhdOutput *Output, struct rhdConnector *Connector)
+ {
+     enum rhdConnectorType Type = Connector->Type;
++    CARD32 sense;
+     RHDFUNC(Output);
+ 
+     switch (Type) {
+     case RHD_CONNECTOR_DVI:
+     case RHD_CONNECTOR_DVI_SINGLE:
+     case RHD_CONNECTOR_VGA:
+-	return  (DACSenseRV620(Output, RV620_REG_DACA_OFFSET, FALSE)
+-		  & 0x1010100) ? RHD_SENSED_VGA : RHD_SENSED_NONE;
++        sense = DACSenseRV620_MethA(Output, RV620_REG_DACA_OFFSET, FALSE);
++	if (sense & 0x1010100)
++	    return RHD_SENSED_VGA;
++	sense = DACSenseRV620_MethB(Output, RV620_REG_DACA_OFFSET, FALSE);
++	if (sense & 0x7)
++	    return RHD_SENSED_VGA;
++	else
++	    return RHD_SENSED_NONE;
+     case RHD_CONNECTOR_TV:
+-	switch (DACSenseRV620(Output, RV620_REG_DACA_OFFSET, TRUE)
++	switch (DACSenseRV620_MethA(Output, RV620_REG_DACA_OFFSET, TRUE)
+ 		& 0x1010100) {
+ 	    case 0x1010100:
+-		return RHD_SENSED_NONE; /* on DAC A we cannot distinguish VGA and CV */
++	        return RHD_SENSED_NONE; /* on DAC A we cannot distinguish VGA and CV */
+ 	    case 0x10100:
+ 		return RHD_SENSED_TV_SVIDEO;
+ 	    case 0x1000000:
+ 		return RHD_SENSED_TV_COMPOSITE;
+ 	    default:
+-		return RHD_SENSED_NONE;
++		switch (DACSenseRV620_MethB(Output, RV620_REG_DACA_OFFSET, TRUE) & 0x7) {
++		case 0x7:
++		    return RHD_SENSED_TV_COMPONENT;
++		case 0x6:
++		    return RHD_SENSED_TV_SVIDEO;
++		case 0x1:
++		    return RHD_SENSED_TV_COMPOSITE;
++		default:
++		    return RHD_SENSED_NONE;
++		}
+ 	}
+     default:
+ 	xf86DrvMsg(Output->scrnIndex, X_WARNING,
+@@ -704,16 +787,23 @@ static enum rhdSensedOutput
+ DACBSenseRV620(struct rhdOutput *Output, struct rhdConnector *Connector)
+ {
+     enum rhdConnectorType Type = Connector->Type;
++    CARD32 sense;
+     RHDFUNC(Output);
+ 
+     switch (Type) {
+     case RHD_CONNECTOR_DVI:
+     case RHD_CONNECTOR_DVI_SINGLE:
+     case RHD_CONNECTOR_VGA:
+-	return  (DACSenseRV620(Output, RV620_REG_DACB_OFFSET, FALSE)
+-		  & 0x1010100) ? RHD_SENSED_VGA : RHD_SENSED_NONE;
++        sense = DACSenseRV620_MethA(Output, RV620_REG_DACB_OFFSET, FALSE);
++	if (sense & 0x1010100)
++	    return RHD_SENSED_VGA;
++	sense = DACSenseRV620_MethB(Output, RV620_REG_DACB_OFFSET, FALSE);
++	if (sense & 0x7)
++	    return RHD_SENSED_VGA;
++	else
++	    return RHD_SENSED_NONE;
+     case RHD_CONNECTOR_TV:
+-	switch (DACSenseRV620(Output, RV620_REG_DACB_OFFSET, TRUE)
++	switch (DACSenseRV620_MethA(Output, RV620_REG_DACB_OFFSET, TRUE)
+ 		& 0x1010100) {
+ 	    case 0x1000000:
+ 		return RHD_SENSED_TV_COMPONENT;
+@@ -722,7 +812,16 @@ DACBSenseRV620(struct rhdOutput *Output, struct rhdConnector *Connector)
+ 	    case 0x10100:
+ 		return RHD_SENSED_TV_COMPOSITE;
+ 	    default:
+-		return RHD_SENSED_NONE;
++		switch (DACSenseRV620_MethB(Output, RV620_REG_DACB_OFFSET, TRUE) & 0x7) {
++		case 0x7:
++		    return RHD_SENSED_TV_COMPONENT;
++		case 0x6:
++		    return RHD_SENSED_TV_SVIDEO;
++		case 0x1:
++		    return RHD_SENSED_TV_COMPOSITE;
++		default:
++		    return RHD_SENSED_NONE;
++		}
+ 	}
+     default:
+ 	xf86DrvMsg(Output->scrnIndex, X_WARNING,
+diff --git a/src/rhd_dig.c b/src/rhd_dig.c
+index 782c8db..3458d4b 100644
+--- a/src/rhd_dig.c
++++ b/src/rhd_dig.c
+@@ -1098,7 +1098,8 @@ EncoderSet(struct rhdOutput *Output, struct rhdCrtc *Crtc, DisplayModePtr Mode)
+ 
+     rhdPrintDigDebug(rhdPtr,__func__);
+ 
+-    RHDRegMask(Output, off + RV620_DIG1_CNTL, Output->Crtc->Id,
++    RHDRegMask(Output, off + RV620_DIG1_CNTL,
++	       (Output->Crtc->Id ?  RV62_DIG_SOURCE_SELECT_FMT2 : RV62_DIG_SOURCE_SELECT_FMT1),
+ 	       RV62_DIG_SOURCE_SELECT);
+ 
+     if (Output->Id == RHD_OUTPUT_UNIPHYA) {
+@@ -1146,7 +1147,7 @@ EncoderSet(struct rhdOutput *Output, struct rhdCrtc *Crtc, DisplayModePtr Mode)
+ 	       (Private->EncoderMode & 0x7) << 8
+ 	       | RV62_DIG_START
+ 	       | (Private->RunDualLink ? RV62_DIG_DUAL_LINK_ENABLE : 0)
+-	       | Output->Crtc->Id,
++	       | (Output->Crtc->Id ? RV62_DIG_SOURCE_SELECT_FMT2 : RV62_DIG_SOURCE_SELECT_FMT1),
+ 	       RV62_DIG_MODE
+ 	       | RV62_DIG_START
+ 	       | RV62_DIG_DUAL_LINK_ENABLE
+diff --git a/src/rhd_dri.c b/src/rhd_dri.c
+index 27d328b..422fc13 100644
+--- a/src/rhd_dri.c
++++ b/src/rhd_dri.c
+@@ -978,7 +978,7 @@ static void RHDDRIIrqInit(RHDPtr rhdPtr, ScreenPtr pScreen)
+ 		       "[drm] falling back to irq-free operation\n");
+ 	    rhdDRI->irq = 0;
+ 	} else {
+-/* FIXME 
++/* FIXME
+ 	    rhdDRI->ModeReg->gen_int_cntl = RHDRegRead (rhdDRI,  RADEON_GEN_INT_CNTL ); */
+ 	}
+     }
+@@ -1771,7 +1771,7 @@ static void RHDDRITransitionSingleToMulti3d(ScreenPtr pScreen)
+ 
+ static void RHDDRITransitionMultiToSingle3d(ScreenPtr pScreen)
+ {
+-    /* Let the remaining 3d app start page flipping again 
++    /* Let the remaining 3d app start page flipping again
+      * RHDEnablePageFlip(pScreen); */
+ }
+ 
+@@ -1993,3 +1993,35 @@ RHDDRIGetIntGARTLocation(ScrnInfoPtr pScrn)
+ 
+     return rhdDRI->gartLocation + rhdDRI->bufStart;
+ }
++
++/*
++ *
++ */
++Bool
++RHDDRIGetHWParam(ScrnInfoPtr pScrn, enum RHDDRIHWParam param, union rhdValue *val)
++{
++    RHDPtr rhdPtr = RHDPTR(pScrn);
++    struct rhdDri *rhdDRI = rhdPtr->dri;
++    struct drm_radeon_getparam gp;
++    char *name;
++
++    if (!rhdDRI || rhdDRI->drmFD == 0)
++	return FALSE;
++
++    switch (param) {
++    case RHD_NUM_GB_PIPES:
++	gp.param = RADEON_PARAM_NUM_GB_PIPES;
++	gp.value = &(val->Int);
++	name = "number of pipes";
++	break;
++    }
++    if (drmCommandWriteRead(rhdDRI->drmFD, DRM_RADEON_GETPARAM, &gp,
++			    sizeof(gp)) < 0) {
++	xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
++		   "Failed to determine %s from DRM.\n",name);
++	return FALSE;
++    }
++    xf86DrvMsgVerb(pScrn->scrnIndex, 4, X_INFO,
++		   "Got %s param from DRM.\n",name);
++    return TRUE;
++}
+diff --git a/src/rhd_dri.h b/src/rhd_dri.h
+index ac860ef..29c00ae 100644
+--- a/src/rhd_dri.h
++++ b/src/rhd_dri.h
+@@ -25,6 +25,10 @@
+ #ifndef _RHD_DRI_
+ #define _RHD_DRI_
+ 
++enum RHDDRIHWParam {
++  RHD_NUM_GB_PIPES
++};
++
+ extern Bool RHDDRIPreInit(ScrnInfoPtr pScrn);
+ extern Bool RHDDRIAllocateBuffers(ScrnInfoPtr pScrn);
+ extern Bool RHDDRIScreenInit(ScreenPtr pScreen);
+@@ -34,8 +38,9 @@ extern Bool RHDDRIFinishScreenInit(ScreenPtr pScreen);
+ extern void RHDDRIEnterVT(ScreenPtr pScreen);
+ extern void RHDDRILeaveVT(ScreenPtr pScreen);
+ extern Bool RHDDRIScreenInit(ScreenPtr pScreen);
++extern void RHDDRIContextClaim(ScrnInfoPtr pScrn);
++extern Bool RHDDRIGetHWParam(ScrnInfoPtr pScrn, enum RHDDRIHWParam param, union rhdValue *val);
++
+ 
+-/* Claim the 3D context */
+-void RHDDRIContextClaim(ScrnInfoPtr pScrn);
+ 
+ #endif
 diff --git a/src/rhd_driver.c b/src/rhd_driver.c
-index e502c5f..f08c097 100644
+index e502c5f..2d7f803 100644
 --- a/src/rhd_driver.c
 +++ b/src/rhd_driver.c
-@@ -3061,7 +3061,8 @@ rhdGetCardType(RHDPtr rhdPtr)
+@@ -1886,8 +1886,9 @@ rhdGetVideoRamSize(RHDPtr rhdPtr)
+     if (RamSize > BARSize) {
+ 	xf86DrvMsg(rhdPtr->scrnIndex, X_INFO, "The detected amount of videoram"
+ 		   " exceeds the PCI BAR aperture.\n");
+-	xf86DrvMsg(rhdPtr->scrnIndex, X_INFO, "Using only %dkB of the total "
+-		   "%dkB.\n", (int) BARSize, (int) RamSize);
++	xf86DrvMsg(rhdPtr->scrnIndex, X_INFO, "Mapping only %dkB of the total "
++		   "%dkB, remaining memory is reserved for GPU.\n",
++		   (int) BARSize, (int) RamSize);
+ 	return BARSize;
+     } else
+ 	return RamSize;
+@@ -3061,7 +3062,8 @@ rhdGetCardType(RHDPtr rhdPtr)
  {
      uint32_t cmd_stat;
  
@@ -53,7 +1148,7 @@ index e502c5f..f08c097 100644
  
  #ifdef XSERVER_LIBPCIACCESS
 diff --git a/src/rhd_i2c.c b/src/rhd_i2c.c
-index d5b698a..b59f3d4 100644
+index d5b698a..0d3553b 100644
 --- a/src/rhd_i2c.c
 +++ b/src/rhd_i2c.c
 @@ -39,6 +39,7 @@
@@ -134,7 +1229,20 @@ index d5b698a..b59f3d4 100644
  }
  
  static Bool
-@@ -1373,6 +1371,21 @@ rhdInitI2C(int scrnIndex)
+@@ -1367,12 +1365,34 @@ rhdInitI2C(int scrnIndex)
+ 	}
+ 	I2CList[i] = I2CPtr;
+     }
++    /*
++     * This magic is needed to pry loose the scaler which appears to affect hardware controlled
++     * I2C readout ?!? after the radeon driver has erronously tried to restore this multi tap data
++     * register. I put this here for now before I find a better place for it.
++     */
++    RHDRegRead(rhdPtr, 0x657C);
++
+     return I2CList;
+  error:
+     rhdTearDownI2C(I2CList);
      return NULL;
  }
  
@@ -156,7 +1264,7 @@ index d5b698a..b59f3d4 100644
  RHDI2CResult
  rhdI2CProbeAddress(int scrnIndex, I2CBusPtr I2CBusPtr, CARD8 slave)
  {
-@@ -1453,6 +1466,11 @@ RHDI2CFunc(int scrnIndex, I2CBusPtr *I2CList, RHDi2cFunc func,
+@@ -1453,6 +1473,11 @@ RHDI2CFunc(int scrnIndex, I2CBusPtr *I2CList, RHDi2cFunc func,
  	    rhdTearDownI2C(I2CList);
  	return RHD_I2C_SUCCESS;
      }
@@ -182,11 +1290,432 @@ index cfc2747..3df8d43 100644
  } RHDi2cFunc;
  
  typedef union RHDI2CDataArg
+diff --git a/src/rhd_id.c b/src/rhd_id.c
+index 6dfaa29..5f436d9 100644
+--- a/src/rhd_id.c
++++ b/src/rhd_id.c
+@@ -768,6 +768,7 @@ rhdCards[] =
+     /* 0x7180 : RV516 : Radeon X1300/X1550 */
+     /* 0x7181 : RV516 : Radeon X1600 */
+     /* 0x7183 : RV516 : Radeon X1300/X1550 */
++    { 0x7183, 0x1002, 0x0D02, "ATI Radeon X1300", RHD_CARD_FLAG_DMS59, ID_CONNECTORINFO_EMPTY, DEVINFO_EMPTY },
+     { 0x7183, 0x1028, 0x0D02, "Dell ATI Radeon X1300", RHD_CARD_FLAG_DMS59, DVI_AA00_DVI_BB11, DEVINFO_EMPTY },
+     { 0x7183, 0x1092, 0x3000, "RX155PCI", RHD_CARD_FLAG_NONE, VGA_A0_TVB_DVI_BB12, DEVINFO_EMPTY },
+     /* 0x7186 : M64 : Mobility Radeon X1450 */
+diff --git a/src/rhd_mc.c b/src/rhd_mc.c
+index def871b..8989b28 100644
+--- a/src/rhd_mc.c
++++ b/src/rhd_mc.c
+@@ -79,7 +79,7 @@ struct rhdMC {
+ 
+     void (*Save)(struct rhdMC *MC);
+     void (*Restore)(struct rhdMC *MC);
+-    Bool (*Idle)(struct rhdMC *MC);
++    CARD32 (*Idle)(struct rhdMC *MC);
+     CARD64 (*GetFBLocation)(struct rhdMC *MC, CARD32 *size);
+     void (*SetupFBLocation)(struct rhdMC *MC, CARD64 Address, CARD32 Size);
+     void (*TuneAccessForDisplay)(struct rhdMC *MC, int crtc,
+@@ -144,12 +144,14 @@ RV515MCRestore(struct rhdMC *MC)
+ /*
+  *
+  */
+-static Bool
+-RV515MCWaitIdle(struct rhdMC *MC)
++static CARD32
++RV515MCStateIdle(struct rhdMC *MC)
+ {
+-    if (RHDReadMC(MC, MC_IND_ALL | RV515_MC_STATUS) & RV515_MC_IDLE)
+-	return TRUE;
+-    return FALSE;
++    CARD32 val;
++
++    if ((val = RHDReadMC(MC, MC_IND_ALL | RV515_MC_STATUS)) & RV515_MC_IDLE)
++	return 0;
++    return val;
+ }
+ 
+ /*
+@@ -217,12 +219,14 @@ R500MCRestore(struct rhdMC *MC)
+ /*
+  *
+  */
+-static Bool
+-R500MCWaitIdle(struct rhdMC *MC)
++static CARD32
++R500MCStateIdle(struct rhdMC *MC)
+ {
+-    if (RHDReadMC(MC, MC_IND_ALL | R5XX_MC_STATUS) & R5XX_MC_IDLE)
+-	return TRUE;
+-    return FALSE;
++    CARD32 val;
++
++    if ((val = RHDReadMC(MC, MC_IND_ALL | R5XX_MC_STATUS)) & R5XX_MC_IDLE)
++	return 0;
++    return val;
+ }
+ 
+ /*
+@@ -268,12 +272,14 @@ RS600MCRestore(struct rhdMC *MC)
+ /*
+  *
+  */
+-static Bool
+-RS600MCWaitIdle(struct rhdMC *MC)
++static CARD32
++RS600MCStateIdle(struct rhdMC *MC)
+ {
+-    if (RHDReadMC(MC, RS60_MC_SYSTEM_STATUS) & RS6X_MC_SEQUENCER_IDLE)
+-	return TRUE;
+-    return FALSE;
++    CARD32 val;
++
++    if ((val = RHDReadMC(MC, RS60_MC_SYSTEM_STATUS)) & RS6X_MC_SEQUENCER_IDLE)
++	return 0;
++    return val;
+ }
+ 
+ /*
+@@ -320,12 +326,15 @@ RS690MCRestore(struct rhdMC *MC)
+ /*
+  *
+  */
+-static Bool
+-RS690MCWaitIdle(struct rhdMC *MC)
++static CARD32
++RS690MCStateIdle(struct rhdMC *MC)
+ {
+-    if (RHDReadMC(MC, RS69_MC_SYSTEM_STATUS) & RS6X_MC_SYSTEM_IDLE)
+-	return TRUE;
+-    return FALSE;
++    CARD32 val;
++
++    if ((val = RHDReadMC(MC, RS69_MC_SYSTEM_STATUS)) & RS6X_MC_SYSTEM_IDLE)
++	return 0;
++
++    return val;
+ }
+ 
+ /*
+@@ -392,14 +401,16 @@ R600MCRestore(struct rhdMC *MC)
+ /*
+  *
+  */
+-static Bool
+-R600MCWaitIdle(struct rhdMC *MC)
++static CARD32
++R600MCStateIdle(struct rhdMC *MC)
+ {
+-    if (!(RHDRegRead(MC, SRBM_STATUS) &
++    CARD32 val;
++
++    if (!((val = RHDRegRead(MC, SRBM_STATUS)) &
+             (VMC_BUSY_bit | MCB_BUSY_bit |
+              MCDZ_BUSY_bit | MCDY_BUSY_bit | MCDX_BUSY_bit | MCDW_BUSY_bit)))
+-	return TRUE;
+-    return FALSE;
++	return 0;
++    return val;
+ }
+ 
+ /*
+@@ -450,11 +461,13 @@ RS780MCRestore(struct rhdMC *MC)
+  *
+  */
+ static Bool
+-RS780MCWaitIdle(struct rhdMC *MC)
++RS780MCStateIdle(struct rhdMC *MC)
+ {
+-    if (RHDReadMC(MC, RS78_MC_SYSTEM_STATUS) & RS78_MC_SEQUENCER_IDLE)
+-	return TRUE;
+-    return FALSE;
++    CARD32 val;
++
++    if ((val = RHDReadMC(MC, RS78_MC_SYSTEM_STATUS)) & RS78_MC_SEQUENCER_IDLE)
++	return 0;
++    return val;
+ }
+ 
+ /*
+@@ -566,7 +579,7 @@ RHDMCInit(RHDPtr rhdPtr)
+ 	    MC->Restore = RV515MCRestore;
+ 	    MC->SetupFBLocation = RV515MCSetupFBLocation;
+ 	    MC->GetFBLocation = RV515MCGetFBLocation;
+-	    MC->Idle = RV515MCWaitIdle;
++	    MC->Idle = RV515MCStateIdle;
+ 	    MC->TuneAccessForDisplay = RV515MCTuneMCAccessForDisplay;
+ 	    break;
+ 	default:
+@@ -574,27 +587,27 @@ RHDMCInit(RHDPtr rhdPtr)
+ 	    MC->Restore = R500MCRestore;
+ 	    MC->SetupFBLocation = R500MCSetupFBLocation;
+ 	    MC->GetFBLocation = R500MCGetFBLocation;
+-	    MC->Idle = R500MCWaitIdle;
++	    MC->Idle = R500MCStateIdle;
+ 	    break;
+ 	}
+     } else if (rhdPtr->ChipSet == RHD_RS600) {
+ 	MC->Save = RS600MCSave;
+ 	MC->Restore = RS600MCRestore;
+ 	MC->SetupFBLocation = RS600MCSetupFBLocation;
+-	MC->Idle = RS600MCWaitIdle;
++	MC->Idle = RS600MCStateIdle;
+ 	MC->GetFBLocation = RS600MCGetFBLocation;
+     } else if (rhdPtr->ChipSet < RHD_R600) {
+ 	MC->Save = RS690MCSave;
+ 	MC->Restore = RS690MCRestore;
+ 	MC->SetupFBLocation = RS690MCSetupFBLocation;
+-	MC->Idle = RS690MCWaitIdle;
++	MC->Idle = RS690MCStateIdle;
+ 	MC->GetFBLocation = RS690MCGetFBLocation;
+ 	MC->TuneAccessForDisplay = RS690MCTuneMCAccessForDisplay;
+     } else if (rhdPtr->ChipSet <= RHD_RS880) {
+ 	MC->Save = R600MCSave;
+ 	MC->Restore = R600MCRestore;
+ 	MC->SetupFBLocation = R600MCSetupFBLocation;
+-	MC->Idle = R600MCWaitIdle;
++	MC->Idle = R600MCStateIdle;
+ 	MC->GetFBLocation = R600MCGetFBLocation;
+     }
+ #ifdef NOTYET
+@@ -602,7 +615,7 @@ RHDMCInit(RHDPtr rhdPtr)
+ 	MC->Save = RS780MCSave;
+ 	MC->Restore = RS780MCRestore;
+ 	MC->SetupFBLocation = RS780MCSetupFBLocation;
+-	MC->Idle = RS780MCWaitIdle;
++	MC->Idle = RS780MCStateIdle;
+ 	MC->GetFBLocation = RS780MCGetFBLocation;
+     }
+ #endif /* NOTYET */
+@@ -610,7 +623,7 @@ RHDMCInit(RHDPtr rhdPtr)
+ 	MC->Save = R700MCSave;
+ 	MC->Restore = R700MCRestore;
+ 	MC->SetupFBLocation = R700MCSetupFBLocation;
+-	MC->Idle = R600MCWaitIdle;
++	MC->Idle = R600MCStateIdle;
+ 	MC->GetFBLocation = R700MCGetFBLocation;
+     } else {
+ 	xf86DrvMsg(rhdPtr->scrnIndex, X_ERROR, "I don't know anything about MC on this chipset\n");
+@@ -666,6 +679,7 @@ void
+ RHDMCRestore(RHDPtr rhdPtr)
+ {
+     struct rhdMC *MC = rhdPtr->MC;
++    int idle;
+ 
+     ASSERT(MC);
+     RHD_UNSETDEBUGFLAG(rhdPtr, MC_SETUP);
+@@ -678,11 +692,11 @@ RHDMCRestore(RHDPtr rhdPtr)
+ 	return;
+     }
+ 
+-    if (MC->Idle(MC))
++    if ((idle = MC->Idle(MC)) == 0)
+ 	MC->Restore(MC);
+     else
+ 	xf86DrvMsg(rhdPtr->scrnIndex, X_ERROR,
+-		   "%s: MC is still not idle!!!\n", __func__);
++		   "%s: MC is still not idle: 0x%x !!!\n", __func__,idle);
+ }
+ 
+ /*
+@@ -692,18 +706,19 @@ Bool
+ RHDMCIdleWait(RHDPtr rhdPtr, CARD32 count)
+ {
+     struct rhdMC *MC = rhdPtr->MC;
++    CARD32 idle;
+ 
+     RHDFUNC(rhdPtr);
+ 
+     ASSERT(MC);
+ 
+     do {
+-	if (MC->Idle(MC))
++	if ((idle = MC->Idle(MC)) == 0)
+ 	    return TRUE;
+ 	usleep(1000);
+     } while (count--);
+ 
+-    RHDDebug(rhdPtr->scrnIndex, "%s: MC not idle\n",__func__);
++    RHDDebug(rhdPtr->scrnIndex, "%s: MC not idle: 0x%x\n",__func__,idle);
+ 
+     return FALSE;
+ }
+@@ -733,18 +748,13 @@ RHDMCSetupFBLocation(RHDPtr rhdPtr, CARD64 Address, CARD32 Size)
+     struct rhdMC *MC = rhdPtr->MC;
+     CARD64 OldAddress;
+     CARD32 OldSize;
++    CARD32 idle;
+ 
+     ASSERT(MC);
+     RHD_SETDEBUGFLAG(rhdPtr, MC_SETUP);
+ 
+     RHDFUNC(rhdPtr);
+ 
+-    if (!MC->Idle(MC)) {
+-	xf86DrvMsg(rhdPtr->scrnIndex, X_ERROR,
+-		   "%s: Cannot setup MC: not idle!!!\n", __func__);
+-	return FALSE;
+-    }
+-
+     OldAddress = MC->GetFBLocation(MC, &OldSize);
+     if (OldAddress == Address && OldSize == Size)
+ 	return TRUE;
+@@ -754,6 +764,12 @@ RHDMCSetupFBLocation(RHDPtr rhdPtr, CARD64 Address, CARD32 Size)
+ 	xf86DrvMsg(rhdPtr->scrnIndex, X_WARNING, "%s: Board claims to use a "
+ 		   "higher than 32bit address for its FB\n", __func__);
+ 
++    if ((idle = MC->Idle(MC))) {
++	xf86DrvMsg(rhdPtr->scrnIndex, X_ERROR,
++		   "%s: Cannot setup MC: not idle %x!!!\n", __func__,idle);
++	return FALSE;
++    }
++
+     RHDDebug(rhdPtr->scrnIndex,
+ 	     "Setting MC from 0x%08X to 0x%08X [Size 0x%08X]\n",
+ 	     OldAddress, rhdPtr->FbIntAddress, Size);
+diff --git a/src/rhd_modes.c b/src/rhd_modes.c
+index 192f3fd..e7b4c7e 100644
+--- a/src/rhd_modes.c
++++ b/src/rhd_modes.c
+@@ -378,7 +378,7 @@ RHDPrintModeline(DisplayModePtr mode)
+     if (mode->Flags & V_CLKDIV2) add(&flags, "vclk/2");
+ #endif
+     xf86Msg(X_NONE, "Modeline \"%s\"  %6.2f  %i %i %i %i  %i %i %i %i%s\n",
+-	    mode->name, mode->Clock/1000.,
++	    mode->name, ((float)mode->Clock)/1000.,
+ 	    mode->HDisplay, mode->HSyncStart, mode->HSyncEnd, mode->HTotal,
+ 	    mode->VDisplay, mode->VSyncStart, mode->VSyncEnd, mode->VTotal,
+ 	    flags);
+@@ -1844,3 +1844,40 @@ RHDSynthModes(int scrnIndex, DisplayModePtr Mode)
+ 	RHDModesAdd(Mode, Tmp);
+     }
+ }
++
++/*
++ * This function may be used to sanitize bogus PANEL modes reported by AtomBIOS.
++ */
++void
++RHDSanitizeModes(int scrnIndex, DisplayModePtr Modes, char *ReportedBy)
++{
++    while (Modes) {
++	Bool sanitized = FALSE;
++
++	/* do a little sanitization as some BIOSes seem to report bogus modes */
++	if (Modes->HTotal <= Modes->HSyncEnd) {
++	    Modes->HTotal =  Modes->CrtcHTotal = Modes->HSyncEnd + 1;
++	    sanitized = TRUE;
++	}
++	if (Modes->VTotal <= Modes->VSyncEnd) {
++	    Modes->VTotal =  Modes->CrtcVTotal = Modes->VSyncEnd + 1;
++	    sanitized = TRUE;
++	}
++	if (Modes->CrtcHBlankEnd <= Modes->CrtcHSyncEnd) {
++	    Modes->CrtcHBlankEnd  = Modes->CrtcHSyncEnd + 1;
++	    sanitized = TRUE;
++	}
++	if (Modes->CrtcVBlankEnd <= Modes->CrtcVSyncEnd) {
++	    Modes->CrtcVBlankEnd =  Modes->CrtcVSyncEnd + 1;
++	    sanitized = TRUE;
++	}
++	if (sanitized) {
++	    xf86DrvMsg(scrnIndex, X_WARNING, "Mode %s reported by %s sanitized!\n",
++		       Modes->name ? Modes->name : "unnamed",ReportedBy);
++	    Modes->HSync = ((float) Modes->Clock) / ((float)Modes->HTotal);
++	    Modes->VRefresh = (1000.0 * ((float) Modes->Clock))
++		/ ((float)(((float)Modes->HTotal) * ((float)Modes->VTotal)));
++	}
++	Modes = Modes->next;
++    }
++}
+diff --git a/src/rhd_modes.h b/src/rhd_modes.h
+index be8aaa4..18a288f 100644
+--- a/src/rhd_modes.h
++++ b/src/rhd_modes.h
+@@ -81,5 +81,6 @@ int RHDRRModeFixup(ScrnInfoPtr pScrn, DisplayModePtr Mode, struct rhdCrtc *Crtc,
+ int RHDValidateScaledToMode(struct rhdCrtc *Crtc, DisplayModePtr Mode);
+ int RHDRRValidateScaledToMode(struct rhdOutput *Output, DisplayModePtr Mode);
+ void RHDSynthModes(int scrnIndex, DisplayModePtr Mode);
++void RHDSanitizeModes(int scrnIndex, DisplayModePtr Modes, char *ReportedBy);
+ 
+ #endif /* _RHD_MODES_H */
+diff --git a/src/rhd_monitor.c b/src/rhd_monitor.c
+index 03448e8..74455ba 100644
+--- a/src/rhd_monitor.c
++++ b/src/rhd_monitor.c
+@@ -57,7 +57,7 @@ RHDMonitorPrint(struct rhdMonitor *Monitor)
+ {
+     int i;
+ 
+-    xf86Msg(X_NONE, "    Bandwidth: %dMHz\n", Monitor->Bandwidth / 1000);
++    xf86Msg(X_NONE, "    Bandwidth: %6.2fMHz\n", ((float)Monitor->Bandwidth) / 1000.0);
+     xf86Msg(X_NONE, "    Horizontal timing:\n");
+     for (i = 0; i < Monitor->numHSync; i++)
+ 	xf86Msg(X_NONE, "        %3.1f - %3.1fkHz\n",  Monitor->HSync[i].lo,
+@@ -355,6 +355,7 @@ rhdMonitorPanel(struct rhdConnector *Connector)
+     if (Mode) {
+ 	Monitor->Name = xstrdup("LVDS Panel");
+ 	Monitor->Modes = RHDModesAdd(Monitor->Modes, Mode);
++	RHDSanitizeModes(Monitor->scrnIndex, Monitor->Modes,"AtomBIOS Panel Mode");
+ 	Monitor->NativeMode = Mode;
+ 	Monitor->numHSync = 1;
+ 	Monitor->HSync[0].lo = Mode->HSync;
+@@ -374,6 +375,7 @@ rhdMonitorPanel(struct rhdConnector *Connector)
+ 	}
+     } else if (EDID) {
+ 	RHDMonitorEDIDSet(Monitor, EDID);
++	RHDSanitizeModes(Monitor->scrnIndex, Monitor->Modes, "AtomBIOS Panel EDID block");
+ 	rhdPanelEDIDModesFilter(Monitor);
+     } else {
+ 	xf86DrvMsg(Connector->scrnIndex, X_ERROR,
+@@ -382,21 +384,6 @@ rhdMonitorPanel(struct rhdConnector *Connector)
+ 	return NULL;
+     }
+ 
+-    /* Fixup some broken modes - if we can do so, otherwise we might have no
+-     * chance of driving the panel at all */
+-    if (Monitor->NativeMode) {
+-
+-	/* Some Panels have H or VSyncEnd values greater than H or VTotal. */
+-	if (Monitor->NativeMode->HTotal <= Monitor->NativeMode->HSyncEnd)
+-	    Monitor->NativeMode->HTotal =  Monitor->NativeMode->CrtcHTotal = Monitor->NativeMode->HSyncEnd + 1;
+-	if (Monitor->NativeMode->VTotal <= Monitor->NativeMode->VSyncEnd)
+-	    Monitor->NativeMode->VTotal =  Monitor->NativeMode->CrtcVTotal = Monitor->NativeMode->VSyncEnd + 1;
+-	if (Monitor->NativeMode->CrtcHBlankEnd <= Monitor->NativeMode->CrtcHSyncEnd)
+-	    Monitor->NativeMode->CrtcHBlankEnd  = Monitor->NativeMode->CrtcHSyncEnd + 1;
+-	if (Monitor->NativeMode->CrtcVBlankEnd <= Monitor->NativeMode->CrtcVSyncEnd)
+-	    Monitor->NativeMode->CrtcVBlankEnd =  Monitor->NativeMode->CrtcVSyncEnd + 1;
+-    }
+-
+     /* panel should be driven at native resolution only. */
+     Monitor->UseFixedModes = TRUE;
+     Monitor->ReducedAllowed = TRUE;
 diff --git a/src/rhd_pm.c b/src/rhd_pm.c
-index 26433aa..75a9bf8 100644
+index 26433aa..d126518 100644
 --- a/src/rhd_pm.c
 +++ b/src/rhd_pm.c
-@@ -35,6 +35,7 @@
+@@ -1,4 +1,9 @@
+ /*
++ * Copyright 2009  Matthias Hopf <mhopf@novell.com>
++ * Copyright 2009  Yang Zhao     <yang@yangman.ca>
++ * Copyright 2009  Egbert Eich   <eich@novell.com>
++ * Copyright 2009  Luc Verhaegen <libv@exsuse.de>
++ *
+  * Permission is hereby granted, free of charge, to any person obtaining
+  * a copy of this software and associated documentation files (the
+  * "Software"), to deal in the Software without restriction, including
+@@ -21,12 +26,6 @@
+  * DEALINGS IN THE SOFTWARE.
+  */
+ 
+-/*
+- * Authors:
+- *   Yang Zhao <yang@yangman.ca>
+- *   Matthias Hopf <mhopf@suse.de>
+- */
+-
+ #ifdef HAVE_CONFIG_H
+ #include "config.h"
+ #endif
+@@ -35,6 +34,7 @@
  
  #include "rhd.h"
  #include "rhd_pm.h"
@@ -194,6 +1723,62 @@ index 26433aa..75a9bf8 100644
  
  #include "rhd_atombios.h"
  
+@@ -109,6 +109,23 @@ static void rhdPmValidateSetting (struct rhdPm *Pm, struct rhdPowerState *settin
+     /* Only set to lower Voltages than compare if 0 */
+ }
+ 
++/* Some AtomBIOSes provide broken current clocks (esp. memory) */
++static void rhdPmValidateClearSetting (struct rhdPm *Pm, struct rhdPowerState *setting)
++{
++    if (setting->EngineClock < COMPARE_MIN_ENGINE_CLOCK)
++	setting->EngineClock = 0;
++    if (setting->EngineClock > COMPARE_MAX_ENGINE_CLOCK)
++	setting->EngineClock = 0;
++    if (setting->MemoryClock < COMPARE_MIN_MEMORY_CLOCK)
++	setting->MemoryClock = 0;
++    if (setting->MemoryClock > COMPARE_MAX_MEMORY_CLOCK)
++	setting->MemoryClock = 0;
++    if (setting->VDDCVoltage < COMPARE_MIN_VOLTAGE)
++	setting->VDDCVoltage = 0;
++    if (setting->VDDCVoltage > COMPARE_MAX_VOLTAGE)
++	setting->VDDCVoltage = 0;
++}
++
+ static void rhdPmValidateMinMax (struct rhdPm *Pm)
+ {
+     if (Pm->Maximum.EngineClock < Pm->Default.EngineClock)
+@@ -142,6 +159,7 @@ static void rhdPmValidateMinMax (struct rhdPm *Pm)
+     if (Pm->NumKnown) {
+ 	int i;
+ 	for (i = 0; i < Pm->NumKnown; i++) {
++	    rhdPmValidateClearSetting (Pm, &Pm->Known[i]);
+ 	    if (Pm->Maximum.EngineClock < Pm->Known[i].EngineClock)
+ 		Pm->Maximum.EngineClock = Pm->Known[i].EngineClock;
+ 	    if (Pm->Maximum.MemoryClock < Pm->Known[i].MemoryClock)
+@@ -161,23 +179,6 @@ static void rhdPmValidateMinMax (struct rhdPm *Pm)
+ 	Pm->Minimum.VDDCVoltage = Pm->Maximum.VDDCVoltage = Pm->Default.VDDCVoltage = 0;
+ }
+ 
+-/* Some AtomBIOSes provide broken current clocks (esp. memory) */
+-static void rhdPmValidateClearSetting (struct rhdPm *Pm, struct rhdPowerState *setting)
+-{
+-    if (setting->EngineClock < COMPARE_MIN_ENGINE_CLOCK)
+-	setting->EngineClock = 0;
+-    if (setting->EngineClock > COMPARE_MAX_ENGINE_CLOCK)
+-	setting->EngineClock = 0;
+-    if (setting->MemoryClock < COMPARE_MIN_MEMORY_CLOCK)
+-	setting->MemoryClock = 0;
+-    if (setting->MemoryClock > COMPARE_MAX_MEMORY_CLOCK)
+-	setting->MemoryClock = 0;
+-    if (setting->VDDCVoltage < COMPARE_MIN_VOLTAGE)
+-	setting->VDDCVoltage = 0;
+-    if (setting->VDDCVoltage > COMPARE_MAX_VOLTAGE)
+-	setting->VDDCVoltage = 0;
+-}
+-
+ /* Have: a list of possible power settings, eventual minimum and maximum settings.
+  * Want: all rhdPowerState_e settings */
+ static void rhdPmSelectSettings (RHDPtr rhdPtr)
 @@ -274,9 +275,12 @@ rhdPmSetRawState (RHDPtr rhdPtr, struct rhdPowerState *state)
      if (state->EngineClock && state->EngineClock != rhdPtr->Pm->Current.EngineClock) {
  	data.clockValue = state->EngineClock;
@@ -209,3 +1794,228 @@ index 26433aa..75a9bf8 100644
  	    ret = FALSE;
      }
  #if 0	/* don't do for the moment */
+diff --git a/src/rhd_randr.c b/src/rhd_randr.c
+index 956119b..36d783b 100644
+--- a/src/rhd_randr.c
++++ b/src/rhd_randr.c
+@@ -1277,11 +1277,13 @@ rhdRROutputGetModes(xf86OutputPtr output)
+ 
+     if (RHDScalePolicy(rout->Connector->Monitor, rout->Connector)) {
+ 	if (o->Connector->Monitor) {
++	    int Status;
+ 	    rout->ScaledToMode = RHDModeCopy(o->Connector->Monitor->NativeMode);
+ 	    xf86DrvMsg(rhdPtr->scrnIndex, X_INFO, "Found native mode: ");
+ 	    RHDPrintModeline(rout->ScaledToMode);
+-	    if (RHDRRValidateScaledToMode(rout->Output, rout->ScaledToMode) != MODE_OK) {
+-		xf86DrvMsg(rhdPtr->scrnIndex, X_ERROR, "Native mode doesn't validate: deleting\n");
++	    if ((Status = RHDRRValidateScaledToMode(rout->Output, rout->ScaledToMode)) != MODE_OK) {
++		xf86DrvMsg(rhdPtr->scrnIndex, X_ERROR, "Native mode doesn't validate [%s]: deleting\n",
++			   RHDModeStatusToString(Status));
+ 		xfree(rout->ScaledToMode->name);
+ 		xfree(rout->ScaledToMode);
+ 		rout->ScaledToMode = NULL;
+diff --git a/src/rhd_regs.h b/src/rhd_regs.h
+index 0e75d06..a233153 100644
+--- a/src/rhd_regs.h
++++ b/src/rhd_regs.h
+@@ -407,6 +407,10 @@ enum {
+     DC_GPIO_HPD_Y                  = 0x7E9C
+ };
+ 
++enum DXSCL_UPDATE_bits {
++    DXSCL_UPDATE_LOCK = (1 << 16)
++};
++
+ enum CONFIG_CNTL_BITS {
+     RS69_CFG_ATI_REV_ID_SHIFT      = 8,
+     RS69_CFG_ATI_REV_ID_MASK       = 0xF << RS69_CFG_ATI_REV_ID_SHIFT
+@@ -620,7 +624,9 @@ enum RV620_DIG_CNTL_BITS {
+     RV62_DIG_START			   = (0x1 << 6),
+     RV62_DIG_MODE			= (0x7 << 8),
+     RV62_DIG_STEREOSYNC_SELECT   = (1 << 2),
+-    RV62_DIG_SOURCE_SELECT       = (1 << 0)
++    RV62_DIG_SOURCE_SELECT       = (1 << 0),
++    RV62_DIG_SOURCE_SELECT_FMT1  = (0 << 0),
++    RV62_DIG_SOURCE_SELECT_FMT2  = (1 << 0)
+ };
+ 
+ enum RV620_DIG_LVDS_DATA_CNTL_BITS {
+diff --git a/src/rhd_video.c b/src/rhd_video.c
+index 383f926..76ccb39 100644
+--- a/src/rhd_video.c
++++ b/src/rhd_video.c
+@@ -347,6 +347,8 @@ R5xxXvCopyPackedDMA(RHDPtr rhdPtr, CARD8 *src, CARD8 *dst,
+     CARD16 y = 0, dwords;
+     CARD16 hpass = ((CS->Size - 10) * 4) / srcPitch;
+ 
++    R5xxEngineWaitIdle3D(rhdPtr->CS);
++
+     while (h) {
+ 	if (h < hpass)
+ 	    hpass = h;
+@@ -478,6 +480,8 @@ R5xxXvCopyPlanarDMA(RHDPtr rhdPtr, CARD8 *src1, CARD8 *src2, CARD8 *src3,
+ 	R5XX_GMC_CLR_CMP_CNTL_DIS | R5XX_GMC_WR_MSK_DIS;
+     CARD16 y = 0, dwords;
+ 
++    R5xxEngineWaitIdle3D(rhdPtr->CS);
++
+     while (h) {
+ 	if (h < hpass)
+ 	    hpass = h;
+diff --git a/utils/conntest/rhd_conntest.c b/utils/conntest/rhd_conntest.c
+index f1db552..1c095ed 100644
+--- a/utils/conntest/rhd_conntest.c
++++ b/utils/conntest/rhd_conntest.c
+@@ -129,7 +129,7 @@ enum {
+     RV620_DACA_CONTROL2             = 0x7058,
+     RV620_DACA_COMPARATOR_ENABLE    = 0x705C,
+ 
+-    RV620_DACA_CONTROL1             = 0x7ef4,
++    RV620_DACA_MACRO_CNTL           = 0x7ef4,
+ 
+     /* DAC B */
+     DACB_ENABLE                    = 0x7A00,
+@@ -845,14 +845,103 @@ RS690DACLoadDetect(void *map, Bool tv, int dac)
+  *
+  */
+ static dacOutput
+-RV620DACLoadDetect(void *map, Bool tv, int dac)
++RV620DACLoadDetect_MethB(void *map, Bool tv, int dac)
++{
++    CARD32 CompEnable, Control1, Control2, DetectControl, Enable;
++    CARD8 ret;
++    unsigned int offset = 0;
++
++    if (dac) offset = 0x200;
++
++    CompEnable = RegRead(map, offset + RV620_DACA_COMPARATOR_ENABLE);
++    Control1 = RegRead(map, offset + RV620_DACA_MACRO_CNTL);
++    Control2 = RegRead(map, offset + RV620_DACA_CONTROL2);
++    DetectControl = RegRead(map, offset + RV620_DACA_AUTODETECT_CONTROL);
++    Enable = RegRead(map, offset + RV620_DACA_ENABLE);
++
++    /* enable */
++    RegWrite(map, offset + RV620_DACA_ENABLE, 1);
++    /* ack autodetect */
++    RegMask(map, offset + RV620_DACA_AUTODETECT_INT_CONTROL, 0x01, 0x01);
++    /* autodetect off */
++    RegMask(map, offset + RV620_DACA_AUTODETECT_CONTROL, 0, 0x3);
++    /* zscale shift off */
++    RegMask(map, offset + RV620_DACA_CONTROL2, 0, 0xff0000);
++    /* dac force off */
++    RegMask(map, offset + RV620_DACA_CONTROL2, 0, 0x1);
++
++    /* set TV */
++    RegMask(map, offset + RV620_DACA_CONTROL2, tv ? 0x100 : 0, 0x100);
++
++    RegWrite(map, offset + RV620_DACA_FORCE_DATA, 0);
++    RegMask(map, offset + RV620_DACA_CONTROL2, 0x1, 0x1);
++
++    RegMask(map, offset + RV620_DACA_COMPARATOR_ENABLE, 0x00070000, 0x00070101);
++    RegWrite(map, offset + RV620_DACA_MACRO_CNTL, offset ? 0x00052202 : 0x00052102);
++
++    RegMask(map, offset + RV620_DACA_POWERDOWN, 0, 0x1); /* Shut down Bandgap Voltage Reference Power */
++    usleep(5000);
++
++    RegMask(map, offset + RV620_DACA_POWERDOWN, 0, 0x01010100); /* Shut down RGB */
++
++    RegWrite(map, offset + RV620_DACA_FORCE_DATA, 0x1e6); /* 486 out of 1024 */
++    usleep(200);
++
++    RegMask(map, offset + RV620_DACA_POWERDOWN, 0x01010100, 0x01010100); /* Enable RGB */
++    usleep(88);
++
++    RegMask(map, offset + RV620_DACA_POWERDOWN, 0, 0x01010100); /* Shut down RGB */
++
++    RegMask(map, offset + RV620_DACA_COMPARATOR_ENABLE, 0x100, 0x100);
++    usleep(100);
++
++    /* Get RGB detect values
++     * If only G is detected, we could have a monochrome monitor,
++     * but we don't bother with this at the moment.
++     */
++    ret = (RegRead(map, offset + RV620_DAC_COMPARATOR_OUTPUT) & 0x0E0000) >> 17;
++#ifdef DEBUG
++    fprintf(stderr, "DAC%s: %x %s\n", dac ? "B" : "A", ret, tv ? "TV" : "");
++#endif
++    RegMask(map, offset + RV620_DACA_COMPARATOR_ENABLE, CompEnable, 0x00FFFFFF);
++    RegWrite(map, offset + RV620_DACA_MACRO_CNTL, Control1);
++    RegMask(map, offset + RV620_DACA_CONTROL2, Control2, 0x1FF);
++    RegMask(map, offset + RV620_DACA_AUTODETECT_CONTROL, DetectControl, 0xFF);
++    RegMask(map, offset + RV620_DACA_ENABLE, Enable, 0xFF);
++
++    switch (ret & 0x7) {
++	case 0x7:
++	    if (tv)
++		return DAC_COMPONENT;
++	    else
++		return DAC_VGA;
++	case 0x1:
++	    if (tv)
++		return DAC_COMPOSITE;
++	    else
++		return DAC_NONE;
++	case 0x6:
++	    if (tv)
++		return DAC_SVIDEO;
++	    else
++		return DAC_NONE;
++	default:
++	    return DAC_NONE;
++    }
++}
++
++/*
++ *
++ */
++static dacOutput
++RV620DACLoadDetect_MethA(void *map, Bool tv, int dac)
+ {
+     CARD32 offset = 0;
+     CARD32 ret;
+     CARD32 DetectControl, AutodetectIntCtl, ForceData, Control1, Control2, CompEnable;
+     if (dac == 1)
+ 	offset = 0x100;
+-    Control1 = RegRead(map, offset + RV620_DACA_CONTROL1); /* 7ef4 */
++    Control1 = RegRead(map, offset + RV620_DACA_MACRO_CNTL); /* 7ef4 */
+     Control2 = RegRead(map, offset + RV620_DACA_CONTROL2); /* 7058 */
+     ForceData = RegRead(map, offset + RV620_DACA_FORCE_DATA);
+     AutodetectIntCtl = RegRead(map, offset + RV620_DACA_AUTODETECT_INT_CONTROL);
+@@ -893,7 +982,7 @@ RV620DACLoadDetect(void *map, Bool tv, int dac)
+     /* autodetect off */
+     RegMask(map, offset + RV620_DACA_AUTODETECT_CONTROL, 0x00, 0xff);
+     /* bandgap */
+-    RegMask(map, offset + RV620_DACA_CONTROL1, dac ? 0x2502 : 0x2002, 0xffff);
++    RegMask(map, offset + RV620_DACA_MACRO_CNTL, dac ? 0x2502 : 0x2002, 0xffff);
+     /* DAC RGB async enable */
+     RegMask(map, offset + RV620_DACA_CONTROL2, 0x1, 0x1);
+     /* enable r/g/b comparators, disable D/SDET ref */
+@@ -906,7 +995,7 @@ RV620DACLoadDetect(void *map, Bool tv, int dac)
+     ret = RegRead(map, offset + RV620_DACA_AUTODETECT_STATUS);
+ 
+     RegWrite(map, offset + RV620_DACA_AUTODETECT_CONTROL, DetectControl);
+-    RegWrite(map, offset + RV620_DACA_CONTROL1, Control1);
++    RegWrite(map, offset + RV620_DACA_MACRO_CNTL, Control1);
+     RegWrite(map, offset + RV620_DACA_CONTROL2, Control2);
+     RegWrite(map, offset + RV620_DACA_FORCE_DATA, ForceData);
+     RegWrite(map, offset + RV620_DACA_AUTODETECT_INT_CONTROL,
+@@ -935,6 +1024,19 @@ RV620DACLoadDetect(void *map, Bool tv, int dac)
+ /*
+  *
+  */
++static dacOutput
++RV620DACLoadDetect(void *map, Bool tv, int dac)
++{
++    dacOutput dacType = RV620DACLoadDetect_MethA(map, tv, dac);
++    if (dacType == DAC_NONE)
++	return RV620DACLoadDetect_MethB(map, tv, dac);
++    else
++	return dacType;
++}
++
++/*
++ *
++ */
+ static Bool
+ TMDSALoadDetect(void *map)
+ {
