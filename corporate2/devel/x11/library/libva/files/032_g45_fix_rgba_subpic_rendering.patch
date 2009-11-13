@@ -1,0 +1,129 @@
+From 24289a3107b2d884cb3de06592314503887b47c5 Mon Sep 17 00:00:00 2001
+From: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
+Date: Wed, 4 Nov 2009 10:55:47 +0000
+Subject: [PATCH] [G45] Fix rendering of subpictures (rgba surfaces).
+
+---
+ i965_drv_video/i965_render.c                       |    2 +-
+ i965_drv_video/shaders/render/Makefile.am          |    3 +
+ .../shaders/render/exa_wm_src_sample_argb.g4a      |   47 ++++++++++++++++++++
+ .../shaders/render/exa_wm_src_sample_argb.g4b      |    2 +
+ .../shaders/render/exa_wm_src_sample_argb.g4b.gen5 |    2 +
+ 5 files changed, 55 insertions(+), 1 deletions(-)
+ create mode 100644 i965_drv_video/shaders/render/exa_wm_src_sample_argb.g4a
+ create mode 100644 i965_drv_video/shaders/render/exa_wm_src_sample_argb.g4b
+ create mode 100644 i965_drv_video/shaders/render/exa_wm_src_sample_argb.g4b.gen5
+
+diff --git a/i965_drv_video/i965_render.c b/i965_drv_video/i965_render.c
+index f523c6a..f105e90 100644
+--- a/i965_drv_video/i965_render.c
++++ b/i965_drv_video/i965_render.c
+@@ -70,7 +70,7 @@ static const unsigned int ps_subpic_kernel_static[][4] =
+ {
+ #include "shaders/render/exa_wm_xy.g4b"
+ #include "shaders/render/exa_wm_src_affine.g4b"
+-#include "shaders/render/exa_wm_blend_subpicture.g4b"
++#include "shaders/render/exa_wm_src_sample_argb.g4b"
+ #include "shaders/render/exa_wm_write.g4b"
+ };
+ 
+diff --git a/i965_drv_video/shaders/render/Makefile.am b/i965_drv_video/shaders/render/Makefile.am
+index f38c234..24e7571 100644
+--- a/i965_drv_video/shaders/render/Makefile.am
++++ b/i965_drv_video/shaders/render/Makefile.am
+@@ -7,6 +7,7 @@ INTEL_G4A =				\
+ 	exa_sf.g4a			\
+ 	exa_wm_xy.g4a			\
+ 	exa_wm_src_affine.g4a		\
++	exa_wm_src_sample_argb.g4a	\
+ 	exa_wm_src_sample_planar.g4a	\
+ 	exa_wm_yuv_rgb.g4a		\
+ 	exa_wm_blend_subpicture.g4a		\
+@@ -16,6 +17,7 @@ INTEL_G4B =				\
+ 	exa_sf.g4b			\
+ 	exa_wm_xy.g4b			\
+ 	exa_wm_src_affine.g4b		\
++	exa_wm_src_sample_argb.g4b	\
+ 	exa_wm_src_sample_planar.g4b	\
+ 	exa_wm_yuv_rgb.g4b		\
+ 	exa_wm_blend_subpicture.g4b		\
+@@ -25,6 +27,7 @@ INTEL_G4B_GEN5 =				\
+ 	exa_sf.g4b.gen5				\
+ 	exa_wm_xy.g4b.gen5			\
+ 	exa_wm_src_affine.g4b.gen5		\
++	exa_wm_src_sample_argb.g4b.gen5	\
+ 	exa_wm_src_sample_planar.g4b.gen5	\
+ 	exa_wm_yuv_rgb.g4b.gen5			\
+ 	exa_wm_blend_subpicture.g4b.gen5	\
+diff --git a/i965_drv_video/shaders/render/exa_wm_src_sample_argb.g4a b/i965_drv_video/shaders/render/exa_wm_src_sample_argb.g4a
+new file mode 100644
+index 0000000..c20f53f
+--- /dev/null
++++ b/i965_drv_video/shaders/render/exa_wm_src_sample_argb.g4a
+@@ -0,0 +1,47 @@
++/*
++ * Copyright © 2006 Intel Corporation
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a
++ * copy of this software and associated documentation files (the "Software"),
++ * to deal in the Software without restriction, including without limitation
++ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
++ * and/or sell copies of the Software, and to permit persons to whom the
++ * Software is furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice (including the next
++ * paragraph) shall be included in all copies or substantial portions of the
++ * Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
++ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
++ * IN THE SOFTWARE.
++ *
++ * Authors:
++ *    Wang Zhenyu <zhenyu.z.wang@intel.com>
++ *    Keith Packard <keithp@keithp.com>
++ */
++
++/* Sample the src surface */
++
++include(`exa_wm.g4i')
++
++/* prepare sampler read back gX register, which would be written back to output */
++
++/* use simd16 sampler, param 0 is u, param 1 is v. */
++/* 'payload' loading, assuming tex coord start from g4 */
++
++/* load argb */
++mov (1) g0.8<1>UD	0x00000000UD { align1 mask_disable };
++
++/* src_msg will be copied with g0, as it contains send desc */
++/* emit sampler 'send' cmd */
++send (16) src_msg_ind		/* msg reg index */
++	src_sample_base<1>UW 	/* readback */
++	g0<8,8,1>UW		/* copy to msg start reg*/
++	sampler (1,0,F)		/* sampler message description, (binding_table,sampler_index,datatype)
++				/* here(src->dst) we should use src_sampler and src_surface */
++	mlen 5 rlen 8 { align1 };   /* required message len 5, readback len 8 */
+diff --git a/i965_drv_video/shaders/render/exa_wm_src_sample_argb.g4b b/i965_drv_video/shaders/render/exa_wm_src_sample_argb.g4b
+new file mode 100644
+index 0000000..c5b9274
+--- /dev/null
++++ b/i965_drv_video/shaders/render/exa_wm_src_sample_argb.g4b
+@@ -0,0 +1,2 @@
++   { 0x00000201, 0x20080061, 0x00000000, 0x00000000 },
++   { 0x01800031, 0x21c01d29, 0x008d0000, 0x02580001 },
+diff --git a/i965_drv_video/shaders/render/exa_wm_src_sample_argb.g4b.gen5 b/i965_drv_video/shaders/render/exa_wm_src_sample_argb.g4b.gen5
+new file mode 100644
+index 0000000..f8cb41e
+--- /dev/null
++++ b/i965_drv_video/shaders/render/exa_wm_src_sample_argb.g4b.gen5
+@@ -0,0 +1,2 @@
++   { 0x00000201, 0x20080061, 0x00000000, 0x00000000 },
++   { 0x01800031, 0x21c01d29, 0x208d0000, 0x0a8a0001 },
+-- 
+1.5.4.3
+
