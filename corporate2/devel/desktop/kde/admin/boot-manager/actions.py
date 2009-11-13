@@ -8,10 +8,14 @@
 
 from pisi.actionsapi import get
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import pythonmodules
+
+shelltools.export('HOME', get.workDIR())
 
 def install():
     pythonmodules.install()
     binpath = "%s/bin/boot-manager" % get.kdeDIR()
     pisitools.remove(binpath)
     pisitools.dosym("%s/share/apps/boot-manager/boot-manager.py" % get.kdeDIR(), binpath)
+    pisitools.removeDir("/usr/share/doc/")
