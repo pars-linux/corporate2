@@ -1,0 +1,187 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>dhcp</Name>
+        <Homepage>http://www.isc.org/products/DHCP</Homepage>
+        <Packager>
+            <Name>Taner Taş</Name>
+            <Email>taner@pardus.org.tr</Email>
+        </Packager>
+        <License>isc-dhcp</License>
+        <IsA>service</IsA>
+        <Summary>DHCP server</Summary>
+        <Description>ISC Dynamic Host Configuration Protocol</Description>
+        <Archive sha1sum="71cd106f518283f6af55d3a6006b7e8f34ffe0e0" type="targz">http://ftp.isc.org/isc/dhcp/dhcp-4.1.0p1.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>groff</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch>dhcp-pardus.patch</Patch>
+            <Patch level="1">dhcp-3.0.3-tr.patch</Patch>
+            <Patch level="1">dhcp-4.0-dhclient-ntp.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>dhcp</Name>
+        <RuntimeDependencies>
+            <Dependency releaseFrom="70">comar</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="executable">/usr/sbin</Path>
+            <Path fileType="config">/etc</Path>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="data">/var/lib</Path>
+            <Path fileType="data">/var/run</Path>
+            <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/dhcpd">dhcpd</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/dhcp/dhcpd.conf">dhcpd.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/dhcp/dhclient.conf">dhclient.conf</AdditionalFile>
+        </AdditionalFiles>
+        <Provides>
+            <COMAR script="service.py">System.Service</COMAR>
+        </Provides>
+    </Package>
+
+    <History>
+        <Update release="19" type="security">
+            <Date>2009-07-19</Date>
+            <Version>4.1.0_p1</Version>
+            <Comment>Version bump to fix ISC dhclient has a stack overflow vulnerability (CVE-2009-0692) (bug#10476)</Comment>
+            <Name>Taner Taş</Name>
+            <Email>taner@pardus.org.tr</Email>
+        </Update>
+        <Update release="18">
+            <Date>2009-05-15</Date>
+            <Version>4.1.0</Version>
+            <Comment>Net.Share model removed, since model is marked as deprecated.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="17">
+            <Date>2009-05-15</Date>
+            <Version>4.1.0</Version>
+            <Comment>First 4.x stable update</Comment>
+            <Name>Taner Taş</Name>
+            <Email>taner@pardus.org.tr</Email>
+        </Update>
+        <Update release="16">
+            <Date>2009-04-16</Date>
+            <Version>3.1.2</Version>
+            <Comment>stable update</Comment>
+            <Name>Taner Taş</Name>
+            <Email>taner@pardus.org.tr</Email>
+        </Update>
+        <Update release="15">
+            <Date>2008-08-27</Date>
+            <Version>3.1.1</Version>
+            <Comment>Net.Share model</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="14">
+            <Date>2008-06-09</Date>
+            <Version>3.1.1</Version>
+            <Comment>Version bump</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2007-08-06</Date>
+            <Version>3.1.0</Version>
+            <Comment>Version bump</Comment>
+            <Name>Ali Erdinç Köroğlu</Name>
+            <Email>erdinc@pardus.org.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2007-06-27</Date>
+            <Version>3.0.5</Version>
+            <Comment>Fixed service script.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2007-06-21</Date>
+            <Version>3.0.5</Version>
+            <Comment>new dhcp.conf template for ptsp.</Comment>
+            <Name>Faik Uygur</Name>
+            <Email>faik@pardus.org.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2007-05-23</Date>
+            <Version>3.0.5</Version>
+            <Comment>Updated Service script.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="9">
+            <Date>2007-01-22</Date>
+            <Version>3.0.5</Version>
+            <Comment>Bugfix #4860</Comment>
+            <Name>Ali Erdinç Köroğlu</Name>
+            <Email>erdinc@pardus.org.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2006-11-08</Date>
+            <Version>3.0.5</Version>
+            <Comment>Version bump</Comment>
+            <Name>Ali Erdinç Köroğlu</Name>
+            <Email>erdinc@pardus.org.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2006-10-14</Date>
+            <Version>3.0.4</Version>
+            <Comment>Fix service script</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2006-10-09</Date>
+            <Version>3.0.4</Version>
+            <Comment>Service script updated.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2006-09-03</Date>
+            <Version>3.0.4</Version>
+            <Comment>Cleanup</Comment>
+            <Name>S.Çağlar Onur</Name>
+            <Email>caglar@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2006-08-28</Date>
+            <Version>3.0.4</Version>
+            <Comment>Fixed service script to use right configuration file.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2006-08-07</Date>
+            <Version>3.0.4</Version>
+            <Comment>Version bump</Comment>
+            <Name>Ali Erdinç Köroğlu</Name>
+            <Email>erdinc@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2006-05-08</Date>
+            <Version>3.0.3</Version>
+            <Comment>Comar init script</Comment>
+            <Name>Ali Erdinç Köroğlu</Name>
+            <Email>erdinc@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2006-04-04</Date>
+            <Version>3.0.3</Version>
+            <Comment>First release</Comment>
+            <Name>Ali Erdinç Köroğlu</Name>
+            <Email>erdinc@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
