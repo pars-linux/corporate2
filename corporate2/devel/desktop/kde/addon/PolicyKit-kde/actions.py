@@ -7,9 +7,11 @@
 
 from pisi.actionsapi import cmaketools
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 WorkDir = "PolicyKit-kde"
+shelltools.export('HOME', get.workDIR())
 
 def setup():
     cmaketools.configure()
