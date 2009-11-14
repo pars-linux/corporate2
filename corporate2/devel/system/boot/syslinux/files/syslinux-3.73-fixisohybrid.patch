@@ -1,0 +1,50 @@
+Index: syslinux-3.82/utils/isohybrid
+===================================================================
+--- syslinux-3.82/utils/isohybrid
++++ syslinux-3.82/utils/isohybrid	2009-06-10 11:52:31.000000000 +0200
+@@ -221,9 +220,9 @@
+ 
+ # Print partition table
+ $offset  = $opt{'offset'};
+-$psize   = $c*$h*$s;
++$psize   = $c*$h*$s - 1;
+ $bhead   = int($offset/$s) % $h;
+-$bsect   = ($offset % $s) + 1;
++$bsect   = ($offset % $s) + 1 + 1;
+ $bcyl    = int($offset/($h*$s));
+ $bsect  += ($bcyl & 0x300) >> 2;
+ $bcyl   &= 0xff;
+@@ -236,7 +235,7 @@
+ for ( $i = 1 ; $i <= 4 ; $i++ ) {
+     if ( $i == $pentry ) {
+ 	$mbr .= pack("CCCCCCCCVV", 0x80, $bhead, $bsect, $bcyl, $fstype,
+-		     $ehead, $esect, $ecyl, 0, $psize);
++		     $ehead, $esect, $ecyl, 1, $psize);
+     } else {
+ 	$mbr .= "\0" x 16;
+     }
+Index: syslinux-3.82/utils/isohybrid.in
+===================================================================
+--- syslinux-3.82/utils/isohybrid.in
++++ syslinux-3.82/utils/isohybrid.in	2009-06-10 11:52:41.000000000 +0200
+@@ -221,9 +221,9 @@
+ 
+ # Print partition table
+ $offset  = $opt{'offset'};
+-$psize   = $c*$h*$s;
++$psize   = $c*$h*$s - 1;
+ $bhead   = int($offset/$s) % $h;
+-$bsect   = ($offset % $s) + 1;
++$bsect   = ($offset % $s) + 1 + 1;
+ $bcyl    = int($offset/($h*$s));
+ $bsect  += ($bcyl & 0x300) >> 2;
+ $bcyl   &= 0xff;
+@@ -236,7 +236,7 @@
+ for ( $i = 1 ; $i <= 4 ; $i++ ) {
+     if ( $i == $pentry ) {
+ 	$mbr .= pack("CCCCCCCCVV", 0x80, $bhead, $bsect, $bcyl, $fstype,
+-		     $ehead, $esect, $ecyl, 0, $psize);
++		     $ehead, $esect, $ecyl, 1, $psize);
+     } else {
+ 	$mbr .= "\0" x 16;
+     }
