@@ -1,0 +1,27 @@
+diff -up qt-x11-opensource-src-4.5.1/configure.mysql_config qt-x11-opensource-src-4.5.1/configure
+--- qt-x11-opensource-src-4.5.1/configure.mysql_config	2009-05-04 09:14:37.105826464 -0500
++++ qt-x11-opensource-src-4.5.1/configure	2009-05-04 09:15:26.747077312 -0500
+@@ -4334,6 +4334,7 @@ if [ "$CFG_ACCESSIBILITY" = "auto" ]; th
+     CFG_ACCESSIBILITY=yes
+ fi
+ 
++set -x
+ # auto-detect SQL-modules support
+ for _SQLDR in $CFG_SQL_AVAILABLE; do
+         case $_SQLDR in
+@@ -4342,8 +4343,15 @@ for _SQLDR in $CFG_SQL_AVAILABLE; do
+ 		[ -z "$CFG_MYSQL_CONFIG" ] && CFG_MYSQL_CONFIG=`$WHICH mysql_config`
+                 if [ -x "$CFG_MYSQL_CONFIG" ]; then
+                     QT_CFLAGS_MYSQL=`$CFG_MYSQL_CONFIG --include 2>/dev/null`
++                    $CFG_MYSQL_CONFIG --pkglibdir &>/dev/null && \
++                      QT_MYSQL_PKGLIBDIR=`$CFG_MYSQL_CONFIG --pkglibdir 2>/dev/null`
++                    if [ -n "$QT_MYSQL_PKGLIBDIR" ]; then
++                    QT_LFLAGS_MYSQL_R="-L$QT_MYSQL_PKGLIBDIR -lmysqlclient_r"
++                    QT_LFLAGS_MYSQL="-L$QT_MYSQL_PKGLIBDIR -lmysqlclient"
++                    else
+                     QT_LFLAGS_MYSQL_R=`$CFG_MYSQL_CONFIG --libs_r 2>/dev/null`
+                     QT_LFLAGS_MYSQL=`$CFG_MYSQL_CONFIG --libs 2>/dev/null`
++                    fi
+ 		    QT_MYSQL_VERSION=`$CFG_MYSQL_CONFIG --version 2>/dev/null`
+                     QT_MYSQL_VERSION_MAJOR=`echo $QT_MYSQL_VERSION | cut -d . -f 1`
+                 fi
