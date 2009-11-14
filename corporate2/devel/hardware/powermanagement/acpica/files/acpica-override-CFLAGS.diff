@@ -1,0 +1,64 @@
+---
+ compiler/Makefile         |    2 +-
+ tools/acpiexec/Makefile   |    2 +-
+ tools/acpisrc/Makefile    |    4 ++--
+ tools/acpixtract/Makefile |    2 +-
+ 4 files changed, 5 insertions(+), 5 deletions(-)
+
+Index: acpica-unix-20060512/compiler/Makefile
+===================================================================
+--- acpica-unix-20060512.orig/compiler/Makefile
++++ acpica-unix-20060512/compiler/Makefile
+@@ -87,7 +87,7 @@ SRCS=	aslcompilerparse.c aslcompilerlex.
+ 	../osunixxf.c
+ 
+ NOMAN=	YES
+-CFLAGS+= -Wall -O2 -Wstrict-prototypes -D_LINUX -DACPI_ASL_COMPILER -I../include 
++override CFLAGS+= -Wstrict-prototypes -D_LINUX -DACPI_ASL_COMPILER -I../include
+ 
+ #YACC=	yacc
+ YACC=	bison
+Index: acpica-unix-20060512/tools/acpiexec/Makefile
+===================================================================
+--- acpica-unix-20060512.orig/tools/acpiexec/Makefile
++++ acpica-unix-20060512/tools/acpiexec/Makefile
+@@ -131,7 +131,7 @@ SRCS=	aeexec.c aemain.c \
+ 	../../osunixxf.c
+ 
+ 
+-CFLAGS+= -Wall -g -D_LINUX -DNDEBUG -D_CONSOLE -DACPI_EXEC_APP -D_MULTI_THREADED -Wstrict-prototypes -I../../include 
++override CFLAGS+= -D_LINUX -DNDEBUG -D_CONSOLE -DACPI_EXEC_APP -D_MULTI_THREADED -Wstrict-prototypes -I../../include
+ 
+ 
+ acpiexec : $(patsubst %.c,%.o, $(SRCS))
+Index: acpica-unix-20060512/tools/acpixtract/Makefile
+===================================================================
+--- acpica-unix-20060512.orig/tools/acpixtract/Makefile
++++ acpica-unix-20060512/tools/acpixtract/Makefile
+@@ -3,7 +3,7 @@
+ PROG=	acpixtract
+ SRCS=	acpixtract.c
+ 
+-CFLAGS+= -Wall -O2 -D_LINUX -DACPI_APPLICATION -Wstrict-prototypes -I../../include 
++override CFLAGS+= -D_LINUX -DACPI_APPLICATION -Wstrict-prototypes -I../../include
+ 
+ 
+ acpixtract : $(patsubst %.c,%.o, $(SRCS))
+Index: acpica-unix-20060512/tools/acpisrc/Makefile
+===================================================================
+--- acpica-unix-20060512.orig/tools/acpisrc/Makefile
++++ acpica-unix-20060512/tools/acpisrc/Makefile
+@@ -4,11 +4,11 @@ PROG=	acpisrc
+ SRCS=	ascase.c asconvrt.c asfile.c asmain.c asremove.c astable.c \
+         asutils.c osunixdir.c ../../common/getopt.c
+ 
+-CFLAGS+= -Wall -O2 -D_LINUX -DACPI_APPLICATION -Wstrict-prototypes -I../../include 
++override CFLAGS+= -D_LINUX -DACPI_APPLICATION -Wstrict-prototypes -I../../include
+ 
+ 
+ aslmain : $(patsubst %.c,%.o, $(SRCS))
+-	$(CC) $(LDFLAGS) $(patsubst %.c,%.o, $(SRCS)) -o $(PROG)
++	$(CC) $(LDFLAGS) $(CFLAGS) $(patsubst %.c,%.o, $(SRCS)) -o $(PROG)
+ 
+ CLEANFILES= $(PROG)
+ 
