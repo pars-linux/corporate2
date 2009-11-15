@@ -1,0 +1,26 @@
+diff --git a/browser/base/content/utilityOverlay.js b/browser/base/content/utilityOverlay.js
+--- a/browser/base/content/utilityOverlay.js
++++ b/browser/base/content/utilityOverlay.js
+@@ -487,7 +487,11 @@ function buildHelpMenu()
+   // administrator or if we cannot update for some other reason
+   var checkForUpdates = document.getElementById("checkForUpdates");
+   var canUpdate = updates.canUpdate;
++  var updateEnabled = getBoolPref("app.update.enabled", true);
+   checkForUpdates.setAttribute("disabled", !canUpdate);
++  checkForUpdates.setAttribute("hidden", !canUpdate || !updateEnabled);
++  var updateSeparator = document.getElementById("updateSeparator");
++  updateSeparator.setAttribute("hidden", !canUpdate || !updateEnabled);
+   if (!canUpdate)
+     return; 
+ 
+diff --git a/browser/components/preferences/advanced.js b/browser/components/preferences/advanced.js
+--- a/browser/components/preferences/advanced.js
++++ b/browser/components/preferences/advanced.js
+@@ -410,6 +410,7 @@ var gAdvancedPane = {
+     var enableAppUpdate = document.getElementById("enableAppUpdate");
+ 
+     enableAppUpdate.disabled = !aus.canUpdate || enabledPref.locked;
++    enableAppUpdate.hidden = !aus.canUpdate || !enabledPref.value;
+   },
+ 
+   /**
