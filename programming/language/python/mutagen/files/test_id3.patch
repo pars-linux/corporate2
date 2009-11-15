@@ -1,0 +1,14 @@
+--- tests/test_id3.py.orig	2009-11-05 02:32:38.359705859 +0200
++++ tests/test_id3.py	2009-11-05 02:32:44.699706505 +0200
+@@ -541,6 +541,11 @@
+     ['PCNT', '\x00\x00\x00\x11', 17, 17, dict(count=17)],
+     ['POPM', 'foo@bar.org\x00\xde\x00\x00\x00\x11', 222, 222,
+         dict(email="foo@bar.org", rating=222, count=17)],
++    ['POPM', 'foo@bar.org\x00\xde\x00', 222, 222,
++        dict(email="foo@bar.org", rating=222, count=0)],
++    # Issue #33 - POPM may have no playcount at all.
++    ['POPM', 'foo@bar.org\x00\xde', 222, 222,
++        dict(email="foo@bar.org", rating=222)],
+ 
+     ['UFID', 'own\x00data', 'data', '', dict(data='data', owner='own')],
+     ['UFID', 'own\x00\xdd', '\xdd', '', dict(data='\xdd', owner='own')],
