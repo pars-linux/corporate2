@@ -1,0 +1,18 @@
+diff -ur ccid-1.3.9.orig/src/Makefile.am ccid-1.3.9/src/Makefile.am
+--- ccid-1.3.9.orig/src/Makefile.am	2008-11-18 22:48:42.000000000 +0100
++++ ccid-1.3.9/src/Makefile.am	2009-02-15 22:56:59.000000000 +0100
+@@ -56,12 +56,14 @@
+ libccid_la_LIBADD = $(LEXLIB) $(LIBUSB_LIBS) $(PTHREAD_LIBS)
+ libccid_la_CFLAGS = $(PCSC_CFLAGS) $(LIBUSB_CFLAGS) $(PTHREAD_CFLAGS) \
+ 	$(SYMBOL_VISIBILITY) -D$(CCID_VERSION)
++libccid_la_LDFLAGS = -module
+ 
+ libccidtwin_la_SOURCES = $(COMMON) $(SERIAL) $(TOKEN_PARSER) \
+ 	$(PROVIDED_BY_PCSC) $(T1)
+ libccidtwin_la_CFLAGS = $(PCSC_CFLAGS) $(PTHREAD_CFLAGS) $(SYMBOL_VISIBILITY) \
+ 	-DTWIN_SERIAL -D$(CCID_VERSION)
+ libccidtwin_la_LIBADD = $(PTHREAD_LIBS)
++libccidtwin_la_LDFLAGS = -module
+ 
+ parse_SOURCES = parse.c debug.c
+ parse_LDADD = libccid.la $(LIBUSB_LIBS)
