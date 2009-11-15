@@ -21,7 +21,7 @@ def setup():
                          --enable-poppler-glib \
                          --enable-libopenjpeg \
                          --enable-poppler-qt \
-                         --disable-poppler-qt4")
+                         --enable-poppler-qt4")
 
 def build():
     shelltools.cd("poppler")
