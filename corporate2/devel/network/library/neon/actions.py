@@ -12,8 +12,8 @@ from pisi.actionsapi import get
 def setup():
     autotools.configure("--with-libxml2 \
                          --with-expat \
-                         --with-libproxy \
                          --without-gssapi \
+                         --without-libproxy \
                          --with-ssl=openssl \
                          --with-ca-bundle=/etc/ssl/certs/ca-bundle.crt \
                          --enable-threadsafe-ssl=posix \
