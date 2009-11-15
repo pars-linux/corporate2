@@ -1,0 +1,30 @@
+Index: src/MainWidget.py
+===================================================================
+--- src/MainWidget.py	(revision 22058)
++++ src/MainWidget.py	(revision 22059)
+@@ -392,9 +392,7 @@
+         self.refreshComponentList(self.setLastSelected())
+         item = self.componentsList.firstChild()
+         if item and item.text(0) == i18n("Search Results"):
+-            Globals.setWaitCursor()
+             self.searchPackage()
+-            Globals.setNormalCursor()
+         basketDialog.deleteLater()
+ 
+     def conflictCheckPass(self):
+@@ -733,6 +731,7 @@
+         self.parent.tray.updateTrayIcon()
+ 
+     def searchPackage(self):
++        Globals.setWaitCursor()
+         query = unicode(self.searchLine.text())
+         terms = query.split()
+         if query:
+@@ -745,6 +744,7 @@
+             self.createSearchResults(result)
+         else:
+             self.refreshState(reset=False)
++        Globals.setNormalCursor()
+ 
+     def showPreferences(self):
+         self.pref = Preferences.Preferences(self)
