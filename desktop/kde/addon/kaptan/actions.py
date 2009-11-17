@@ -19,3 +19,5 @@ def install():
 
     pisitools.remove("%s/bin/kaptan" % get.kdeDIR())
     pisitools.dosym("%s/share/apps/kaptan/kaptan.py" % get.kdeDIR(), "%s/bin/kaptan" % get.kdeDIR())
+
+    pisitools.removeDir("/usr/share/doc/")
