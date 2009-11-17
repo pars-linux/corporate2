@@ -1,0 +1,124 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>python-std-extensions</Name>
+        <Homepage>http://www.python.org/</Homepage>
+        <Packager>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Packager>
+        <License>PSF-2.2</License>
+        <Summary>Additional modules and tools for Python</Summary>
+        <Description>Python is a dynamic object-oriented programming language that can be used for many kinds of software development. It offers strong support for integration with other languages and tools, comes with extensive standard libraries, and can be learned in a few days.</Description>
+        <Archive sha1sum="dacb8c44413893fc5755d91db26042234658c8e0" type="targz">http://python.org/ftp/python/2.6.2/Python-2.6.2.tgz</Archive>
+        <BuildDependencies>
+            <Dependency>tcl</Dependency>
+            <Dependency>tcltk</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <!-- Look into /usr/lib/pardus first -->
+            <Patch>searchpath.patch</Patch>
+
+            <!-- Don't create pyc files on installation -->
+            <Patch>no-pyc.patch</Patch>
+
+            <!-- Uluzilla bug #5649 -->
+            <Patch>decimal-ascii.patch</Patch>
+
+            <!-- Use UTF-8 by default -->
+            <Patch>default-utf8.patch</Patch>
+
+            <Patch level="1">disable-egginfo.patch</Patch>
+            <Patch level="1">sqlite-encoding.patch</Patch>
+
+            <!-- some Turkish locale fixes, usually caused by tolower() -->
+            <Patch level="1">python-2.5.1-codec-ascii-tolower.patch</Patch>
+            <Patch level="1">trfix_emaillib.patch</Patch>
+
+            <!-- Also recognize ccache  -->
+            <Patch>gentoo/12_all_distutils-rpath-gcc.patch</Patch>
+
+            <Patch level="1">gentoo/18_all_distutils-cxxflags.patch</Patch>
+            <Patch>gentoo/21_all_ctypes-execstack.patch</Patch>
+
+            <Patch level="1">pthread.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>python-tk</Name>
+        <IsA>library</IsA>
+        <Summary>Python modules for Tk</Summary>
+        <RuntimeDependencies>
+            <Dependency>tcl</Dependency>
+            <Dependency>tcltk</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/python*/lib-tk</Path>
+            <Path fileType="library">/usr/lib/python*/lib-dynload/_tkinter.so</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>idle</Name>
+        <Icon>idle</Icon>
+        <IsA>app:gui</IsA>
+        <PartOf>programming.environment</PartOf>
+        <Summary>An Integrated Development Environment for Python</Summary>
+        <RuntimeDependencies>
+            <Dependency>python-tk</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/usr/bin/idle</Path>
+            <Path fileType="library">/usr/lib/python*/idlelib</Path>
+            <Path fileType="data">/usr/share/applications</Path>
+            <Path fileType="data">/usr/share/pixmaps</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile permission="0644" target="/usr/share/pixmaps/idle.png">python-logo.png</AdditionalFile>
+            <AdditionalFile permission="0644" target="/usr/share/applications/idle.desktop">idle.desktop</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <History>
+        <Update release="5">
+            <Date>2009-05-03</Date>
+            <Version>2.6.2</Version>
+            <Comment>
+                * Bump to new release
+                * Remove wantobjects workaround
+            </Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2009-01-31</Date>
+            <Version>2.5.4</Version>
+            <Comment>Fix IDLE autocomplete problem (#8604)</Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+        <Update release="3" type="security">
+            <Date>2009-01-21</Date>
+            <Version>2.5.4</Version>
+            <Comment>New release and fix bug#9028.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2008-11-11</Date>
+            <Version>2.5_20080801</Version>
+            <Comment>Fix desktop files to make them XDG compliant</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2008-09-02</Date>
+            <Version>2.5_20080801</Version>
+            <Comment>First release</Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
