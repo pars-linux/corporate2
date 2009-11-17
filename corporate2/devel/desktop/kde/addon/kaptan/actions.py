@@ -10,7 +10,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import pythonmodules
 
-shelltools.export('HOME', get.work.DIR())
+shelltools.export('HOME', get.workDIR())
 
 def install():
     pythonmodules.install()
