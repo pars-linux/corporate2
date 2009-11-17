@@ -69,6 +69,10 @@ def install():
     pisitools.domove("/usr/kde/3.5/share/config/kdm/kdmrc", "/etc/X11/kdm/")
     pisitools.dosym("/etc/X11/kdm/kdmrc", "/usr/kde/3.5/share/config/kdm/kdmrc")
 
+    # Use common Xsession script
+    pisitools.remove("/usr/kde/3.5/share/config/kdm/Xsession")
+    pisitools.dosym("/usr/lib/X11/xinit/Xsession", "/usr/kde/3.5/share/config/kdm/Xsession")
+
     # Remove shutdownkonq to replace it
     pisitools.remove("/usr/kde/3.5/share/apps/ksmserver/pics/shutdownkonq.png")
     pisitools.remove("/usr/kde/3.5/share/apps/kdm/pics/shutdown.jpg")
