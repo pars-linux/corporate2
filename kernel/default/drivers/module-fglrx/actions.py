@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Licensed under the GNU General Public License, version 2.
@@ -84,10 +83,6 @@ def install():
 
     # not needed as xdg-utils package provides xdg-su
     pisitools.remove("/usr/bin/amdxdg-su")
-
-    # No kitty
-    pisitools.removeDir("/usr/share/applnk")
-    pisitools.removeDir("/usr/share/gnome")
 
     pisitools.domove("/usr/share/icons/ccc_large.xpm", "/usr/share/pixmaps", "amdcccle.xpm")
     pisitools.removeDir("/usr/share/icons")
