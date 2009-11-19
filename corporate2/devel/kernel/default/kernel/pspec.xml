@@ -31,6 +31,12 @@
                  Fix vulnerability in net llc sockaddr_llc struct (#11121, #11016) -->
             <Patch level="1" compressionType="bz2">kernel/patch-2.6.30.9.bz2</Patch>
 
+            <!-- A negative offset could be used to index before the event buffer and lead to a security breach. (#11573) -->
+            <Patch level="1">kernel/CVE-2009-3080-gdth_read_event-array-index.patch</Patch>
+
+            <!-- fuse: prevent fuse_put_request on invalid pointer (#11574) -->
+            <Patch level="1">kernel/prevent-fuse_put_request-on-invalid-pointer.patch</Patch>
+
             <!-- nfs: nfs4_proc_lock() null pointer dereference (CVE-2009-3726) (#11522) -->
             <Patch level="1">kernel/nfsv4-fix-a-problem-whereby-a-buggy-server-can-oops-the-kernel.patch</Patch>
 
@@ -461,7 +467,7 @@
 
     <History>
         <Update release="128" type="security">
-            <Date>2009-11-17</Date>
+            <Date>2009-11-10</Date>
             <Version>2.6.30.9</Version>
             <Comment>
                 - Version bump to 2.6.30.9,
@@ -482,6 +488,8 @@
                 - security: af_unix: Fix deadlock on connecting to shutdown socket,
                 - security: fs: pipe.c: null pointer dereference (CVE-2009-3547) (#11526),
                 - security: fs: nfs: nfs4_proc_lock() null pointer dereference (CVE-2009-3726) (#11522),
+                - security: fs: fuse: prevent fuse_put_request on invalid pointer (#11574)
+                - security: scsi: prevent negative offset in ioctl (CVE-2009-3080) (#11573)
             </Comment>
             <Requires>
                 <Action>reverseDependencyUpdate</Action>
