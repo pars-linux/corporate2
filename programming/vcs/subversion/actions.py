@@ -68,6 +68,8 @@ def install():
     # shelltools.chmod("%s/usr/bin/svnmerge" % get.installDIR(), 0755)
 
     perlmodules.fixLocalPod()
+    # remove emtpy dir that conflicts with perl modules
+    pisitools.removeDir("/usr/lib/perl5/%s" % get.curPERL())
 
     # Documentation and etc.
     pisitools.insinto("/usr/share/doc/%s" % get.srcNAME(), "contrib")
