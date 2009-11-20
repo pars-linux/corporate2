@@ -12,7 +12,7 @@
         <IsA>service</IsA>
         <Summary>Common Unix Printing System</Summary>
         <Description>cups provides a portable printing layer for *nix-based operating systems.</Description>
-        <Archive sha1sum="c8304ee8d631bb370fc10fc1fffbe8ebae413df2" type="tarbz2">ftp://ftp.rz.tu-bs.de/pub/mirror/ftp.easysw.com/ftp/pub/cups/1.3.11/cups-1.3.11-source.tar.bz2</Archive>
+        <Archive sha1sum="df5cfb64fb608fc128acadde670dc30af49bdb18" type="tarbz2">ftp://ftp.rz.tu-bs.de/pub/mirror/ftp.easysw.com/ftp/pub/cups/1.3.11/cups-1.3.11-source.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>openldap-client</Dependency>
             <Dependency>mit-kerberos</Dependency>
@@ -24,6 +24,9 @@
             <Dependency>avahi</Dependency>
         </BuildDependencies>
         <Patches>
+            <!-- Fix for CVE-2009-2820 (#11532) -->
+            <Patch level="1">fedora/cups-CVE-2009-2820.patch</Patch>
+
             <!-- Strip *.gz from man pages -->
             <Patch level="1">fedora/cups-no-gzip-man.patch</Patch>
 
@@ -59,6 +62,9 @@
 
             <!-- Accept "Host: ::1" (bzrh: #497393) -->
             <Patch level="1">fedora/cups-localhost-ipv6.patch</Patch>
+
+            <!-- Fix incorrect operator in jpeg and bmp MIME type rules -->
+            <Patch level="1">fedora/0001-Fixed-incorrect-operator-in-jpeg-and-bmp-MIME-type-r.patch</Patch>
 
 
             <!-- Ubuntu patches -->
@@ -126,12 +132,13 @@
             <Dependency>avahi</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/etc</Path>
             <Path fileType="config">/etc/cups/*conf</Path>
-            <Path fileType="executable">/usr/bin</Path>
             <Path fileType="header">/usr/include</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="executable">/usr/sbin</Path>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="data">/etc</Path>
+            <Path fileType="data">/lib/udev/rules.d</Path>
             <Path fileType="data">/usr/share/cups</Path>
             <Path fileType="data">/usr/lib/pkgconfig</Path>
             <Path fileType="data">/usr/share/icons</Path>
@@ -159,6 +166,12 @@
 
             <!-- Generic PS ppd from ubuntu which contains some improvements over the oldest from Fedora -->
             <AdditionalFile owner="root" permission="0644" target="/usr/share/cups/model/postscript.ppd">ubuntu/postscript.ppd</AdditionalFile>
+
+            <!-- Udev rules for ACL management -->
+            <!-- FIXME: GROUP conversion here (lp->pnp) -->
+            <!-- FIXME: Enable this after switching to the new system-config-printer
+            <AdditionalFile owner="root" permission="0644" target="/lib/udev/rules.d/70-cups-libusb.rules">cups-libusb.rules</AdditionalFile>
+            -->
         </AdditionalFiles>
         <Provides>
             <COMAR script="package.py">System.Package</COMAR>
@@ -167,12 +180,30 @@
     </Package>
 
     <History>
-        <Update release="60">
+        <Update release="62" type="security">
+            <Date>2009-11-11</Date>
+            <Version>1.3.11</Version>
+            <Comment>Fix several XSS flaws in CUPS (CVE-2009-2820) (#11532).</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="61">
             <Date>2009-11-05</Date>
             <Version>1.3.11</Version>
             <Comment>Remove unneeded directory removal in actions.py.</Comment>
             <Name>Ekin Meroğlu</Name>
             <Email>ekin@pardus.org.tr</Email>
+        </Update>
+        <Update release="60">
+            <Date>2009-08-06</Date>
+            <Version>1.3.11</Version>
+            <Comment>
+                - Fix printing of text files beginning with BM,
+                - Replay printer events in service script,
+                - Add udev rule for ACL management.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
         </Update>
         <Update release="59">
             <Date>2009-07-13</Date>
