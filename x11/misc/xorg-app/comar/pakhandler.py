@@ -1,33 +1,51 @@
 # -*- coding: utf-8 -*-
 
-import os
 import piksemel
-import subprocess
 
-def updateIndex(filepath, cleanup=False):
+def updateIndex():
+    import os
+    import subprocess
+
+    join = os.path.join
+    fontsPath = "/usr/share/fonts"
+    encodingsPath = join(fontsPath, "encodings")
+    fontsScale = "fonts.scale"
+    fontsDir = "fonts.dir"
+
+    for root, dirs, files in os.walk(fontsPath):
+        if root.startswith(encodingsPath):
+            continue
+
+        fonts = files[:]
+
+        if fontsScale in fonts:
+            fonts.remove(fontsScale)
+            os.unlink(join(root, fontsScale))
+
+        if fontsDir in fonts:
+            fonts.remove(fontsDir)
+            os.unlink(join(root, fontsDir))
+
+        if not fonts:
+            continue
+
+        print "Creating %s ..." % join(root, fontsScale)
+        subprocess.call(["/usr/bin/mkfontscale", "-u", root])
+
+        print "Creating %s ..." % join(root, fontsDir)
+        subprocess.call(["/usr/bin/mkfontdir", root])
+
+def checkPaths(filepath):
     doc = piksemel.parse(filepath)
-    indexedDirs = []
+
     for item in doc.tags("File"):
         path = item.getTagData("Path")
         if path.startswith("usr/share/fonts/"):
-            fontDir = "/%s" % os.path.dirname(path)
-
-            if fontDir not in indexedDirs:
-                indexedDirs.append(fontDir)
-
-                if cleanup:
-                    try:
-                        os.unlink(os.path.join(fontDir, "fonts.dir"))
-                        os.unlink(os.path.join(fontDir, "fonts.scale"))
-                    except OSError:
-                        pass
-                else:
-                    subprocess.call(["/usr/bin/mkfontscale", "-u", fontDir])
-                    subprocess.call(["/usr/bin/mkfontdir", fontDir])
-
+            updateIndex()
+            break
 
 def setupPackage(metapath, filepath):
-    updateIndex(filepath)
+    checkPaths(filepath)
 
 def postCleanupPackage(metapath, filepath):
-    updateIndex(filepath, True)
+    checkPaths(filepath)
