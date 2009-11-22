@@ -26,6 +26,8 @@
             <Patch>openssl-0.9.8-CVE-2009-1378.patch</Patch>
             <Patch level="1">CVE-2009-1387.diff</Patch>
             <Patch level="1">CVE-2009-2409.patch</Patch>
+            <!-- http://extendedsubset.com/?p=8 , #11515 -->
+            <Patch level="1">CVE-2009-3555-no-renegotiation.patch</Patch>
         </Patches>
     </Source>
 
@@ -50,6 +52,20 @@
     </Package>
 
     <History>
+        <Update release="25" type="security">
+            <Date>2009-11-15</Date>
+            <Version>0.9.8k</Version>
+            <Comment>
+                * Add patch to completely disable renegotiation. (CVE-2009-3555, #11515). See: http://extendedsubset.com/?p=8
+                * NOTE: This fixes 90% of the cases. If renegotiation is needed, we can not do anything about it.
+                  Now, TLS extension is being developed to solve the issue but it needs time. When extension is completed,
+                  we will keep us updated as well..
+                * NOTE #2: With this commit, apache will also be fixed. There is no need to patch mod_ssl. The patch to mod_ssl is needed
+                  with old version of openssl which does not reject renegotiating.
+            </Comment>
+            <Name>Eren Türkay</Name>
+            <Email>eren@pardus.org.tr</Email>
+        </Update>
        <Update release="24" type="security">
             <Date>2009-09-27</Date>
             <Version>0.9.8k</Version>
