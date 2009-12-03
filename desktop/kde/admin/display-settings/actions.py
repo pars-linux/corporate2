@@ -1,7 +1,5 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 #
@@ -16,6 +14,6 @@ shelltools.export('HOME', get.workDIR())
 def install():
     pythonmodules.install()
 
-    binpath = "%s/bin/display-manager" % get.kdeDIR()
+    binpath = "%s/bin/display-settings" % get.kdeDIR()
     pisitools.remove(binpath)
-    pisitools.dosym("%s/share/apps/display-manager/display-manager.py" % get.kdeDIR(), binpath)
+    pisitools.dosym("%s/share/apps/display-settings/display-settings.py" % get.kdeDIR(), binpath)
