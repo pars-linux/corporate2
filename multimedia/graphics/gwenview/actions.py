@@ -11,6 +11,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 
 shelltools.export("HOME", get.workDIR())
+KeepSpecial=["libtool"]
 
 def setup():
     kde.make("-f admin/Makefile.common")
