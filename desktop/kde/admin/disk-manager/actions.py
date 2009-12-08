@@ -12,6 +12,7 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import pythonmodules
 
 shelltools.export('HOME', get.workDIR())
+KeepSpecial=["libtool"]
 def install():
     pythonmodules.install()
     binpath = "%s/bin/disk-manager" % get.kdeDIR()
