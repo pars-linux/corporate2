@@ -10,6 +10,7 @@ from pisi.actionsapi import get
 from pisi.actionsapi import shelltools
 
 shelltools.export("HOME", get.workDIR())
+KeepSpecial=["libtool"]
 
 def setup():
     kde.configure("--without-arts")
