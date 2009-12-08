@@ -11,6 +11,7 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 shelltools.export('HOME', get.workDIR())
+KeepSpecial=["libtool"]
 
 def install():
     pythonmodules.install()
