@@ -10,11 +10,18 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
+import os
+
 WorkDir = "Python-%s" % get.srcVERSION()
 
 def setup():
     shelltools.export("OPT", "%s -fPIC" % get.CFLAGS())
-    autotools.autoconf()
+
+    # Uncomment to use installed libffi as does other distributions and replace 
+    # shelltools.export("CPPFLAGS", "%s" % os.popen("pkg-config --cflags-only-I libffi").read().strip())
+    # shelltools.system("rm -rf Modules/_ctypes/libffi*")
+
+    autotools.autoreconf()
     autotools.configure("--with-fpectl \
                          --enable-shared \
                          --enable-ipv6 \
@@ -26,6 +33,9 @@ def setup():
 
 def build():
     autotools.make()
+
+def check():
+    autotools.make("test")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR(), "altinstall")
