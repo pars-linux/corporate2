@@ -12,6 +12,32 @@ config_files = ("/etc/default/xdm",
 xdm_path = "/usr/bin/xdm"
 safe_xorg_conf = "/usr/share/X11/xorg-safe.conf"
 
+def is_live_media():
+    "Returns True if the system runs on a live media."
+    return os.path.exists("/var/run/pardus/livemedia")
+
+def system_language():
+    "Returns the current system language."
+    try:
+        return open("/etc/mudur/language").read().strip()
+    except IOError:
+        return "en"
+
+def set_keymap(link):
+    """
+    Sets keymap for the current language.
+
+    Args:
+        link: Comar.Link instance.
+    """
+    from pardus import localedata
+
+    language = localedata.languages.get(system_language())
+
+    if language:
+        keymap = language.keymaps[0]
+        link.Xorg.Display["zorg"].setKeymap(keymap.xkb_layout, keymap.xkb_variant)
+
 if __name__ == "__main__":
     boot = "--boot" in sys.argv
 
@@ -50,5 +76,10 @@ if __name__ == "__main__":
     # and zorg returns False?
     if not link.Xorg.Display["zorg"].ready(boot, timeout=5*60):
         env["XORGCONFIG"] = safe_xorg_conf
+
+    # If we are on a live media, set the default keymap for
+    # the current language.
+    if is_live_media():
+        set_keymap(link)
 
     os.execl(dm_path, dm_path, "-nodaemon")
