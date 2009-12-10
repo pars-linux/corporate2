@@ -10,6 +10,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
+WorkDir = "libtool-2.2.6b"
 configTemplateDir = "/usr/share/libtool/config"
 
 # FIXME: do we still need this ?
@@ -33,6 +34,10 @@ def setup():
 
 def build():
     autotools.make()
+
+# fails in some tests, requires binutils > 2.19.51 which has relaxed as-needed behaviour
+#def check():
+#    autotools.make("check")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
