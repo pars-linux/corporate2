@@ -1,0 +1,137 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>redland</Name>
+        <Homepage>http://librdf.org</Homepage>
+        <Packager>
+            <Name>Pardus</Name>
+            <Email>admins@pardus.org.tr</Email>
+        </Packager>
+        <License>LGPLv2</License>
+        <License>Apache-2.0</License>
+        <IsA>library</IsA>
+        <Summary>High-level interface for the Resource Description Framework</Summary>
+        <Description>Redland is a set of free software C libraries that provide support for the Resource Description Framework (RDF).</Description>
+        <Archive sha1sum="74c9ce4b496095d404593a18af1d15de4904ae9b" type="targz">http://download.librdf.org/source/redland-1.0.9.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>rasqal</Dependency>
+            <Dependency>raptor</Dependency>
+            <Dependency>mysql-lib</Dependency>
+            <Dependency>postgresql-lib</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">remove-docs.diff</Patch>
+            <Patch level="1">fix-uri-test-crash.diff</Patch>
+            <!-- Gentoo patches -->
+            <Patch level="1">redland-1.0.9-ldflags.patch</Patch>
+            <Patch level="1">redland-1.0.9-sqlite.patch</Patch>
+            <Patch level="1">redland-1.0.9-librdf_storage_register_factory.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>redland</Name>
+        <RuntimeDependencies>
+            <Dependency>rasqal</Dependency>
+            <Dependency>raptor</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="data">/usr/share/redland</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>redland-mysql</Name>
+        <RuntimeDependencies>
+            <Dependency>redland</Dependency>
+            <Dependency>mysql-lib</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/redland/*mysql*</Path>
+            <Path fileType="data">/usr/share/redland/mysql*</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>redland-postgresql</Name>
+        <RuntimeDependencies>
+            <Dependency>redland</Dependency>
+            <Dependency>postgresql-lib</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/redland/*postgresql*</Path>
+        </Files>
+    </Package>
+
+    <History>
+        <Update release="9">
+            <Date>2009-09-25</Date>
+            <Version>1.0.9</Version>
+            <Comment>Add a patch to fix 'librdf_storage_register_factory' linking error.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2009-07-28</Date>
+            <Version>1.0.9</Version>
+            <Comment>Fix sqlite, mysql and postgresql backends, and enable file, hashes, trees, mysql, sqlite and postgresql storages. The bug was due to buggy --enable-storages configure parameter.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2009-06-27</Date>
+            <Version>1.0.9</Version>
+            <Comment>Add missed raptor dependency</Comment>
+            <Name>Mehmet Nur Olcay</Name>
+            <Email>mnurolcay@gmail.com</Email>
+        </Update>
+        <Update release="6">
+            <Date>2009-05-02</Date>
+            <Version>1.0.9</Version>
+            <Comment>Add Description and translations.xml. Docdir fix by Ozan Çağlayan</Comment>
+            <Name>Mehmet Nur Olcay</Name>
+            <Email>mnurolcay@gmail.com</Email>
+        </Update>
+        <Update release="5">
+            <Date>2009-04-24</Date>
+            <Version>1.0.9</Version>
+            <Comment>Stable bump</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2008-09-02</Date>
+            <Version>1.0.8</Version>
+            <Comment>Stable bump</Comment>
+            <Name>Murat Şenel</Name>
+            <Email>muratasenel@gmail.com</Email>
+        </Update>
+        <Update release="3">
+            <Date>2008-01-14</Date>
+            <Version>1.0.7</Version>
+            <Comment>Stable update</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2007-05-08</Date>
+            <Version>1.0.6</Version>
+            <Comment>Version bump</Comment>
+            <Name>Murat Şenel</Name>
+            <Email>muratasenel@gmail.com</Email>
+        </Update>
+        <Update release="1">
+            <Date>2007-04-18</Date>
+            <Version>1.0.5</Version>
+            <Comment>First release</Comment>
+            <Name>Murat Şenel</Name>
+            <Email>muratasenel@gmail.com</Email>
+        </Update>
+    </History>
+</PISI>
