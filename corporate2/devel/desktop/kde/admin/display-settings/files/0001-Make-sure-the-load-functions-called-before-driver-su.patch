@@ -1,0 +1,51 @@
+From b479eb1634055d5ef431fc21d29c3ee81512feab Mon Sep 17 00:00:00 2001
+From: fatih <fatih@26e1f6f6-46e4-0310-a0b7-a8a415fd4c45>
+Date: Thu, 10 Dec 2009 08:39:35 +0000
+Subject: [PATCH] Make sure the 'load' functions called before driver suggestion
+
+git-svn-id: https://svn.pardus.org.tr/uludag/branches/kde/display-settings/corporate2@26767 26e1f6f6-46e4-0310-a0b7-a8a415fd4c45
+---
+ code/display-settings.py           |    2 --
+ code/displaysettings/mainwidget.py |    6 ++++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/code/display-settings.py b/code/display-settings.py
+index 39fa522..e1a6465 100755
+--- a/code/display-settings.py
++++ b/code/display-settings.py
+@@ -62,8 +62,6 @@ class Module(KCModule):
+ 
+         self.connect(self.mainwidget, PYSIGNAL("configChanged"), self.changed)
+ 
+-        self.load()
+-
+     def load(self):
+         self.mainwidget.load()
+ 
+diff --git a/code/displaysettings/mainwidget.py b/code/displaysettings/mainwidget.py
+index 91d3d8b..d216198 100644
+--- a/code/displaysettings/mainwidget.py
++++ b/code/displaysettings/mainwidget.py
+@@ -67,8 +67,6 @@ class MainWidget(Ui_MainWidget):
+             self.buttonSwap.hide()
+             self.setDisabled(True)
+ 
+-        self.suggestDriver()
+-
+         self.cardDialog = VideoCardDialog(self, self.iface)
+         self.outputDialogs = {}
+ 
+@@ -88,6 +86,10 @@ class MainWidget(Ui_MainWidget):
+         self.connect(self.cardDialog, PYSIGNAL("configChanged"), self.emitConfigChanged)
+         self.connect(self.configureCardButton, SIGNAL("clicked()"), self.cardDialog.show)
+ 
++        self.load()
++
++        QTimer.singleShot(0, self.suggestDriver)
++
+     def checkBackend(self):
+         """
+             Check if there are packages that provide required backend.
+-- 
+1.6.5.4
+
