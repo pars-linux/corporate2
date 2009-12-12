@@ -1,0 +1,70 @@
+--- notification-daemon-0.4.0/src/daemon/daemon.c.always-stack	2008-09-25 21:27:07.000000000 -0400
++++ notification-daemon-0.4.0/src/daemon/daemon.c	2009-09-23 02:44:22.721967819 -0400
+@@ -1270,14 +1270,14 @@
+ 	}
+ 
+ 
+-	if (window_xid != None)
++	if (window_xid != None && !theme_get_always_stack(nw))
+ 	{
+ 		/*
+ 		 * Do nothing here if we were passed an XID; we'll call
+ 		 * sync_notification_position later.
+ 		 */
+ 	}
+-	else if (use_pos_data)
++	else if (use_pos_data && !theme_get_always_stack(nw))
+ 	{
+ 		/*
+ 		 * Typically, the theme engine will set its own position based on
+@@ -1316,7 +1316,7 @@
+ 	 * for changes, and reposition the window based on the source
+ 	 * window.  We need to do this after return_id is calculated.
+ 	 */
+-	if (window_xid != None)
++	if (window_xid != None && !theme_get_always_stack(nw))
+ 	{
+ 		monitor_notification_source_windows(daemon, nt, window_xid);
+ 		sync_notification_position(daemon, nw, window_xid);
+--- notification-daemon-0.4.0/src/daemon/engines.h.always-stack	2008-03-14 19:11:43.000000000 -0400
++++ notification-daemon-0.4.0/src/daemon/engines.h	2009-09-23 02:16:32.615722273 -0400
+@@ -21,5 +21,6 @@
+ 								   const char *key, GCallback cb);
+ void theme_clear_notification_actions(GtkWindow *nw);
+ void theme_move_notification(GtkWindow *nw, int x, int y);
++gboolean theme_get_always_stack(GtkWindow *nw);
+ 
+ #endif /* _ENGINES_H_ */
+--- notification-daemon-0.4.0/src/daemon/engines.c.always-stack	2008-11-20 05:45:16.000000000 -0500
++++ notification-daemon-0.4.0/src/daemon/engines.c	2009-09-23 02:16:32.614725140 -0400
+@@ -30,6 +30,7 @@
+ 	void (*move_notification)(GtkWindow *nw, int x, int y);
+ 	void (*set_notification_timeout)(GtkWindow *nw, glong timeout);
+ 	void (*notification_tick)(GtkWindow *nw, glong timeout);
++	gboolean (*get_always_stack)(GtkWindow *nw);
+ 
+ } ThemeEngine;
+ 
+@@ -83,6 +84,7 @@
+ 	BIND_OPTIONAL_FUNC(set_notification_timeout);
+ 	BIND_OPTIONAL_FUNC(set_notification_hints);
+ 	BIND_OPTIONAL_FUNC(notification_tick);
++	BIND_OPTIONAL_FUNC(get_always_stack);
+ 
+ 	if (!engine->theme_check_init(NOTIFICATION_DAEMON_MAJOR_VERSION,
+ 								  NOTIFICATION_DAEMON_MINOR_VERSION,
+@@ -290,3 +292,14 @@
+ 	ThemeEngine *engine = g_object_get_data(G_OBJECT(nw), "_theme_engine");
+ 	engine->move_notification(nw, x, y);
+ }
++
++gboolean
++theme_get_always_stack(GtkWindow *nw)
++{
++	ThemeEngine *engine = g_object_get_data(G_OBJECT(nw), "_theme_engine");
++
++	if (engine->get_always_stack != NULL)
++		return engine->get_always_stack(nw);
++	else
++		return FALSE;
++}
