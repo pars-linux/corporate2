@@ -1,0 +1,69 @@
+diff -up notification-daemon-0.4.0/configure.ac.sexy notification-daemon-0.4.0/configure.ac
+--- notification-daemon-0.4.0/configure.ac.sexy	2008-11-20 05:46:52.000000000 -0500
++++ notification-daemon-0.4.0/configure.ac	2009-08-04 00:20:23.596393484 -0400
+@@ -75,14 +75,12 @@ AM_GLIB_GNU_GETTEXT
+ 
+ REQ_GTK_VERSION=2.10.0
+ REQ_GLIB_VERSION=$REQ_GTK_VERSION
+-REQ_SEXY_VERSION=0.1.3
+ REQ_DBUS_VERSION=0.36
+ pkg_modules="
+ 	gtk+-2.0 >= $REQ_GTK_VERSION, \
+ 	glib-2.0 >= $REQ_GLIB_VERSION, \
+ 	dbus-1 >= $REQ_DBUS_VERSION, \
+ 	dbus-glib-1 >= $REQ_DBUS_VERSION, \
+-	libsexy >= $REQ_SEXY_VERSION, \
+ 	gconf-2.0, \
+ 	libwnck-1.0 \
+ "
+diff -up notification-daemon-0.4.0/src/themes/standard/theme.c.sexy notification-daemon-0.4.0/src/themes/standard/theme.c
+--- notification-daemon-0.4.0/src/themes/standard/theme.c.sexy	2008-11-20 04:38:01.000000000 -0500
++++ notification-daemon-0.4.0/src/themes/standard/theme.c	2009-08-04 00:22:22.859636942 -0400
+@@ -1,7 +1,6 @@
+ #include "config.h"
+ 
+ #include <gtk/gtk.h>
+-#include <libsexy/sexy-url-label.h>
+ 
+ typedef void (*ActionInvokedCb)(GtkWindow *nw, const char *key);
+ typedef void (*UrlClickedCb)(GtkWindow *nw, const char *url);
+@@ -563,6 +562,14 @@ configure_event_cb(GtkWidget *nw,
+ 	return FALSE;
+ }
+ 
++static gboolean
++activate_link (GtkLabel *label, const char *url, WindowData *windata)
++{
++	windata->url_clicked (GTK_WINDOW(windata->win), url);
++
++	return TRUE;
++}
++
+ GtkWindow *
+ create_notification(UrlClickedCb url_clicked)
+ {
+@@ -722,12 +729,12 @@ create_notification(UrlClickedCb url_cli
+ 	gtk_widget_show(vbox);
+ 	gtk_box_pack_start(GTK_BOX(windata->content_hbox), vbox, TRUE, TRUE, 0);
+ 
+-	windata->body_label = sexy_url_label_new();
++	windata->body_label = gtk_label_new (NULL);
+ 	gtk_box_pack_start(GTK_BOX(vbox), windata->body_label, TRUE, TRUE, 0);
+ 	gtk_misc_set_alignment(GTK_MISC(windata->body_label), 0, 0);
+ 	gtk_label_set_line_wrap(GTK_LABEL(windata->body_label), TRUE);
+-	g_signal_connect_swapped(G_OBJECT(windata->body_label), "url_activated",
+-							 G_CALLBACK(windata->url_clicked), win);
++	g_signal_connect(G_OBJECT(windata->body_label), "activate-link",
++                                  G_CALLBACK(activate_link), windata);
+ 
+ 	atkobj = gtk_widget_get_accessible(windata->body_label);
+ 	atk_object_set_description(atkobj, "Notification body text.");
+@@ -801,7 +808,7 @@ set_notification_text(GtkWindow *nw, con
+ 	gtk_label_set_markup(GTK_LABEL(windata->summary_label), str);
+ 	g_free(str);
+ 
+-	sexy_url_label_set_markup(SEXY_URL_LABEL(windata->body_label), body);
++	gtk_label_set_markup(GTK_LABEL(windata->body_label), body);
+ 
+ 	if (body == NULL || *body == '\0')
+ 		gtk_widget_hide(windata->body_label);
