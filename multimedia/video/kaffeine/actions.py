@@ -14,7 +14,7 @@ shelltools.export("HOME", get.workDIR())
 KeepSpecial=["libtool"]
 
 def setup():
-    kde.configure("--without-arts")
+    kde.configure()
 
 def build():
     kde.make()
