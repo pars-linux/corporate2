@@ -1,0 +1,103 @@
+diff -Nuar src.orig/input/audiobrowser/playlist.cpp src/input/audiobrowser/playlist.cpp
+--- kaffeine/src.orig/input/audiobrowser/playlist.cpp	2008-12-24 09:39:29.000000000 +0200
++++ kaffeine/src/input/audiobrowser/playlist.cpp	2008-12-24 09:41:03.000000000 +0200
+@@ -18,7 +18,7 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+  */
+-
++#include <kmimemagic.h>
+ #include <krandomsequence.h>
+ #include <kapplication.h>
+ #include <kglobalsettings.h>
+@@ -931,8 +931,8 @@
+ 
+ 	if (mrl.mime().isNull())
+ 	{
+-		KMimeType::Ptr mime = KMimeType::findByURL(mrl.kurl().path());
+-		mrl.setMime(mime->name());
++		KMimeMagicResult *result = KMimeMagic::self()->findFileType(mrl.kurl().path());
++		mrl.setMime(result->mimeType());
+ 	}
+ 
+ 	tmp = new PlaylistItem(m_list, dynamic_cast<KListViewItem *>(after), mrl);
+@@ -1095,27 +1097,32 @@
+ 			mrl.setTitle(mrl.url());
+ 		}
+ 
+-		//kdDebug() << "PlayList: Check url " << mrl.url() << endl;
++		kdDebug() << "PlayList: Check url " << mrl.url() << endl;
+ 		/*********** determine extension and mime type ************/
+ 
+ 		ext = mrl.kurl().fileName();
++        
+ 		ext = ext.remove(0 , ext.findRev('.') +1).lower();
+-		// kdDebug() << "Extension: " << ext << endl;
++		kdDebug() << "Extension: " << ext << endl;
++
++		kdDebug() << "PlayList: Try to determine mime of: " << mrl.url() << endl;
++
++        KMimeMagicResult *result = KMimeMagic::self()->findFileType(mrl.kurl().path());
++        if (!result || !result->isValid())
++                kdDebug() << "Could not find out type" << endl;
++        else
++                kdDebug() << "Type: " << result->mimeType() << endl;
++
+ 
+-		//kdDebug() << "PlayList: Try to determine mime of: " << mrl.url() << endl;
+-		KMimeType::Ptr mime = KMimeType::findByURL(mrl.kurl().path()); /* works only with path() (without protocol)
+-		                                                                      e.g. http://www.somafm.com/indipop.pls
+-		                                                                      path: /indipop.pls */
+-		//kdDebug() << "Mime: " << mime->name() << endl;
+ 		/*** check for kaffeine/noatun/pls/asx/m3u playlist ***/
+-		mrl.setMime(mime->name());
++		mrl.setMime(result->mimeType());
+ 
+ 		/******** some special processing for local files! *******/
+ 		if (mrl.kurl().isLocalFile())
+ 		{
+ 			/* playlist ? */
+-			if ((mime->name() == "text/plain") || (mime->name() == "text/xml") || (mime->name() == "application/x-kaffeine")
+-			        || (mime->name() == "audio/x-scpls") || (mime->name() == "audio/x-mpegurl" || (mime->name() == "audio/mpegurl")
++			if ((result->mimeType()== "text/plain") || (result->mimeType() == "text/xml") || (result->mimeType() == "application/x-kaffeine")
++			        || (result->mimeType() == "audio/x-scpls") || (result->mimeType() == "audio/x-mpegurl" || (result->mimeType() == "audio/mpegurl")
+ 			                || (ext == "asx") || (ext == "asf") || (ext == "wvx") || (ext == "wax"))) /* windows meta files */
+ 			{
+ 				kdDebug() << "PlayList: Check for kaffeine/noatun/m3u/pls/asx playlist\n";
+@@ -1182,7 +1189,7 @@
+ 			}
+ 
+ 			/**** a directory ? ****/
+-			if (mime->name() == "inode/directory")
++			if (result->mimeType() == "inode/directory")
+ 			{
+ 				kdDebug() << "PlayList: Add Directory: " << mrl.url() << endl;
+ 
+@@ -1257,13 +1264,13 @@
+ 
+ 			/*** get meta tags ****/
+ 			if (m_metaOnLoading)
+-				getMetaInfo(mrl, mime->name());
++				getMetaInfo(mrl, result->mimeType());
+ 
+ 			/* Get all suported subs in movie dir, clear out
+ 			 * those starting with a different name than the movie,
+ 			 * prompt the user to select a sub
+ 			 */
+-			if (mime->name().contains("video"))
++			if (result->mimeType().contains("video"))
+ 			{
+ 				kdDebug() << "PlayList: Check for subtitle files" << endl;
+ 				subtitleURL = QString::null;
+diff -Nuar src.orig/player-parts/kaffeine-part/mrl.h src/player-parts/kaffeine-part/mrl.h
+--- kaffeine/src.orig/player-parts/kaffeine-part/mrl.h	2008-12-24 09:39:29.000000000 +0200
++++ kaffeine/src/player-parts/kaffeine-part/mrl.h	2008-12-24 09:40:53.000000000 +0200
+@@ -63,7 +63,7 @@
+    const QStringList& subtitleFiles() const { return m_subtitleFiles; }
+    int currentSubtitle() const { return m_currentSubtitle; }
+ 
+-   void setURL(const QString& url) { m_url = url; m_kurl = KURL(url); }
++   void setURL(const QString& url) { m_url = url; m_kurl = KURL::fromPathOrURL(url); }
+    void setTitle(const QString& title) { m_title = title; }
+    void setArtist(const QString& artist) { m_artist = artist; }
+    void setAlbum(const QString& album) { m_album = album; }

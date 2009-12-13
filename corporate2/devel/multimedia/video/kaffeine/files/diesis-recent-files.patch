@@ -1,0 +1,39 @@
+--- kaffeine/src/player-parts/xine-part/kxinewidget.cpp.orig	2008-12-25 09:35:34.000000000 +0200
++++ kaffeine/src/player-parts/xine-part/kxinewidget.cpp	2008-12-25 09:38:00.000000000 +0200
+@@ -1964,6 +1964,7 @@
+ 
+ 	if ( (pos=m_trackURL.find("#subtitle:"))>-1 ) {
+ 		turl = m_trackURL.left(pos);
++        turl = turl.replace( "%23", "#" );
+ 		m_trackSubtitleURL = m_trackURL.right( m_trackURL.length()-pos );
+ 		if ( (pos=m_trackSubtitleURL.find("#save:"))>-1 ) {
+ 			m_trackSaveURL = m_trackSubtitleURL.right( m_trackSubtitleURL.length()-pos );
+@@ -1974,14 +1975,20 @@
+ 		turl = m_trackURL.left(pos);
+ 		m_trackSaveURL = m_trackURL.right( m_trackURL.length()-pos );
+ 	}
+-	else turl = m_trackURL;
+-
+-	m_trackSubtitleURL.remove("#subtitle:");
+-	m_trackSaveURL.remove("#save:");
+-
+-	turl = turl.replace( "%", "%25" ).replace( "#", "%23" ).replace( ";", "%3b" ).replace( " ", "%20" );
+-	if ( !m_trackSubtitleURL.isEmpty() )
+-		turl = turl + "#subtitle:" + m_trackSubtitleURL.replace( "%", "%25" ).replace( "#", "%23" ).replace( ";", "%3b" ).replace( " ", "%20" );
++    else {
++         turl = m_trackURL;
++         turl = turl.replace( "%23", "#" );
++    }
++    m_trackSubtitleURL.remove("#subtitle:");
++    m_trackSaveURL.remove("#save:");
++    if(!turl.contains("http")){
++        turl = turl.replace( "%", "%25" ).replace( "#", "%23" ).replace( ";", "%3b" ).replace( " ", "%20" );
++    }else{
++        turl = turl.replace( "#", "%23" );
++    }
++    if ( !m_trackSubtitleURL.isEmpty() ){
++        turl = turl + "#subtitle:" + m_trackSubtitleURL.replace( "%", "%25" ).replace( "#", "%23" ).replace( ";", "%3b" ).replace( " ", "%20" );
++    }
+ 	if ( !m_trackSaveURL.isEmpty() )
+ 		turl = turl + "#save:" + m_trackSaveURL.replace( "%", "%25" ).replace( "#", "%23" ).replace( ";", "%3b" ).replace( " ", "%20" );
+ 	if ( turl.startsWith("/") )
