@@ -1,0 +1,59 @@
+Index: arrayprobe-2.0/configure
+===================================================================
+--- arrayprobe-2.0.orig/configure
++++ arrayprobe-2.0/configure
+@@ -311,7 +311,7 @@ ac_includes_default="\
+ # include <unistd.h>
+ #endif"
+ 
+-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CPP EGREP LIBOBJS LTLIBOBJS'
++ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT kerneldir exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CPP EGREP LIBOBJS LTLIBOBJS'
+ ac_subst_files=''
+ 
+ # Initialize some variables set by options.
+@@ -341,6 +341,7 @@ x_libraries=NONE
+ # Use braces instead of parens because sh, perl, etc. also accept them.
+ bindir='${exec_prefix}/bin'
+ sbindir='${exec_prefix}/sbin'
++kerneldir='${prefix}/src/linux'
+ libexecdir='${exec_prefix}/libexec'
+ datadir='${prefix}/share'
+ sysconfdir='${prefix}/etc'
+@@ -546,6 +547,11 @@ do
+   | --sbi=* | --sb=*)
+     sbindir=$ac_optarg ;;
+ 
++  -kerneldir | --kerneldir)
++    ac_prev=kerneldir ;;
++  -kerneldir=* | --kerneldir=*)
++    kerneldir=$ac_optarg ;;
++
+   -sharedstatedir | --sharedstatedir | --sharedstatedi \
+   | --sharedstated | --sharedstate | --sharedstat | --sharedsta \
+   | --sharedst | --shareds | --shared | --share | --shar \
+@@ -669,7 +675,7 @@ do
+ done
+ 
+ # Be sure to have absolute paths.
+-for ac_var in bindir sbindir libexecdir datadir sysconfdir sharedstatedir \
++for ac_var in kerneldir bindir sbindir libexecdir datadir sysconfdir sharedstatedir \
+ 	      localstatedir libdir includedir oldincludedir infodir mandir
+ do
+   eval ac_val=$`echo $ac_var`
+@@ -3812,7 +3818,7 @@ done
+ echo "$as_me:$LINENO: checking for kernel sources" >&5
+ echo $ECHO_N "checking for kernel sources... $ECHO_C" >&6
+ found_kernel_dir=""
+-for kernel_dir in /usr/src/linux /usr/src/linux-2.4
++for kernel_dir in ${kerneldir} /usr/src/linux /usr/src/linux-2.4
+ do
+   if test -d $kernel_dir/drivers/block ; then
+     CFLAGS="$CFLAGS -I$kernel_dir/include -I$kernel_dir/drivers/block"
+@@ -5658,6 +5664,7 @@ s,@prefix@,$prefix,;t t
+ s,@program_transform_name@,$program_transform_name,;t t
+ s,@bindir@,$bindir,;t t
+ s,@sbindir@,$sbindir,;t t
++s,@kerneldir@,$kerneldir,;t t
+ s,@libexecdir@,$libexecdir,;t t
+ s,@datadir@,$datadir,;t t
+ s,@sysconfdir@,$sysconfdir,;t t
