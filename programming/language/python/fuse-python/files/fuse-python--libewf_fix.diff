@@ -1,0 +1,78 @@
+Only in fuse-python-0.2: Changelog
+Only in python: CVS
+Only in python/example: CVS
+Only in python/fuseparts: CVS
+diff -ru fuse-python-0.2/fuseparts/_fusemodule.c python/fuseparts/_fusemodule.c
+--- fuse-python-0.2/fuseparts/_fusemodule.c	2007-06-18 18:20:09.000000000 +0400
++++ python/fuseparts/_fusemodule.c	2008-04-24 18:52:10.000000000 +0400
+@@ -118,7 +118,7 @@
+ 
+ /* transform a Python integer to an unsigned C numeric value */
+ 
+-#define py2attr(st, attr)						\
++#define py2attr(st, attr) {						\
+ 	if (PyInt_Check(pytmp) && sizeof((st)->attr) <= sizeof(long)) {	\
+ 		/*							\
+ 		 * We'd rather use here PyInt_AsUnsignedLong() here	\
+@@ -162,8 +162,9 @@
+ 		goto OUT_DECREF;					\
+ 	(st)->attr = ctmp;						\
+ 	if ((unsigned long long)(st)->attr != ctmp)			\
+-		goto OUT_DECREF;
+-		
++		goto OUT_DECREF;					\
++}
++
+ #define fetchattr_nam(st, attr, aname)					\
+ 	if (!(pytmp = PyObject_GetAttrString(v, aname)))		\
+ 		goto OUT_DECREF;					\
+@@ -174,7 +175,13 @@
+ 
+ #define fetchattr_soft(st, attr)					\
+ 	if (PyObject_HasAttrString(v, #attr)) {				\
+-		fetchattr(st, attr);					\
++		pytmp = PyObject_GetAttrString(v, #attr);		\
++		if (!pytmp)						\
++			goto OUT_DECREF;				\
++	        if (pytmp == Py_None)					\
++			Py_DECREF(pytmp);				\
++		else							\
++			py2attr(st, attr);				\
+ 	}
+ 
+ /*
+@@ -891,6 +898,7 @@
+ 	save = PyEval_SaveThread();
+ 	err = fuse_loop_mt(f);
+ 	PyEval_RestoreThread(save);
++	interp = NULL;
+ #endif
+ 
+ 	return(err);
+diff -ru fuse-python-0.2/fuse.py python/fuse.py
+--- fuse-python-0.2/fuse.py	2007-06-25 03:08:09.000000000 +0400
++++ python/fuse.py	2008-01-23 22:32:47.000000000 +0300
+@@ -461,7 +461,7 @@
+     FUSE, see ``fuse.h``).
+     """
+ 
+-    def __init__(self, name, **kw):
++    def __init__(self, **kw):
+     
+         self.l_type  = None
+         self.l_start = None
+@@ -477,7 +477,7 @@
+     http://www.opengroup.org/onlinepubs/009695399/basedefs/time.h.html
+     """
+ 
+-    def __init__(self, name, **kw):
++    def __init__(self, **kw):
+     
+         self.tv_sec  = None
+         self.tv_nsec = None
+Only in fuse-python-0.2: fuse_python.egg-info
+Only in fuse-python-0.2: MANIFEST.in
+Only in fuse-python-0.2: PKG-INFO
+Only in fuse-python-0.2: README.new_fusepy_api.html
+Only in fuse-python-0.2: setup.cfg
+Only in python/util: CVS
