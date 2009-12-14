@@ -20,7 +20,7 @@ Index: foo2zjs-0.0_20090623/Makefile
 ===================================================================
 --- foo2zjs-0.0_20090623.orig/Makefile
 +++ foo2zjs-0.0_20090623/Makefile
-@@ -16,9 +16,9 @@ SYSNAME := $(shell uname -n)
+@@ -17,9 +17,9 @@ SYSNAME := $(shell uname -n)
  VERSION=0.0
  
  # Installation prefix...
@@ -32,7 +32,7 @@ Index: foo2zjs-0.0_20090623/Makefile
  
  # Pathnames for this package...
  BIN=$(PREFIX)/bin
-@@ -39,7 +39,7 @@ FOODB=$(DESTDIR)/usr/share/foomatic/db/s
+@@ -40,7 +40,7 @@ FOODB=$(DESTDIR)/usr/share/foomatic/db/s
  
  # User ID's
  LPuid=-oroot
@@ -41,7 +41,7 @@ Index: foo2zjs-0.0_20090623/Makefile
  ifeq ($(UNAME),Darwin)
      LPuid=-oroot
      LPgid=-gwheel
-@@ -110,7 +110,7 @@ WEBFILES=	\
+@@ -111,7 +111,7 @@ WEBFILES=	\
  		archhiperc.fig \
  		c3400n.png \
  		$(NULL)
@@ -50,7 +50,7 @@ Index: foo2zjs-0.0_20090623/Makefile
  FILES	=	\
  		README \
  		README.in \
-@@ -255,7 +255,7 @@ ifeq ($(UNAME),Linux)
+@@ -256,7 +256,7 @@ ifeq ($(UNAME),Linux)
  endif
  
  # Compiler flags
@@ -59,7 +59,7 @@ Index: foo2zjs-0.0_20090623/Makefile
  #CFLAGS +=	-g
  
  #
-@@ -588,6 +588,7 @@ install-foo:
+@@ -589,6 +589,7 @@ install-foo:
  	#
  	@if [ -d $(FOODB) ]; then \
  	    for dir in driver printer opt; do \
@@ -67,7 +67,7 @@ Index: foo2zjs-0.0_20090623/Makefile
  		echo install -m 644 foomatic-db/$$dir/*.xml $(FOODB)/$$dir/; \
  		$(INSTALL) -c -m 644 foomatic-db/$$dir/*.xml $(FOODB)/$$dir/; \
  	    done \
-@@ -605,10 +606,10 @@ install-foo:
+@@ -606,10 +607,10 @@ install-foo:
  	#
  	# Clear foomatic cache and rebuild database if needed
  	#
@@ -82,7 +82,7 @@ Index: foo2zjs-0.0_20090623/Makefile
  	    foomatic-combo-xml -O >overview.xml; \
  	fi
  
-@@ -662,21 +663,21 @@ install-extra:
+@@ -663,21 +664,21 @@ install-extra:
  	    fi; \
  	done
  	# foo2zjs Firmware files (if any)
@@ -108,7 +108,7 @@ Index: foo2zjs-0.0_20090623/Makefile
  	    fi; \
  	done
  	# foo2oak ICM files (if any)
-@@ -730,40 +731,11 @@ install-ppd:
+@@ -731,40 +732,11 @@ install-ppd:
  	#
  	# Install PPD files for CUPS
  	#
@@ -150,7 +150,7 @@ Index: foo2zjs-0.0_20090623/Makefile
  	    done; \
  	fi
  
-@@ -776,13 +748,13 @@ install-desktop:
+@@ -777,13 +749,13 @@ install-desktop:
  	# Install GNOME desktop
  	#
  	if [ -d $(APPL) ]; then \
@@ -167,22 +167,39 @@ Index: foo2zjs-0.0_20090623/Makefile
  	fi
  
  install-gui:
-@@ -793,10 +765,10 @@ install-gui:
+@@ -794,10 +766,28 @@ install-gui:
  	$(INSTALL) -c -m 755 hplj10xx_gui.tcl $(SHAREZJS)
  	
  
 -USBDIR=/etc/hotplug/usb
 -UDEVDIR=/etc/udev/rules.d
--RULES=hplj10xx.rules
--install-hotplug: install-hotplug-test install-hotplug-prog
 +UDEVDIR=$(DESTDIR)/lib/udev
 +RULESDIR=$(UDEVDIR)/rules.d
 +
 +install-hotplug: install-hotplug-test install-udev
++
++install-udev-helper:
++	[ -d $(UDEVDIR) ] || $(INSTALL) -d -m 755 $(UDEVDIR)/
++	$(INSTALL) -c -m 755 hplj1000 $(UDEVDIR)/
++	ln -sf hplj1000 $(UDEVDIR)/hplj1005
++	ln -sf hplj1000 $(UDEVDIR)/hplj1018
++	ln -sf hplj1000 $(UDEVDIR)/hplj1020
++	ln -sf hplj1000 $(UDEVDIR)/hpljP1005
++	ln -sf hplj1000 $(UDEVDIR)/hpljP1006
++	ln -sf hplj1000 $(UDEVDIR)/hpljP1007
++	ln -sf hplj1000 $(UDEVDIR)/hpljP1008
++	ln -sf hplj1000 $(UDEVDIR)/hpljP1505
++	ln -sf hplj1000 $(UDEVDIR)/hpljP1505n
++
+ RULES=hplj10xx.rules
+-install-hotplug: install-hotplug-test install-hotplug-prog
++install-udev: install-udev-helper
++	[ -d $(RULESDIR) ] || install -d -m 755 $(RULESDIR)/
++	install -c -m 644 $(RULES) $(RULESDIR)/85-foo2zjs.rules
  
  install-hotplug-test:
  	#
-@@ -813,29 +785,23 @@ install-hotplug-test:
+@@ -814,32 +804,6 @@ install-hotplug-test:
  	# ... OK!
  	#
  
@@ -209,27 +226,13 @@ Index: foo2zjs-0.0_20090623/Makefile
 -	$(USBDIR)/hpljP1007 install-usermap
 -	$(USBDIR)/hpljP1008 install-usermap
 -	$(USBDIR)/hpljP1505 install-usermap
-+install-udev-helper:
-+	[ -d $(UDEVDIR) ] || $(INSTALL) -d -m 755 $(UDEVDIR)/
-+	$(INSTALL) -c -m 755 hplj1000 $(UDEVDIR)/
-+	ln -sf hplj1000 $(UDEVDIR)/hplj1005
-+	ln -sf hplj1000 $(UDEVDIR)/hplj1018
-+	ln -sf hplj1000 $(UDEVDIR)/hplj1020
-+	ln -sf hplj1000 $(UDEVDIR)/hpljP1005
-+	ln -sf hplj1000 $(UDEVDIR)/hpljP1006
-+	ln -sf hplj1000 $(UDEVDIR)/hpljP1007
-+	ln -sf hplj1000 $(UDEVDIR)/hpljP1008
-+	ln -sf hplj1000 $(UDEVDIR)/hpljP1505
-+	ln -sf hplj1000 $(UDEVDIR)/hpljP1505n
-+
-+RULES=hplj10xx.rules
-+install-udev: install-udev-helper
-+	[ -d $(RULESDIR) ] || install -d -m 755 $(RULESDIR)/
-+	install -c -m 644 $(RULES) $(RULESDIR)/85-foo2zjs.rules
- 
+-	# modprobe usblp
+-	$(USBDIR)/hplj1000 install-usblp
+-
  cups:	FRC
  	if [ -x /etc/init.d/cups ]; then \
-@@ -1231,7 +1197,6 @@ install-doc: doc
+ 	    /etc/init.d/cups restart; \
+@@ -1235,7 +1199,6 @@ install-doc: doc
  	$(INSTALL) -c -m 644 README $(DOCDIR)
  	$(INSTALL) -c -m 644 ChangeLog $(DOCDIR)
  
@@ -237,7 +240,7 @@ Index: foo2zjs-0.0_20090623/Makefile
  GROFF=groff
  manual.pdf: $(MANPAGES)
  	-$(GROFF) -t -man $(MANPAGES) | ps2pdf - $@
-@@ -1286,7 +1251,7 @@ maildb:
+@@ -1290,7 +1253,7 @@ maildb:
  #
  # Create tarball
  #
