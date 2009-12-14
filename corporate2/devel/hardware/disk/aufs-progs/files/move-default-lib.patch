@@ -1,0 +1,59 @@
+Index: aufs-progs-20090429/aubrsync
+===================================================================
+--- aufs-progs-20090429.orig/aubrsync
++++ aufs-progs-20090429/aubrsync
+@@ -37,13 +37,13 @@ test ! -x $f && EEcho $f is not installe
+ # special handling for backward compatibility.
+ #
+ # aufs in the donated eeepc is aufs1 20080211 without CONFIG_AUFS_COMPAT.
+-# /etc/default/aufs was introduced in aufs1 20080922.
++# /usr/share/aufs-progs/aufs was introduced in aufs1 20080922.
+ # shwh/noshwh was introduced in aufs1 20080310 with CONFIG_AUFS_SHWH.
+ # noshwh became always available regardless CONFIG_AUFS_SHWH in aufs1 20081117.
+ 
+ noshwh=1
+ AUFS_VERSION=20080211
+-f=/etc/default/aufs
++f=/usr/share/aufs-progs/aufs
+ if [ -s $f ]
+ then
+ 	. $f
+Index: aufs-progs-20090429/auchk
+===================================================================
+--- aufs-progs-20090429.orig/auchk
++++ aufs-progs-20090429/auchk
+@@ -24,7 +24,7 @@ EEcho() # str
+ 	echo $0: $@ 1>&2
+ }
+ 
+-f=/etc/default/aufs
++f=/usr/share/aufs-progs/aufs
+ . $f
+ 
+ Usage()
+Index: aufs-progs-20090429/Makefile
+===================================================================
+--- aufs-progs-20090429.orig/Makefile
++++ aufs-progs-20090429/Makefile
+@@ -53,7 +53,7 @@ install_sbin: Tgt = ${DESTDIR}/sbin
+ install_ubin: File = auchk aubrsync #auctl
+ install_ubin: Tgt = ${DESTDIR}/usr/bin
+ install_etc: File = etc_default_aufs
+-install_etc: Tgt = ${DESTDIR}/etc/default/aufs
++install_etc: Tgt = ${DESTDIR}/usr/share/aufs-progs/aufs
+ install_sbin install_ubin install_etc: ${File}
+ 	install -m 755 -o root -g root -p ${File} ${Tgt}
+ install: install_sbin install_ubin install_etc
+Index: aufs-progs-20090429/README
+===================================================================
+--- aufs-progs-20090429.orig/README
++++ aufs-progs-20090429/README
+@@ -37,7 +37,7 @@ o /usr/bin/aubrsync
+   Kindly they agreed that I keep my aufs work as free software as it has
+   been.
+ 
+-o /etc/default/aufs
++o /usr/share/aufs-progs/aufs
+   A library for shell scripts.
+ 
+ 
