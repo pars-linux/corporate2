@@ -1,0 +1,102 @@
+--- a/hplj1000	2009-04-14 03:56:05.000000000 +0300
++++ b/hplj1000	2009-07-23 16:48:07.000000000 +0300
+@@ -10,9 +10,6 @@
+ #	Used to download firmware automatically into the printer when it
+ #	is powered up or plugged into the USB port.
+ #
+-#	Also, run this script once with the magic argument "install-usermap"
+-#	to create the proper entry in the /etc/hotplug/usb.usermap file.
+-#
+ #	The inspiration fo this script is from:
+ #		Oscar Santacreu. Alicante-Spain (2002)
+ #		Mike Morgan (2004)
+@@ -35,7 +32,7 @@
+ #
+ # Directory to find downloadable HP firmware files sihpMMMM.dl
+ #
+-FWDIR=/usr/share/foo2zjs/firmware
++FWDIR=/lib/firmware
+ 
+ #
+ # Program used to determine USB printer id information
+@@ -77,37 +74,31 @@
+     MODEL=P1005; FWMODEL=$MODEL
+     USB1=0x03f0	#Vendor
+     USB2=0x3d17	#Model
+-    FWDIR=/usr/share/foo2xqx/firmware
+     ;;
+ *P1006)
+     MODEL=P1006; FWMODEL=$MODEL
+     USB1=0x03f0	#Vendor
+     USB2=0x3e17	#Model
+-    FWDIR=/usr/share/foo2xqx/firmware
+     ;;
+ *P1007)
+     MODEL=P1007; FWMODEL=P1005		# Alias
+     USB1=0x03f0	#Vendor
+     USB2=0x4817	#Model
+-    FWDIR=/usr/share/foo2xqx/firmware
+     ;;
+ *P1008)
+     MODEL=P1008; FWMODEL=P1006		# Alias
+     USB1=0x03f0	#Vendor
+     USB2=0x4917	#Model
+-    FWDIR=/usr/share/foo2xqx/firmware
+     ;;
+ *P1505)
+     MODEL=P1505; FWMODEL=$MODEL
+     USB1=0x03f0	#Vendor
+     USB2=0x3f17	#Model
+-    FWDIR=/usr/share/foo2xqx/firmware
+     ;;
+ *P1505n)
+     MODEL=P1505n; FWMODEL=$MODEL
+     USB1=0x03f0	#Vendor
+     USB2=0x4017	#Model
+-    FWDIR=/usr/share/foo2xqx/firmware
+     ;;
+ *1000)
+     MODEL=1000; FWMODEL=$MODEL
+@@ -136,42 +127,6 @@
+ esac
+ 
+ #
+-#	The special command line argument "install-usermap" will install
+-#	the proper entry into the /etc/hotplug/usb.usermap file
+-#
+-case "$1" in
+-install-usermap)
+-    if [ "$USB2" != "" ]; then
+-	if [ -w /etc/hotplug/usb.usermap ]; then
+-		USERMAP=/etc/hotplug/usb.usermap
+-	elif [ -d /etc/hotplug/usb/ ]; then
+-		USERMAP=/etc/hotplug/usb/foo2zjs.usermap
+-		if [ ! -s $USERMAP ]; then
+-			echo > $USERMAP
+-		fi
+-	else
+-		log "No /etc/hotplug usermap!"
+-		exit
+-	fi
+-	chmod 664 $USERMAP
+-	ex - $USERMAP <<-EOF
+-	g/^hplj$MODEL/d
+-	\$a
+-	hplj$MODEL 0x0003 $USB1 $USB2 0x0000 0x0000 0x00 0x00 0x00 0x00 0x00 0x00 0x00000000
+-	.
+-	w
+-	q
+-	EOF
+-    else
+-	log "I don't know the USB info for this model yet.  Please run"
+-	log "usb_printerid on the usb device and send the output to:"
+-	log "rick.richardson@comcast.net"
+-    fi
+-    exit 0
+-    ;;
+-esac
+- 
+-#
+ #	Procedure to load a single device with firmware
+ #
+ load1() {
