@@ -13,12 +13,6 @@ from pisi.actionsapi import get
 def setup():
     autotools.autoreconf("-fi")
 
-    # Skip desktop-file-install's
-    pisitools.dosed("Makefile.in", "desktop-file-install ", "/bin/true ")
-
-    # Fix udev rules dir
-    pisitools.dosed("Makefile.in", "@udevrulesdir = \$.*$", "@udevrulesdir = /lib/udev/rules.d")
-
     pisitools.dosed("Makefile.in", "xmlto man", "xmlto --skip-validation man")
     autotools.configure("--with-udev-rules")
 
@@ -29,5 +23,6 @@ def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     pisitools.dodir("/var/run/udev-configure-printer")
+    pisitools.remove("/usr/share/applications/my-default-printer.desktop")
 
     pisitools.dodoc("README", "AUTHORS", "NEWS", "COPYING", "ChangeLog")
