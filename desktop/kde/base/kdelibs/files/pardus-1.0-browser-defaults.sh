@@ -1,1 +1,0 @@
-echo "BrowserApplication=!firefox"
