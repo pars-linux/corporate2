@@ -1,5 +1,7 @@
---- a/hplj1000	2009-04-14 03:56:05.000000000 +0300
-+++ b/hplj1000	2009-07-23 16:48:07.000000000 +0300
+Index: foo2zjs-0.0_20090623/hplj1000
+===================================================================
+--- foo2zjs-0.0_20090623.orig/hplj1000
++++ foo2zjs-0.0_20090623/hplj1000
 @@ -10,9 +10,6 @@
  #	Used to download firmware automatically into the printer when it
  #	is powered up or plugged into the USB port.
@@ -10,7 +12,7 @@
  #	The inspiration fo this script is from:
  #		Oscar Santacreu. Alicante-Spain (2002)
  #		Mike Morgan (2004)
-@@ -35,7 +32,7 @@
+@@ -35,7 +32,7 @@ DEV=""
  #
  # Directory to find downloadable HP firmware files sihpMMMM.dl
  #
@@ -19,7 +21,7 @@
  
  #
  # Program used to determine USB printer id information
-@@ -77,37 +74,31 @@
+@@ -77,37 +74,31 @@ case "$0" in
      MODEL=P1005; FWMODEL=$MODEL
      USB1=0x03f0	#Vendor
      USB2=0x3d17	#Model
@@ -57,10 +59,11 @@
      ;;
  *1000)
      MODEL=1000; FWMODEL=$MODEL
-@@ -136,42 +127,6 @@
+@@ -135,55 +126,6 @@ case "$0" in
+     ;;
  esac
  
- #
+-#
 -#	The special command line argument "install-usermap" will install
 -#	the proper entry into the /etc/hotplug/usb.usermap file
 -#
@@ -94,9 +97,21 @@
 -    fi
 -    exit 0
 -    ;;
+-install-usblp)
+-    for f in /etc/modprobe.d/blacklist*; do
+-	if grep -q usblp $f; then
+-	    ed - $f <<-EOF
+-		g/^blacklist.*usblp/d
+-		w
+-		q
+-		EOF
+-	    #echo $f
+-	    /sbin/modprobe usblp
+-	fi
+-    done
+-    exit 0
+-    ;;
 -esac
-- 
--#
- #	Procedure to load a single device with firmware
+  
  #
- load1() {
+ #	Procedure to load a single device with firmware
