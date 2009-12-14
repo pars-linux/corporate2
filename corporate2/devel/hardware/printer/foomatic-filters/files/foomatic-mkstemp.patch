@@ -1,0 +1,24 @@
+diff -up foomatic-filters-4.0.2/pdf.c.mkstemp foomatic-filters-4.0.2/pdf.c
+--- foomatic-filters-4.0.2/pdf.c.mkstemp	2009-07-02 15:52:38.960401425 +0100
++++ foomatic-filters-4.0.2/pdf.c	2009-07-02 16:24:39.966400563 +0100
+@@ -157,6 +157,7 @@ static int pdf_extract_pages(char filena
+                              int last)
+ {
+     void *minst;
++    int fd;
+     char filename_arg[PATH_MAX], first_arg[50], last_arg[50];
+     const char *gs_args[] = { "", "-q", "-dNOPAUSE", "-dBATCH",
+         "-dPARANOIDSAFER", "-sDEVICE=pdfwrite", filename_arg, first_arg,
+@@ -165,10 +166,10 @@ static int pdf_extract_pages(char filena
+     _log("Extracting pages %d through %d\n", first, last);
+ 
+     snprintf(filename, PATH_MAX, "%s/foomatic-XXXXXX", temp_dir());
+-    mktemp(filename);
+-    if (!filename[0])
++    if ((fd = mkstemp(filename)) == -1)
+         return 0;
+ 
++    close (fd);
+     if (gsapi_new_instance(&minst, NULL) < 0)
+     {
+         _log("Could not create ghostscript instance\n");
