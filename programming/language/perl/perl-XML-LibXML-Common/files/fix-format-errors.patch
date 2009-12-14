@@ -1,0 +1,30 @@
+diff -Naur --exclude '*~' XML-LibXML-Common-0.13/Common.xs XML-LibXML-Common-0.13-fix-format-errors/Common.xs
+--- XML-LibXML-Common-0.13/Common.xs	2003-05-29 19:39:57.000000000 +0200
++++ XML-LibXML-Common-0.13-fix-format-errors/Common.xs	2009-05-20 23:17:45.000000000 +0200
+@@ -34,7 +34,7 @@
+         sv_catsv(LibXML_COMMON_error, sv); /* remember the last error */
+     }
+     else {
+-        croak(SvPV(sv, PL_na));
++        croak("%s", SvPV(sv, PL_na));
+     }
+     SvREFCNT_dec(sv);
+ }
+@@ -109,7 +109,7 @@
+                     sv_2mortal(LibXML_COMMON_error);
+ 
+                     if ( SvCUR( LibXML_COMMON_error ) > 0 ) {
+-                        croak(SvPV(LibXML_COMMON_error, len));
++                        croak("%s", SvPV(LibXML_COMMON_error, len));
+                     }
+                 }
+             }
+@@ -201,7 +201,7 @@
+                     xmlCharEncCloseFunc( coder );
+ 
+                     if ( SvCUR( LibXML_COMMON_error ) > 0 ) {
+-                        croak(SvPV(LibXML_COMMON_error, len));
++                        croak("%s", SvPV(LibXML_COMMON_error, len));
+                     }
+             
+                     if ( !tstr ) {
