@@ -1,1 +1,0 @@
-echo "forceFontDPI=96"
