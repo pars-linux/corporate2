@@ -47,6 +47,10 @@ def create_directories():
     # these are done in mudur
     # kdir("/dev/pts")
     # kdir("/dev/shm")
+
+    # Create autostart directory
+    kdir("/etc/xdg/autostart")
+
     kdir("/etc/conf.d")
     kdir("/etc/cron.daily")
     kdir("/etc/cron.hourly")
@@ -95,6 +99,9 @@ def create_directories():
     kdir("/var/spool")
     kdir("/var/state")
     kdir("/var/tmp", "-m 01777")
+
+    # Link /usr/share/autostart to /etc/xdg/autostart
+    pisitools.dosym("/etc/xdg/autostart", "/usr/share/autostart")
 
     # FHS compatibility symlinks stuff
     pisitools.dosym("/var/tmp", "/usr/tmp")
