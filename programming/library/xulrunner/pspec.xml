@@ -12,11 +12,11 @@
         <IsA>library</IsA>
         <Summary>XUL Runtime for Gecko Applications</Summary>
         <Description>xulrunner provides the XUL Runtime environment for Gecko applications.</Description>
-        <Archive sha1sum="759a2604dcab518386ed13f28158d7af2c0afd0b" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/mozilla-1.9.1.4.tar.lzma</Archive>
+        <Archive sha1sum="0d943c8133f876dd88cbc37b91ead4dd49cc0a04" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/mozilla-1.9.1.6.tar.lzma</Archive>
         <BuildDependencies>
-            <Dependency releaseFrom="26">nss</Dependency>
-            <Dependency releaseFrom="24">nspr</Dependency>
-            <Dependency versionFrom="3.6.16">sqlite</Dependency>
+            <Dependency>nss</Dependency>
+            <Dependency>nspr</Dependency>
+            <Dependency>sqlite</Dependency>
             <Dependency>cairo</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>libIDL</Dependency>
@@ -41,6 +41,10 @@
             <Patch>suse/mozilla-helper-app.patch</Patch>
             <Patch level="1">suse/toolkit-ui-lockdown.patch</Patch>
             <Patch level="1">suse/mozilla-pkgconfig.patch</Patch>
+            <Patch level="1">suse/mozilla-clipboard.patch</Patch>
+            <Patch level="1">suse/mozilla-startup-notification.patch</Patch>
+            <Patch level="1">suse/mozilla-gtkfilepicker-buttonorder.patch</Patch>
+
 
             <!-- Ubuntu patches -->
             <Patch level="1">ubuntu/bz461277_att344402_eliminate_deprecated_gtk_type_macros.patch</Patch>
@@ -51,7 +55,6 @@
             <Patch level="1">ubuntu/bzXXX_pc_honour_system_nspr_nss.patch</Patch>
             <Patch level="1">ubuntu/bzXXX_urlclassifier_prefs_in_toolkit.patch</Patch>
             <Patch level="1">ubuntu/dont_install_so_in_dev.patch</Patch>
-            <Patch level="1">ubuntu/fix_ftbfs_with_cairo_fb.patch</Patch>
 
             <!-- Pardus -->
             <Patch>zemberek-firefox3.patch</Patch>
@@ -61,9 +64,9 @@
     <Package>
         <Name>xulrunner</Name>
         <RuntimeDependencies>
-            <Dependency releaseFrom="26">nss</Dependency>
-            <Dependency releaseFrom="24">nspr</Dependency>
-            <Dependency versionFrom="3.6.16">sqlite</Dependency>
+            <Dependency>nss</Dependency>
+            <Dependency>nspr</Dependency>
+            <Dependency>sqlite</Dependency>
             <Dependency>cairo</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>gtk2</Dependency>
@@ -73,10 +76,6 @@
             <Dependency>gnome-vfs</Dependency>
             <Dependency>libgnomeui</Dependency>
         </RuntimeDependencies>
-        <Conflicts>
-            <!-- We have moved sdk libraries to base package -->
-            <Package releaseTo="10">xulrunner-devel</Package>
-        </Conflicts>
         <Files>
             <Path fileType="config">/etc/gre.d</Path>
             <Path fileType="executable">/usr/bin</Path>
@@ -103,6 +102,13 @@
     </Package>
 
     <History>
+        <Update release="24">
+            <Date>2009-12-14</Date>
+            <Version>1.9.1.6</Version>
+            <Comment>Version bump to latest bugfix release.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
         <Update release="23" type="security">
             <Date>2009-10-30</Date>
             <Version>1.9.1.4</Version>
