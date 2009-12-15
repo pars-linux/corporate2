@@ -13,7 +13,7 @@ KeepSpecial=["libtool"]
 shelltools.export("HOME", get.workDIR())
 
 def setup():
-    shelltools.export("DO_NOT_COMPILE", "kpovmodeler kmrml kview ksvg")
+    shelltools.export("DO_NOT_COMPILE", "kpovmodeler kmrml kview")
     kde.configure("--with-poppler \
                    --with-kamera \
                    --without-arts")
