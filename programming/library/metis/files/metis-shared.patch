@@ -1,0 +1,29 @@
+--- Lib/Makefile.orig	1998-09-22 15:08:29.000000000 +0300
++++ Lib/Makefile	2007-12-22 00:17:24.000000000 +0200
+@@ -2,7 +2,7 @@
+ 
+ INCLUDES = -I.
+ 
+-CFLAGS = $(COPTIONS) $(OPTFLAGS) $(INCLUDES)
++CFLAGS += $(COPTIONS) $(OPTFLAGS) $(INCLUDES)
+ LD = $(CC) -L. 
+ 
+ 
+@@ -20,12 +20,13 @@
+ .c.o:
+ 	$(CC) $(CFLAGS) -c $*.c
+ 
+-../libmetis.a: $(OBJS)
+-	$(AR) $@ $(OBJS)
+-	$(RANLIB) $@
++../libmetis.so.0.0: $(OBJS)
++	$(CC) $(CFLAGS) -fPIC -shared -Wl,-soname=libmetis.so.0 -o $@ $(OBJS)
++	ln -s libmetis.so.0.0 ../libmetis.so.0
++	ln -s libmetis.so.0.0 ../libmetis.so
+ 
+ clean:
+ 	rm -f *.o
+ 
+ realclean:
+-	rm -f *.o ; rm -f ../libmetis.a
++	rm -f *.o ; rm -f ../libmetis.so.0.0 ../libmetis.so.0
