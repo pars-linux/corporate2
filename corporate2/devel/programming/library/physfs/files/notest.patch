@@ -1,0 +1,24 @@
+diff -Nur physfs-1.1.1-old/CMakeLists.txt physfs-1.1.1/CMakeLists.txt
+--- physfs-1.1.1-old/CMakeLists.txt	2008-03-25 04:24:10.260149465 +0200
++++ physfs-1.1.1/CMakeLists.txt	2008-03-25 04:24:28.043445993 +0200
+@@ -312,9 +312,6 @@
+             ADD_DEFINITIONS(-DPHYSFS_HAVE_READLINE=1)
+         ENDIF(HAVE_LIBREADLINE AND HAVE_LIBHISTORY)
+     ENDIF(HAVE_READLINE_H AND HAVE_HISTORY_H)
+-    ADD_EXECUTABLE(test_physfs test/test_physfs.c)
+-    TARGET_LINK_LIBRARIES(test_physfs ${PHYSFS_LIB_TARGET} ${TEST_PHYSFS_LIBS} ${OTHER_LDFLAGS})
+-    SET(PHYSFS_INSTALL_TARGETS ${PHYSFS_INSTALL_TARGETS} ";test_physfs")
+ ENDIF(PHYSFS_BUILD_TEST)
+ 
+ OPTION(PHYSFS_BUILD_WX_TEST "Build wxWidgets test program." TRUE)
+@@ -325,10 +322,6 @@
+     FIND_PACKAGE(wxWidgets)
+     IF(wxWidgets_FOUND)
+         INCLUDE(${wxWidgets_USE_FILE})
+-        ADD_EXECUTABLE(wxtest_physfs test/wxtest_physfs.cpp)
+-        SET_SOURCE_FILES_PROPERTIES(test/wxtest_physfs.cpp COMPILE_FLAGS ${wxWidgets_CXX_FLAGS})
+-        TARGET_LINK_LIBRARIES(wxtest_physfs ${PHYSFS_LIB_TARGET} ${wxWidgets_LIBRARIES} ${OTHER_LDFLAGS})
+-        SET(PHYSFS_INSTALL_TARGETS ${PHYSFS_INSTALL_TARGETS} ";wxtest_physfs")
+     ELSE(wxWidgets_FOUND)
+         MESSAGE(STATUS "wxWidgets not found. Disabling wx test app.")
+         SET(PHYSFS_BUILD_WX_TEST FALSE)
