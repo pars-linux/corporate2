@@ -1,0 +1,949 @@
+diff -Nuar networkx-0.99.orig/doc/source/reference/news.rst networkx-0.99/doc/source/reference/news.rst
+--- networkx-0.99.orig/doc/source/reference/news.rst	2009-01-29 11:16:35.000000000 +0200
++++ networkx-0.99/doc/source/reference/news.rst	2009-01-29 11:17:21.000000000 +0200
+@@ -49,7 +49,6 @@
+  - Edge coloring and node line widths with Matplotlib drawings
+  - Update pydot functions to work with pydot-1.0.2
+  - Maximum-weight matching algorithm
+- - Ubigraph interface for 3D OpenGL layout and drawing
+  - Pajek graph file format reader and writer
+  - p2g graph file format reader and writer
+  - Secondary sort in topological sort
+@@ -69,7 +68,6 @@
+ 
+ Examples
+ ~~~~~~~~
+- - Ubigraph examples showing 3D drawing 
+ 
+ 
+ NetworkX-0.36
+diff -Nuar networkx-0.99.orig/examples/ubigraph/atlas.py networkx-0.99/examples/ubigraph/atlas.py
+--- networkx-0.99.orig/examples/ubigraph/atlas.py	2009-01-29 11:16:35.000000000 +0200
++++ networkx-0.99/examples/ubigraph/atlas.py	1970-01-01 02:00:00.000000000 +0200
+@@ -1,69 +0,0 @@
+-#!/usr/bin/env python
+-"""
+-Atlas of all graphs of 6 nodes or less.
+-
+-"""
+-__author__ = """Aric Hagberg (hagberg@lanl.gov)"""
+-#    Copyright (C) 2008 by 
+-#    Aric Hagberg <hagberg@lanl.gov>
+-#    Dan Schult <dschult@colgate.edu>
+-#    Pieter Swart <swart@lanl.gov>
+-#    Distributed under the terms of the GNU Lesser General Public License
+-#    http://www.gnu.org/copyleft/lesser.html
+-
+-from networkx import *
+-from networkx.generators.atlas import *
+-from networkx import graph_could_be_isomorphic as isomorphic
+-import random
+-
+-def atlas6():
+-    """ Return the atlas of all connected graphs of 6 nodes or less.
+-        Attempt to check for isomorphisms and remove.
+-    """
+-
+-    Atlas=graph_atlas_g()[0:158] # 208
+-    # remove isolated nodes, only connected graphs are left
+-    U=Graph() # graph for union of all graphs in atlas
+-    for G in Atlas: 
+-        zerodegree=[n for n in G if G.degree(n)==0]
+-        for n in zerodegree:
+-            G.delete_node(n)
+-        U=disjoint_union(U,G)
+-
+-    # list of graphs of all connected components        
+-    C=connected_component_subgraphs(U)        
+-    
+-    UU=Graph()        
+-    # do quick isomorphic-like check, not a true isomorphism checker     
+-    nlist=[] # list of nonisomorphic graphs
+-    for G in C:
+-        # check against all nonisomorphic graphs so far
+-        if not iso(G,nlist):
+-            nlist.append(G)
+-            UU=disjoint_union(UU,G) # union the nonisomorphic graphs  
+-    return UU            
+-
+-def iso(G1, glist):
+-    """Quick and dirty nonisomorphism checker used to check isomorphisms."""
+-    for G2 in glist:
+-        if isomorphic(G1,G2):
+-            return True
+-    return False        
+-
+-
+-if __name__ == '__main__':
+-
+-    import networkx as nx
+-    
+-    import random
+-
+-    G=atlas6()
+-
+-    print "graph has %d nodes with %d edges"\
+-          %(number_of_nodes(G),number_of_edges(G))
+-    print number_connected_components(G),"connected components"
+-    C=nx.connected_component_subgraphs(G)
+-    UG=nx.UbiGraph(G)
+-    for g in C:
+-        x = random.randint(0,256*256*256)
+-        UG.set_node_attr(g.nodes(),color='#%06x'%x)
+diff -Nuar networkx-0.99.orig/examples/ubigraph/basic.py networkx-0.99/examples/ubigraph/basic.py
+--- networkx-0.99.orig/examples/ubigraph/basic.py	2009-01-29 11:16:35.000000000 +0200
++++ networkx-0.99/examples/ubigraph/basic.py	1970-01-01 02:00:00.000000000 +0200
+@@ -1,16 +0,0 @@
+-#!/usr/bin/env python
+-
+-import networkx
+-import time
+-
+-# ubigraph server should already be running
+-
+-G=networkx.UbiGraph()
+-G.add_node('a')
+-G.add_node('b')
+-G.add_edge('a','b','edge a-b')
+-G.add_edge('b','c')
+-G.add_edge('c','a')
+-
+-
+-
+diff -Nuar networkx-0.99.orig/examples/ubigraph/dynamic_shortest_path.py networkx-0.99/examples/ubigraph/dynamic_shortest_path.py
+--- networkx-0.99.orig/examples/ubigraph/dynamic_shortest_path.py	2009-01-29 11:16:35.000000000 +0200
++++ networkx-0.99/examples/ubigraph/dynamic_shortest_path.py	1970-01-01 02:00:00.000000000 +0200
+@@ -1,64 +0,0 @@
+-#!/usr/bin/env python
+-"""
+-Dynamically draw shortest path in Watts-Stogatz small world graph using 
+-Ubigraph callbacks.
+-
+-"""
+-__author__ = """Aric Hagberg (hagberg@lanl.gov)\n Katy Bold (kbold@princeton.edu"""
+-#    Copyright (C) 2008 by 
+-#    Aric Hagberg <hagberg@lanl.gov>
+-#    Dan Schult <dschult@colgate.edu>
+-#    Pieter Swart <swart@lanl.gov>
+-#    Distributed under the terms of the GNU Lesser General Public License
+-#    http://www.gnu.org/copyleft/lesser.html
+-
+-
+-def vertex_callback(id):
+-    import sys
+-    global start
+-    try:
+-        if start is not None:
+-            s=nx.shortest_path(G,G.idnode[start],G.idnode[id])
+-            e=zip(s[0:-1],s[1:])
+-            epath=[(u,v,G.get_edge(u,v)) for u,v in e]
+-            print >> sys.stderr, s
+-            G.set_edge_attr(epath,style=wideyellow)
+-            start=None
+-        else:
+-            start=id
+-            G.set_edge_attr(style=gray)
+-    except:
+-        return -1
+-    return 0
+-
+-
+-
+-if __name__ == "__main__":
+-    import random
+-    import networkx as nx
+-
+-    print "double click nodes to find shortest path"
+-    G=nx.UbiGraph(nx.watts_strogatz_graph(50,4,0.1))
+-    G.node_labels() # turn on node labels
+-    G.set_edge_attr(color='#3f3f3f') # dark grey edges
+-    gray=G.new_edge_style(color='#3f3f3f',width='2.0')
+-    wideyellow=G.new_edge_style(color='#ffff00',width='6.0')
+-
+-    start=None
+-
+-
+-    # call back server        
+-    myPort = random.randint(20739,20999)
+-    # Set up a callback for left double-clicks on vertices.
+-    G.ubigraph.set_vertex_style_attribute(0, "callback_left_doubleclick", 
+-                "http://127.0.0.1:" + str(myPort) + "/vertex_callback")
+-
+-    # Now make an XMLRPC server to handle tha callbacks.
+-    from SimpleXMLRPCServer import SimpleXMLRPCServer
+-    # Create server
+-    server = SimpleXMLRPCServer(("localhost", myPort))
+-    server.register_introspection_functions()
+-    server.register_function(vertex_callback)
+-    # Run the server's main loop
+-    print "Listening for callbacks from ubigraph_server on port " + str(myPort)
+-    server.serve_forever()
+diff -Nuar networkx-0.99.orig/examples/ubigraph/fancy.py networkx-0.99/examples/ubigraph/fancy.py
+--- networkx-0.99.orig/examples/ubigraph/fancy.py	2009-01-29 11:16:35.000000000 +0200
++++ networkx-0.99/examples/ubigraph/fancy.py	1970-01-01 02:00:00.000000000 +0200
+@@ -1,29 +0,0 @@
+-#!/usr/bin/env python
+-
+-import networkx
+-import time
+-
+-# ubigraph server should already be running
+-
+-G=networkx.UbiGraph(multiedges=True)
+-G.add_node('a')
+-G.add_node('b')
+-G.add_edge('a','b','edge a-b 1')
+-G.add_edge('a','b','edge a-b 2')
+-G.add_edge('b','c')
+-G.add_edge('c','a')
+-
+-G.splines() # turn on splines
+-G.node_labels() # turn on node labels
+-
+-
+-G.set_node_attr(color='#00ff00') # green nodes
+-G.set_node_attr('a',color='#0000ff') # node 'a' blue
+-G.set_node_attr('a',shape='torus') # node 'a' torus
+-
+-G.set_edge_attr(color='#00ff00') # green edges
+-
+-# set node style 
+-purplecube=G.new_node_style(color='#ff00ff',shape='cube')
+-G.set_node_attr(style=purplecube)
+-
+diff -Nuar networkx-0.99.orig/examples/ubigraph/karate_club_community.py networkx-0.99/examples/ubigraph/karate_club_community.py
+--- networkx-0.99.orig/examples/ubigraph/karate_club_community.py	2009-01-29 11:16:35.000000000 +0200
++++ networkx-0.99/examples/ubigraph/karate_club_community.py	1970-01-01 02:00:00.000000000 +0200
+@@ -1,167 +0,0 @@
+-#!/usr/bin/env python
+-"""
+-Communities in Zachary's Karate Club graph.
+-
+-Double-click to expand and contract communities.
+-
+-Data file from:
+-http://vlado.fmf.uni-lj.si/pub/networks/data/Ucinet/UciData.htm
+-
+-Reference:
+-Zachary W. (1977).
+-An information flow model for conflict and fission in small groups.
+-Journal of Anthropological Research, 33, 452-473.
+-
+-"""
+-__author__ = """Aric Hagberg (hagberg@lanl.gov)\n Katy Bold (kbold@princeton.edu"""
+-#    Copyright (C) 2008 by 
+-#    Aric Hagberg <hagberg@lanl.gov>
+-#    Dan Schult <dschult@colgate.edu>
+-#    Pieter Swart <swart@lanl.gov>
+-#    Distributed under the terms of the GNU Lesser General Public License
+-#    http://www.gnu.org/copyleft/lesser.html
+-
+-import string
+-
+-def karate_graph(create_using=None, **kwds):
+-    from networkx.generators.classic import empty_graph
+-
+-    G=empty_graph(34,create_using=create_using,**kwds)
+-    G.name="Zachary's Karate Club"
+-
+-    zacharydat="""\
+-0 1 1 1 1 1 1 1 1 0 1 1 1 1 0 0 0 1 0 1 0 1 0 0 0 0 0 0 0 0 0 1 0 0
+-1 0 1 1 0 0 0 1 0 0 0 0 0 1 0 0 0 1 0 1 0 1 0 0 0 0 0 0 0 0 1 0 0 0
+-1 1 0 1 0 0 0 1 1 1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 1 0
+-1 1 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+-1 0 0 0 0 0 1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+-1 0 0 0 0 0 1 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+-1 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+-1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+-1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1 1
+-0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1
+-1 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+-1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+-1 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+-1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1
+-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1
+-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1
+-0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+-1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1
+-1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1
+-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1
+-1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1
+-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1 0 1 0 0 1 1
+-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0 1 0 0
+-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 1 0 0
+-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 1
+-0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 1
+-0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1
+-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0 0 0 0 1 1
+-0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1
+-1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 1 0 0 0 1 1
+-0 0 1 0 0 0 0 0 1 0 0 0 0 0 1 1 0 0 1 0 1 0 1 1 0 0 0 0 0 1 1 1 0 1
+-0 0 0 0 0 0 0 0 1 1 0 0 0 1 1 1 0 0 1 1 1 0 1 1 0 0 1 1 1 1 1 1 1 0"""
+-
+-
+-    row=0
+-    for line in string.split(zacharydat,'\n'):
+-        thisrow=map(int,string.split(line,' '))
+-        for col in range(0,len(thisrow)):
+-            if thisrow[col]==1:
+-                G.add_edge(row,col) # col goes from 0,33
+-        row+=1
+-    return G
+-
+-def contract_community(G,K,community):
+-    G.add_node(community['label'],color=community['color'],size='2.0')
+-    for node in community['nodes']:
+-        for nbr in G.neighbors(node):
+-            if nbr not in community['nodes']:
+-                G.add_edge(community['label'],nbr)
+-        G.delete_node(node)
+-
+-
+-def expand_community(G,K,community):
+-    G.delete_node(community['label'])
+-    for node in community['nodes']:
+-        G.add_node(node,color=community['color'])
+-    for node in community['nodes']:
+-        for nbr in K.neighbors(node):
+-            if nbr in G:
+-                G.add_edge(node,nbr)
+-            else:
+-                G.add_edge(node,node_map[nbr])
+-
+-
+-def get_communities():
+-    # assign communities and some properties
+-    communities={}
+-    communities['c1']={}
+-    communities['c2']={}
+-    communities['c3']={}
+-    communities['c4']={}
+-    communities['c1']['nodes']=[0, 1, 2, 3, 7, 11, 12, 13, 17, 19, 21]
+-    communities['c2']['nodes']=[4, 5, 6, 10, 16]
+-    communities['c3']['nodes']=[8, 9, 14, 15, 18, 20, 22, 26, 29, 30, 32, 33]
+-    communities['c4']['nodes']=[23, 24, 25, 27, 28, 31]
+-    communities['c1']['color']='#ff0000'
+-    communities['c2']['color']='#00ff00'
+-    communities['c3']['color']='#0000ff'
+-    communities['c4']['color']='#afafaf'
+-    communities['c1']['label']='c1'
+-    communities['c2']['label']='c2'
+-    communities['c3']['label']='c3'
+-    communities['c4']['label']='c4'
+-
+-    node_map={}
+-    for label,c in communities.items():
+-        for n in c['nodes']:
+-            node_map[n]=label
+-    return communities,node_map
+-
+-
+-def vertex_callback(id):
+-    import sys
+-    try:
+-        n=G.idnode[id]
+-        if n in node_map:
+-            contract_community(G,K,communities[node_map[n]])
+-        elif n in communities:
+-            expand_community(G,K,communities[n])
+-    except:
+-        return -1
+-    return 0
+-
+-
+-
+-if __name__ == "__main__":
+-    import random
+-    import networkx as nx
+-    K=karate_graph()
+-    G=nx.UbiGraph(K)
+-    G.node_labels()
+-    communities,node_map=get_communities()
+-    for key,c in communities.items():
+-        G.set_node_attr(c['nodes'],color=c['color'])
+-
+-
+-    print "Double-click to expand and contract communities."
+-
+-    # call back server        
+-    myPort = random.randint(20739,20999)
+-    # Set up a callback for left double-clicks on vertices.
+-    G.ubigraph.set_vertex_style_attribute(0, "callback_left_doubleclick", 
+-                "http://127.0.0.1:" + str(myPort) + "/vertex_callback")
+-
+-    # Now make an XMLRPC server to handle tha callbacks.
+-    from SimpleXMLRPCServer import SimpleXMLRPCServer
+-    # Create server
+-    server = SimpleXMLRPCServer(("localhost", myPort))
+-    server.register_introspection_functions()
+-    server.register_function(vertex_callback)
+-    # Run the server's main loop
+-    print "Listening for callbacks from ubigraph_server on port " + str(myPort)
+-    server.serve_forever()
+diff -Nuar networkx-0.99.orig/examples/ubigraph/shortest_path.py networkx-0.99/examples/ubigraph/shortest_path.py
+--- networkx-0.99.orig/examples/ubigraph/shortest_path.py	2009-01-29 11:16:35.000000000 +0200
++++ networkx-0.99/examples/ubigraph/shortest_path.py	1970-01-01 02:00:00.000000000 +0200
+@@ -1,27 +0,0 @@
+-#!/usr/bin/env python
+-
+-import networkx
+-import time
+-
+-# ubigraph server should already be running
+-
+-#G=UbiGraph(networkx.generators.pappus_graph())
+-G=networkx.UbiGraph(networkx.generators.moebius_kantor_graph())
+-
+-
+-G.node_labels() # turn on node labels
+-G.set_edge_attr(color='#3f3f3f') # dark grey edges
+-
+-time.sleep(2)
+-
+-# get edges in shortest path between 0 and 8
+-s=networkx.shortest_path(G,0,8)
+-print "shortest path between 0-8",s
+-e=zip(s[0:-1],s[1:])
+-epath=[(u,v,G.get_edge(u,v)) for u,v in e]
+-
+-wideyellow=G.new_edge_style(color='#ffff00',width='6.0')
+-for edge in epath:
+-    G.set_edge_attr(edge,style=wideyellow)
+-    time.sleep(2)
+-
+diff -Nuar networkx-0.99.orig/examples/ubigraph/simple_graphs.py networkx-0.99/examples/ubigraph/simple_graphs.py
+--- networkx-0.99.orig/examples/ubigraph/simple_graphs.py	2009-01-29 11:16:35.000000000 +0200
++++ networkx-0.99/examples/ubigraph/simple_graphs.py	1970-01-01 02:00:00.000000000 +0200
+@@ -1,16 +0,0 @@
+-#!/usr/bin/env python
+-
+-from networkx import *
+-import time
+-
+-# ubigraph server should already be running
+-
+-print "Pappus Graph"
+-G=UbiGraph(pappus_graph())
+-time.sleep(5)
+-print "4D Hypercube Graph"
+-G=UbiGraph(hypercube_graph(4))
+-time.sleep(5)
+-print "50 node circular ladder graph"
+-G=UbiGraph(circular_ladder_graph(50))
+-time.sleep(5)
+diff -Nuar networkx-0.99.orig/networkx/__init__.py networkx-0.99/networkx/__init__.py
+--- networkx-0.99.orig/networkx/__init__.py	2009-01-29 11:16:35.000000000 +0200
++++ networkx-0.99/networkx/__init__.py	2009-01-29 11:21:05.000000000 +0200
+@@ -55,7 +55,6 @@
+ from linalg import *
+ from operators import *
+ from readwrite import *
+-from ubigraph import *
+ 
+ import utils
+ from tests.test import run as test
+diff -Nuar networkx-0.99.orig/networkx/ubigraph.py networkx-0.99/networkx/ubigraph.py
+--- networkx-0.99.orig/networkx/ubigraph.py	2009-01-29 11:16:35.000000000 +0200
++++ networkx-0.99/networkx/ubigraph.py	1970-01-01 02:00:00.000000000 +0200
+@@ -1,454 +0,0 @@
+-__author__ = """Aric Hagberg (hagberg@lanl.gov)"""
+-#    Copyright (C) 2008 by 
+-#    Aric Hagberg <hagberg@lanl.gov>
+-#    Dan Schult <dschult@colgate.edu>
+-#    Pieter Swart <swart@lanl.gov>
+-#    Distributed under the terms of the GNU Lesser General Public License
+-#    http://www.gnu.org/copyleft/lesser.html
+-
+-
+-from networkx.classes.multigraph import MultiGraph
+-from networkx.classes.multidigraph import MultiDiGraph
+-from networkx.exception import NetworkXException, NetworkXError
+-import networkx.convert as convert
+-
+-class UbiGraph(MultiGraph):
+-    """
+-Base classes for interaction between NetworkX and Ubigraph.
+-
+-These classes allow drawing with Ubigraph and all of the NetworkX functions.
+-
+-Examples
+---------
+-(start Ubigraph server)
+-->>> import networkx
+-->>> G=nx.UbiGraph()
+-->>> G.add_edge('a','b',color='#0000ff') # blue edge between 'a' and 'b'
+-
+-->>> G=nx.UbiGraph(networkx.cycle_graph(5)) # cycle of length 5
+-
+-See the examples 
+-https://networkx.lanl.gov/browser/networkx/trunk/doc/examples/ubigraph
+-
+-UbiGraph 
+---------
+-NetworkX compatible graph class.  Allows self loops and multiple edges.  
+-Extends to NetworkX MultiGraph class. 
+-
+-UbiDiGraph 
+---------
+-NetworkX compatible digraph class.  Allows self loops and multiple edges.  
+-Extends NetworkX MultiDiGraph class. 
+-
+-Ubigraph attributes
+---------------------
+-In addition to all of the XGraph and XDiGraph methods and NetworkX functions
+-this class also provides methods to set node and edge attributes and styles.
+-
+-Node and edge attributes:
+-
+-->>> G=nx.UbiGraph()
+-->>> G.add_node('a',shape='torus')
+-->>> G.add_edge('a','b',style='dashed')
+-->>> G.set_node_attr('a',color='#0000ff') # node a blue
+-->>> G.set_node_attr(color='#00ffff') # all nodes green
+-
+-Node and edge styles:
+-
+-->>> G=nx.UbiGraph(nx.cycle_graph(5)) # cycle of length 5
+-->>> redtorus=G.new_node_style(color="#ff0000',shape='torus')
+-->>> G.set_node_attr(style=redtorus) # all nodes to redtorus style
+-"""
+-    def __init__(self, data=None, name='', 
+-                 selfloops=False, 
+-                 multiedges=False, 
+-                 ubigraph_server= 'http://127.0.0.1:20738/RPC2',
+-                 clear=True,
+-                 nextid=0):
+-
+-        import xmlrpclib
+-        try:
+-            server_url = ubigraph_server
+-            self.server = xmlrpclib.Server(server_url)
+-            self.ubigraph = self.server.ubigraph
+-            if clear:
+-                self.ubigraph.clear()
+-        except:
+-            raise IOError("No Ubigraph server found")
+-        
+-        # default node and edge styles
+-        self.ubigraph.set_vertex_style_attribute(0, "color", "#ff0000")
+-        self.ubigraph.set_vertex_style_attribute(0, "shape", "sphere")
+-        self.ubigraph.set_vertex_style_attribute(0, "size", "0.7")
+-
+-        self.ubigraph.set_edge_style_attribute(0, "color", "#ffffff")
+-        self.ubigraph.set_edge_style_attribute(0, "width", "2.0")
+-
+-        self.use_splines=False
+-        self.use_node_labels=False
+-        self.use_edge_labels=False
+-
+-        # keep a mapping from nodes to ubigraph ids
+-        self.nodeid={} 
+-        self.nextid=nextid
+-        self.idnode={} 
+-
+-
+-
+-        self.adj={}      # adjacency list
+-        self.selfloops=selfloops
+-        self.multiedges=multiedges
+-        if data is not None:
+-            self=convert.from_whatever(data,create_using=self)
+-        self.name=name
+-
+-
+-    def add_node(self, n,**kwds):
+-        if n not in self:
+-            MultiGraph.add_node(self,n)
+-            self.nodeid[n]=self.nextid
+-            self.idnode[self.nextid]=n
+-            self.nextid+=1
+-            self.ubigraph.new_vertex_w_id(self.nodeid[n])
+-            # add ubigraph attributes
+-            for (k,v) in kwds.items():
+-                ret=self.ubigraph.set_vertex_attribute(self.nodeid[n],k,v) 
+-            # support toggling node labels
+-            if self.use_node_labels:
+-                self.ubigraph.set_vertex_attribute(self.nodeid[n],'label',str(n))
+-
+-    def add_nodes_from(self, nlist,**kwds):
+-        for n in nlist:
+-            self.add_node(n,**kwds)
+-
+-
+-    def delete_node(self,n):
+-        if n in self:
+-            MultiGraph.delete_node(self,n)
+-            self.ubigraph.remove_vertex(self.nodeid[n])
+-            id=self.nodeid[n]
+-            del self.nodeid[n]
+-            del self.idnode[id]
+-
+-
+-    def delete_nodes_from(self,nlist):
+-        for n in nlist:
+-            self.delete_node(n)
+-
+-
+-    def add_edge(self, u, v=None, x=None, **kwds):  
+-        if v is None: # add_edge was called as add_edge(e), with  e=(u,v,x)
+-            if len(u)==3: # case e=(u,v,x)
+-                u,v,x=u
+-            else:          # assume e=(u,v)
+-                u,v=u   # x=None
+-
+-        # if edge exists, quietly return if multiple edges are not allowed
+-        if not self.multiedges and self.has_edge(u,v):
+-            return
+-
+-        # add nodes            
+-        self.add_node(u)
+-        self.add_node(v)
+-
+-        # self loop? quietly return if not allowed
+-        if not self.selfloops and u==v: 
+-            return
+-
+-        # create ubigraph edge
+-        # build dictionary with edge id and user data to use as edge data
+-        e=self.ubigraph.new_edge(self.nodeid[u],self.nodeid[v])
+-        edata={'id':e,'data':x}
+-
+-        if self.multiedges: # add x to the end of the list of objects
+-                            # that defines the edges between u and v
+-            self.adj[u][v]=self.adj[u].get(v,[])+ [edata]
+-            if u!=v:
+-                self.adj[v][u]=self.adj[v].get(u,[])+ [edata]
+-        else:  # x is the new object assigned to single edge between u and v
+-            self.adj[u][v]=edata
+-            if u!=v:
+-                self.adj[v][u]=edata # a copy would be required to avoid
+-                                   # modifying both at the same time
+-                                   # when doing a delete_edge
+-        # add ubigraph attributes
+-        for (k,v) in kwds.items():
+-            ret=self.ubigraph.set_edge_attribute(e,k,v) 
+-
+-        # support toggling edge labels
+-        if self.use_edge_labels:
+-            self.ubigraph.set_edge_attribute(e,'label',str(x))
+-
+-    def add_edges_from(self, ebunch,**kwds):  
+-        for e in ebunch:
+-            self.add_edge(e,**kwds)
+-
+-    def delete_edge(self, u, v=None, x=None): 
+-        if v is None:      # was called as delete_edge(e)
+-            if len(u)==3:  # case e=(u,v,x)
+-                u,v,x=u
+-            else:           # assume e=(u,v), x unspecified, set to None
+-                u,v=u    # x=None
+-        try:
+-            xdata=x['data']
+-        except:
+-            xdata=x
+-
+-        if self.multiedges:
+-            if (self.adj.has_key(u) and self.adj[u].has_key(v)):
+-                x=None
+-                for edata in self.adj[u][v]:
+-                    if xdata == edata['data']:
+-                        x=edata # (u,v,edata) is an edge
+-                        eid=edata['id']
+-                if x is None: 
+-                    return # no edge
+-                # remove the edge item from list
+-                self.adj[u][v].remove(x)  
+-                # and if not self loop remove v->u entry
+-                if u!=v:                   
+-                    self.adj[v][u].remove(x) 
+-                # if last edge between u and v was deleted, remove all trace
+-                if len(self.adj[u][v])==0:
+-                    del self.adj[u][v]      
+-                    # and if not self loop remove v->u entry
+-                    if u!=v:              
+-                        del self.adj[v][u] 
+-                self.ubigraph.remove_edge(eid)
+-        else:  # delete single edge       
+-            if self.has_neighbor(u,v):
+-                eid=self.get_edge(u,v)['id']                    
+-                self.ubigraph.remove_edge(eid)
+-                del self.adj[u][v]
+-                if u!=v:
+-                    del self.adj[v][u]
+-
+-
+-    def delete_edges_from(self, ebunch): 
+-        for e in ebunch:
+-            self.delete_edge(e)
+-
+-    def clear(self):
+-        if len(self)>0:
+-            MultiGraph.clear(self)
+-            self.ubigraph.clear()
+-            self.nodeid={}
+-            self.nextid=0
+-
+-# node and edge attrs            
+-            
+-    def set_node_attr(self,nbunch=None,style=None,**kwds):
+-        bunch=self.nbunch_iter(nbunch)
+-        for n in bunch:
+-            if style is None:
+-                for (k,v) in kwds.items():
+-                    ret=self.ubigraph.set_vertex_attribute(self.nodeid[n],k,v) 
+-            else:
+-                self.ubigraph.change_vertex_style(self.nodeid[n],style) 
+-
+-    def set_edge_attr(self,ebunch=None,style=None,**kwds):
+-        if ebunch is None:
+-            bunch=self.edges(data=True)
+-        else:
+-            try:
+-                self.has_edge(ebunch)
+-                bunch=[ebunch]
+-            except:
+-                bunch=list(ebunch)
+-
+-        for (u,v,d) in bunch:
+-            if style is None:
+-                for (k,v) in kwds.items():
+-                    ret=self.ubigraph.set_edge_attribute(d['id'],k,v) 
+-            else:
+-                ret=self.ubigraph.change_edge_style(d['id'],style) 
+-
+-# node and edge styles                
+-
+-    def new_node_style(self,style=0,**kwds):
+-        style=self.ubigraph.new_vertex_style(style)
+-        for (k,v) in kwds.items():
+-            self.ubigraph.set_vertex_style_attribute(style,k,v) 
+-        return style
+-
+-
+-    def new_edge_style(self,style=0,**kwds):
+-        style=self.ubigraph.new_edge_style(style)
+-        for (k,v) in kwds.items():
+-            self.ubigraph.set_edge_style_attribute(style,k,v) 
+-        return style
+-
+-
+-# ubigraph helper methods
+-# an interface to the internal ubigraph methods that do this
+-# would make this simpler
+-
+-    def splines(self):
+-        """Toggle spline edges.
+-        """
+-        if self.use_splines==True:
+-            self.set_edge_attr(spline='false')
+-            self.use_splines=False
+-        else:
+-            self.set_edge_attr(spline='true')
+-            self.use_splines=True
+-
+-
+-    def node_labels(self,nbunch=None,labels=None):
+-        """Toggle node labels.
+-        """
+-        bunch=list(self.nbunch_iter(nbunch))
+-        if self.use_node_labels==True:
+-            labels=dict(zip(bunch,['']*len(bunch)))
+-            self.use_node_labels=False
+-        else:
+-            if labels is None:
+-                  labels=dict(zip(bunch,bunch))
+-            self.use_node_labels=True
+-        for n,label in labels.items():
+-            self.ubigraph.set_vertex_attribute(self.nodeid[n],'label',str(label))
+-    
+-    def edge_labels(self,ebunch=None,labels=None):
+-        """Toggle edge labels.
+-        """
+-        if ebunch is None:
+-            bunch=self.edges(data=True)
+-        else:
+-            try:
+-                self.has_edge(ebunch)
+-                bunch=[ebunch]
+-            except:
+-                bunch=list(ebunch)
+-
+-        if self.use_edge_labels==True:
+-            labels=dict([(d['id'],'') for u,v,d in bunch])
+-            self.use_edge_labels=False
+-        else:
+-            if labels is None:
+-                  labels=dict([(d['id'],str(d['data'])) for u,v,d in bunch if d['data'] is not None])
+-            self.use_edge_labels=True
+-        for eid,label in labels.items():
+-            self.ubigraph.set_edge_attribute(eid,'label',label)
+-
+-class UbiDiGraph(UbiGraph,MultiDiGraph):
+-    def __init__(self, data=None, name='', 
+-                 selfloops=False, 
+-                 multiedges=False, 
+-                 ubigraph_server= 'http://127.0.0.1:20738/RPC2',
+-                 clear=True):
+-
+-
+-        self.pred={}        # predecessor
+-        self.succ={}
+-
+-        UbiGraph.__init__(self,
+-                          data=data,name=name,
+-                          selfloops=selfloops,
+-                          multiedges=multiedges,
+-                          ubigraph_server=ubigraph_server,
+-                          clear=clear)
+-        self.ubigraph.set_edge_style_attribute(0, "arrow", "true")
+-
+-        self.adj=self.succ  # successor is same as adj for digraph
+-
+-
+-    def add_node(self, n,**kwds):
+-        if n not in self:
+-            MultiDiGraph.add_node(self,n)
+-            self.nodeid[n]=self.nextid
+-            self.nextid+=1
+-            self.ubigraph.new_vertex_w_id(self.nodeid[n])
+-            # add ubigraph attributes
+-            for (k,v) in kwds.items():
+-                ret=self.ubigraph.set_vertex_attribute(self.nodeid[n],k,v) 
+-            # support toggling node labels
+-            if self.use_node_labels:
+-                self.ubigraph.set_vertex_attribute(self.nodeid[n],'label',str(n))
+-
+-    def delete_node(self,n):
+-        if n in self:
+-            MultiDiGraph.delete_node(self,n)
+-            self.ubigraph.remove_vertex(self.nodeid[n])
+-
+-
+-    def add_edge(self, u, v=None, x=None, **kwds):  
+-        if v is None: # add_edge was called as add_edge(e), with e a tuple
+-            if len(u)==3: #case e=(u,v,x)
+-                u,v,x=u
+-            else:          # assume e=(u,v)
+-                u,v=u   # x=None
+-
+-        # if edge exists, quietly return if multiple edges are not allowed
+-        if not self.multiedges and self.has_edge(u,v,x):
+-            return
+-
+-        # add nodes            
+-        self.add_node(u)
+-        self.add_node(v)
+-
+-        # self loop? quietly return if not allowed
+-        if not self.selfloops and u==v: 
+-            return
+-
+-        # create ubigraph edge
+-        # build dictionary with edge id and user data to use as edge data
+-        e=self.ubigraph.new_edge(self.nodeid[u],self.nodeid[v])
+-        edata={'id':e,'data':x}
+-
+-        if self.multiedges: # append x to the end of the list of objects
+-                            # that defines the edges between u and v
+-            self.succ[u][v]=self.succ[u].get(v,[])+ [edata]
+-            self.pred[v][u]=self.pred[v].get(u,[])+ [edata]
+-        else:  # x is the new object assigned to single edge between u and v
+-            self.succ[u][v]=edata
+-            self.pred[v][u]=edata # note that the same object is referred to
+-                                # from both succ and pred
+-        for (k,v) in kwds.items():
+-            ret=self.ubigraph.set_edge_attribute(e,k,v) 
+-
+-        # support toggling edge labels
+-        if self.use_edge_labels:
+-            self.ubigraph.set_edge_attribute(e,'label',str(x))
+-
+-
+-    def delete_edge(self, u, v=None, x=None): 
+-        if v is None:      # was called as delete_edge(e)
+-            if len(u)==3:  # case e=(u,v,x)
+-                u,v,x=u
+-            else:           # assume e=(u,v), x unspecified, set to None
+-                u,v=u    # x=None
+-        try:
+-            xdata=x['data']
+-        except:
+-            xdata=x
+-
+-        if self.multiedges:              # multiedges are stored as a list
+-            if (self.succ.has_key(u) and self.succ[u].has_key(v)):
+-                x=None
+-                for edata in self.succ[u][v]:
+-                    if xdata == edata['data']:
+-                        x=edata # (u,v,edata) is an edge
+-                        eid=edata['id']
+-                if x is None: 
+-                    return # no edge
+-                self.succ[u][v].remove(x)  # remove the edge item from list
+-                self.pred[v][u].remove(x)
+-                if len(self.succ[u][v])==0: # if last edge between u and v
+-                    del self.succ[u][v]     # was deleted, remove all trace
+-                    del self.pred[v][u]
+-                self.ubigraph.remove_edge(eid)
+-        else:  # delete single edge
+-            if self.has_successor(u,v):
+-                eid=self.get_edge(u,v)['id']                    
+-                self.ubigraph.remove_edge(eid)
+-                del self.succ[u][v]
+-                del self.pred[v][u]
+-        return
+-
+-    def clear(self):
+-        if len(self)>0:
+-            MultiDiGraph.clear(self)
+-            self.ubigraph.clear()
+-            self.nodeid={}
+-            self.nextid=0
+-
+diff -Nuar networkx-0.99.orig/networkx.egg-info/SOURCES.txt networkx-0.99/networkx.egg-info/SOURCES.txt
+--- networkx-0.99.orig/networkx.egg-info/SOURCES.txt	2009-01-29 11:16:35.000000000 +0200
++++ networkx-0.99/networkx.egg-info/SOURCES.txt	2009-01-29 11:20:29.000000000 +0200
+@@ -120,13 +120,6 @@
+ examples/pygraphviz/pygraphviz_draw.py
+ examples/pygraphviz/pygraphviz_simple.py
+ examples/pygraphviz/write_dotfile.py
+-examples/ubigraph/atlas.py
+-examples/ubigraph/basic.py
+-examples/ubigraph/dynamic_shortest_path.py
+-examples/ubigraph/fancy.py
+-examples/ubigraph/karate_club_community.py
+-examples/ubigraph/shortest_path.py
+-examples/ubigraph/simple_graphs.py
+ networkx/__init__.py
+ networkx/convert.py
+ networkx/exception.py
+@@ -134,7 +127,6 @@
+ networkx/matching.py
+ networkx/operators.py
+ networkx/release.py
+-networkx/ubigraph.py
+ networkx/utils.py
+ networkx.egg-info/PKG-INFO
+ networkx.egg-info/SOURCES.txt
+@@ -258,4 +250,4 @@
+ scripts/adjmat2edgelist.py
+ scripts/bipartiteadjmat2edgelist.py
+ scripts/dia2networkx.xsl
+-scripts/edgelist2adjlist.py
+\ Dosya sonunda yenisatır yok.
++scripts/edgelist2adjlist.py
+diff -Nuar networkx-0.99.orig/setup.py networkx-0.99/setup.py
+--- networkx-0.99.orig/setup.py	2009-01-29 11:16:35.000000000 +0200
++++ networkx-0.99/setup.py	2009-01-29 11:18:12.000000000 +0200
+@@ -48,8 +48,7 @@
+           'graph',
+           'multigraph',
+           'pygraphviz',
+-          'readwrite',
+-          'ubigraph']:
++          'readwrite']:
+     dd=os.path.join(docdirbase,'examples',d)
+     pp=os.path.join('examples',d)
+     data.append((dd,glob(os.path.join(pp,"*.py"))))
