@@ -54,6 +54,9 @@ def install():
     shelltools.export("HOME", get.workDIR())
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
+    #Remove upstream desktop files, use ours. It's very hard to translate and make changes in those desktop files
+    pisitools.remove("/usr/share/applications/*.desktop")
+
     #dosym main executables
     for bin in map(os.path.basename, shelltools.ls("%s/opt/OpenOffice.org/bin/*" % get.installDIR())):
         pisitools.dosym("/opt/OpenOffice.org/bin/ooo-wrapper.py", "/usr/bin/%s" % bin)
