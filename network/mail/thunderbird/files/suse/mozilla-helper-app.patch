@@ -1,0 +1,118 @@
+From: Wolfgang Rosenauer <wr@rosenauer.org>
+Subject: no helper app for application/octet-stream but recognized extensions
+References:
+https://bugzilla.novell.com/show_bug.cgi?id=406979
+https://bugzilla.mozilla.org/show_bug.cgi?id=327323
+
+
+diff --git a/uriloader/exthandler/unix/nsMIMEInfoUnix.cpp b/uriloader/exthandler/unix/nsMIMEInfoUnix.cpp
+--- mozilla/uriloader/exthandler/unix/nsMIMEInfoUnix.cpp
++++ mozilla/uriloader/exthandler/unix/nsMIMEInfoUnix.cpp
+@@ -41,16 +41,17 @@
+ #include <glib.h>
+ #include <hildon-uri.h>
+ #endif
+ 
+ 
+ #include "nsMIMEInfoUnix.h"
+ #include "nsGNOMERegistry.h"
+ #include "nsIGnomeVFSService.h"
++#include "nsAutoPtr.h"
+ #ifdef MOZ_ENABLE_DBUS
+ #include "nsDBusHandlerApp.h"
+ #endif
+ 
+ 
+ nsresult
+ nsMIMEInfoUnix::LoadUriInternal(nsIURI * aURI)
+ { 
+@@ -69,23 +70,26 @@ nsMIMEInfoUnix::LoadUriInternal(nsIURI *
+ #endif
+   return rv;
+ }
+ 
+ NS_IMETHODIMP
+ nsMIMEInfoUnix::GetHasDefaultHandler(PRBool *_retval)
+ {
+   *_retval = PR_FALSE;
+-  nsCOMPtr<nsIGnomeVFSService> vfs = do_GetService(NS_GNOMEVFSSERVICE_CONTRACTID);
+-  if (vfs) {
+-    nsCOMPtr<nsIGnomeVFSMimeApp> app;
+-    if (NS_SUCCEEDED(vfs->GetAppForMimeType(mType, getter_AddRefs(app))) && app)
+-      *_retval = PR_TRUE;
++  nsRefPtr<nsMIMEInfoBase> mimeInfo = nsGNOMERegistry::GetFromType(mType);
++  if (!mimeInfo) {
++    nsCAutoString ext;
++    GetPrimaryExtension(ext);
++    mimeInfo = nsGNOMERegistry::GetFromExtension(ext);
+   }
+ 
++  if (mimeInfo)
++    *_retval = PR_TRUE;
++
+   if (*_retval)
+     return NS_OK;
+ 
+ #ifdef MOZ_PLATFORM_HILDON
+   HildonURIAction *action = hildon_uri_get_default_action(mType.get(), nsnull);
+   if (action) {
+     *_retval = PR_TRUE;
+     hildon_uri_action_unref(action);
+@@ -104,16 +108,26 @@ nsMIMEInfoUnix::LaunchDefaultWithFile(ns
+   aFile->GetNativePath(nativePath);
+ 
+   nsCOMPtr<nsIGnomeVFSService> vfs = do_GetService(NS_GNOMEVFSSERVICE_CONTRACTID);
+ 
+   if (vfs) {
+     nsCOMPtr<nsIGnomeVFSMimeApp> app;
+     if (NS_SUCCEEDED(vfs->GetAppForMimeType(mType, getter_AddRefs(app))) && app)
+       return app->Launch(nativePath);
++
++    // If we haven't got an app we try to get a valid one by searching for the
++    // extension mapped type
++    nsRefPtr<nsMIMEInfoBase> mimeInfo = nsGNOMERegistry::GetFromExtension(nativePath);
++    if (mimeInfo) {
++      nsCAutoString type;
++      mimeInfo->GetType(type);
++      if (NS_SUCCEEDED(vfs->GetAppForMimeType(type, getter_AddRefs(app))) && app)
++        return app->Launch(nativePath);
++    }
+   }
+ 
+   if (!mDefaultApplication)
+     return NS_ERROR_FILE_NOT_FOUND;
+ 
+   return LaunchWithIProcess(mDefaultApplication, nativePath);
+ }
+ 
+diff --git a/uriloader/exthandler/unix/nsOSHelperAppService.cpp b/uriloader/exthandler/unix/nsOSHelperAppService.cpp
+--- mozill/uriloader/exthandler/unix/nsOSHelperAppService.cpp
++++ mozilla/uriloader/exthandler/unix/nsOSHelperAppService.cpp
+@@ -1641,18 +1641,26 @@ nsOSHelperAppService::GetMIMEInfoFromOS(
+         NS_ADDREF(retval);
+         if (!aFileExt.IsEmpty())
+           retval->AppendExtension(aFileExt);
+       }
+       
+       return retval;
+     }
+ 
+-    // Copy the attributes of retval onto miByExt, to return it
++    // Copy the attributes of retval onto miByExt, to return it but keep
++    // just collected mDefaultAppDescription
++    nsAutoString byExtDefault;
++    miByExt->GetDefaultDescription(byExtDefault);
++    retval->SetDefaultDescription(byExtDefault);
+     retval->CopyBasicDataTo(miByExt);
++    // But set the extensions primary since CopyBasicDataTo overwrites the
++    // list
++    if (!aFileExt.IsEmpty())
++      miByExt->SetPrimaryExtension(aFileExt);
+ 
+     miByExt.swap(retval);
+   }
+   return retval;
+ }
+ 
+ NS_IMETHODIMP
+ nsOSHelperAppService::GetProtocolHandlerInfoFromOS(const nsACString &aScheme,
