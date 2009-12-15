@@ -10,7 +10,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-WorkDir = "baselayout"
+WorkDir = "corporate2"
 
 def build():
     autotools.make('-C src CC="%s" LD="%s %s" CFLAGS="%s"' % (get.CC(), get.CC(), get.LDFLAGS(), get.CFLAGS()))
@@ -106,4 +106,3 @@ def create_directories():
     # FHS compatibility symlinks stuff
     pisitools.dosym("/var/tmp", "/usr/tmp")
     pisitools.dosym("share/man", "/usr/local/man")
-
