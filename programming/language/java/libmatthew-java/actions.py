@@ -10,6 +10,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def build():
+    pisitools.dosed("Makefile", "Class\-Path\: \$\(JARDIR\)\/hexdump.jar", "Class-Path: hexdump.jar")
     autotools.make("-j1")
 
 def install():
