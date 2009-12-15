@@ -26,7 +26,7 @@ from pardus.fileutils import FileLock
 # faces
 
 FACES = [
-    "/usr/kde/4/share/apps/kdm/pics/users",
+    "/usr/kde/3.5/share/apps/kdm/pics/users",
 ]
 
 # messages
