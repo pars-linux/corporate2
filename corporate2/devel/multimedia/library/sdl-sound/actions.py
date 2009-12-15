@@ -24,13 +24,13 @@ def setup():
     autotools.configure("--disable-dependency-tracking \
                          --disable-static \
                          --disable-smpeg \
-                         --disable-physfs \
                          --enable-midi \
                          --enable-flac \
                          --enable-speex \
                          --enable-mikmod \
                          --enable-modplug \
                          --enable-mpglib \
+                         --enable-physfs \
                          --enable-ogg")
 
 def build():
