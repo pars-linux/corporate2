@@ -55,11 +55,8 @@ def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     #dosym main executables
-    for bin in map(os.path.basename, shelltools.ls("%s/opt/OpenOffice.org/bin/oo*" % get.installDIR())):
+    for bin in map(os.path.basename, shelltools.ls("%s/opt/OpenOffice.org/bin/*" % get.installDIR())):
         pisitools.dosym("/opt/OpenOffice.org/bin/ooo-wrapper.py", "/usr/bin/%s" % bin)
-
-    #make symlink of unopkg
-    pisitools.dosym("/opt/OpenOffice.org/bin/unopkg","/usr/bin/unopkg")
 
     # Icons
     pisitools.insinto("/usr/share/pixmaps","desktop/48x48/*.png")
