@@ -1,0 +1,161 @@
+diff --git a/COPYING b/COPYING
+index 7f33cbf..bed7479 100644
+--- a/COPYING
++++ b/COPYING
+@@ -1,12 +1,24 @@
+-This is a stub file.  This package has not yet had its complete licensing
+-information compiled.  Please see the individual source files for details on
+-your rights to use and modify this software.
++Copyright (c) 1999  Machine Vision Holdings Incorporated
++Template driver used: Copyright (c) 1998  Metro Link Incorporated
+ 
+-Please submit updated COPYING files to the Xorg bugzilla:
++Permission is hereby granted, free of charge, to any person obtaining a
++copy of this software and associated documentation files (the "Software"),
++to deal in the Software without restriction, including without limitation
++the rights to use, cpy, modify, merge, publish, distribute, sublicense,
++and/or sell copies of the Software, and to permit persons to whom the
++Software is furnished to do so, subject to the following conditions:
+ 
+-https://bugs.freedesktop.org/enter_bug.cgi?product=xorg
++The above copyright notice and this permission notice shall be included in
++all copies or substantial portions of the Software.
+ 
+-All licensing questions regarding this software should be directed at the
+-Xorg mailing list:
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
++THE X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
++WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
++OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
+ 
+-http://lists.freedesktop.org/mailman/listinfo/xorg
++Except as contained in this notice, the name of the Metro Link shall not be
++used in advertising or otherwise to promote the sale, use or other dealings
++in this Software without prior written authorization from Metro Link.
+diff --git a/README b/README
+index f857884..6cf5a78 100644
+--- a/README
++++ b/README
+@@ -1,20 +1,25 @@
+ xf86-input-penmount - PenMount input driver for the Xorg X server
+ 
+-Please submit bugs & patches to the Xorg bugzilla:
+-
+-        https://bugs.freedesktop.org/enter_bug.cgi?product=xorg
+-
+ All questions regarding this software should be directed at the
+ Xorg mailing list:
+ 
+         http://lists.freedesktop.org/mailman/listinfo/xorg
+ 
++Please submit bug reports to the Xorg bugzilla:
++
++        https://bugs.freedesktop.org/enter_bug.cgi?product=xorg
++
+ The master development code repository can be found at:
+ 
+         git://anongit.freedesktop.org/git/xorg/driver/xf86-input-penmount
+ 
+         http://cgit.freedesktop.org/xorg/driver/xf86-input-penmount
+ 
++For patch submission instructions, see:
++
++	http://www.x.org/wiki/Development/Documentation/SubmittingPatches
++
+ For more information on the git code manager, see:
+ 
+         http://wiki.x.org/wiki/GitPage
++
+diff --git a/src/xf86PM.c b/src/xf86PM.c
+index d07e242..1e38124 100644
+--- a/src/xf86PM.c
++++ b/src/xf86PM.c
+@@ -181,6 +181,9 @@ ProcessDeviceInit(PenMountPrivatePtr priv, DeviceIntPtr dev, InputInfoPtr pInfo)
+ 	unsigned char map[] =
+ 	{0, 1};
+ 	int min_x, min_y, max_x, max_y;
++	Atom axis_labels[2] = { 0, 0 };
++	Atom btn_label = 0;
++
+ 	/*
+ 	 * these have to be here instead of in the SetupProc, because when the
+ 	 * SetupProc is run at server startup, screenInfo is not setup yet
+@@ -191,7 +194,11 @@ ProcessDeviceInit(PenMountPrivatePtr priv, DeviceIntPtr dev, InputInfoPtr pInfo)
+ 	/*
+ 	 * Device reports button press for 1 button.
+ 	 */
+-	if (InitButtonClassDeviceStruct (dev, 1, map) == FALSE)
++	if (InitButtonClassDeviceStruct (dev, 1,
++#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
++                    &btn_label,
++#endif
++                    map) == FALSE)
+ 		{
+ 			ErrorF ("Unable to allocate PenMount ButtonClassDeviceStruct\n");
+ 			return !Success;
+@@ -202,6 +209,9 @@ ProcessDeviceInit(PenMountPrivatePtr priv, DeviceIntPtr dev, InputInfoPtr pInfo)
+ 	 * Axes min and max values are reported in raw coordinates.
+ 	 */
+ 	if (InitValuatorClassDeviceStruct (dev, 2,
++#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
++					   axis_labels,
++#endif
+ #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
+ 					   xf86GetMotionEvents,
+ #endif
+@@ -234,11 +244,19 @@ ProcessDeviceInit(PenMountPrivatePtr priv, DeviceIntPtr dev, InputInfoPtr pInfo)
+ 					min_y = 0;
+ 				}
+ 
+-			InitValuatorAxisStruct (dev, 0, min_x, max_x,
++			InitValuatorAxisStruct (dev, 0,
++#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
++						axis_labels[0],
++#endif
++						min_x, max_x,
+ 						9500,
+ 						0 /* min_res */ ,
+ 						9500 /* max_res */ );
+-			InitValuatorAxisStruct (dev, 1, min_y, max_y,
++			InitValuatorAxisStruct (dev, 1,
++#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
++						axis_labels[1],
++#endif
++						min_y, max_y,
+ 						10500,
+ 						0 /* min_res */ ,
+ 						10500 /* max_res */ );
+@@ -529,6 +547,7 @@ PenMountPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
+ 	priv->button_number = xf86SetIntOption( pInfo->options, "ButtonNumber", 1 );
+ 	priv->swap_xy = xf86SetIntOption( pInfo->options, "SwapXY", 0 );
+ 	priv->invert_y = xf86SetIntOption( pInfo->options, "InvertY", 0 );
++	priv->invert_x = xf86SetIntOption( pInfo->options, "InvertX", 0 );
+ 	priv->buffer = NULL;
+ 	s = xf86FindOptionValue (pInfo->options, "ReportingMode");
+ 	if ((s) && (xf86NameCmp (s, "raw") == 0))
+@@ -848,6 +867,10 @@ DMC9000_ReadInput (InputInfoPtr pInfo)
+ 		{
+ 			y = priv->max_y - y + priv->min_y;
+ 		}
++		if (priv->invert_x)
++		{
++			x = priv->max_x - x + priv->min_x;
++		}
+ 		priv->packet[0] = priv->pen_down ? 0x01 : 0x00;
+ 
+ 		if (priv->reporting_mode == TS_Scaled)
+diff --git a/src/xf86PM.h b/src/xf86PM.h
+index d13cbee..ff1d158 100644
+--- a/src/xf86PM.h
++++ b/src/xf86PM.h
+@@ -63,6 +63,7 @@ typedef struct _PenMountPrivateRec
+ 	int proximity;
+ 	int swap_xy;
+ 	int invert_y;
++	int invert_x;
+ 	XISBuffer *buffer;
+ 	unsigned char packet[PENMOUNT_PACKET_SIZE];	/* packet being/just read */
+ 	PenMountState lex_mode;
