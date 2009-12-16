@@ -40,8 +40,136 @@ index f081c67..a19a308 100644
          AC_DEFINE(XF86DRI,1,[Enable DRI driver support])
          AC_DEFINE(XF86DRI_DEVEL,1,[Enable developmental DRI driver support])
  	if test "$have_damage_h" = yes; then
+diff --git a/man/radeon.man b/man/radeon.man
+index 09239cf..4d8942f 100644
+--- a/man/radeon.man
++++ b/man/radeon.man
+@@ -40,14 +40,14 @@ R/RV/RS2xx and RS3xx);
+ .TP
+ \(bu
+ Textured XVideo acceleration including anti-tearing support (Bicubic filtering
+-only available on R/RV3xx, R/RV/RS4xx, R/RV5xx, and RS6xx);
++only available on R/RV3xx, R/RV/RS4xx, R/RV5xx, and RS6xx/RS740);
+ .TP
+ \(bu
+ Overlay XVideo acceleration (only on R/RV/RS1xx, R/RV/RS2xx,
+ R/RV/RS3xx, R/RV/RS4xx);
+ .TP
+ \(bu
+-3D acceleration (not supported on R/RV6xx and R/RV/RS7xx);
++3D acceleration;
+ .PD
+ .SH SUPPORTED HARDWARE
+ The
+diff --git a/src/atombios_output.c b/src/atombios_output.c
+index 57345b3..66a86f4 100644
+--- a/src/atombios_output.c
++++ b/src/atombios_output.c
+@@ -1472,6 +1472,18 @@ atombios_apply_output_quirks(xf86OutputPtr output, DisplayModePtr mode)
+     /* set scaler clears this on some chips */
+     if (IS_AVIVO_VARIANT && (mode->Flags & V_INTERLACE))
+ 	OUTREG(AVIVO_D1MODE_DATA_FORMAT + radeon_crtc->crtc_offset, AVIVO_D1MODE_INTERLEAVE_EN);
++
++    if (IS_DCE32_VARIANT && (radeon_output->active_device & (ATOM_DEVICE_DFP_SUPPORT))) {
++	radeon_encoder_ptr radeon_encoder = radeon_get_encoder(output);
++	if (radeon_encoder == NULL)
++	    return;
++	/* XXX: need to sort out why transmitter control table sometimes sets this to a
++	 * different golden value.
++	 */
++	if (radeon_encoder->encoder_id == ENCODER_OBJECT_ID_INTERNAL_UNIPHY2) {
++	    OUTREG(0x7ec4, 0x00824002);
++	}
++    }
+ }
+ 
+ void
+diff --git a/src/legacy_crtc.c b/src/legacy_crtc.c
+index 5ea13bc..ba3b102 100644
+--- a/src/legacy_crtc.c
++++ b/src/legacy_crtc.c
+@@ -670,8 +670,7 @@ legacy_crtc_dpms(xf86CrtcPtr crtc, int mode)
+     unsigned char *RADEONMMIO = pRADEONEnt->MMIO;
+ 
+     if (radeon_crtc->crtc_id)
+-	mask = (RADEON_CRTC2_EN |
+-		RADEON_CRTC2_DISP_DIS |
++	mask = (RADEON_CRTC2_DISP_DIS |
+ 		RADEON_CRTC2_VSYNC_DIS |
+ 		RADEON_CRTC2_HSYNC_DIS |
+ 		RADEON_CRTC2_DISP_REQ_EN_B);
+@@ -683,7 +682,7 @@ legacy_crtc_dpms(xf86CrtcPtr crtc, int mode)
+     switch(mode) {
+     case DPMSModeOn:
+ 	if (radeon_crtc->crtc_id) {
+-	    OUTREGP(RADEON_CRTC2_GEN_CNTL, RADEON_CRTC2_EN, ~mask);
++	    OUTREGP(RADEON_CRTC2_GEN_CNTL, RADEON_CRTC2_EN, ~(RADEON_CRTC2_EN | mask));
+ 	} else {
+ 	    OUTREGP(RADEON_CRTC_GEN_CNTL, RADEON_CRTC_EN, ~(RADEON_CRTC_EN | RADEON_CRTC_DISP_REQ_EN_B));
+ 	    OUTREGP(RADEON_CRTC_EXT_CNTL, 0, ~mask);
+@@ -693,7 +692,7 @@ legacy_crtc_dpms(xf86CrtcPtr crtc, int mode)
+     case DPMSModeSuspend:
+     case DPMSModeOff:
+ 	if (radeon_crtc->crtc_id) {
+-	    OUTREGP(RADEON_CRTC2_GEN_CNTL, mask, ~mask);
++	    OUTREGP(RADEON_CRTC2_GEN_CNTL, mask, ~(RADEON_CRTC2_EN | mask));
+ 	} else {
+ 	    OUTREGP(RADEON_CRTC_GEN_CNTL, RADEON_CRTC_DISP_REQ_EN_B, ~(RADEON_CRTC_EN | RADEON_CRTC_DISP_REQ_EN_B));
+ 	    OUTREGP(RADEON_CRTC_EXT_CNTL, mask, ~mask);
+@@ -913,6 +912,11 @@ RADEONInitCrtcRegisters(xf86CrtcPtr crtc, RADEONSavePtr save,
+ 			      ? RADEON_CRTC_INTERLACE_EN
+ 			      : 0));
+ 
++    /* 200M freezes on VT switch sometimes if CRTC is disabled */
++    if ((info->ChipFamily == CHIP_FAMILY_RS400) ||
++	(info->ChipFamily == CHIP_FAMILY_RS480))
++	save->crtc_gen_cntl |= RADEON_CRTC_EN;
++
+     save->crtc_ext_cntl |= (RADEON_XCRT_CNT_EN|
+ 			    RADEON_CRTC_VSYNC_DIS |
+ 			    RADEON_CRTC_HSYNC_DIS |
+@@ -1163,6 +1167,11 @@ RADEONInitCrtc2Registers(xf86CrtcPtr crtc, RADEONSavePtr save,
+ 				? RADEON_CRTC2_INTERLACE_EN
+ 				: 0));
+ 
++    /* 200M freezes on VT switch sometimes if CRTC is disabled */
++    if ((info->ChipFamily == CHIP_FAMILY_RS400) ||
++	(info->ChipFamily == CHIP_FAMILY_RS480))
++	save->crtc2_gen_cntl |= RADEON_CRTC2_EN;
++
+     save->disp2_merge_cntl = info->SavedReg->disp2_merge_cntl;
+     save->disp2_merge_cntl &= ~(RADEON_DISP2_RGB_OFFSET_EN);
+ 
+diff --git a/src/r600_exa.c b/src/r600_exa.c
+index bee8f09..54d91e8 100644
+--- a/src/r600_exa.c
++++ b/src/r600_exa.c
+@@ -1313,6 +1313,9 @@ static Bool R600CheckComposite(int op, PicturePtr pSrcPicture, PicturePtr pMaskP
+     if (op >= (int) (sizeof(R600BlendOp) / sizeof(R600BlendOp[0])))
+ 	RADEON_FALLBACK(("Unsupported Composite op 0x%x\n", op));
+ 
++    if (!pSrcPicture->pDrawable)
++	RADEON_FALLBACK(("Solid or gradient pictures not supported yet\n"));
++
+     pSrcPixmap = RADEONGetDrawablePixmap(pSrcPicture->pDrawable);
+ 
+     max_tex_w = 8192;
+@@ -1337,7 +1340,12 @@ static Bool R600CheckComposite(int op, PicturePtr pSrcPicture, PicturePtr pMaskP
+     }
+ 
+     if (pMaskPicture) {
+-	PixmapPtr pMaskPixmap = RADEONGetDrawablePixmap(pMaskPicture->pDrawable);
++	PixmapPtr pMaskPixmap;
++
++	if (!pMaskPicture->pDrawable)
++	    RADEON_FALLBACK(("Solid or gradient pictures not supported yet\n"));
++
++	pMaskPixmap = RADEONGetDrawablePixmap(pMaskPicture->pDrawable);
+ 
+ 	if (pMaskPixmap->drawable.width >= max_tex_w ||
+ 	    pMaskPixmap->drawable.height >= max_tex_h) {
 diff --git a/src/radeon_driver.c b/src/radeon_driver.c
-index 551cb7f..c726f8f 100644
+index 551cb7f..17253a7 100644
 --- a/src/radeon_driver.c
 +++ b/src/radeon_driver.c
 @@ -1362,6 +1362,18 @@ static void RADEONInitMemoryMap(ScrnInfoPtr pScrn)
@@ -63,7 +191,34 @@ index 551cb7f..c726f8f 100644
  #ifdef XF86DRI
      /* Apply memory map limitation if using an old DRI */
      if (info->directRenderingEnabled && !info->dri->newMemoryMap) {
-@@ -3727,6 +3739,8 @@ Bool RADEONScreenInit(int scrnIndex, ScreenPtr pScreen,
+@@ -1947,6 +1959,11 @@ static Bool RADEONPreInitChipType(ScrnInfoPtr pScrn)
+     if (info->cardType == CARD_PCIE && info->IsIGP)
+ 	info->cardType = CARD_PCI;
+ 
++    /* some rs4xx cards report as agp */
++    if ((info->ChipFamily == CHIP_FAMILY_RS400) ||
++	(info->ChipFamily == CHIP_FAMILY_RS480))
++	info->cardType = CARD_PCI;
++
+     if ((info->ChipFamily >= CHIP_FAMILY_R600) && info->IsIGP)
+ 	info->cardType = CARD_PCIE;
+ 
+@@ -1960,7 +1977,13 @@ static Bool RADEONPreInitChipType(ScrnInfoPtr pScrn)
+ 	    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Forced into AGP mode\n");
+ 	} else if ((strcmp(s, "PCI") == 0) ||
+ 		   (strcmp(s, "PCIE") == 0)) {
+-	    if (info->ChipFamily >= CHIP_FAMILY_RV380) {
++	    if ((info->ChipFamily == CHIP_FAMILY_RS400) ||
++		(info->ChipFamily == CHIP_FAMILY_RS480) ||
++		(info->ChipFamily == CHIP_FAMILY_RS690) ||
++		(info->ChipFamily == CHIP_FAMILY_RS740)) {
++		info->cardType = CARD_PCI;
++		xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Forced into PCI mode\n");
++	    } else if (info->ChipFamily >= CHIP_FAMILY_RV380) {
+ 		info->cardType = CARD_PCIE;
+ 		xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Forced into PCI Express mode\n");
+ 	    } else {
+@@ -3727,6 +3750,8 @@ Bool RADEONScreenInit(int scrnIndex, ScreenPtr pScreen,
      memset(info->FB + pScrn->fbOffset, 0,
             pScrn->virtualY * pScrn->displayWidth * info->CurrentLayout.pixel_bytes);
  
@@ -72,3 +227,158 @@ index 551cb7f..c726f8f 100644
      /* set the modes with desired rotation, etc. */
      if (!xf86SetDesiredModes (pScrn))
  	return FALSE;
+diff --git a/src/radeon_exa_render.c b/src/radeon_exa_render.c
+index 8e98b9f..e663b54 100644
+--- a/src/radeon_exa_render.c
++++ b/src/radeon_exa_render.c
+@@ -478,7 +478,7 @@ static Bool R100CheckComposite(int op, PicturePtr pSrcPicture,
+ 	RADEON_FALLBACK(("Unsupported Composite op 0x%x\n", op));
+ 
+     if (!pSrcPicture->pDrawable)
+-	return FALSE;
++	RADEON_FALLBACK(("Solid or gradient pictures not supported yet\n"));
+ 
+     /* r100 limit should be 2048, there are issues with 2048
+      * see 197a62704742a4a19736c2637ac92d1dc5ab34ed
+@@ -503,7 +503,12 @@ static Bool R100CheckComposite(int op, PicturePtr pSrcPicture,
+     }
+ 
+     if (pMaskPicture) {
+-	PixmapPtr pMaskPixmap = RADEONGetDrawablePixmap(pMaskPicture->pDrawable);
++	PixmapPtr pMaskPixmap;
++
++	if (!pMaskPicture->pDrawable)
++	    RADEON_FALLBACK(("Solid or gradient pictures not supported yet\n"));
++
++	pMaskPixmap = RADEONGetDrawablePixmap(pMaskPicture->pDrawable);
+ 
+ 	if (pMaskPixmap->drawable.width > 2047 ||
+ 	    pMaskPixmap->drawable.height > 2047) {
+@@ -808,7 +813,7 @@ static Bool R200CheckComposite(int op, PicturePtr pSrcPicture, PicturePtr pMaskP
+ 	RADEON_FALLBACK(("Unsupported Composite op 0x%x\n", op));
+ 
+     if (!pSrcPicture->pDrawable)
+-	return FALSE;
++	RADEON_FALLBACK(("Solid or gradient pictures not supported yet\n"));
+ 
+     /* r200 limit should be 2048, there are issues with 2048
+      * see bug 19269
+@@ -833,7 +838,12 @@ static Bool R200CheckComposite(int op, PicturePtr pSrcPicture, PicturePtr pMaskP
+     }
+ 
+     if (pMaskPicture) {
+-	PixmapPtr pMaskPixmap = RADEONGetDrawablePixmap(pMaskPicture->pDrawable);
++	PixmapPtr pMaskPixmap;
++
++	if (!pMaskPicture->pDrawable)
++	    RADEON_FALLBACK(("Solid or gradient pictures not supported yet\n"));
++
++	pMaskPixmap = RADEONGetDrawablePixmap(pMaskPicture->pDrawable);
+ 
+ 	if (pMaskPixmap->drawable.width > 2047 ||
+ 	    pMaskPixmap->drawable.height > 2047) {
+@@ -1182,6 +1192,9 @@ static Bool R300CheckComposite(int op, PicturePtr pSrcPicture, PicturePtr pMaskP
+     if (op >= sizeof(RadeonBlendOp) / sizeof(RadeonBlendOp[0]))
+ 	RADEON_FALLBACK(("Unsupported Composite op 0x%x\n", op));
+ 
++    if (!pSrcPicture->pDrawable)
++	RADEON_FALLBACK(("Solid or gradient pictures not supported yet\n"));
++
+     pSrcPixmap = RADEONGetDrawablePixmap(pSrcPicture->pDrawable);
+ 
+     if (IS_R500_3D) {
+@@ -1213,7 +1226,12 @@ static Bool R300CheckComposite(int op, PicturePtr pSrcPicture, PicturePtr pMaskP
+     }
+ 
+     if (pMaskPicture) {
+-	PixmapPtr pMaskPixmap = RADEONGetDrawablePixmap(pMaskPicture->pDrawable);
++	PixmapPtr pMaskPixmap;
++
++	if (!pMaskPicture->pDrawable)
++	    RADEON_FALLBACK(("Solid or gradient pictures not supported yet\n"));
++
++	pMaskPixmap = RADEONGetDrawablePixmap(pMaskPicture->pDrawable);
+ 
+ 	if (pMaskPixmap->drawable.width > max_tex_w ||
+ 	    pMaskPixmap->drawable.height > max_tex_h) {
+diff --git a/src/radeon_output.c b/src/radeon_output.c
+index acba31f..6b6ba70 100644
+--- a/src/radeon_output.c
++++ b/src/radeon_output.c
+@@ -236,10 +236,40 @@ radeon_ddc_connected(xf86OutputPtr output)
+ 	case CONNECTOR_HDMI_TYPE_A:
+ 	case CONNECTOR_HDMI_TYPE_B:
+ 	    if (radeon_output->shared_ddc) {
++		xf86CrtcConfigPtr config = XF86_CRTC_CONFIG_PTR (output->scrn);
++		int i;
++
+ 		if (MonInfo->rawData[0x14] & 0x80) /* if it's digital and DVI/HDMI/etc. */
+ 		    MonType = MT_DFP;
+ 		else
+ 		    MonType = MT_NONE;
++
++		for (i = 0; i < config->num_output; i++) {
++		    if (output != config->output[i]) {
++			RADEONOutputPrivatePtr other_radeon_output =
++			    config->output[i]->driver_private;
++			if (radeon_output->devices & other_radeon_output->devices) {
++#ifndef EDID_COMPLETE_RAWDATA
++			    if (radeon_output->ConnectorType == CONNECTOR_HDMI_TYPE_A) {
++				MonType = MT_NONE;
++				break;
++			    }
++#else
++			    if (xf86MonitorIsHDMI(MonInfo)) {
++				if (radeon_output->ConnectorType == CONNECTOR_DVI_D) {
++				    MonType = MT_NONE;
++				    break;
++				}
++			    } else {
++				if (radeon_output->ConnectorType == CONNECTOR_HDMI_TYPE_A) {
++				    MonType = MT_NONE;
++				    break;
++				}
++			    }
++#endif
++			}
++		    }
++		}
+ 	    } else
+ 		MonType = MT_DFP;
+ 	    break;
+@@ -268,9 +298,11 @@ radeon_ddc_connected(xf86OutputPtr output)
+ 	    break;
+ 	}
+ 
+-	if (MonType != MT_NONE)
++	if (MonType != MT_NONE) {
+ 	    if (!xf86ReturnOptValBool(info->Options, OPTION_IGNORE_EDID, FALSE))
+ 		xf86OutputSetEDID(output, MonInfo);
++	} else
++	    xfree(MonInfo);
+     } else
+ 	MonType = MT_NONE;
+ 
+@@ -332,6 +364,22 @@ radeon_dpms(xf86OutputPtr output, int mode)
+     if ((mode == DPMSModeOn) && radeon_output->enabled)
+ 	return;
+ 
++    if ((mode != DPMSModeOn) && radeon_output->shared_ddc) {
++	xf86CrtcConfigPtr config = XF86_CRTC_CONFIG_PTR (output->scrn);
++	int i;
++
++	for (i = 0; i < config->num_output; i++) {
++	    if (output != config->output[i]) {
++		RADEONOutputPrivatePtr other_radeon_output =
++		    config->output[i]->driver_private;
++		if (radeon_output->devices & other_radeon_output->devices) {
++		    if (output->status == XF86OutputStatusDisconnected)
++			return;
++		}
++	    }
++	}
++    }
++
+     if (IS_AVIVO_VARIANT || info->r4xx_atom) {
+ 	atombios_output_dpms(output, mode);
+     } else {
