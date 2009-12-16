@@ -1,0 +1,145 @@
+From 0ad67ff31747416eefc0f9784805ef7d979bdedd Mon Sep 17 00:00:00 2001
+From: Chris Dekter <cdekter@gmail.com>
+Date: Fri, 30 Oct 2009 10:11:12 +1100
+Subject: [PATCH] [record] Refactor around RecordADeviceEvent()
+
+Signed-off-by: Chris Dekter <cdekter@gmail.com>
+---
+ Xi/exevents.c   |    9 ++-------
+ dix/events.c    |   14 +++++---------
+ include/dix.h   |    5 +++--
+ record/record.c |   30 ++++++++++++++++++++++++++++--
+ 4 files changed, 38 insertions(+), 20 deletions(-)
+
+diff --git a/Xi/exevents.c b/Xi/exevents.c
+index 080d033..79c61b4 100644
+--- a/Xi/exevents.c
++++ b/Xi/exevents.c
+@@ -1033,13 +1033,8 @@ ProcessOtherEvent(InternalEvent *ev, DeviceIntPtr device)
+ 
+     if (DeviceEventCallback) {
+ 	DeviceEventInfoRec eventinfo;
+-	xEvent xE;
+-
+-	/* TODO check return value of EventToCore() */
+-	EventToCore(ev, &xE);
+-
+-	eventinfo.events = (xEventPtr) &xE;
+-	eventinfo.count = 1;
++	eventinfo.event = ev;
++	eventinfo.ismaster = IsMaster(device);	
+ 	CallCallbacks(&DeviceEventCallback, (pointer) & eventinfo);
+     }
+ 
+diff --git a/dix/events.c b/dix/events.c
+index df7bd63..facc5c3 100644
+--- a/dix/events.c
++++ b/dix/events.c
+@@ -1144,9 +1144,6 @@ EnqueueEvent(InternalEvent *ev, DeviceIntPtr device)
+     if (DeviceEventCallback)
+     {
+ 	DeviceEventInfoRec eventinfo;
+-	xEvent xE;
+-	/* TODO check return value of EventToCore() */
+-	EventToCore(ev, &xE);
+ 
+ 	/*  The RECORD spec says that the root window field of motion events
+ 	 *  must be valid.  At this point, it hasn't been filled in yet, so
+@@ -1157,12 +1154,11 @@ EnqueueEvent(InternalEvent *ev, DeviceIntPtr device)
+ 	 *  the data that GetCurrentRootWindow relies on hasn't been
+ 	 *  updated yet.
+ 	 */
+-
+-	if (xE.u.u.type == DeviceMotionNotify)
+-	    xE.u.keyButtonPointer.root = WindowTable[pSprite->hotPhys.pScreen->myNum]->drawable.id;
+-
+-	eventinfo.events = &xE;
+-	eventinfo.count = 1;
++	if (ev->any.type == ET_Motion)
++	    eventinfo.root = WindowTable[pSprite->hotPhys.pScreen->myNum]->drawable.id;
++    
++	eventinfo.event = ev;
++	eventinfo.ismaster = IsMaster(device);
+ 	CallCallbacks(&DeviceEventCallback, (pointer)&eventinfo);
+     }
+ 
+diff --git a/include/dix.h b/include/dix.h
+index ed3acb6..c08256a 100644
+--- a/include/dix.h
++++ b/include/dix.h
+@@ -576,8 +576,9 @@ typedef struct {
+ extern _X_EXPORT CallbackListPtr DeviceEventCallback;
+ 
+ typedef struct {
+-    xEventPtr events;
+-    int count;
++    InternalEvent *event;
++    Window root;
++    int ismaster;
+ } DeviceEventInfoRec;
+ 
+ extern int XItoCoreType(int xi_type);
+diff --git a/record/record.c b/record/record.c
+index 5abca24..5658960 100644
+--- a/record/record.c
++++ b/record/record.c
+@@ -42,6 +42,8 @@ and Jim Haggerty of Metheus.
+ #include "set.h"
+ #include "swaprep.h"
+ #include "inputstr.h"
++#include "eventconvert.h"
++
+ 
+ #include <stdio.h>
+ #include <assert.h>
+@@ -757,14 +759,34 @@ RecordADeviceEvent(CallbackListPtr *pcbl, pointer nulldata, pointer calldata)
+ 	    if (pRCAP->pDeviceEventSet)
+ 	    {
+ 		int ev; /* event index */
+-		xEvent *pev = pei->events;
+-		for (ev = 0; ev < pei->count; ev++, pev++)
++		int count;		
++        xEvent xE;
++        xEvent *pev = &xE;        
++
++        // TODO check return values
++        if (pei->ismaster)
++        {
++            EventToCore(pei->event, &xE);
++            count = 1;
++        }
++        else
++        {
++            EventToXI(pei->event, &pev, &count);
++        }
++        
++		for (ev = 0; ev < count; ev++, pev++)
+ 		{
+ 		    if (RecordIsMemberOfSet(pRCAP->pDeviceEventSet,
+ 					    pev->u.u.type & 0177))
+ 		    {
+ 		        xEvent swappedEvent;
+ 		        xEvent *pEvToRecord = pev;
++
++                if (pei->root != NULL)
++                {
++                    pev->u.keyButtonPointer.root = pei->root;
++                }
++		        
+ #ifdef PANORAMIX
+ 		        xEvent shiftedEvent;
+ 
+@@ -801,6 +823,10 @@ RecordADeviceEvent(CallbackListPtr *pcbl, pointer nulldata, pointer calldata)
+ 			SetCriticalOutputPending();
+ 		    }
+ 		} /* end for each event */
++	    if (!pei->ismaster)
++	    {
++        	xfree(pev);
++        }
+ 	    } /* end this RCAP selects device events */
+ 	} /* end for each RCAP on this context */
+     } /* end for each enabled context */
+-- 
+1.6.0.4
+

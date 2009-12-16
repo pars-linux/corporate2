@@ -1,0 +1,43 @@
+From 027e76b27178f140f1ceca12a6f5ba9496c9443c Mon Sep 17 00:00:00 2001
+From: Tinderbox user <tinderbox@tinder.box>
+Date: Fri, 11 Dec 2009 07:37:56 +1100
+Subject: [PATCH] [record] Get RECORD module to link and load
+
+---
+ hw/xfree86/dixmods/Makefile.am |    2 +-
+ include/eventconvert.h         |    6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/hw/xfree86/dixmods/Makefile.am b/hw/xfree86/dixmods/Makefile.am
+index 9ee710f..365f006 100644
+--- a/hw/xfree86/dixmods/Makefile.am
++++ b/hw/xfree86/dixmods/Makefile.am
+@@ -54,7 +54,7 @@ libglx_la_LIBADD = \
+ libglx_la_SOURCES = glxmodule.c
+ 
+ librecord_la_LDFLAGS = -avoid-version
+-librecord_la_LIBADD = $(top_builddir)/record/librecord.la $(top_builddir)/dix/libdix.la $(top_builddir)/xkb/libxkb.la
++librecord_la_LIBADD = $(top_builddir)/record/librecord.la
+ librecord_la_SOURCES = recordmod.c
+ 
+ libshadow_la_LDFLAGS = -avoid-version
+diff --git a/include/eventconvert.h b/include/eventconvert.h
+index 277a6c4..d993af7 100644
+--- a/include/eventconvert.h
++++ b/include/eventconvert.h
+@@ -30,9 +30,9 @@
+ 
+ #define FP1616(integral, frac) ((integral) * (1 << 16) + (frac) * (1 << 16))
+ 
+-_X_INTERNAL int EventToCore(InternalEvent *event, xEvent *core);
+-_X_INTERNAL int EventToXI(InternalEvent *ev, xEvent **xi, int *count);
+-_X_INTERNAL int EventToXI2(InternalEvent *ev, xEvent **xi);
++int EventToCore(InternalEvent *event, xEvent *core);
++int EventToXI(InternalEvent *ev, xEvent **xi, int *count);
++int EventToXI2(InternalEvent *ev, xEvent **xi);
+ _X_INTERNAL int GetCoreType(InternalEvent* ev);
+ _X_INTERNAL int GetXIType(InternalEvent* ev);
+ _X_INTERNAL int GetXI2Type(InternalEvent* ev);
+-- 
+1.6.0.4
+
