@@ -6,7 +6,7 @@ import subprocess
 
 from zorg.config import getDeviceInfo
 
-version = "173.14.20"
+version = "173.14.22"
 major = version.split(".")[0]
 base = "/usr/lib/xorg/nvidia%s" % major
 

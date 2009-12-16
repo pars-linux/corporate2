@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Licensed under the GNU General Public License, version 2.
@@ -14,7 +13,8 @@ WorkDir = "NVIDIA-Linux-x86-%s" % get.srcVERSION()
 KDIR = kerneltools.getKernelVersion()
 NoStrip = ["/lib/modules"]
 
-base = "/usr/lib/xorg/nvidia173"
+driver = "nvidia173"
+base = "/usr/lib/xorg/%s" % driver
 
 def build():
     shelltools.export("SYSSRC", "/lib/modules/%s/build" % KDIR)
@@ -24,7 +24,7 @@ def build():
 
 def install():
     # Kernel driver
-    pisitools.insinto("/lib/modules/%s/extra/nvidia" % KDIR, "usr/src/nv/nvidia.ko", "nvidia173.ko")
+    pisitools.insinto("/lib/modules/%s/extra/nvidia" % KDIR, "usr/src/nv/nvidia.ko", "%s.ko" % driver)
 
     # Libraries and X modules
     pisitools.insinto("%s/lib" % base, "usr/X11R6/lib/*")
@@ -42,5 +42,5 @@ def install():
     pisitools.remove("%s/libnvidia-wfb.so.*" % base)
 
     # Documentation
-    pisitools.dodoc("usr/share/doc/[!h]*")
-    pisitools.dohtml("usr/share/doc/html/*")
+    pisitools.dodoc("usr/share/doc/[!h]*", destDir="xorg-video-%s" % driver)
+    pisitools.dohtml("usr/share/doc/html/*", destDir="xorg-video-%s" % driver)
