@@ -21,7 +21,6 @@ def setup():
     # Remove VDPAU headers and wrapper library
     shelltools.unlinkDir("usr/include/vdpau")
     shelltools.unlink("usr/lib/libvdpau.so.%s" % get.srcVERSION())
-    shelltools.unlink("usr/lib/libvdpau_trace.so.%s" % get.srcVERSION())
 
 def build():
     shelltools.export("SYSSRC", "/lib/modules/%s/build" % KDIR)
