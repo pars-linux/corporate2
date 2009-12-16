@@ -1,7 +1,5 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -10,19 +8,12 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-WorkDir = "linuxwacom-%s" % get.srcVERSION().replace("_", "-")
+WorkDir = "xf86-input-wacom-%s" % get.srcVERSION()
 
 def setup():
-    shelltools.move("GPL", "COPYING")
-    shelltools.touch("NEWS")
-    shelltools.touch("README")
-    shelltools.touch("mkxincludes.in")
+    shelltools.move("fdi/wacom.fdi", "11-x11-wacom.fdi")
 
-    autotools.autoreconf("-vif")
-    autotools.configure("--disable-static \
-                         --enable-dlloader \
-                         --without-tk \
-                         --without-tcl")
+    autotools.configure()
 
 def build():
     autotools.make()
@@ -30,4 +21,6 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    pisitools.dodoc("AUTHORS", "COPYING", "ChangeLog")
+    pisitools.insinto("/usr/share/hal/fdi/policy/20thirdparty", "11-x11-wacom.fdi")
+
+    pisitools.dodoc("AUTHORS", "ChangeLog", "GPL", "README")
