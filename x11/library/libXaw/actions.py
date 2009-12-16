@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Licensed under the GNU General Public License, version 2.
@@ -9,6 +8,7 @@ from pisi.actionsapi import autotools
 def setup():
     autotools.autoreconf("-vif")
     autotools.configure("--disable-static \
+                         --disable-docs \
                          --disable-xaw6")
 
 def build():
