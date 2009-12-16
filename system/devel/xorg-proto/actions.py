@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Licensed under the GNU General Public License, version 2.
@@ -10,15 +9,16 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 WorkDir = "."
-SkipFiles = ["filelist", "patches", "pisiBuildState"]
+SkipFiles = [".pc", "filelist", "patches", "pisiBuildState"]
 
 def setup():
+    pisitools.dosed("*/Makefile.am", r"/doc/\$\(PACKAGE\)", "/doc/xorg-proto")
+
     for package in shelltools.ls("."):
         if package in SkipFiles:
             continue
         shelltools.cd(package)
-        if package.startswith("vncproto"):
-            autotools.autoreconf("-vif")
+        autotools.autoreconf("-vif")
         autotools.configure()
         shelltools.cd("../")
 
@@ -37,6 +37,3 @@ def install():
         shelltools.cd(package)
         autotools.rawInstall("DESTDIR=%s" % get.installDIR())
         shelltools.cd("../")
-
-    pisitools.domove("%s/*[!-]proto/*" % get.docDIR(), "/".join((get.docDIR(), get.srcNAME())))
-    pisitools.removeDir("%s/*[!-]proto" % get.docDIR())
