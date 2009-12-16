@@ -1,0 +1,24 @@
+--- src/kpowersave.cpp	2007-09-17 20:39:45.000000000 +0300
++++ src/kpowersave.cpp	2007-11-06 20:52:22.000000000 +0200
+@@ -465,10 +465,10 @@
+ 			else if (minutes > 0){
+ 				if (charging_state == CHARGING)
+ 					tmp = i18n("Plugged in -- %1% charged (%2:%3 h until full "
+-						   "charged)").arg(percent).arg(minutes / 60).arg(num3);
++						   "charged)").arg(QString::number(percent), QString::number(minutes / 60), num3);
+ 				else
+ 					tmp = i18n("Plugged in -- %1% charged (%2:%3 remaining hours)")
+-						   .arg(percent).arg(minutes / 60).arg(num3);
++                          .arg(QString::number(percent), QString::number(minutes / 60), num3);
+ 			}
+ 			else if (charging_state == CHARGING && hwinfo->hasAPM()) {
+ 				tmp = i18n("Plugged in -- %1% charged").arg(percent);
+@@ -481,7 +481,7 @@
+ 	} else{
+ 		if (minutes >= 0){
+ 			tmp = i18n("Running on batteries -- %1% charged (%2:%3 hours remaining)")
+-				   .arg(percent).arg(minutes / 60).arg(num3);
++                  .arg(QString::number(percent), QString::number(minutes / 60), num3);
+ 		}
+ 		else {
+ 			tmp = i18n("Running on batteries -- %1% charged").arg(percent);
