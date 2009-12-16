@@ -1,20 +1,7 @@
-Index: xorg-server-1.6.3.901/hw/vnc/cursor.c
+Index: xorg-server-1.6.1/hw/vnc/cutpaste.c
 ===================================================================
---- xorg-server-1.6.3.901.orig/hw/vnc/cursor.c
-+++ xorg-server-1.6.3.901/hw/vnc/cursor.c
-@@ -262,7 +262,7 @@ rfbSendCursorPos(cl, pScreen)
- 
- #if XFREE86VNC
-     if (pScreen == pCursorScreen) 
--        miPointerPosition(&x, &y);
-+	miPointerGetPosition(inputInfo.pointer, &x, &y);
- #else
-     rfbSpriteGetCursorPos(pScreen, &x, &y);
- #endif
-Index: xorg-server-1.6.3.901/hw/vnc/cutpaste.c
-===================================================================
---- xorg-server-1.6.3.901.orig/hw/vnc/cutpaste.c
-+++ xorg-server-1.6.3.901/hw/vnc/cutpaste.c
+--- xorg-server-1.6.1.orig/hw/vnc/cutpaste.c
++++ xorg-server-1.6.1/hw/vnc/cutpaste.c
 @@ -66,7 +66,7 @@ rfbSetXCutText(char *str, int len)
  	    event.u.selectionClear.time = GetTimeInMillis();
  	    event.u.selectionClear.window = pSel->window;
@@ -24,121 +11,10 @@ Index: xorg-server-1.6.3.901/hw/vnc/cutpaste.c
  				NoEventMask, NoEventMask /* CantBeFiltered */,
  				NullGrab);
  	}
-Index: xorg-server-1.6.3.901/hw/vnc/dispcur.c
+Index: xorg-server-1.6.1/hw/vnc/kbdptr.c
 ===================================================================
---- xorg-server-1.6.3.901.orig/hw/vnc/dispcur.c
-+++ xorg-server-1.6.3.901/hw/vnc/dispcur.c
-@@ -74,7 +74,10 @@ in this Software without prior written a
- 
- /* per-screen private data */
- 
--static DevPrivateKey rfbDCScreenKey = &rfbDCScreenKey;
-+static int rfbDCScreenKeyStore;
-+static DevPrivateKey rfbDCScreenKey = &rfbDCScreenKeyStore;
-+static int rfbScreenKeyStore;
-+static DevPrivateKey rfbScreenKey = &rfbScreenKeyStore;
- 
- static Bool	rfbDCCloseScreen(int index, ScreenPtr pScreen);
- 
-@@ -205,7 +208,7 @@ rfbDCRealizeCursor (pScreen, pCursor)
-     CursorPtr	pCursor;
- {
-     if (pCursor->bits->refcnt <= 1)
--	dixSetPrivate(&pCursor->bits->devPrivates, pScreen, NULL);
-+	dixSetPrivate(&pCursor->bits->devPrivates, rfbScreenKey, NULL);
-     return TRUE;
- }
- 
-@@ -303,7 +306,7 @@ rfbDCRealize (ScreenPtr pScreen, CursorP
- 	    xfree ((pointer) pPriv);
- 	    return (rfbDCCursorPtr)NULL;
- 	}
--	dixSetPrivate(&pCursor->bits->devPrivates, pScreen, pPriv);
-+	dixSetPrivate(&pCursor->bits->devPrivates, rfbScreenKey, pPriv);
- 	return pPriv;
-     }
-     pPriv->pPicture = 0;
-@@ -321,7 +324,7 @@ rfbDCRealize (ScreenPtr pScreen, CursorP
- 	xfree ((pointer) pPriv);
- 	return (rfbDCCursorPtr)NULL;
-     }
--    dixSetPrivate(&pCursor->bits->devPrivates, pScreen, pPriv);
-+    dixSetPrivate(&pCursor->bits->devPrivates, rfbScreenKey, pPriv);
- 
-     /* create the two sets of bits, clipping as appropriate */
- 
-@@ -368,7 +371,7 @@ rfbDCUnrealizeCursor (pScreen, pCursor)
-     rfbDCCursorPtr   pPriv;
- 
-     pPriv = (rfbDCCursorPtr)dixLookupPrivate(&pCursor->bits->devPrivates,
--					    pScreen);
-+					     rfbScreenKey);
-     if (pPriv && (pCursor->bits->refcnt <= 1))
-     {
- 	if (pPriv->sourceBits)
-@@ -380,7 +383,7 @@ rfbDCUnrealizeCursor (pScreen, pCursor)
- 	    FreePicture (pPriv->pPicture, 0);
- #endif
- 	xfree ((pointer) pPriv);
--	dixSetPrivate(&pCursor->bits->devPrivates, pScreen, NULL);
-+	dixSetPrivate(&pCursor->bits->devPrivates, rfbScreenKey, NULL);
-     }
-     return TRUE;
- }
-@@ -439,7 +442,7 @@ rfbDCPutUpCursor (pScreen, pCursor, x, y
-     WindowPtr	    pWin;
- 
-     pPriv = (rfbDCCursorPtr)dixLookupPrivate(&pCursor->bits->devPrivates,
--					    pScreen);
-+					     rfbScreenKey);
-     if (!pPriv)
-     {
- 	pPriv = rfbDCRealize(pScreen, pCursor);
-@@ -690,7 +693,7 @@ rfbDCMoveCursor (pScreen, pCursor, x, y,
-     PixmapPtr	    pTemp;
- 
-     pPriv = (rfbDCCursorPtr)dixLookupPrivate(&pCursor->bits->devPrivates,
--					    pScreen);
-+					     rfbScreenKey);
-     if (!pPriv)
-     {
- 	pPriv = rfbDCRealize(pScreen, pCursor);
-Index: xorg-server-1.6.3.901/hw/vnc/init.c
-===================================================================
---- xorg-server-1.6.3.901.orig/hw/vnc/init.c
-+++ xorg-server-1.6.3.901/hw/vnc/init.c
-@@ -138,7 +138,7 @@ static void rfbCrossScreen(ScreenPtr pSc
- 
- 
- static void
--PointerWarpCursor(ScreenPtr pScreen, int x, int y)
-+PointerWarpCursor(DeviceIntPtr pDev, ScreenPtr pScreen, int x, int y)
- {
- #if 0
-    DeviceIntPtr pDev = NULL;
-@@ -775,8 +775,8 @@ InitInput(argc, argv)
-     char *argv[];
- {
-     DeviceIntPtr p, k;
--    k = AddInputDevice(rfbKeybdProc, TRUE);
--    p = AddInputDevice(rfbMouseProc, TRUE);
-+    k = AddInputDevice(serverClient, rfbKeybdProc, TRUE);
-+    p = AddInputDevice(serverClient, rfbMouseProc, TRUE);
-     RegisterKeyboardDevice(k);
-     RegisterPointerDevice(p);
- 
-@@ -843,7 +843,6 @@ rfbMouseProc(pDevice, onoff)
- 	map[4] = 4;
- 	map[5] = 5;
- 	InitPointerDeviceStruct(pDev, map, 5,
--                                GetMotionHistory,
- 				PtrDeviceControl,
-                                 GetMaximumEventsNum(), 2 /* numAxes */);
-         vncSetPointerDevice(pDevice);
-Index: xorg-server-1.6.3.901/hw/vnc/kbdptr.c
-===================================================================
---- xorg-server-1.6.3.901.orig/hw/vnc/kbdptr.c
-+++ xorg-server-1.6.3.901/hw/vnc/kbdptr.c
+--- xorg-server-1.6.1.orig/hw/vnc/kbdptr.c
++++ xorg-server-1.6.1/hw/vnc/kbdptr.c
 @@ -74,19 +74,26 @@ vncSetPointerDevice(DeviceIntPtr ptr)
  static void
  EnqueueMotion(DeviceIntPtr ptrDev, int x, int y)
@@ -229,10 +105,10 @@ Index: xorg-server-1.6.3.901/hw/vnc/kbdptr.c
  
  	ErrorF("KbdAddEvent: unknown KeySym 0x%x - allocating KeyCode %d\n",
  	       (int)keySym, keyCode);
-Index: xorg-server-1.6.3.901/hw/vnc/rfbkeyb.c
+Index: xorg-server-1.6.1/hw/vnc/rfbkeyb.c
 ===================================================================
---- xorg-server-1.6.3.901.orig/hw/vnc/rfbkeyb.c
-+++ xorg-server-1.6.3.901/hw/vnc/rfbkeyb.c
+--- xorg-server-1.6.1.orig/hw/vnc/rfbkeyb.c
++++ xorg-server-1.6.1/hw/vnc/rfbkeyb.c
 @@ -388,7 +388,7 @@ static XF86ModuleVersionInfo xf86rfbKeyb
      "xf4vnc Project, see http://xf4vnc.sf.net",
      MODINFOSTRING1,
@@ -242,10 +118,10 @@ Index: xorg-server-1.6.3.901/hw/vnc/rfbkeyb.c
      1, 0, 0,
      ABI_CLASS_XINPUT,
      ABI_XINPUT_VERSION,
-Index: xorg-server-1.6.3.901/hw/vnc/rfbmouse.c
+Index: xorg-server-1.6.1/hw/vnc/rfbmouse.c
 ===================================================================
---- xorg-server-1.6.3.901.orig/hw/vnc/rfbmouse.c
-+++ xorg-server-1.6.3.901/hw/vnc/rfbmouse.c
+--- xorg-server-1.6.1.orig/hw/vnc/rfbmouse.c
++++ xorg-server-1.6.1/hw/vnc/rfbmouse.c
 @@ -98,10 +98,12 @@ xf86rfbMouseControlProc(DeviceIntPtr dev
      void *func1;
      int (*func2)(void);
@@ -278,10 +154,10 @@ Index: xorg-server-1.6.3.901/hw/vnc/rfbmouse.c
      1, 0, 0,
      ABI_CLASS_XINPUT,
      ABI_XINPUT_VERSION,
-Index: xorg-server-1.6.3.901/hw/vnc/rfbserver.c
+Index: xorg-server-1.6.1/hw/vnc/rfbserver.c
 ===================================================================
---- xorg-server-1.6.3.901.orig/hw/vnc/rfbserver.c
-+++ xorg-server-1.6.3.901/hw/vnc/rfbserver.c
+--- xorg-server-1.6.1.orig/hw/vnc/rfbserver.c
++++ xorg-server-1.6.1/hw/vnc/rfbserver.c
 @@ -1122,8 +1122,8 @@ rfbProcessClientNormalMessage(cl)
  
  	{
@@ -293,10 +169,10 @@ Index: xorg-server-1.6.3.901/hw/vnc/rfbserver.c
  	}
  #endif
  
-Index: xorg-server-1.6.3.901/hw/vnc/sprite.c
+Index: xorg-server-1.6.1/hw/vnc/sprite.c
 ===================================================================
---- xorg-server-1.6.3.901.orig/hw/vnc/sprite.c
-+++ xorg-server-1.6.3.901/hw/vnc/sprite.c
+--- xorg-server-1.6.1.orig/hw/vnc/sprite.c
++++ xorg-server-1.6.1/hw/vnc/sprite.c
 @@ -112,7 +112,8 @@ static void	    rfbSpriteSaveDoomedAreas
  static RegionPtr    rfbSpriteRestoreAreas(WindowPtr pWin, RegionPtr pRgnExposed);
  static void	    rfbSpriteComputeSaved(ScreenPtr pScreen);
@@ -424,53 +300,10 @@ Index: xorg-server-1.6.3.901/hw/vnc/sprite.c
  
      /* send new cursor shape to interested viewers */
      for (cl = rfbClientHead; cl ; cl = cl->next) {
-Index: xorg-server-1.6.3.901/hw/vnc/vncext.c
+Index: xorg-server-1.6.1/hw/xfree86/vnc/vncInit.c
 ===================================================================
---- xorg-server-1.6.3.901.orig/hw/vnc/vncext.c
-+++ xorg-server-1.6.3.901/hw/vnc/vncext.c
-@@ -36,8 +36,9 @@
- #include <arpa/inet.h>
- #include <netdb.h>
- 
--DevPrivateKey vncCreateScreenResourcesKey = &vncCreateScreenResourcesKey;
--DevPrivateKey rfbGCKey = &rfbGCKey;
-+static int vncCreateScreenResourcesKeyStore, rfbGCKeyStore;
-+DevPrivateKey vncCreateScreenResourcesKey = &vncCreateScreenResourcesKeyStore;
-+DevPrivateKey rfbGCKey = &rfbGCKeyStore;
- 
- int VncSelectNotify(ClientPtr client, BOOL onoff);
- void VncExtensionInit(void);
-@@ -514,7 +515,7 @@ GenerateVncConnectedEvent(int sock)
-    	  else
- 		conn.ipaddress = (CARD32)peer.sin_addr.s_addr;
- 
--	  (void) TryClientEvents(pn->client, (xEventPtr)&conn, 1, NoEventMask,
-+	  (void) TryClientEvents(pn->client, NULL, (xEventPtr)&conn, 1, NoEventMask,
- 				 NoEventMask, NullGrab);
- 	}
- 	pn = pn->next;
-@@ -557,7 +558,7 @@ GenerateVncChromiumConnectedEvent(int so
-    	  else
- 		conn.ipaddress = (CARD32)peer.sin_addr.s_addr;
- 
--	  (void) TryClientEvents(pn->client, (xEventPtr)&conn, 1, NoEventMask,
-+	  (void) TryClientEvents(pn->client, NULL, (xEventPtr)&conn, 1, NoEventMask,
- 				 NoEventMask, NullGrab);
- 	}
- 	pn = pn->next;
-@@ -586,7 +587,7 @@ GenerateVncDisconnectedEvent(int sock)
-     	  conn.type = VncEventBase + XVncDisconnected;
-     	  conn.sequenceNumber = pn->client->sequence;
-     	  conn.connected = sock;
--	  (void) TryClientEvents(pn->client, (xEventPtr)&conn, 1, NoEventMask,
-+	  (void) TryClientEvents(pn->client, NULL, (xEventPtr)&conn, 1, NoEventMask,
- 				 NoEventMask, NullGrab);
- 	}
- 	pn = pn->next;
-Index: xorg-server-1.6.3.901/hw/xfree86/vnc/vncInit.c
-===================================================================
---- xorg-server-1.6.3.901.orig/hw/xfree86/vnc/vncInit.c
-+++ xorg-server-1.6.3.901/hw/xfree86/vnc/vncInit.c
+--- xorg-server-1.6.1.orig/hw/xfree86/vnc/vncInit.c
++++ xorg-server-1.6.1/hw/xfree86/vnc/vncInit.c
 @@ -35,7 +35,7 @@
  #include "xf86.h"
  #include "xf86_OSproc.h"
@@ -569,3 +402,170 @@ Index: xorg-server-1.6.3.901/hw/xfree86/vnc/vncInit.c
  
      pScreen->DisplayCursor = vncDisplayCursor;
  
+Index: xorg-server-1.6.1/hw/vnc/vncext.c
+===================================================================
+--- xorg-server-1.6.1.orig/hw/vnc/vncext.c
++++ xorg-server-1.6.1/hw/vnc/vncext.c
+@@ -36,8 +36,9 @@
+ #include <arpa/inet.h>
+ #include <netdb.h>
+ 
+-DevPrivateKey vncCreateScreenResourcesKey = &vncCreateScreenResourcesKey;
+-DevPrivateKey rfbGCKey = &rfbGCKey;
++static int vncCreateScreenResourcesKeyStore, rfbGCKeyStore;
++DevPrivateKey vncCreateScreenResourcesKey = &vncCreateScreenResourcesKeyStore;
++DevPrivateKey rfbGCKey = &rfbGCKeyStore;
+ 
+ int VncSelectNotify(ClientPtr client, BOOL onoff);
+ void VncExtensionInit(void);
+@@ -514,7 +515,7 @@ GenerateVncConnectedEvent(int sock)
+    	  else
+ 		conn.ipaddress = (CARD32)peer.sin_addr.s_addr;
+ 
+-	  (void) TryClientEvents(pn->client, (xEventPtr)&conn, 1, NoEventMask,
++	  (void) TryClientEvents(pn->client, NULL, (xEventPtr)&conn, 1, NoEventMask,
+ 				 NoEventMask, NullGrab);
+ 	}
+ 	pn = pn->next;
+@@ -557,7 +558,7 @@ GenerateVncChromiumConnectedEvent(int so
+    	  else
+ 		conn.ipaddress = (CARD32)peer.sin_addr.s_addr;
+ 
+-	  (void) TryClientEvents(pn->client, (xEventPtr)&conn, 1, NoEventMask,
++	  (void) TryClientEvents(pn->client, NULL, (xEventPtr)&conn, 1, NoEventMask,
+ 				 NoEventMask, NullGrab);
+ 	}
+ 	pn = pn->next;
+@@ -586,7 +587,7 @@ GenerateVncDisconnectedEvent(int sock)
+     	  conn.type = VncEventBase + XVncDisconnected;
+     	  conn.sequenceNumber = pn->client->sequence;
+     	  conn.connected = sock;
+-	  (void) TryClientEvents(pn->client, (xEventPtr)&conn, 1, NoEventMask,
++	  (void) TryClientEvents(pn->client, NULL, (xEventPtr)&conn, 1, NoEventMask,
+ 				 NoEventMask, NullGrab);
+ 	}
+ 	pn = pn->next;
+Index: xorg-server-1.6.1/hw/vnc/cursor.c
+===================================================================
+--- xorg-server-1.6.1.orig/hw/vnc/cursor.c
++++ xorg-server-1.6.1/hw/vnc/cursor.c
+@@ -262,7 +262,7 @@ rfbSendCursorPos(cl, pScreen)
+ 
+ #if XFREE86VNC
+     if (pScreen == pCursorScreen) 
+-        miPointerPosition(&x, &y);
++	miPointerGetPosition(inputInfo.pointer, &x, &y);
+ #else
+     rfbSpriteGetCursorPos(pScreen, &x, &y);
+ #endif
+Index: xorg-server-1.6.1/hw/vnc/init.c
+===================================================================
+--- xorg-server-1.6.1.orig/hw/vnc/init.c
++++ xorg-server-1.6.1/hw/vnc/init.c
+@@ -138,7 +138,7 @@ static void rfbCrossScreen(ScreenPtr pSc
+ 
+ 
+ static void
+-PointerWarpCursor(ScreenPtr pScreen, int x, int y)
++PointerWarpCursor(DeviceIntPtr pDev, ScreenPtr pScreen, int x, int y)
+ {
+ #if 0
+    DeviceIntPtr pDev = NULL;
+@@ -775,8 +775,8 @@ InitInput(argc, argv)
+     char *argv[];
+ {
+     DeviceIntPtr p, k;
+-    k = AddInputDevice(rfbKeybdProc, TRUE);
+-    p = AddInputDevice(rfbMouseProc, TRUE);
++    k = AddInputDevice(serverClient, rfbKeybdProc, TRUE);
++    p = AddInputDevice(serverClient, rfbMouseProc, TRUE);
+     RegisterKeyboardDevice(k);
+     RegisterPointerDevice(p);
+ 
+@@ -843,7 +843,6 @@ rfbMouseProc(pDevice, onoff)
+ 	map[4] = 4;
+ 	map[5] = 5;
+ 	InitPointerDeviceStruct(pDev, map, 5,
+-                                GetMotionHistory,
+ 				PtrDeviceControl,
+                                 GetMaximumEventsNum(), 2 /* numAxes */);
+         vncSetPointerDevice(pDevice);
+Index: xorg-server-1.6.1/hw/vnc/dispcur.c
+===================================================================
+--- xorg-server-1.6.1.orig/hw/vnc/dispcur.c
++++ xorg-server-1.6.1/hw/vnc/dispcur.c
+@@ -74,7 +74,10 @@ in this Software without prior written a
+ 
+ /* per-screen private data */
+ 
+-static DevPrivateKey rfbDCScreenKey = &rfbDCScreenKey;
++static int rfbDCScreenKeyStore;
++static DevPrivateKey rfbDCScreenKey = &rfbDCScreenKeyStore;
++static int rfbScreenKeyStore;
++static DevPrivateKey rfbScreenKey = &rfbScreenKeyStore;
+ 
+ static Bool	rfbDCCloseScreen(int index, ScreenPtr pScreen);
+ 
+@@ -205,7 +208,7 @@ rfbDCRealizeCursor (pScreen, pCursor)
+     CursorPtr	pCursor;
+ {
+     if (pCursor->bits->refcnt <= 1)
+-	dixSetPrivate(&pCursor->bits->devPrivates, pScreen, NULL);
++	dixSetPrivate(&pCursor->bits->devPrivates, rfbScreenKey, NULL);
+     return TRUE;
+ }
+ 
+@@ -303,7 +306,7 @@ rfbDCRealize (ScreenPtr pScreen, CursorP
+ 	    xfree ((pointer) pPriv);
+ 	    return (rfbDCCursorPtr)NULL;
+ 	}
+-	dixSetPrivate(&pCursor->bits->devPrivates, pScreen, pPriv);
++	dixSetPrivate(&pCursor->bits->devPrivates, rfbScreenKey, pPriv);
+ 	return pPriv;
+     }
+     pPriv->pPicture = 0;
+@@ -321,7 +324,7 @@ rfbDCRealize (ScreenPtr pScreen, CursorP
+ 	xfree ((pointer) pPriv);
+ 	return (rfbDCCursorPtr)NULL;
+     }
+-    dixSetPrivate(&pCursor->bits->devPrivates, pScreen, pPriv);
++    dixSetPrivate(&pCursor->bits->devPrivates, rfbScreenKey, pPriv);
+ 
+     /* create the two sets of bits, clipping as appropriate */
+ 
+@@ -368,7 +371,7 @@ rfbDCUnrealizeCursor (pScreen, pCursor)
+     rfbDCCursorPtr   pPriv;
+ 
+     pPriv = (rfbDCCursorPtr)dixLookupPrivate(&pCursor->bits->devPrivates,
+-					    pScreen);
++					     rfbScreenKey);
+     if (pPriv && (pCursor->bits->refcnt <= 1))
+     {
+ 	if (pPriv->sourceBits)
+@@ -380,7 +383,7 @@ rfbDCUnrealizeCursor (pScreen, pCursor)
+ 	    FreePicture (pPriv->pPicture, 0);
+ #endif
+ 	xfree ((pointer) pPriv);
+-	dixSetPrivate(&pCursor->bits->devPrivates, pScreen, NULL);
++	dixSetPrivate(&pCursor->bits->devPrivates, rfbScreenKey, NULL);
+     }
+     return TRUE;
+ }
+@@ -439,7 +442,7 @@ rfbDCPutUpCursor (pScreen, pCursor, x, y
+     WindowPtr	    pWin;
+ 
+     pPriv = (rfbDCCursorPtr)dixLookupPrivate(&pCursor->bits->devPrivates,
+-					    pScreen);
++					     rfbScreenKey);
+     if (!pPriv)
+     {
+ 	pPriv = rfbDCRealize(pScreen, pCursor);
+@@ -690,7 +693,7 @@ rfbDCMoveCursor (pScreen, pCursor, x, y,
+     PixmapPtr	    pTemp;
+ 
+     pPriv = (rfbDCCursorPtr)dixLookupPrivate(&pCursor->bits->devPrivates,
+-					    pScreen);
++					     rfbScreenKey);
+     if (!pPriv)
+     {
+ 	pPriv = rfbDCRealize(pScreen, pCursor);

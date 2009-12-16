@@ -11,15 +11,17 @@
         <License>MIT</License>
         <Summary>X.Org X Server</Summary>
         <Description>X server is the main application that allows a graphical interface.</Description>
-        <Archive sha1sum="c57c80dd15d3ca492e58ae993b9015d085ec6ea6" type="tarbz2">mirrors://xorg/individual/xserver/xorg-server-1.6.5.tar.bz2</Archive>
+        <Archive sha1sum="648ed22d03b5d8d68c2f6ee1b91b438b2dd920ac" type="tarbz2">mirrors://xorg/individual/xserver/xorg-server-1.7.3.901.tar.bz2</Archive>
         <BuildDependencies>
+            <Dependency versionFrom="1.1.0">libdmx</Dependency>
             <Dependency>libdrm</Dependency>
             <Dependency>libpciaccess</Dependency>
+            <Dependency versionFrom="1.3.2">libX11</Dependency>
             <Dependency>libXaw</Dependency>
-            <Dependency>libXext</Dependency>
+            <Dependency versionFrom="1.1.1">libXext</Dependency>
             <Dependency>libXfixes</Dependency>
             <Dependency>libXfont</Dependency>
-            <Dependency>libXi</Dependency>
+            <Dependency versionFrom="1.3">libXi</Dependency>
             <Dependency>libXmu</Dependency>
             <Dependency>libXrender</Dependency>
             <Dependency>libXres</Dependency>
@@ -27,40 +29,28 @@
             <Dependency>libXv</Dependency>
             <Dependency>hal</Dependency>
             <Dependency>mesa</Dependency>
-            <Dependency>pixman</Dependency>
+            <Dependency versionFrom="0.16.4">pixman</Dependency>
             <Dependency>xorg-app</Dependency>
-            <Dependency releaseFrom="25">xorg-proto</Dependency>
+            <Dependency releaseFrom="26">xorg-proto</Dependency>
         </BuildDependencies>
         <Patches>
-            <!-- Upstream fixes -->
-            <Patch level="1">upstream/0001-xfree86-add-edid-quirk-for-Samsung-Syncmaster-2333HD.patch</Patch>
-            <Patch level="1">upstream/0004-EXA-Only-take-special-code-path-for-1x1-fill-for-pix.patch</Patch>
-
-            <!-- Server servives acpid restarts -->
-            <!--Patch level="2">xorg_acpi.patch</Patch-->
-
-            <Patch level="1">fedora/xorg-x11-server-1.1.0-no-move-damage.patch</Patch>
             <Patch level="1">fedora/xserver-1.4.99-pic-libxf86config.patch</Patch>
-            <Patch level="1">fedora/xserver-1.6.1-hush-warning.patch</Patch>
-            <Patch level="1">fedora/xserver-1.6.1-document-fontpath-correctly.patch</Patch>
-            <Patch level="1">fedora/xserver-1.5.0-projector-fb-size.patch</Patch>
             <Patch level="1">fedora/xserver-1.4.99-ssh-isnt-local.patch</Patch>
-            <Patch level="1">fedora/xserver-1.5.0-bad-fbdev-thats-mine.patch</Patch>
+            <Patch level="1">fedora/xserver-1.5.0-projector-fb-size.patch</Patch>
             <Patch level="1">fedora/xserver-1.5.1-mode-debug.patch</Patch>
-            <Patch level="1">fedora/xserver-1.5.99.3-dmx-xcalloc.patch</Patch>
-            <Patch level="1">fedora/xserver-1.6.0-less-acpi-brokenness.patch</Patch>
-            <Patch level="1">fedora/xserver-1.5.99.902-sod-off-poulsbo.patch</Patch>
-            <Patch level="1">fedora/xserver-1.5.99.902-vnc.patch</Patch>
-            <Patch level="1">fedora/xserver-1.6.1-nouveau.patch</Patch>
-            <Patch level="1">fedora/xserver-1.6.0-primary.patch</Patch>
             <Patch level="1">fedora/xserver-1.6.0-displayfd.patch</Patch>
-            <Patch level="1">fedora/xserver-1.6.0-no-i810.patch</Patch>
-            <Patch level="1">fedora/xserver-1.6.1-exa-avoid-swapped-out.patch</Patch>
-            <Patch level="1">fedora/xserver-1.6.1-exa-create-pixmap2.patch</Patch>
-            <Patch level="1">fedora/xserver-1.6.1-vt-switch.patch</Patch>
-            <Patch level="1">fedora/xserver-1.6.1-synaptics.patch</Patch>
-            <Patch level="1">fedora/xserver-1.6.1-mousedrivers.patch</Patch>
-            <Patch level="1">fedora/xserver-1.6.1-proc-cmdline.patch</Patch>
+            <Patch level="1">fedora/xserver-1.6.0-less-acpi-brokenness.patch</Patch>
+            <Patch level="1">fedora/xserver-1.6.1-nouveau.patch</Patch>
+            <Patch level="1">fedora/xserver-1.6.99-default-modes.patch</Patch>
+            <Patch level="1">fedora/xserver-1.6.99-hush-prerelease-warning.patch</Patch>
+            <Patch level="1">fedora/xserver-1.6.99-randr-error-debugging.patch</Patch>
+            <Patch level="1">fedora/xserver-1.6.99-right-of.patch</Patch>
+            <Patch level="1">fedora/xserver-1.7.0-glx-versioning.patch</Patch>
+            <Patch level="1">fedora/xserver-1.7.0-randr-gamma-restore.patch</Patch>
+            <Patch level="1">fedora/xserver-1.7.1-gamma-kdm-fix.patch</Patch>
+            <Patch level="1">fedora/xserver-1.7.1-glx14-swrast.patch</Patch>
+            <Patch level="1">fedora/xserver-1.7.1-libcrypto.patch</Patch>
+            <Patch level="1">fedora/xserver-1.7.1-sigaction.patch</Patch>
 
             <Patch level="1">suse/xorg-server-xf4vnc.patch</Patch>
             <Patch level="0">suse/xorg-server-xf4vnc-disable-dmxvnc.diff</Patch>
@@ -72,20 +62,18 @@
             <Patch level="1">suse/xorg-server-xf4vnc-fix.diff</Patch>
 
             <Patch level="1">ubuntu/121_only_switch_vt_when_active.diff</Patch>
-            <Patch level="1">ubuntu/156_exevents_copykeyclass_nullptrcheck.patch</Patch>
             <Patch level="1">ubuntu/157_check_null_modes.patch</Patch>
             <Patch level="1">ubuntu/162_null_crtc_in_rotation.patch</Patch>
             <Patch level="1">ubuntu/166_nullptr_xinerama_keyrepeat.patch</Patch>
             <Patch level="1">ubuntu/167_nullptr_xisbread.patch</Patch>
             <Patch level="1">ubuntu/169_mipointer_nullptr_checks.patch</Patch>
             <Patch level="1">ubuntu/172_cwgetbackingpicture_nullptr_check.patch</Patch>
-            <Patch level="1">ubuntu/174_set_bg_pixmap_of_cow_to_none.patch</Patch>
-            <Patch level="1">ubuntu/177_animated_cursor_change_master.patch</Patch>
             <Patch level="1">ubuntu/184_virtual_devices_autodetect.patch</Patch>
-            <Patch level="1">ubuntu/185_dix_badwindow.patch</Patch>
-            <Patch level="1">ubuntu/186_autoconfig_geode.patch</Patch>
+            <Patch level="1">ubuntu/187_edid_quirk_hp_nc8430.patch</Patch>
+            <Patch level="1">ubuntu/188_default_primary_to_first_busid.patch</Patch>
 
             <Patch level="1">edid-quirk-for-apple-lcd.patch</Patch>
+            <Patch level="1">xf4vnc-fixes.patch</Patch>
         </Patches>
     </Source>
 
@@ -97,10 +85,11 @@
             <Package releaseTo="48">xorg-server</Package>
         </Conflicts>
         <Files>
+            <Path fileType="data">/etc/X11/fontpath.d</Path>
             <Path fileType="data">/etc/dbus-1</Path>
-            <Path fileType="man">/usr/share/man/man1/Xserver.1</Path>
             <Path fileType="data">/usr/lib/xorg/protocol.txt</Path>
             <Path fileType="data">/var/lib/xkb</Path>
+            <Path fileType="man">/usr/share/man/man1/Xserver.1</Path>
         </Files>
     </Package>
 
@@ -113,7 +102,7 @@
             <Dependency>libpciaccess</Dependency>
             <Dependency>libXfont</Dependency>
             <Dependency>hal</Dependency>
-            <Dependency>pixman</Dependency>
+            <Dependency versionFrom="0.16.4">pixman</Dependency>
             <Dependency>xorg-app</Dependency>
         </RuntimeDependencies>
         <Files>
@@ -141,17 +130,17 @@
         <Summary>Distributed Multihead X Server</Summary>
         <RuntimeDependencies>
             <Dependency>xorg-server-common</Dependency>
-            <Dependency>libdmx</Dependency>
+            <Dependency versionFrom="1.1.0">libdmx</Dependency>
             <Dependency>libXaw</Dependency>
-            <Dependency>libXext</Dependency>
+            <Dependency versionFrom="1.1.1">libXext</Dependency>
             <Dependency>libXfixes</Dependency>
             <Dependency>libXfont</Dependency>
-            <Dependency>libXi</Dependency>
+            <Dependency versionFrom="1.3">libXi</Dependency>
             <Dependency>libXmu</Dependency>
             <Dependency>libXrender</Dependency>
             <Dependency>libXt</Dependency>
             <Dependency>hal</Dependency>
-            <Dependency>pixman</Dependency>
+            <Dependency versionFrom="0.16.4">pixman</Dependency>
             <Dependency>xorg-app</Dependency>
         </RuntimeDependencies>
         <Files>
@@ -166,12 +155,12 @@
         <Summary>Nested X Server</Summary>
         <RuntimeDependencies>
             <Dependency>xorg-server-common</Dependency>
-            <Dependency>libXext</Dependency>
+            <Dependency versionFrom="1.1.1">libXext</Dependency>
             <Dependency>libXfont</Dependency>
             <Dependency>libXv</Dependency>
             <Dependency>hal</Dependency>
             <Dependency>mesa</Dependency>
-            <Dependency>pixman</Dependency>
+            <Dependency versionFrom="0.16.4">pixman</Dependency>
             <Dependency>xorg-app</Dependency>
         </RuntimeDependencies>
         <Files>
@@ -190,7 +179,7 @@
             <Dependency>xorg-server-common</Dependency>
             <Dependency>libXfont</Dependency>
             <Dependency>hal</Dependency>
-            <Dependency>pixman</Dependency>
+            <Dependency versionFrom="0.16.4">pixman</Dependency>
             <Dependency>xorg-app</Dependency>
         </RuntimeDependencies>
         <Conflicts>
@@ -213,7 +202,7 @@
             <Dependency>xorg-server-common</Dependency>
             <Dependency>libXfont</Dependency>
             <Dependency>hal</Dependency>
-            <Dependency>pixman</Dependency>
+            <Dependency versionFrom="0.16.4">pixman</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin/Xvnc</Path>
@@ -227,7 +216,7 @@
         <Summary>Headers and libraries for X server driver development</Summary>
         <RuntimeDependencies>
             <Dependency>libpciaccess</Dependency>
-            <Dependency>pixman</Dependency>
+            <Dependency versionFrom="0.16.4">pixman</Dependency>
             <Dependency>xorg-app</Dependency>
         </RuntimeDependencies>
         <Conflicts>
@@ -242,6 +231,20 @@
     </Package>
 
     <History>
+        <Update release="65">
+            <Date>2009-12-14</Date>
+            <Version>1.7.3.901</Version>
+            <Comment>
+                - Bump to 1.7 series.
+                - Add recent Fedora/Ubuntu patches. Update existing ones.
+                - Add fixes for xf4vnc to build with xserver 1.7.x.
+            </Comment>
+            <Requires>
+                <Action>reverseDependencyUpdate</Action>
+            </Requires>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
         <Update release="64">
             <Date>2009-10-13</Date>
             <Version>1.6.5</Version>

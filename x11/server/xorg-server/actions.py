@@ -1,7 +1,5 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2006-2009 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -54,12 +52,11 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
+    pisitools.dodir("/etc/X11/fontpath.d")
     pisitools.dodir("/usr/share/X11/pci")
 
     pisitools.remove("/usr/lib/xorg/modules/*.la")
     pisitools.remove("/usr/lib/xorg/modules/*/*.la")
-
-    pisitools.remove("/usr/lib/X11/Options")
 
     # Move glx and dri modules for dynamic switching
     pisitools.domove("/usr/lib/xorg/modules/extensions/libglx.so", "/usr/lib/xorg/std/extensions")
