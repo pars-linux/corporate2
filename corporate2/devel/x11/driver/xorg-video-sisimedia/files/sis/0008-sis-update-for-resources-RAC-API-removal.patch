@@ -1,0 +1,85 @@
+From 9e1ebb9530bbb71be7fcab9e6f8f9a475be72efe Mon Sep 17 00:00:00 2001
+From: Dave Airlie <airlied@redhat.com>
+Date: Tue, 28 Jul 2009 13:32:37 +1000
+Subject: [PATCH 08/10] sis: update for resources/RAC API removal
+
+---
+ src/sis.h        |    2 ++
+ src/sis_driver.c |    7 +++++++
+ 2 files changed, 9 insertions(+), 0 deletions(-)
+
+Index: xf86-video-sis-0.9.1/src/sis.h
+===================================================================
+--- xf86-video-sis-0.9.1.orig/src/sis.h
++++ xf86-video-sis-0.9.1/src/sis.h
+@@ -64,7 +64,9 @@
+ #include "xf86Pci.h"
+ #include "xf86Priv.h"
+ #include "xf86_OSproc.h"
++#ifndef XSERVER_LIBPCIACCESS
+ #include "xf86Resources.h"
++#endif
+ #include "xf86.h"
+ #include "xf86PciInfo.h"
+ #include "xf86Cursor.h"
+Index: xf86-video-sis-0.9.1/src/sis_driver.c
+===================================================================
+--- xf86-video-sis-0.9.1.orig/src/sis_driver.c
++++ xf86-video-sis-0.9.1/src/sis_driver.c
+@@ -78,7 +78,9 @@
+ 
+ #include "sis.h"
+ 
++#ifndef XSERVER_LIBPCIACCESS
+ #include "xf86RAC.h"
++#endif
+ #include "dixstruct.h"
+ #include "shadowfb.h"
+ #include "fb.h"
+@@ -3623,6 +3625,7 @@ SISPreInit(ScrnInfoPtr pScrn, int flags)
+     SiS_MapVGAMem(pScrn);
+ #endif
+ 
++#ifndef XSERVER_LIBPCIACCESS
+     /* Set operating state */
+ 
+     /* 1. memory */
+@@ -3652,6 +3655,8 @@ SISPreInit(ScrnInfoPtr pScrn, int flags)
+     /* Operations for which I/O access is required */
+     pScrn->racIoFlags = RAC_COLORMAP | RAC_CURSOR | RAC_VIEWPORT;
+ 
++#endif
++
+     /* Load ramdac module */
+     if(!xf86LoadSubModule(pScrn, "ramdac")) {
+        SISErrorLog(pScrn, "Could not load ramdac module\n");
+@@ -4427,6 +4432,7 @@ SISPreInit(ScrnInfoPtr pScrn, int flags)
+     xf86DrvMsg(pScrn->scrnIndex, from, "MMIO registers at 0x%lX (size %ldK)\n",
+ 	   (ULong)pSiS->IOAddress, pSiS->mmioSize);
+ 
++#ifndef XSERVER_LIBPCIACCESS
+     /* Register the PCI-assigned resources */
+     if(xf86RegisterResources(pSiS->pEnt->index, NULL, ResExclusive)) {
+        SISErrorLog(pScrn, "PCI resource conflicts detected\n");
+@@ -4438,6 +4444,7 @@ SISPreInit(ScrnInfoPtr pScrn, int flags)
+        SISFreeRec(pScrn);
+        return FALSE;
+     }
++#endif
+ 
+     from = X_PROBED;
+     if(pSiS->pEnt->device->videoRam != 0) {
+Index: xf86-video-sis-0.9.1/src/sis_hwmc.c
+===================================================================
+--- xf86-video-sis-0.9.1.orig/src/sis_hwmc.c
++++ xf86-video-sis-0.9.1/src/sis_hwmc.c
+@@ -43,7 +43,9 @@ THE USE OR OTHER DEALINGS IN THE SOFTWAR
+ 
+ #include "xf86.h"
+ #include "xf86_OSproc.h"
++#ifndef XSERVER_LIBPCIACCESS
+ #include "xf86Resources.h"
++#endif
+ #include "compiler.h"
+ #include "xf86PciInfo.h"
+ #include "xf86Pci.h"
