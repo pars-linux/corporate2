@@ -20,7 +20,7 @@ def build():
 def install():
     autotools.install()
 
-    dirs = ["/usr/share/doc", "/usr/share/devhelp", "/usr/share/glibmm-2.4"]
+    dirs = ["/usr/share/doc", "/usr/share/devhelp"]
     for dir in dirs:
         pisitools.removeDir(dir)
 
