@@ -6,7 +6,7 @@ import subprocess
 
 from zorg.config import getDeviceInfo
 
-version = "190.42"
+version = "190.53"
 driver = "nvidia-current"
 base = "/usr/lib/xorg/%s" % driver
 
@@ -42,8 +42,8 @@ links = (
         ("%s/lib/libcuda.so.%s" % (base, version), "/usr/lib/libcuda.so.%s" % version),
 
         # VDPAU library
-        ("libvdpau_nvidia.so.%s" % version, "/usr/lib/libvdpau_nvidia.so"),
-        ("%s/lib/libvdpau_nvidia.so.%s" % (base, version), "/usr/lib/libvdpau_nvidia.so.%s" % version),
+        ("libvdpau_nvidia.so.%s" % version, "/usr/lib/vdpau/libvdpau_nvidia.so"),
+        ("%s/lib/vdpau/libvdpau_nvidia.so.%s" % (base, version), "/usr/lib/vdpau/libvdpau_nvidia.so.%s" % version),
 
         # nvidia-cfg library
         ("libnvidia-cfg.so.1", "/usr/lib/libnvidia-cfg.so"),
