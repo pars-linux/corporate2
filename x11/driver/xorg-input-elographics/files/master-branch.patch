@@ -1,0 +1,235 @@
+diff --git a/Makefile.am b/Makefile.am
+index 36867bd..183adde 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -28,8 +28,7 @@ MAINTAINERCLEANFILES = ChangeLog
+ .PHONY: ChangeLog
+ 
+ ChangeLog:
+-	(GIT_DIR=$(top_srcdir)/.git git-log > .changelog.tmp && mv .changelog.tmp ChangeLog; rm -f .changelog.tmp) || \
+-	(touch ChangeLog; echo 'git directory not found: installing possibly empty changelog.' >&2)
++	$(CHANGELOG_CMD)
+ 
+ dist-hook: ChangeLog
+ 
+diff --git a/README b/README
+new file mode 100644
+index 0000000..279c320
+--- /dev/null
++++ b/README
+@@ -0,0 +1,20 @@
++xf86-input-elographics - Elographics input driver for the Xorg X server
++
++Please submit bugs & patches to the Xorg bugzilla:
++
++        https://bugs.freedesktop.org/enter_bug.cgi?product=xorg
++
++All questions regarding this software should be directed at the
++Xorg mailing list:
++
++        http://lists.freedesktop.org/mailman/listinfo/xorg
++
++The master development code repository can be found at:
++
++        git://anongit.freedesktop.org/git/xorg/driver/xf86-input-elographics
++
++        http://cgit.freedesktop.org/xorg/driver/xf86-input-elographics
++
++For more information on the git code manager, see:
++
++        http://wiki.x.org/wiki/GitPage
+diff --git a/configure.ac b/configure.ac
+index 4801a9c..d1b776c 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -32,36 +32,19 @@ AM_INIT_AUTOMAKE([dist-bzip2])
+ 
+ AM_MAINTAINER_MODE
+ 
+-DRIVER_NAME=elographics
+-AC_SUBST([DRIVER_NAME])
+-
++# Require xorg-macros: XORG_CWARNFLAGS, XORG_CHANGELOG
++m4_ifndef([XORG_MACROS_VERSION], [AC_FATAL([must install xorg-macros 1.2 or later before running autoconf/autogen])])
++XORG_MACROS_VERSION(1.2)
+ AM_CONFIG_HEADER([config.h])
+ 
+ # Checks for programs.
+ AC_DISABLE_STATIC
+ AC_PROG_LIBTOOL
+ AC_PROG_CC
++XORG_CWARNFLAGS
+ 
+ AH_TOP([#include "xorg-server.h"])
+ 
+-#AC_DEFINE(XFree86LOADER,1,[Stub define for loadable drivers])
+-#
+-#AC_ARG_ENABLE(XINPUT, AS_HELP_STRING([--enable-xinput],
+-#              [Build XInput support (default: yes)]),
+-#              [XINPUT=$enableval],[XINPUT=yes])
+-#AM_CONDITIONAL(XINPUT, test "x$XINPUT" = "xyes")
+-#if test "x$XINPUT" = "xyes" ; then
+-#    AC_DEFINE(XINPUT,1,[Enable XInput support])
+-#fi
+-#
+-#AC_ARG_ENABLE(XKB, AS_HELP_STRING([--enable-xkb],
+-#              [Build XKB support (default: yes)]),
+-#              [XKB=$enableval],[XKB=yes])
+-#AM_CONDITIONAL(XKB, test "x$XKB" = "xyes")
+-#if test "x$XKB" = "xyes" ; then
+-#    AC_DEFINE(XKB,1,[Enable XKB support])
+-#fi
+-
+ AC_ARG_WITH(xorg-module-dir,
+             AC_HELP_STRING([--with-xorg-module-dir=DIR],
+                            [Default xorg module directory [[default=$libdir/xorg/modules]]]),
+@@ -77,16 +60,18 @@ XORG_DRIVER_CHECK_EXT(XINPUT, inputproto)
+ # Checks for pkg-config packages
+ PKG_CHECK_MODULES(XORG, xorg-server xproto $REQUIRED_MODULES)
+ sdkdir=$(pkg-config --variable=sdkdir xorg-server)
+-
+-CFLAGS="$CFLAGS $XORG_CFLAGS "' -I$(top_srcdir)/src'
+-AC_SUBST([CFLAGS])
++XORG_CFLAGS="$CWARNFLAGS $XORG_CFLAGS"
+ 
+ # Checks for libraries.
+ 
+ # Checks for header files.
+ AC_HEADER_STDC
+ 
++DRIVER_NAME=elographics
++AC_SUBST([DRIVER_NAME])
++
+ XORG_MANPAGE_SECTIONS
+ XORG_RELEASE_VERSION
++XORG_CHANGELOG
+ 
+ AC_OUTPUT([Makefile src/Makefile man/Makefile])
+diff --git a/man/elographics.man b/man/elographics.man
+index 3a3e84e..7ce590a 100644
+--- a/man/elographics.man
++++ b/man/elographics.man
+@@ -75,7 +75,7 @@ Delay between report packets. Default: 1 (10ms).
+ .BI "Option \*qModel\*q \*q" string \*q
+ The touchscreen model. Default: unset. Supported models: "Sunit dSeries".
+ .SH "SEE ALSO"
+-__xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), xorgconfig(__appmansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__).
++__xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__).
+ .SH AUTHORS
+ Authors include:
+  Patrick Lecoanet
+diff --git a/src/Makefile.am b/src/Makefile.am
+index c1d44bf..cfc8bb2 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -24,6 +24,8 @@
+ # -avoid-version prevents gratuitous .0.0.0 version numbers on the end
+ # _ladir passes a dummy rpath to libtool so the thing will actually link
+ # TODO: -nostdlib/-Bstatic/-lgcc platform magic, not installing the .a, etc.
++AM_CFLAGS = $(XORG_CFLAGS)
++
+ @DRIVER_NAME@_drv_la_LTLIBRARIES = @DRIVER_NAME@_drv.la
+ @DRIVER_NAME@_drv_la_LDFLAGS = -module -avoid-version
+ @DRIVER_NAME@_drv_ladir = @inputdir@
+diff --git a/src/xf86Elo.c b/src/xf86Elo.c
+index 1620e44..ad88621 100644
+--- a/src/xf86Elo.c
++++ b/src/xf86Elo.c
+@@ -780,6 +780,10 @@ xf86EloControl(DeviceIntPtr	dev,
+   unsigned char		map[] = { 0, 1 };
+   unsigned char		req[ELO_PACKET_SIZE];
+   unsigned char		reply[ELO_PACKET_SIZE];
++#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
++  Atom btn_label;
++  Atom axis_labels[2] = { 0, 0 };
++#endif
+ 
+   switch(mode) {
+ 
+@@ -797,7 +801,11 @@ xf86EloControl(DeviceIntPtr	dev,
+       /*
+        * Device reports button press for up to 1 button.
+        */
+-      if (InitButtonClassDeviceStruct(dev, 1, map) == FALSE) {
++      if (InitButtonClassDeviceStruct(dev, 1,
++#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
++				      &btn_label,
++#endif
++				      map) == FALSE) {
+ 	ErrorF("Unable to allocate Elographics touchscreen ButtonClassDeviceStruct\n");
+ 	return !Success;
+       }
+@@ -818,6 +826,9 @@ xf86EloControl(DeviceIntPtr	dev,
+        * screen to fit one meter.
+        */
+       if (InitValuatorClassDeviceStruct(dev, 2,
++#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
++					axis_labels,
++#endif
+ #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
+                   xf86GetMotionEvents,
+ #endif
+@@ -827,11 +838,19 @@ xf86EloControl(DeviceIntPtr	dev,
+       }
+       else {
+ 	/* I will map coordinates myself */
+-	InitValuatorAxisStruct(dev, 0, -1, -1,
++	InitValuatorAxisStruct(dev, 0,
++#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
++			       axis_labels[0],
++#endif
++			       -1, -1,
+ 			       9500,
+ 			       0     /* min_res */,
+ 			       9500  /* max_res */);
+-	InitValuatorAxisStruct(dev, 1, -1, -1,
++	InitValuatorAxisStruct(dev, 1,
++#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
++			       axis_labels[1],
++#endif
++			       -1, -1,
+ 			       10500,
+ 			       0     /* min_res */,
+ 			       10500 /* max_res */);
+@@ -970,7 +989,7 @@ not_success:
+  ***************************************************************************
+  */
+ static LocalDevicePtr
+-xf86EloAllocate(InputDriverPtr	drv)
++xf86EloAllocate(InputDriverPtr	drv, IDevPtr dev)
+ {
+   LocalDevicePtr	local;
+   EloPrivatePtr		priv;
+@@ -1002,7 +1021,7 @@ xf86EloAllocate(InputDriverPtr	drv)
+   priv->packet_buf_p = 0;
+   priv->swap_axes = 0;
+ 
+-  local->name = XI_TOUCHSCREEN;
++  local->name = xstrdup(dev->identifier);
+   local->flags = 0 /* XI86_NO_OPEN_ON_INIT */;
+   local->device_control = xf86EloControl;
+   local->read_input   = xf86EloReadInput;
+@@ -1029,13 +1048,9 @@ xf86EloUninit(InputDriverPtr	drv,
+ {
+   EloPrivatePtr		priv = (EloPrivatePtr) local->private;
+ 
+-  xf86EloControl(local->dev, DEVICE_OFF);
+-
+   xfree(priv->input_dev);
+   xfree(priv);
+-  xfree(local->name);
+-  xfree(local);
+-
++  local->private = NULL;
+   xf86DeleteInput(local, 0);
+ }
+ 
+@@ -1064,7 +1079,7 @@ xf86EloInit(InputDriverPtr	drv,
+   Model*		model;
+ 
+ 
+-  local = xf86EloAllocate(drv);
++  local = xf86EloAllocate(drv, dev);
+   if (!local) {
+     return NULL;
+   }
