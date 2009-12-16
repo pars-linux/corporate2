@@ -1,0 +1,111 @@
+From 2f4ed2b1351da41dfaab2ec996bc187467c60de1 Mon Sep 17 00:00:00 2001
+From: Chris Dekter <cdekter@gmail.com>
+Date: Sat, 7 Nov 2009 11:00:33 +1100
+Subject: [PATCH] Tidy up record.c and fix linker error
+
+Signed-off-by: Chris Dekter <cdekter@gmail.com>
+---
+ hw/xfree86/dixmods/Makefile.am |    2 +-
+ record/record.c                |   61 ++++++++++++++++++---------------------
+ 2 files changed, 29 insertions(+), 34 deletions(-)
+
+diff --git a/hw/xfree86/dixmods/Makefile.am b/hw/xfree86/dixmods/Makefile.am
+index 365f006..9ee710f 100644
+--- a/hw/xfree86/dixmods/Makefile.am
++++ b/hw/xfree86/dixmods/Makefile.am
+@@ -54,7 +54,7 @@ libglx_la_LIBADD = \
+ libglx_la_SOURCES = glxmodule.c
+ 
+ librecord_la_LDFLAGS = -avoid-version
+-librecord_la_LIBADD = $(top_builddir)/record/librecord.la
++librecord_la_LIBADD = $(top_builddir)/record/librecord.la $(top_builddir)/dix/libdix.la $(top_builddir)/xkb/libxkb.la
+ librecord_la_SOURCES = recordmod.c
+ 
+ libshadow_la_LDFLAGS = -avoid-version
+diff --git a/record/record.c b/record/record.c
+index 5658960..85415e7 100644
+--- a/record/record.c
++++ b/record/record.c
+@@ -756,39 +756,34 @@ RecordADeviceEvent(CallbackListPtr *pcbl, pointer nulldata, pointer calldata)
+ 	pContext = ppAllContexts[eci];
+ 	for (pRCAP = pContext->pListOfRCAP; pRCAP; pRCAP = pRCAP->pNextRCAP)
+ 	{
+-	    if (pRCAP->pDeviceEventSet)
+-	    {
++		if (pRCAP->pDeviceEventSet)
++		{
+ 		int ev; /* event index */
+-		int count;		
+-        xEvent xE;
+-        xEvent *pev = &xE;        
+-
+-        // TODO check return values
+-        if (pei->ismaster)
+-        {
+-            EventToCore(pei->event, &xE);
+-            count = 1;
+-        }
+-        else
+-        {
+-            EventToXI(pei->event, &pev, &count);
+-        }
+-        
++		int count;
++		xEvent xE;
++		xEvent *pev = &xE;
++
++		// TODO check return values
++		if (pei->ismaster)
++		{
++		    EventToCore(pei->event, &xE);
++		    count = 1;
++		} else
++			EventToXI(pei->event, &pev, &count);
++		
+ 		for (ev = 0; ev < count; ev++, pev++)
+ 		{
+-		    if (RecordIsMemberOfSet(pRCAP->pDeviceEventSet,
++			if (RecordIsMemberOfSet(pRCAP->pDeviceEventSet,
+ 					    pev->u.u.type & 0177))
+-		    {
+-		        xEvent swappedEvent;
+-		        xEvent *pEvToRecord = pev;
+-
+-                if (pei->root != NULL)
+-                {
+-                    pev->u.keyButtonPointer.root = pei->root;
+-                }
+-		        
++			{
++			xEvent swappedEvent;
++			xEvent *pEvToRecord = pev;
++
++			if (pei->root != None)
++				pev->u.keyButtonPointer.root = pei->root;
++
+ #ifdef PANORAMIX
+-		        xEvent shiftedEvent;
++				xEvent shiftedEvent;
+ 
+ 			if (!noPanoramiXExtension &&
+ 			    (pev->u.u.type == MotionNotify ||
+@@ -823,11 +818,11 @@ RecordADeviceEvent(CallbackListPtr *pcbl, pointer nulldata, pointer calldata)
+ 			SetCriticalOutputPending();
+ 		    }
+ 		} /* end for each event */
+-	    if (!pei->ismaster)
+-	    {
+-        	xfree(pev);
+-        }
+-	    } /* end this RCAP selects device events */
++
++		if (!pei->ismaster)
++			xfree(pev);
++
++		} /* end this RCAP selects device events */
+ 	} /* end for each RCAP on this context */
+     } /* end for each enabled context */
+ } /* RecordADeviceEvent */
+-- 
+1.6.0.4
+
