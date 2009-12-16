@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Licensed under the GNU General Public License, version 2.
@@ -14,7 +13,8 @@ WorkDir = "NVIDIA-Linux-x86-%s" % get.srcVERSION()
 KDIR = kerneltools.getKernelVersion()
 NoStrip = ["/lib/modules"]
 
-base = "/usr/lib/xorg/nvidia96"
+driver = "nvidia96"
+base = "/usr/lib/xorg/%s" % driver
 
 def build():
     shelltools.export("SYSSRC", "/lib/modules/%s/build" % KDIR)
@@ -24,4 +24,4 @@ def build():
 
 def install():
     # Kernel driver
-    pisitools.insinto("/lib/modules/%s/extra/nvidia" % KDIR, "usr/src/nv/nvidia.ko", "nvidia96.ko")
+    pisitools.insinto("/lib/modules/%s/extra/nvidia" % KDIR, "usr/src/nv/nvidia.ko", "%s.ko" % driver)
