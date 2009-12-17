@@ -15,7 +15,7 @@ shelltools.export('HOME', get.workDIR())
 
 def setup():
     kde.make("-f admin/Makefile.common")
-    kde.configure("--without-arts")
+    kde.configure()
 
 def build():
     kde.make()
@@ -23,5 +23,4 @@ def build():
 def install():
     kde.install()
 
-    pisitools.remove("/usr/kde/3.5/lib/kde3/kio_sysinfo.a")
-    pisitools.remove("/usr/kde/3.5/lib/kde3/libksysinfopart.a")
+    pisitools.remove("/usr/kde/3.5/lib/kde3/*.a")
