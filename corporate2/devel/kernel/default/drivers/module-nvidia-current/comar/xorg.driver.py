@@ -19,48 +19,48 @@ def symlink(src, dst):
     os.symlink(src, dst)
 
 links = (
-        # X driver
-        ("%s/drivers/nvidia_drv.so" % base, "/usr/lib/xorg/modules/drivers/nvidia_drv.so"),
+    # X driver
+    ("%s/drivers/nvidia_drv.so" % base, "/usr/lib/xorg/modules/drivers/nvidia_drv.so"),
 
-        # XvMC library
-        ("%s/lib/libXvMCNVIDIA.so.%s" % (base, version), "/usr/lib/libXvMCNVIDIA.so.%s" % version),
-        ("libXvMCNVIDIA.so.%s" % version, "/usr/lib/libXvMCNVIDIA.so"),
+    # glx extension
+    ("%s/extensions/libglx.so.%s" % (base, version), "/usr/lib/xorg/modules/extensions/libglx.so"),
 
-        # glx extension
-        ("%s/extensions/libglx.so.%s" % (base, version), "/usr/lib/xorg/modules/extensions/libglx.so"),
+    # nvidia-tls library
+    ("libnvidia-tls.so.1", "/usr/lib/libnvidia-tls.so"),
+    ("libnvidia-tls.so.%s" % version, "/usr/lib/libnvidia-tls.so.1"),
+    ("%s/lib/tls/libnvidia-tls.so.%s" % (base, version), "/usr/lib/libnvidia-tls.so.%s" % version),
 
-        # GL library
-        ("%s/lib/libGL.so.%s" % (base, version), "/usr/lib/libGL.so.1.2"),
+    # GL library
+    ("%s/lib/libGL.so.%s" % (base, version), "/usr/lib/libGL.so.1.2"),
 
-        ("libGLcore.so.1", "/usr/lib/libGLcore.so"),
-        ("libGLcore.so.%s" % version, "/usr/lib/libGLcore.so.1"),
-        ("%s/lib/libGLcore.so.%s" % (base, version), "/usr/lib/libGLcore.so.%s" % version),
+    ("libGLcore.so.1", "/usr/lib/libGLcore.so"),
+    ("libGLcore.so.%s" % version, "/usr/lib/libGLcore.so.1"),
+    ("%s/lib/libGLcore.so.%s" % (base, version), "/usr/lib/libGLcore.so.%s" % version),
 
-        # Cuda library
-        ("libcuda.so.1", "/usr/lib/libcuda.so"),
-        ("libcuda.so.%s" % version, "/usr/lib/libcuda.so.1"),
-        ("%s/lib/libcuda.so.%s" % (base, version), "/usr/lib/libcuda.so.%s" % version),
+    # XvMC library
+    ("%s/lib/libXvMCNVIDIA.so.%s" % (base, version), "/usr/lib/libXvMCNVIDIA.so.%s" % version),
+    ("libXvMCNVIDIA.so.%s" % version, "/usr/lib/libXvMCNVIDIA.so"),
 
-        # VDPAU library
-        ("libvdpau_nvidia.so.%s" % version, "/usr/lib/vdpau/libvdpau_nvidia.so"),
-        ("%s/lib/vdpau/libvdpau_nvidia.so.%s" % (base, version), "/usr/lib/vdpau/libvdpau_nvidia.so.%s" % version),
+    # VDPAU driver
+    ("%s/lib/vdpau/libvdpau_nvidia.so.%s" % (base, version), "/usr/lib/vdpau/libvdpau_nvidia.so"),
 
-        # nvidia-cfg library
-        ("libnvidia-cfg.so.1", "/usr/lib/libnvidia-cfg.so"),
-        ("libnvidia-cfg.so.%s" % version, "/usr/lib/libnvidia-cfg.so.1"),
-        ("%s/lib/libnvidia-cfg.so.%s" % (base, version), "/usr/lib/libnvidia-cfg.so.%s" % version),
+    # nvidia-cfg library
+    ("libnvidia-cfg.so.1", "/usr/lib/libnvidia-cfg.so"),
+    ("libnvidia-cfg.so.%s" % version, "/usr/lib/libnvidia-cfg.so.1"),
+    ("%s/lib/libnvidia-cfg.so.%s" % (base, version), "/usr/lib/libnvidia-cfg.so.%s" % version),
 
-        # nvidia-tls library
-        ("libnvidia-tls.so.1", "/usr/lib/libnvidia-tls.so"),
-        ("libnvidia-tls.so.%s" % version, "/usr/lib/libnvidia-tls.so.1"),
-        ("%s/lib/tls/libnvidia-tls.so.%s" % (base, version), "/usr/lib/libnvidia-tls.so.%s" % version),
-        )
+    # Cuda library
+    ("libcuda.so.1", "/usr/lib/libcuda.so"),
+    ("libcuda.so.%s" % version, "/usr/lib/libcuda.so.1"),
+    ("%s/lib/libcuda.so.%s" % (base, version), "/usr/lib/libcuda.so.%s" % version),
+)
 
 #
 # Çomar methods
 #
 
 def enable():
+    unlink("/usr/lib/libvdpau_nvidia.so")
     for src, dst in links:
         symlink(src, dst)
 
@@ -74,6 +74,7 @@ def enable():
     subprocess.call(["/sbin/modprobe", "-s", "nvidia"])
 
 def disable():
+    unlink("/usr/lib/libvdpau_nvidia.so")
     for src, dst in links:
         unlink(dst)
 
