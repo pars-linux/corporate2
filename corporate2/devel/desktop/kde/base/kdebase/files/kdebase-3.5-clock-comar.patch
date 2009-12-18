@@ -1,7 +1,8 @@
-diff -Naur kcontrol/clock/clock.desktop kcontrol/clock/clock.desktop
---- kcontrol/clock/clock.desktop	2008-06-24 16:05:13.000000000 +0300
-+++ kcontrol/clock/clock.desktop	2008-06-24 16:05:24.000000000 +0300
-@@ -7,8 +7,6 @@
+Index: kcontrol/clock/clock.desktop
+===================================================================
+--- kcontrol/clock/clock.desktop.orig
++++ kcontrol/clock/clock.desktop
+@@ -6,8 +6,6 @@ DocPath=kcontrol/clock/index.html
  
  
  X-KDE-Library=clock
@@ -10,10 +11,20 @@ diff -Naur kcontrol/clock/clock.desktop kcontrol/clock/clock.desktop
  X-KDE-ParentApp=kcontrol
  
  Name=Date & Time
-diff -Naur kcontrol/clock/dtime.cpp kcontrol/clock/dtime.cpp
---- kcontrol/clock/dtime.cpp	2008-06-24 16:05:13.000000000 +0300
-+++ kcontrol/clock/dtime.cpp	2008-06-24 16:05:24.000000000 +0300
-@@ -173,15 +173,6 @@
+Index: kcontrol/clock/dtime.cpp
+===================================================================
+--- kcontrol/clock/dtime.cpp.orig
++++ kcontrol/clock/dtime.cpp
+@@ -4,7 +4,7 @@
+  *  Copyright (C) 1998 Luca Montecchiani <m.luca@usa.net>
+  *
+  *  This program is free software; you can redistribute it and/or modify
+- *  it under the terms of the GNU General Public License as published by
++*  it under the terms of the GNU General Public License as published by
+  *  the Free Software Foundation; either version 2 of the License, or
+  *  (at your option) any later version.
+  *
+@@ -173,15 +173,6 @@ Dtime::Dtime(QWidget * parent, const cha
  
    load();
  
@@ -29,69 +40,23 @@ diff -Naur kcontrol/clock/dtime.cpp kcontrol/clock/dtime.cpp
    kclock->setEnabled(false);
  }
  
-@@ -261,6 +252,55 @@
-   timeout();
- }
- 
-+bool Dtime::obtain()
-+{
-+    DBusError dbus_err;
-+    dbus_error_init(&dbus_err);
-+    
-+    DBusConnection *dbus_conn = dbus_bus_get_private(DBUS_BUS_SESSION, &dbus_err);
-+    if (dbus_error_is_set(&dbus_err)) {
-+        KMessageBox::error(this, i18n(QString("Unable to connect D-Bus: %1.").arg(dbus_err.message).latin1()));
-+        dbus_error_free(&dbus_err);
-+        return FALSE;
-+    }
-+    
-+    DBusMessage *dbus_msg = dbus_message_new_method_call("org.freedesktop.PolicyKit.AuthenticationAgent",
-+                                                         "/",
-+                                                         "org.freedesktop.PolicyKit.AuthenticationAgent",
-+                                                         "ObtainAuthorization");
-+
-+    const char *v_action = "tr.org.pardus.comar.time.clock.set";
-+    dbus_int32_t v_win = 0;
-+    dbus_int32_t v_pid = getpid();
-+
-+    dbus_message_append_args(dbus_msg,
-+                             DBUS_TYPE_STRING, &v_action,
-+                             DBUS_TYPE_UINT32, &v_win,
-+                             DBUS_TYPE_UINT32, &v_pid,
-+                             DBUS_TYPE_INVALID);
-+
-+    DBusMessage *dbus_reply = dbus_connection_send_with_reply_and_block(dbus_conn, dbus_msg, 65535 * 1000, &dbus_err);
-+    if (dbus_error_is_set(&dbus_err)) {
-+        KMessageBox::error(this, i18n(QString("Unable to change date: %1.").arg(dbus_err.message).latin1()));
-+        dbus_message_unref(dbus_msg);
-+        dbus_error_free(&dbus_err);
-+        return FALSE;
-+    }
-+
-+    dbus_bool_t v_grant = FALSE;
-+    dbus_message_get_args(dbus_reply, &dbus_err,
-+                          DBUS_TYPE_BOOLEAN, &v_grant,
-+                          DBUS_TYPE_INVALID);
-+
-+    dbus_message_unref(dbus_reply);
-+    dbus_message_unref(dbus_msg);
-+    dbus_error_free(&dbus_err);
-+    dbus_connection_close(dbus_conn);
-+    dbus_connection_unref(dbus_conn);
-+
-+    return v_grant;
-+}
-+
- void Dtime::save()
- {
-   KConfig config("kcmclockrc", false, false);
-@@ -302,40 +342,63 @@
+@@ -302,40 +293,65 @@ void Dtime::save()
      }
    }
    else {
 -    // User time setting
 -    KProcess c_proc;
--
++    // Comar stuff
++    DBusError dbus_err;
++    dbus_error_init(&dbus_err);
++
++    DBusConnection *dbus_conn = dbus_bus_get_private(DBUS_BUS_SYSTEM, &dbus_err);
++    if (dbus_error_is_set(&dbus_err)) {
++        KMessageBox::error(this, i18n(QString("Unable to connect D-Bus: %1.").arg(dbus_err.message).latin1()));
++        dbus_error_free(&dbus_err);
++        return;
++    }
+ 
 -  // BSD systems reverse year compared to Susv3
 -#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
 -    BufS.sprintf("%04d%02d%02d%02d%02d.%02d",
@@ -117,17 +82,6 @@ diff -Naur kcontrol/clock/dtime.cpp kcontrol/clock/dtime.cpp
 -      ) {
 -      KMessageBox::error( this, i18n("Can not set date."));
 -      return;
-+    // Comar stuff 
-+    DBusError dbus_err;
-+    dbus_error_init(&dbus_err);
-+    
-+    DBusConnection *dbus_conn = dbus_bus_get_private(DBUS_BUS_SYSTEM, &dbus_err);
-+    if (dbus_error_is_set(&dbus_err)) {
-+        KMessageBox::error(this, i18n(QString("Unable to connect D-Bus: %1.").arg(dbus_err.message).latin1()));
-+        dbus_error_free(&dbus_err);
-+        return;
-     }
-+    
 +    DBusMessage *dbus_msg = dbus_message_new_method_call("tr.org.pardus.comar",
 +                                                         "/package/util_linux",
 +                                                         "tr.org.pardus.comar.Time.Clock",
@@ -152,16 +106,22 @@ diff -Naur kcontrol/clock/dtime.cpp kcontrol/clock/dtime.cpp
 +    if (dbus_error_is_set(&dbus_err)) {
 +        dbus_message_unref(dbus_msg);
 +        dbus_error_free(&dbus_err);
-+        
-+        if (this->obtain()) {
-+            this->save();
-+        }
-+        else {
-+            KMessageBox::error(this, i18n(QString("Unable to get authorization.").latin1()));
-+        }
-+        return;
-+    }
 +
++        //KMessageBox::error(this, i18n(QString("Error while setting the date:")));
++
++        /*
++        if (this->obtain())
++            this->save();
++        else
++            KMessageBox::error(this, i18n(QString("Unable to get authorization for the requested action.").latin1()));
++        */
++        return;
+     }
+ 
+-    // try to set hardware clock. We do not care if it fails
+-    KProcess hwc_proc;
+-    hwc_proc << "hwclock" << "--systohc";
+-    hwc_proc.start(KProcess::Block);
 +    dbus_msg = dbus_message_new_method_call("tr.org.pardus.comar",
 +                                            "/package/util_linux",
 +                                            "tr.org.pardus.comar.Time.Clock",
@@ -173,40 +133,15 @@ diff -Naur kcontrol/clock/dtime.cpp kcontrol/clock/dtime.cpp
 +    dbus_error_free(&dbus_err);
 +    dbus_connection_close(dbus_conn);
 +    dbus_connection_unref(dbus_conn);
- 
--    // try to set hardware clock. We do not care if it fails
--    KProcess hwc_proc;
--    hwc_proc << "hwclock" << "--systohc";
--    hwc_proc.start(KProcess::Block);
++
    }
  
    // restart time
-diff -Naur kcontrol/clock/dtime.h kcontrol/clock/dtime.h
---- kcontrol/clock/dtime.h	2008-06-24 16:05:13.000000000 +0300
-+++ kcontrol/clock/dtime.h	2008-06-24 16:05:24.000000000 +0300
-@@ -22,6 +22,10 @@
- #ifndef dtime_included
- #define dtime_included
- 
-+#include <polkit-grant/polkit-grant.h>
-+#include <polkit-dbus/polkit-dbus.h>
-+#include <dbus/dbus.h>
-+
- #include <qdatetime.h> 
- #include <qlineedit.h> 
- #include <qspinbox.h> 
-@@ -51,6 +55,7 @@
-  public:
-   Dtime( QWidget *parent=0, const char* name=0 );
- 
-+  bool obtain();
-   void	save();
-   void	load();
- 
-diff -Naur kcontrol/clock/Makefile.am kcontrol/clock/Makefile.am
---- kcontrol/clock/Makefile.am	2008-06-24 16:05:13.000000000 +0300
-+++ kcontrol/clock/Makefile.am	2008-06-24 16:05:26.000000000 +0300
-@@ -3,9 +3,9 @@
+Index: kcontrol/clock/Makefile.am
+===================================================================
+--- kcontrol/clock/Makefile.am.orig
++++ kcontrol/clock/Makefile.am
+@@ -3,9 +3,9 @@ kde_module_LTLIBRARIES = kcm_clock.la
  kcm_clock_la_SOURCES = dtime.cpp tzone.cpp main.cpp 
  
  kcm_clock_la_LDFLAGS = $(all_libraries) -module -avoid-version -no-undefined
@@ -218,10 +153,11 @@ diff -Naur kcontrol/clock/Makefile.am kcontrol/clock/Makefile.am
   
  METASOURCES = AUTO
  
-diff -Naur kcontrol/clock/tzone.cpp kcontrol/clock/tzone.cpp
---- kcontrol/clock/tzone.cpp	2008-06-24 16:05:13.000000000 +0300
-+++ kcontrol/clock/tzone.cpp	2008-06-24 16:05:27.000000000 +0300
-@@ -58,7 +58,7 @@
+Index: kcontrol/clock/tzone.cpp
+===================================================================
+--- kcontrol/clock/tzone.cpp.orig
++++ kcontrol/clock/tzone.cpp
+@@ -58,7 +58,7 @@ Tzone::Tzone(QWidget * parent, const cha
  
      load();
  
@@ -230,12 +166,29 @@ diff -Naur kcontrol/clock/tzone.cpp kcontrol/clock/tzone.cpp
  }
  
  void Tzone::load()
-@@ -84,117 +84,43 @@
+@@ -84,117 +84,56 @@ void Tzone::currentZone()
  // on non-Solaris systems which do not use /etc/timezone?
  void Tzone::save()
  {
 -    QStringList selectedZones(tzonelist->selection());
--
++  QStringList selectedZones(tzonelist->selection());
++  if (selectedZones.count() <= 0)
++    return;
++
++  // Find untranslated selected zone
++  QString selectedzone(selectedZones[0]);
++
++  // Comar stuff
++    DBusError dbus_err;
++    dbus_error_init(&dbus_err);
++
++    DBusConnection *dbus_conn = dbus_bus_get_private(DBUS_BUS_SYSTEM, &dbus_err);
++    if (dbus_error_is_set(&dbus_err)) {
++        KMessageBox::error(this, i18n(QString("Unable to connect D-Bus: %1.").arg(dbus_err.message).latin1()));
++        dbus_error_free(&dbus_err);
++        return;
++    }
+ 
 -    if (selectedZones.count() > 0)
 -    {
 -      // Find untranslated selected zone
@@ -344,26 +297,6 @@ diff -Naur kcontrol/clock/tzone.cpp kcontrol/clock/tzone.cpp
 -        setenv("TZ", "", 1);
 -        tzset();
 -#endif // !USE SOLARIS
-+  QStringList selectedZones(tzonelist->selection());
-+  if (selectedZones.count() <= 0)
-+    return;
-+
-+  // Find untranslated selected zone
-+  QString selectedzone(selectedZones[0]);
-+  
-+  // Comar stuff
-+    DBusError dbus_err;
-+    dbus_error_init(&dbus_err);
-+    
-+    DBusConnection *dbus_conn = dbus_bus_get_private(DBUS_BUS_SYSTEM, &dbus_err);
-+    if (dbus_error_is_set(&dbus_err)) {
-+        KMessageBox::error(this, i18n(QString("Unable to connect D-Bus: %1.").arg(dbus_err.message).latin1()));
-+        dbus_error_free(&dbus_err);
-+        return;
-     }
--
--    currentZone();
-+    
 +    DBusMessage *dbus_msg = dbus_message_new_method_call("tr.org.pardus.comar",
 +                                                         "/package/util_linux",
 +                                                         "tr.org.pardus.comar.Time.Clock",
@@ -376,19 +309,33 @@ diff -Naur kcontrol/clock/tzone.cpp kcontrol/clock/tzone.cpp
 +
 +    DBusMessage *dbus_reply = dbus_connection_send_with_reply_and_block(dbus_conn, dbus_msg, 65535 * 1000, &dbus_err);
 +
++    if (dbus_error_is_set(&dbus_err)) {
++        dbus_message_unref(dbus_msg);
++        dbus_error_free(&dbus_err);
++
++        /*
++        if (this->obtain())
++            this->save();
++        else
++            KMessageBox::error(this, i18n(QString("Unable to get authorization for the requested action.").latin1()));
++        */
++        return;
+     }
+ 
 +    dbus_message_unref(dbus_reply);
 +    dbus_message_unref(dbus_msg);
 +    dbus_error_free(&dbus_err);
 +    dbus_connection_close(dbus_conn);
 +    dbus_connection_unref(dbus_conn);
-+  
-+  setenv("TZ",selectedzone.local8Bit(),1);
-+  tzset();
-+  currentZone();
++
++    setenv("TZ",selectedzone.local8Bit(),1);
++    tzset();
+     currentZone();
  }
-diff -Naur kcontrol/clock/tzone.h kcontrol/clock/tzone.h
---- kcontrol/clock/tzone.h	2008-06-24 16:05:13.000000000 +0300
-+++ kcontrol/clock/tzone.h	2008-06-24 16:05:28.000000000 +0300
+Index: kcontrol/clock/tzone.h
+===================================================================
+--- kcontrol/clock/tzone.h.orig
++++ kcontrol/clock/tzone.h
 @@ -22,6 +22,10 @@
  #ifndef tzone_included
  #define tzone_included
@@ -400,9 +347,26 @@ diff -Naur kcontrol/clock/tzone.h kcontrol/clock/tzone.h
  #include <ktimezones.h>
  #include <ktimezonewidget.h>
  #include <qvgroupbox.h>
---- kicker/applets/clock/clock.cpp	2008-11-07 00:14:59.000000000 +0200
-+++ kicker/applets/clock/clock.cpp	2008-11-15 19:26:53.000000000 +0200
-@@ -1547,11 +1547,8 @@
+@@ -36,11 +40,11 @@ class Tzone : public QVGroupBox
+ public:
+   Tzone( QWidget *parent=0, const char* name=0 );
+ 
+-  void	save();
+-  void  load();
++  void save();
++  void load();
+ 
+ signals:
+-	void zoneChanged(bool);
++  void zoneChanged(bool);
+ 
+ protected slots:
+   void handleZoneChange() {emit zoneChanged( TRUE );}
+Index: kicker/applets/clock/clock.cpp
+===================================================================
+--- kicker/applets/clock/clock.cpp.orig
++++ kicker/applets/clock/clock.cpp
+@@ -1476,11 +1476,8 @@ void ClockApplet::contextMenuActivated(i
              preferences();
              break;
          case 103:
@@ -416,3 +380,128 @@ diff -Naur kcontrol/clock/tzone.h kcontrol/clock/tzone.h
              proc.start(KProcess::DontCare);
              break;
          case 104:
+Index: kcontrol/clock/main.cpp
+===================================================================
+--- kcontrol/clock/main.cpp.orig
++++ kcontrol/clock/main.cpp
+@@ -28,7 +28,9 @@
+ #include <kaboutdata.h>
+ #include <kapplication.h>
+ #include <kdialog.h>
++#include <kdebug.h>
+ #include <kgenericfactory.h>
++#include <kmessagebox.h>
+ 
+ #include "main.h"
+ #include "main.moc"
+@@ -77,11 +79,78 @@ KclockModule::KclockModule(QWidget *pare
+     setButtons(Help);
+ }
+ 
++bool KclockModule::obtain()
++{
++    kdDebug() << "*** In obtain" << endl;
++    const char *v_action = "tr.org.pardus.comar.time.clock.set";
++    dbus_int32_t v_win = 0;
++    dbus_int32_t v_pid = getpid();
++
++    // Check for authorization
++    if (polkit_check_auth(getpid(), v_action, NULL)) {
++        kdDebug() << "*** polkit returned true" << endl;
++        return TRUE;
++    }
++
++    DBusError dbus_err;
++    dbus_error_init(&dbus_err);
++
++    DBusConnection *dbus_conn = dbus_bus_get_private(DBUS_BUS_SESSION, &dbus_err);
++    if (dbus_error_is_set(&dbus_err)) {
++        KMessageBox::error(this, i18n(QString("Unable to connect D-Bus: %1.").arg(dbus_err.message).latin1()));
++        dbus_error_free(&dbus_err);
++        return FALSE;
++    }
++
++
++    DBusMessage *dbus_msg = dbus_message_new_method_call("org.freedesktop.PolicyKit.AuthenticationAgent",
++                                                         "/",
++                                                         "org.freedesktop.PolicyKit.AuthenticationAgent",
++                                                         "ObtainAuthorization");
++
++
++    dbus_message_append_args(dbus_msg,
++                             DBUS_TYPE_STRING, &v_action,
++                             DBUS_TYPE_UINT32, &v_win,
++                             DBUS_TYPE_UINT32, &v_pid,
++                             DBUS_TYPE_INVALID);
++
++    DBusMessage *dbus_reply = dbus_connection_send_with_reply_and_block(dbus_conn, dbus_msg, 65535 * 1000, &dbus_err);
++    if (dbus_error_is_set(&dbus_err)) {
++        kdDebug() << "*** In obtain: dbus_err" << endl;
++        KMessageBox::error(this, i18n(QString("Unable to change date: %1.").arg(dbus_err.message).latin1()));
++        dbus_message_unref(dbus_msg);
++        dbus_error_free(&dbus_err);
++        return FALSE;
++    }
++
++    dbus_bool_t v_grant = FALSE;
++    dbus_message_get_args(dbus_reply, &dbus_err,
++                          DBUS_TYPE_BOOLEAN, &v_grant,
++                          DBUS_TYPE_INVALID);
++
++    dbus_message_unref(dbus_reply);
++    dbus_message_unref(dbus_msg);
++
++    kdDebug() << "*** obtain dbus_err: " << dbus_err.message << endl;
++    dbus_error_free(&dbus_err);
++
++    dbus_connection_close(dbus_conn);
++    dbus_connection_unref(dbus_conn);
++
++    kdDebug() << "*** obtain returns: " << v_grant << endl;
++    return v_grant;
++}
++
+ void KclockModule::save()
+ {
+-//  The order here is important
+-  dtime->save();
+-  tzone->save();
++  if (getuid() == 0 || this->obtain()) {
++    // The order here is important
++    dtime->save();
++    tzone->save();
++  }
++  else
++      QTimer::singleShot(0, this, SLOT(changed()));
+ 
+   // Tell the clock applet about the change so that it can update its timezone
+   kapp->dcopClient()->send( "kicker", "ClockApplet", "reconfigure()", QByteArray() );
+Index: kcontrol/clock/main.h
+===================================================================
+--- kcontrol/clock/main.h.orig
++++ kcontrol/clock/main.h
+@@ -21,6 +21,10 @@
+ #ifndef main_included
+ #define main_included
+ 
++#include <polkit-grant/polkit-grant.h>
++#include <polkit-dbus/polkit-dbus.h>
++#include <dbus/dbus.h>
++
+ #include <kcmodule.h>
+ 
+ class Dtime;
+@@ -34,9 +38,10 @@ class KclockModule : public KCModule
+ 
+ public:
+   KclockModule(QWidget *parent, const char *name, const QStringList &);
+-  
+-  void	save();
+-  void	load();
++
++  bool obtain();
++  void save();
++  void load();
+ 
+ private:
+   QTabWidget   *tab;
