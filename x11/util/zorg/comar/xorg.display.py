@@ -219,29 +219,4 @@ def syncConfigs():
         saveXorgConfig(dev)
 
 def setKeymap(layout, variant=""):
-    import piksemel
-
-    # FDI file for evdev driver
-    doc = piksemel.newDocument("deviceinfo")
-    device = doc.insertTag("device")
-
-    match = device.insertTag("match")
-    match.setAttribute("key", "info.capabilities")
-    match.setAttribute("contains", "input.keys")
-
-    merge = match.insertTag("merge")
-    merge.setAttribute("key", "input.xkb.layout")
-    merge.setAttribute("type", "string")
-    merge.insertData(layout)
-
-    merge = match.insertTag("merge")
-    merge.setAttribute("key", "input.xkb.variant")
-    merge.setAttribute("type", "string")
-    if variant:
-        merge.insertData(variant)
-
-    f = file("/etc/hal/fdi/policy/10-keymap.fdi", "w")
-    f.write(doc.toPrettyString())
-
-    # zorg's config file
     saveKeymap(layout, variant)

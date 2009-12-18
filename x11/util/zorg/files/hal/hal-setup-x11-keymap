@@ -1,0 +1,37 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+import dbus
+from zorg.config import getKeymap
+
+def err(msg):
+    sys.stderr.write("%s: %s\n" % (sys.argv[0], msg))
+
+def main():
+    udi = os.environ.get("UDI")
+    if udi is None:
+        err("Failed to get UDI")
+        return 1
+
+    try:
+        if "HALD_DIRECT_ADDR" in os.environ:
+            bus = dbus.connection.Connection(os.environ['HALD_DIRECT_ADDR'])
+        else:
+            bus = dbus.SystemBus()
+        obj = bus.get_object("org.freedesktop.Hal", udi, introspect=False)
+        iface = dbus.Interface(obj, "org.freedesktop.Hal.Device")
+    except dbus.DBusException:
+        return 1
+
+    if not iface.AddonIsReady(udi):
+        return 1
+
+    layout, variant = getKeymap()
+
+    iface.SetPropertyString("input.xkb.layout", layout)
+    iface.SetPropertyString("input.xkb.variant", variant)
+
+if __name__ == "__main__":
+    sys.exit(main())
