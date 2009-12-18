@@ -52,6 +52,7 @@ def build():
 
 def install():
     shelltools.export("HOME", get.workDIR())
+
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     #Remove upstream desktop files, use ours. It's very hard to translate and make changes in those desktop files
@@ -97,4 +98,7 @@ def install():
     pisitools.removeDir("/opt/OpenOffice.org/share/man")
 
     pisitools.dodoc("AUTHORS","ChangeLog","COPYING","NEWS","README")
+
+    #Workaround for #11530, bnc#502641
+    pisitools.dosed("%s/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/data/org/openoffice/Office/Calc.xcu" % get.installDIR(), "</oor:component-data>", " <node oor:name=\"Formula\">\n  <node oor:name=\"Syntax\">\n   <prop oor:name=\"Grammar\" oor:type=\"xs:int\">\n    <value>0</value>\n   </prop>\n  </node>\n </node>\n</oor:component-data>")
 
