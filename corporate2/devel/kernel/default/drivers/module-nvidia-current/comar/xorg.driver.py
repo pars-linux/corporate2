@@ -42,7 +42,7 @@ links = (
     ("libXvMCNVIDIA.so.%s" % version, "/usr/lib/libXvMCNVIDIA.so"),
 
     # VDPAU driver
-    ("%s/lib/vdpau/libvdpau_nvidia.so.%s" % (base, version), "/usr/lib/vdpau/libvdpau_nvidia.so"),
+    ("%s/lib/vdpau/libvdpau_nvidia.so.%s" % (base, version), "/usr/lib/vdpau/libvdpau_nvidia.so.1"),
 
     # nvidia-cfg library
     ("libnvidia-cfg.so.1", "/usr/lib/libnvidia-cfg.so"),
