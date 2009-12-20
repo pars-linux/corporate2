@@ -9,7 +9,7 @@ from pisi.actionsapi import perlmodules
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir="SDL_Perl-%s" % get.srcVERSION()
+WorkDir="SDL_Perl-v%s" % get.srcVERSION()
 
 perlautodir = "/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto" % get.curPERL()
 
@@ -24,8 +24,5 @@ def check():
 
 def install():
     perlmodules.install()
-
-    pisitools.domove("%s/src/*" % perlautodir,"%s/" % perlautodir)
-    pisitools.removeDir("%s/src/" % perlautodir)
 
     pisitools.dodoc("README","CHANGELOG")
