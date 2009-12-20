@@ -17,8 +17,11 @@ def setup():
 def build():
     perlmodules.make()
 
+# Requires running X11 to test, skip
+#def check():
+#    perlmodules.make("test")
+
 def install():
     perlmodules.install()
 
-    pisitools.removeDir("/usr/lib/perl5/%s" % get.curPERL())
     pisitools.dodoc("README")
