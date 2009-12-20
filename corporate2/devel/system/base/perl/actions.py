@@ -51,6 +51,12 @@ def setup():
                       ' %(get.CC(), get.CFLAGS(), get.installDIR(), get.installDIR()))
 
 def build():
+    # colorgcc uses Term::ANSIColor
+    paths = get.ENV("PATH").split(":")
+    if "/usr/share/colorgcc" in paths:
+        paths.remove("/usr/share/colorgcc")
+    shelltools.export("PATH", ":".join(paths))
+    ##
     autotools.make()
 
 def check():
