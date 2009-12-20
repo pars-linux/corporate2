@@ -23,11 +23,9 @@ def build():
     perlmodules.make()
 
 def check():
-    autotools.make("test")
+    perlmodules.make("test")
 
 def install():
     perlmodules.install()
-
-    pisitools.removeDir("/usr/lib/perl5/%s" % get.curPERL())
 
     pisitools.dodoc("COPYING", "README*", "TODO", "Changes")
