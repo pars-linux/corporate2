@@ -23,4 +23,7 @@ def check():
 def install():
     perlmodules.install()
 
+    # file type mismatch, removing by hand
+    pisitools.remove("/usr/lib/perl5/vendor_perl/%s/Sub/Uplevel.pod" % get.curPERL())
+
     pisitools.dodoc("README", "MANIFEST", "Changes")
