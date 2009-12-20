@@ -13,12 +13,17 @@ from pisi.actionsapi import get
 import os
 
 def setup():
+    shelltools.export("AUTOPOINT", "true")
     autotools.autoreconf("-fi")
     autotools.configure("--with-rpmbuild=/bin/false \
                          --with-drivers=all \
+                         --enable-nls \
                          --without-aalib \
                          --disable-rpath \
-                         --enable-nls \
+                         --disable-lockdev \
+                         --disable-resmgr \
+                         --disable-ttylock \
+                         --disable-baudboy \
                          --disable-static")
 
 def build():
