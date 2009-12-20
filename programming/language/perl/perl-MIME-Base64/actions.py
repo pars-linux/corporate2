@@ -17,9 +17,10 @@ def setup():
 def build():
     perlmodules.make()
 
+def check():
+    perlmodules.make("test")
+
 def install():
     perlmodules.install()
-
-    pisitools.removeDir("/usr/lib/perl5/%s" % get.curPERL())
 
     pisitools.dodoc("Changes","README")
