@@ -12,9 +12,10 @@
         <IsA>library</IsA>
         <Summary>Nearly transparent SSL encapsulation for IO::Socket::INET</Summary>
         <Description>IO::Socket::SSL is a class implementing an object oriented interface to SSL sockets. The class is a descendent of IO::Socket::INET.</Description>
-        <Archive sha1sum="88a3e1678593ef87b8218399419737fc2357f7a1" type="targz">mirrors://cpan/authors/id/S/SU/SULLR/IO-Socket-SSL-1.26.tar.gz</Archive>
+        <Archive sha1sum="06fc8e9d85e53e7a2156988f1e009272e9871d81" type="targz">mirrors://cpan/authors/id/S/SU/SULLR/IO-Socket-SSL-1.31.tar.gz</Archive>
         <BuildDependencies>
             <Dependency versionFrom="1.33">perl-Net-SSLeay</Dependency>
+            <Dependency versionFrom="5.10.1">perl</Dependency>
         </BuildDependencies>
     </Source>
 
@@ -22,6 +23,7 @@
         <Name>perl-IO-Socket-SSL</Name>
         <RuntimeDependencies>
             <Dependency versionFrom="1.33">perl-Net-SSLeay</Dependency>
+            <Dependency versionFrom="5.10.1">perl</Dependency>
         </RuntimeDependencies>
         <Replaces>
             <Package>IO-Socket-SSL</Package>
@@ -34,6 +36,34 @@
     </Package>
 
     <History>
+        <Update release="17">
+            <Date>2009-12-11</Date>
+            <Version>1.31</Version>
+            <Comment>
+	      * changed possible local/utf-8 depended \w in some regex against more
+                explicit [a-zA-Z0-9_]. Fixed one regex, where it assumed, that service
+                names can't have '-' inside
+              * Fix Net::ssl_write_all (return undef not 0 in generic_write) (RT#48131)
+              * Fix memleak when SSL handshake failed.
+              * Make sure that idn_to_ascii gets no \0 bytes from identity
+	    </Comment>
+            <Name>Faik Uygur</Name>
+            <Email>faik@pardus.org.tr</Email>
+        </Update>
+        <Update release="16">
+            <Date>2009-12-04</Date>
+            <Version>1.26</Version>
+            <Comment>Depend on new perl</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="15">
+            <Date>2009-12-03</Date>
+            <Version>1.26</Version>
+            <Comment>Add perl dependency</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
         <Update release="14" type="security">
             <Date>2009-07-10</Date>
             <Version>1.26</Version>
