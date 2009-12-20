@@ -15,9 +15,13 @@
         <Archive sha1sum="f91aef06204f3b1b0f3e07facba452881bedc2e1" type="tarbz2">mirrors://sourceforge/gphoto/libgphoto2-2.4.7.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>libexif</Dependency>
-            <Dependency>lockdev</Dependency>
+            <Dependency>doxygen</Dependency>
             <Dependency>avahi</Dependency>
             <Dependency>hal</Dependency>
+
+            <!-- Disable lockdev as it causes digikam to hang (#11534)
+            <Dependency>lockdev</Dependency>
+            -->
         </BuildDependencies>
         <Patches>
             <Patch level="1">70_increase_max_entries.patch</Patch>
@@ -25,6 +29,8 @@
             <Patch level="1">gphoto2-ixany.patch</Patch>
 
             <!--<Patch level="1">gphoto2-storage.patch</Patch>-->
+            <!-- When gphoto does serial probing it hangs and causes a hang in the client, see bug #11534 -->
+            <Patch level="1">disable_lockdev.patch</Patch>
         </Patches>
     </Source>
 
@@ -34,6 +40,10 @@
             <Dependency>libexif</Dependency>
             <Dependency>avahi</Dependency>
             <Dependency>hal</Dependency>
+
+            <!-- Disable lockdev as it causes digikam to hang (#11534)
+            <Dependency>lockdev</Dependency>
+            -->
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
@@ -66,6 +76,16 @@
     </Package>
 
     <History>
+        <Update release="27">
+            <Date>2009-11-21</Date>
+            <Version>2.4.7</Version>
+            <Comment>
+                - Remove CVS build dependency
+                - Disable lockdev to fix bug #11534
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
         <Update release="26">
             <Date>2009-10-15</Date>
             <Version>2.4.7</Version>
