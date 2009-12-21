@@ -14,8 +14,11 @@
         <Description>PolicyKit is a framework for defining policy for system-wide components and for desktop pieces to configure it. It is used by HAL.</Description>
         <Archive sha1sum="ac99c580eff72f6d5df261c155fb047306439f85" type="targz">http://hal.freedesktop.org/releases/PolicyKit-0.9.tar.gz</Archive>
         <BuildDependencies>
+            <Dependency>pam</Dependency>
+            <Dependency>dbus</Dependency>
+            <Dependency>glib2</Dependency>
+            <Dependency>expat</Dependency>
             <Dependency>dbus-glib</Dependency>
-            <Dependency versionFrom="0.3.0">ConsoleKit</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">policy-tr.patch</Patch>
@@ -24,23 +27,42 @@
 
             <!-- ConsoleKit 0.3.0 patch from Fedora -->
             <Patch level="1">pk-ck-api-change.patch</Patch>
+            <Patch level="1">entry-leak.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
+        <Name>PolicyKit-devel</Name>
+        <Summary>Headers and libraries for PolicyKit</Summary>
+        <RuntimeDependencies>
+            <Dependency>dbus</Dependency>
+            <Dependency>glib2</Dependency>
+            <Dependency>expat</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="19">PolicyKit</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
+        </Files>
+    </Package>
+
+    <Package>
         <Name>PolicyKit</Name>
         <RuntimeDependencies>
+            <Dependency>pam</Dependency>
+            <Dependency>dbus</Dependency>
+            <Dependency>glib2</Dependency>
             <Dependency>dbus-glib</Dependency>
-            <Dependency>ConsoleKit</Dependency>
+            <Dependency>PolicyKit-devel</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/libexec</Path>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="executable">/usr/sbin</Path>
-            <Path fileType="library">/lib</Path>
-            <Path fileType="library">/usr/lib</Path>
             <Path fileType="config">/etc</Path>
-            <Path fileType="header">/usr/include</Path>
             <Path fileType="data">/usr/share/PolicyKit</Path>
             <Path fileType="data">/usr/share/dbus-1</Path>
             <Path fileType="data">/var</Path>
@@ -57,6 +79,13 @@
     </Package>
 
     <History>
+        <Update release="20">
+            <Date>2009-10-26</Date>
+            <Version>0.9</Version>
+            <Comment>Add missing dependencies, fix a memory leak, drop ConsoleKit dependency, split package (#9959).</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="19">
             <Date>2009-01-21</Date>
             <Version>0.9</Version>
