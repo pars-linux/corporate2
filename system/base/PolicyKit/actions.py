@@ -16,6 +16,7 @@ def setup():
                          --with-polkit-user=polkit \
                          --with-polkit-group=polkit \
                          --disable-man-pages \
+                         --disable-gtk-doc \
                          --localstatedir=/var \
                          --disable-static")
 
