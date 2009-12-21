@@ -15,8 +15,6 @@ def setup():
                          --with-os-type=Pardus \
                          --with-polkit-user=polkit \
                          --with-polkit-group=polkit \
-                         --with-pid-file=/var/run/PolicyKit/pid \
-                         --disable-docbook-docs \
                          --disable-man-pages \
                          --localstatedir=/var \
                          --disable-static")
