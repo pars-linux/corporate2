@@ -13,18 +13,16 @@ from pisi.actionsapi import shelltools
 WorkDir = "gtk+-%s" % get.srcVERSION()
 
 def setup():
-    files = ["gtkmarshalers.c", "gtkmarshalers.h"]
-    for f in files:
-        shelltools.unlink("gtk/%s" % f)
-
     autotools.configure("--with-libjpeg \
                          --with-libtiff \
                          --with-libjasper\
                          --with-libpng \
                          --with-gdktarget=x11 \
                          --enable-xinerama \
+                         --with-xinput=yes \
                          --enable-xkb \
-                         --enable-shm")
+                         --enable-shm \
+                         --with-included-loaders=png")
     pisitools.dosed("libtool"," -shared ", " -Wl,--as-needed -shared ")
 
 def build():
@@ -33,4 +31,6 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
+    # remove empty dir
+    pisitools.removeDir("/usr/share/man")
     pisitools.dodoc("AUTHORS", "README*", "HACKING", "ChangeLog*", "NEWS*")
