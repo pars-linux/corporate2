@@ -1,0 +1,72 @@
+Index: wvdial-1.60/wvrules.mk
+===================================================================
+--- wvdial-1.60.orig/wvrules.mk
++++ wvdial-1.60/wvrules.mk
+@@ -38,13 +38,6 @@ ifeq (${WVTESTRUN},)
+   WVTESTRUN=$(WVSTREAMS_BIN)/wvtesthelper
+ endif
+ 
+-ifneq ("$(with_xplc)", "no")
+-ifneq ("$(with_xplc)", "")
+-  LDFLAGS:=-L$(with_xplc) $(LDFLAGS)
+-endif
+-  LIBXPLC=-lxplc-cxx
+-endif
+-
+ LIBWVBASE=$(WVSTREAMS_LIB)/libwvbase.so
+ LIBWVUTILS=$(WVSTREAMS_LIB)/libwvutils.so $(LIBWVBASE)
+ LIBWVSTREAMS=$(WVSTREAMS_LIB)/libwvstreams.so $(LIBWVUTILS)
+@@ -60,7 +53,7 @@ C_AND_CXX_FLAGS += -D_BSD_SOURCE -D_GNU_
+ 		  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+ CFLAGS += $(COPTS) $(C_AND_CXX_FLAGS) 
+ CXXFLAGS += $(CXXOPTS) $(C_AND_CXX_FLAGS)
+-LDFLAGS += $(LDOPTS) -L$(WVSTREAMS_LIB)
++LDFLAGS += $(LDOPTS)
+ 
+ # Default compiler we use for linking
+ WVLINK_CC = gcc
+@@ -171,17 +164,6 @@ ifeq ($(CCMALLOC),1)
+  endif
+ endif
+ 
+-ifeq ($(DEBUG),1)
+-  C_AND_CXX_FLAGS += -ggdb -DDEBUG=1
+-  LDFLAGS += -ggdb
+-else
+-  C_AND_CXX_FLAGS += -g -DDEBUG=0
+-  #CFLAGS += -DNDEBUG    # I don't like disabling assertions...
+-  #CFLAGS += -fomit-frame-pointer  # really evil
+-  #CXXFLAGS += -fno-implement-inlines  # causes trouble with egcs 1.0
+-  LDFLAGS += -g
+-endif
+-
+ ifeq ($(PROFILE),1)
+   CFLAGS += -pg
+   LDFLAGS += -pg
+@@ -270,11 +252,11 @@ endef
+ %.so: SONAME=$@$(if $(SO_VERSION),.$(SO_VERSION))
+ wvsoname=$(if $($1-SONAME),$($1-SONAME),$(if $(SONAME),$(SONAME),$1))
+ define wvlink_so
+-	$(LINK_MSG)$(WVLINK_CC) $(LDFLAGS) $($1-LDFLAGS) -Wl,-soname,$(call wvsoname,$1) -shared -o $1 $(filter %.o %.a %.so,$2) $($1-LIBS) $(LIBS) $(XX_LIBS)
++	$(LINK_MSG)$(WVLINK_CC) $(LDFLAGS) $($1-LDFLAGS) -Wl,-soname,$(call wvsoname,$1) -shared $(filter %.o %.a %.so,$2) $($1-LIBS) $(LIBS) $(XX_LIBS) -o $1
+ 	$(if $(filter-out $(call wvsoname,$1),$1),$(call wvlns,$1,$(call wvsoname,$1)))
+ endef
+ 
+-wvlink=$(LINK_MSG)$(CC) $(LDFLAGS) $($1-LDFLAGS) -o $1 $(filter %.o %.a %.so, $2) $($1-LIBS) $(LIBS) $(XX_LIBS) $(LDLIBS)
++wvlink=$(LINK_MSG)$(CC) $(LDFLAGS) $($1-LDFLAGS) $(filter %.o %.a %.so, $2) $($1-LIBS) $(LIBS) $(XX_LIBS) $(LDLIBS) -o $1
+ 
+ ../%.so:;	@echo "Shared library $@ does not exist!"; exit 1
+ ../%.a:;	@echo "Library $@ does not exist!"; exit 1
+Index: wvdial-1.60/Makefile
+===================================================================
+--- wvdial-1.60.orig/Makefile
++++ wvdial-1.60/Makefile
+@@ -30,8 +30,6 @@ all: wvdial.a wvdial wvdialconf pppmon
+ wvdial.a: wvdialer.o wvmodemscan.o wvpapchap.o wvdialbrain.o \
+ 	wvdialmon.o
+ 
+-wvdial: LDFLAGS+=-luniconf
+-
+ wvdial wvdialconf papchaptest pppmon: wvdial.a
+ 
+ install-bin: all

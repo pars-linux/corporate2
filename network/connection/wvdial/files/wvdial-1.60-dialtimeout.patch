@@ -1,0 +1,46 @@
+Written-by: Steve Marple <S.Marple lancaster ac uk>
+Modified-by: Ondrej Vasik <ovasik redhat com>
+
+--- wvdial-1.60.dialtimeout/wvdial.conf.5	2007-07-19 23:22:26.000000000 +0200
++++ wvdial-1.60/wvdial.conf.5	2007-10-10 14:02:37.000000000 +0200
+@@ -231,6 +231,11 @@
+ will quit after that many tries .If set to 0,
+ .B wvdial
+ will happily keep dialling forever.
++.TP
++.I Dial Timeout
++The maximum time in seconds that
++.B wvdial
++will wait for a connection to be made. Default value is 60 seconds.
+ .PP
+ The
+ .BR wvdialconf (1)
+--- wvdial-1.60.dialtimeout/wvdialer.cc	2007-07-19 23:22:26.000000000 +0200
++++ wvdial-1.60/wvdialer.cc	2007-10-10 14:01:21.000000000 +0200
+@@ -641,6 +641,7 @@
+         { "Idle Seconds",    NULL, &options.idle_seconds,  "", 0            },
+         { "ISDN",            NULL, &options.isdn,          "", false        },
+         { "Ask Password",    NULL, &options.ask_password,  "", false        },
++        { "Dial Timeout",    NULL, &options.dial_timeout,  "", 60           },
+ 
+     	{ NULL,		     NULL, NULL,                   "", 0            }
+     };
+@@ -908,7 +909,7 @@
+     switch( received ) 
+     {
+     case -1:	// nothing -- return control.
+-	if( time( NULL ) - last_rx  >= 60 ) 
++	if( time( NULL ) - last_rx  >= options.dial_timeout ) 
+ 	{
+ 	    log( WvLog::Warning, "Timed out while dialing.  Trying again.\n" );
+ 	    stat = PreDial1;
+--- wvdial-1.60.dialtimeout/wvdialer.h	2007-07-19 23:22:26.000000000 +0200
++++ wvdial-1.60/wvdialer.h	2007-10-10 14:01:52.000000000 +0200
+@@ -141,6 +141,7 @@
+ 	int              idle_seconds;
+ 	int              isdn;
+ 	int              ask_password;
++	int              dial_timeout;
+        
+     } options;
+    
