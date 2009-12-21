@@ -83,7 +83,7 @@ Index: kcontrol/clock/dtime.cpp
 -      KMessageBox::error( this, i18n("Can not set date."));
 -      return;
 +    DBusMessage *dbus_msg = dbus_message_new_method_call("tr.org.pardus.comar",
-+                                                         "/package/util_linux",
++                                                         "/package/timezone",
 +                                                         "tr.org.pardus.comar.Time.Clock",
 +                                                         "setDate");
 +
@@ -123,7 +123,7 @@ Index: kcontrol/clock/dtime.cpp
 -    hwc_proc << "hwclock" << "--systohc";
 -    hwc_proc.start(KProcess::Block);
 +    dbus_msg = dbus_message_new_method_call("tr.org.pardus.comar",
-+                                            "/package/util_linux",
++                                            "/package/timezone",
 +                                            "tr.org.pardus.comar.Time.Clock",
 +                                            "saveToHW");
 +    dbus_connection_send_with_reply_and_block(dbus_conn, dbus_msg, 65535 * 1000, &dbus_err);
@@ -298,7 +298,7 @@ Index: kcontrol/clock/tzone.cpp
 -        tzset();
 -#endif // !USE SOLARIS
 +    DBusMessage *dbus_msg = dbus_message_new_method_call("tr.org.pardus.comar",
-+                                                         "/package/util_linux",
++                                                         "/package/timezone",
 +                                                         "tr.org.pardus.comar.Time.Clock",
 +                                                         "setTimeZone");
 +
