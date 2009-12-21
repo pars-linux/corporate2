@@ -1,28 +1,32 @@
-commit 063bded33b417cdf92fd51366fc7fdb06dea00ba
-Author: Bradley T. Hughes <bradley.hughes@nokia.com>
-Date:   Wed Sep 23 13:51:17 2009 +0200
+From 063bded33b417cdf92fd51366fc7fdb06dea00ba Mon Sep 17 00:00:00 2001
+From: Bradley T. Hughes <bradley.hughes@nokia.com>
+Date: Wed, 23 Sep 2009 13:51:17 +0200
+Subject: [PATCH 19/19] Fix regressions in qeventloop, qtimer, and qsocketnotifier autotests
 
-    Fix regressions in qeventloop, qtimer, and qsocketnotifier autotests
-    
-    Commit ed375675d4a4f6fd63edeb242e23c87b3de4be6f triggers a behavior in
-    Glib's mainloop implementation where some event sources are not
-    "serviced" every iteration of the mainloop context. This breaks an
-    invariant that many tests relied on, so we need to solve the problem.
-    
-    The invariant is that a newly added timer that would normally fire on
-    the next pass of the event loop (liker a zero timer) SHOULD actually
-    fire. We do this by registering 2 timer event sources with Glib's
-    mainloop: one normal priority source and one idle priority source. The
-    idle priority source is the one that will send events most of the
-    time, with the normal priority one taking over only when
-    processEvents() is called manually.
-    
-    Task-number: QT-877
-    Reviewed-by: jbache
-    Reviewed-by: thiago
-    Reviewed-by: denis
-    (cherry picked from commit d0d0fdb8e46351b4ab8492de31e5363ef6662b57)
-    (cherry picked from commit 0ed23e95fa756fd851f509a565f91ab43fc30449)
+Commit ed375675d4a4f6fd63edeb242e23c87b3de4be6f triggers a behavior in
+Glib's mainloop implementation where some event sources are not
+"serviced" every iteration of the mainloop context. This breaks an
+invariant that many tests relied on, so we need to solve the problem.
+
+The invariant is that a newly added timer that would normally fire on
+the next pass of the event loop (liker a zero timer) SHOULD actually
+fire. We do this by registering 2 timer event sources with Glib's
+mainloop: one normal priority source and one idle priority source. The
+idle priority source is the one that will send events most of the
+time, with the normal priority one taking over only when
+processEvents() is called manually.
+
+Task-number: QT-877
+Reviewed-by: jbache
+Reviewed-by: thiago
+Reviewed-by: denis
+(cherry picked from commit d0d0fdb8e46351b4ab8492de31e5363ef6662b57)
+(cherry picked from commit 0ed23e95fa756fd851f509a565f91ab43fc30449)
+---
+ src/corelib/kernel/qeventdispatcher_glib.cpp |  133 ++++++++++++++++++++-----
+ src/corelib/kernel/qeventdispatcher_glib_p.h |    2 +
+ src/corelib/kernel/qeventdispatcher_unix.cpp |    8 +-
+ 3 files changed, 112 insertions(+), 31 deletions(-)
 
 diff --git a/src/corelib/kernel/qeventdispatcher_glib.cpp b/src/corelib/kernel/qeventdispatcher_glib.cpp
 index 87e9728..7f6dbb6 100644
@@ -280,3 +284,6 @@ index 897bb49..903b0eb 100644
      }
  
      if (!t)
+-- 
+1.6.5.2
+
