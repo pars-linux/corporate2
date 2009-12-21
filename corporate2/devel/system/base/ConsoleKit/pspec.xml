@@ -10,13 +10,14 @@
         </Packager>
         <License>GPLv2</License>
         <IsA>library</IsA>
-        <Summary>ConsoleKit is a framework for defining and tracking users, login sessions, and seats</Summary>
+        <Summary>A framework for defining and tracking users, login sessions, and seats</Summary>
         <Description>ConsoleKit is a system daemon for tracking what users are logged into the system and how they interact with the computer (e.g. which keyboard and mouse they use).</Description>
         <Archive sha1sum="e3b6156622cc14ebca7382a55b8ed15f2f2bad98" type="tarbz2">http://people.freedesktop.org/~mccann/dist/ConsoleKit-0.3.0.tar.bz2</Archive>
         <BuildDependencies>
-            <Dependency versionFrom="1.1.2">dbus</Dependency>
+            <Dependency>dbus</Dependency>
             <Dependency>dbus-glib</Dependency>
             <Dependency>libX11-devel</Dependency>
+            <Dependency>PolicyKit-devel</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">disable-policykit.patch</Patch>
@@ -37,9 +38,10 @@
     <Package>
         <Name>ConsoleKit</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="1.1.2">dbus</Dependency>
-            <Dependency>dbus-glib</Dependency>
+            <Dependency>dbus</Dependency>
             <Dependency>libX11</Dependency>
+            <Dependency>dbus-glib</Dependency>
+            <Dependency>PolicyKit</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="config">/etc</Path>
@@ -52,19 +54,27 @@
             <Path fileType="data">/usr/share/dbus-1</Path>
             <Path fileType="man">/usr/share/man</Path>
             <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="data">/usr/share/PolicyKit</Path>
             <Path fileType="data">/var</Path>
         </Files>
     </Package>
 
     <History>
-        <Update release="13">
-            <Date>2009-02-02</Date>
+        <Update release="14">
+            <Date>2009-10-26</Date>
             <Version>0.3.0</Version>
-            <Comment>4 patches added from Ubuntu:
-                        * Fix double close of the log file (->file is an fdopen(->priv), which occasionally causes segfaults.
-                        * Close the directory handle when we're done with it, so that we aren't leaking file descriptors.
-                        * Fix common crash when trying to remove a NULL watch
-                        * Unref the dbus proxy when finalizing the session object, so that they are not leaked
+            <Comment>Enable polkit support, don't remove scripts.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2009-05-08</Date>
+            <Version>0.3.0</Version>
+            <Comment>
+                - Fix double close of the log file (->file is an fdopen(->priv), which occasionally causes segfaults.
+                - Close the directory handle when we're done with it, so that we aren't leaking file descriptors.
+                - Fix common crash when trying to remove a NULL watch
+                - Unref the dbus proxy when finalizing the session object, so that they are not leaked
             </Comment>
             <Name>Gökçen Eraslan</Name>
             <Email>gokcen@pardus.org.tr</Email>
