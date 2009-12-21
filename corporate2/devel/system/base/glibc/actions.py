@@ -87,6 +87,9 @@ def install():
 
     pisitools.dodoc("BUGS", "ChangeLog*", "CONFORMANCE", "FAQ", "NEWS", "NOTES", "PROJECTS", "README*", "LICENSES")
 
-    # Create Timezone db in /usr/share/zoneinfo
-    shelltools.chmod("dump-tz-db", 0755)
-    shelltools.system("./dump-tz-db %s" % get.installDIR())
+    # remove zoneinfo files since they are coming from timezone packages
+    pisitools.removeDir("/usr/share/zoneinfo")
+
+    for i in ["zdump", "zic"]:
+        pisitools.remove("/usr/sbin/%s" % i)
+
