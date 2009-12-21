@@ -67,9 +67,8 @@ def install():
     # pisitools.insinto("/usr/bin", "contrib/client-side/svnmerge.py", "svnmerge")
     # shelltools.chmod("%s/usr/bin/svnmerge" % get.installDIR(), 0755)
 
-    perlmodules.fixLocalPod()
-    # remove emtpy dir that conflicts with perl modules
-    pisitools.removeDir("/usr/lib/perl5/%s" % get.curPERL())
+    # remove useless .packlist by hand.
+    pisitools.remove("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/SVN/_Core/.packlist" % get.curPERL())
 
     # Documentation and etc.
     pisitools.insinto("/usr/share/doc/%s" % get.srcNAME(), "contrib")
