@@ -31,6 +31,7 @@ def setup():
                          --with-dps \
                          --with-fpx \
                          --with-perl \
+                         --with-perl-options='INSTALLDIRS=vendor' \
                          --without-jbig \
                          --with-tiff \
                          --with-lcms \
@@ -45,3 +46,5 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
     pisitools.dodoc("AUTHORS.txt", "ChangeLog", "LICENSE", "NEWS.txt")
+    pisitools.remove("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/Image/Magick/.packlist" % get.curPERL())
+
