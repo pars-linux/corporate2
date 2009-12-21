@@ -8,7 +8,7 @@
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir="SGMLSpm"
+WorkDir="%s" % get.srcNAME()
 
 def install():
     pisitools.chmod("*",0644)
