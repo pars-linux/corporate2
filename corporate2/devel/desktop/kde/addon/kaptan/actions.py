@@ -13,6 +13,7 @@ from pisi.actionsapi import pythonmodules
 shelltools.export('HOME', get.workDIR())
 
 def install():
+
     pythonmodules.install()
 
     pythonmodules.fixCompiledPy("/usr/kde/3.5/share/apps/kaptan")
