@@ -13,7 +13,7 @@ def setup():
     autotools.autoreconf("-fi")
     autotools.configure("--disable-oss \
                          --disable-lynx \
-                         --disable-rpath \
+                         --disable-gtk-doc \
                          --enable-gstreamer \
                          --enable-pulse \
                          --enable-alsa \

@@ -26,8 +26,34 @@
         <Patches>
             <Patch level="1">fix-pthread.patch</Patch>
             <Patch level="1">fix-underlinking.patch</Patch>
+
+            <!-- canberra-event-play to use with KDE 3 -->
+            <Patch level="1">add-basic-event-player.patch</Patch>
         </Patches>
     </Source>
+
+    <Package>
+        <Name>libcanberra-gtk</Name>
+        <Summary>GTK+ convenience API and utilities for libcanberra</Summary>
+        <RuntimeDependencies>
+            <Dependency>libcanberra</Dependency>
+            <Dependency>gconf</Dependency>
+            <Dependency>gtk2</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="4">libcanberra</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="library">/usr/lib/gtk-2.0</Path>
+            <Path fileType="library">/usr/lib/libcanberra-gtk*</Path>
+            <Path fileType="data">/usr/lib/pkgconfig/libcanberra-gtk.pc</Path>
+            <Path fileType="data">/usr/share/vala/vapi/libcanberra-gtk.vapi</Path>
+            <Path fileType="data">/etc/gconf/schemas/libcanberra.schemas</Path>
+            <Path fileType="data">/usr/share/gdm/autostart</Path>
+            <Path fileType="executable">/usr/bin/canberra-gtk-play</Path>
+            <Path fileType="header">/usr/include/canberra-gtk.h</Path>
+        </Files>
+    </Package>
 
     <Package>
         <Name>libcanberra</Name>
@@ -37,8 +63,6 @@
             <Dependency>libvorbis</Dependency>
             <Dependency>alsa-lib</Dependency>
             <Dependency>libtdb</Dependency>
-            <Dependency>gconf</Dependency>
-            <Dependency>gtk2</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="data">/etc/gconf/schemas</Path>
@@ -53,6 +77,13 @@
     </Package>
 
     <History>
+        <Update release="5">
+            <Date>2009-12-22</Date>
+            <Version>0.22</Version>
+            <Comment>Split package, add simple event player.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="4">
             <Date>2009-12-16</Date>
             <Version>0.22</Version>
