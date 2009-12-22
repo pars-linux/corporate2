@@ -26,6 +26,7 @@ def install():
 
     # Symlinks
     mapping = {"button_cancel.png": "actions/cancel.png",
+               "lock.png" : "actions/object-locked.png",
                "kmenu.png": "apps/panel.png",
                "kmenu.png": "apps/panel_settings.png"}
 
