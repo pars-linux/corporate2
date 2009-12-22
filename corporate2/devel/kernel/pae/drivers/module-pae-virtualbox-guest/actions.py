@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Licensed under the GNU General Public License, version 2.
@@ -13,11 +12,10 @@ WorkDir = "."
 KDIR = kerneltools.getKernelVersion()
 
 def build():
-    modules = ("vboxadd", "vboxvfs", "vboxvideo")
-    #modules = ("vboxadd", "vboxvfs")
+    modules = ("vboxguest", "vboxvfs", "vboxvideo")
     for module in modules:
-        if module != "vboxadd":
-            shelltools.copy("vboxadd/Module.symvers", module)
+        if module != "vboxguest":
+            shelltools.copy("vboxguest/Module.symvers", module)
         autotools.make("-C %s KERN_DIR=/lib/modules/%s/build" % (module, KDIR))
 
 def install():
