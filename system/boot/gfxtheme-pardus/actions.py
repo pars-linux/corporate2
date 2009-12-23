@@ -9,11 +9,10 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = "pardus"
 datadir = "/usr/share/gfxtheme/pardus"
 
 def build():
-    autotools.make('PRODUCT="Pardus 2009"')
+    autotools.make('PRODUCT="Pardus Corporate 2"')
 
 def install():
     pisitools.insinto(datadir, "bootlogo.dir", "install")
