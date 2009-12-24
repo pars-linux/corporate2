@@ -1,0 +1,1596 @@
+diff -Nuar cogito-0.18.2.orig/cg-add cogito-0.18.2/cg-add
+--- cogito-0.18.2.orig/cg-add	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-add	2009-01-05 09:41:06.000000000 +0200
+@@ -92,7 +92,7 @@
+ fi
+ 
+ cat "$TMPFILE" | sed 's/^/Adding file /'
+-cat "$TMPFILE" | sed "s|^|$_git_relpath|" | path_xargs git-update-index --add ${infoonly} -- || error=1
++cat "$TMPFILE" | sed "s|^|$_git_relpath|" | path_xargs /usr/libexec/git-core/git-update-index --add ${infoonly} -- || error=1
+ 
+ rm "$TMPFILE"
+ 
+diff -Nuar cogito-0.18.2.orig/cg-admin-cat cogito-0.18.2/cg-admin-cat
+--- cogito-0.18.2.orig/cg-admin-cat	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-admin-cat	2009-01-05 09:41:06.000000000 +0200
+@@ -41,15 +41,15 @@
+ 
+ id=$(cg-object-id -t "$rev") || exit 1
+ 
+-git-ls-tree "$id" "${ARGS[@]}" |
++/usr/libexec/git-core/git-ls-tree "$id" "${ARGS[@]}" |
+ 	while read -r mode type sha name
+ 	do
+ 		case "$type" in
+ 		blob)
+-			git-cat-file blob "$sha"
++			/usr/libexec/git-core/git-cat-file blob "$sha"
+ 			;;
+ 		tree)
+-			git-ls-tree "$sha"
++			/usr/libexec/git-core/git-ls-tree "$sha"
+ 			;;
+ 		*)
+ 			exit 1
+diff -Nuar cogito-0.18.2.orig/cg-admin-ls cogito-0.18.2/cg-admin-ls
+--- cogito-0.18.2.orig/cg-admin-ls	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-admin-ls	2009-01-05 09:41:06.000000000 +0200
+@@ -54,4 +54,4 @@
+ 
+ id="$(cg-object-id -t "$tree_id")" || exit 1
+ 
+-git-ls-tree "$id" "${ARGS[@]}"
++/usr/libexec/git-core/git-ls-tree "$id" "${ARGS[@]}"
+diff -Nuar cogito-0.18.2.orig/cg-admin-lsobj cogito-0.18.2/cg-admin-lsobj
+--- cogito-0.18.2.orig/cg-admin-lsobj	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-admin-lsobj	2009-01-05 09:41:06.000000000 +0200
+@@ -59,7 +59,7 @@
+ 				continue
+ 			fi
+ 			base="$(basename "$f")"
+-			type="$(git-cat-file -t "$top$base")"
++			type="$(/usr/libexec/git-core/git-cat-file -t "$top$base")"
+ 			if [ ! "$target" ] || [ "$target" == "$type" ]; then
+ 				echo -e "$top$base\t$type"
+ 			fi
+diff -Nuar cogito-0.18.2.orig/cg-admin-rewritehist cogito-0.18.2/cg-admin-rewritehist
+--- cogito-0.18.2.orig/cg-admin-rewritehist	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-admin-rewritehist	2009-01-05 09:41:06.000000000 +0200
+@@ -85,7 +85,7 @@
+ #	This is the filter for rewriting the commit's parent list.
+ #	It will receive the parent string on stdin and shall output
+ #	the new parent string on stdout. The parent string is in
+-#	format accepted by `git-commit-tree`: empty for initial
++#	format accepted by `/usr/libexec/git-core/git-commit-tree`: empty for initial
+ #	commit, "-p parent" for a normal commit and "-p parent1
+ #	-p parent2 -p parent3 ..." for a merge commit.
+ #
+@@ -97,7 +97,7 @@
+ #
+ # --commit-filter COMMAND:: The filter for performing the commit
+ #	If this filter is passed, it will be called instead of the
+-#	`git-commit-tree` command, with those arguments:
++:/#	`/usr/libexec/git-core/git-commit-tree` command, with those arguments:
+ #
+ #		TREE_ID [-p PARENT_COMMIT_ID]...
+ #
+@@ -115,7 +115,7 @@
+ #
+ # A significantly faster version:
+ #
+-#	cg-admin-rewritehist --index-filter 'git-update-index --remove filename' newbranch
++#	cg-admin-rewritehist --index-filter '/usr/libexec/git-core/git-update-index --remove filename' newbranch
+ #
+ # Now, you will get the rewritten history saved in the branch 'newbranch'
+ # (your current branch is left untouched).
+@@ -134,7 +134,7 @@
+ #
+ # To remove commits authored by "Darl McBribe" from the history:
+ #
+-#	cg-admin-rewritehist --commit-filter 'if [ "$GIT_AUTHOR_NAME" = "Darl McBribe" ]; then shift; while [ -n "$1" ]; do shift; echo "$1"; shift; done; else git-commit-tree "$@"; fi' newbranch
++#	cg-admin-rewritehist --commit-filter 'if [ "$GIT_AUTHOR_NAME" = "Darl McBribe" ]; then shift; while [ -n "$1" ]; do shift; echo "$1"; shift; done; else /usr/libexec/git-core/git-commit-tree "$@"; fi' newbranch
+ #
+ # (the shift magic first throws away the tree id and then the -p
+ # parameters). Note that this handles merges properly! In case Darl
+@@ -183,7 +183,7 @@
+ filter_index=
+ filter_parent=
+ filter_msg=cat
+-filter_commit='git-commit-tree "$@"'
++filter_commit='/usr/libexec/git-core/git-commit-tree "$@"'
+ while optparse; do
+ 	if optparse -d=; then
+ 		tempdir="$OPTARG"
+@@ -221,7 +221,7 @@
+ [ -n "$GIT_DIR" ] || export GIT_DIR=.git
+ [[ "$GIT_DIR" == /* ]] || export GIT_DIR="$(pwd)/../../$GIT_DIR"
+ export GIT_INDEX_FILE="$(pwd)/../index"
+-git-read-tree # seed the index file
++/usr/libexec/git-core/git-read-tree # seed the index file
+ 
+ ret=0
+ 
+@@ -233,7 +233,7 @@
+ 	echo $commit > ../map/$commit
+ done
+ 
+-git-rev-list --topo-order HEAD ${unchanged[@]/#/^} | tac >../revs
++/usr/libexec/git-core/git-rev-list --topo-order HEAD ${unchanged[@]/#/^} | tac >../revs
+ commits=$(cat ../revs | wc -l)
+ 
+ if [ $commits -eq 0 ]; then
+@@ -245,25 +245,25 @@
+ 	i=$((i+1))
+ 	echo -n "$commit ($i/$commits) "
+ 
+-	git-read-tree -i -m $commit
++	/usr/libexec/git-core/git-read-tree -i -m $commit
+ 
+ 	export GIT_COMMIT=$commit
+-	git-cat-file commit "$commit" >../commit
++	/usr/libexec/git-core/git-cat-file commit "$commit" >../commit
+ 
+ 	eval "$(pick_author <../commit)"
+ 	eval "$(pick_id committer COMMITTER <../commit)"
+ 	eval "$filter_env"
+ 
+ 	if [ "$filter_tree" ]; then
+-		git-checkout-index -f -u -a
++		/usr/libexec/git-core/git-checkout-index -f -u -a
+ 		# files that $commit removed are now still in the working tree;
+ 		# remove them, else they would be added again
+-		git-ls-files -z --others | xargs -0 rm -f
++		/usr/libexec/git-core/git-ls-files -z --others | xargs -0 rm -f
+ 		eval "$filter_tree"
+-		git-diff-index -r $commit | cut -f 2- | tr '\n' '\0' | \
+-			xargs -0 git-update-index --add --replace --remove
+-		git-ls-files -z --others | \
+-			xargs -0 git-update-index --add --replace --remove
++		/usr/libexec/git-core/git-diff-index -r $commit | cut -f 2- | tr '\n' '\0' | \
++			xargs -0 /usr/libexec/git-core/git-update-index --add --replace --remove
++		/usr/libexec/git-core/git-ls-files -z --others | \
++			xargs -0 /usr/libexec/git-core/git-update-index --add --replace --remove
+ 	fi
+ 
+ 	eval "$filter_index"
+@@ -284,11 +284,11 @@
+ 
+ 	sed -e '1,/^$/d' <../commit | \
+ 		eval "$filter_msg" | \
+-		sh -c "$filter_commit" git-commit-tree $(git-write-tree) $parentstr | \
++		sh -c "$filter_commit" /usr/libexec/git-core/git-commit-tree $(/usr/libexec/git-core/git-write-tree) $parentstr | \
+ 		tee ../map/$commit
+ done <../revs
+ 
+-git-update-ref refs/heads/"$dstbranch" $(head -n 1 ../map/$(tail -n 1 ../revs))
++/usr/libexec/git-core/git-update-ref refs/heads/"$dstbranch" $(head -n 1 ../map/$(tail -n 1 ../revs))
+ if [ "$(cat ../map/$(tail -n 1 ../revs) | wc -l)" -gt 1 ]; then
+ 	echo "WARNING: Your commit filter caused the head commit to expand to several rewritten commits. Only the first such commit was recorded as the current $dstbranch head but you will need to resolve the situation now (probably by manually merging the other commits). These are all the commits:" >&2
+ 	sed 's/^/	/' ../map/$(tail -n 1 ../revs) >&2
+diff -Nuar cogito-0.18.2.orig/cg-admin-setuprepo cogito-0.18.2/cg-admin-setuprepo
+--- cogito-0.18.2.orig/cg-admin-setuprepo	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-admin-setuprepo	2009-01-05 09:41:06.000000000 +0200
+@@ -25,14 +25,14 @@
+ #
+ # Note that in case you are using cg-admin-setuprepo with SSH URL instead of
+ # a local path, you need a full shell access at the remote machine, the
+-# restricted git-shell access is not enough.
++# restricted /usr/libexec/git-core/git-shell access is not enough.
+ #
+-# The repository will also be set up so that `git-update-server-info` will
++# The repository will also be set up so that `/usr/libexec/git-core/git-update-server-info` will
+ # be automagically re-ran after each push, in short making it suitable for
+ # HTTP access.
+ #
+ # Note that you might need to do other additional steps, like touching the
+-# 'git-daemon-export-ok' file if you want to make the repository accessible
++# '/usr/libexec/git-core/git-daemon-export-ok' file if you want to make the repository accessible
+ # by the git daemon (serving the 'git://...' URIs).
+ #
+ # OPTIONS
+@@ -51,7 +51,7 @@
+ # to .git/hooks/post-update (and then make it eXecutable):
+ #
+ #	#!/bin/sh
+-#	exec git-update-server-info
++#	exec /usr/libexec/git-core/git-update-server-info
+ 
+ # Testsuite: TODO
+ 
+@@ -110,9 +110,9 @@
+ 	chgrp "$unixgroup" "$_git" && chmod 2775 "$_git" || exit 1
+ fi
+ 
+-git-init-db $shared || die "git-init-db failed"
++/usr/libexec/git-core/git-init-db $shared || die "/usr/libexec/git-core/git-init-db failed"
+ 
+-# Enable git-update-server-info after each push.
++# Enable /usr/libexec/git-core/git-update-server-info after each push.
+ if ! chmod a+x "$_git/hooks/post-update"; then
+ 	echo "Due to a missing post-update hook, HTTP pull will not work properly on this repository." >&2
+ 	echo "See the NOTES section of cg-admin-setuprepo(1)'s documentation for more details." >&2
+diff -Nuar cogito-0.18.2.orig/cg-admin-uncommit cogito-0.18.2/cg-admin-uncommit
+--- cogito-0.18.2.orig/cg-admin-uncommit	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-admin-uncommit	2009-01-05 09:41:06.000000000 +0200
+@@ -56,7 +56,7 @@
+ base="$(cg-object-id -c)" || exit 1
+ 
+ commit="$(cg-object-id -c "${ARGS[0]}")" || exit 1
+-[ "$(git-rev-list $commit ^$base)" ] && \
++[ "$(/usr/libexec/git-core/git-rev-list $commit ^$base)" ] && \
+ 	die "$commit: not an ancestor of HEAD"
+ 
+ parent="$(cg-object-id -p "$commit")" || exit 1
+diff -Nuar cogito-0.18.2.orig/cg-branch-add cogito-0.18.2/cg-branch-add
+--- cogito-0.18.2.orig/cg-branch-add	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-branch-add	2009-01-05 09:41:06.000000000 +0200
+@@ -79,7 +79,7 @@
+ location="${ARGS[1]}"
+ 
+ ([ -n "$name" ] && [ -n "$location" ] && ! [ -n "${ARGS[2]}" ]) || usage
+-git-check-ref-format "refs/heads/$name" || \
++/usr/libexec/git-core/git-check-ref-format "refs/heads/$name" || \
+ 	die "name contains invalid characters"
+ if [ "$name" = "this" ] || [ "$name" = "HEAD" ]; then
+ 	die "given branch name is reserved"
+diff -Nuar cogito-0.18.2.orig/cg-commit cogito-0.18.2/cg-commit
+--- cogito-0.18.2.orig/cg-commit	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-commit	2009-01-05 09:41:06.000000000 +0200
+@@ -212,7 +212,7 @@
+ if [ -z "$GIT_AUTHOR_NAME" -o -z "$GIT_AUTHOR_EMAIL" ]; then
+ 	# Always pre-fill those so that the user can modify them in the
+ 	# commit template.
+-	idline="$(git-var GIT_AUTHOR_IDENT)"
++	idline="$(/usr/libexec/git-core/git-var GIT_AUTHOR_IDENT)"
+ 	[ -z "$GIT_AUTHOR_NAME" ] && export GIT_AUTHOR_NAME="$(echo "$idline" | sed 's/ *<.*//')"
+ 	[ -z "$GIT_AUTHOR_EMAIL" ] && export GIT_AUTHOR_EMAIL="$(echo "$idline" | sed 's/.*<\(.*\)>.*/\1/')"
+ fi
+@@ -255,7 +255,7 @@
+ 		review=1
+ 		forceeditor=1
+ 	elif optparse -s || optparse --signoff; then
+-		[ "$signoff" ] || signoff="$(git-var GIT_AUTHOR_IDENT | sed 's/> .*/>/')"
++		[ "$signoff" ] || signoff="$(/usr/libexec/git-core/git-var GIT_AUTHOR_IDENT | sed 's/> .*/>/')"
+ 	elif optparse --signoff=; then
+ 		signoff="$OPTARG"
+ 	elif optparse -m=; then
+@@ -314,11 +314,11 @@
+ 		echo "${_git_relpath}$file" >>"$filter"
+ 	done
+ 
+-	eval "commitfiles=($(cat "$filter" | path_xargs git-diff-index --name-status -z -r -m HEAD -- | \
++	eval "commitfiles=($(cat "$filter" | path_xargs /usr/libexec/git-core/git-diff-index --name-status -z -r -m HEAD -- | \
+ 		perl -n0e 'chomp; if (defined $meta) { s/([\"\\])/\\\1/; print "\"$meta $_\"\n"; $meta=undef } else { $meta = $_ }'))"
+ 	customfiles=1
+ 
+-	[ "$review" ] && cat "$filter" | path_xargs git-diff-index -r -m -p HEAD -- > "$PATCH"
++	[ "$review" ] && cat "$filter" | path_xargs /usr/libexec/git-core/git-diff-index -r -m -p HEAD -- > "$PATCH"
+ 	rm "$filter"
+ 
+ else
+@@ -332,7 +332,7 @@
+ 	if [ ! "$ignorecache" ]; then
+ 		# \t instead of the tab character itself works only with new
+ 		# sed versions.
+-		eval "commitfiles=($(git-diff-index --name-status -z -r -m HEAD | \
++		eval "commitfiles=($(/usr/libexec/git-core/git-diff-index --name-status -z -r -m HEAD | \
+ 			perl -n0e 'chomp; if (defined $meta) { s/([\"\\])/\\\1/; print "\"$meta $_\"\n"; $meta=undef } else { $meta = $_ }'))"
+ 
+ 		if [ -s "$_git/commit-ignore" ]; then
+@@ -345,7 +345,7 @@
+ 		fi
+ 	fi
+ 
+-	[ "$review" ] && git-diff-index -r -m -p HEAD > "$PATCH"
++	[ "$review" ] && /usr/libexec/git-core/git-diff-index -r -m -p HEAD > "$PATCH"
+ 
+ 	merging=
+ 	[ -s "$_git/merging" ] && merging="$(cat "$_git/merging" | sed 's/^/-p /')"
+@@ -376,7 +376,7 @@
+ 		# We are squashing all the merged commits to a single one.
+ 		# Therefore, helpfully pre-fill the commit message with
+ 		# the messages of all the merged commits.
+-		git-rev-list --pretty "$(cat "$_git/merging")" ^HEAD >>"$LOGMSG"
++		/usr/libexec/git-core/git-rev-list --pretty "$(cat "$_git/merging")" ^HEAD >>"$LOGMSG"
+ 	fi
+ 	written=1
+ fi
+@@ -388,10 +388,10 @@
+ 
+ if [ "$copy_commit" ]; then
+ 	[ "$written" ] && echo >>"$LOGMSG"
+-	eval "$(git-cat-file commit "$copy_commit" | pick_author)"
++	eval "$(/usr/libexec/git-core/git-cat-file commit "$copy_commit" | pick_author)"
+ 	# --amend -m _replaces_ the original message
+ 	if [ ! "$amend" ] || [ "$editor" ] || [ "$no_custom_messages" ]; then
+-		git-cat-file commit "$copy_commit" | sed -e '1,/^$/d' >>"$LOGMSG"
++		/usr/libexec/git-core/git-cat-file commit "$copy_commit" | sed -e '1,/^$/d' >>"$LOGMSG"
+ 		written=1
+ 	fi
+ fi
+@@ -457,7 +457,7 @@
+ if [ "$review" ]; then
+ 	echo "CG: Changes summary:"
+ 	echo "CG:"
+-	git-apply --stat --summary < "$PATCH" | sed 's/^/CG: /'
++	/usr/libexec/git-core/git-apply --stat --summary < "$PATCH" | sed 's/^/CG: /'
+ 	echo "CG:"
+ fi >>"$LOGMSG"
+ 
+@@ -550,9 +550,9 @@
+ 	oldIFS="$IFS"
+ 	IFS=$'\n'
+ 	# XXX: Do we even need to do the --add and --remove update-caches?
+-	[ "$queueA" ] && { ( echo "${queueA[*]}" | path_xargs git-update-index --add ${infoonly} -- ) || return 1; }
+-	[ "$queueD" ] && { ( echo "${queueD[*]}" | path_xargs git-update-index --force-remove -- ) || return 1;  }
+-	[ "$queueM" ] && { ( echo "${queueM[*]}" | path_xargs git-update-index ${infoonly} -- ) || return 1; }
++	[ "$queueA" ] && { ( echo "${queueA[*]}" | path_xargs /usr/libexec/git-core/git-update-index --add ${infoonly} -- ) || return 1; }
++	[ "$queueD" ] && { ( echo "${queueD[*]}" | path_xargs /usr/libexec/git-core/git-update-index --force-remove -- ) || return 1;  }
++	[ "$queueM" ] && { ( echo "${queueM[*]}" | path_xargs /usr/libexec/git-core/git-update-index ${infoonly} -- ) || return 1; }
+ 	IFS="$oldIFS"
+ 	return 0
+ }
+@@ -561,14 +561,14 @@
+ 	if [ "$customfiles" ]; then
+ 		precommit_update "${commitfiles[@]}" || die "update-cache failed"
+ 		export GIT_INDEX_FILE="$tmpdir/index"
+-		git-read-tree HEAD
++		/usr/libexec/git-core/git-read-tree HEAD
+ 	fi
+ 	precommit_update "${commitfiles[@]}" || die "update-cache failed"
+ fi
+ 
+ 
+ oldhead=
+-oldheadname="$(git-symbolic-ref HEAD)"
++oldheadname="$(/usr/libexec/git-core/git-symbolic-ref HEAD)"
+ if [ -s "$_git/$oldheadname" ]; then
+ 	oldhead="$(cat "$_git/$oldheadname")"
+ 	oldheadstr="-p $oldhead"
+@@ -577,8 +577,8 @@
+ 	oldheadstr="$(cg-object-id -p "$oldhead" | sed 's/^/-p /')"
+ fi
+ 
+-treeid="$(git-write-tree ${missingok})"
+-[ "$treeid" ] || die "git-write-tree failed"
++treeid="$(/usr/libexec/git-core/git-write-tree ${missingok})"
++[ "$treeid" ] || die "/usr/libexec/git-core/git-write-tree failed"
+ if [ ! "$force" ] && [ ! "$merging" ] && [ "$oldhead" ] &&
+    [ "$treeid" = "$(cg-object-id -t)" ]; then
+ 	echo "Refusing to make an empty commit - the tree was not modified" >&2
+@@ -588,7 +588,7 @@
+ fi
+ 
+ [ -s "$_git/squashing" ] && merging=" " # viciously prevent recording a proper merge
+-newhead=$(git-commit-tree $treeid $oldheadstr $merging <"$LOGMSG")
++newhead=$(/usr/libexec/git-core/git-commit-tree $treeid $oldheadstr $merging <"$LOGMSG")
+ rm "$LOGMSG"
+ 
+ if [ "$customfiles" ]; then
+@@ -597,7 +597,7 @@
+ fi
+ 
+ if [ "$newhead" ]; then
+-	git-update-ref HEAD $newhead $oldhead || die "unable to move to the new commit $newhead"
++	/usr/libexec/git-core/git-update-ref HEAD $newhead $oldhead || die "unable to move to the new commit $newhead"
+ 	echo "Committed as $newhead"
+ 	[ "$merging" ] && rm -f "$_git/merging" "$_git/merging-sym" "$_git/merge-base" "$_git/squashing"
+ 	rm -f "$_git/commit-ignore"
+@@ -611,10 +611,10 @@
+ 	fi
+ 	[ -z "$branchname" ] && [ "$_git_head" != "master" ] && branchname="$_git_head"
+ 	if [ -x "$_git/hooks/commit-post" -a ! "$no_hooks" ]; then
+-		if [ "$(git-repo-config --bool cogito.hooks.commit.post.allmerged)" = "true" ]; then
++		if [ "$(/usr/libexec/git-core/git-repo-config --bool cogito.hooks.commit.post.allmerged)" = "true" ]; then
+ 			# We just hope that for the initial commit, the user didn't
+ 			# manage to install the hook yet.
+-			for merged in $(git-rev-list $newhead ^$oldhead | tac); do
++			for merged in $(/usr/libexec/git-core/git-rev-list $newhead ^$oldhead | tac); do
+ 				"$_git/hooks/commit-post" "$merged" "$branchname"
+ 			done
+ 		else
+diff -Nuar cogito-0.18.2.orig/cg-diff cogito-0.18.2/cg-diff
+--- cogito-0.18.2.orig/cg-diff	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-diff	2009-01-05 09:41:06.000000000 +0200
+@@ -16,7 +16,7 @@
+ #
+ # --diffcore ARGS:: Diffcore arguments to pass the Git diff command
+ #	Pass the given diffcore arguments the called Git diff command.
+-#	See e.g. git-diff-tree(1) documentation for the list of possible
++#	See e.g. /usr/libexec/git-core/git-diff-tree(1) documentation for the list of possible
+ #	arguments; '-R', '-B', and '-C' might be of particular interest
+ #	('-M' is already passed by default).
+ #
+@@ -198,16 +198,16 @@
+ 	[ "$_git_no_wc" ] && die "only cg-diff between two revisions allowed outside a working copy"
+ 
+ 	# Make sure we only diff modified files
+-	git-update-index --refresh >/dev/null
++	/usr/libexec/git-core/git-update-index --refresh >/dev/null
+ 
+-	diffprog=git-diff-index
++	diffprog=/usr/libexec/git-core/git-diff-index
+ 	diffargs=(-m "$id1")
+ 
+ else
+ 	id2="$(cg-object-id -t "$id2")" || exit 1
+ 	[ "$id1" = "$id2" ] && exit 0
+ 
+-	diffprog=git-diff-tree
++	diffprog=/usr/libexec/git-core/git-diff-tree
+ 	diffargs=("$id1" "$id2")
+ fi
+ 
+diff -Nuar cogito-0.18.2.orig/cg-export cogito-0.18.2/cg-export
+--- cogito-0.18.2.orig/cg-export	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-export	2009-01-05 09:41:06.000000000 +0200
+@@ -26,7 +26,7 @@
+ id=
+ while optparse; do
+ 	if optparse -r=; then
+-		# We do not resolve to tree id since git-tar-tree can
++		# We do not resolve to tree id since /usr/libexec/git-core/git-tar-tree can
+ 		# utilize some commit information.
+ 		id="$(cg-object-id -c "$OPTARG" 2>/dev/null)" || id="$OPTARG"
+ 	else
+@@ -52,13 +52,13 @@
+ 		base="${base##*/}"
+ 		case "$ext" in
+ 		.tar.gz|.tgz)
+-			git-tar-tree "$id" "$base" | gzip -c9 >"$dest"
++			/usr/libexec/git-core/git-tar-tree "$id" "$base" | gzip -c9 >"$dest"
+ 			;;
+ 		.tar.bz2)
+-			git-tar-tree "$id" "$base" | bzip2 -c >"$dest"
++			/usr/libexec/git-core/git-tar-tree "$id" "$base" | bzip2 -c >"$dest"
+ 			;;
+ 		.tar)
+-			git-tar-tree "$id" "$base" >"$dest"
++			/usr/libexec/git-core/git-tar-tree "$id" "$base" >"$dest"
+ 			;;
+ 		esac
+ 		;;
+@@ -66,8 +66,8 @@
+ 		mkdir -p "$dest" || die "cannot create $dest"
+ 		export GIT_INDEX_FILE="$dest/.git-index"
+ 		id="$(cg-object-id -t "$id")"
+-		git-read-tree "$id"
+-		git-checkout-index "--prefix=$dest/" -a
++		/usr/libexec/git-core/git-read-tree "$id"
++		/usr/libexec/git-core/git-checkout-index "--prefix=$dest/" -a
+ 		rm "$GIT_INDEX_FILE"
+ 	;;
+ esac
+diff -Nuar cogito-0.18.2.orig/cg-fetch cogito-0.18.2/cg-fetch
+--- cogito-0.18.2.orig/cg-fetch	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-fetch	2009-01-05 09:41:06.000000000 +0200
+@@ -71,7 +71,7 @@
+ 
+ 	elif [ "$orig_head" != "$new_head" ]; then
+ 		echo "Tree change: $orig_head..$new_head"
+-		[ $verbose -ge 1 ] && git-diff-tree --abbrev -r "$(cg-object-id -t "$orig_head")" "$(cg-object-id -t "$new_head")"
++		[ $verbose -ge 1 ] && /usr/libexec/git-core/git-diff-tree --abbrev -r "$(cg-object-id -t "$orig_head")" "$(cg-object-id -t "$new_head")"
+ 	else
+ 		echo "Up to date."
+ 	fi
+@@ -85,9 +85,9 @@
+ 	if [ -s "$_git/info/cg-fetch-initial-wcless" ]; then
+ 		rm "$_git/info/cg-fetch-initial-wcless"
+ 	else
+-		git-read-tree HEAD &&
+-		git-checkout-index -a &&
+-		git-update-index --refresh ||
++		/usr/libexec/git-core/git-read-tree HEAD &&
++		/usr/libexec/git-core/git-checkout-index -a &&
++		/usr/libexec/git-core/git-update-index --refresh ||
+ 		die "initial checkout failed"
+ 	fi
+ 	rm "$_git/info/cg-fetch-initial"
+@@ -136,9 +136,9 @@
+ 	ret=${PIPESTATUS[0]}
+ 	if [ "$3" ] && [ "$ret" -eq "0" ]; then
+ 		if [ "$orig_head" ]; then
+-			git-rev-list --objects $new_head ^$orig_head |
++			/usr/libexec/git-core/git-rev-list --objects $new_head ^$orig_head |
+ 				while read obj type; do
+-					git-cat-file -t $obj >/dev/null || exit $?
++					/usr/libexec/git-core/git-cat-file -t $obj >/dev/null || exit $?
+ 				done ||
+ 			die "rsync fetch incomplete, some objects missing"
+ 		fi
+@@ -178,7 +178,7 @@
+ {
+ 	whead=
+ 	[ "$3" ] && whead="-w $3"
+-	(git-http-fetch -a -v $whead $recovery "$1" "$2/" 2>&1 /dev/null) | fetch_progress
++	(/usr/libexec/git-core/git-http-fetch -a -v $whead $recovery "$1" "$2/" 2>&1 /dev/null) | fetch_progress
+ 	return ${PIPESTATUS[0]}
+ }
+ 
+@@ -228,7 +228,7 @@
+ 		fi
+ 	fi
+ 
+-	git-ls-remote --tags "$uri" |
++	/usr/libexec/git-core/git-ls-remote --tags "$uri" |
+ 		# SHA1 refs/tags/v0.99.8^{} --> SHA1 tags/v0.99.8
+ 		# where SHA1 is the object v0.99.8 tag points at.
+ 		sed -n -e 's:\([^	]\)	refs/\(tags/.*\)^{}$:\1 \2:p' \
+@@ -237,7 +237,7 @@
+ 			# Do we have the tag itself?
+ 			[ -s "$_git/refs/$tagname" ] && continue
+ 			# Do we have the object pointed at by the tag?
+-			git-cat-file -t "$sha1" >/dev/null 2>&1 || continue
++			/usr/libexec/git-core/git-cat-file -t "$sha1" >/dev/null 2>&1 || continue
+ 
+ 			# if so, fetch the tag -- which should be
+ 			# a cheap operation -- to complete the chain.
+@@ -363,14 +363,14 @@
+ 		done
+ 	}
+ 	echo "Fetching pack (head and objects)..."
+-	( git-fetch-pack $cloneorfetch "$uri" "$rembranch" ||
++	( /usr/libexec/git-core/git-fetch-pack $cloneorfetch "$uri" "$rembranch" ||
+ 	  echo "failed" "$rembranch" ) |
+ 		fetch_pack_recorder "refs/heads/$name" "fetching pack failed" ||
+ 		exit
+ 
+ 	record_tags_to_fetch () {
+ 		( cut -f 1 | tr '\n' '\0' |
+-			xargs -0 git-fetch-pack $cloneorfetch "$uri" ||
++			xargs -0 /usr/libexec/git-core/git-fetch-pack $cloneorfetch "$uri" ||
+ 		  echo "failed" "$rembranch" ) |
+ 
+ 		fetch_pack_recorder "" "unable to retrieve tags (non-fatal)"
+diff -Nuar cogito-0.18.2.orig/cg-init cogito-0.18.2/cg-init
+--- cogito-0.18.2.orig/cg-init	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-init	2009-01-05 09:41:06.000000000 +0200
+@@ -12,8 +12,8 @@
+ # If you want to clone an existing project, see `cg-clone`. If you want to
+ # set up a public repository not for direct work but only for pushing/pulling,
+ # see `cg-admin-setuprepo`. It is also possible to import repositories from
+-# other SCMs to GIT, see `git-cvsimport(1)`, `git-svnimport(1)` and
+-# `git-archimport(1)`.
++# other SCMs to GIT, see `/usr/libexec/git-core/git-cvsimport(1)`, `/usr/libexec/git-core/git-svnimport(1)` and
++# `/usr/libexec/git-core/git-archimport(1)`.
+ #
+ # OPTIONS
+ # -------
+@@ -72,9 +72,9 @@
+ 
+ cleanup_trap "rm -rf $_git"
+ 
+-git-init-db
++/usr/libexec/git-core/git-init-db
+ 
+-git-read-tree # Seed the dircache
++/usr/libexec/git-core/git-read-tree # Seed the dircache
+ if ! [ "$no_initial_commit" ]; then
+ 	[ "$(ls)" ] && list_untracked_files exclude nosquashdirs "${excludes[@]}" | xargs -0 cg-add ${infoonly}
+ 	cg-commit -C "${commitargs[@]}" ${infoonly} || die "Initial commit aborted"
+diff -Nuar cogito-0.18.2.orig/cg-log cogito-0.18.2/cg-log
+--- cogito-0.18.2.orig/cg-log	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-log	2009-01-05 09:41:06.000000000 +0200
+@@ -27,7 +27,7 @@
+ #
+ # --diffcore ARGS:: Diffcore arguments to pass the Git diff command
+ #	Pass the given diffcore arguments the called Git diff command.
+-#	See e.g. git-diff-tree(1) documentation for the list of possible
++#	See e.g. /usr/libexec/git-core/git-diff-tree(1) documentation for the list of possible
+ #	arguments; '-R', '-B', and '-C' might be of particular interest
+ #	('-M' is sometimes passed automatically, but not always). This
+ #	is mostly only relevant in conjunction with the '-d' option.
+@@ -268,7 +268,7 @@
+ 		reset_commit_info
+ 		commit="${rest:0:40}"
+ 		# If we've just seen a commit, we are seeing multiple
+-		# instances of the same commit caused by git-diff-tree --stdin
++		# instances of the same commit caused by /usr/libexec/git-core/git-diff-tree --stdin
+ 		# hitting a merge. We show only the diff against the first
+ 		# parent since heuristically, this is the interesting one.
+ 		# In some cases, this might not be true, but this is hopefully
+@@ -578,19 +578,19 @@
+ #			$revlsstart -- "${ARGS[@]}"
+ #	el
+ 	if [ "$difffilter" ]; then
+-		git-rev-list $revls $revlsstart $sep "${ARGS[@]}" | \
+-		git-diff-tree -r --stdin --root --pickaxe-all \
++		/usr/libexec/git-core/git-rev-list $revls $revlsstart $sep "${ARGS[@]}" | \
++		/usr/libexec/git-core/git-diff-tree -r --stdin --root --pickaxe-all \
+ 			$diffmerges $diffpatches $always $diffcore $fmt \
+ 			"${pickaxe[@]}"
+ 	else
+-		git-rev-list $revls $revlsstart $fmt $sep "${ARGS[@]}"
++		/usr/libexec/git-core/git-rev-list $revls $revlsstart $fmt $sep "${ARGS[@]}"
+ 	fi
+ }
+ 
+ rev_show()
+ {
+ 	if [ "$shortlog" ]; then
+-		git-shortlog | pager
++		/usr/libexec/git-core/git-shortlog | pager
+ 	else
+ 		# LESS="S" will prevent less to wrap too long titles
+ 		# to multiple lines; you can scroll horizontally.
+diff -Nuar cogito-0.18.2.orig/cg-merge cogito-0.18.2/cg-merge
+--- cogito-0.18.2.orig/cg-merge	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-merge	2009-01-05 09:41:06.000000000 +0200
+@@ -149,7 +149,7 @@
+ [ "$branchname" ] || branchname="$(choose_origin branches "what to merge?")" || exit 1
+ branch=$(cg-object-id -c "$branchname") || exit 1
+ 
+-[ "$base" ] || base="$(git-merge-base --all "$head" "$branch")"
++[ "$base" ] || base="$(/usr/libexec/git-core/git-merge-base --all "$head" "$branch")"
+ if [ ! "$join" ]; then
+ 	[ "$base" ] || die "unable to automatically determine merge base (consider cg-merge -j)"
+ 	baselist=($base)
+@@ -166,8 +166,8 @@
+ else
+ 	[ "$base" ] && die "joining branches with common history is something I refuse to do"
+ 	index="$(mktemp -t gitmerge.XXXXXX)" || exit $?
+-	GIT_INDEX_FILE="$index" git-read-tree
+-	base="$(GIT_INDEX_FILE="$index" git-write-tree)"
++	GIT_INDEX_FILE="$index" /usr/libexec/git-core/git-read-tree
++	base="$(GIT_INDEX_FILE="$index" /usr/libexec/git-core/git-write-tree)"
+ 	rm "$index"
+ fi
+ 
+@@ -191,7 +191,7 @@
+ 	echo "Fast-forwarding $base -> $branch" >&2
+ 	echo -e "\ton top of $head ..." >&2
+ 
+-	[ "$verbose" ] && git-diff-tree --abbrev -r "$(cg-object-id -t "$head")" "$(cg-object-id -t "$branch")"
++	[ "$verbose" ] && /usr/libexec/git-core/git-diff-tree --abbrev -r "$(cg-object-id -t "$head")" "$(cg-object-id -t "$branch")"
+ 
+ 	prehook forward
+ 	tree_timewarp "forward" "yes, rollback (or rather rollforth) the tree!" "$head" "$branch"
+@@ -201,7 +201,7 @@
+ fi
+ 
+ 
+-git-update-index --refresh >/dev/null
++/usr/libexec/git-core/git-update-index --refresh >/dev/null
+ 
+ if [ ! "$squash" ]; then
+ 	[ -s "$_git/squashing" ] && die "cannot combine squashing and non-squashing merges"
+@@ -217,16 +217,16 @@
+ 	mergetype="squash"
+ fi
+ 
+-[ "$verbose" ] && git-diff-tree --abbrev -r "$(cg-object-id -t "$base")" "$(cg-object-id -t "$branch")"
++[ "$verbose" ] && /usr/libexec/git-core/git-diff-tree --abbrev -r "$(cg-object-id -t "$base")" "$(cg-object-id -t "$branch")"
+ 
+ prehook "$mergetype"
+ 
+-git-diff-index --name-only "$(cg-object-id -t $head)" >>"$_git/commit-ignore"
++/usr/libexec/git-core/git-diff-index --name-only "$(cg-object-id -t $head)" >>"$_git/commit-ignore"
+ # Don't keep around useless empty files
+ [ -s "$_git/commit-ignore" ] || rm "$_git/commit-ignore"
+ 
+-if ! git-read-tree -u -m "$(cg-object-id -t "$base")" "$(cg-object-id -t "$head")" "$(cg-object-id -t "$branch")"; then
+-	echo "cg-merge: git-read-tree failed (merge likely blocked by local changes)" >&2
++if ! /usr/libexec/git-core/git-read-tree -u -m "$(cg-object-id -t "$base")" "$(cg-object-id -t "$head")" "$(cg-object-id -t "$branch")"; then
++	echo "cg-merge: /usr/libexec/git-core/git-read-tree failed (merge likely blocked by local changes)" >&2
+ 	posthook "$mergetype" localchanges
+ 	rm -f "$_git/commit-ignore"
+ 	exit 1
+@@ -237,7 +237,7 @@
+ echo "$branchname" >>"$_git/merging-sym"
+ [ "$squash" ] && echo "$branch" >>"$_git/squashing"
+ 
+-if ! git-merge-index -o -q "${COGITO_LIB}"cg-Xmergefile -a || [ "$careful" ]; then
++if ! /usr/libexec/git-core/git-merge-index -o -q "${COGITO_LIB}"cg-Xmergefile -a || [ "$careful" ]; then
+ 	echo >&2
+ 	if [ ! "$careful" ]; then
+ 		echo "	Conflicts during merge. Do cg-commit after resolving them." >&2
+@@ -270,7 +270,7 @@
+ 	posthook "$mergetype" nocommit
+ fi
+ 
+-[ "$readtree" ] && git-read-tree -m HEAD
++[ "$readtree" ] && /usr/libexec/git-core/git-read-tree -m HEAD
+ # update_index here is safe because no tree<->index desyncs could've
+ # survived the read-tree above
+ update_index
+diff -Nuar cogito-0.18.2.orig/cg-mkpatch cogito-0.18.2/cg-mkpatch
+--- cogito-0.18.2.orig/cg-mkpatch	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-mkpatch	2009-01-05 09:41:06.000000000 +0200
+@@ -76,7 +76,7 @@
+ 	patch="$(mktemp -t gitpatch.XXXXXX)"
+ 	id="$1"
+ 	cg-diff -p -r "$id" >"$patch"
+-	git-cat-file commit "$id" | while read -r key rest; do
++	/usr/libexec/git-core/git-cat-file commit "$id" | while read -r key rest; do
+ 		case "$key" in
+ 		"author"|"committer")
+ 			date=(${rest#*> })
+@@ -93,7 +93,7 @@
+ 				echo commit "$id"
+ 				cat "$header"
+ 				echo
+-				cat "$patch" | git-apply --stat
++				cat "$patch" | /usr/libexec/git-core/git-apply --stat
+ 			fi
+ 			;;
+ 		*)
+@@ -161,9 +161,9 @@
+ 		pnum=001
+ 	fi
+ 
+-	git-rev-list --topo-order "$id2" "^$id1" | tac | while read id; do
++	/usr/libexec/git-core/git-rev-list --topo-order "$id2" "^$id1" | tac | while read id; do
+ 		if [ "$outdir" ]; then
+-			title="$(git-cat-file commit "$id" |
++			title="$(/usr/libexec/git-core/git-cat-file commit "$id" |
+ 			         sed -n '/^$/{n;
+ 				              s/^[ \t]*\[[^]]*\][ \t]*//;
+ 				              s/[:., \t][:., \t]*/-/g;
+diff -Nuar cogito-0.18.2.orig/cg-mv cogito-0.18.2/cg-mv
+--- cogito-0.18.2.orig/cg-mv	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-mv	2009-01-05 09:41:06.000000000 +0200
+@@ -44,4 +44,4 @@
+ 	ARGS2[${#ARGS2[@]}]="$_git_relpath${arg%/}"
+ done
+ 
+-git-mv $force "${ARGS2[@]}"
++/usr/libexec/git-core/git-mv $force "${ARGS2[@]}"
+diff -Nuar cogito-0.18.2.orig/cg-object-id cogito-0.18.2/cg-object-id
+--- cogito-0.18.2.orig/cg-object-id	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-object-id	2009-01-05 09:41:06.000000000 +0200
+@@ -31,7 +31,7 @@
+ #	Get a commit description in form of a short string. It shows the
+ #	most recent tag in past of the commit and if it is not the commit
+ #	itself, it appends first few chars of the commit id to id. See
+-#	`git-describe`(1) for details.
++#	`/usr/libexec/git-core/git-describe`(1) for details.
+ #
+ # -n:: Disable object type checking
+ #	Normalize only - don't check the object type.
+@@ -67,7 +67,7 @@
+ 		id=HEAD;
+ 	fi
+ 
+-	revid="$(git-rev-parse --verify "$id" 2>/dev/null)"
++	revid="$(/usr/libexec/git-core/git-rev-parse --verify "$id" 2>/dev/null)"
+ 	if [ "$revid" ] && [ ${#revid} -eq 40 ] && [ "${revid//[0-9a-f]/}" = "" ]; then
+ 		id="$revid"
+ 		valid=1
+@@ -78,7 +78,7 @@
+ 		reqsecs="$(date --date="$id" +'%s' 2>/dev/null)"
+ 
+ 		if [ "$reqsecs" ]; then
+-			revid="$(git-rev-list "--min-age=$reqsecs" --max-count=1 HEAD)"
++			revid="$(/usr/libexec/git-core/git-rev-list "--min-age=$reqsecs" --max-count=1 HEAD)"
+ 			if [ "$revid" ]; then
+ 				id="$revid"
+ 				valid=1
+@@ -92,9 +92,9 @@
+ 		exit 1
+ 	fi
+ 
+-	type="$(git-cat-file -t "$id")"
++	type="$(/usr/libexec/git-core/git-cat-file -t "$id")"
+ 	if [ "$type" = "tag" ]; then
+-		id="$(git-cat-file tag "$id" | head -n 1)"
++		id="$(/usr/libexec/git-core/git-cat-file tag "$id" | head -n 1)"
+ 		id="${id#object }"
+ 		type=
+ 	fi
+@@ -147,21 +147,21 @@
+ 	exit 0
+ fi
+ if [ "$describe" ]; then
+-	git-describe "$normid"
++	/usr/libexec/git-core/git-describe "$normid"
+ 	exit 0
+ fi
+ 
+ 
+ if [ "$show_parent" ]; then
+-	git-rev-list --parents -n 1 "$normid" | tr ' ' '\n' | tail -n +2
++	/usr/libexec/git-core/git-rev-list --parents -n 1 "$normid" | tr ' ' '\n' | tail -n +2
+ 	exit 0
+ fi
+ 
+-[ "$type" ] || type="$(git-cat-file -t "$normid")"
++[ "$type" ] || type="$(/usr/libexec/git-core/git-cat-file -t "$normid")"
+ if [ "$show_tree" ]; then
+ 	if [ "$type" = "commit" ]; then
+-		normid="$(git-cat-file commit "$normid" | sed -e 's/tree //;q')"
+-		type="$(git-cat-file -t "$normid")"
++		normid="$(/usr/libexec/git-core/git-cat-file commit "$normid" | sed -e 's/tree //;q')"
++		type="$(/usr/libexec/git-core/git-cat-file -t "$normid")"
+ 	fi
+ 
+ 	if [ "$type" != "tree" ]; then
+diff -Nuar cogito-0.18.2.orig/cg-patch cogito-0.18.2/cg-patch
+--- cogito-0.18.2.orig/cg-patch	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-patch	2009-01-05 09:41:06.000000000 +0200
+@@ -13,7 +13,7 @@
+ # patches from existing commits, therefore effectively enabling you to
+ # 'cherrypick' certain changes from a different branch.
+ #
+-# In comparison with the 'git-apply' tool, `cg-patch` will also apply
++# In comparison with the '/usr/libexec/git-core/git-apply' tool, `cg-patch` will also apply
+ # fuzzy patches.
+ #
+ # OPTIONS
+@@ -157,21 +157,21 @@
+ 	if [ "$op" = "delete" -o "$op" = "rename" ]; then
+ 		torm="$(echo "$file1" | strip_path)"
+ 		if ! [ "$reverse" ]; then
+-			(git-ls-files | fgrep -qx "$torm") && echo -ne "rm\0$torm\0"
++			(/usr/libexec/git-core/git-ls-files | fgrep -qx "$torm") && echo -ne "rm\0$torm\0"
+ 			if [ "$op" != "rename" ]; then
+ 				redzone_reset
+ 				return
+ 			fi
+ 		else
+-			(git-ls-files | fgrep -qx "$torm") || echo -ne "add\0$torm\0"
++			(/usr/libexec/git-core/git-ls-files | fgrep -qx "$torm") || echo -ne "add\0$torm\0"
+ 		fi
+ 	fi
+ 	if [ "$op" = "add" -o "$op" = "rename" ]; then
+ 		toadd="$(echo "$file2" | strip_path)"
+ 		if ! [ "$reverse" ]; then
+-			(git-ls-files | fgrep -qx "$toadd") || echo -ne "add\0$toadd\0"
++			(/usr/libexec/git-core/git-ls-files | fgrep -qx "$toadd") || echo -ne "add\0$toadd\0"
+ 		else
+-			(git-ls-files | fgrep -qx "$toadd") && echo -ne "rm\0$toadd\0"
++			(/usr/libexec/git-core/git-ls-files | fgrep -qx "$toadd") && echo -ne "rm\0$toadd\0"
+ 			if [ "$op" != "rename" ]; then
+ 				redzone_reset
+ 				return
+@@ -289,7 +289,7 @@
+ 		patchargs[${#patchargs[@]}]="-R"
+ 
+ 	elif optparse -s || optparse --signoff; then
+-		[ "$signoff" ] || signoff="--signoff=$(git-var GIT_AUTHOR_IDENT | sed 's/> .*/>/')"
++		[ "$signoff" ] || signoff="--signoff=$(/usr/libexec/git-core/git-var GIT_AUTHOR_IDENT | sed 's/> .*/>/')"
+ 
+ 	elif optparse --signoff=; then
+ 		signoff="--signoff=$OPTARG"
+@@ -319,8 +319,8 @@
+ 		[ $strip -ne 1 ] && die "-p does not make sense here"
+ 
+ 		files="$(mktemp -t gitpatch.XXXXXX)"
+-		git-diff-tree -m -r "$commitparent" "$commitid" | cut -f 2- >"$files"
+-		if [ -n "$(git-diff-index -m -r HEAD | cut -f 2- | join "$files" -)" ]; then
++		/usr/libexec/git-core/git-diff-tree -m -r "$commitparent" "$commitid" | cut -f 2- >"$files"
++		if [ -n "$(/usr/libexec/git-core/git-diff-index -m -r HEAD | cut -f 2- | join "$files" -)" ]; then
+ 			rm "$files"
+ 			die "cherry-pick blocked by local changes"
+ 		fi
+@@ -352,7 +352,7 @@
+ 	if [ "$commit" ]; then
+ 		[ "$reverse" ] && die "cannot do -R here"
+ 
+-		[ "$(git-diff-index -m -r HEAD)" ] &&
++		[ "$(/usr/libexec/git-core/git-diff-index -m -r HEAD)" ] &&
+ 			die "cannot auto-commit patches when the tree has local changes"
+ 		file="$(mktemp -t gitpatch.XXXXXX)"
+ 		cat >"$file"
+@@ -382,7 +382,7 @@
+ 			commit_patch "$commitdir/$lastpatch"
+ 			rm -f "$resume"
+ 
+-		elif ! git-update-index --refresh >/dev/null || [ "$(git-diff-index -m -r HEAD)" ]; then
++		elif ! /usr/libexec/git-core/git-update-index --refresh >/dev/null || [ "$(/usr/libexec/git-core/git-diff-index -m -r HEAD)" ]; then
+ 			die "cannot auto-commit patches when the tree has local changes"
+ 
+ 		else
+@@ -426,7 +426,7 @@
+ 			commit_mail_patch "$lastpatch"
+ 			rm "$resume/a/$lastpatch"
+ 
+-		elif ! git-update-index --refresh >/dev/null || [ "$(git-diff-index -m -r HEAD)" ]; then
++		elif ! /usr/libexec/git-core/git-update-index --refresh >/dev/null || [ "$(/usr/libexec/git-core/git-diff-index -m -r HEAD)" ]; then
+ 			die "cannot auto-commit patches when the tree has local changes"
+ 
+ 		else 
+@@ -436,14 +436,14 @@
+ 			mkdir -p "$resume/i"
+ 			mkdir -p "$resume/m"
+ 			mkdir -p "$resume/p"
+-			git-mailsplit -o"$resume/a" >/dev/null
++			/usr/libexec/git-core/git-mailsplit -o"$resume/a" >/dev/null
+ 		fi
+ 
+ 		for patch in "$resume"/a/*; do
+ 			patch="${patch#$resume/a/}"
+ 			[ "$patch" = "*" ] && break # Out of patches
+ 			echo "$patch" >"$resume/last"
+-			git-mailinfo "$resume/m/$patch" "$resume/p/$patch" \
++			/usr/libexec/git-core/git-mailinfo "$resume/m/$patch" "$resume/p/$patch" \
+ 				<"$resume/a/$patch" >"$resume/i/$patch"
+ 			parse_mail_info "$patch"
+ 			echo
+@@ -477,8 +477,8 @@
+ patchfifo="$(mktemp -t gitapply.XXXXXX)"
+ rm "$patchfifo" && mkfifo -m 600 "$patchfifo"
+ 
+-[ "$unidiff" ] && git-ls-files --others >"$newsfile"
+-git-ls-files --deleted >"$gonefile"
++[ "$unidiff" ] && /usr/libexec/git-core/git-ls-files --others >"$newsfile"
++/usr/libexec/git-core/git-ls-files --deleted >"$gonefile"
+ 
+ # patch file removal behaviour cannot be sensibly controlled, so we
+ # just handle it all ourselves.
+@@ -546,10 +546,10 @@
+ wait %1; ret=$?
+ cat "$patchout"
+ 
+-IFS=$'\n' emptyfiles=($(git-ls-files --deleted | join -v 2 "$gonefile" -))
++IFS=$'\n' emptyfiles=($(/usr/libexec/git-core/git-ls-files --deleted | join -v 2 "$gonefile" -))
+ if [ "$unidiff" ]; then
+ 	[ "${emptyfiles[*]}" ] && cg-rm "${emptyfiles[@]}"
+-	IFS=$'\n' freshfiles=($(git-ls-files --others | join -v 2 "$newsfile" -))
++	IFS=$'\n' freshfiles=($(/usr/libexec/git-core/git-ls-files --others | join -v 2 "$newsfile" -))
+ 	[ "${freshfiles[*]}" ] && cg-add "${freshfiles[@]}"
+ else
+ 	# Now we just recreate all the supposedly deleted files and
+diff -Nuar cogito-0.18.2.orig/cg-push cogito-0.18.2/cg-push
+--- cogito-0.18.2.orig/cg-push	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-push	2009-01-05 09:41:06.000000000 +0200
+@@ -16,7 +16,7 @@
+ # You can set up update hooks in the remote repository to bind
+ # any action to the push (e.g. sending an email or CIA notification
+ # or even verifying if the commits are well-formed before letting
+-# them in). See `git-receive-pack`(1) documentation for details.
++# them in). See `/usr/libexec/git-core/git-receive-pack`(1) documentation for details.
+ #
+ # Takes the branch names as arguments, defaulting to "origin".
+ #
+@@ -45,7 +45,7 @@
+ {
+ 	name="$1"; shift
+ 	commit="$(cg-object-id -c "$locbranch")"; old="$(cat "$_git/refs/heads/$name" 2>/dev/null)"
+-	git-send-pack "$@" && git-update-ref refs/heads/"$name" "$commit" $old
++	/usr/libexec/git-core/git-send-pack "$@" && /usr/libexec/git-core/git-update-ref refs/heads/"$name" "$commit" $old
+ }
+ 
+ 
+@@ -75,7 +75,7 @@
+ 	sprembranch=":refs/heads/$rembranch"
+ 
+ 	if [ "${uri#http://}" != "$uri" -o "${uri#https://}" != "$uri" ]; then
+-		git-http-push "$uri/" "$locbranch$sprembranch" "${tags[@]}"
++		/usr/libexec/git-core/git-http-push "$uri/" "$locbranch$sprembranch" "${tags[@]}"
+ 
+ 	elif [ "${uri#git+ssh://}" != "$uri" ]; then
+ 		send_pack_update "$name" "$(echo "$uri" | sed 's#^git+ssh://\([^/]*\)\(/.*\)$#\1:\2#')" "$locbranch$sprembranch" "${tags[@]}"
+@@ -97,7 +97,7 @@
+ 				echo "$remgit#$rembranch: Already up-to-date." >&2
+ 				exit 0
+ 			fi
+-			if [ "$remid" != "$(git-merge-base "$remid" "$commit")" ]; then
++			if [ "$remid" != "$(/usr/libexec/git-core/git-merge-base "$remid" "$commit")" ]; then
+ 				echo "ERROR: Remote '$rembranch' has some changes you don't have in your '$locbranch'" >&2
+ 				echo "Try to cg-update from it first, then push." >&2
+ 				exit 1
+@@ -105,10 +105,10 @@
+ 
+ 			echo "Pushing $commit to $remgit#$rembranch" >&2
+ 			[ -x "$remgit/hooks/update" ] && "$remgit/hooks/update" "$rembranch" "$remid" "$commit"
+-			GIT_DIR="$remgit" git-update-ref refs/heads/"$rembranch" "$commit" "$remid" || die "push failed"
+-			git-update-ref refs/heads/"$name" "$commit"
++			GIT_DIR="$remgit" /usr/libexec/git-core/git-update-ref refs/heads/"$rembranch" "$commit" "$remid" || die "push failed"
++			/usr/libexec/git-core/git-update-ref refs/heads/"$name" "$commit"
+ 			for tag in "${tags[@]}"; do
+-				GIT_DIR="$remgit" git-update-ref refs/tags/"$tag" "$(cat "$_git/refs/tags/$tag")"
++				GIT_DIR="$remgit" /usr/libexec/git-core/git-update-ref refs/tags/"$tag" "$(cat "$_git/refs/tags/$tag")"
+ 			done
+ 			[ -x "$remgit/hooks/post-update" ] && "$remgit/hooks/post-update" "$rembranch"
+ 		else
+diff -Nuar cogito-0.18.2.orig/cg-reset cogito-0.18.2/cg-reset
+--- cogito-0.18.2.orig/cg-reset	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-reset	2009-01-05 09:41:06.000000000 +0200
+@@ -43,22 +43,22 @@
+ 
+ 
+ if [ "$indexonly" ]; then
+-	( git-read-tree --reset HEAD ) && git-update-index --refresh
++	( /usr/libexec/git-core/git-read-tree --reset HEAD ) && /usr/libexec/git-core/git-update-index --refresh
+ 	exit
+ fi
+ 
+ 
+ if ! [ -s "$_git/HEAD" ]; then
+ 	rm -f "$_git/HEAD"
+-	# XXX: git-symbolic-ref is a weenie and won't do the job at this point.
++	# XXX: /usr/libexec/git-core/git-symbolic-ref is a weenie and won't do the job at this point.
+ 	echo "ref: refs/heads/$_git_head" >"$_git/HEAD"
+ fi
+ 
+ # Undo seek?
+ if [ -s "$_git/head-name" ]; then
+-	echo "Unseeking: $(cat "$_git/$(git-symbolic-ref HEAD)") -> $(cat "$_git/refs/heads/$_git_head") ($_git_head)"
++	echo "Unseeking: $(cat "$_git/$(/usr/libexec/git-core/git-symbolic-ref HEAD)") -> $(cat "$_git/refs/heads/$_git_head") ($_git_head)"
+ 	if [ -s "$_git/refs/heads/$_git_head" ]; then
+-		git-symbolic-ref HEAD "refs/heads/$_git_head"
++		/usr/libexec/git-core/git-symbolic-ref HEAD "refs/heads/$_git_head"
+ 		rm "$_git/refs/heads/cg-seek-point" "$_git/head-name"
+ 	else
+ 		echo "ERROR: Unknown branch $_git_head! Preserving HEAD." >&2
+@@ -66,6 +66,6 @@
+ fi
+ 
+ rm -f "$_git/blocked" "$_git/merging" "$_git/merging-sym" "$_git/merge-base" "$_git/commit-ignore" "$_git/squashing"
+-git-read-tree --reset HEAD
++/usr/libexec/git-core/git-read-tree --reset HEAD
+ 
+-git-checkout-index -u -f -a
++/usr/libexec/git-core/git-checkout-index -u -f -a
+diff -Nuar cogito-0.18.2.orig/cg-restore cogito-0.18.2/cg-restore
+--- cogito-0.18.2.orig/cg-restore	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-restore	2009-01-05 09:41:06.000000000 +0200
+@@ -55,7 +55,7 @@
+ 
+ if [ "$ARGS" ]; then
+ 	if [ "$objid" ]; then
+-		objtype="$(git-cat-file -t "$objid")"
++		objtype="$(/usr/libexec/git-core/git-cat-file -t "$objid")"
+ 		if [ "$objtype" = "commit" ]; then
+ 			objid="$(cg-object-id -t "$objid")"
+ 			objtype="tree"
+@@ -85,13 +85,13 @@
+ 
+ 	if [ "$objtype" = "tree" ]; then
+ 		TMPFILE="$(mktemp -t gitrestore.XXXXXX)" || exit 1
+-		if ! git-ls-tree -r "$objid" "${files[@]}" |
++		if ! /usr/libexec/git-core/git-ls-tree -r "$objid" "${files[@]}" |
+ 			sed -ne 's/^\([0-7]*\) blob \(.*\)$/\1 \2/p' |
+ 			( ret=0; while read mode id name; do
+ 				echo "Restoring file ${name#$_git_relpath}"
+-				# TODO: Use git-update-index --index-info when we
++				# TODO: Use /usr/libexec/git-core/git-update-index --index-info when we
+ 				# will depend on git new enough. --pasky
+-				if ! git-update-index --add --cacheinfo "$mode" "$id" "$name"; then
++				if ! /usr/libexec/git-core/git-update-index --add --cacheinfo "$mode" "$id" "$name"; then
+ 					echo "Error: Cannot mark ${name#$_git_relpath} for update" >&2
+ 					ret=1
+ 					continue
+@@ -102,11 +102,11 @@
+ 				ret=$?
+ 		# When we'll do --index-info which should be atomic:
+ 		#|| {
+-		#	echo "Fatal: git-update-index failed, cancelling the whole operation (restored nothing)" >&2
++		#	echo "Fatal: /usr/libexec/git-core/git-update-index failed, cancelling the whole operation (restored nothing)" >&2
+ 		#	exit $?
+ 		#}
+ 		fi
+-		cat "$TMPFILE" | tr '\n' '\0' | xargs -0 git-checkout-index -u $force -- || ret=1
++		cat "$TMPFILE" | tr '\n' '\0' | xargs -0 /usr/libexec/git-core/git-checkout-index -u $force -- || ret=1
+ 		rm "$TMPFILE"
+ 
+ 	elif [ "$objtype" = "blob" ]; then
+@@ -114,18 +114,18 @@
+ 		for file in "${files[@]}"; do
+ 			echo "Restoring file ${file#$_git_relpath}"
+ 			warn "file ${file#$_git_relpath} likely will not have correct permissions"
+-			git-cat-file blob "$objid" >"$file"
+-			git-update-index -- "$file" || ret=1
++			/usr/libexec/git-core/git-cat-file blob "$objid" >"$file"
++			/usr/libexec/git-core/git-update-index -- "$file" || ret=1
+ 		done
+ 	fi
+ 
+ else # no arguments - much weaker
+ 	[ "$objid" ] && die "you need to pass an explicit list of files to -r"
+ 	[ "$_git_relpath" ] && die "cannot restore files en masse in subdirectories yet"
+-	if [ "$(git-ls-files --deleted)" ]; then
+-		git-ls-files --deleted | sed "s/^/Restoring file /"
++	if [ "$(/usr/libexec/git-core/git-ls-files --deleted)" ]; then
++		/usr/libexec/git-core/git-ls-files --deleted | sed "s/^/Restoring file /"
+ 	fi
+-	git-checkout-index -u -q -a $force
++	/usr/libexec/git-core/git-checkout-index -u -q -a $force
+ fi
+ 
+ exit $ret
+diff -Nuar cogito-0.18.2.orig/cg-rm cogito-0.18.2/cg-rm
+--- cogito-0.18.2.orig/cg-rm	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-rm	2009-01-05 09:41:06.000000000 +0200
+@@ -71,7 +71,7 @@
+ 	if [ -d "$absfile" ]; then
+ 		if [ "$recursive" ]; then
+ 			echo "$file" >>"$TMPDIRFILE"
+-			git-ls-files "$absfile" | while IFS=$'' read path; do
++			/usr/libexec/git-core/git-ls-files "$absfile" | while IFS=$'' read path; do
+ 				echo "${path#$_git_relpath}"
+ 			done >>"$TMPFILE"
+ 		else
+@@ -97,7 +97,7 @@
+ 	cat "$TMPFILE" | tr '\n' '\0' | xargs -0 rm -f
+ 	[ -s "$TMPDIRFILE" ] && cat "$TMPDIRFILE" | tr '\n' '\0' | xargs -0 rmdir --ignore-fail-on-non-empty -p
+ ); fi
+-cat "$TMPFILE" | sed "s|^|$_git_relpath|" | path_xargs git-update-index --force-remove -- || error=1
++cat "$TMPFILE" | sed "s|^|$_git_relpath|" | path_xargs /usr/libexec/git-core/git-update-index --force-remove -- || error=1
+ 
+ rm "$TMPFILE" "$TMPDIRFILE"
+ 
+diff -Nuar cogito-0.18.2.orig/cg-seek cogito-0.18.2/cg-seek
+--- cogito-0.18.2.orig/cg-seek	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-seek	2009-01-05 09:41:06.000000000 +0200
+@@ -59,7 +59,7 @@
+ 
+ if [ "$dstcommit" ] && [ "$dstcommit" != "$_git_head" ]; then
+ 	seek_mode=away
+-	[ -s "$_git/head-name" ] && [ "$(git-symbolic-ref HEAD)" != "refs/heads/cg-seek-point" ] &&
++	[ -s "$_git/head-name" ] && [ "$(/usr/libexec/git-core/git-symbolic-ref HEAD)" != "refs/heads/cg-seek-point" ] &&
+ 		die "seeked away by some other tool, refusing to meddle (you can still use cg-seek without any arguments to unseek)"
+ 	[ -s "$_git/refs/heads/$dstcommit" ] &&
+ 		warn "seeking to a branch head; this is not for permanent switching, please see cg-switch"
+@@ -77,11 +77,11 @@
+ 	echo "$_git_head" >"$_git/head-name"
+ 	[ -s "$_git/blocked" ] || echo "seeked from $_git_head (some commands can be still forced)" >"$_git/blocked"
+ 	# We hold this in a temporary branch so that some of the core
+-	# GIT tools (git checkout and git-fsck-objects) don't get confused.
++	# GIT tools (git checkout and /usr/libexec/git-core/git-fsck-objects) don't get confused.
+ 	echo "$dstcommit" >"$_git/refs/heads/cg-seek-point"
+-	git-symbolic-ref HEAD "refs/heads/cg-seek-point"
++	/usr/libexec/git-core/git-symbolic-ref HEAD "refs/heads/cg-seek-point"
+ else
+-	git-symbolic-ref HEAD "refs/heads/$_git_head"
++	/usr/libexec/git-core/git-symbolic-ref HEAD "refs/heads/$_git_head"
+ 	rm -f "$_git/refs/heads/cg-seek-point" "$_git/head-name"
+ 	rm -f "$_git/blocked"
+ fi
+diff -Nuar cogito-0.18.2.orig/cg-status cogito-0.18.2/cg-status
+--- cogito-0.18.2.orig/cg-status	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-status	2009-01-05 09:41:06.000000000 +0200
+@@ -183,7 +183,7 @@
+ 	[ -s "$_git/branch-name" ] && echo "Branch (informal): $(cat "$_git/branch-name")"
+ 
+ 	if [ -s "$_git/head-name" ]; then
+-		headsha1=$(cat "$_git/$(git-symbolic-ref HEAD)")
++		headsha1=$(cat "$_git/$(/usr/libexec/git-core/git-symbolic-ref HEAD)")
+ 		echo "Seeked from head: $(cat "$_git/head-name")"
+ 		echo "Seeked at commit: $headsha1"
+ 		echo
+@@ -222,7 +222,7 @@
+ 		sed 's/^/    /' "$_git/blocked"
+ 	fi
+ 
+-	if [ ! -s "$_git/$(git-symbolic-ref HEAD)" ]; then
++	if [ ! -s "$_git/$(/usr/libexec/git-core/git-symbolic-ref HEAD)" ]; then
+ 		echo
+ 		echo "Before initial commit."
+ 	fi
+@@ -242,7 +242,7 @@
+ 
+ 
+ if [ "$workstatus" ]; then
+-	git-update-index --refresh > /dev/null
++	/usr/libexec/git-core/git-update-index --refresh > /dev/null
+ 
+ 	basepath="$_git_relpath"
+ 	[ "${ARGS[0]}" ] && basepath="$(echo "$_git_relpath${ARGS[0]}" | normpath)"
+@@ -259,17 +259,17 @@
+ 		fi |
+ 		sed 's,^,? ,'
+ 
+-	if [ ! -s "$_git/$(git-symbolic-ref HEAD)" ]; then
++	if [ ! -s "$_git/$(/usr/libexec/git-core/git-symbolic-ref HEAD)" ]; then
+ 		# Initial commit
+-		should_show_flag 'A' && git-ls-files | sed 's,^,A ,'
++		should_show_flag 'A' && /usr/libexec/git-core/git-ls-files | sed 's,^,A ,'
+ 	else
+ 		commitignore=
+ 		[ -s "$_git/commit-ignore" ] && commitignore=1
+ 
+-		git-diff-index HEAD -- "${basepath:-.}" | cut -f5- -d' ' | 
++		/usr/libexec/git-core/git-diff-index HEAD -- "${basepath:-.}" | cut -f5- -d' ' | 
+ 		while IFS=$'\t' read -r mode file; do
+ 			if [ "$mode" = D ]; then
+-				[ "$(git-diff-files -- "$file")" ] && mode=!
++				[ "$(/usr/libexec/git-core/git-diff-files -- "$file")" ] && mode=!
+ 			elif [ "$mode" = M ] && [ "$commitignore" ]; then
+ 				fgrep -qx "$file" "$_git/commit-ignore" && mode=m
+ 			fi
+diff -Nuar cogito-0.18.2.orig/cg-switch cogito-0.18.2/cg-switch
+--- cogito-0.18.2.orig/cg-switch	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-switch	2009-01-05 09:41:06.000000000 +0200
+@@ -27,7 +27,7 @@
+ #	passed as the '-r' argument even if the branch already exists.
+ #	WARNING: The pointer to the original contents of the branch will
+ #	be lost! The contents itself will not be deleted right away,
+-#	`git-fsck-objects --unreachable` might help you to find it.
++#	`/usr/libexec/git-core/git-fsck-objects --unreachable` might help you to find it.
+ #	Besides, this can get very troublesome if you are pushing the
+ #	branch out - please refer to the documentation of a close
+ #	relative, `cg-admin-uncommit`.
+@@ -96,7 +96,7 @@
+ repoint_head() {
+ 	# $oldcommit is optional
+ 	local dsthead="$1" dstcommit="$2" oldcommit="$3"
+-	git-update-ref "refs/heads/$dsthead" "$dstcommit" $oldcommit
++	/usr/libexec/git-core/git-update-ref "refs/heads/$dsthead" "$dstcommit" $oldcommit
+ }
+ 
+ 
+@@ -134,7 +134,7 @@
+ [ -s "$_git/branches/$dsthead" ] &&
+ 	die "refusing to switch to a remote branch - see README for lengthy explanation; use cg-seek to just quickly inspect it"
+ 
+-[ "$(git-symbolic-ref HEAD)" != "refs/heads/$dsthead" ] || [ -n "$dstcommit" ] ||
++[ "$(/usr/libexec/git-core/git-symbolic-ref HEAD)" != "refs/heads/$dsthead" ] || [ -n "$dstcommit" ] ||
+ 	die "already on branch $dsthead"
+ 
+ if [ "$seek" ]; then
+@@ -183,10 +183,10 @@
+ 				echo "I have created branch $dirty and made the old local changes available as its last commit." >&2
+ 			fi
+ 			cp "$_git/refs/heads/$_git_head" "$_git/refs/heads/.cg-shelve-$_git_head"
+-			git-symbolic-ref HEAD "refs/heads/.cg-shelve-$_git_head"
++			/usr/libexec/git-core/git-symbolic-ref HEAD "refs/heads/.cg-shelve-$_git_head"
+ 			cg-commit --no-hooks -m"[@internal@] cg-switch local changes shelve" -m"This commit for internal Cogito use stores uncommitted local changes at the time of cg-switch -l away from $_git_head." >/dev/null
+ 			# Restoring HEAD now is useful in case anything bad happens later
+-			git-symbolic-ref HEAD "refs/heads/$_git_head"
++			/usr/libexec/git-core/git-symbolic-ref HEAD "refs/heads/$_git_head"
+ 			curcommit="$(cg-object-id -c "refs/heads/.cg-shelve-$_git_head")"
+ 		fi
+ 
+@@ -219,5 +219,5 @@
+ 	else
+ 		echo "Switching to branch $dsthead..."
+ 	fi
+-	git-symbolic-ref HEAD "refs/heads/$dsthead"
++	/usr/libexec/git-core/git-symbolic-ref HEAD "refs/heads/$dsthead"
+ fi
+diff -Nuar cogito-0.18.2.orig/cg-tag cogito-0.18.2/cg-tag
+--- cogito-0.18.2.orig/cg-tag	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-tag	2009-01-05 09:41:06.000000000 +0200
+@@ -83,17 +83,17 @@
+ [ -n "$name" ] || usage
+ 
+ id="$(cg-object-id -n "$id")" || exit 1
+-type="$(git-cat-file -t "$id")"
++type="$(/usr/libexec/git-core/git-cat-file -t "$id")"
+ id="${id% *}"
+ 
+-git-check-ref-format "refs/tags/$name" || \
++/usr/libexec/git-core/git-check-ref-format "refs/tags/$name" || \
+ 	die "name contains invalid characters"
+ 
+ mkdir -p "$_git/refs/tags"
+ [ "$force" ] || [ ! -s "$_git/refs/tags/$name" ] || \
+ 	die "tag already exists ($name)"
+ 
+-[ "$id" ] || id="$(cat "$_git/$(git-symbolic-ref HEAD)")"
++[ "$id" ] || id="$(cat "$_git/$(/usr/libexec/git-core/git-symbolic-ref HEAD)")"
+ 
+ 
+ tagdir="$(mktemp -d -t gittag.XXXXXX)"
+@@ -156,7 +156,7 @@
+ object $id
+ type $type
+ tag $name
+-tagger $(git-var GIT_COMMITTER_IDENT)
++tagger $(/usr/libexec/git-core/git-var GIT_COMMITTER_IDENT)
+ SIGEND
+ if [ -s "$LOGMSG" ]; then
+ 	echo >>"$tagdir/tag"
+@@ -170,7 +170,7 @@
+ 	fi
+ 	cat "$tagdir/tag.asc" >>"$tagdir/tag"
+ fi
+-if ! git-mktag <"$tagdir/tag" >"$_git/refs/tags/$name"; then
++if ! /usr/libexec/git-core/git-mktag <"$tagdir/tag" >"$_git/refs/tags/$name"; then
+ 	rm -rf "$tagdir"
+ 	die "error creating tag"
+ fi
+diff -Nuar cogito-0.18.2.orig/cg-tag-ls cogito-0.18.2/cg-tag-ls
+--- cogito-0.18.2.orig/cg-tag-ls	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-tag-ls	2009-01-05 09:41:06.000000000 +0200
+@@ -42,10 +42,10 @@
+ 	sha1="$(cat "$tag")"
+ 	title=
+ 
+-	type="$(git-cat-file -t "$sha1" 2>/dev/null)" || flag="!"
++	type="$(/usr/libexec/git-core/git-cat-file -t "$sha1" 2>/dev/null)" || flag="!"
+ 	if [ "$type" = "tag" ]; then
+-		title="$(git-cat-file tag "$sha1" | sed -ne '/^$/{n;s/^-----BEGIN PGP SIGNATURE-----//;p;q;}')"
+-		git-cat-file tag "$sha1" | grep -q '^-----BEGIN PGP SIGNATURE-----' && flag="S"
++		title="$(/usr/libexec/git-core/git-cat-file tag "$sha1" | sed -ne '/^$/{n;s/^-----BEGIN PGP SIGNATURE-----//;p;q;}')"
++		/usr/libexec/git-core/git-cat-file tag "$sha1" | grep -q '^-----BEGIN PGP SIGNATURE-----' && flag="S"
+ 	elif [ "$type" ]; then
+ 		flag="%"
+ 	fi
+diff -Nuar cogito-0.18.2.orig/cg-tag-show cogito-0.18.2/cg-tag-show
+--- cogito-0.18.2.orig/cg-tag-show	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-tag-show	2009-01-05 09:41:06.000000000 +0200
+@@ -18,7 +18,7 @@
+ 	local tag="$1" sha1="$2"
+ 	local tagfile="$(mktemp -t gittag.XXXXXX)"
+ 
+-	git-cat-file tag "$1" >"$tagfile" || return 1
++	/usr/libexec/git-core/git-cat-file tag "$1" >"$tagfile" || return 1
+ 	cat "$tagfile" | sed '/^-----BEGIN PGP SIGNATURE-----/Q' |
+ 		gpg --verify "$tagfile" - || return 1
+ 	rm -f "$tagfile"
+@@ -92,7 +92,7 @@
+ 		echo >&2
+ 		return 1
+ 	fi
+-	local type="$(git-cat-file -t "$sha1" 2>/dev/null)"
++	local type="$(/usr/libexec/git-core/git-cat-file -t "$sha1" 2>/dev/null)"
+ 	if [ ! "$type" ]; then
+ 		echo "Broken tag: $tag" >&2
+ 		echo >&2
+@@ -108,10 +108,10 @@
+ 	echo
+ 
+ 	local verify=
+-	if git-cat-file tag "$sha1" | grep -q '^-----BEGIN PGP SIGNATURE-----'; then
++	if /usr/libexec/git-core/git-cat-file tag "$sha1" | grep -q '^-----BEGIN PGP SIGNATURE-----'; then
+ 		verify=1
+ 	fi
+-	git-cat-file tag "$sha1" | cat_tag "$tag" "$sha1" "$verify"
++	/usr/libexec/git-core/git-cat-file tag "$sha1" | cat_tag "$tag" "$sha1" "$verify"
+ 	if [ ${PIPESTATUS[0]} -ne 0 -o ${PIPESTATUS[1]} -ne 0 ]; then
+ 		return 1
+ 	fi
+diff -Nuar cogito-0.18.2.orig/cg-Xfollowrenames cogito-0.18.2/cg-Xfollowrenames
+--- cogito-0.18.2.orig/cg-Xfollowrenames	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-Xfollowrenames	2009-01-05 09:41:06.000000000 +0200
+@@ -1,13 +1,13 @@
+ #!/usr/bin/env perl
+ #
+-# git-rev-list | git-diff-tree --stdin following renames
++# /usr/libexec/git-core/git-rev-list | /usr/libexec/git-core/git-diff-tree --stdin following renames
+ # Copyright (c) Petr Baudis, 2006
+-# Uses bits of git-annotate.perl by Ryan Anderson.
++# Uses bits of /usr/libexec/git-core/git-annotate.perl by Ryan Anderson.
+ #
+ # This script will efficiently show output as of the
+ #
+-#	git-rev-list --remove-empty ARGS -- FILE... |
+-#	git-diff-tree -M -r -m --stdin --pretty=raw ARGS
++#	/usr/libexec/git-core/git-rev-list --remove-empty ARGS -- FILE... |
++#	/usr/libexec/git-core/git-diff-tree -M -r -m --stdin --pretty=raw ARGS
+ #
+ # pipeline, except that it follows renames of individual files listed
+ # in the FILE... set.
+@@ -23,7 +23,7 @@
+ # to separate the heads and pipes.
+ 
+ # TODO: Does not work on multiple files properly yet - most probably
+-# (I didn't test it!). We want git-rev-list to stop traversing the history
++# (I didn't test it!). We want /usr/libexec/git-core/git-rev-list to stop traversing the history
+ # when _any_ file disappears while now it probably stops traversing when
+ # _all_ files disappear.
+ 
+@@ -88,16 +88,16 @@
+ 
+ sub revlist($@) {
+ 	my ($rev, @files) = @_;
+-	open_pipe(undef, "git-rev-list", "--remove-empty",
++	open_pipe(undef, "/usr/libexec/git-core/git-rev-list", "--remove-empty",
+ 	                 @revlist_args, $rev, "--", @files)
+-		or die "Failed to exec git-rev-list: $!";
++		or die "Failed to exec /usr/libexec/git-core/git-rev-list: $!";
+ }
+ 
+ sub difftree($) {
+ 	my ($revlist) = @_;
+-	open_pipe($revlist, "git-diff-tree", "-r", "-m", "--stdin", "-M",
++	open_pipe($revlist, "/usr/libexec/git-core/git-diff-tree", "-r", "-m", "--stdin", "-M",
+ 	                    "--pretty=raw", @difftree_args)
+-		or die "Failed to exec git-diff-tree: $!";
++		or die "Failed to exec /usr/libexec/git-core/git-diff-tree: $!";
+ }
+ 
+ sub revdiffpipe($@) {
+@@ -178,7 +178,7 @@
+ 			# Not weeding out deleted files (the patch is reversed
+ 			# so they appear as added to us) might cause bizarre
+ 			# results when following multiple files since
+-			# git-rev-list weeds them out too (probably?).
++			# /usr/libexec/git-core/git-rev-list weeds them out too (probably?).
+ 			#print STDERR "grepping - @oldset, @{$head->{files}} > MINUS $newfile <\n";
+ 			@oldset = grep { $newfile ne $_ } @oldset;
+ 			@{$head->{'files'}} = grep { $newfile ne $_ } @{$head->{'files'}};
+diff -Nuar cogito-0.18.2.orig/cg-Xlib cogito-0.18.2/cg-Xlib
+--- cogito-0.18.2.orig/cg-Xlib	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-Xlib	2009-01-05 09:41:06.000000000 +0200
+@@ -235,7 +235,7 @@
+ 		# If -c was not passed but we _are_ on a terminal,
+ 		# check $2.usecolor yet.
+ 		[ -t 1 ] || return 1
+-		[ "$(git-repo-config --bool $2.usecolor)" = "true" ] || return 1
++		[ "$(/usr/libexec/git-core/git-repo-config --bool $2.usecolor)" = "true" ] || return 1
+ 		[ "$CG_COLORS_AUTO" ] || return 0
+ 	else
+ 		[ "$CG_COLORS_AUTO" ] || return 0
+@@ -479,7 +479,7 @@
+ 	fi
+ 	local listdirs=
+ 	[ "$squashflag" != "squashdirs" ] || listdirs=--directory
+-	git-ls-files -z --others $listdirs "${EXCLUDE[@]}"
++	/usr/libexec/git-core/git-ls-files -z --others $listdirs "${EXCLUDE[@]}"
+ }
+ 
+ 
+@@ -529,7 +529,7 @@
+ 
+ editor_parse_clean()
+ {
+-	grep -v ^CG: "$LOGMSG2" | git-stripspace >"$LOGMSG"
++	grep -v ^CG: "$LOGMSG2" | /usr/libexec/git-core/git-stripspace >"$LOGMSG"
+ }
+ 
+ # editor_shalluse FORCEEDITOR
+@@ -609,20 +609,20 @@
+ 			warn "uncommitted local changes, trying to bring them $dirstr"
+ 		[ ! -s "$patchfile" ] || localmods=1
+ 
+-		git-read-tree -i -m "$branch" || die "$branch: bad commit"
+-		[ "$no_head_update" ] || git-update-ref HEAD "$branch" || :
++		/usr/libexec/git-core/git-read-tree -i -m "$branch" || die "$branch: bad commit"
++		[ "$no_head_update" ] || /usr/libexec/git-core/git-update-ref HEAD "$branch" || :
+ 
+ 		# Kill gone files
+-		git-diff-tree -z --name-status -r "$base" "$branch" |
++		/usr/libexec/git-core/git-diff-tree -z --name-status -r "$base" "$branch" |
+ 			perl -n0e 'chomp; if (defined $meta) { print "$_\0" if $meta eq 'D'; $meta=undef } else { $meta = $_ }' |
+ 			xargs --null rm -f --
+-		git-checkout-index -u -f -a
++		/usr/libexec/git-core/git-checkout-index -u -f -a
+ 
+ 		# FIXME: Can produce bogus "contains only garbage" messages.
+ 		cat "$patchfile" | cg-patch
+ 		rm "$patchfile"
+ 	else
+-		[ "$no_head_update" ] || git-update-ref HEAD "$branch" || :
++		[ "$no_head_update" ] || /usr/libexec/git-core/git-update-ref HEAD "$branch" || :
+ 	fi
+ 	return $localmods
+ }
+@@ -638,7 +638,7 @@
+ 	baselist=("$@")
+ 	_cg_base_conservative=
+ 	for (( safecounter=0; $safecounter < 1000; safecounter++ )) ; do
+-		baselist=($(git-merge-base --all "${baselist[@]}")) || return 1
++		baselist=($(/usr/libexec/git-core/git-merge-base --all "${baselist[@]}")) || return 1
+ 		[ "${#baselist[@]}" -gt "1" ] || break
+ 	done
+ 	[ $safecounter -le 0 ] || _cg_base_conservative=$safecounter
+@@ -654,7 +654,7 @@
+ update_index()
+ {
+ 	[ -z "$_git_no_wc" ] || die "INTERNAL ERROR: update_index() outside a working copy"
+-	git-update-index --refresh | sed 's/needs update$/locally modified/'
++	/usr/libexec/git-core/git-update-index --refresh | sed 's/needs update$/locally modified/'
+ }
+ 
+ # Takes two object directories and checks if they are the same (symlinked
+@@ -893,9 +893,9 @@
+ 
+ _git="${GIT_DIR:-.git}"
+ if [ ! "$_git_repo_unneeded" ] && [ ! "$GIT_DIR" ] && [ ! -d "$_git" ]; then
+-	_git_abs_path="$(git-rev-parse --git-dir 2>/dev/null)"
++	_git_abs_path="$(/usr/libexec/git-core/git-rev-parse --git-dir 2>/dev/null)"
+ 	if [ -d "$_git_abs_path" ]; then
+-		_git_relpath="$(git-rev-parse --show-prefix)"
++		_git_relpath="$(/usr/libexec/git-core/git-rev-parse --show-prefix)"
+ 		cd "$_git_abs_path/.."
+ 	fi
+ fi
+@@ -907,7 +907,7 @@
+ 	# Check if we aren't _in_ the repository (perhaps it's without
+ 	# a working copy).
+ 	if [ ! -d "$_git" -a -d objects/ -a -d refs/ -a -s HEAD ] &&
+-	   GIT_DIR=. git-symbolic-ref HEAD >/dev/null 2>&1; then
++	   GIT_DIR=. /usr/libexec/git-core/git-symbolic-ref HEAD >/dev/null 2>&1; then
+ 		_git=.
+ 		export GIT_DIR=.
+ 	fi
+@@ -923,7 +923,7 @@
+ 		exit 1
+ 	fi
+ 	_git_head=master
+-	[ ! -s "$_git/HEAD" ] || { _git_head="$(git-symbolic-ref HEAD)"; _git_head="${_git_head#refs/heads/}"; }
++	[ ! -s "$_git/HEAD" ] || { _git_head="$(/usr/libexec/git-core/git-symbolic-ref HEAD)"; _git_head="${_git_head#refs/heads/}"; }
+ 	[ ! -s "$_git/head-name" ] || _git_head="$(cat "$_git/head-name")"
+ fi
+ 
+diff -Nuar cogito-0.18.2.orig/cg-Xmergefile cogito-0.18.2/cg-Xmergefile
+--- cogito-0.18.2.orig/cg-Xmergefile	2009-01-05 09:39:56.000000000 +0200
++++ cogito-0.18.2/cg-Xmergefile	2009-01-05 09:41:06.000000000 +0200
+@@ -76,7 +76,7 @@
+ 	if test -f "$file"; then
+ 		rm -f -- "$file"
+ 	fi &&
+-		exec git-update-index --remove -- "$file"
++		exec /usr/libexec/git-core/git-update-index --remove -- "$file"
+ 	;;
+ 
+ #
+@@ -96,12 +96,12 @@
+ 	done
+ 	error "File $file removed in one branch but modified in the other!"
+ 	error "The original version saved as '$filev~${ways[0]}', the modified one as '$filev~${ways[$num]}'."
+-	git-update-index --add --cacheinfo "$mode0" "$id0" "$file" &&
+-		git-checkout-index -u -f -- "$file" &&
++	/usr/libexec/git-core/git-update-index --add --cacheinfo "$mode0" "$id0" "$file" &&
++		/usr/libexec/git-core/git-checkout-index -u -f -- "$file" &&
+ 		mv "$file" "$filev~${ways[0]}" ||
+ 		error "Cannot create '$filev~${ways[0]}'"
+-	git-update-index --add --cacheinfo "$mode" "$id" "$file" &&
+-		git-checkout-index -u -f -- "$file" &&
++	/usr/libexec/git-core/git-update-index --add --cacheinfo "$mode" "$id" "$file" &&
++		/usr/libexec/git-core/git-checkout-index -u -f -- "$file" &&
+ 		mv "$file" "$filev~${ways[$num]}" ||
+ 		error "Cannot create '$filev~${ways[$num]}'"
+ 	;;
+@@ -110,8 +110,8 @@
+ #
+ ".$id1." | "..$id2" )
+ 	#echo "Adding $file"
+-	git-update-index --add --cacheinfo "$mode1$mode2" "$id1$id2" "$file" &&
+-		exec git-checkout-index -u -f -- "$file"
++	/usr/libexec/git-core/git-update-index --add --cacheinfo "$mode1$mode2" "$id1$id2" "$file" &&
++		exec /usr/libexec/git-core/git-checkout-index -u -f -- "$file"
+ 	;;
+ 
+ #
+@@ -119,8 +119,8 @@
+ #
+ ".$id2$id1")
+ 	#echo "Adding $file"
+-	git-update-index --add --cacheinfo "$mode1" "$id1" "$file" &&
+-		git-checkout-index -u -f -- "$file"
++	/usr/libexec/git-core/git-update-index --add --cacheinfo "$mode1" "$id1" "$file" &&
++		/usr/libexec/git-core/git-checkout-index -u -f -- "$file"
+ 	ret=$?
+ 	if [ "$mode1" != "$mode2" ]; then
+ 		pmxmc "$mode2"; chmod ${_pmxmc}x "$file"
+@@ -142,12 +142,12 @@
+ 	done
+ 	error "File $file added in both branches, but different in each!"
+ 	error "Conflicting versions saved as '$filev~${ways[1]}' and '$filev~${ways[2]}'."
+-	git-update-index --add --cacheinfo "$mode1" "$id1" "$file" &&
+-		git-checkout-index -u -f -- "$file" &&
++	/usr/libexec/git-core/git-update-index --add --cacheinfo "$mode1" "$id1" "$file" &&
++		/usr/libexec/git-core/git-checkout-index -u -f -- "$file" &&
+ 		mv "$file" "$filev~${ways[1]}" ||
+ 		error "Cannot create '$filev~${ways[1]}'"
+-	git-update-index --add --cacheinfo "$mode2" "$id2" "$file" &&
+-		git-checkout-index -u -f -- "$file" &&
++	/usr/libexec/git-core/git-update-index --add --cacheinfo "$mode2" "$id2" "$file" &&
++		/usr/libexec/git-core/git-checkout-index -u -f -- "$file" &&
+ 		mv "$file" "$filev~${ways[2]}" ||
+ 		error "Cannot create '$filev~${ways[2]}'"
+ 	exit 1
+@@ -158,15 +158,15 @@
+ #
+ "$id0$id1$id2")
+ 	echo "... Auto-merging $file"
+-	orig=$(git-unpack-file $id0)
+-	src2=$(git-unpack-file $id2)
++	orig=$(/usr/libexec/git-core/git-unpack-file $id0)
++	src2=$(/usr/libexec/git-core/git-unpack-file $id2)
+ 	merged=$(mktemp .mergeresult-XXXXXX)
+ 
+ 	load_unescaped_sym_ways
+ 	# We reset the index to the first branch, making
+-	# git-diff-file useful
+-	git-update-index --add --cacheinfo "$mode1" "$id1" "$file"
+-		git-checkout-index -u -f -- "$file" &&
++	# /usr/libexec/git-core/git-diff-file useful
++	/usr/libexec/git-core/git-update-index --add --cacheinfo "$mode1" "$id1" "$file"
++		/usr/libexec/git-core/git-checkout-index -u -f -- "$file" &&
+ 		{ diff3 -m -E -L "${ways[1]}" -L "${ways[0]}" -L "${ways[2]}" "$file" "$orig" "$src2" >"$merged"; }
+ 	ret=$?
+ 	rm -f -- "$orig" "$src2"
+@@ -188,7 +188,7 @@
+ 		echo "    CONFLICTS during merge." >&2
+ 		exit 1
+ 	fi
+-	exec git-update-index -- "$file"
++	exec /usr/libexec/git-core/git-update-index -- "$file"
+ 	;;
+ 
+ *)
