@@ -48,8 +48,5 @@ def install():
     pisitools.removeDir("/usr/lib/perl5/%s" % get.curPERL())
     pisitools.removeDir("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi" % get.curPERL())
 
-    # Remove Error module not to conflict with perl-Error
-    pisitools.remove("/usr/lib/perl5/vendor_perl/%s/Error.pm" % get.curPERL())
-
     # Some docs
     pisitools.dodoc("README", "COPYING", "Documentation/SubmittingPatches")
