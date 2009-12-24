@@ -6,9 +6,6 @@
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import get
-
-WorkDir = "bootsplash-theme-%s" % get.srcVERSION()
 
 def install():
-    pisitools.insinto("/etc/bootsplash/themes/Pardus" , "*")
+    pisitools.insinto("/etc/bootsplash/themes/Pardus" , "Pardus/*")
