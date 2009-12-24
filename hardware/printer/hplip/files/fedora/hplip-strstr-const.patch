@@ -1,0 +1,41 @@
+Index: hplip-3.9.6/prnt/hpijs/dj3320.cpp
+===================================================================
+--- hplip-3.9.6.orig/prnt/hpijs/dj3320.cpp
++++ hplip-3.9.6/prnt/hpijs/dj3320.cpp
+@@ -405,7 +405,7 @@ DISPLAY_STATUS DJ3320::ParseError (BYTE 
+ {
+     DRIVER_ERROR err = NO_ERROR;
+     BYTE byDevIDBuffer[DevIDBuffSize];
+-    char *pcStr = NULL;
++    const char *pcStr = NULL;
+     BYTE byStatus1, byStatus2;
+ 
+     memset(byDevIDBuffer, 0, sizeof(byDevIDBuffer));
+Index: hplip-3.9.6/prnt/hpijs/registry.cpp
+===================================================================
+--- hplip-3.9.6.orig/prnt/hpijs/registry.cpp
++++ hplip-3.9.6/prnt/hpijs/registry.cpp
+@@ -290,7 +290,7 @@ DRIVER_ERROR DeviceRegistry::SelectDevic
+         err = pSS->GetDeviceID(DevIDBuffer, DevIDBuffSize, FALSE);
+         ERRCHECK;   // should be either NO_ERROR or BAD_DEVICE_ID
+ 
+-		char	*cmdStr = (char *) strstr ((const char *) DevIDBuffer+2, "CMD:");
++		const char	*cmdStr = (char *) strstr ((const char *) DevIDBuffer+2, "CMD:");
+         char    *cmdStrEnd;
+         if ((strstr((const char *) DevIDBuffer+2,"CMD:LDL")))
+         {
+@@ -311,10 +311,10 @@ DRIVER_ERROR DeviceRegistry::SelectDevic
+ 		{
+ 			cmdStr = (char *) strstr ((const char *) DevIDBuffer+2, "COMMAND SET:");
+ 		}
+-		if (!match && cmdStr && (strstr ((const char *) cmdStr+4, "POSTSCRIPT") || 
+-			                     strstr ((const char *) cmdStr+4, "PostScript") || 
+-					             strstr ((const char *) cmdStr+4, "Postscript") || 
+-					             strstr ((const char *) cmdStr+4, "postscript") ))
++		if (!match && cmdStr && (strstr (cmdStr+4, "POSTSCRIPT") || 
++			                     strstr (cmdStr+4, "PostScript") || 
++					             strstr (cmdStr+4, "Postscript") || 
++					             strstr (cmdStr+4, "postscript") ))
+ 		{
+ 			device = ePScript;
+ 			match = TRUE;
