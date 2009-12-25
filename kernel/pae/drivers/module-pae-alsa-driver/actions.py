@@ -30,25 +30,24 @@ def setup():
                          --with-card-options=all \
                          --disable-verbose-printk \
                          --with-cards=all" % KDIR)
+
+    # Needed for V4L stuff
+    shelltools.sym("%s/alsa-driver/include/config.h" % get.workDIR(), "%s/alsa-driver/sound/include/config.h" % get.workDIR())
+    shelltools.sym("%s/alsa-driver/include/config1.h" % get.workDIR(), "%s/alsa-driver/sound/include/config1.h" % get.workDIR())
+
 def build():
     autotools.make()
 
     # Build v4l drivers
-    # FIXME: Still buggy, oopses..
-    """
-    for d in ["saa7134", "cx88", "cx231xx", "em28xx"]:
-        shelltools.copy("Module.symvers", "v4l/%s" % d)
-        autotools.make("-C /lib/modules/%s/build M=%s/v4l/%s V=1 modules" % (KDIR, get.curDIR(), d))
-    """
+    shelltools.copy("Module.symvers", "v4l/")
+    autotools.make("-C /lib/modules/%s/build M=%s/v4l V=1 modules" % (KDIR, get.curDIR()))
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR(), "install-modules")
 
     # Install v4l drivers
-    """
     for d in ["saa7134", "cx88", "cx231xx", "em28xx"]:
         pisitools.insinto("/lib/modules/%s/kernel/sound/drivers" % KDIR, "v4l/%s/*.ko" % d)
-    """
 
     # Copy symvers file for external module building like saa7134-alsa, cx2388-alsa, etc.
     pisitools.insinto("/lib/modules/%s/kernel/sound" % KDIR, "Module.symvers", "Module.symvers.alsa")
