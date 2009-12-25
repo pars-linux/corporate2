@@ -6,18 +6,28 @@
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from pisi.actionsapi import kerneltools
+from pisi.actionsapi import shelltools
+from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import get
 
-WorkDir = "linux-2.6.30"
+WorkDir = "linux-2.6.31"
 NoStrip = ["/"]
 
 def setup():
     kerneltools.configure()
 
+    # Enable PAE and update kernel configuration
+    pisitools.dosed(".config", "CONFIG_HIGHMEM64G is not set", "CONFIG_HIGHMEM4G is not set")
+    pisitools.dosed(".config", "CONFIG_HIGHMEM4G=y", "CONFIG_HIGHMEM64G=y")
+    #kerneltools.updateKConfig()
+    shelltools.system('yes "" | make oldconfig')
+
 def build():
     kerneltools.build(debugSymbols=False)
 
 def install():
+    #kerneltools.install(installFirmwares=False)
     kerneltools.install()
 
     # Ugly hack to remove the firmwares
@@ -32,6 +42,5 @@ def install():
                                       "drivers/media/dvb/frontends",
                                       "drivers/media/video"])
 
-    # kerneltools.installSource()
-
+    # Clean module-init-tools related stuff
     kerneltools.cleanModuleFiles()
