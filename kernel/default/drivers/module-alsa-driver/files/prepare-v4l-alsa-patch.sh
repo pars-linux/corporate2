@@ -16,6 +16,22 @@ done
 
 cd v4l
 
+# Add toptree Makefile
+cat << EOF > Makefile
+#
+# All media drivers should use the internal ALSA headers
+#
+NOSTDINC_FLAGS                  += -I\$(src)/../sound/include
+NOSTDINC_FLAGS                  += -include config.h
+
+#include \$(src)/../.config
+
+EOF
+
+for driver in $DRIVERS; do
+    echo "obj-m += $driver/" >> Makefile
+done
+
 echo "Commenting external includes.."
 grep -rl "^#include.*tuner-xc.*$" * | xargs sed -i "s/^\(#include.*tuner-xc.*$\)/\/*\1*\//g"
 
