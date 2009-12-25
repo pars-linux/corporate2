@@ -11,13 +11,14 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-# WorkDir = "v4l-dvb-214c94aa62aa"
-WorkDir = "uvcvideo-214c94aa62aa"
+WorkDir = "uvcvideo-c57f47cfb0e8"
 KDIR = kerneltools.getKernelVersion()
 
+def setup():
+    pisitools.dosed("v4l/Makefile", "^v4l_modules.*lsmod.*$", "")
+
 def build():
-    # kerneltools.build("KERNELRELEASE=%s oldconfig" % KDIR)
-    autotools.make("KERNELRELEASE=%s" % KDIR)
+    autotools.make("VER=%s" % KDIR)
 
 def install():
     pisitools.insinto("/lib/modules/%s/extra" % KDIR, "v4l/*.ko")
