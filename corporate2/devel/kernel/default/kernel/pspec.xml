@@ -10,151 +10,40 @@
         </Packager>
         <License>GPLv2</License>
         <IsA>kernel</IsA>
+        <PartOf>kernel.default</PartOf>
         <Summary>The Linux kernel (the core of the Linux operating system) for Pardus Linux</Summary>
         <Description>kernel contains the Linux kernel, the core of any Linux operating system. The kernel handles the basic functions of the operating system: memory allocation, process allocation, device input and output, etc.</Description>
-        <Archive sha1sum="5fb7f2ccdc59c57887d586971a157bee7af324d1" type="tarbz2">http://www.kernel.org/pub/linux/kernel/v2.6/linux-2.6.30.tar.bz2</Archive>
+        <Archive sha1sum="c6e0e6b473ba2b80d164e37cfabf294e783c03d9" type="tarbz2">http://www.kernel.org/pub/linux/kernel/v2.6/linux-2.6.31.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>cpio</Dependency>
+            <Dependency>xmlto</Dependency>
             <Dependency>unifdef</Dependency>
+            <Dependency>asciidoc</Dependency>
             <Dependency>diffutils</Dependency>
             <Dependency>bootsplash</Dependency>
         </BuildDependencies>
         <Patches>
-            <!-- cfg80211 cmp_ies() NULL pointer dereference (#10918),
-                 uninit op in SOCKOPS_WRAP() leads to privilege escalation (CVE-2009-2692, #10908),
-                 clock_nanosleep() with CLOCK_MONOTONIC_RAW NULL pointer dereference (#10820),
-                 execve: must clear current->clear_child_tid (#10774),
-                 /proc/$pid/maps visible during initial setuid ELF loading (CVE-2009-2691) (#10875),
-                 flat: fix uninitialized pointer with shared libs (#10940),
-                 CVE-2009-1895, CVE-2009-1897, CVE-2009-2406, CVE-2009-2407 (Fixed by 2.6.30.4),
-                 Fix several getsockname() leaks in net subsystem (CVE-2009-3002) (#10122),
-                 Fix vulnerability in net llc sockaddr_llc struct (#11121, #11016) -->
-            <Patch level="1" compressionType="bz2">kernel/patch-2.6.30.9.bz2</Patch>
+            <Patch level="1" compressionType="bz2">kernel/patch-2.6.31.9.bz2</Patch>
 
-            <!-- A negative offset could be used to index before the event buffer and lead to a security breach. (#11573) -->
-            <Patch level="1">kernel/CVE-2009-3080-gdth_read_event-array-index.patch</Patch>
-
-            <!-- fuse: prevent fuse_put_request on invalid pointer (#11574) -->
-            <Patch level="1">kernel/prevent-fuse_put_request-on-invalid-pointer.patch</Patch>
-
-            <!-- nfs: nfs4_proc_lock() null pointer dereference (CVE-2009-3726) (#11522) -->
-            <Patch level="1">kernel/nfsv4-fix-a-problem-whereby-a-buggy-server-can-oops-the-kernel.patch</Patch>
-
-            <!-- ecryptfs: Fix NULL pointer dereference in ecryptfs (CVE-2009-2908) (#11282) -->
-            <Patch level="1">kernel/linux-2.6-fs-ecryptfs-prevent-lower-dentry-from-going-negative-CVE-2009-2908.patch</Patch>
-
-            <!-- x86: Don't leak 64-bit registers into 32-bit processes (#11265) -->
-            <Patch level="1">kernel/linux-2.6-x86-dont-leak-64bit-kernel-register-values-to-32bit-processes.patch</Patch>
-
-            <!-- appletalk: Fix skb leak when ipddp interface is not loaded (CVE-2009-2903) (#11164) -->
-            <Patch level="1">kernel/linux-2.6-appletalk-use-correct-NET_RX_-returns-for-atalk_rcv.patch</Patch>
-            <Patch level="1">kernel/linux-2.6-appletalk-fix-skb-leak-when-ipddp-interface-is-not-loaded.patch</Patch>
-
-            <!-- netlink: fix typo in initialization (CVE-2009-3612) -->
-            <Patch level="1">kernel/linux-2.6.git-ad61df918c44316940404891d5082c63e79c256a.patch</Patch>
-
-            <!-- tc: Fix uninitialized kernel memory leak (#11092) -->
-            <Patch level="1">kernel/linux-2.6-sched-tc-fix-leak.patch</Patch>
-
-            <!-- Remove low_latency flag setting from nozomi and mxser characters drivers -->
-            <Patch level="1">kernel/linux-2.6-drivers-char-low-latency-removal.patch</Patch>
+            <!-- Squashfs-lzma support -->
+            <Patch level="1">squashfs/linux-2.6-squashfs-constify-super_operations-struct.patch</Patch>
+            <Patch level="1">squashfs/squashfs-devel-add-lzma-support.patch</Patch>
 
             <!-- cfq: Fix serious performance regression -->
             <Patch level="1">kernel/linux-2.6-cfq-choose-new-next-req.patch</Patch>
 
-            <!-- cdc: Add more cdc_ether devices from linus-2.6 -->
-            <Patch level="1">kernel/linux-2.6-add-more-devices-to-cdc-ether-whitelist.patch</Patch>
+            <!-- atkbd: Consolidate multimedia keys into one table, add OQO keyboard quirk,
+                 add possibility to set forced release bitmaps through sysfs -->
+             <Patch level="1">kernel/linux-2.6-atkbd-forced-release-through-sysfs.patch</Patch>
+             <Patch level="1">kernel/linux-2.6-atkbd-oqo-forced-release-quirk.patch</Patch>
 
-            <!-- acpi: Add notifier chain for AC/DC connect/disconnect events -->
-            <Patch level="1">kernel/linux-acpi-2.6.git-68b92b567c0c5e6f4d0b264d438f97ee5ccbdccc.patch</Patch>
+            <!-- Several sched patches for CFQ to improve desktop performance -->
+            <Patch level="1">kernel/0051-sched-Turn-off-child_runs_first.patch</Patch>
+            <Patch level="1">kernel/0052-sched-Ensure-that-a-child-can-t-gain-time-over-it-s-.patch</Patch>
 
             <!-- Add TuxOnIce 3.0.1 support -->
-            <Patch level="1" compressionType="bz2">tuxonice/current-tuxonice-for-2.6.30.patch-20090620-v1.bz2</Patch>
-            <Patch level="1">tuxonice/move-freezer-h-include-for-userspace.patch</Patch>
+            <Patch level="1" compressionType="bz2">tuxonice/current-tuxonice-for-2.6.31.patch-20090911-v1.bz2</Patch>
 
-            <!-- OpenWRT Squashfs-lzma patches -->
-            <!-- Disable those for now
-            <Patch level="1">openwrt/051-squashfs_pcomp.patch</Patch>
-            <Patch level="1">openwrt/052-pcomp_lzma_support.patch</Patch>
-            <Patch level="1">openwrt/053-squashfs_lzma.patch</Patch>
-            -->
-
-            <!-- Mark e_powersaver as EXPERIMENTAL and DANGEROUS, enable acpi-cpufreq for
-                 VIA Centaur family -->
-            <Patch level="1">kernel/acpi-cpufreq-mark-e_powersaver-as-experimental.patch</Patch>
-            <Patch level="1">kernel/enable-acpi-cpufreq-for-VIA-Centaur.patch</Patch>
-
-            <!-- bnx2*: Fix link state before bringing up interface (2.6.31) -->
-            <Patch level="1">kernel/0001-bnx2x-Fix-the-behavior-of-ethtool-when-ONBOOT-no.patch</Patch>
-            <Patch level="1">kernel/0002-bnx2-Fix-the-behavior-of-ethtool-when-ONBOOT-no.patch</Patch>
-
-            <!-- Various new driver IDs, quirk fixes for input, usb-serial, network etc. from 2.6.31 -->
-
-            <!-- Fix reboot on MacBook5,2, MacBookPro5,1, SBC-fitPC2 -->
-            <Patch level="1">kernel/0005-x86-Add-reboot-fixup-for-SBC-fitPC2.patch</Patch>
-            <Patch level="1">kernel/0006-x86-Add-quirk-to-make-Apple-MacBook5-2-use-reboot-pc.patch</Patch>
-            <Patch level="1">kernel/0007-x86-Add-quirk-to-make-Apple-MacBookPro5-1-use-reboot.patch</Patch>
-
-            <!-- acerhdf: New driver for Acer Aspire One and Packard Bell fan control -->
-            <Patch level="1">kernel/0008-acerhdf-Acer-Aspire-One-fan-control.patch</Patch>
-
-            <!-- acerhdf: Fix fan control for A0A150 model -->
-            <Patch level="1">kernel/0048-acerhdf-fix-fan-control-for-A0A150-model.patch</Patch>
-
-            <!-- drivers/platform fixes -->
-            <Patch level="1">kernel/0009-hp-wmi-Add-support-for-reporting-tablet-state.patch</Patch>
-            <Patch level="1">kernel/0010-eeepc-laptop-enable-camera-by-default.patch</Patch>
-
-            <!-- usb-serial: Various new IDs, zero-cd quirks, etc -->
-            <Patch level="1">kernel/0011-USB-FTDI-SIO-new-device-ids.patch</Patch>
-            <Patch level="1">kernel/0012-USB-option.c-add-Toshiba-3G-HSDPA-SM-Bus-Minicard-de.patch</Patch>
-            <Patch level="1">kernel/0013-USB-Ignore-storage-device-in-modem-mode-on-DWN-652.patch</Patch>
-            <Patch level="1">kernel/0014-USB-Identify-Novatel-MC760-in-option-driver.patch</Patch>
-            <Patch level="1">kernel/0015-USB-option.c-add-Qualcomm-Option-iCON-210-modem.patch</Patch>
-            <Patch level="1">kernel/0016-USB-option.c-to-support-Qisda-H21-H20-usb-modem.patch</Patch>
-            <Patch level="1">kernel/0017-USB-option-add-Novatel-Ovation-MC760.patch</Patch>
-            <Patch level="1">kernel/0018-USB-option.c-add-A-Link-3GU-device-id.patch</Patch>
-            <Patch level="1">kernel/0019-USB-serial-Add-ID-for-Turtelizer-an-FT2232L-based-JT.patch</Patch>
-            <Patch level="1">kernel/0020-USB-ftdi_sio-Add-support-for-GN-Otometrics-Aurical-U.patch</Patch>
-            <Patch level="1">kernel/0021-USB-option-add-ZTE-device-ids-and-remove-ONDA-ids.patch</Patch>
-            <Patch level="1">kernel/0022-USB-option-Add-USB-ID-for-Novatel-MC727-U727-USB727-.patch</Patch>
-            <Patch level="1">kernel/0023-USB-serial-option-Add-ZTE-AC8710-usb-modem-device.patch</Patch>
-            <Patch level="1">kernel/0024-USB-option.c-to-support-Alcatel-X060S-X200-broadband.patch</Patch>
-
-            <!-- sis190: Add support for ASUS F5Sr network phy -->
-            <Patch level="1">kernel/0027-sis190-add-new-phy-found-on-asus-F5Sr-laptop.patch</Patch>
-
-            <!-- New network device IDs -->
-            <Patch level="1">kernel/0029-mlx4_core-Add-new-ConnectX-EN-PCI-ID-0x6764.patch</Patch>
-            <Patch level="1">kernel/0030-New-device-ID-for-sc92031-1088-2031.patch</Patch>
-
-            <!-- input: Dell Latitude D630 and D800 have DualPoint -->
-            <Patch level="1">kernel/0036-Input-ALPS-Dell-Latitude-D630-D800-have-DualPoint.patch</Patch>
-
-            <!-- input: Add Intuos4 support for wacom -->
-            <Patch level="1">kernel/0037-Input-wacom-add-support-for-Intuos4-tablets.patch</Patch>
-            <Patch level="1">kernel/0039-Input-wacom-clear-Intuos4-wheel-data-when-finger-lea.patch</Patch>
-            <Patch level="1">kernel/0043-Input-wacom-add-DTF720a-support-and-fix-rotation-on-.patch</Patch>
-
-            <!-- input: various atkbd and i8042 quirks along with an OLPC fix and rfkill keyevent for Prestigio -->
-            <Patch level="1">kernel/0038-Input-psmouse-ESD-workaround-fix-for-OLPC-XO-touchpa.patch</Patch>
-            <Patch level="1">kernel/0040-Input-appletouch-improve-finger-detection.patch</Patch>
-            <Patch level="1">kernel/0041-Input-ALPS-handle-touchpoints-buttons-correctly.patch</Patch>
-            <Patch level="1">kernel/0042-Input-i8042-more-reset-quirks-for-MSI-Wind-clone-net.patch</Patch>
-            <Patch level="1">kernel/0044-Input-atkbd-add-forced-release-keys-quirk-for-FSC-Am.patch</Patch>
-            <Patch level="1">kernel/0045-Input-atkbd-add-force-relese-key-quirk-for-Soltech-T.patch</Patch>
-            <Patch level="1">kernel/0046-Input-i8042-add-Asus-G1S-to-noloop-exception-list.patch</Patch>
-            <Patch level="1">kernel/0047-Input-wistron_btns-support-Prestigio-Wifi-RF-kill-bu.patch</Patch>
-
-            <!-- mmc: Add new drivers from linus-2.6 git tree -->
-            <Patch level="1">kernel/mmc/0001-mmc-Driver-for-CB710-720-memory-card-reader-MMC-part.patch</Patch>
-            <Patch level="1">kernel/mmc/0002-cb710-add-missing-parenthesis.patch</Patch>
-            <Patch level="1">kernel/mmc/0003-cb710-handle-DEBUG-define-in-Makefile.patch</Patch>
-            <Patch level="1">kernel/mmc/0004-cb710-more-cleanup-for-the-DEBUG-case.patch</Patch>
-            <Patch level="1">kernel/mmc/0005-cb710-fix-printk-format-string.patch</Patch>
-
-            <!-- Driver core: add new device to bus's list before probing -->
-            <Patch level="1">kernel/driver-core-add-new-device-to-bus-s-list-before-probing.patch</Patch>
 
             <!-- Moblin patches -->
 
@@ -171,55 +60,84 @@
 
             <!-- Subset of Fedora Kernel Patches -->
 
-            <!-- fs: pipe.c null pointer dereference (CVE-2009-3547) (#11526)  -->
-            <Patch level="1">fedora/fs-pipe-null-ptr-deref-fix.patch</Patch>
+            <!-- ath9k: ath9k: add fixes suggested by upstream maintainer -->
+            <Patch level="1">fedora/linux-2.6-ath9k-fixes.patch</Patch>
 
-            <!-- KEYS: get_instantiation_keyring() should inc the keyring refcount in all cases (CVE-2009-3624) (#11426) -->
-            <Patch level="1">fedora/keys-get_instantiation_keyring-should-inc-the-keyring-refcount.patch</Patch>
+            <!-- Several IOMMU fixes -->
 
-            <!-- AF_UNIX: Fix deadlock on connecting to shutdown socket (Local DoS by non-root users) -->
-            <Patch level="1">fedora/af_unix-fix-deadlock-connecting-to-shutdown-socket.patch</Patch>
+            <!-- Work around BIOS bugs by quiescing USB controllers earlier -->
+            <Patch level="1">fedora/linux-2.6-die-closed-source-bios-muppets-die.patch</Patch>
 
-            <!-- Several sched patches for CFQ to improve desktop performance -->
-            <Patch level="1">fedora/sched-deal-with-low-load-in-wake-affine.patch</Patch>
-            <Patch level="1">fedora/sched-ensure-child-cant-gain-time-over-its-parent-after-fork.patch</Patch>
-            <Patch level="1">fedora/sched-remove-shortcut-from-select-task-rq-fair.patch</Patch>
-            <Patch level="1">fedora/sched-retune-scheduler-latency-defaults.patch</Patch>
+            <!-- Some performance fixes, unify hw/sw passthrough support, and most importantly notice when
+            the BIOS points us to a region that returns all 0xFF and claims that there's an IOMMU there -->
+            <Patch level="1">fedora/linux-2.6-intel-iommu-updates.patch</Patch>
+            <Patch level="1">fedora/linux-2.6-iommu-at-zero.patch</Patch>
+            <Patch level="1">fedora/linux-2.6-iommu-dmar-all-1s.patch</Patch>
+            <Patch level="1">fedora/linux-2.6-iommu-another-hp-screwup.patch</Patch>
+            <Patch level="1">fedora/linux-2.6-iommu-sanity-checks-for-intr-remap-too.patch</Patch>
+            <Patch level="1">fedora/linux-2.6-iommu-hp-cantiga-resume.patch</Patch>
+
+            <!-- ACPI fixes form 2.6.32 -->
+            <Patch level="1">fedora/acpi-ec-merge-irq-and-poll-modes.patch</Patch>
+            <Patch level="1">fedora/acpi-ec-restart-command-even-if-no-interrupts-from-ec.patch</Patch>
+            <Patch level="1">fedora/acpi-ec-use-burst-mode-only-for-msi-notebooks.patch</Patch>
+
+            <!-- i8042: bypass AUX IRQ delivery test on laptops -->
+            <Patch level="1">fedora/input-i8042-bypass-aux-irq-delivery-test-on-laptops.patch</Patch>
+
+            <!-- i8042: try disabling and reenabling aux port at close -->
+            <Patch level="1">fedora/input-i8042-try-disabling-and-re-enabling-aux-port-at-close.patch</Patch>
+
+            <!-- sched: Update the clock of runqueue select_task_rq() selected -->
             <Patch level="1">fedora/sched-update-the-clock-of-runqueue-select-task-rq-selected.patch</Patch>
 
-            <!-- forcedeth: Fix race condition -->
-            <Patch level="1">fedora/forcedeth-fix-napi-race.patch</Patch>
-            <Patch level="1">fedora/tcp-fix-config_tcp_md5sig-config_preempt-timer-bug.patch</Patch>
+            <!-- sched: Re-tune the scheduler latency defaults to decrease worst-case latencies -->
+            <Patch level="1">fedora/sched-retune-scheduler-latency-defaults.patch</Patch>
 
-            <!-- ax25: Security fix (CVE-2009-2909) -->
-            <!-- forcedeth: Fix race condition -->
-            <!-- libata: Fix a drive detection problem -->
-            <!-- Several networking fixes from 2.6.31 stable -->
-            <!-- ACPI: Several upstream ACPI EC fixes from 2.6.32 -->
-            <!-- ACPI: Revert "attach device to handle early.." to fix boot hang on some systems -->
-            <Patch level="1">fedora/ax25-fix-possible-oops-in-ax25_make_new.patch</Patch>
+            <!-- sched: Remove shortcut from select_task_rq_fair() -->
+            <Patch level="1">fedora/sched-remove-shortcut-from-select-task-rq-fair.patch</Patch>
 
-            <!-- libata: Fix a drive detection problem -->
-            <Patch level="1">fedora/libata-fix-incorrect-link-online-check-during-probe.patch</Patch>
+            <!-- sched: Deal with low-load in wake_affine() -->
+            <Patch level="1">fedora/sched-deal-with-low-load-in-wake-affine.patch</Patch>
 
-            <!-- Several networking fixes from 2.6.31 stable -->
-            <Patch level="1">fedora/net-fix-wrong-sizeof.patch</Patch>
-            <Patch level="1">fedora/net-unix-fix-sending-fds-in-multiple-buffers.patch</Patch>
-            <Patch level="1">fedora/sit-fix-off-by-one-in-ipip6_tunnel_get_prl.patch</Patch>
-            <Patch level="1">fedora/smsc95xx-fix-transmission-where-zlp-is-expected.patch</Patch>
-            <Patch level="1">fedora/sky2-set-sky2_hw_ram_buffer-in-sky2_init.patch</Patch>
-            <Patch level="1">fedora/x86-fix-csum_ipv6_magic-asm-memory-clobber.patch</Patch>
+            <!-- Add TG3 driver patches to fix large size transfer stalls -->
+            <Patch level="1">fedora/tg3-01-delay-mdio-bus-init-until-fw-finishes.patch</Patch>
+            <Patch level="1">fedora/tg3-02-fix-tso-test-against-wrong-flags-var.patch</Patch>
+            <Patch level="1">fedora/tg3-03-fix-57780-asic-rev-pcie-link-receiver-errors.patch</Patch>
+            <Patch level="1">fedora/tg3-04-prevent-tx-bd-corruption.patch</Patch>
+            <Patch level="1">fedora/tg3-05-assign-flags-to-fixes-in-start_xmit_dma_bug.patch</Patch>
+            <Patch level="1">fedora/tg3-06-fix-5906-transmit-hangs.patch</Patch>
 
-            <!-- ACPI: Several upstream ACPI EC fixes from 2.6.32 -->
-            <Patch level="1">fedora/acpi-ec-merge-irq-and-poll-modes.patch</Patch>
-            <Patch level="1">fedora/acpi-ec-use-burst-mode-only-for-msi-notebooks.patch</Patch>
-            <Patch level="1">fedora/acpi-ec-restart-command-even-if-no-interrupts-from-ec.patch</Patch>
+            <!-- Disable prism54 in favor of p54pci -->
+            <Patch level="1">fedora/prism54-remove-pci-dev-table.patch</Patch>
 
-            <!-- ACPI: Revert "attach device to handle early.." to fix boot hang on some systems -->
-            <Patch level="1">fedora/acpi-revert-attach-device-to-handle-early.patch</Patch>
+            <!-- bluetooth: Add USB autosuspend support for btusb driver (disable for now) -->
+            <!--<Patch level="1">fedora/linux-2.6-bluetooth-autosuspend.diff</Patch>-->
 
-            <!-- toshiba_acpi: Get away from having to poll Toshibas -->
-            <Patch level="1">fedora/linux-2.6-input-fix-toshiba-hotkeys.patch</Patch>
+            <!-- memcg: Improve resource counter scalability -->
+            <Patch level="1">fedora/improve-resource-counter-scalability.patch</Patch>
+
+            <!-- virtio_blk: add support for cache flush -->
+            <Patch level="1">fedora/linux-2.6-virtio_blk-add-support-for-cache-flush.patch</Patch>
+
+            <!-- cpuidle: Fix the menu governor to boost IO performance -->
+            <Patch level="1">fedora/linux-2.6.31-cpuidle-faster-io.patch</Patch>
+
+            <!-- nfs: Fixed hang during NFS installs -->
+            <Patch level="1">fedora/linux-2.6-nfs4-callback-hidden.patch</Patch>
+
+            <!-- nfs: NFSD v4 dynamic pseudo root patch which allows NFS v3 exports to be mounted
+                 by v4 clients -->
+            <Patch level="1">fedora/linux-2.6.31-nfsd-proot.patch</Patch>
+
+            <!-- toshiba_acpi: Get away from having to poll Toshibas (Not applicable for now)
+            <Patch level="1">fedora/linux-2.6-input-fix-toshiba-hotkeys.patch</Patch>-->
+
+            <!-- input: Support for keys that toggle all rfkill state -->
+            <Patch level="1">fedora/linux-2.6-rfkill-all.patch</Patch>
+
+            <!-- sched: Introduce SCHED_RESET_ON_FORK flag -->
+            <Patch level="1">fedora/sched-introduce-SCHED_RESET_ON_FORK-scheduling-policy-flag.patch</Patch>
 
             <!-- Use UTF-8 by default on VFAT -->
             <Patch level="1">fedora/linux-2.6-defaults-fat-utf8.patch</Patch>
@@ -240,48 +158,31 @@
             <Patch level="1">fedora/linux-2.6-ata-quirk.patch</Patch>
             <Patch level="1">fedora/linux-2.6-e1000-ich9.patch</Patch>
 
-            <!-- Add VIA MMC driver (Post 2.6.30) -->
-            <Patch level="1">fedora/via-sdmmc.patch</Patch>
-
-            <!-- Fix port= option in CIFS (Post 2.6.30) -->
-            <Patch level="1">fedora/linux-2.6-fs-cifs-fix-port-numbers.patch</Patch>
-
-            <!-- Fix inaccurate delay calculation with tsc (Post 2.6.30) -->
-            <Patch level="1">fedora/linux-2.6-x86-delay-tsc-barrier.patch</Patch>
-
-            <!-- zd1211rw: Adding 083a:e503 as a ZD1211B device -->
-            <Patch level="1">fedora/linux-2.6-zd1211rw_-adding-083a_e503-as-a-ZD1211B-device.patch</Patch>
-
             <!-- cx25840: Fix CX23885 and CX241XX caused ivtv regression -->
             <Patch level="1">fedora/v4l-dvb-fix-cx25840-firmware-load.patch</Patch>
 
-            <!-- xen: Rearrange things to fix stack protector -->
-            <Patch level="1">fedora/linux-2.6-xen-rearrange-to-fix-stackprotector.patch</Patch>
-
-            <!-- af9015: Fix stack corruption bug -->
-            <Patch level="1">fedora/linux-2.6-v4l-dvb-af9015-fix-stack-corruption.patch</Patch>
-
-            <!-- x86: Make sure load_percpu has no stackprotector -->
-            <Patch level="1">fedora/linux-2.6-x86-load-percpu-segment-no-stackprotector.patch</Patch>
+            <!-- Add LIRC support -->
+            <Patch level="1">fedora/lirc-2.6.31.patch</Patch>
 
             <!-- hdpvr: Enable IR -->
             <Patch level="1">fedora/hdpvr-ir-enable.patch</Patch>
 
-            <!-- Several security improvements for mmap stuff (#11120) -->
-            <Patch level="1">fedora/make-mmap_min_addr-suck-less.patch</Patch>
+            <!-- libata: Export AHCI capabilities through sysfs -->
+            <Patch level="1">fedora/linux-2.6-ahci-export-capabilities.patch</Patch>
 
 
             <!-- DRM patches -->
-            <Patch level="1" compressionType="bz2">drm/drm-next.patch.bz2</Patch>
 
-            <Patch level="1">drm/intel/0001-agp-intel-Fix-the-pre-9xx-chipset-flush.patch</Patch>
-            <Patch level="1">drm/intel/0002-drm-i915-Only-destroy-a-constructed-mmap-offset.patch</Patch>
-            <Patch level="1">drm/intel/0003-drm-i915-fix-mask-bits-setting.patch</Patch>
-            <Patch level="1">drm/intel/0004-i915-disable-interrupts-before-tearing-down-GEM-stat.patch</Patch>
-
-            <Patch level="1">drm/fedora/drm-i915-resume-force-mode.patch</Patch>
-            <Patch level="1">drm/fedora/drm-intel-big-hammer.patch</Patch>
+            <Patch level="1">drm/fedora/drm-next-b390f944.patch</Patch>
+            <Patch level="1">drm/fedora/drm-edid-9340d8cf.patch</Patch>
             <Patch level="1">drm/fedora/drm-nouveau.patch</Patch>
+            <Patch level="1">drm/fedora/drm-i915-resume-force-mode.patch</Patch>
+            <Patch level="1">drm/fedora/drm-intel-no-tv-hotplug.patch</Patch>
+            <Patch level="1">drm/fedora/drm-radeon-misc-fixes.patch</Patch>
+
+            <Patch level="1">drm/fedora/linux-2.6-vga-arb.patch</Patch>
+            <Patch level="1">drm/fedora/drm-vga-arb.patch</Patch>
+            <Patch level="1">drm/fedora/drm-radeon-kms-arbiter-return-ignore.patch</Patch>
 
 
             <!-- Subset of Ubuntu Kernel Patches -->
@@ -302,23 +203,40 @@
             <Patch level="1">ubuntu/0005-UBUNTU-SAUCE-Correctly-blacklist-Thinkpad-r40e-in-AC.patch</Patch>
             <Patch level="1">ubuntu/0006-UBUNTU-SAUCE-ipw2200-Enable-LED-by-default.patch</Patch>
 
+            <!-- Add Apparmor support (Disable for now) -->
+            <!--
+            <Patch level="1">ubuntu/apparmor/apparmor.diff</Patch>
+            <Patch level="1">ubuntu/apparmor/security-default-lsm.diff</Patch>
+            -->
 
             <!-- Subset of OpenSuSE Kernel Patches -->
+
+            <!-- Eventhough we don't build legacy IDE drivers, prefer libata over them -->
+            <Patch level="1">suse/libata-prefer-over-ide.patch</Patch>
+
+            <!-- Add ELO touchpad driver -->
+            <Patch level="1">suse/elousb.patch</Patch>
+
+            <!-- Explain OOM warning better -->
+            <Patch level="1">suse/explain-oom-warning.patch</Patch>
+
+            <!-- Input: Add Acer ASpire 5710 to nomux quirk table -->
+            <Patch level="1">suse/input-add-acer-aspire-5710-to-nomux.patch</Patch>
+
+            <!-- x86: APIC force bigsmp apic on some IBM and DELL stations -->
+            <Patch level="1">suse/x86-apic-force-bigsmp-apic-on-IBM-EXA3-4.patch</Patch>
 
             <!-- Module use count must be updated as bridges are created/destroyed -->
             <Patch level="1">suse/bridge-module-get-put.patch</Patch>
 
-            <!-- FIXME: Make tsc disabling optional -->
-            <!-- <Patch level="1">suse/seccomp-disable-tsc-option.patch</Patch>-->
+            <!-- Make tsc disabling optional -->
+            <Patch level="1">suse/seccomp-disable-tsc-option.patch</Patch>
 
             <!-- Enable apm=power_off on uniprocessors (Fixes #4519) -->
             <Patch level="1">suse/apm_setup_UP.patch</Patch>
 
             <!-- Don't force select AES in wireless -->
             <Patch level="1">suse/wireless-no-aes-select.patch</Patch>
-
-            <!-- Ext2 should force the FS readonly for metadata write errors -->
-            <Patch level="1">suse/ext2-fsync-err.patch</Patch>
 
             <!-- Make ext3 mount default to barrier=1 -->
             <Patch level="1">suse/ext3-barrier-default.patch</Patch>
@@ -327,10 +245,12 @@
             <Patch level="1">suse/usb-storage-disable-delay.patch</Patch>
 
             <!-- NFS4ACL for ext3 -->
-            <!--
             <Patch level="1">suse/parser-match_string.patch</Patch>
-            <Patch level="1">suse/nfs4acl-ext3.patch</Patch>
-            -->
+            <Patch level="1">suse/fs-may_iops.diff</Patch>
+            <Patch level="1">suse/fs-knows-MAY_APPEND.diff</Patch>
+            <Patch level="1">suse/nfs4acl-common.diff</Patch>
+            <Patch level="1">suse/nfs4acl-ext3.diff</Patch>
+            <Patch level="1">suse/nfs4acl-ai.diff</Patch>
 
             <!-- Bootsplash for current kernel -->
             <Patch level="1">suse/bootsplash.patch</Patch>
@@ -353,8 +273,13 @@
             <!-- Patch acerhk driver into the kernel -->
             <Patch>pardus/linux-2.6-add-acerhk-driver.patch</Patch>
 
+            <!-- Add RF kill switch drivers for Fujitsu Amilo M7400 and M7440
+                 http://fsam7440.sourceforge.net
+                 http://www.zwobble.de -->
+            <Patch level="1">pardus/linux-2.6-add-fujitsu-amilo-74xx-rfkill-drivers.patch</Patch>
+
             <!-- Patch acx100 driver into the kernel -->
-            <Patch>pardus/linux-2.6-add-acx-driver.patch</Patch>
+            <!--<Patch>pardus/linux-2.6-add-acx-driver.patch</Patch>-->
 
             <!-- Use buildfarm.pardus.org.tr and pardus for /proc/version -->
             <Patch level="1">pardus/buildhost.patch</Patch>
@@ -371,7 +296,8 @@
             <Patch level="1">pardus/vesa_fallback_on_fail.patch</Patch>
 
             <!-- AuFS-2 patch -->
-            <Patch level="1">aufs/aufs2-29-20090408.patch</Patch>
+            <Patch level="1">aufs/aufs2-31-20091003.patch</Patch>
+
 
             <!-- Kernel configuration patches -->
 
@@ -383,24 +309,11 @@
     <Package>
         <Name>kernel</Name>
         <RuntimeDependencies>
-            <Dependency releaseFrom="15">module-init-tools</Dependency>
-            <Dependency releaseFrom="54">mkinitramfs</Dependency>
+            <Dependency>module-init-tools</Dependency>
+            <Dependency>mkinitramfs</Dependency>
         </RuntimeDependencies>
         <Replaces>
-            <Package>sdricoh_cs</Package>
-            <Package>rt2860sta</Package>
-            <Package>lmpcm_usb</Package>
-            <Package>rt2870sta</Package>
-            <Package>rtl8187se</Package>
-            <Package>sn9c1xx</Package>
-            <Package>acx100</Package>
-            <Package>comedi</Package>
-            <Package>acerhk</Package>
-            <Package>et131x</Package>
-            <Package>ov511</Package>
-            <Package>atl1e</Package>
-            <Package>atl2</Package>
-            <Package>pwc</Package>
+            <Package>module-lirc</Package>
         </Replaces>
         <Files>
             <Path fileType="executable" permanent="true">/boot</Path>
@@ -435,9 +348,6 @@
         <PartOf>system.devel</PartOf>
         <Summary>Header files for the Linux kernel for use by glibc</Summary>
         <Description>kernel-headers includes the C header files that specify the interface between the Linux kernel and userspace libraries and programs. The header files define structures and constants that are needed for building most standard programs and are also needed for rebuilding the glibc package.</Description>
-        <Conflicts>
-            <Package releaseTo="20">libdrm</Package>
-        </Conflicts>
         <Files>
             <Path fileType="header">/usr/include</Path>
         </Files>
@@ -447,12 +357,19 @@
         <Name>kernel-doc</Name>
         <Summary>Documentation and scripts for the Linux kernel</Summary>
         <Description>kernel-doc includes several documentation files and scripts for managing several debugging and other tasks.</Description>
-        <Conflicts>
-            <Package releaseTo="122">kernel-source</Package>
-        </Conflicts>
         <Files>
             <Path fileType="header">/usr/src/linux-source*/Documentation</Path>
             <Path fileType="header">/usr/src/linux-source*/scripts</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>perf</Name>
+        <Summary>Performance analyser tool that makes full use of the Linux performance counter subsystem</Summary>
+        <Description>perf is a new tool which is used to optimize, validate and measure applications, workloads or the full system through the Linux performance counter subsystem.</Description>
+        <Files>
+            <Path fileType="executable">/usr/bin/perf*</Path>
+            <Path fileType="man">/usr/share/man/man1/perf*</Path>
         </Files>
     </Package>
 
@@ -466,9 +383,51 @@
     </Package>
 
     <History>
+        <Update release="129">
+            <Date>2009-12-19</Date>
+            <Version>2.6.31.9</Version>
+            <Comment>
+                - Version bump to 2.6.31.9,
+                - Drop mainlined patches,
+                - Sync'ed aufs with the latest branch,
+                - Add Apparmor back again but don't disable it,
+                - Add lirc drivers,
+                - Add several Suse and Fedora patches,
+                - bluetooth: Add USB autosuspend support (disabled),
+                - memcg: Improve resource counter scalability,
+                - pci: Increase alignment to make more space for hidden code,
+                - virtio_blk: Add support for cache flush,
+                - cpuidle: Fix the menu governor to boost IO performance,
+                - Revert "Attach the ACPI device to the ACPI handle as early as possible",
+                - ahci: Disable 64-bit DMA on SB600 SATA controllers,
+                - nfs: Fixed hang during NFS installs,
+                - nfs: NFSD v4 dynamic pseudo root patch which allows NFSv3 exports to be mounted by v4 clients,
+                - acpi: Fix boot hang with ACPI on some systems,
+                - netlink: Fix typo in initialization (CVE-2009-3612),
+                - security: connector security bypass: capabilities check (CVE-2009-3725, #11521)
+                - security: nfsv4: null pointer dereference (CVE-2009-3726, #11522)
+                - Disable prism54 in favor of p54pci,
+                - Disable rt2800usb in favor of staging/rt2870sta,
+                - Add TG3 network driver fixes,
+                - sched: Update the clock of runqueue select_task_rq() selected,
+                - i8142: Bypass aux loop tests on laptops,
+                - Grab atkbd fixes from upstream,
+                - ath9k: add upstream fixes,
+                - Add several IOMMU fixes from upstream,
+                - Add ACPI fixes from 2.6.32,
+                - squashfs: Add lzma patches from squashfs-devel git,
+                - Add two kill switch drivers for Fujitsu Amilo M7400 and M7440 (#11571),
+                - drm: Update Fedora patches.
+            </Comment>
+            <Requires>
+                <Action>reverseDependencyUpdate</Action>
+            </Requires>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="128" type="security">
-            <Date>2009-11-10</Date>
-            <Version>2.6.30.9</Version>
+            <Date>2009-10-15</Date>
+            <Version>2.6.31.6</Version>
             <Comment>
                 - Version bump to 2.6.30.9,
                 - x86: Don't leak 64-bit registers into 32-bit processes (#11265),
@@ -476,20 +435,16 @@
                 - ecryptfs: Fix NULL pointer dereference (CVE-2009-2908) (#11282),
                 - netlink: fix typo in initialization (CVE-2009-3612),
                 - ax25: Security fix (CVE-2009-2909),
+                - keys: get_instantiation_keyring() should inc the keyring refcount in all cases (CVE-2009-3624) (#11426),
+                - af_unix: Fix deadlock on connecting to shutdown socket,
                 - forcedeth: Fix race condition,
                 - libata: Fix a drive detection problem,
                 - Several networking fixes from 2.6.31 stable,
                 - ACPI: Add notifier chain for AC/DC connect/disconnect events,
                 - ACPI: Several upstream ACPI EC fixes from 2.6.32,
                 - ACPI: Revert "attach device to handle early.." to fix boot hang on some systems.
-                - drm: Sync with latest drm-next tree,
+                - drm: Sync with latest drm-next tree.
                 - drm/nouveau: more vbios opcodes, minor fixes, hopeful fix for hangs on nVidia 7800GT.
-                - security: keys: get_instantiation_keyring() should inc the keyring refcount in all cases (CVE-2009-3624) (#11426),
-                - security: af_unix: Fix deadlock on connecting to shutdown socket,
-                - security: fs: pipe.c: null pointer dereference (CVE-2009-3547) (#11526),
-                - security: fs: nfs: nfs4_proc_lock() null pointer dereference (CVE-2009-3726) (#11522),
-                - security: fs: fuse: prevent fuse_put_request on invalid pointer (#11574)
-                - security: scsi: prevent negative offset in ioctl (CVE-2009-3080) (#11573)
             </Comment>
             <Requires>
                 <Action>reverseDependencyUpdate</Action>
@@ -520,7 +475,7 @@
                 - hdpvr: Enable IR,
                 - sched: Add several patches for improving desktop latencies (disabled for now).
                 - drm: Sync with latest drm-next tree.
-                - drm/nouveau: Update Fedora patch and fix random lockups caused by null pointer dereference in CFQ.
+                - drm/nouveau: Sync with upstream tree.
             </Comment>
             <Requires>
                 <Action>reverseDependencyUpdate</Action>

@@ -1,21 +1,23 @@
-diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index e0f346d..9e70467 100644
---- a/Documentation/kernel-parameters.txt
-+++ b/Documentation/kernel-parameters.txt
-@@ -1623,6 +1623,9 @@ and is between 256 and 4096 characters. It is defined in the file
- 				root domains (aka PCI segments, in ACPI-speak).
- 		nommconf	[X86-32,X86_64] Disable use of MMCONFIG for PCI
- 				Configuration
+Index: linux-2.6.31/Documentation/kernel-parameters.txt
+===================================================================
+--- linux-2.6.31.orig/Documentation/kernel-parameters.txt
++++ linux-2.6.31/Documentation/kernel-parameters.txt
+@@ -1807,7 +1807,10 @@ and is between 256 and 4096 characters. 
+ 		check_enable_amd_mmconf [X86] check for and enable
+ 				properly configured MMIO access to PCI
+ 				config space on AMD family 10h CPU
+-		nomsi		[MSI] If the PCI_MSI kernel config parameter is
 +		msi		[MSI] If the PCI_MSI kernel config parameter is
 +				enabled, this kernel boot option can be used to
 +				enable the use of MSI interrupts system-wide.
- 		nomsi		[MSI] If the PCI_MSI kernel config parameter is
++		nomsi	[MSI] If the PCI_MSI kernel config parameter is
  				enabled, this kernel boot option can be used to
  				disable the use of MSI interrupts system-wide.
-diff --git a/drivers/pci/msi.c b/drivers/pci/msi.c
-index 74801f7..ffcf464 100644
---- a/drivers/pci/msi.c
-+++ b/drivers/pci/msi.c
+ 		noioapicquirk	[APIC] Disable all boot interrupt quirks.
+Index: linux-2.6.31/drivers/pci/msi.c
+===================================================================
+--- linux-2.6.31.orig/drivers/pci/msi.c
++++ linux-2.6.31/drivers/pci/msi.c
 @@ -23,7 +23,7 @@
  #include "pci.h"
  #include "msi.h"
@@ -25,7 +27,7 @@ index 74801f7..ffcf464 100644
  
  /* Arch hooks */
  
-@@ -788,6 +788,11 @@ int pci_msi_enabled(void)
+@@ -823,6 +823,11 @@ int pci_msi_enabled(void)
  }
  EXPORT_SYMBOL(pci_msi_enabled);
  
@@ -37,11 +39,11 @@ index 74801f7..ffcf464 100644
  void pci_msi_init_pci_dev(struct pci_dev *dev)
  {
  	INIT_LIST_HEAD(&dev->msi_list);
-diff --git a/drivers/pci/pci.c b/drivers/pci/pci.c
-index 061d1ee..883e572 100644
---- a/drivers/pci/pci.c
-+++ b/drivers/pci/pci.c
-@@ -2051,6 +2051,8 @@ static int __init pci_setup(char *str)
+Index: linux-2.6.31/drivers/pci/pci.c
+===================================================================
+--- linux-2.6.31.orig/drivers/pci/pci.c
++++ linux-2.6.31/drivers/pci/pci.c
+@@ -2659,6 +2659,8 @@ static int __init pci_setup(char *str)
  		if (*str && (str = pcibios_setup(str)) && *str) {
  			if (!strcmp(str, "nomsi")) {
  				pci_no_msi();
@@ -50,9 +52,11 @@ index 061d1ee..883e572 100644
  			} else if (!strcmp(str, "noaer")) {
  				pci_no_aer();
  			} else if (!strcmp(str, "nodomains")) {
---- linux-2.6.28.noarch/drivers/pci/pci.h~	2009-01-08 09:45:35.000000000 -0500
-+++ linux-2.6.28.noarch/drivers/pci/pci.h	2009-01-08 09:45:49.000000000 -0500
-@@ -105,9 +105,11 @@ extern unsigned int pci_pm_d3_delay;
+Index: linux-2.6.31/drivers/pci/pci.h
+===================================================================
+--- linux-2.6.31.orig/drivers/pci/pci.h
++++ linux-2.6.31/drivers/pci/pci.h
+@@ -112,9 +112,11 @@ extern unsigned int pci_pm_d3_delay;
  
  #ifdef CONFIG_PCI_MSI
  void pci_no_msi(void);

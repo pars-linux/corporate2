@@ -6,8 +6,11 @@
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from pisi.actionsapi import kerneltools
+from pisi.actionsapi import autotools
+from pisi.actionsapi import pisitools
+from pisi.actionsapi import get
 
-WorkDir = "linux-2.6.30"
+WorkDir = "linux-2.6.31"
 NoStrip = ["/"]
 
 def setup():
@@ -28,7 +31,16 @@ def install():
                                       "drivers/media/dvb/frontends",
                                       "drivers/media/video"])
 
-    kerneltools.installLibcHeaders()
+    # Drop /usr/include/scsi directory as it's shipped within glibc
+    kerneltools.installLibcHeaders(excludes=["scsi"])
+
+    # Install kernel source
     kerneltools.installSource()
 
+    # Clean module-init-tools related stuff
     kerneltools.cleanModuleFiles()
+
+    # Build and install the new 'perf' tool
+    autotools.make("V=1 -C tools/perf perf")
+    pisitools.insinto("/usr/bin", "tools/perf/perf", "perf.%s-%s" % (get.srcNAME(), get.srcVERSION()))
+    autotools.install("-C tools/perf/Documentation install-man mandir=%s/usr/share/man" % get.installDIR())
