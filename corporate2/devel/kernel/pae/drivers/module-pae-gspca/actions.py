@@ -11,13 +11,14 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-# WorkDir = "v4l-dvb-ee300d3178c4"
-WorkDir = "gspca-111c1cbc759b"
+WorkDir = "gspca-4a80605644fe"
 KDIR = kerneltools.getKernelVersion()
 
+def setup():
+    pisitools.dosed("v4l/Makefile", "^v4l_modules.*lsmod.*$", "")
+
 def build():
-    # kerneltools.build("KERNELRELEASE=%s oldconfig" % KDIR)
-    autotools.make("KERNELRELEASE=%s" % KDIR)
+    autotools.make("VER=%s" % KDIR)
 
 def install():
     pisitools.insinto("/lib/modules/%s/extra" % KDIR, "v4l/*.ko")
