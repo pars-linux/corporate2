@@ -27,14 +27,12 @@ Signed-off-by: mls@suse.de
  drivers/video/vesafb.c                |    8 
  include/linux/console_struct.h        |    3 
  include/linux/fb.h                    |    8 
- kernel/panic.c                        |   12 
- 19 files changed, 2601 insertions(+), 1 deletion(-)
+ kernel/panic.c                        |   13 
+ 19 files changed, 2601 insertions(+), 2 deletions(-)
 
-Index: linux-2.6.30/drivers/char/keyboard.c
-===================================================================
---- linux-2.6.30.orig/drivers/char/keyboard.c
-+++ linux-2.6.30/drivers/char/keyboard.c
-@@ -1180,6 +1180,15 @@ static void kbd_keycode(unsigned int key
+--- a/drivers/char/keyboard.c
++++ b/drivers/char/keyboard.c
+@@ -1178,6 +1178,15 @@ static void kbd_keycode(unsigned int key
  			if (keycode < BTN_MISC && printk_ratelimit())
  				printk(KERN_WARNING "keyboard.c: can't emulate rawmode for keycode %d\n", keycode);
  
@@ -50,11 +48,9 @@ Index: linux-2.6.30/drivers/char/keyboard.c
  #ifdef CONFIG_MAGIC_SYSRQ	       /* Handle the SysRq Hack */
  	if (keycode == KEY_SYSRQ && (sysrq_down || (down == 1 && sysrq_alt))) {
  		if (!sysrq_down) {
-Index: linux-2.6.30/drivers/char/n_tty.c
-===================================================================
---- linux-2.6.30.orig/drivers/char/n_tty.c
-+++ linux-2.6.30/drivers/char/n_tty.c
-@@ -1799,6 +1799,15 @@ do_it_again:
+--- a/drivers/char/n_tty.c
++++ b/drivers/char/n_tty.c
+@@ -1777,6 +1777,15 @@ do_it_again:
  			tty->minimum_to_wake = (minimum - (b - buf));
  
  		if (!input_available_p(tty, 0)) {
@@ -70,11 +66,9 @@ Index: linux-2.6.30/drivers/char/n_tty.c
  			if (test_bit(TTY_OTHER_CLOSED, &tty->flags)) {
  				retval = -EIO;
  				break;
-Index: linux-2.6.30/drivers/char/vt.c
-===================================================================
---- linux-2.6.30.orig/drivers/char/vt.c
-+++ linux-2.6.30/drivers/char/vt.c
-@@ -4075,6 +4075,31 @@ void vcs_scr_writew(struct vc_data *vc, 
+--- a/drivers/char/vt.c
++++ b/drivers/char/vt.c
+@@ -4066,6 +4066,31 @@ void vcs_scr_writew(struct vc_data *vc,
  	}
  }
  
@@ -106,11 +100,9 @@ Index: linux-2.6.30/drivers/char/vt.c
  /*
   *	Visible symbols for modules
   */
-Index: linux-2.6.30/drivers/video/Kconfig
-===================================================================
---- linux-2.6.30.orig/drivers/video/Kconfig
-+++ linux-2.6.30/drivers/video/Kconfig
-@@ -2145,4 +2145,8 @@ if FB || SGI_NEWPORT_CONSOLE
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -2161,4 +2161,8 @@ if FB || SGI_NEWPORT_CONSOLE
  	source "drivers/video/logo/Kconfig"
  endif
  
@@ -119,10 +111,8 @@ Index: linux-2.6.30/drivers/video/Kconfig
 +endif
 +
  endmenu
-Index: linux-2.6.30/drivers/video/Makefile
-===================================================================
---- linux-2.6.30.orig/drivers/video/Makefile
-+++ linux-2.6.30/drivers/video/Makefile
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
 @@ -14,6 +14,7 @@ fb-objs                           := $(f
  obj-$(CONFIG_VT)		  += console/
  obj-$(CONFIG_LOGO)		  += logo/
@@ -131,10 +121,8 @@ Index: linux-2.6.30/drivers/video/Makefile
  
  obj-$(CONFIG_FB_CFB_FILLRECT)  += cfbfillrect.o
  obj-$(CONFIG_FB_CFB_COPYAREA)  += cfbcopyarea.o
-Index: linux-2.6.30/drivers/video/bootsplash/Kconfig
-===================================================================
 --- /dev/null
-+++ linux-2.6.30/drivers/video/bootsplash/Kconfig
++++ b/drivers/video/bootsplash/Kconfig
 @@ -0,0 +1,17 @@
 +#
 +# Bootsplash configuration
@@ -153,20 +141,16 @@ Index: linux-2.6.30/drivers/video/bootsplash/Kconfig
 +          If you are unsure, say N
 +endmenu
 +
-Index: linux-2.6.30/drivers/video/bootsplash/Makefile
-===================================================================
 --- /dev/null
-+++ linux-2.6.30/drivers/video/bootsplash/Makefile
++++ b/drivers/video/bootsplash/Makefile
 @@ -0,0 +1,5 @@
 +# Makefile for the Linux bootsplash
 +
 +obj-$(CONFIG_BOOTSPLASH)		+= bootsplash.o
 +obj-$(CONFIG_BOOTSPLASH)		+= decode-jpg.o
 +obj-$(CONFIG_BOOTSPLASH)		+= render.o
-Index: linux-2.6.30/drivers/video/bootsplash/bootsplash.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.30/drivers/video/bootsplash/bootsplash.c
++++ b/drivers/video/bootsplash/bootsplash.c
 @@ -0,0 +1,1017 @@
 +/*
 + *           linux/drivers/video/bootsplash/bootsplash.c -
@@ -1185,10 +1169,8 @@ Index: linux-2.6.30/drivers/video/bootsplash/bootsplash.c
 +	return;
 +}
 +
-Index: linux-2.6.30/drivers/video/bootsplash/bootsplash.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.30/drivers/video/bootsplash/bootsplash.h
++++ b/drivers/video/bootsplash/bootsplash.h
 @@ -0,0 +1,44 @@
 +/*
 + *    linux/drivers/video/bootsplash/bootsplash.h - splash screen definition.
@@ -1234,10 +1216,8 @@ Index: linux-2.6.30/drivers/video/bootsplash/bootsplash.h
 +extern void release_console_sem(void);
 +
 +#endif
-Index: linux-2.6.30/drivers/video/bootsplash/decode-jpg.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.30/drivers/video/bootsplash/decode-jpg.c
++++ b/drivers/video/bootsplash/decode-jpg.c
 @@ -0,0 +1,957 @@
 +/*
 + *    linux/drivers/video/bootsplash/decode-jpg.c - a tiny jpeg decoder.
@@ -2196,10 +2176,8 @@ Index: linux-2.6.30/drivers/video/bootsplash/decode-jpg.c
 +		outy += 64 * 2 - 16 * 4;
 +	}
 +}
-Index: linux-2.6.30/drivers/video/bootsplash/decode-jpg.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.30/drivers/video/bootsplash/decode-jpg.h
++++ b/drivers/video/bootsplash/decode-jpg.h
 @@ -0,0 +1,35 @@
 +/*
 + *    linux/drivers/video/bootsplash/decode-jpg.h - a tiny jpeg decoder.
@@ -2236,10 +2214,8 @@ Index: linux-2.6.30/drivers/video/bootsplash/decode-jpg.h
 +extern int jpeg_check_size(unsigned char *, int, int);
 +
 +#endif
-Index: linux-2.6.30/drivers/video/bootsplash/render.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.30/drivers/video/bootsplash/render.c
++++ b/drivers/video/bootsplash/render.c
 @@ -0,0 +1,328 @@
 +/*
 + *    linux/drivers/video/bootsplash/render.c - splash screen render functions.
@@ -2569,10 +2545,8 @@ Index: linux-2.6.30/drivers/video/bootsplash/render.c
 +	}
 +}
 +
-Index: linux-2.6.30/drivers/video/console/bitblit.c
-===================================================================
---- linux-2.6.30.orig/drivers/video/console/bitblit.c
-+++ linux-2.6.30/drivers/video/console/bitblit.c
+--- a/drivers/video/console/bitblit.c
++++ b/drivers/video/console/bitblit.c
 @@ -17,6 +17,9 @@
  #include <linux/console.h>
  #include <asm/types.h>
@@ -2654,10 +2628,8 @@ Index: linux-2.6.30/drivers/video/console/bitblit.c
  	if (info->fbops->fb_cursor)
  		err = info->fbops->fb_cursor(info, &cursor);
  
-Index: linux-2.6.30/drivers/video/console/fbcon.c
-===================================================================
---- linux-2.6.30.orig/drivers/video/console/fbcon.c
-+++ linux-2.6.30/drivers/video/console/fbcon.c
+--- a/drivers/video/console/fbcon.c
++++ b/drivers/video/console/fbcon.c
 @@ -80,6 +80,9 @@
  #include <asm/system.h>
  
@@ -2691,11 +2663,10 @@ Index: linux-2.6.30/drivers/video/console/fbcon.c
  	err = take_over_console(&fb_con, first_fb_vc, last_fb_vc,
  				fbcon_is_default);
  
-@@ -1082,6 +1093,16 @@ static void fbcon_init(struct vc_data *v
- 	new_rows = FBCON_SWAP(ops->rotate, info->var.yres, info->var.xres);
+@@ -1083,6 +1094,16 @@ static void fbcon_init(struct vc_data *v
  	new_cols /= vc->vc_font.width;
  	new_rows /= vc->vc_font.height;
-+
+ 
 +#ifdef CONFIG_BOOTSPLASH
 +	if (vc->vc_splash_data && vc->vc_splash_data->splash_state) {
 +		new_cols = vc->vc_splash_data->splash_text_wi / vc->vc_font.width;
@@ -2705,9 +2676,10 @@ Index: linux-2.6.30/drivers/video/console/fbcon.c
 +	}
 +#endif
 +
- 	vc_resize(vc, new_cols, new_rows);
- 
++
  	/*
+ 	 * We must always set the mode. The mode of the previous console
+ 	 * driver could be in the same resolution but we are using different
 @@ -1777,6 +1798,10 @@ static int fbcon_scroll(struct vc_data *
  			fbcon_softback_note(vc, t, count);
  		if (logo_shown >= 0)
@@ -2782,10 +2754,8 @@ Index: linux-2.6.30/drivers/video/console/fbcon.c
  		cols /= w;
  		rows /= h;
  		vc_resize(vc, cols, rows);
-Index: linux-2.6.30/drivers/video/console/fbcon.h
-===================================================================
---- linux-2.6.30.orig/drivers/video/console/fbcon.h
-+++ linux-2.6.30/drivers/video/console/fbcon.h
+--- a/drivers/video/console/fbcon.h
++++ b/drivers/video/console/fbcon.h
 @@ -25,6 +25,34 @@
      *    low-level frame buffer device
      */
@@ -2821,10 +2791,8 @@ Index: linux-2.6.30/drivers/video/console/fbcon.h
  struct display {
      /* Filled in by the low-level console driver */
      const u_char *fontdata;
-Index: linux-2.6.30/drivers/video/vesafb.c
-===================================================================
---- linux-2.6.30.orig/drivers/video/vesafb.c
-+++ linux-2.6.30/drivers/video/vesafb.c
+--- a/drivers/video/vesafb.c
++++ b/drivers/video/vesafb.c
 @@ -182,7 +182,10 @@ static void vesafb_destroy(struct fb_inf
  	framebuffer_release(info);
  }
@@ -2847,11 +2815,9 @@ Index: linux-2.6.30/drivers/video/vesafb.c
  	if (vram_remap)
  		size_remap = vram_remap * 1024 * 1024;
  	if (size_remap < size_vmode)
-Index: linux-2.6.30/include/linux/console_struct.h
-===================================================================
---- linux-2.6.30.orig/include/linux/console_struct.h
-+++ linux-2.6.30/include/linux/console_struct.h
-@@ -106,6 +106,9 @@ struct vc_data {
+--- a/include/linux/console_struct.h
++++ b/include/linux/console_struct.h
+@@ -105,6 +105,9 @@ struct vc_data {
  	struct vc_data **vc_display_fg;		/* [!] Ptr to var holding fg console for this display */
  	unsigned long	vc_uni_pagedir;
  	unsigned long	*vc_uni_pagedir_loc;  /* [!] Location of uni_pagedir variable for this console */
@@ -2861,11 +2827,9 @@ Index: linux-2.6.30/include/linux/console_struct.h
  	/* additional information is in vt_kern.h */
  };
  
-Index: linux-2.6.30/include/linux/fb.h
-===================================================================
---- linux-2.6.30.orig/include/linux/fb.h
-+++ linux-2.6.30/include/linux/fb.h
-@@ -860,6 +860,14 @@ struct fb_info {
+--- a/include/linux/fb.h
++++ b/include/linux/fb.h
+@@ -861,6 +861,14 @@ struct fb_info {
  	void *fbcon_par;                /* fbcon use-only private area */
  	/* From here on everything is device dependent */
  	void *par;
@@ -2880,24 +2844,23 @@ Index: linux-2.6.30/include/linux/fb.h
  	/* we need the PCI or similiar aperture base/size not
  	   smem_start/size as smem_start may just be an object
  	   allocated inside the aperture so may not actually overlap */
-Index: linux-2.6.30/kernel/panic.c
-===================================================================
---- linux-2.6.30.orig/kernel/panic.c
-+++ linux-2.6.30/kernel/panic.c
-@@ -99,6 +99,12 @@ NORET_TYPE void panic(const char * fmt, 
+--- a/kernel/panic.c
++++ b/kernel/panic.c
+@@ -99,7 +99,12 @@ NORET_TYPE void panic(const char * fmt,
  		 * We can't use the "normal" timers since we just panicked.
  		 */
  		printk(KERN_EMERG "Rebooting in %d seconds..", panic_timeout);
+-
 +#ifdef CONFIG_BOOTSPLASH
 +		{
 +			extern int splash_verbose(void);
 +			(void)splash_verbose();
 +		}
 +#endif
- 
  		for (i = 0; i < panic_timeout*1000; ) {
  			touch_nmi_watchdog();
-@@ -130,6 +136,12 @@ NORET_TYPE void panic(const char * fmt, 
+ 			i += panic_blink(i);
+@@ -130,6 +135,12 @@ NORET_TYPE void panic(const char * fmt,
  	}
  #endif
  	local_irq_enable();
