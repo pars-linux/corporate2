@@ -12,30 +12,33 @@
         <IsA>app:console</IsA>
         <Summary>Kernel module for Kernel-based Virtual Machine</Summary>
         <Description>KVM (for Kernel-based Virtual Machine) is a full virtualization solution for Linux on x86 hardware containing virtualization extensions (Intel VT or AMD-V). This package includes the kernel modules needed to use KVM.</Description>
-        <Archive sha1sum="ff5ac54eb6865d5d0287c687def8049e527eadf3" type="targz">mirrors://sourceforge/kvm/kvm-kmod-devel-85.tar.gz</Archive>
+        <Archive sha1sum="02a4a35ba37d2a66dda06f534c64268a60843bcb" type="tarbz2">mirrors://sourceforge/kvm/2.6.32/kvm-kmod-2.6.32.tar.bz2</Archive>
         <BuildDependencies>
-            <Dependency release="129">kernel-module-headers-pae</Dependency>
+            <Dependency release="128">kernel-module-headers-pae</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch>kvm-kernel-cpuid4.patch</Patch>
             <Patch>kvm-kernel-msr.patch</Patch>
+
             <!-- no need to depmod -->
             <Patch>kvm-nodepmod.patch</Patch>
+
             <!-- Init kernel module on demand-->
             <Patch>kvm-preXX-init-on-demand.patch</Patch>
-            <!-- http://bugs.pardus.org.tr/show_bug.cgi?id=10771 -->
-            <Patch level="1">kvm-84-check-bogus-cr3-after-set-sregs.diff</Patch>
-            <!-- http://bugs.pardus.org.tr/show_bug.cgi?id=11210 -->
-            <Patch level="1">linux-2.6-kvm-x86-disallow-hypercalls-for-guest-callers-in-rings-le-0.patch</Patch>
-            <!-- http://bugs.pardus.org.tr/show_bug.cgi?id=11427 -->
-            <Patch level="1">linux-2.6.git-6a54435560efdab1a08f429a954df4d6c740bddf.patch</Patch>
+
+            <!-- http://bugs.pardus.org.tr/show_bug.cgi?id=10771
+                 FIXME: Codebase changed a lot but this one should be fixed..
+            <Patch level="1">kvm-84-check-bogus-cr3-after-set-sregs.diff</Patch>-->
+
+            <!-- KVM: x86 emulator: Limit instructions to 15 bytes (CVE-2009-4031) (#11640) -->
+            <Patch level="1">kvm.git-e42d9b8141d1f54ff72ad3850bb110c95a5f3b88.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>module-pae-kvm</Name>
         <RuntimeDependencies>
-             <Dependency release="129">kernel-pae</Dependency>
+             <Dependency release="128">kernel-pae</Dependency>
              <Dependency>module-kvm-userspace</Dependency>
         </RuntimeDependencies>
         <Files>
@@ -44,6 +47,20 @@
     </Package>
 
     <History>
+        <Update release="8">
+            <Date>2009-12-11</Date>
+            <Version>2.6.32</Version>
+            <Comment>Bump to the latest version.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="7" type="security">
+            <Date>2009-12-04</Date>
+            <Version>85</Version>
+            <Comment>Limit instructions to 15 bytes (CVE-2009-4031) (#11640).</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="6" type="security">
             <Date>2009-10-23</Date>
             <Version>85</Version>
