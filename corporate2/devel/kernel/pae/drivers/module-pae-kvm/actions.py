@@ -11,7 +11,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 NoStrip=["/usr/share/kvm"]
-WorkDir='kvm-kmod-devel-85'
+WorkDir="kvm-kmod-%s" % get.srcVERSION()
 
 def setup():
     autotools.rawConfigure('--arch=x86 \
@@ -22,5 +22,8 @@ def build():
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+
+    # FIXME: Remove internal rules for now, they're more bleeding-edge oriented
+    pisitools.removeDir("/etc/udev/rules.d")
 
 
