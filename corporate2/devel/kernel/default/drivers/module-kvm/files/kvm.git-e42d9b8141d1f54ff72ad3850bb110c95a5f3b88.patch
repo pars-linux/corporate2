@@ -1,0 +1,55 @@
+From e42d9b8141d1f54ff72ad3850bb110c95a5f3b88 Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Tue, 24 Nov 2009 15:20:15 +0200
+Subject: [PATCH] KVM: x86 emulator: limit instructions to 15 bytes
+
+While we are never normally passed an instruction that exceeds 15 bytes,
+smp games can cause us to attempt to interpret one, which will cause
+large latencies in non-preempt hosts.
+
+Cc: stable@kernel.org
+Signed-off-by: Avi Kivity <avi@redhat.com>
+---
+ arch/x86/include/asm/kvm_emulate.h |    2 +-
+ arch/x86/kvm/emulate.c             |    5 ++++-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/arch/x86/include/asm/kvm_emulate.h b/arch/x86/include/asm/kvm_emulate.h
+index b7ed2c4..7c18e12 100644
+--- a/include/asm-x86/kvm_emulate.h
++++ b/include/asm-x86/kvm_emulate.h
+@@ -129,7 +129,7 @@ struct decode_cache {
+ 	u8 seg_override;
+ 	unsigned int d;
+ 	unsigned long regs[NR_VCPU_REGS];
+-	unsigned long eip;
++	unsigned long eip, eip_orig;
+ 	/* modrm */
+ 	u8 modrm;
+ 	u8 modrm_mod;
+diff --git a/arch/x86/kvm/emulate.c b/arch/x86/kvm/emulate.c
+index d226dff..7e8faea 100644
+--- a/x86/emulate.c
++++ b/x86/emulate.c
+@@ -622,6 +622,9 @@ static int do_insn_fetch(struct x86_emulate_ctxt *ctxt,
+ {
+ 	int rc = 0;
+ 
++	/* x86 instructions are limited to 15 bytes. */
++	if (eip + size - ctxt->decode.eip_orig > 15)
++		return X86EMUL_UNHANDLEABLE;
+ 	eip += ctxt->cs_base;
+ 	while (size--) {
+ 		rc = do_fetch_insn_byte(ctxt, ops, eip++, dest++);
+@@ -880,7 +883,7 @@ x86_decode_insn(struct x86_emulate_ctxt *ctxt, struct x86_emulate_ops *ops)
+ 	/* Shadow copy of register state. Committed on successful emulation. */
+ 
+ 	memset(c, 0, sizeof(struct decode_cache));
+-	c->eip = kvm_rip_read(ctxt->vcpu);
++	c->eip = c->eip_orig = kvm_rip_read(ctxt->vcpu);
+ 	ctxt->cs_base = seg_base(ctxt, VCPU_SREG_CS);
+ 	memcpy(c->regs, ctxt->vcpu->arch.regs, sizeof c->regs);
+ 
+-- 
+1.6.5.1
+
