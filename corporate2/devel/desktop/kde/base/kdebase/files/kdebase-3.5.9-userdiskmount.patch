@@ -1,0 +1,164 @@
+diff -ur kdebase-3.5.9/kioslave/media/mediamanager/halbackend.cpp kdebase-3.5.9-userdiskmount/kioslave/media/mediamanager/halbackend.cpp
+--- kdebase-3.5.9/kioslave/media/mediamanager/halbackend.cpp	2008-02-13 10:40:36.000000000 +0100
++++ kdebase-3.5.9-userdiskmount/kioslave/media/mediamanager/halbackend.cpp	2008-03-27 04:59:21.000000000 +0100
+@@ -20,6 +20,7 @@
+ #include "linuxcdpolling.h"
+ 
+ #include <stdlib.h>
++#include <locale.h>
+ 
+ #include <kapplication.h>
+ #include <qeventloop.h>
+@@ -33,6 +34,8 @@
+ #include <kmountpoint.h>
+ #include <kmessagebox.h>
+ #include <kio/job.h>
++#include <kstandarddirs.h>
++#include <kprocess.h>
+ 
+ #define MOUNT_SUFFIX	(libhal_volume_is_mounted(halVolume) ? QString("_mounted") : QString("_unmounted"))
+ #define MOUNT_ICON_SUFFIX	(libhal_volume_is_mounted(halVolume) ? QString("_mount") : QString("_unmount"))
+@@ -945,6 +948,92 @@
+     return true;
+ }
+ 
++static QString startKdeSuProcess(const QString& kdesuPath, const QString& command)
++{
++    KProcess kdesuProcess;
++
++    kdesuProcess << kdesuPath
++		<< "-d"
++		<< "--noignorebutton"
++		<< "-c" << command;
++
++    // @todo handle kdesu output
++    kdesuProcess.start(KProcess::Block);
++
++    return QString();
++}
++
++static QString startPrivilegedProcess(const QString& command)
++{
++    QString error;
++
++    QString kdesuPath = KStandardDirs::findExe("kdesu");
++
++    if (kdesuPath.isEmpty())
++        error = QString::fromLatin1("kdesu not found");
++    else
++        error = startKdeSuProcess(kdesuPath, command);
++
++    return error;
++}
++
++static QString privilegedMount(const char* udi, const char* mountPoint, const char** options, int numberOfOptions)
++{
++    QString error;
++ 
++    kdDebug() << "run privileged mount for " << udi << endl;
++
++    QString dbusSendPath = KStandardDirs::findExe("dbus-send");
++
++    // @todo return error message
++    if (dbusSendPath.isEmpty())
++        return QString::fromLatin1("dbus-send not found");
++
++    QString mountOptions;
++    QTextOStream optionsStream(&mountOptions);
++    for (int optionIndex = 0; optionIndex < numberOfOptions; optionIndex++) {
++        optionsStream << options[optionIndex];
++        if (optionIndex < numberOfOptions - 1)
++            optionsStream << ",";
++    }
++
++    QString command;
++    QTextOStream(&command) << dbusSendPath
++            << " --system --print-reply --dest=org.freedesktop.Hal " << udi
++            << " org.freedesktop.Hal.Device.Volume.Mount string:" << mountPoint
++            << " string: array:string:" << mountOptions;
++
++    kdDebug() << "command: " << command << endl;
++
++    error = startPrivilegedProcess(command);
++
++    return error;
++}
++
++static QString privilegedUnmount(const char* udi)
++{
++    QString error;
++ 
++    kdDebug() << "run privileged unmount for " << udi << endl;
++
++    QString dbusSendPath = KStandardDirs::findExe("dbus-send");
++
++    // @todo return error message
++    if (dbusSendPath.isEmpty())
++        return QString();
++
++    QString command;
++    QTextOStream(&command) << dbusSendPath
++            << " --system --print-reply --dest=org.freedesktop.Hal " << udi
++            << " org.freedesktop.Hal.Device.Volume.Unmount array:string:force";
++
++    kdDebug() << "command: " << command << endl;
++
++    error = startPrivilegedProcess(command);
++
++    return error;
++}
++
+ static QString mount_priv(const char *udi, const char *mount_point, const char **poptions, int noptions,
+ 			  DBusConnection *dbus_connection)
+ {
+@@ -979,6 +1068,8 @@
+             qerror = i18n("Invalid filesystem type");
+         else if ( !strcmp(error.name, "org.freedesktop.Hal.Device.Volume.PermissionDenied"))
+             qerror = i18n("Permissions denied");
++        else if ( !strcmp(error.name, "org.freedesktop.Hal.Device.PermissionDeniedByPolicy"))
++            qerror = privilegedMount(udi, mount_point, poptions, noptions);
+         else if ( !strcmp(error.name, "org.freedesktop.Hal.Device.Volume.AlreadyMounted"))
+             qerror = i18n("Device is already mounted.");
+         else if ( !strcmp(error.name, "org.freedesktop.Hal.Device.Volume.InvalidMountpoint") && strlen(mount_point)) {
+@@ -1135,7 +1226,7 @@
+     if (valids["flush"] == "true")
+         soptions << "flush";
+ 
+-    if (valids["uid"] == "true")
++    if ((valids["uid"] == "true") && (medium->fsType() == "vfat" || medium->fsType() == "iso9660" || medium->fsType() == "hfs" || medium->fsType() == "udf"))
+     {
+         soptions << QString("uid=%1").arg(getuid());
+     }
+@@ -1155,6 +1246,13 @@
+     if (valids["sync"] == "true")
+         soptions << "sync";
+ 
++    if (medium->fsType() == "ntfs") {
++        QString fsLocale("locale=");
++        fsLocale += setlocale(LC_ALL, "");
++
++        soptions << fsLocale;
++    }
++
+     QString mount_point = valids["mountpoint"];
+     if (mount_point.startsWith("/media/"))
+         mount_point = mount_point.mid(7);
+@@ -1283,6 +1381,18 @@
+     {
+         QString qerror, reason;
+ 
++        if (!strcmp(error.name, "org.freedesktop.Hal.Device.PermissionDeniedByPolicy")) {
++            qerror = privilegedUnmount(udi);
++
++            if (qerror.isEmpty()) {
++                dbus_message_unref(dmesg);
++                dbus_error_free(&error);
++                return QString();
++            }
++
++            // @todo handle unmount error message
++        }
++        
+         kdDebug() << "unmount failed for " << udi << ": " << error.name << " " << error.message << endl;
+         qerror = "<qt>";
+         qerror += "<p>" + i18n("Unfortunately, the device <b>%1</b> (%2) named <b>'%3'</b> and "
