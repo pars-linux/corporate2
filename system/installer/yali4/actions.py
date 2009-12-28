@@ -7,7 +7,6 @@
 
 from pisi.actionsapi import pythonmodules
 
-WorkDir = "yali4"
 
 def build():
     pythonmodules.compile()
