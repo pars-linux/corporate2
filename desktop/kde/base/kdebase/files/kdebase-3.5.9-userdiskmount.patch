@@ -1,6 +1,7 @@
-diff -ur kdebase-3.5.9/kioslave/media/mediamanager/halbackend.cpp kdebase-3.5.9-userdiskmount/kioslave/media/mediamanager/halbackend.cpp
---- kdebase-3.5.9/kioslave/media/mediamanager/halbackend.cpp	2008-02-13 10:40:36.000000000 +0100
-+++ kdebase-3.5.9-userdiskmount/kioslave/media/mediamanager/halbackend.cpp	2008-03-27 04:59:21.000000000 +0100
+Index: kdebase-3.5.10/kioslave/media/mediamanager/halbackend.cpp
+===================================================================
+--- kdebase-3.5.10.orig/kioslave/media/mediamanager/halbackend.cpp
++++ kdebase-3.5.10/kioslave/media/mediamanager/halbackend.cpp
 @@ -20,6 +20,7 @@
  #include "linuxcdpolling.h"
  
@@ -18,7 +19,7 @@ diff -ur kdebase-3.5.9/kioslave/media/mediamanager/halbackend.cpp kdebase-3.5.9-
  
  #define MOUNT_SUFFIX	(libhal_volume_is_mounted(halVolume) ? QString("_mounted") : QString("_unmounted"))
  #define MOUNT_ICON_SUFFIX	(libhal_volume_is_mounted(halVolume) ? QString("_mount") : QString("_unmount"))
-@@ -945,6 +948,92 @@
+@@ -958,6 +961,94 @@ bool HALBackend::setMountoptions(const Q
      return true;
  }
  
@@ -29,6 +30,8 @@ diff -ur kdebase-3.5.9/kioslave/media/mediamanager/halbackend.cpp kdebase-3.5.9-
 +    kdesuProcess << kdesuPath
 +		<< "-d"
 +		<< "--noignorebutton"
++        << "-i"
++        << "hdd_mount"
 +		<< "-c" << command;
 +
 +    // @todo handle kdesu output
@@ -111,7 +114,7 @@ diff -ur kdebase-3.5.9/kioslave/media/mediamanager/halbackend.cpp kdebase-3.5.9-
  static QString mount_priv(const char *udi, const char *mount_point, const char **poptions, int noptions,
  			  DBusConnection *dbus_connection)
  {
-@@ -979,6 +1068,8 @@
+@@ -992,6 +1083,8 @@ static QString mount_priv(const char *ud
              qerror = i18n("Invalid filesystem type");
          else if ( !strcmp(error.name, "org.freedesktop.Hal.Device.Volume.PermissionDenied"))
              qerror = i18n("Permissions denied");
@@ -120,7 +123,7 @@ diff -ur kdebase-3.5.9/kioslave/media/mediamanager/halbackend.cpp kdebase-3.5.9-
          else if ( !strcmp(error.name, "org.freedesktop.Hal.Device.Volume.AlreadyMounted"))
              qerror = i18n("Device is already mounted.");
          else if ( !strcmp(error.name, "org.freedesktop.Hal.Device.Volume.InvalidMountpoint") && strlen(mount_point)) {
-@@ -1135,7 +1226,7 @@
+@@ -1148,7 +1241,7 @@ QString HALBackend::mount(const Medium *
      if (valids["flush"] == "true")
          soptions << "flush";
  
@@ -129,21 +132,7 @@ diff -ur kdebase-3.5.9/kioslave/media/mediamanager/halbackend.cpp kdebase-3.5.9-
      {
          soptions << QString("uid=%1").arg(getuid());
      }
-@@ -1155,6 +1246,13 @@
-     if (valids["sync"] == "true")
-         soptions << "sync";
- 
-+    if (medium->fsType() == "ntfs") {
-+        QString fsLocale("locale=");
-+        fsLocale += setlocale(LC_ALL, "");
-+
-+        soptions << fsLocale;
-+    }
-+
-     QString mount_point = valids["mountpoint"];
-     if (mount_point.startsWith("/media/"))
-         mount_point = mount_point.mid(7);
-@@ -1283,6 +1381,18 @@
+@@ -1301,6 +1394,18 @@ QString HALBackend::unmount(const QStrin
      {
          QString qerror, reason;
  
