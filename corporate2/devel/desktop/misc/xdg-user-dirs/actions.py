@@ -11,6 +11,7 @@ def setup():
     autotools.configure()
 
 def build():
+    autotools.make("-C po update-gmo")
     autotools.make()
 
 def install():
