@@ -1,0 +1,64 @@
+Index: kchmviewer-3.1/src/kchmmainwindow.cpp
+===================================================================
+--- kchmviewer-3.1.orig/src/kchmmainwindow.cpp
++++ kchmviewer-3.1/src/kchmmainwindow.cpp
+@@ -31,6 +31,8 @@
+ #include <qaccel.h>
+ #include <qevent.h>
+ 
++#include <kio/netaccess.h>
++
+ #include "libchmfile.h"
+ #include "libchmfileimpl.h"
+ #include "libchmurlfactory.h"
+@@ -156,8 +158,22 @@ void KCHMMainWindow::slotOpenMenuItemAct
+ bool KCHMMainWindow::loadChmFile ( const QString &fileName, bool call_open_page )
+ {
+ 	LCHMFile * new_chmfile = new LCHMFile();
++	const KURL url = KIO::NetAccess::mostLocalURL(fileName, this);
++	QString localFile;
+ 	
+-	if ( new_chmfile->loadFile( fileName ) )
++	if ( url.isLocalFile() )
++	{
++		localFile = url.path();
++	}
++	else
++	{
++		if ( !KIO::NetAccess::download( url, localFile, this ) )
++		{
++			localFile = fileName;
++		}
++	}
++
++	if ( new_chmfile->loadFile( localFile ) )
+ 	{
+ 		// The new file is opened, so we can close the old one
+ 		if ( m_chmFile )
+@@ -173,12 +189,12 @@ bool KCHMMainWindow::loadChmFile ( const
+ 
+ 		// Make the file name absolute; we'll need it later
+ 		QDir qd;
+-		qd.setPath (fileName);
++		qd.setPath (localFile);
+ 		m_chmFilename = qd.absPath();
+-		
+-		// Qt's 'dirname' does not work well
+-		QFileInfo qf ( m_chmFilename );
+-		appConfig.m_lastOpenedDir = qf.dirPath(true);
++
++		KURL u;
++		u.setPath (fileName);
++		appConfig.m_lastOpenedDir = u.directory(false);
+ 
+ 		// Order the tabulations
+ 		int number_of_pages = 0;
+@@ -597,6 +613,8 @@ void KCHMMainWindow::closeChmFile( )
+ 	}
+ 	
+ 	appConfig.save();
++
++	KIO::NetAccess::removeTempFile( m_chmFilename );
+ }
+ 
+ 
