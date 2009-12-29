@@ -5,6 +5,17 @@ import os
 import string
 import subprocess
 
+# Translations
+
+MSG_HOSTNAME = {
+    "en": "Hostname contains invalid characters: '%s'",
+    "tr": "Makine ismi geçersiz karakterler içeriyor: '%s'",
+    "fr": "Le nom d'hôte contient des caractères invalides: '%s'",
+    "nl": "Hostnaam bevat ongeldige lettertekens: '%s'",
+}
+
+# Translations End
+
 HEADER_DEFAULT = """# Default DNS settings
 #
 """
@@ -129,7 +140,7 @@ def setHostName(hostname):
         return
     invalid = filter(lambda x: not x in HOST_CHARS, hostname)
     if len(invalid) > 0:
-        fail("Invalid characters '%s' in hostname" % ("".join(invalid)))
+        fail(_(MSG_HOSTNAME) % ("".join(invalid)))
 
     # hostname
     if os.path.exists(NAME_PATH):

@@ -95,7 +95,7 @@ def create_directories():
     kdir("/var/lib/misc")
     kdir("/var/lock/subsys")
     kdir("/var/log/news")
-    kdir("/var/run")
+    kdir("/var/run/pardus")
     kdir("/var/spool")
     kdir("/var/state")
     kdir("/var/tmp", "-m 01777")
