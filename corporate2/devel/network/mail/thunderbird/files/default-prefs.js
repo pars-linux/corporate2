@@ -15,7 +15,7 @@ pref("browser.display.show_image_placeholders", false);
 pref("mailnews.customHeaders", "List-Id");
 
 pref("general.useragent.vendor", "Pardus");
-pref("general.useragent.vendorSub", "2009");
+pref("general.useragent.vendorSub", "Corporate2");
 
 pref("font.name.monospace.null", "DejaVu Sans Mono");
 pref("font.name.monospace.tr", "DejaVu Sans Mono");
