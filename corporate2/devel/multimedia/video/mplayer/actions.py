@@ -14,8 +14,8 @@ from pisi.actionsapi import get
 import os
 
 WorkDir = "mplayer-%s" % get.srcVERSION().split("_", 1)[1]
-mp_version = "29789"
-ff_version = "20334"
+mp_version = "30135"
+ff_version = "20964"
 
 def fixPermissions(dest):
     for root, dirs, files in os.walk(dest):
@@ -105,12 +105,12 @@ def setup():
                             --enable-sse \
                             --enable-tga \
                             --enable-tv \
-                            --enable-tv-teletext \
                             --enable-tv-v4l1 \
                             --enable-tv-v4l2 \
                             --enable-unrarexec \
                             --enable-v4l2 \
                             --enable-v4lw \
+                            --enable-vaapi \
                             --enable-vdpau \
                             --enable-win32dll \
                             --enable-x11 \
