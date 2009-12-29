@@ -12,14 +12,14 @@ from pisi.actionsapi import get
 WorkDir = "glib-%s" % get.srcVERSION()
 
 def setup():
+    autotools.autoconf()
     autotools.configure("--with-threads=posix \
                          --disable-gtk-doc \
                          --with-pcre=system \
                          --disable-fam \
                          --disable-static")
 
-    pisitools.dosed("libtool"," -shared ", " -Wl,--as-needed -shared ")
-    pisitools.dosed("gthread-2.0.pc"," -pthread"," -lpthread")
+    pisitools.dosed("libtool", " -shared ", " -Wl,--as-needed -shared ")
 
 def build():
     autotools.make()
