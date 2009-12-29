@@ -1,7 +1,8 @@
-diff -ur net-snmp-5.4.orig/snmplib/parse.c net-snmp-5.4/snmplib/parse.c
---- net-snmp-5.4.orig/snmplib/parse.c	2006-10-25 19:16:24.000000000 +0300
-+++ net-snmp-5.4/snmplib/parse.c	2007-06-13 15:33:35.000000000 +0300
-@@ -101,6 +101,7 @@
+Index: net-snmp-5.5/snmplib/parse.c
+===================================================================
+--- net-snmp-5.5.orig/snmplib/parse.c
++++ net-snmp-5.5/snmplib/parse.c
+@@ -101,6 +101,7 @@ SOFTWARE.
  #endif
  
  #include <errno.h>
@@ -9,24 +10,24 @@ diff -ur net-snmp-5.4.orig/snmplib/parse.c net-snmp-5.4/snmplib/parse.c
  
  #include <net-snmp/types.h>
  #include <net-snmp/output_api.h>
-@@ -4719,6 +4720,8 @@
+@@ -4785,6 +4786,8 @@ add_mibdir(const char *dirname)
      char newline;
      struct stat     dir_stat, idx_stat;
-     int empty = 1;
+     char            tmpstr1[300];
 +    char *locale_data = setlocale(LC_CTYPE, "");
 +    setlocale(LC_CTYPE, "C");
  #endif
  
      DEBUGMSGTL(("parse-mibs", "Scanning directory %s\n", dirname));
-@@ -4753,6 +4753,7 @@
+@@ -4817,6 +4820,7 @@ add_mibdir(const char *dirname)
                      count++;
                  }
                  fclose(ip);
 +                setlocale(LC_CTYPE, locale_data);
-                 if ( !empty ) {
-                     return count;
-                 }
-@@ -4794,11 +4798,13 @@
+                 return count;
+             } else
+                 DEBUGMSGTL(("parse-mibs", "Can't read index\n"));
+@@ -4858,11 +4862,13 @@ add_mibdir(const char *dirname)
          closedir(dir);
          if (ip)
              fclose(ip);
@@ -40,5 +41,3 @@ diff -ur net-snmp-5.4.orig/snmplib/parse.c net-snmp-5.4/snmplib/parse.c
      return (-1);
  }
  
---- /var/pisi/net-snmp-5.4.1-4/work/net-snmp-5.4.1/snmplib/parse.c.orig	2007-05-27 22:54:25.000000000 +0300
-+++ parse.c.orig	2008-01-31 03:05:45.000000000 +0200
