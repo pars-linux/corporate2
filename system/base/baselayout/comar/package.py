@@ -183,7 +183,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     hav("addUser", (135, "radiusd", "Freeradius", "/dev/null", "/bin/false", "", ["radiusd"], [], []))
     hav("addUser", (136, "oprofile", "oprofile", "/dev/null", "/bin/false", "", ["oprofile"], [], []))
     hav("addUser", (137, "mediatomb", "mediatomb", "/dev/null", "/bin/false", "", ["mediatomb"], [], []))
-    hav("addUser", (138, "pulse", "PulseAudio System Daemon", "/var/run/pulse", "/bin/false", "", ["pulse"], [], []))
+    hav("addUser", (138, "pulse", "PulseAudio System Daemon", "/var/run/pulse", "/bin/false", "", ["pulse", "pulse-access", "pulse-rt", "audio"], [], []))
     hav("addUser", (139, "quasselcore", "Quassel IRC System", "/var/cache/quassel", "/bin/false", "", ["quassel"], [], []))
     hav("addUser", (140, "bitlbee", "Bitlbee Gateway", "/var/lib/bitlbee", "/bin/false", "", ["bitlbee"], [], []))
     hav("addUser", (141, "spamd", "Spamassassin Daemon", "/var/lib/spamd", "/bin/false", "", [], [], []))
