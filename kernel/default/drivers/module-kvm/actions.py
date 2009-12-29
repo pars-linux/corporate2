@@ -14,6 +14,11 @@ NoStrip=["/usr/share/kvm"]
 WorkDir="kvm-kmod-%s" % get.srcVERSION()
 
 def setup():
+    # Don't run depmod
+    pisitools.dosed("Makefile", "/sbin/depmod", "/bin/true")
+
+    # Fix PREFIX
+    pisitools.dosed("Makefile", "^PREFIX =.*$", "PREFIX = /usr")
     autotools.rawConfigure('--arch=x86 \
                             --kerneldir=/lib/modules/%s/build' % kerneltools.getKernelVersion())
 
