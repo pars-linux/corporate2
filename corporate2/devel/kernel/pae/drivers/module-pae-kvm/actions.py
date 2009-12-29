@@ -14,6 +14,9 @@ NoStrip=["/usr/share/kvm"]
 WorkDir="kvm-kmod-%s" % get.srcVERSION()
 
 def setup():
+    # Don't run depmod
+    pisitools.dosed("Makefile","/sbin/depmod", "/bin/true")
+
     autotools.rawConfigure('--arch=x86 \
                             --kerneldir=/lib/modules/%s/build' % kerneltools.getKernelVersion())
 
@@ -25,5 +28,4 @@ def install():
 
     # FIXME: Remove internal rules for now, they're more bleeding-edge oriented
     pisitools.removeDir("/etc/udev/rules.d")
-
-
+    pisitools.removeDir("/usr/local")
