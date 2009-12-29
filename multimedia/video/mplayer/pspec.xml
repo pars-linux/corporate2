@@ -14,7 +14,7 @@
         <IsA>app:console</IsA>
         <Summary>Media Player for Linux</Summary>
         <Description>MPlayer is a movie player that can run on many platforms. It plays most MPEG/VOB, AVI, Ogg/OGM, VIVO, ASF/WMA/WMV, QT/MOV/MP4, RealMedia, Matroska, NUT, NuppelVideo, FLI, YUV4MPEG, FILM, RoQ, PVA files, supported by many native codecs.</Description>
-        <Archive sha1sum="72051861d2b316ee509334099512ba86872255ba" type="targz">http://cekirdek.pardus.org.tr/~onur/distfiles/mplayer-20091020.tar.gz</Archive>
+        <Archive sha1sum="fefe300175cd5d26e2183840a141f960f02e00c3" type="targz">http://cekirdek.pardus.org.tr/~onur/distfiles/mplayer-20091229.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>DirectFB</Dependency>
             <Dependency>aalib</Dependency>
@@ -27,7 +27,7 @@
             <Dependency>fontconfig</Dependency>
             <Dependency>giflib</Dependency>
             <Dependency>glib2</Dependency>
-            <Dependency>gtk2</Dependency>
+            <Dependency versionFrom="2.18.5">gtk2</Dependency>
             <Dependency>ladspa-sdk</Dependency>
             <Dependency>lame</Dependency>
             <Dependency>libcaca</Dependency>
@@ -51,10 +51,10 @@
             <Dependency>schroedinger</Dependency>
             <Dependency>speex</Dependency>
             <Dependency>twolame</Dependency>
-            <Dependency releaseFrom="25">x264</Dependency>
+            <Dependency releaseFrom="26">x264</Dependency>
             <Dependency>xvid</Dependency>
             <Dependency>atk</Dependency>
-            <Dependency>cairo</Dependency>
+            <Dependency versionFrom="1.8.8">cairo</Dependency>
             <Dependency>libXScrnSaver</Dependency>
             <Dependency>libXext</Dependency>
             <Dependency>libXinerama</Dependency>
@@ -65,6 +65,7 @@
             <Dependency>mesa</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>libvdpau</Dependency>
+            <Dependency releaseFrom="3">libva</Dependency>
             <Dependency>jack-audio-connection-kit</Dependency>
             <Dependency>opencore-amr</Dependency>
         </BuildDependencies>
@@ -91,8 +92,7 @@
             -->
             <Patch>fix-dvd-sub.patch</Patch>
             <Patch>demux_mkv_seek.diff</Patch>
-
-            <Patch>ao_pulse_volume_restore_fix.patch</Patch>
+            <Patch level="1">awk_path.patch</Patch>
 
             <!-- don't let console config mess with gui config -->
             <Patch level="1">dont_override_gui_conf.patch</Patch>
@@ -116,6 +116,12 @@
             <!-- Demuxer patches for eac3 support, can be epanded for provided samples -->
             <Patch level="1">eac3_mkv.patch</Patch>
             <Patch level="1">eac3_codec_id.patch</Patch>
+
+            <!-- for libvaapi support -->
+            <Patch level="1">mplayer-vaapi.patch</Patch>
+            <!-- too hacky, keep it in case we really need it
+            <Patch level="1">mplayer-vaapi-gma500-workaround.patch</Patch>
+            -->
         </Patches>
     </Source>
 
@@ -132,7 +138,7 @@
             <Dependency>fontconfig</Dependency>
             <Dependency>giflib</Dependency>
             <Dependency>glib2</Dependency>
-            <Dependency>gtk2</Dependency>
+            <Dependency versionFrom="2.18.5">gtk2</Dependency>
             <Dependency>ladspa-sdk</Dependency>
             <Dependency>lame</Dependency>
             <Dependency>libcaca</Dependency>
@@ -156,10 +162,10 @@
             <Dependency>schroedinger</Dependency>
             <Dependency>speex</Dependency>
             <Dependency>twolame</Dependency>
-            <Dependency releaseFrom="25">x264</Dependency>
+            <Dependency releaseFrom="26">x264</Dependency>
             <Dependency>xvid</Dependency>
             <Dependency>atk</Dependency>
-            <Dependency>cairo</Dependency>
+            <Dependency versionFrom="1.8.8">cairo</Dependency>
             <Dependency>libXScrnSaver</Dependency>
             <Dependency>libXext</Dependency>
             <Dependency>libXinerama</Dependency>
@@ -170,6 +176,7 @@
             <Dependency>mesa</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>libvdpau</Dependency>
+            <Dependency releaseFrom="3">libva</Dependency>
             <Dependency>jack-audio-connection-kit</Dependency>
             <Dependency>opencore-amr</Dependency>
         </RuntimeDependencies>
@@ -198,6 +205,19 @@
     </Package>
 
     <History>
+        <Update release="116">
+            <Date>2009-12-29</Date>
+            <Version>0.0_20091229</Version>
+            <Comment>
+                Bump snapshot to 30135, ffmpeg 20964
+                Enable vaapi support
+                Depend on new x264
+                Add mp4, matroska, 3gp, mp4 mimetypes to desktop file
+                Add more examples to mplayer.conf
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
         <Update release="115">
             <Date>2009-10-20</Date>
             <Version>0.0_20091020</Version>
