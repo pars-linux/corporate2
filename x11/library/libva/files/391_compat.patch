@@ -1,3 +1,9 @@
+commit 2e7aa803a8547dfcde6e97ae2bb4a8bbdbb2634e
+Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
+Date:   Mon Nov 23 12:22:09 2009 +0000
+
+    Update compat code for VDPAU/MPEG-4 additions.
+
 commit 30808b39d82cbf0c185052a2d2d5ed8a5fc065d1
 Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
 Date:   Thu Sep 10 14:01:57 2009 +0000
@@ -72,10 +78,10 @@ Date:   Wed Jun 24 11:40:56 2009 +0000
 
 diff --git a/src/va_compat.c b/src/va_compat.c
 new file mode 100644
-index 0000000..e83e314
+index 0000000..0bd7385
 --- /dev/null
 +++ b/src/va_compat.c
-@@ -0,0 +1,1170 @@
+@@ -0,0 +1,1171 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
 + *
@@ -564,6 +570,7 @@ index 0000000..e83e314
 +            switch (ctx->version_minor) {
 +            case 29: INIT_TRANSLATE_FUNC(PictureParameter,MPEG4, 0,29); break;
 +            case 30: INIT_TRANSLATE_FUNC(PictureParameter,MPEG4, 0,30); break;
++            case 31: INIT_TRANSLATE_FUNC(PictureParameter,MPEG4, 0,31); break;
 +            }
 +        }
 +        break;
@@ -1248,10 +1255,10 @@ index 0000000..e83e314
 +}
 diff --git a/src/va_compat.h b/src/va_compat.h
 new file mode 100644
-index 0000000..e2b32ee
+index 0000000..2c9d801
 --- /dev/null
 +++ b/src/va_compat.h
-@@ -0,0 +1,1420 @@
+@@ -0,0 +1,1467 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
 + *
@@ -1898,6 +1905,53 @@ index 0000000..e2b32ee
 +        unsigned char value;
 +    } slice_flags;
 +} VAEncSliceParameterBuffer_0_30;
++
++/* MPEG-4 Picture Parameter Buffer (0.31) */
++typedef struct _VAPictureParameterBufferMPEG4_0_31
++{
++    unsigned short vop_width;
++    unsigned short vop_height;
++    VASurfaceID forward_reference_picture;
++    VASurfaceID backward_reference_picture;
++    union {
++        struct {
++            unsigned int short_video_header		: 1; 
++            unsigned int chroma_format			: 2; 
++            unsigned int interlaced			: 1; 
++            unsigned int obmc_disable			: 1; 
++            unsigned int sprite_enable			: 2; 
++            unsigned int sprite_warping_accuracy	: 2; 
++            unsigned int quant_type			: 1; 
++            unsigned int quarter_sample			: 1; 
++            unsigned int data_partitioned		: 1; 
++            unsigned int reversible_vlc			: 1; 
++        } bits;
++        unsigned int value;
++    } vol_fields;
++    unsigned char no_of_sprite_warping_points;
++    short sprite_trajectory_du[3];
++    short sprite_trajectory_dv[3];
++    unsigned char quant_precision;
++    union {
++        struct {
++            unsigned int vop_coding_type		: 2; 
++            unsigned int backward_reference_vop_coding_type	: 2; 
++            unsigned int vop_rounding_type		: 1; 
++            unsigned int intra_dc_vlc_thr		: 3; 
++            unsigned int top_field_first		: 1; 
++            unsigned int alternate_vertical_scan_flag	: 1; 
++        } bits;
++        unsigned int value;
++    } vop_fields;
++    unsigned char vop_fcode_forward;
++    unsigned char vop_fcode_backward;
++    /* short header related */
++    unsigned char num_gobs_in_vop;
++    unsigned char num_macroblocks_in_gob;
++    /* for direct mode prediction */
++    short TRB;
++    short TRD;
++} VAPictureParameterBufferMPEG4_0_31;
 +
 +typedef struct VADriverContext_0_29 *VADriverContextP_0_29;
 +
@@ -2674,7 +2728,7 @@ index 0000000..e2b32ee
 +#endif /* VA_COMPAT_H */
 diff --git a/src/va_compat_template.h b/src/va_compat_template.h
 new file mode 100644
-index 0000000..a652af6
+index 0000000..18349de
 --- /dev/null
 +++ b/src/va_compat_template.h
 @@ -0,0 +1,539 @@
@@ -3080,6 +3134,7 @@ index 0000000..a652af6
 +
 +    return VA_STATUS_SUCCESS;
 +}
++#endif
 +
 +static VAStatus TRANSLATE(PictureParameter,MPEG4)(
 +    VACompatContextP    ctx,
@@ -3125,7 +3180,6 @@ index 0000000..a652af6
 +
 +    return VA_STATUS_SUCCESS;
 +}
-+#endif
 +
 +#if COMPAT_MAJOR == 0 && COMPAT_MINOR == 30
 +static VAStatus TRANSLATE_(VAEncSliceParameterBuffer)(
