@@ -10,10 +10,10 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
+WorkDir = "gnome-mplayer"
 
 def setup():
-    autotools.configure("--without-gconf \
-                         --disable-dependency-tracking \
+    autotools.configure("--disable-dependency-tracking \
                          --with-gio \
                          --enable-nautilus=no \
                          --with-libgpod \
@@ -23,10 +23,13 @@ def setup():
                          --without-gpm-old-method \
                          --disable-schemas-install")
 
+
 def build():
     autotools.make()
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+    # installing manually since make install causes sandbox violation
+    pisitools.insinto("/etc/gconf/schemas/", "gnome-mplayer.schemas")
 
     pisitools.remove("/%s/%s/INSTALL" % (get.docDIR(), get.srcNAME()))

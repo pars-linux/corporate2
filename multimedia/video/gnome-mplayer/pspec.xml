@@ -3,7 +3,7 @@
 <PISI>
     <Source>
         <Name>gnome-mplayer</Name>
-        <Homepage>http://dekorte.homeip.net/download/gnome-mplayer/</Homepage>
+        <Homepage>http://code.google.com/p/gnome-mplayer/</Homepage>
         <Packager>
             <Name>Onur Küçük</Name>
             <Email>onur@pardus.org.tr</Email>
@@ -13,43 +13,51 @@
         <IsA>app:gui</IsA>
         <Summary>MPlayer frontend</Summary>
         <Description>Simple GUI for MPlayer. It is intended to be a nice tight player and provide a simple and clean interface to MPlayer. GNOME MPlayer has a rich API that is exposed via DBus. Using DBus you can control a single or multiple instances of GNOME MPlayer from a single command.</Description>
+        <!--
         <Archive sha1sum="8551c2c7b7b48eed315ab73a36237f8012ba73b7" type="targz">http://gnome-mplayer.googlecode.com/files/gnome-mplayer-0.9.8.tar.gz</Archive>
+        -->
+        <Archive sha1sum="a8e61d0a50d6a21308ca6d964eee7c8ad5cd154b" type="targz">http://cekirdek.pardus.org.tr/~onur/distfiles/gnome-mplayer-1606.tar.gz</Archive>
         <BuildDependencies>
-            <Dependency>gtk2</Dependency>
+            <Dependency versionFrom="2.18.5">gtk2</Dependency>
             <Dependency>dbus-glib</Dependency>
             <Dependency>libnotify</Dependency>
             <Dependency>musicbrainz3</Dependency>
             <Dependency>libgpod</Dependency>
             <Dependency>alsa-lib</Dependency>
             <Dependency>pango</Dependency>
+            <Dependency>gconf</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">desktop.patch</Patch>
-            <!-- not needed
+            <!-- not needed, keeping to make sure
             <Patch level="1">nomsgconfig.patch</Patch>
-            -->
             <Patch level="1">nosliderset.patch</Patch>
+            -->
             <Patch level="1">nomsg.patch</Patch>
             <Patch level="1">one_extraopts_to_rule_them_all.patch</Patch>
+            <Patch level="1">turkish.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>gnome-mplayer</Name>
         <RuntimeDependencies>
-            <Dependency>gtk2</Dependency>
+            <Dependency versionFrom="2.18.5">gtk2</Dependency>
             <Dependency>dbus-glib</Dependency>
             <Dependency>libnotify</Dependency>
             <Dependency>musicbrainz3</Dependency>
             <Dependency>libgpod</Dependency>
             <Dependency>alsa-lib</Dependency>
             <Dependency>pango</Dependency>
+            <Dependency>gconf</Dependency>
             <Dependency>mplayer</Dependency>
         </RuntimeDependencies>
         <Files>
+            <Path fileType="config">/etc</Path>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="data">/usr/share/applications</Path>
             <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="data">/usr/share/gnome-control-center</Path>
             <Path fileType="localedata">/usr/share/locale</Path>
             <Path fileType="data">/usr/share/pixmaps</Path>
             <Path fileType="man">/usr/share/man</Path>
@@ -58,6 +66,18 @@
     </Package>
 
     <History>
+        <Update release="26">
+            <Date>2009-12-26</Date>
+            <Version>0.9.8_20091226</Version>
+            <Comment>
+                Bump to snapshot 1606
+                Add volume level fixes, bug (#11564)
+                Fix crash on Apple related sites, bug (#11759)
+                Enable gconf since xulrunner uses it too
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
         <Update release="25">
             <Date>2009-09-18</Date>
             <Version>0.9.8</Version>
