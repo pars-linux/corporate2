@@ -1,0 +1,14 @@
+Index: kdebase-3.5.10/kdm/kfrontend/kdm_greet.c
+===================================================================
+--- kdebase-3.5.10.orig/kdm/kfrontend/kdm_greet.c
++++ kdebase-3.5.10/kdm/kfrontend/kdm_greet.c
+@@ -779,7 +779,8 @@ main( int argc ATTR_UNUSED, char **argv 
+ 		LogPanic( "Cannot save $HOME\n" );
+ 	atexit( cleanup );
+ 
+-	setenv( "LC_ALL", _language, 1 );
++	if (*_language)
++		setenv( "LC_ALL", _language, 1 );
+ 
+ 	kg_main( argv[0] );
+ 
