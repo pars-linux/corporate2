@@ -13,20 +13,30 @@
         <IsA>library</IsA>
         <Summary>Mediaplayer plugin for firefox</Summary>
         <Description>Browser plugin that uses GNOME MPlayer to play media in a browser. It should work with all browsers on Unix-ish systems (Mozilla, Firefox, Opera etc.).</Description>
+        <!--
         <Archive sha1sum="a1f90176c0447374ac6518f1eb23984bc2a88ae3" type="targz">http://gecko-mediaplayer.googlecode.com/files/gecko-mediaplayer-0.9.8.tar.gz</Archive>
+        -->
+        <Archive sha1sum="a33092e4615f8c8807b38c818dc695176965ac85" type="targz">http://cekirdek.pardus.org.tr/~onur/distfiles/gecko-mediaplayer-344.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>gnome-mplayer</Dependency>
+            <Dependency>gconf</Dependency>
             <Dependency>xulrunner-devel</Dependency>
         </BuildDependencies>
+        <Patches>
+            <Patch level="1">asneeded.patch</Patch>
+            <Patch>itunessegfault.patch</Patch>
+        </Patches>
     </Source>
 
     <Package>
         <Name>gecko-mediaplayer</Name>
         <RuntimeDependencies>
             <Dependency>gnome-mplayer</Dependency>
+            <Dependency>gconf</Dependency>
             <Dependency>xulrunner</Dependency>
         </RuntimeDependencies>
         <Files>
+            <Path fileType="config">/etc</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="doc">/usr/share/doc</Path>
             <Path fileType="localedata">/usr/share/locale</Path>
@@ -34,6 +44,18 @@
     </Package>
 
     <History>
+        <Update release="20">
+            <Date>2009-12-26</Date>
+            <Version>0.9.8_20091226</Version>
+            <Comment>
+                Bump to version 344
+                Add volume level fixes, bug (#11564)
+                Fix crash on Apple related sites, bug (#11759)
+                Enable gconf since xulrunner uses it too
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
         <Update release="19">
             <Date>2009-09-18</Date>
             <Version>0.9.8</Version>
