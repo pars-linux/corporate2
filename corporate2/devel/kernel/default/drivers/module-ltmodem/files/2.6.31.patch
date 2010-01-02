@@ -1,0 +1,19 @@
+diff -Nur ltmodem-8.31_alpha10-20090420-old/modules/lib.c ltmodem-8.31_alpha10-20090420/modules/lib.c
+--- ltmodem-8.31_alpha10-20090420-old/modules/lib.c	2009-12-31 14:55:11.861003028 +0200
++++ ltmodem-8.31_alpha10-20090420/modules/lib.c	2009-12-31 14:55:22.163752874 +0200
+@@ -74,10 +74,13 @@
+ int lt_pcibios_##rw##_config_##size(unsigned char bus, unsigned char dev_fn,	\
+ 				  unsigned char where, unsigned type val)	\
+ {										\
+-	struct pci_dev *pcidev = pci_find_slot(bus, dev_fn);			\
++	int ret; \
++	struct pci_dev *pcidev = pci_get_bus_and_slot(bus, dev_fn);			\
+ 	if (!pcidev)								\
+ 		return PCIBIOS_DEVICE_NOT_FOUND;				\
+-	return pci_##rw##_config_##size(pcidev, where, val);			\
++	ret = pci_##rw##_config_##size(pcidev, where, val);			\
++	pci_dev_put(pcidev); \
++	return ret; \
+ }
+ 
+ LT_DEFINE_PCI_OP(read, byte, char *)
