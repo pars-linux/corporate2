@@ -28,6 +28,7 @@ def install():
     mapping = {"button_cancel.png": "actions/cancel.png",
                "lock.png" : "actions/object-locked.png",
                "systemsettings.png": "apps/multimedia-volume-control.png",
+               "printer.png": "devices/printer-printing.png",
                "kmenu.png": "apps/panel.png",
                "kmenu.png": "apps/panel_settings.png"}
 
