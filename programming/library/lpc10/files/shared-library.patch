@@ -1,0 +1,157 @@
+diff -Naur lpc10-1.5.orig/lpc55-C/lpc10/Makefile lpc10-1.5/lpc55-C/lpc10/Makefile
+--- lpc10-1.5.orig/lpc55-C/lpc10/Makefile	1997-04-02 18:42:02.000000000 +0300
++++ lpc10-1.5/lpc55-C/lpc10/Makefile	2007-12-11 22:37:23.000000000 +0200
+@@ -22,49 +22,57 @@
+ # 
+ 
+ WARNINGS = -Wall
+-CFLAGS = -O3 -I$(LIB_TARGET_DIR) $(WARNINGS)
++CFLAGS += -I$(LIB_TARGET_DIR) $(WARNINGS)
+ 
+-LIB = $(LIB_TARGET_DIR)/liblpc10.a
++LIB = $(LIB_TARGET_DIR)/liblpc10.la
++LIBDIR = /usr/lib
+ 
+ .PHONY: all clean
+ 
+ all:	$(LIB)
+-	ranlib $(LIB)
+ 
+-$(LIB):		$(LIB)(f2clib.o)	\
+-		$(LIB)(analys.o)	\
+-		$(LIB)(bsynz.o)		\
+-		$(LIB)(chanwr.o)	\
+-		$(LIB)(dcbias.o)	\
+-		$(LIB)(decode.o)	\
+-		$(LIB)(deemp.o)		\
+-		$(LIB)(difmag.o)	\
+-		$(LIB)(dyptrk.o)	\
+-		$(LIB)(encode.o)	\
+-		$(LIB)(energy.o)	\
+-		$(LIB)(ham84.o)		\
+-		$(LIB)(hp100.o)		\
+-		$(LIB)(invert.o)	\
+-		$(LIB)(irc2pc.o)	\
+-		$(LIB)(ivfilt.o)	\
+-		$(LIB)(lpcdec.o)	\
+-		$(LIB)(lpcenc.o)	\
+-		$(LIB)(lpcini.o)	\
+-		$(LIB)(lpfilt.o)	\
+-		$(LIB)(median.o)	\
+-		$(LIB)(mload.o)		\
+-		$(LIB)(onset.o)		\
+-		$(LIB)(pitsyn.o)	\
+-		$(LIB)(placea.o)	\
+-		$(LIB)(placev.o)	\
+-		$(LIB)(preemp.o)	\
+-		$(LIB)(prepro.o)	\
+-		$(LIB)(random.o)	\
+-		$(LIB)(rcchk.o)		\
+-		$(LIB)(synths.o)	\
+-		$(LIB)(tbdm.o)		\
+-		$(LIB)(voicin.o)	\
+-		$(LIB)(vparms.o)
++$(LIB):		f2clib.lo	\
++		analys.lo	\
++		bsynz.lo		\
++		chanwr.lo	\
++		dcbias.lo	\
++		decode.lo	\
++		deemp.lo		\
++		difmag.lo	\
++		dyptrk.lo	\
++		encode.lo	\
++		energy.lo	\
++		ham84.lo		\
++		hp100.lo		\
++		invert.lo	\
++		irc2pc.lo	\
++		ivfilt.lo	\
++		lpcdec.lo	\
++		lpcenc.lo	\
++		lpcini.lo	\
++		lpfilt.lo	\
++		median.lo	\
++		mload.lo		\
++		onset.lo		\
++		pitsyn.lo	\
++		placea.lo	\
++		placev.lo	\
++		preemp.lo	\
++		prepro.lo	\
++		random.lo	\
++		rcchk.lo		\
++		synths.lo	\
++		tbdm.lo		\
++		voicin.lo	\
++		vparms.lo
++	libtool --mode=link $(CC) -o $(LIB) $^ -rpath $(LIBDIR) -lm
++
++%.lo : %.c
++	libtool --mode=compile $(CC) $(CFLAGS) -o $@ -c $<
++
++install:
++	install -d $(DESTDIR)$(LIBDIR)
++	libtool --mode=install install $(LIB) $(DESTDIR)$(LIBDIR)
+ 
+ clean:
+ 	-rm -f *.o
+diff -Naur lpc10-1.5.orig/lpc55-C/Makefile lpc10-1.5/lpc55-C/Makefile
+--- lpc10-1.5.orig/lpc55-C/Makefile	1997-04-02 18:44:03.000000000 +0300
++++ lpc10-1.5/lpc55-C/Makefile	2007-12-11 22:36:39.000000000 +0200
+@@ -3,26 +3,44 @@
+ # 
+ 
+ WARNINGS = -Wall
+-CFLAGS = -O3 $(WARNINGS)
++CFLAGS += $(WARNINGS)
+ 
+ # default C compiler
+ CC= gcc
+ 
+-.PHONY: all clean
++BINDIR = /usr/bin
++INCDIR = /usr/include
+ 
+-all: nuke unnuke nuke2 unnuke2
++.PHONY: all clean
+ 
+-nuke:	nuke.o bitio.o sampleio.o liblpc10.a
+-	$(CC) -o $@ nuke.o bitio.o sampleio.o -L. -llpc10 -lm
++all: lib nuke unnuke nuke2 unnuke2
+ 
+-unnuke:	unnuke.o bitio.o sampleio.o liblpc10.a
+-	$(CC) -o $@ unnuke.o bitio.o sampleio.o -L. -llpc10 -lm
++lib:
++	$(MAKE) -C lpc10
+ 
+-nuke2:	nuke2.o bitio.o sampleio.o liblpc10.a
+-	$(CC) -o $@ nuke2.o bitio.o sampleio.o -L. -llpc10 -lm
++nuke:	nuke.o bitio.o sampleio.o
++	libtool --mode=link $(CC) -o $@ nuke.o bitio.o sampleio.o liblpc10.la -lm
+ 
+-unnuke2:	unnuke2.o bitio.o sampleio.o liblpc10.a
+-	$(CC) -o $@ unnuke2.o bitio.o sampleio.o -L. -llpc10 -lm
++unnuke:	unnuke.o bitio.o sampleio.o
++	libtool --mode=link $(CC) -o $@ unnuke.o bitio.o sampleio.o liblpc10.la -lm
++
++nuke2:	nuke2.o bitio.o sampleio.o
++	libtool --mode=link $(CC) -o $@ nuke2.o bitio.o sampleio.o liblpc10.la -lm
++
++unnuke2:	unnuke2.o bitio.o sampleio.o
++	libtool --mode=link $(CC) -o $@ unnuke2.o bitio.o sampleio.o liblpc10.la -lm
++
++installlib:
++	$(MAKE) -C lpc10 install
++	install -d $(DESTDIR)$(INCDIR)
++	install -m644 lpc10.h $(DESTDIR)$(INCDIR)
++
++install: installlib
++	install -d $(DESTDIR)$(BINDIR)
++	libtool --mode=install install nuke $(DESTDIR)$(BINDIR)
++	libtool --mode=install install unnuke $(DESTDIR)$(BINDIR)
++	libtool --mode=install install nuke2 $(DESTDIR)$(BINDIR)
++	libtool --mode=install install unnuke2 $(DESTDIR)$(BINDIR)
+ 
+ clean:
+ 	-rm -f *.o
