@@ -1,0 +1,86 @@
+Re: [patch] Make a function for block->objfile lookups
+http://sourceware.org/ml/gdb-patches/2009-04/msg00609.html
+
+gdb/
+2009-04-22  Jan Kratochvil  <jan.kratochvil@redhat.com>
+    
+	* block.c (block_objfile): New function.
+	* block.h (block_objfile): New prototype.
+	* objfiles.c (matching_objfiles): New function.
+	* objfiles.h (matching_objfiles): New prototype.
+	* printcmd.c: Remove include solib.h.
+	(display_uses_solib_p): Rename to ...
+	(display_uses_objfile): ... a new function name.  Change the SOLIB
+	parameter to OBJFILE parameter.  Use now a matching_objfiles call.
+	(clear_dangling_display_expressions): Update the caller.
+
+[ Cut the printcmd.c simplification/change.  ]
+
+--- ./gdb/block.c	3 Jan 2009 05:57:50 -0000	1.18
++++ ./gdb/block.c	22 Apr 2009 19:51:40 -0000
+@@ -309,3 +309,21 @@ allocate_block (struct obstack *obstack)
+ 
+   return bl;
+ }
++
++/* Return OBJFILE in which BLOCK is located or NULL if we cannot find it for
++   whatever reason.  */
++
++struct objfile *
++block_objfile (const struct block *block)
++{
++  struct symbol *func;
++
++  if (block == NULL)
++    return NULL;
++
++  func = block_linkage_function (block);
++  if (func == NULL)
++    return NULL;
++
++  return SYMBOL_SYMTAB (func)->objfile;
++}
+--- ./gdb/block.h	3 Jan 2009 05:57:50 -0000	1.19
++++ ./gdb/block.h	22 Apr 2009 19:51:40 -0000
+@@ -164,4 +164,6 @@ extern const struct block *block_global_
+ 
+ extern struct block *allocate_block (struct obstack *obstack);
+ 
++extern struct objfile *block_objfile (const struct block *block);
++
+ #endif /* BLOCK_H */
+--- ./gdb/objfiles.c	11 Mar 2009 20:26:02 -0000	1.82
++++ ./gdb/objfiles.c	22 Apr 2009 19:51:40 -0000
+@@ -891,3 +891,21 @@ objfile_data (struct objfile *objfile, c
+   gdb_assert (data->index < objfile->num_data);
+   return objfile->data[data->index];
+ }
++
++/* Return non-zero if A and B point to the same OBJFILE, ignoring any binary
++   vs. debuginfo variants of the pointers.  If either A or B is NULL return
++   zero as not a match.  */
++
++int
++matching_objfiles (struct objfile *a, struct objfile *b)
++{
++  if (a == NULL || b == NULL)
++    return 0;
++
++  if (a->separate_debug_objfile_backlink)
++    a = a->separate_debug_objfile_backlink;
++  if (b->separate_debug_objfile_backlink)
++    b = b->separate_debug_objfile_backlink;
++
++  return a == b;
++}
+--- ./gdb/objfiles.h	15 Jan 2009 16:35:22 -0000	1.59
++++ ./gdb/objfiles.h	22 Apr 2009 19:51:40 -0000
+@@ -497,6 +497,8 @@ extern struct obj_section *find_pc_secti
+ 
+ extern int in_plt_section (CORE_ADDR, char *);
+ 
++extern int matching_objfiles (struct objfile *a, struct objfile *b);
++
+ /* Keep a registry of per-objfile data-pointers required by other GDB
+    modules.  */
+ 
