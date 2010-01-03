@@ -21,8 +21,6 @@ def start():
                  donotify=True)
 
     # Tell udevd to replay printer events
-    # FIXME: This will be enabled after switching to the new system-config-printer
-    """
     # One for low-level usb
     os.system("udevadm trigger --subsystem-match=usb \
                                --attr-match=bInterfaceClass=07 \
@@ -30,7 +28,6 @@ def start():
     # One for usblp backend
     os.system("udevadm trigger --subsystem-match=usb \
                                --property-match=DEVNAME=\"/dev/usb/lp*\"")
-    """
 
 @synchronized
 def stop():
