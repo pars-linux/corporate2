@@ -8,6 +8,8 @@
 from pisi.actionsapi import kde
 from pisi.actionsapi import pisitools
 
+KeepSpecial = ["libtool"]
+
 def setup():
     kde.configure("--enable-openmp")
 
