@@ -1,0 +1,1130 @@
+Index: metadataedit/exifdevice.h
+===================================================================
+--- kipi-plugins/metadataedit/exifdevice.h	(revision 869928)
++++ kipi-plugins/metadataedit/exifdevice.h	(revision 1069422)
+@@ -6,7 +6,7 @@
+  * Date        : 2006-10-18
+  * Description : EXIF device settings page.
+  *
+- * Copyright (C) 2006-2007 by Gilles Caulier <caulier dot gilles at gmail dot com>
++ * Copyright (C) 2006-2008 by Gilles Caulier <caulier dot gilles at gmail dot com>
+  *
+  * This program is free software; you can redistribute it
+  * and/or modify it under the terms of the GNU General
+Index: metadataedit/exifdevice.cpp
+===================================================================
+--- kipi-plugins/metadataedit/exifdevice.cpp	(revision 869928)
++++ kipi-plugins/metadataedit/exifdevice.cpp	(revision 1069422)
+@@ -6,7 +6,7 @@
+  * Date        : 2006-10-18
+  * Description : EXIF device settings page.
+  *
+- * Copyright (C) 2006-2007 by Gilles Caulier <caulier dot gilles at gmail dot com>
++ * Copyright (C) 2006-20087 by Gilles Caulier <caulier dot gilles at gmail dot com>
+  *
+  * This program is free software; you can redistribute it
+  * and/or modify it under the terms of the GNU General
+@@ -162,7 +162,7 @@
+                                      "take the picture."));
+ 
+     KActiveLabel *warning = new KActiveLabel(i18n("<b>Warning: EXIF <b><a href="
+-                 "'http://en.wikipedia.org/wiki/Exchangeable_image_file_format#MakerNote_Information'>"
++                 "'http://en.wikipedia.org/wiki/Exchangeable_image_file_format#MakerNote_data'>"
+                  "Makernotes</a></b> can be unreadable if you set "
+                  "wrong device manufacturer/model description.</b>"), parent);
+ 
+Index: slideshow/slideshow.cpp
+===================================================================
+--- kipi-plugins/slideshow/slideshow.cpp	(revision 869928)
++++ kipi-plugins/slideshow/slideshow.cpp	(revision 1069422)
+@@ -110,7 +110,7 @@
+     m_intArray      = 0;
+     m_endOfShow     = false;
+ 
+-    m_timer = new QTimer();
++    m_timer = new QTimer(this);
+     connect(m_timer, SIGNAL(timeout()), 
+             this, SLOT(slotTimeOut()));
+ 
+Index: slideshow/plugin_slideshow.cpp
+===================================================================
+--- kipi-plugins/slideshow/plugin_slideshow.cpp	(revision 869928)
++++ kipi-plugins/slideshow/plugin_slideshow.cpp	(revision 1069422)
+@@ -23,7 +23,7 @@
+ 
+ // C Ansi includes.
+ 
+-extern "C" 
++extern "C"
+ {
+ #include <sys/time.h>
+ }
+@@ -40,7 +40,7 @@
+ #include <qstringlist.h>
+ 
+  // KDE includes.
+- 
++
+ #include <klocale.h>
+ #include <kaction.h>
+ #include <kapplication.h>
+@@ -51,7 +51,7 @@
+ #include <kmessagebox.h>
+ 
+ // Lib KIPI includes.
+- 
++
+ #include <libkipi/interface.h>
+ #include <libkipi/imagecollection.h>
+ 
+@@ -79,8 +79,8 @@
+ void Plugin_SlideShow::setup( QWidget* widget )
+ {
+     KIPI::Plugin::setup( widget );
+-    
+-    m_actionSlideShow = new KAction (i18n("Advanced SlideShow..."),
++
++    m_actionSlideShow = new KAction (i18n("Advanced Slideshow..."),
+                                      "slideshow",
+                                      0,
+                                      this,
+@@ -89,17 +89,17 @@
+                                      "slideshow");
+ 
+     m_interface = dynamic_cast< KIPI::Interface* >( parent() );
+-    
++
+     m_urlList = new KURL::List();
+ 
+-    if ( !m_interface ) 
++    if ( !m_interface )
+     {
+        kdError( 51000 ) << "Kipi m_interface is null!" << endl;
+        return;
+     }
+ 
+     m_actionSlideShow->setEnabled( false );
+-    
++
+     connect( m_interface, SIGNAL( currentAlbumChanged( bool ) ),
+              SLOT( slotAlbumChanged( bool ) ) );
+ 
+@@ -114,7 +114,7 @@
+ 
+ void Plugin_SlideShow::slotActivate()
+ {
+-    if ( !m_interface ) 
++    if ( !m_interface )
+     {
+         kdError( 51000 ) << "Kipi m_interface is null!" << endl;
+         return;
+@@ -129,9 +129,9 @@
+     }
+ 
+     m_imagesHasComments = m_interface->hasFeature(KIPI::ImagesHasComments);
+-    
++
+     KIPISlideShowPlugin::SlideShowConfig *slideShowConfig
+-            = new KIPISlideShowPlugin::SlideShowConfig( allowSelectedOnly, m_interface,kapp->activeWindow(), 
++            = new KIPISlideShowPlugin::SlideShowConfig( allowSelectedOnly, m_interface,kapp->activeWindow(),
+                                                         i18n("Slide Show").ascii(), m_imagesHasComments,
+                                                         m_urlList);
+ 
+@@ -150,7 +150,7 @@
+     }
+ 
+     KIPI::Interface* m_interface = dynamic_cast<KIPI::Interface*>( parent() );
+-    if ( !m_interface ) 
++    if ( !m_interface )
+     {
+         kdError( 51000 ) << "Kipi m_interface is null!" << endl;
+         m_actionSlideShow->setEnabled( false );
+@@ -170,23 +170,23 @@
+ 
+ void Plugin_SlideShow::slotSlideShow()
+ {
+-    if ( !m_interface ) 
++    if ( !m_interface )
+     {
+            kdError( 51000 ) << "Kipi m_interface is null!" << endl;
+            return;
+     }
+ 
+     KConfig config("kipirc");
+-     
++
+     bool    opengl;
+     bool    shuffle;
+     bool    wantKB;
+-    
++
+     config.setGroup("SlideShow Settings");
+     opengl                = config.readBoolEntry("OpenGL");
+     shuffle               = config.readBoolEntry("Shuffle");
+     wantKB                = config.readEntry("Effect Name (OpenGL)") == QString("Ken Burns");
+-    
++
+     if ( m_urlList->isEmpty() )
+     {
+         KMessageBox::sorry(kapp->activeWindow(), i18n("There are no images to show."));
+@@ -206,7 +206,7 @@
+     }
+ 
+     m_urlList->clear();
+-    
++
+     if (shuffle)
+     {
+         struct timeval tv;
+@@ -244,12 +244,12 @@
+                                i18n("Sorry. OpenGL support not available on your system"));
+         else {
+           if (wantKB) {
+-            KIPISlideShowPlugin::SlideShowKB* slideShow = 
++            KIPISlideShowPlugin::SlideShowKB* slideShow =
+                 new KIPISlideShowPlugin::SlideShowKB(fileList, commentsList, m_imagesHasComments);
+             slideShow->show();
+           }
+           else {
+-            KIPISlideShowPlugin::SlideShowGL * slideShow = 
++            KIPISlideShowPlugin::SlideShowGL * slideShow =
+                 new KIPISlideShowPlugin::SlideShowGL(fileList, commentsList, m_imagesHasComments);
+             slideShow->show();
+           }
+@@ -261,7 +261,7 @@
+ {
+     if ( action == m_actionSlideShow )
+        return KIPI::TOOLSPLUGIN;
+-    
++
+     kdWarning( 51000 ) << "Unrecognized action for plugin category identification" << endl;
+     return KIPI::TOOLSPLUGIN; // no warning from compiler, please
+ }
+Index: slideshow/slideshowgl.cpp
+===================================================================
+--- kipi-plugins/slideshow/slideshowgl.cpp	(revision 869928)
++++ kipi-plugins/slideshow/slideshowgl.cpp	(revision 1069422)
+@@ -134,7 +134,7 @@
+ 
+     // --------------------------------------------------
+ 
+-    m_timer = new QTimer();
++    m_timer = new QTimer(this);
+     connect(m_timer, SIGNAL(timeout()),
+             SLOT(slotTimeOut()));
+     m_timer->start(m_timeout, true);
+Index: kipi-plugins.lsm
+===================================================================
+--- kipi-plugins.lsm	(revision 869928)
++++ kipi-plugins.lsm	(revision 1069422)
+@@ -1,7 +1,7 @@
+ Begin4
+ Title: kipi-plugins
+-Version: 0.1.6
+-Entered-date: 2008-10-11
++Version: 0.1.8
++Entered-date: 2009-xx-xx
+ Description: Plugins for KIPI, the KDE Image Plugin Interface
+ Keywords: kde image plugins, digiKam, photo management
+ Author: renchi at pooh.tam.uiuc.edu (Renchi Raju)
+Index: batchprocessimages/convertimagesdialog.cpp
+===================================================================
+--- kipi-plugins/batchprocessimages/convertimagesdialog.cpp	(revision 869928)
++++ kipi-plugins/batchprocessimages/convertimagesdialog.cpp	(revision 1069422)
+@@ -302,8 +302,6 @@
+           *proc << m_TGACompressionAlgo;
+        }
+     }
+-   
+-    *proc << "-verbose";
+ 
+     *proc << item->pathSrc() + "[0]";
+ 
+Index: batchprocessimages/renameimageswidget.cpp
+===================================================================
+--- kipi-plugins/batchprocessimages/renameimageswidget.cpp	(revision 869928)
++++ kipi-plugins/batchprocessimages/renameimageswidget.cpp	(revision 1069422)
+@@ -50,6 +50,9 @@
+ #include <qprogressdialog.h>
+ #include <qgroupbox.h>
+ #include <qpopupmenu.h>
++#include <qregexp.h>
++#include <qdir.h>
++#include <qtooltip.h>
+ 
+ // KDE includes.
+ 
+@@ -97,6 +100,22 @@
+     sortMenu->insertItem(i18n("Sort by Date"), BYDATE);
+     m_sortButton->setPopup(sortMenu);
+ 
++    QToolTip::add(m_useExtraSymbolsCheck,
++            "[e] - extension (small one - after last '.')\n"
++            "[e-] - extension lower case\n"
++            "[e+] extension upper case\n"
++            "[i] - sequence number - no leading zeros\n"
++            "[i:4] - sequence number in 4 digit with leading zeros format\n"
++            "[n] - original file name\n"
++            "[n+] - original file name upper case\n"
++            "[n-] - original file name lower case\n"
++            "[n:5..-2] - substring of original filename from char 5 to second from the end\n"
++            "[n+:..5] - whole name (base + extension, characters from 1 to 5)\n"
++            "[a] - album name\n"
++            "[p+] - absolute path (uppercase)\n"
++            "[B:4..-2] - base name (big one - all before last ',', from 4-th to one before last characters)\n"
++            "[b-:-3..] - base name (small one - all before first '.', last 3 characters)");
++
+     connect(m_listView, SIGNAL(doubleClicked(QListViewItem*)),
+             SLOT(slotListViewDoubleClicked(QListViewItem*)));
+     connect(m_listView, SIGNAL(selectionChanged(QListViewItem*)),
+@@ -108,6 +127,8 @@
+             SLOT(slotOptionsChanged()));
+     connect(m_addFileNameCheck, SIGNAL(toggled(bool)),
+             SLOT(slotOptionsChanged()));
++    connect(m_useExtraSymbolsCheck, SIGNAL(toggled(bool)),
++            SLOT(slotOptionsChanged()));
+     connect(m_addFileDateCheck, SIGNAL(toggled(bool)),
+             SLOT(slotOptionsChanged()));
+     connect(m_formatDateCheck, SIGNAL(toggled(bool)),
+@@ -169,6 +190,7 @@
+     m_seqSpin->setValue(config.readNumEntry("FirstRenameValue", 1));
+ 
+     m_addFileNameCheck->setChecked(config.readBoolEntry("AddOriginalFileName", false));
++    m_useExtraSymbolsCheck->setChecked(config.readBoolEntry("UseExtraSymbolsCheck", false));
+     m_addFileDateCheck->setChecked(config.readBoolEntry("AddImageFileDate", false));
+     m_formatDateCheck->setChecked(config.readBoolEntry("FormatDate", false));
+     m_formatDateEdit->setText(config.readEntry("FormatDateString", "%Y-%m-%d"));
+@@ -185,6 +207,7 @@
+     config.writeEntry("FirstRenameValue", m_seqSpin->value());
+ 
+     config.writeEntry("AddOriginalFileName", m_addFileNameCheck->isChecked());
++    config.writeEntry("UseExtraSymbolsCheck", m_useExtraSymbolsCheck->isChecked());
+     config.writeEntry("AddImageFileDate", m_addFileDateCheck->isChecked());
+     config.writeEntry("FormatDate", m_formatDateCheck->isChecked());
+     config.writeEntry("FormatDateString", m_formatDateEdit->text());
+@@ -195,6 +218,7 @@
+ void RenameImagesWidget::slotOptionsChanged()
+ {
+     m_formatDateCheck->setEnabled(m_addFileDateCheck->isChecked());
++    m_useExtraSymbolsCheck->setEnabled(m_addFileDateCheck->isChecked());
+     m_formatDateEdit->setEnabled(m_formatDateCheck->isEnabled() &&
+                                  m_formatDateCheck->isChecked());
+ 
+@@ -337,6 +361,9 @@
+ 
+     KIPI::ImageInfo info = m_interface->info(url);
+     
++    bool useExtraSymbols = m_addFileDateCheck->isChecked() && 
++        m_useExtraSymbolsCheck->isChecked();
++
+     QString newName = m_prefixEdit->text();
+     
+     if (m_addFileNameCheck->isChecked())
+@@ -345,40 +372,107 @@
+         newName += "_";
+     }
+ 
++    int seqNumber = itemPosition + m_seqSpin->value();
+     if (m_addFileDateCheck->isChecked())
+     {
+         QString format = m_formatDateEdit->text();
+         format = format.simplifyWhiteSpace();
++        if (useExtraSymbols)
++        {
++            QRegExp rxI("\\[i(:(\\d+))?\\]");
++            QRegExp rxN("\\[([anbBeEp])([-+]?)(:(\\d*|-\\d+)\\.\\.(\\d*|-\\d+))?\\]");
++
++            for(int watchDog = 0; watchDog < 100; watchDog++)
++            {
++                QString to;
++                int j, i = rxI.search(format);
++                if (i != -1)
++                {
++                    j = rxI.matchedLength();
++                    QString digits = rxI.cap(2);
++                    int k = (!digits || !digits.length()) ? 0 : digits.toInt();
++                    if (k < 2)
++                    {
++                        to = QString::number(seqNumber);
++                    }
++                    else
++                    {
++                        QString fmt;
++                        fmt.sprintf("0%dd", (k > 10 ? 10 : k));
++                        fmt = "%" + fmt;
++                        to.sprintf(fmt.latin1(), seqNumber);
++                    }
++                }
++                else
++                {
++                    if ((i = rxN.search(format)) == -1)
++                    { 
++                        break; 
++                    }
++                    j = rxN.matchedLength();
++                    QString from = rxN.cap(1);
++                    from = (from == "e") ? fi.extension(/*complete=*/FALSE) :
++                           (from == "E") ? fi.extension(/*complete=*/TRUE) :
++                           (from == "b") ? fi.baseName(/*complete=*/FALSE) :
++                           (from == "B") ? fi.baseName(/*complete=*/TRUE) :
++                           (from == "n") ? fi.fileName() :
++                           (from == "a") ? fi.dir(/*absPath=*/TRUE).dirName() :
++                           (from == "p") ? fi.dirPath(/*absPath=*/TRUE) :
++                           "";
++                    int len = from.length();
++                    QString start = rxN.cap(4);
++                    QString end = rxN.cap(5);
++                    int k = (!start || !start.length()) ? 1 : start.toInt();
++                    int l = (!end || !end.length()) ? len : end.toInt();
++                    k = (k < -len) ? 0 : (k < 0) ? (len + k) : (k > 0) ? (k - 1) : 0;
++                    l = (l < -len) ? -1 : (l < 0) ? (len + l) : (l > 0) ? (l - 1) : 0;
++                    to = l < k ? "" : from.mid(k, l - k + 1);
++                    QString changeCase = rxN.cap(2);
++                    if (!!changeCase && changeCase.length())
++                    {
++                        to = (changeCase == "+") ? to.upper() : to.lower();
++                    }
++                }
++                format.replace(i, j, to);
++            }
++        }
+         format.replace("%%","%");
+         format.replace("%s","");
+-        format.replace("/", "");
++        format.replace("/", "!");
++        format.replace("%[","% [");
+ 
+         time_t time = info.time().toTime_t();
+         struct tm* time_tm = ::localtime(&time);
+         char s[100];
+         ::strftime(s, 100, QFile::encodeName(format), time_tm);
+ 
+-        newName += QString::fromLatin1(s);
+-        newName += "_";
++        newName += QString::fromLocal8Bit(s);
++        if (!useExtraSymbols)
++        {
++            newName += "_";
++        }
+     }
+ 
+-    int count = m_listView->childCount();
+-    int numDigits = 1;
+-    while (count > 0)
++    if (!useExtraSymbols)
+     {
+-        numDigits++;
+-        count = count / 10;
+-    }
++        int numDigits = 1;
++        int count = m_listView->childCount();
++        while (count > 0)
++        {
++            numDigits++;
++            count = count / 10;
++        }
+ 
+-    QString format;
+-    format.sprintf("0%dd", numDigits);
+-    format = "%" + format;
++        QString format;
++        format.sprintf("0%dd", numDigits);
++        format = "%" + format;
+ 
+-    QString seq;
+-    seq.sprintf(format.latin1(), itemPosition + m_seqSpin->value());
+-    newName += seq;
++        QString seq;
++        seq.sprintf(format.latin1(), seqNumber);
++        newName += seq;
+ 
+-    newName += QString::fromLatin1(".") + fi.extension();
++        newName += QString::fromLatin1(".") + fi.extension();
++    }
+     
+     return newName;
+ }
+Index: batchprocessimages/renameimagesbase.ui
+===================================================================
+--- kipi-plugins/batchprocessimages/renameimagesbase.ui	(revision 869928)
++++ kipi-plugins/batchprocessimages/renameimagesbase.ui	(revision 1069422)
+@@ -62,7 +62,7 @@
+                         <string>Add original file name</string>
+                     </property>
+                 </widget>
+-                <widget class="QCheckBox" row="3" column="0" rowspan="1" colspan="2">
++                <widget class="QCheckBox" row="3" column="0">
+                     <property name="name">
+                         <cstring>m_addFileDateCheck</cstring>
+                     </property>
+@@ -70,6 +70,14 @@
+                         <string>Add file date</string>
+                     </property>
+                 </widget>
++                <widget class="QCheckBox" row="3" column="1">
++                    <property name="name">
++                        <cstring>m_useExtraSymbolsCheck</cstring>
++                    </property>
++                    <property name="text">
++                        <string>Use extra [X*] symbols in date format field</string>
++                    </property>
++                </widget>
+                 <widget class="QLineEdit" row="4" column="1">
+                     <property name="name">
+                         <cstring>m_formatDateEdit</cstring>
+Index: NEWS
+===================================================================
+--- NEWS	(revision 869928)
++++ NEWS	(revision 1069422)
+@@ -1,3 +1,40 @@
++v 0.1.8
++---------------------------------------------------------------------------
++
++Kipi-plugins NEW FEATURES:
++
++Kipi-plugins BUG FIXING from B.K.O (http://bugs.kde.org):
++
++001 ==> 144713 : utf8 not supported in "rename images" plugin.
++002 ==> 147823 : Batch processing tasks does not do the job.
++003 ==> 
++
++v 0.1.7
++---------------------------------------------------------------------------
++
++Kipi-plugins NEW FEATURES:
++
++Kipi-plugins BUG FIXING from B.K.O (http://bugs.kde.org):
++
++001 ==> 175033 : GPSSync            : GPSSync does not get any map just a grey square.
++002 ==> 175304 : MetadataEdit       : db does replicate to iptc or exif.
++003 ==> 137359 : MetadataEdit       : Unclear wording in kipiplugin_metadataedit.
++004 ==> 146381 : JPEGLossLess       : Image rotation splits the image with a small strip appearing on the wrong side.
++005 ==> 155023 : SendImages         : Crashs when trying to send images via digiKam.
++006 ==> 170272 : FlickrExport       : Undefined signature problem prevents uploading to flickr.
++007 ==> 161114 : SendImages         : Resizing and emailing from digikam results in no-more readable files.
++008 ==> 147685 : General            : Errors in error and "what's this" messages -- No way to select text in an error box.
++009 ==> 146293 : MetadataEdit       : Plugins/Images/metadata: untranslated.
++010 ==> 140345 : BatchProcess       : kipiplugins do not work due to trying to save the result into the root directory.
++011 ==> 163395 : SendImages         : digiKam and encoding errors in flickr export and mail attachments.
++012 ==> 136941 : BatchProcess       : Graphical picture ordering and renaming.
++013 ==> 149394 : General            : Recover lost/deleted images from flash memory/camera.
++014 ==> 162441 : PicasaWebExport    : Unable to create an album.
++015 ==> 162993 : PicasaWebExport    : Picasa album list not refreshed.
++016 ==> 162994 : PicasaWebExport    : Picasa album list does not contain "not listed" albums, contains only "public" albums.
++017 ==> 174353 : GPSSync            : Kipi-plugin geolocation does not work anymore.
++018 ==> 132982 : BatchProcess       : Batch rename limited, should allow renaming by patterns.
++
+ v 0.1.6
+ ---------------------------------------------------------------------------
+ 
+Index: gpssync/gpseditdialog.cpp
+===================================================================
+--- kipi-plugins/gpssync/gpseditdialog.cpp	(revision 869928)
++++ kipi-plugins/gpssync/gpseditdialog.cpp	(revision 1069422)
+@@ -241,8 +241,14 @@
+     config.setGroup("GPS Sync Settings");
+     resize(configDialogSize(config, QString("GPS Edit Dialog")));
+ 
++    QString mapType = config.readEntry("Map Type", QString("G_NORMAL_MAP"));
++
++    if (mapType == QString("G_SATELLITE_TYPE"))   mapType = QString("G_SATELLITE_MAP");
++    else if (mapType == QString("G_MAP_TYPE"))    mapType = QString("G_NORMAL_MAP");
++    else if (mapType == QString("G_HYBRID_TYPE")) mapType = QString("G_HYBRID_MAP");
++
++    d->worldMap->setMapType(mapType);
+     d->worldMap->setZoomLevel(config.readNumEntry("Zoom Level", 8));
+-    d->worldMap->setMapType(config.readEntry("Map Type", QString("G_MAP_TYPE")));
+ 
+     d->altitudeInput->blockSignals(true);
+     d->latitudeInput->blockSignals(true);
+Index: gpssync/gpsmapwidget.cpp
+===================================================================
+--- kipi-plugins/gpssync/gpsmapwidget.cpp	(revision 869928)
++++ kipi-plugins/gpssync/gpsmapwidget.cpp	(revision 1069422)
+@@ -152,7 +152,7 @@
+     }
+ 
+     // If a new map type have been selected, the Status
+-    // string is like : "newMapType:G_SATELLITE_TYPE"
++    // string is like : "newMapType:G_SATELLITE_MAP"
+     if (status.startsWith(QString("newMapType:")))
+     {
+         status.remove(0, 11);
+Index: ChangeLog
+===================================================================
+--- ChangeLog	(revision 869928)
++++ ChangeLog	(revision 1069422)
+@@ -1,3 +1,129 @@
++V 0.1.7 - 2008-12-13
++----------------------------------------------------------------------------
++
++2008-12-11 04:42  cgilles
++
++    * NEWS: update
++
++2008-12-10 22:30  gateau
++
++    * batchprocessimages/renameimagesbase.ui,
++      batchprocessimages/renameimageswidget.cpp: Applied patches from
++      Piotr Tarnowski and tomas to provide more formating
++      options to the batch renamer.
++      BUG:132982
++
++2008-12-08 15:07  cgilles
++
++    * NEWS: update
++
++2008-12-08 15:04  cgilles
++
++    * NEWS: update
++
++2008-12-08 15:03  cgilles
++
++    * NEWS: update
++
++2008-12-08 15:01  cgilles
++
++    * NEWS: update
++
++2008-12-08 09:49  cgilles
++
++    * NEWS: update
++
++2008-12-08 08:34  cgilles
++
++    * NEWS: update
++
++2008-12-08 08:16  cgilles
++
++    * NEWS: update
++
++2008-12-08 08:08  cgilles
++
++    * NEWS: update
++
++2008-12-08 07:51  cgilles
++
++    * NEWS: update
++
++2008-12-08 07:49  cgilles
++
++    * NEWS: update
++
++2008-12-08 05:03  cgilles
++
++    * NEWS: update
++
++2008-12-08 05:02  cgilles
++
++    * NEWS: update
++
++2008-12-08 05:00  cgilles
++
++    * NEWS: update
++
++2008-12-08 04:59  cgilles
++
++    * NEWS: update
++
++2008-12-07 19:49  cgilles
++
++    * NEWS: update
++
++2008-12-01 17:19  cgilles
++
++    * metadataedit/exifdevice.cpp, metadataedit/exifdevice.h: fix url
++      BUG: 176640
++
++2008-11-17 09:45  cgilles
++
++    * gpssync/gpseditdialog.cpp: backport commit #885395 from trunk
++
++2008-11-16 18:44  cgilles
++
++    * NEWS: update
++
++2008-11-15 21:26  cgilles
++
++    * picasawebexport/picasaweblogin.cpp,
++      picasawebexport/picasawebtalker.cpp: backport commit #884771 from
++      trunk
++
++2008-11-14 04:58  cgilles
++
++    * NEWS: update
++
++2008-11-05 17:43  cgilles
++
++    * NEWS, common/include/kpaboutdata.h,
++      common/include/pluginsversion.h,
++      common/libkipiplugins/kpaboutdata.cpp, kipi-plugins.lsm: dump
++      version
++
++2008-11-04 19:41  cgilles
++
++    * gpssync/gpseditdialog.cpp, gpssync/gpsmapwidget.cpp: sync with
++      trunk : fix crash about new Google API
++
++2008-10-11 12:36  cgilles
++
++    * common/include/pluginsversion.h: prepare 0.1.6
++
++2008-10-11 12:36  cgilles
++
++    * README, kipi-plugins.lsm: prepare 0.1.6
++
++2008-10-11 12:34  cgilles
++
++    * ChangeLog: prepare 0.1.6
++
++2008-10-11 12:27  cgilles
++
++    * NEWS: prepare 0.1.6
++
+ V 0.1.6 - 2008-10-11
+ ----------------------------------------------------------------------------
+ 
+Index: common/include/kpaboutdata.h
+===================================================================
+--- kipi-plugins/common/include/kpaboutdata.h	(revision 869928)
++++ kipi-plugins/common/include/kpaboutdata.h	(revision 1069422)
+@@ -2,7 +2,7 @@
+ //
+ //    KPABOUTDATA.H
+ //
+-//    Copyright (C) 2006 Angelo Naselli <anaselli at linux dot it>
++//    Copyright (C) 2006-2008 Angelo Naselli <anaselli at linux dot it>
+ //
+ //    This program is free software; you can redistribute it and/or modify
+ //    it under the terms of the GNU General Public License as published by
+@@ -41,7 +41,7 @@
+                   const char *pluginVersion=0,
+                   int licenseType=License_Unknown,
+                   const char *pluginDescription=0,
+-                  const char *copyrightStatement="Copyright 2003-2007, kipi-plugins team");
++                  const char *copyrightStatement="Copyright 2003-2009, kipi-plugins team");
+ 
+   };
+ 
+Index: common/include/pluginsversion.h
+===================================================================
+--- kipi-plugins/common/include/pluginsversion.h	(revision 869928)
++++ kipi-plugins/common/include/pluginsversion.h	(revision 1069422)
+@@ -21,7 +21,7 @@
+ #ifndef KIPIPLUGINS_VERSION_H
+ #define KIPIPLUGINS_VERSION_H
+ 
+-static const char kipiplugins_version[] = "0.1.6";
++static const char kipiplugins_version[] = "0.1.8";
+ 
+ #endif // KIPIPLUGINS_VERSION_H
+ 
+Index: common/libkipiplugins/kpaboutdata.cpp
+===================================================================
+--- kipi-plugins/common/libkipiplugins/kpaboutdata.cpp	(revision 869928)
++++ kipi-plugins/common/libkipiplugins/kpaboutdata.cpp	(revision 1069422)
+@@ -2,7 +2,7 @@
+ //
+ //    KPABOUTDATA.CPP
+ //
+-//    Copyright (C) 2006 Angelo Naselli <anaselli at linux dot it>
++//    Copyright (C) 2006-2008 Angelo Naselli <anaselli at linux dot it>
+ //
+ //    This program is free software; you can redistribute it and/or modify
+ //    it under the terms of the GNU General Public License as published by
+@@ -66,4 +66,4 @@
+     setShortDescription(KipiPluginsVersionString.ascii());
+   }
+ 
+-}
++} // namespace KIPIPlugins
+Index: configure.in.in
+===================================================================
+--- kipi-plugins/configure.in.in	(revision 869928)
++++ kipi-plugins/configure.in.in	(revision 1069422)
+@@ -234,7 +234,7 @@
+ KIPI_PLUGIN_PRE([htmlexport], [HTML Gallery], [xslt])
+ #KIPI_PLUGIN_PRE([imagesgallery], [Images Gallery])      # ???
+ KIPI_PLUGIN_PRE([imageviewer], [Viewer], [opengl])
+-KIPI_PLUGIN_PRE([ipodexport], [iPod Export], [libgpod])
++KIPI_PLUGIN_PRE([ipodexport], [iPod Export], [libgpod] [gdk])
+ KIPI_PLUGIN_PRE([jpeglossless], [JPEG Lossless]) # Does it depend on tiff?
+ KIPI_PLUGIN_PRE([kameraklient], [Kamera Klient], [gphoto])
+ KIPI_PLUGIN_PRE([metadataedit], [Metadata Editor])
+@@ -329,7 +329,7 @@
+ if test "x$build_libgpod" != "xno"; then
+     if test "$PKGCONFIGFOUND" = "yes" ; then
+ 
+-        KDE_PKG_CHECK_MODULES(LIBGPOD, libgpod-1.0 >= 0.4.2 gobject-2.0, have_libgpod=yes,have_libgpod=no)
++        KDE_PKG_CHECK_MODULES(LIBGPOD, libgpod-1.0 >= 0.7.0 gobject-2.0, have_libgpod=yes,have_libgpod=no)
+ 
+         if test "x$have_libgpod" = "xyes"; then
+             AC_DEFINE(HAVE_LIBGPOD, 1, [have libgpod])
+@@ -343,11 +343,41 @@
+         else
+             AC_MSG_WARN([libgpod is required for the iPod export plugin.])
+         fi
++
+     fi
+ fi
+ 
+ #------------------------------------------------------------------
+ #
++# Check for GDK - ipod export plugin
++#
++#------------------------------------------------------------------
++
++have_gdk=no
++
++if test "x$build_libgpod" != "xno"; then
++    if test "$PKGCONFIGFOUND" = "yes" ; then
++
++        KDE_PKG_CHECK_MODULES(GDK, gdk-2.0 >= 2.10.0, have_gdk=yes,have_gdk=no)
++
++        if test "x$have_gdk" = "xyes"; then
++            AC_DEFINE(HAVE_GDK, 1, [have gdk])
++            ac_cppflags_save=$CPPFLAGS
++            ac_cflags_save=$CFLAGS
++            ac_ldflags_save=$LDFLAGS
++
++            CPPFLAGS="$CPPFLAGS $GDK_INCLUDES"
++            CFLAGS="$CFLAGS $GDK_CFLAGS"
++            LDFLAGS="$LDFLAGS $GDK_LIBS"
++        else
++            AC_MSG_WARN([GDK is required for the iPod export plugin.])
++        fi
++
++    fi
++fi
++
++#------------------------------------------------------------------
++#
+ # Check for libkcal - iCalendar support library
+ #
+ #------------------------------------------------------------------
+Index: ipodexport/Makefile.am
+===================================================================
+--- kipi-plugins/ipodexport/Makefile.am	(revision 869928)
++++ kipi-plugins/ipodexport/Makefile.am	(revision 1069422)
+@@ -2,6 +2,7 @@
+ INCLUDES    = $(KIPI_PLUGINS_COMMON_INCLUDE) \
+               $(LIBKIPI_CFLAGS) \
+               $(LIBGPOD_CFLAGS) \
++              $(GDK_CFLAGS) \
+               $(all_includes)
+ 
+ METASOURCES = AUTO
+@@ -17,7 +18,7 @@
+ 
+ kipiplugin_ipodexport_la_LIBADD  = $(LIBKIPI_LIBS) $(LIB_KIO) $(LIB_KDEUI) $(LIB_KDECORE) $(LIB_QT)
+ 
+-kipiplugin_ipodexport_la_LDFLAGS = -module $(KDE_PLUGIN) $(LIBGPOD_LIBS) $(all_libraries)
++kipiplugin_ipodexport_la_LDFLAGS = -module $(KDE_PLUGIN) $(LIBGPOD_LIBS) $(GDK_LIBS) $(all_libraries)
+ 
+ kde_services_DATA = kipiplugin_ipodexport.desktop
+ 
+Index: ipodexport/ipodexportdialog.cpp
+===================================================================
+--- kipi-plugins/ipodexport/ipodexportdialog.cpp	(revision 869928)
++++ kipi-plugins/ipodexport/ipodexportdialog.cpp	(revision 1069422)
+@@ -47,6 +47,10 @@
+ #include <libkipi/imagedialog.h>
+ #endif
+ 
++extern "C" {
++#include <gdk-pixbuf/gdk-pixbuf.h>
++}
++
+ #define debug() kdDebug()
+ 
+ using namespace IpodExport;
+@@ -344,9 +348,13 @@
+         return;
+ 
+     Itdb_Artwork *artwork = item->artwork();
+-    Itdb_Thumb *thumb = itdb_artwork_get_thumb_by_type( artwork, ITDB_THUMB_PHOTO_SMALL );
++    GdkPixbuf *gpixbuf = NULL;
++    
++    // First arg in itdb_artwork_get_pixbuf(...) is pointer to Itdb_Device struct,
++    // in kipiplugin-ipodexport it is m_itdb->device. i hope it _is_ initialiezed
++    gpixbuf = (GdkPixbuf*) itdb_artwork_get_pixbuf( m_itdb->device, artwork, -1, -1 );
+ 
+-    if( !thumb )
++    if( !gpixbuf )
+     {
+         debug() << "no thumb was found" << endl;
+         return;
+@@ -361,6 +369,9 @@
+ //     QPixmap pix;
+ //     pix.convertFromImage( image );
+ //     m_ipodPreview->setPixmap( pix );
++
++    // memory release
++    gdk_pixbuf_unref ( gpixbuf );
+ }
+ 
+ void
+Index: README
+===================================================================
+--- README	(revision 869928)
++++ README	(revision 1069422)
+@@ -106,7 +106,7 @@
+ 
+ AutoConf    >= 2.5.x                        http://www.gnu.org/software/autoconf
+ AutoMake    >= 1.7.x                        http://www.gnu.org/software/automake
+-libqt       >= 3.3.x                        http://www.trolltech.com
++libqt       >= 3.3.x                        http://www.qtsoftware.com
+ libkde      >= 3.4.x (>=3.5.x recommended)  http://www.kde.org
+ libgphoto2  >= 2.x   (>=2.2.x recommended)  http://www.gphoto.org
+ libtiff     >= 3.6.x (>=3.8.2 recommended)  http://www.remotesensing.org/libtiff
+@@ -114,7 +114,8 @@
+ libkexiv2   >= 0.1.5                        http://www.kipi-plugins.org
+ libkdcraw   >= 0.1.6                        http://www.kipi-plugins.org
+ libxslt     >= 1.1                          http://xmlsoft.org/XSLT
+-libgpod     >= 0.4.2                        http://www.gtkpod.org/libgpod
++libgpod     >= 0.7.0                        http://www.gtkpod.org/libgpod
++libgdk      >= 2.0.0                        http://library.gnome.org/devel/gdk-pixbuf
+ libkcal     >= 3.4.x                        http://pim.kde.org
+ ImageMagick >= 5.5.4 (runtime dependency)   http://www.imagemagick.org
+ MJPEGTools  >= 1.6.0 (runtime dependency)   http://mjpeg.sourceforge.net
+@@ -135,5 +136,5 @@
+ rawconverter       : libtiff 
+ acquireimages      : libtiff
+ htmlexport         : libxslt
+-ipodexport         : libgpod
++ipodexport         : libgpod, libgdk
+ calendar           : libkcal
+Index: picasawebexport/picasawebtalker.cpp
+===================================================================
+--- kipi-plugins/picasawebexport/picasawebtalker.cpp	(revision 869928)
++++ kipi-plugins/picasawebexport/picasawebtalker.cpp	(revision 1069422)
+@@ -158,8 +158,8 @@
+         return ;
+     }
+ 
+-    m_username    = username_edit;
+-    username_edit = username;
++    m_username          = username_edit;
++    //username_edit = username;
+     QString accountType = "GOOGLE";
+ 
+     if (!(username_edit.endsWith("@gmail.com")))
+Index: picasawebexport/picasaweblogin.cpp
+===================================================================
+--- kipi-plugins/picasawebexport/picasaweblogin.cpp	(revision 869928)
++++ kipi-plugins/picasawebexport/picasaweblogin.cpp	(revision 1069422)
+@@ -63,16 +63,16 @@
+ 
+     QGridLayout* centerLayout = new QGridLayout(0, 1, 1, 5, 5);
+ 
+-    m_nameEdit = new QLineEdit( this );
++    m_nameEdit = new QLineEdit(this);
+     centerLayout->addWidget(m_nameEdit, 0, 1);
+ 
+-    m_passwdEdit = new QLineEdit( this );
++    m_passwdEdit = new QLineEdit(this);
+     m_passwdEdit->setEchoMode(QLineEdit::Password);
+     centerLayout->addWidget(m_passwdEdit, 1, 1);
+ 
+     QLabel* nameLabel = new QLabel(this);
+-    nameLabel->setText(i18n( "Username:" ));
+-    centerLayout->addWidget(nameLabel, 0, 0);
++    nameLabel->setText(i18n( "Google Login:" ));
++    //centerLayout->addWidget(nameLabel, 0, 0);
+ 
+     QLabel* passwdLabel = new QLabel(this);
+     passwdLabel->setText(i18n( "Password:" ));
+Index: configure.in.bot
+===================================================================
+--- kipi-plugins/configure.in.bot	(revision 869928)
++++ kipi-plugins/configure.in.bot	(revision 1069422)
+@@ -124,7 +124,7 @@
+   if test "x$have_libgpod" != "xyes"; then
+     echo "-- libgpod found.................. NO"
+     echo ""
+-    echo "iPodExport plugin needs the libgpod library, version 0.4.2 or greater. This plugin will not be compiled!"
++    echo "iPodExport plugin needs the libgpod library, version 0.7.0 or greater. This plugin will not be compiled!"
+     echo "To complile this plugin, please install libgpod development package."
+     echo "libgpod website is at http://gtkpod.org/libgpod.html"
+     echo ""
+@@ -132,8 +132,18 @@
+   else
+     echo "-- libgpod found.................. YES"
+   fi
++  if test "x$have_gdk" != "xyes"; then
++    echo "-- gdk found...................... NO"
++    echo ""
++    echo "iPodExport plugin needs the GDK (GTK+ Drawing Kit) library, the part of GTK2. This plugin will not be compiled!"
++    echo "To complile this plugin, please install GDK development package."
++    echo ""
++    all_tests=bad
++  else
++    echo "-- GDK found...................... YES"
++  fi
+ else
+-  echo "-- libgpod library......... NOT NEEDED"
++  echo "-- libgpod and gdk library......... NOT NEEDED"
+ fi
+ 
+ echo ""
+Index: jpeglossless/utils.cpp
+===================================================================
+--- kipi-plugins/jpeglossless/utils.cpp	(revision 869928)
++++ kipi-plugins/jpeglossless/utils.cpp	(revision 1069422)
+@@ -136,7 +136,6 @@
+     KProcess process;
+     process.clearArguments();
+     process << "mogrify";
+-    process << "-verbose";
+ 
+     process << "-profile";
+     process << exifTemp.name();
+Index: jpeglossless/imagerotate.cpp
+===================================================================
+--- kipi-plugins/jpeglossless/imagerotate.cpp	(revision 869928)
++++ kipi-plugins/jpeglossless/imagerotate.cpp	(revision 1069422)
+@@ -174,7 +174,6 @@
+     KProcess process;
+     process.clearArguments();
+     process << "convert";
+-    process << "-verbose";
+     process << "-rotate";
+ 
+     switch(angle)
+Index: jpeglossless/convert2grayscale.h
+===================================================================
+--- kipi-plugins/jpeglossless/convert2grayscale.h	(revision 869928)
++++ kipi-plugins/jpeglossless/convert2grayscale.h	(revision 1069422)
+@@ -6,19 +6,19 @@
+  * Date        : 2003-10-14
+  * Description : batch images grayscale conversion
+  *
+- * Copyright (C) 2004-2007 by Marcel Wiesweg <marcel dot wiesweg at gmx dot de>
+- * Copyright (C) 2003-2007 by Gilles Caulier <caulier dot gilles at gmail dot com>
++ * Copyright (C) 2004-2009 by Marcel Wiesweg <marcel dot wiesweg at gmx dot de>
++ * Copyright (C) 2003-2009 by Gilles Caulier <caulier dot gilles at gmail dot com>
+  *
+  * This program is free software; you can redistribute it
+  * and/or modify it under the terms of the GNU General
+  * Public License as published by the Free Software Foundation;
+  * either version 2, or (at your option) any later version.
+- * 
++ *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+- * 
++ *
+  * ============================================================ */
+ 
+ #ifndef convert2grayscale_H
+Index: jpeglossless/imageflip.cpp
+===================================================================
+--- kipi-plugins/jpeglossless/imageflip.cpp	(revision 869928)
++++ kipi-plugins/jpeglossless/imageflip.cpp	(revision 1069422)
+@@ -160,7 +160,6 @@
+     KProcess process;
+     process.clearArguments();
+     process << "convert";
+-    process << "-verbose";
+ 
+     switch(action)
+     {
+Index: jpeglossless/convert2grayscale.cpp
+===================================================================
+--- kipi-plugins/jpeglossless/convert2grayscale.cpp	(revision 869928)
++++ kipi-plugins/jpeglossless/convert2grayscale.cpp	(revision 1069422)
+@@ -6,8 +6,8 @@
+  * Date        : 2003-10-14
+  * Description : batch images grayscale conversion
+  *
+- * Copyright (C) 2004-2007 by Marcel Wiesweg <marcel dot wiesweg at gmx dot de>
+- * Copyright (C) 2003-2007 by Gilles Caulier <caulier dot gilles at gmail dot com>
++ * Copyright (C) 2004-2009 by Marcel Wiesweg <marcel dot wiesweg at gmx dot de>
++ * Copyright (C) 2003-2009 by Gilles Caulier <caulier dot gilles at gmail dot com>
+  *
+  * NOTE: Do not use kdDebug() in this implementation because 
+  *       it will be multithreaded. Use qDebug() instead. 
+@@ -17,12 +17,12 @@
+  * and/or modify it under the terms of the GNU General
+  * Public License as published by the Free Software Foundation;
+  * either version 2, or (at your option) any later version.
+- * 
++ *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+- * 
++ *
+  * ============================================================ */
+ 
+ #define XMD_H
+@@ -33,7 +33,7 @@
+ 
+ // C Ansi includes.
+ 
+-extern "C" 
++extern "C"
+ {
+ #include <sys/types.h>
+ #include <unistd.h>
+@@ -55,9 +55,14 @@
+ #include <kurl.h>
+ #include <ktempfile.h>
+ 
++// LibKExiv2 includes.
++
++#include <libkexiv2/kexiv2.h>
++
+ // Local includes.
+ 
+ #include "utils.h"
++#include "pluginsversion.h"
+ #include "transupp.h"
+ #include "convert2grayscale.h"
+ #include "convert2grayscale.moc"
+@@ -171,7 +176,7 @@
+         err = i18n("Error in opening output file");
+         return false;
+     }
+-    
++
+     // Open jpeglib stream
+     jpeg_stdio_src(&srcinfo, input_file);
+ 
+@@ -195,7 +200,7 @@
+ 
+     // Specify data destination for compression
+     jpeg_stdio_dest(&dstinfo, output_file);
+-    
++
+     // Do not write a JFIF header if previously the image did not contain it
+     dstinfo.write_JFIF_header = false;
+ 
+@@ -217,6 +222,16 @@
+     fclose(input_file);
+     fclose(output_file);
+ 
++    // And set finaly update the metadata to target file.
++
++    KExiv2Iface::KExiv2 exiv2Iface;
++    exiv2Iface.load(dest);
++    QImage img(dest);
++    QImage exifThumbnail = img.scale(160, 120, QImage::ScaleMin);
++    exiv2Iface.setImageProgramId(QString("Kipi-plugins"), QString(kipiplugins_version));
++    exiv2Iface.setExifThumbnail(exifThumbnail);
++    exiv2Iface.save(dest);
++
+     return true;
+ }
+ 
+@@ -225,7 +240,6 @@
+     KProcess process;
+     process.clearArguments();
+     process << "convert";
+-    process << "-verbose";
+     process << "-type" << "Grayscale";
+     process << src + QString("[0]") << dest;
+ 
