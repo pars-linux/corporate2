@@ -1,0 +1,33 @@
+--- a/libk3b/jobs/k3bverificationjob.cpp.sav	2008-05-27 10:24:20.000000000 +0200
++++ b/libk3b/jobs/k3bverificationjob.cpp	2009-06-11 17:58:58.000000000 +0200
+@@ -154,6 +154,20 @@ void K3bVerificationJob::start()
+   emit newTask( i18n("Checking medium") );
+ 
+   d->mediumHasBeenReloaded = false;
++  connect( K3bDevice::sendCommand( K3bDevice::DeviceHandler::LOAD, d->device ),
++           SIGNAL(finished(K3bDevice::DeviceHandler*)),
++           this,
++           SLOT(slotMediaLoaded()) );
++}
++
++void K3bVerificationJob::slotMediaLoaded()
++{
++    // we always need to wait for the medium. Otherwise the diskinfo below
++    // may run before the drive is ready!
++    waitForMedia( d->device,
++                  K3bDevice::STATE_COMPLETE|K3bDevice::STATE_INCOMPLETE,
++                  K3bDevice::MEDIA_WRITABLE );
++
+   connect( K3bDevice::sendCommand( K3bDevice::DeviceHandler::DISKINFO, d->device ),
+            SIGNAL(finished(K3bDevice::DeviceHandler*)),
+            this,
+--- c/libk3b/jobs/k3bverificationjob.h.sav	2008-05-27 10:24:20.000000000 +0200
++++ d/libk3b/jobs/k3bverificationjob.h	2009-06-11 17:13:37.000000000 +0200
+@@ -75,6 +75,7 @@ class K3bVerificationJob : public K3bJob
+   void setGrownSessionSize( const K3b::Msf& );
+ 
+  private slots:
++  void slotMediaLoaded();
+   void slotMediaReloaded( bool success );
+   void slotDiskInfoReady( K3bDevice::DeviceHandler* dh );
+   void readTrack( int trackIndex );
