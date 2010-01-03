@@ -13,11 +13,3 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
 
     # Remove old-style certs directory
     os.system("rm -rf /etc/cups/certs")
-
-    # Fix the behavioural change introduced in cups 1.3.10 which broke
-    # printing support.
-    """
-    if os.path.exists("/etc/cups/client.conf.newconfig"):
-        new = re.sub('^ServerName localhost.*$', 'ServerName /var/run/cups/cups.sock', open('/etc/cups/client.conf', 'r').read())
-        open("/etc/cups/client.conf", "w").write(new)
-    """
