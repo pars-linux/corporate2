@@ -20,6 +20,9 @@
             <Dependency>bootsplash</Dependency>
         </BuildDependencies>
         <Patches>
+            <!-- fuse: fuse_ioctl_copy_user() denial of service (CVE-2009-4410) (#11842) -->
+            <!-- firewire: ohci: handle receive packets with a data length of zero (CVE-2009-4138) (#11736) -->
+            <!-- ext4: divide-by-zero error when trying to mount a corrupted file system (CVE-2009-4307) (#11720) -->
             <Patch level="1" compressionType="bz2">kernel/patch-2.6.31.9.bz2</Patch>
 
             <!-- Squashfs: Add lzma support from squashfs-devel.git -->
@@ -44,9 +47,6 @@
 
 
             <!-- Moblin patches -->
-
-            <!-- sreadahead kernel open() tracer patch-->
-            <!--<Patch level="1">fastboot/0001-kernel-trace-open.patch</Patch>-->
 
             <!-- fastboot: retry mounting / if it fails first time -->
             <Patch level="1">fastboot/linux-2.6.29-retry-root-mount.patch</Patch>
@@ -109,9 +109,6 @@
             <!-- Disable prism54 in favor of p54pci -->
             <Patch level="1">fedora/prism54-remove-pci-dev-table.patch</Patch>
 
-            <!-- bluetooth: Add USB autosuspend support for btusb driver (disable for now) -->
-            <!--<Patch level="1">fedora/linux-2.6-bluetooth-autosuspend.diff</Patch>-->
-
             <!-- memcg: Improve resource counter scalability -->
             <Patch level="1">fedora/improve-resource-counter-scalability.patch</Patch>
 
@@ -127,9 +124,6 @@
             <!-- nfs: NFSD v4 dynamic pseudo root patch which allows NFS v3 exports to be mounted
                  by v4 clients -->
             <Patch level="1">fedora/linux-2.6.31-nfsd-proot.patch</Patch>
-
-            <!-- toshiba_acpi: Get away from having to poll Toshibas (Not applicable for now)
-            <Patch level="1">fedora/linux-2.6-input-fix-toshiba-hotkeys.patch</Patch>-->
 
             <!-- input: Support for keys that toggle all rfkill state -->
             <Patch level="1">fedora/linux-2.6-rfkill-all.patch</Patch>
@@ -199,8 +193,7 @@
             <Patch level="1">ubuntu/0005-UBUNTU-SAUCE-Correctly-blacklist-Thinkpad-r40e-in-AC.patch</Patch>
             <Patch level="1">ubuntu/0006-UBUNTU-SAUCE-ipw2200-Enable-LED-by-default.patch</Patch>
 
-            <!-- Add Apparmor support (Disable for now) -->
-            <!--
+            <!-- Add Apparmor support (Disable for now)
             <Patch level="1">ubuntu/apparmor/apparmor.diff</Patch>
             <Patch level="1">ubuntu/apparmor/security-default-lsm.diff</Patch>
             -->
@@ -252,6 +245,21 @@
             <!-- Bootsplash for current kernel -->
             <Patch level="1">suse/bootsplash.patch</Patch>
 
+            <!-- bootsplash: Make it work with KMS
+            <Patch level="1">suse/cleanup-and-make-boot-splash-work-with-KMS.patch</Patch>-->
+
+            <!-- SCSI driver for HP Smart Array controllers, a replacement for cciss
+            <Patch level="1">suse/scsi-driver-for-hp-smart-array.patch</Patch>-->
+
+            <!-- Disable NCQ for Acer Aspire 3810T -->
+            <Patch level="1">suse/libata-ahci-aspire-3810t-noncq.patch</Patch>
+
+            <!-- Add new serial Wacom device IDs -->
+            <Patch level="1">suse/serial-8250-add-new-wacom-devices.patch</Patch>
+
+            <!-- igb: Add support for Intel 82576NS ethernet adapter -->
+            <Patch level="1">suse/igb-add-support-for-82576NS-SerDes-adapter.patch</Patch>
+
 
             <!-- Pardus patches & specific changes -->
 
@@ -277,9 +285,6 @@
                  http://fsam7440.sourceforge.net
                  http://www.zwobble.de -->
             <Patch level="1">pardus/linux-2.6-add-fujitsu-amilo-74xx-rfkill-drivers.patch</Patch>
-
-            <!-- Patch acx100 driver into the kernel -->
-            <!--<Patch>pardus/linux-2.6-add-acx-driver.patch</Patch>-->
 
             <!-- Use buildfarm.pardus.org.tr and pardus for /proc/version -->
             <Patch level="1">pardus/buildhost.patch</Patch>
@@ -369,8 +374,8 @@
     -->
 
     <History>
-        <Update release="129">
-            <Date>2009-12-19</Date>
+        <Update release="129" type="security">
+            <Date>2010-01-03</Date>
             <Version>2.6.31.9</Version>
             <Comment>
                 - Version bump to 2.6.31.9,
@@ -403,6 +408,11 @@
                 - Add ACPI fixes from 2.6.32,
                 - squashfs: Add lzma patches from squashfs-devel git,
                 - Add two kill switch drivers for Fujitsu Amilo M7400 and M7440 (#11571),
+                - Enable AppArmor,
+                - fuse: fuse_ioctl_copy_user() denial of service (CVE-2009-4410) (#11842),
+                - firewire: ohci: handle receive packets with a data length of zero (CVE-2009-4138) (#11736),
+                - ext4: divide-by-zero error when trying to mount a corrupted file system (CVE-2009-4307) (#11720),
+                - Add some little fixes from Suse,
                 - drm: Update Fedora patches.
             </Comment>
             <Requires>
