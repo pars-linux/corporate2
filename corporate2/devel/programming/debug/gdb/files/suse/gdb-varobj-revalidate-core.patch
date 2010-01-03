@@ -1,0 +1,328 @@
+Re: [patch] [4/5] Types reference counting [varobj-validation]
+http://sourceware.org/ml/gdb-patches/2009-04/msg00610.html
+
+gdb/
+2009-04-22  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	Split varobj_invalidate into a two-phased operation.
+	* objfiles.c: Include varobj.h
+	(free_objfile): Call varobj_invalidate.
+	* parser-defs.h (exp_uses_objfile): New prototype.
+	* printcmd.c (display_uses_objfile): Move the EXP checking part to ...
+	* parse.c (exp_uses_objfile): ... a new function here.
+	* symfile.c (new_symfile_objfile): Call varobj_revalidate.
+	(reread_symbols): Call varobj_invalidate and varobj_revalidate.
+	(clear_symtab_users): No longer call varobj_invalidate.
+	* varobj.c: New includes objfiles.h and parser-defs.h.
+	(varobj_invalidate): New parameter `objfile', comment it.
+	New variable `var'.  Invalidate any varobj related to `objfile'.
+	Remove unconditional invalidation of local varobjs.  Move global
+	varobjs revalidation to ...
+	(varobj_revalidate): ... a new function.
+	* varobj.h (varobj_invalidate): Update the prototype.
+	(varobj_revalidate): New prototype.
+
+[ Cut the printcmd.c simplification/change.  ]
+
+Index: gdb-6.8.50.20090302/gdb/objfiles.c
+===================================================================
+--- gdb-6.8.50.20090302.orig/gdb/objfiles.c	2009-05-10 21:36:30.000000000 +0200
++++ gdb-6.8.50.20090302/gdb/objfiles.c	2009-05-10 21:36:42.000000000 +0200
+@@ -50,6 +50,7 @@
+ #include "addrmap.h"
+ #include "arch-utils.h"
+ #include "exec.h"
++#include "varobj.h"
+ 
+ /* Prototypes for local functions */
+ 
+@@ -409,6 +410,7 @@ free_objfile (struct objfile *objfile)
+   /* Remove any references to this objfile in the global value
+      lists.  */
+   preserve_values (objfile);
++  varobj_invalidate (objfile);
+ 
+   /* First do any symbol file specific actions required when we are
+      finished with a particular symbol file.  Note that if the objfile
+Index: gdb-6.8.50.20090302/gdb/parse.c
+===================================================================
+--- gdb-6.8.50.20090302.orig/gdb/parse.c	2009-05-10 21:36:29.000000000 +0200
++++ gdb-6.8.50.20090302/gdb/parse.c	2009-05-10 21:36:42.000000000 +0200
+@@ -1373,6 +1373,45 @@ parser_fprintf (FILE *x, const char *y, 
+   va_end (args);
+ }
+ 
++/* Return 1 if EXP uses OBJFILE (and will become dangling when OBJFILE
++   is unloaded), otherwise return 0.  */
++
++int
++exp_uses_objfile (struct expression *exp, struct objfile *objfile)
++{
++  int endpos;
++  const union exp_element *const elts = exp->elts;
++
++  for (endpos = exp->nelts; endpos > 0; )
++    {
++      int i, args, oplen = 0;
++
++      exp->language_defn->la_exp_desc->operator_length (exp, endpos,
++							&oplen, &args);
++      gdb_assert (oplen > 0);
++
++      i = endpos - oplen;
++      if (elts[i].opcode == OP_VAR_VALUE)
++	{
++	  const struct block *const block = elts[i + 1].block;
++	  const struct symbol *const symbol = elts[i + 2].symbol;
++	  const struct obj_section *const section =
++	    SYMBOL_OBJ_SECTION (symbol);
++
++	  /* Check objfile where is placed the code touching the variable.  */
++	  if (matching_objfiles (block_objfile (block), objfile))
++	    return 1;
++
++	  /* Check objfile where the variable itself is placed.  */
++	  if (section && section->objfile == objfile)
++	    return 1;
++	}
++      endpos -= oplen;
++    }
++
++  return 0;
++}
++
+ void
+ _initialize_parse (void)
+ {
+Index: gdb-6.8.50.20090302/gdb/parser-defs.h
+===================================================================
+--- gdb-6.8.50.20090302.orig/gdb/parser-defs.h	2009-05-10 21:36:27.000000000 +0200
++++ gdb-6.8.50.20090302/gdb/parser-defs.h	2009-05-10 21:36:42.000000000 +0200
+@@ -299,4 +299,6 @@ extern void print_subexp_standard (struc
+ 
+ extern void parser_fprintf (FILE *, const char *, ...) ATTR_FORMAT (printf, 2 ,3);
+ 
++extern int exp_uses_objfile (struct expression *exp, struct objfile *objfile);
++
+ #endif /* PARSER_DEFS_H */
+Index: gdb-6.8.50.20090302/gdb/symfile.c
+===================================================================
+--- gdb-6.8.50.20090302.orig/gdb/symfile.c	2009-05-10 21:36:29.000000000 +0200
++++ gdb-6.8.50.20090302/gdb/symfile.c	2009-05-10 21:37:51.000000000 +0200
+@@ -931,6 +931,8 @@ new_symfile_objfile (struct objfile *obj
+ 
+   /* We're done reading the symbol file; finish off complaints.  */
+   clear_complaints (&symfile_complaints, 0, verbo);
++
++  varobj_revalidate ();
+ }
+ 
+ /* A helper function which returns true if OBJFILE has any debug
+@@ -3261,6 +3263,7 @@ reread_symbols (void)
+ 	      /* Remove any references to this objfile in the global
+ 		 value lists.  */
+ 	      preserve_values (objfile);
++	      varobj_invalidate (objfile);
+ 
+ 	      /* Nuke all the state that we will re-read.  Much of the following
+ 	         code which sets things to NULL really is necessary to tell
+@@ -3359,6 +3362,7 @@ reread_symbols (void)
+ 	         frameless.  */
+ 
+ 	      reinit_frame_cache ();
++	      varobj_revalidate ();
+ 
+ 	      /* Discard cleanups as symbol reading was successful.  */
+ 	      discard_cleanups (old_cleanups);
+@@ -3739,10 +3743,6 @@ clear_symtab_users (void)
+      between expressions and which ought to be reset each time.  */
+   expression_context_block = NULL;
+   innermost_block = NULL;
+-
+-  /* Varobj may refer to old symbols, perform a cleanup.  */
+-  varobj_invalidate ();
+-
+ }
+ 
+ static void
+Index: gdb-6.8.50.20090302/gdb/varobj.c
+===================================================================
+--- gdb-6.8.50.20090302.orig/gdb/varobj.c	2009-05-10 21:36:27.000000000 +0200
++++ gdb-6.8.50.20090302/gdb/varobj.c	2009-05-10 21:40:55.000000000 +0200
+@@ -26,6 +26,8 @@
+ #include "gdbcmd.h"
+ #include "block.h"
+ #include "valprint.h"
++#include "objfiles.h"
++#include "parser-defs.h"
+ 
+ #include "gdb_assert.h"
+ #include "gdb_string.h"
+@@ -3272,48 +3274,117 @@ When non-zero, varobj debugging is enabl
+ 			    &setlist, &showlist);
+ }
+ 
+-/* Invalidate the varobjs that are tied to locals and re-create the ones that
+-   are defined on globals.
++/* Invalidate the varobjs that are tied to the specified OBJFILE.  Call this
++   function before you start removing OBJFILE.
++
++   Call varobj_revalidate after the OBJFILEs updates get finished.
++
+    Invalidated varobjs will be always printed in_scope="invalid".  */
++
+ void 
+-varobj_invalidate (void)
++varobj_invalidate (struct objfile *objfile)
+ {
+   struct varobj **all_rootvarobj;
+   struct varobj **varp;
+ 
+   if (varobj_list (&all_rootvarobj) > 0)
+-  {
+-    varp = all_rootvarobj;
+-    while (*varp != NULL)
+-      {
+-	/* Floating varobjs are reparsed on each stop, so we don't care if
+-	   the presently parsed expression refers to something that's gone.  */
+-	if ((*varp)->root->floating)
+-	  continue;
+-
+-        /* global var must be re-evaluated.  */     
+-        if ((*varp)->root->valid_block == NULL)
+-        {
+-          struct varobj *tmp_var;
+-
+-          /* Try to create a varobj with same expression.  If we succeed replace
+-             the old varobj, otherwise invalidate it.  */
+-          tmp_var = varobj_create (NULL, (*varp)->name, (CORE_ADDR) 0, USE_CURRENT_FRAME);
+-          if (tmp_var != NULL) 
+-            { 
+-	      tmp_var->obj_name = xstrdup ((*varp)->obj_name);
+-              varobj_delete (*varp, NULL, 0);
+-              install_variable (tmp_var);
+-            }
+-          else
+-              (*varp)->root->is_valid = 0;
+-        }
+-        else /* locals must be invalidated.  */
+-          (*varp)->root->is_valid = 0;
++    {
++      varp = all_rootvarobj;
++      while (*varp != NULL)
++	{
++	  struct varobj *var = *varp;
+ 
+-        varp++;
+-      }
+-  }
++	  /* Floating varobjs are reparsed on each stop, so we don't care if
++	     the presently parsed expression refers to something that's gone.
++	     */
++	  if (var->root->floating)
++	    continue;
++
++	  if (var->root->is_valid
++	      && matching_objfiles (block_objfile (var->root->valid_block),
++	                            objfile))
++	    var->root->is_valid = 0;
++	  
++	  if (var->root->is_valid
++	      && exp_uses_objfile (var->root->exp, objfile))
++	    {
++	      var->root->is_valid = 0;
++
++	      /* No one touches EXP for !IS_VALID varobj.  */
++	      xfree (var->root->exp);
++	      var->root->exp = NULL;
++	    }
++	  
++	  if (var->type && TYPE_OBJFILE (var->type) == objfile)
++	    {
++	      if (!var->root->valid_block)
++		var->root->is_valid = 0;
++	      else
++		gdb_assert (!var->root->is_valid);
++
++	      var->type = NULL;
++	    }
++
++	  if (var->value
++	      && TYPE_OBJFILE (value_type (var->value)) == objfile)
++	    {
++	      if (!var->root->valid_block)
++		var->root->is_valid = 0;
++	      else
++		gdb_assert (!var->root->is_valid);
++
++	      value_free (var->value);
++	      var->value = NULL;
++	    }
++
++	  varp++;
++	}
++    }
++  xfree (all_rootvarobj);
++}
++
++/* Recreate any global varobjs possibly previously invalidated.  If the
++   expressions are no longer evaluatable set/keep the varobj invalid.  */
++
++void 
++varobj_revalidate (void)
++{
++  struct varobj **all_rootvarobj;
++  struct varobj **varp;
++
++  if (varobj_list (&all_rootvarobj) > 0)
++    {
++      varp = all_rootvarobj;
++      while (*varp != NULL)
++	{
++	  struct varobj *var = *varp;
++
++	  /* Floating varobjs are reparsed on each stop, so we don't care if
++	     the presently parsed expression refers to something that's gone.
++	     */
++	  if (var->root->floating)
++	    continue;
++
++	  /* global var must be re-evaluated.  */     
++	  if (var->root->valid_block == NULL)
++	    {
++	      struct varobj *tmp_var;
++
++	      /* Try to create a varobj with same expression.  If we succeed
++		 replace the old varobj, otherwise invalidate it.  */
++	      tmp_var = varobj_create (NULL, var->name, 0, USE_CURRENT_FRAME);
++	      if (tmp_var != NULL) 
++		{ 
++		  tmp_var->obj_name = xstrdup (var->obj_name);
++		  varobj_delete (var, NULL, 0);
++		  install_variable (tmp_var);
++		}
++	      else
++		var->root->is_valid = 0;
++	    }
++
++	  varp++;
++	}
++    }
+   xfree (all_rootvarobj);
+-  return;
+ }
+Index: gdb-6.8.50.20090302/gdb/varobj.h
+===================================================================
+--- gdb-6.8.50.20090302.orig/gdb/varobj.h	2009-05-10 21:36:27.000000000 +0200
++++ gdb-6.8.50.20090302/gdb/varobj.h	2009-05-10 21:36:42.000000000 +0200
+@@ -148,7 +148,9 @@ extern int varobj_list (struct varobj **
+ extern VEC(varobj_update_result) *varobj_update (struct varobj **varp, 
+ 						 int explicit);
+ 
+-extern void varobj_invalidate (void);
++extern void varobj_invalidate (struct objfile *objfile);
++
++extern void varobj_revalidate (void);
+ 
+ extern int varobj_editable_p (struct varobj *var);
+ 

@@ -1,0 +1,118 @@
+2004-11-23  Andrew Cagney  <cagney@redhat.com>
+
+	* Makefile.in (uninstall-gstack, install-gstack): New rules, add
+	to install and uninstall.
+	* gstack.sh, gstack.1: New files.
+
+Index: gdb-6.8.91.20090917/gdb/Makefile.in
+===================================================================
+--- gdb-6.8.91.20090917.orig/gdb/Makefile.in	2009-09-17 12:47:07.000000000 +0200
++++ gdb-6.8.91.20090917/gdb/Makefile.in	2009-09-17 12:47:38.000000000 +0200
+@@ -989,7 +989,7 @@ install: all install-only 
+ 
+ # The "install-only" target also installs the syscalls' XML files in
+ # the system.
+-install-only: $(CONFIG_INSTALL) xml-syscall-install
++install-only: install-gstack $(CONFIG_INSTALL) xml-syscall-install
+ 	transformed_name=`t='$(program_transform_name)'; \
+ 			  echo gdb | sed -e "$$t"` ; \
+ 		if test "x$$transformed_name" = x; then \
+@@ -1021,9 +1021,26 @@ install-tui:
+ 			$(DESTDIR)$(man1dir) ; \
+ 		$(INSTALL_DATA) $(srcdir)/gdb.1 \
+ 			$(DESTDIR)$(man1dir)/$$transformed_name.1
++GSTACK=gstack
++.PHONY: install-gstack
++install-gstack:
++	transformed_name=`t='$(program_transform_name)'; \
++			  echo $(GSTACK) | sed -e "$$t"` ; \
++		if test "x$$transformed_name" = x; then \
++		  transformed_name=$(GSTACK) ; \
++		else \
++		  true ; \
++		fi ; \
++		$(SHELL) $(srcdir)/../mkinstalldirs $(DESTDIR)$(bindir) ; \
++		$(INSTALL_PROGRAM) $(srcdir)/$(GSTACK).sh \
++			$(DESTDIR)$(bindir)/$$transformed_name$(EXEEXT) ; \
++		: $(SHELL) $(srcdir)/../mkinstalldirs \
++			$(DESTDIR)$(man1dir) ; \
++		: $(INSTALL_DATA) $(srcdir)/gstack.1 \
++			$(DESTDIR)$(man1dir)/$$transformed_name.1
+ 
+ 
+-uninstall: force $(CONFIG_UNINSTALL)
++uninstall: force uninstall-gstack $(CONFIG_UNINSTALL)
+ 	transformed_name=`t='$(program_transform_name)'; \
+ 			  echo gdb | sed -e $$t` ; \
+ 		if test "x$$transformed_name" = x; then \
+@@ -1045,6 +1062,17 @@ uninstall-tui:
+ 		fi ; \
+ 		rm -f $(DESTDIR)$(bindir)/$$transformed_name$(EXEEXT) \
+ 		      $(DESTDIR)$(man1dir)/$$transformed_name.1
++.PHONY: uninstall-gstack
++uninstall-gstack:
++	transformed_name=`t='$(program_transform_name)'; \
++			  echo $(GSTACK) | sed -e $$t` ; \
++		if test "x$$transformed_name" = x; then \
++		  transformed_name=$(GSTACK) ; \
++		else \
++		  true ; \
++		fi ; \
++		rm -f $(DESTDIR)$(bindir)/$$transformed_name$(EXEEXT) \
++		      $(DESTDIR)$(man1dir)/$$transformed_name.1
+ 
+ # The C++ name parser can be built standalone for testing.
+ test-cp-name-parser.o: cp-name-parser.c
+Index: gdb-6.8.91.20090917/gdb/gstack.sh
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ gdb-6.8.91.20090917/gdb/gstack.sh	2009-09-17 12:47:14.000000000 +0200
+@@ -0,0 +1,48 @@
++#!/bin/sh
++
++if test $# -ne 1; then
++    echo "Usage: `basename $0 .sh` <process-id>" 1>&2
++    exit 1
++fi
++
++if test ! -r /proc/$1; then
++    echo "Process $1 not found." 1>&2
++    exit 1
++fi
++
++# GDB doesn't allow "thread apply all bt" when the process isn't
++# threaded; need to peek at the process to determine if that or the
++# simpler "bt" should be used.
++
++backtrace="bt"
++if test -d /proc/$1/task ; then
++    # Newer kernel; has a task/ directory.
++    if test `ls /proc/$1/task | wc -l` -gt 1 2>/dev/null ; then
++	backtrace="thread apply all bt"
++    fi
++elif test -f /proc/$1/maps ; then
++    # Older kernel; go by it loading libpthread.
++    if grep -e libpthread /proc/$1/maps > /dev/null 2>&1 ; then
++	backtrace="thread apply all bt"
++    fi
++fi
++
++GDB=${GDB:-gdb}
++
++if $GDB -nx --quiet --batch --readnever > /dev/null 2>&1; then
++    readnever=--readnever
++else
++    readnever=
++fi
++
++# Run GDB, strip out unwanted noise.
++$GDB --quiet $readnever -nx /proc/$1/exe $1 <<EOF 2>&1 | 
++set width 0
++set height 0
++set pagination no
++$backtrace
++EOF
++sed -n \
++    -e 's/^(gdb) //' \
++    -e '/^#/p' \
++    -e '/^Thread/p'

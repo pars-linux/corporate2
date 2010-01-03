@@ -1,0 +1,110 @@
+http://sourceware.org/ml/gdb-patches/2009-04/msg00284.html
+http://sourceware.org/ml/gdb-cvs/2009-04/msg00077.html
+http://sourceware.org/ml/archer/2009-q2/msg00049.html
+
+gdb/
+2009-04-14  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* c-lang.c (c_get_string): Fix xfree crash on a failed string read.
+
+gdb/testsuite/
+2009-04-14  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* gdb.python/python-prettyprint.c: Include <string.h>.
+	(struct nullstr): New.
+	(main): New variable `nullstr'.  Clear it.
+	* gdb.python/python-prettyprint.exp (run_lang_tests): Test `nullstr'.
+	* gdb.python/python-prettyprint.py (class pp_nullstr): New.
+	(register_pretty_printers): Register `pp_nullstr'.
+
+--- src/gdb/c-lang.c	2009/03/21 00:46:17	1.63
++++ src/gdb/c-lang.c	2009/04/14 21:54:33	1.64
+@@ -657,7 +657,7 @@
+ 			 buffer, length);
+       if (err)
+ 	{
+-	  xfree (buffer);
++	  xfree (*buffer);
+ 	  error (_("Error reading string from inferior: %s"),
+ 		 safe_strerror (err));
+ 	}
+diff --git a/gdb/testsuite/gdb.python/python-prettyprint.c b/gdb/testsuite/gdb.python/python-prettyprint.c
+index 399be23..0d9110d 100644
+--- a/gdb/testsuite/gdb.python/python-prettyprint.c
++++ b/gdb/testsuite/gdb.python/python-prettyprint.c
+@@ -15,6 +15,8 @@
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ 
++#include <string.h>
++
+ struct s
+ {
+   int a;
+@@ -143,6 +145,11 @@ void do_nothing(void)
+   c = 23;			/* Another MI breakpoint */
+ }
+ 
++struct nullstr
++{
++  char *s;
++};
++
+ int
+ main ()
+ {
+@@ -151,10 +158,13 @@ main ()
+   string x = make_string ("this is x");
+   zzz_type c = make_container ("container");
+   const struct string_repr cstring = { { "const string" } };
++  /* Clearing by being `static' could invoke an other GDB C++ bug.  */
++  struct nullstr nullstr;
+ 
+   init_ss(&ss, 1, 2);
+   init_ss(ssa+0, 3, 4);
+   init_ss(ssa+1, 5, 6);
++  memset (&nullstr, 0, sizeof nullstr);
+ 
+ #ifdef __cplusplus
+   S cps;
+diff --git a/gdb/testsuite/gdb.python/python-prettyprint.exp b/gdb/testsuite/gdb.python/python-prettyprint.exp
+index f83b1cd..907dcfd 100644
+--- a/gdb/testsuite/gdb.python/python-prettyprint.exp
++++ b/gdb/testsuite/gdb.python/python-prettyprint.exp
+@@ -85,6 +85,8 @@ proc run_lang_tests {lang} {
+ 
+     gdb_test "print c" " = container $hex \"container\" with 2 elements = {$nl *.0. = 23,$nl *.1. = 72$nl}"
+ 
++    gdb_test "print nullstr" "RuntimeError: Error reading string from inferior.*"
++
+     gdb_test "continue" "Program exited normally\."
+ }
+ 
+diff --git a/gdb/testsuite/gdb.python/python-prettyprint.py b/gdb/testsuite/gdb.python/python-prettyprint.py
+index a53e412..82e5331 100644
+--- a/gdb/testsuite/gdb.python/python-prettyprint.py
++++ b/gdb/testsuite/gdb.python/python-prettyprint.py
+@@ -92,6 +92,13 @@ class pp_vbase1:
+     def to_string (self):
+         return "pp class name: " + self.val.type.tag
+ 
++class pp_nullstr:
++    def __init__(self, val):
++        self.val = val
++
++    def to_string(self):
++        return self.val['s'].string(gdb.parameter('target-charset'))
++
+ def lookup_function (val):
+     "Look-up and return a pretty-printer that can print val."
+ 
+@@ -135,6 +142,9 @@ def register_pretty_printers ():
+     
+     pretty_printers_dict[re.compile ('^VirtualTest$')] =  pp_multiple_virtual
+     pretty_printers_dict[re.compile ('^Vbase1$')] =  pp_vbase1
++
++    pretty_printers_dict[re.compile ('^struct nullstr$')] = pp_nullstr
++    pretty_printers_dict[re.compile ('^nullstr$')] = pp_nullstr
+     
+     # Note that we purposely omit the typedef names here.
+     # Printer lookup is based on canonical name.
