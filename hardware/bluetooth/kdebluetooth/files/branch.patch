@@ -1,0 +1,914 @@
+Index: kdebluetooth/kdebluetooth-common/mimetypes/phone-device-class.desktop
+===================================================================
+--- kdebluetooth/kdebluetooth-common/mimetypes/phone-device-class.desktop	(revision 713500)
++++ kdebluetooth/kdebluetooth-common/mimetypes/phone-device-class.desktop	(revision 1069754)
+@@ -27,5 +27,6 @@
+ Comment[sr@Latn]=Telefonski bluetooth uređaj
+ Comment[sv]=Blåtandsenhet i telefon
+ Comment[ta]=தொலைபெசி புலுடுத் கருவி
++Comment[tg]=Дастгоҳи телефони Bluetooth
+ Comment[tr]=Bluetooth Telefon Aygıtı
+ Comment[xx]=xxPhone Bluetooth Devicexx
+Index: kdebluetooth/kdebluetooth-common/mimetypes/lan-device-class.desktop
+===================================================================
+--- kdebluetooth/kdebluetooth-common/mimetypes/lan-device-class.desktop	(revision 713500)
++++ kdebluetooth/kdebluetooth-common/mimetypes/lan-device-class.desktop	(revision 1069754)
+@@ -25,5 +25,6 @@
+ Comment[sr@Latn]=LAN/mrežni bluetooth uređaj
+ Comment[sv]=Blåtandsenhet för lokalt nätverk
+ Comment[ta]=LAN/புலுடுத் வலை இனைப்பு கருவி
++Comment[tg]=Дастгоҳи шабака/LAN Bluetooth
+ Comment[tr]=LAN/Ağ Bluetooth Aygıtı
+ Comment[xx]=xxLAN/Networking Bluetooth Devicexx
+Index: kdebluetooth/kdebluetooth-common/mimetypes/unknown-profile.desktop
+===================================================================
+--- kdebluetooth/kdebluetooth-common/mimetypes/unknown-profile.desktop	(revision 713500)
++++ kdebluetooth/kdebluetooth-common/mimetypes/unknown-profile.desktop	(revision 1069754)
+@@ -24,6 +24,7 @@
+ Comment[sr@Latn]=Nepoznati bluetooth profil
+ Comment[sv]=Okänd Blåtandsprofil
+ Comment[ta]=தெரியாத ப்ளூ டூத் விளக்கக்குறிப்பு
++Comment[tg]=Профили Bluetooth номуайян
+ Comment[tr]=Bilinmeyen Bluetooth Profili
+ Comment[xx]=xxUnknown Bluetooth Profilexx
+ Icon=misc
+Index: kdebluetooth/kdebluetooth-common/mimetypes/computer-device-class.desktop
+===================================================================
+--- kdebluetooth/kdebluetooth-common/mimetypes/computer-device-class.desktop	(revision 713500)
++++ kdebluetooth/kdebluetooth-common/mimetypes/computer-device-class.desktop	(revision 1069754)
+@@ -27,5 +27,6 @@
+ Comment[sr@Latn]=Računar/PDA bluetooth uređaj
+ Comment[sv]=Blåtandsenhet i dator eller handdator
+ Comment[ta]=கணிணி/PDA புலுடுத் கருவி
++Comment[tg]=Дастгоҳи компютер/PDA Bluetooth
+ Comment[tr]=Bluetooth Bilgisayar/PDA Aygıtı
+ Comment[xx]=xxComputer/PDA Bluetooth Devicexx
+Index: kdebluetooth/kdebluetooth-common/mimetypes/av-device-class.desktop
+===================================================================
+--- kdebluetooth/kdebluetooth-common/mimetypes/av-device-class.desktop	(revision 713500)
++++ kdebluetooth/kdebluetooth-common/mimetypes/av-device-class.desktop	(revision 1069754)
+@@ -27,5 +27,6 @@
+ Comment[sr@Latn]=Audio-video bluetooth uređaj
+ Comment[sv]=Blåtandsenhet med ljud eller video
+ Comment[ta]=அடியோ/விடியோ புலுடுத் கருவி
++Comment[tg]=Дастгоҳи аудио/видео Bluetoot
+ Comment[tr]=Bluetooth Ses/Görüntü Aygıtı
+ Comment[xx]=xxAudio/Video Bluetooth Devicexx
+Index: kdebluetooth/kbtserialchat/kbtserialchat.desktop
+===================================================================
+--- kdebluetooth/kbtserialchat/kbtserialchat.desktop	(revision 713500)
++++ kdebluetooth/kbtserialchat/kbtserialchat.desktop	(revision 1069754)
+@@ -28,6 +28,7 @@
+ GenericName[sr]=Bluetooth ћаскање
+ GenericName[sr@Latn]=Bluetooth ćaskanje
+ GenericName[sv]=Blåtandchatt
++GenericName[tg]=Суҳбати Bluetooth
+ GenericName[tr]=Bluetooth Sohbeti
+ GenericName[xx]=xxBluetooth Chatxx
+ Categories=Qt;KDE;Network;InstantMessaging;
+Index: kdebluetooth/kbtserialchat/kbluetoothd_kbtserialchat.desktop
+===================================================================
+--- kdebluetooth/kbtserialchat/kbluetoothd_kbtserialchat.desktop	(revision 713500)
++++ kdebluetooth/kbtserialchat/kbluetoothd_kbtserialchat.desktop	(revision 1069754)
+@@ -26,6 +26,7 @@
+ Name[pa]=ਸੀਰੀਅਲ ਚੈਟ
+ Name[pl]=Rozmowy przez port szeregowy
+ Name[sv]=Serialchat
++Name[tg]=Суҳбати сериявӣ
+ Name[tr]=Seriport İletişimi
+ Name[xx]=xxSerialChatxx
+ Comment=Simple application to talk to a modem with AT-commands or actually chat with other people.
+Index: kdebluetooth/kbluetooth/application.cpp
+===================================================================
+--- kdebluetooth/kbluetooth/application.cpp	(revision 713500)
++++ kdebluetooth/kbluetooth/application.cpp	(revision 1069754)
+@@ -34,7 +34,7 @@
+ KBluetoothApp::KBluetoothApp() :
+     KUniqueApplication()
+ {
+-    m_config = new KConfig("kbluetoothrc");
++    m_config = new KConfig("kdebluetoothrc");
+     // Enable autostart
+     m_config->setGroup("General");
+     m_config->writeEntry("AutoStart", true);
+@@ -159,10 +159,10 @@
+ 
+ 	PinDialog *dialog = new PinDialog(address, adapter->getRemoteName(address), passkeyagent); 
+ 
++	kapp->updateUserTimestamp();
+ 	dialog->show();
+-	KDialog::centerOnScreen(dialog);
+-	dialog->setActiveWindow();
+ 	dialog->raise();
++
+ }
+ 
+ void KBluetoothApp::slotAuthDialog(const QString &path, const QString &address, const QString &service, const QString &uuid)
+@@ -170,9 +170,9 @@
+ 	kdDebug() << k_funcinfo << " (" << path << "," << address << "," << service << "," << uuid << ")" << endl;
+ 
+ 	AuthorizeDialog *dialog = new AuthorizeDialog(address, adapter->getRemoteName(address), service, uuid, authagent); 
++	
++	kapp->updateUserTimestamp();
+ 	dialog->show();
+-	KDialog::centerOnScreen(dialog);
+-	dialog->setActiveWindow();
+ 	dialog->raise();
+ 
+ 	
+Index: kdebluetooth/kbluetooth/kbluetooth.desktop
+===================================================================
+--- kdebluetooth/kbluetooth/kbluetooth.desktop	(revision 713500)
++++ kdebluetooth/kbluetooth/kbluetooth.desktop	(revision 1069754)
+@@ -30,6 +30,7 @@
+ GenericName[sr]=Bluetooth сервер
+ GenericName[sr@Latn]=Bluetooth server
+ GenericName[sv]=Blåtandserver
++GenericName[tg]=Хидматгоҳи Bluetooth
+ GenericName[tr]=Bluetooth Sunucusu
+ GenericName[xx]=xxBluetooth Serverxx
+ Categories=Settings;HardwareSettings;
+Index: kdebluetooth/kbluetooth/eventsrc
+===================================================================
+--- kdebluetooth/kbluetooth/eventsrc	(revision 713500)
++++ kdebluetooth/kbluetooth/eventsrc	(revision 1069754)
+@@ -2,6 +2,8 @@
+ IconName=kdebluetooth
+ Comment=KBluetooth
+ Comment[sv]=Kbluetooth
++Comment[tr]=Bluetooth
++Comment[xx]=xxKBluetoothxx
+ 
+ [IncomingConnection]
+ Name=IncomingConnection
+@@ -22,8 +24,13 @@
+ Name[pl]=Połączenie przychodzące
+ Name[pt]=Ligação Recebida
+ Name[pt_BR]=Ligação Recebida
++Name[sr]=Долазна веза
++Name[sr@Latn]=Долазна веза
+ Name[sv]=Inkommande anslutning
+ Name[ta]=உள் வரும் இனைப்பு
++Name[tg]=Пайвастшавии даромад
++Name[tr]=Gelen Bağlandı
++Name[xx]=xxIncomingConnectionxx
+ Comment=Received incoming connection
+ Comment[bg]=Получаване на входяща връзка
+ Comment[bs]=Primljena dolazeća konekcija
+@@ -44,8 +51,12 @@
+ Comment[pl]=Otrzymano połączenie przychodzące
+ Comment[pt]=Foi recebida uma ligação
+ Comment[pt_BR]=Foi recebida uma ligação
++Comment[sr]=Примљена је долазећа веза
++Comment[sr@Latn]=Примљена је долазећа веза
+ Comment[sv]=Tog emot inkommande anslutning
+ Comment[ta]=உள் வரும் இனைப்பை பேற்றுள்ளது
++Comment[tg]=Пайвастшавии даромад қабул шуд
++Comment[xx]=xxReceived incoming connectionxx
+ default_presentation=20
+ 
+ [ProcessStderr]
+@@ -59,7 +70,10 @@
+ Name[pl]=Wyjście diagnostyczne procesu
+ Name[pt]=Processamento do STDERR
+ Name[pt_BR]=Processamento do STDERR
++Name[sr]=Stderr процеса
++Name[sr@Latn]=Stderr процеса
+ Name[sv]=Processens standardfelutmatning
++Name[xx]=xxProcessStderrxx
+ Comment=Output of search job on stderr
+ Comment[bg]=Изходни данни за търсене на работа на stderr
+ Comment[ca]=Resultat del treball de cerca en stderr
+@@ -71,13 +85,18 @@
+ Comment[fr]=Sortie de la tâche de recherche sur stderr
+ Comment[gl]=Resultado do traballo de procura en stderr
+ Comment[it]=Output del processo di ricerca su stderr
++Comment[ja]=検索ジョブの stderr への出力
+ Comment[lt]=Paieškos rezultato išvedimas į stderr
+ Comment[nl]=Uitvoer van zoektaak op stderr
+ Comment[pl]=Wyjście zadania wyszukiwania na standardowe wyjście diagnostyczne
+ Comment[pt]=Resultado da tarefa de pesquisa no 'stderr'
+ Comment[pt_BR]=Resultado da tarefa de pesquisa no 'stderr'
++Comment[sr]=Излаз посла тражења на stderr
++Comment[sr@Latn]=Излаз посла тражења на stderr
+ Comment[sv]=Utmatning från sökjobb på standardfelutmatningen
+ Comment[ta]=stderr இல் தேடும் பணியின் வெளியீடு
++Comment[tg]=Натиҷаи ҷустуҷӯи корҳои stderr
++Comment[xx]=xxOutput of search job on stderrxx
+ default_presentation=28
+ default_sound=KDE_Critical_Error.wav
+ 
+@@ -92,7 +111,10 @@
+ Name[pl]=Wyjście standardowe procesu
+ Name[pt]=Processamento do STDOUT
+ Name[pt_BR]=Processamento do STDOUT
++Name[sr]=Stdout процеса
++Name[sr@Latn]=Stdout процеса
+ Name[sv]=Processens standardutmatning
++Name[xx]=xxProcessStdoutxx
+ Comment=Output of search job on stdout
+ Comment[bg]=Изходни данни за търсене на работа на stdout
+ Comment[ca]=Resultat del treball de cerca en stdout
+@@ -104,13 +126,17 @@
+ Comment[fr]=Sortie de la tâche de recherche sur stdout
+ Comment[gl]=Resultado do traballo de procura en stdout
+ Comment[it]=Output del processo di ricerca su stdout
++Comment[ja]=検索ジョブの stdout への出力
+ Comment[lt]=Paieškos rezultato išvedimas į stdout
+ Comment[nl]=Uitvoer van zoektaak op stdout
+ Comment[pl]=Wyjście zadania wyszukiwania na standardowe wyjście procesu
+ Comment[pt]=Resultado da tarefa de pesquisa no 'stdout'
+ Comment[pt_BR]=Resultado da tarefa de pesquisa no 'stdout'
++Comment[sr]=Излаз посла тражења на stdout
++Comment[sr@Latn]=Излаз посла тражења на stdout
+ Comment[sv]=Utmatning från sökjobb på standardutmatningen
+ Comment[ta]=stdout இல் தேடும் பணியின் வெளியீடு
++Comment[xx]=xxOutput of search job on stdoutxx
+ default_presentation=8
+ 
+ [ProcessFailed]
+@@ -121,7 +147,7 @@
+ Name[de]=ProzessFehlgeschlagen
+ Name[el]=Η διεργασία απέτυχε
+ Name[es]=Proceso fallido
+-Name[et]=Protsess ebaõnnestus
++Name[et]=Protsess nurjus
+ Name[fr]=Échec du processus
+ Name[ga]=PróiseasTeipthe
+ Name[gl]=ProcesFailed
+@@ -132,8 +158,13 @@
+ Name[pl]=Błąd procesu
+ Name[pt]=Processo Mal-Sucedido
+ Name[pt_BR]=Processo Mal-Sucedido
++Name[sr]=Неуспео процес
++Name[sr@Latn]=Неуспео процес
+ Name[sv]=Processen misslyckades
+ Name[ta]=சேயல் இயந்தது
++Name[tg]=Амалиёт қатъ шуд
++Name[tr]=Süreç Hatası
++Name[xx]=xxProcessFailedxx
+ Comment=Could not call process to handle connection
+ Comment[bg]=Грешка при изпълнение на процес за обработка на връзка
+ Comment[bs]=Nisam mogao pozvati proces koji rukuje konekcijom
+@@ -154,8 +185,12 @@
+ Comment[pl]=Nie można wywołać procesu do obsługi połączenia
+ Comment[pt]=Não foi possível invocar o processo para tratar da ligação
+ Comment[pt_BR]=Não foi possível invocar o processo para tratar da ligação
++Comment[sr]=Нисам могао да позовем процес за руковање везом
++Comment[sr@Latn]=Нисам могао да позовем процес за руковање везом
+ Comment[sv]=Kunde inte anropa process för att hantera anslutningen
+ Comment[ta]=இனைப்பை கையாள செயல் எதுவும் இல்லை
++Comment[tg]=Амалиёт барои пайвастшавӣ фаъол карда натавонист
++Comment[xx]=xxCould not call process to handle connectionxx
+ default_presentation=15
+ default_sound=KDE_Critical_Error.wav
+ 
+@@ -173,8 +208,13 @@
+ Name[pl]=Utracono urządzenie
+ Name[pt]=Dispositivo Bluetooth Perdido
+ Name[pt_BR]=Dispositivo Bluetooth Perdido
++Name[sr]=Bluetooth уређај је изгубљен
++Name[sr@Latn]=Bluetooth уређај је изгубљен
+ Name[sv]=Blåtandsenhet förlorad
+ Name[ta]=புலுடுத் கருவி தொலைந்தது
++Name[tg]=Дастгоҳи Bluetooth гум шуд
++Name[tr]=Bluetooth Aygıtı Kaybedildi
++Name[xx]=xxBluetoothDeviceLostxx
+ Comment=The Bluetooth device failed or was unplugged
+ Comment[bg]=Bluetooth устройство се повреди или е било изключено
+ Comment[bs]=Bluetooth uređaj je izazvao grešku ili je iskopčan
+@@ -193,8 +233,13 @@
+ Comment[pl]=Urządzenie Bluetooth zostało odłączone lub wystąpił w nim błąd
+ Comment[pt]=O dispositivo Bluetooth falhou ou foi desligado
+ Comment[pt_BR]=O dispositivo Bluetooth falhou ou foi desligado
++Comment[sr]=Bluetooth уређај није у реду или је искључен
++Comment[sr@Latn]=Bluetooth уређај није у реду или је искључен
+ Comment[sv]=Blåtandsenheten slutade fungera eller kopplades bort
+ Comment[ta]=புலுடுத் கருவி சேயல் இயந்தது அல்லது இனைப்பு துண்டிக்க பட்டது
++Comment[tg]=Дастгоҳи Bluetooth қатъ шуд ё ҷудо карда шуд
++Comment[tr]=Bluetooth aygıtı başarısız oldu ya da çıkartıldı
++Comment[xx]=xxThe Bluetooth device failed or was unpluggedxx
+ default_presentation=21
+ default_sound=KDE_Dialog_Disappear.wav
+ 
+@@ -212,8 +257,13 @@
+ Name[pl]=Znaleziono urządzenie Bluetooth
+ Name[pt]=Dispositivo Bluetooth Encontrado
+ Name[pt_BR]=Dispositivo Bluetooth Encontrado
++Name[sr]=Нађен Bluetooth уређај
++Name[sr@Latn]=Нађен Bluetooth уређај
+ Name[sv]=Blåtandsenhet hittades
+ Name[ta]=புலுடுத் கருவி கிடைத்தது
++Name[tg]=Дастгоҳи Bluetooth ёфт нашуд
++Name[tr]=Bluetooth Aygıtı Bulundu
++Name[xx]=xxBluetoothDeviceFoundxx
+ Comment=The Bluetooth device was detected
+ Comment[ar]=تم اكتشلف جهاز Bluetooth 
+ Comment[bg]=Открито е устройство Bluetooth
+@@ -234,8 +284,13 @@
+ Comment[pl]=Znaleziono urządzenie Bluetooth
+ Comment[pt]=Foi detectado um dispositivo Bluetooth
+ Comment[pt_BR]=Foi detectado um dispositivo Bluetooth
++Comment[sr]=Bluetooth уређај је пронађен
++Comment[sr@Latn]=Bluetooth уређај је пронађен
+ Comment[sv]=Blåtandsenheten detekterades
+ Comment[ta]=புலுடுத் கருவி கண்டறிய பட்டது
++Comment[tg]=Дастгоҳи Bluetooth пайдо шуд
++Comment[tr]=Bluetooth aygıtı bulundu
++Comment[xx]=xxThe Bluetooth device was detectedxx
+ default_presentation=21
+ default_sound=KDE_Dialog_Appear.wav
+ 
+@@ -253,8 +308,12 @@
+ Name[pl]=Kanał nie odnaleziony
+ Name[pt]=Nenhum Canal Encontrado
+ Name[pt_BR]=Nenhum Canal Encontrado
++Name[sr]=Није нађен канал
++Name[sr@Latn]=Није нађен канал
+ Name[sv]=Ingen kanal hittades
+ Name[ta]=அலைவரிசை எதுவும் கிடைக்கவில்லை
++Name[tg]=Ягон канал ёфт нашуд
++Name[xx]=xxNoChannelFoundxx
+ Comment=No channel could be assigned to a service
+ Comment[ar]=لم اتمكن من تعيين قناة للخدمة
+ Comment[bg]=Не е открит канал за услуга
+@@ -274,8 +333,11 @@
+ Comment[pl]=Żaden kanał nie mógł zostać przypisany do urządzenia
+ Comment[pt]=Não foi possível atribuir um canal a um serviço
+ Comment[pt_BR]=Não foi possível atribuir um canal a um serviço
++Comment[sr]=Нема канала који се може доделити услузи
++Comment[sr@Latn]=Нема канала који се може доделити услузи
+ Comment[sv]=Någon kanal kunde inte tilldelas till en tjänst
+ Comment[ta]=சேவைக்கு எந்த ஒரு அலைவரிசையும் கோடுக்கபட வில்லை
++Comment[xx]=xxNo channel could be assigned to a servicexx
+ default_presentation=15
+ default_sound=KDE_Critical_Error.wav
+ 
+@@ -295,8 +357,12 @@
+ Name[pl]=Błąd połączenia
+ Name[pt]=Erro de Ligação
+ Name[pt_BR]=Erro de Ligação
++Name[sr]=Грешка везе
++Name[sr@Latn]=Грешка везе
+ Name[sv]=Anslutningsfel
+ Name[ta]=இனைப்பு பிழை
++Name[tg]=Хатои пайвастшавӣ
++Name[xx]=xxConnectionErrorxx
+ Comment=Error while setting up a connection
+ Comment[ar]=خطأ عند أعداد الاتصال
+ Comment[bg]=Грешка при установяване на връзка
+@@ -317,7 +383,11 @@
+ Comment[pl]=Błąd w trakcie przygotowywania połączenia
+ Comment[pt]=Ocorreu um erro ao configurar uma ligação
+ Comment[pt_BR]=Ocorreu um erro ao configurar uma ligação
++Comment[sr]=Грешка при подешавању везе
++Comment[sr@Latn]=Грешка при подешавању везе
+ Comment[sv]=Fel när en anslutning skulle upprättas
+ Comment[ta]=இனைப்பை அமைக்கையில் பிழை
++Comment[tg]=Ҳангоми танзими пайвастшавӣ хато пайдо шуд
++Comment[xx]=xxError while setting up a connectionxx
+ default_presentation=21
+ default_sound=KDE_Error.wav
+Index: kdebluetooth/kbluetooth/main.cpp
+===================================================================
+--- kdebluetooth/kbluetooth/main.cpp	(revision 713500)
++++ kdebluetooth/kbluetooth/main.cpp	(revision 1069754)
+@@ -28,7 +28,7 @@
+ int main(int argc, char *argv[])
+ {
+     KLocale::setMainCatalogue("kdebluetooth");
+-    KAboutData aboutData("kbluetooth",
++    KAboutData aboutData("kdebluetooth",
+                          I18N_NOOP("KBluetooth"),
+ 			 0,
+ 			 description, KAboutData::License_GPL,
+Index: kdebluetooth/kbluetooth/sdprecord.cpp
+===================================================================
+--- kdebluetooth/kbluetooth/sdprecord.cpp	(revision 713500)
++++ kdebluetooth/kbluetooth/sdprecord.cpp	(revision 1069754)
+@@ -9,6 +9,8 @@
+  *   (at your option) any later version.                                   *
+  ***************************************************************************/
+ 
++#include <stdlib.h>
++
+ #include "sdprecord.h"
+ 
+ #include <qdom.h>
+Index: kdebluetooth/kbluetooth/trayicon.cpp
+===================================================================
+--- kdebluetooth/kbluetooth/trayicon.cpp	(revision 713500)
++++ kdebluetooth/kbluetooth/trayicon.cpp	(revision 1069754)
+@@ -79,7 +79,7 @@
+     connect(inputConfigAction, SIGNAL(activated()), this, SLOT(slotInputConfig()));
+ 
+     // Bluetooth Device configuration
+-    deviceConfigAction = new KAction(i18n("&Devices..."),
++    deviceConfigAction = new KAction(i18n("&Adapters..."),
+         KGlobal::iconLoader()->loadIcon("configure", KIcon::Small, 16),
+         KShortcut::null(), this, "device_config");
+     connect(deviceConfigAction, SIGNAL(activated()), this, SLOT(slotDeviceConfig()));
+Index: kdebluetooth/kbluetooth/kbluetooth.autostart.desktop
+===================================================================
+--- kdebluetooth/kbluetooth/kbluetooth.autostart.desktop	(revision 713500)
++++ kdebluetooth/kbluetooth/kbluetooth.autostart.desktop	(revision 1069754)
+@@ -2,7 +2,6 @@
+ Encoding=UTF-8
+ Name=KBluetooth
+ Name[sv]=Kbluetooth
+-Name[ta]=Kபுலுடுத்D
+ Name[xx]=xxKBluetoothxx
+ GenericName=KDE Bluetooth Daemon
+ GenericName[ar]=مراقب KDE Bluetooth
+@@ -31,6 +30,7 @@
+ GenericName[sr@Latn]=Bluetooth demon za KDE
+ GenericName[sv]=KDE-Blåtandsdemon
+ GenericName[ta]=KDE புலுடுத் டேமொன்
++GenericName[tg]=Даймони KDE Bluetooth
+ GenericName[tr]=KDE Bluetooth Servisi
+ GenericName[xx]=xxKDE Bluetooth Daemonxx
+ Exec=kbluetooth --dontforceshow
+Index: kdebluetooth/kcm_btpaired/pairedtab.h
+===================================================================
+--- kdebluetooth/kcm_btpaired/pairedtab.h	(revision 713500)
++++ kdebluetooth/kcm_btpaired/pairedtab.h	(revision 1069754)
+@@ -34,6 +34,7 @@
+ #include <qstringlist.h>
+ #include <qdatetime.h>
+ #include <vector>
++#include <stdint.h>
+ 
+ #include "exportdialog.h"
+ 
+Index: kdebluetooth/kcm_btpaired/kcm_btpaired.desktop
+===================================================================
+--- kdebluetooth/kcm_btpaired/kcm_btpaired.desktop	(revision 713500)
++++ kdebluetooth/kcm_btpaired/kcm_btpaired.desktop	(revision 1069754)
+@@ -31,7 +31,9 @@
+ Keywords[ta]=புலுடுத்
+ Keywords[xx]=xxBluetoothxx
+ GenericName=Paired Bluetooth Devices
++GenericName[de]=Gepaarte Bluetooth-Geräte
+ GenericName[es]=Dispositivos bluetooth emparejados
++GenericName[et]=Registreeritud Bluetoothi seadmed
+ GenericName[it]=Dispositivi Bluetooth accoppiati
+ GenericName[ja]=ペアリング済みの Bluetooth デバイス
+ GenericName[nl]=Gepaarde Bluetooth-diensten
+@@ -40,6 +42,7 @@
+ GenericName[sr]=Упарени Bluetooth уређаји
+ GenericName[sr@Latn]=Upareni Bluetooth uređaji
+ GenericName[sv]=Ihopparade Blåtandsenheter
++GenericName[tg]=Дастгоҳҳои алоқашудаи Bluetooth
+ GenericName[tr]=Eşlenmiş Bluetooth Aygıtları
+ GenericName[xx]=xxPaired Bluetooth Devicesxx
+ Name=Paired Bluetooth Devices
+@@ -50,7 +53,7 @@
+ Name[de]=Gepaarte Bluetooth-Geräte
+ Name[el]=Συζευγμένες συσκευές Bluetooth
+ Name[es]=Dispositivos Bluetooth emparejados
+-Name[et]=Bluetoothi seadmed
++Name[et]=Registreeritud Bluetoothi seadmed
+ Name[fr]=Périphériques Bluetooth couplés
+ Name[gl]=Dispositivos Bluetooth Emparellados
+ Name[it]=Dispositivi Bluetooth accoppiati
+@@ -64,6 +67,7 @@
+ Name[sr@Latn]=Upareni Bluetooth uređaji
+ Name[sv]=Ihopparade Blåtandsenheter
+ Name[ta]=இரட்டை புலுடுத் கருவிகள்
++Name[tg]=Дастгоҳҳои алоқашудаи Bluetooth
+ Name[tr]=Eşlenmiş Bluetooth Aygıtları
+ Name[xx]=xxPaired Bluetooth Devicesxx
+ Exec=kcmshell kcm_btpaired
+Index: kdebluetooth/kinputwizard/inputwizard.cpp
+===================================================================
+--- kdebluetooth/kinputwizard/inputwizard.cpp	(revision 713500)
++++ kdebluetooth/kinputwizard/inputwizard.cpp	(revision 1069754)
+@@ -215,10 +215,13 @@
+ //	busid = manager->activateService("input");
+ 	for (it = inputList.begin();it != inputList.end(); ++it) {
+ 		InputDevice *tmp = new InputDevice(conn,busid,*it);
+-		QString name = adapter->getRemoteName(tmp->getAddress());
++		QString addr = tmp->getAddress();
++		QString name = adapter->getRemoteName(addr);
+ 		if (name == sel->text(1)) {
+ 			inman->removeDevice(*it);
+ 			deviceBox->takeItem(sel);
++			Service service(conn,"/org/bluez/service_input");
++			service.removeTrust(addr);
+ 		}
+ 	}
+ }
+Index: kdebluetooth/kinputwizard/kinputwizard.desktop
+===================================================================
+--- kdebluetooth/kinputwizard/kinputwizard.desktop	(revision 713500)
++++ kdebluetooth/kinputwizard/kinputwizard.desktop	(revision 1069754)
+@@ -6,7 +6,9 @@
+ Name=Kinputwizard
+ Name[xx]=xxKinputwizardxx
+ GenericName=Bluetooth Wizard
++GenericName[de]=Bluetooth-Assistent
+ GenericName[es]=Asistente de bluetooth
++GenericName[et]=Bluetoothi nõustaja
+ GenericName[it]=Assistente per Bluetooth
+ GenericName[ja]=Bluetooth ウィザード
+ GenericName[nl]=Bluetooth-assistent
+@@ -15,19 +17,24 @@
+ GenericName[sr]=Bluetooth чаробњак
+ GenericName[sr@Latn]=Bluetooth čarobnjak
+ GenericName[sv]=Blåtandsguide
++GenericName[tg]=Устоди Bluetooth
+ GenericName[tr]=Bluetooth Sihirbazı
+ GenericName[xx]=xxBluetooth Wizardxx
+ Categories=Qt;KDE;System;Monitor;
+ Comment=KDE Bluetooth Wizard
++Comment[de]=KDE Bluetooth-Assistent
+ Comment[es]=Asistente de bluetooth para KDE
++Comment[et]=KDE Bluetoothi nõustaja
+ Comment[it]=Assistente per Bluetooth di KDE
+ Comment[ja]=KDE Bluetooth ウィザード
++Comment[ms]=Wizard Bluetooth KDE
+ Comment[nl]=KDE Bluetooth-assistent
+ Comment[pt]=Assistente de Bluetooth do KDE
+ Comment[pt_BR]=Assistente de Bluetooth do KDE
+ Comment[sr]=KDE чаробњак за Bluetooth
+ Comment[sr@Latn]=KDE čarobnjak za Bluetooth
+ Comment[sv]=KDE:s Blåtandsguide
++Comment[tg]=Устоди KDE Bluetooth
+ Comment[tr]=KDE Bluetooth Sihirbazı
+ Comment[xx]=xxKDE Bluetooth Wizardxx
+ 
+Index: kdebluetooth/kbtobexclient/kbtobexclient.desktop
+===================================================================
+--- kdebluetooth/kbtobexclient/kbtobexclient.desktop	(revision 713500)
++++ kdebluetooth/kbtobexclient/kbtobexclient.desktop	(revision 1069754)
+@@ -30,6 +30,7 @@
+ GenericName[sr]=Bluetooth OBEX клијент
+ GenericName[sr@Latn]=Bluetooth OBEX klijent
+ GenericName[sv]=Blåtand OBEX-klient
++GenericName[tg]=Миҷози Bluetooth OBEX
+ GenericName[tr]=Bluetooth OBEX İstemcisi
+ GenericName[xx]=xxBluetooth OBEX Clientxx
+ Categories=Qt;KDE;Network;FileTransfer;
+Index: kdebluetooth/kbtobexclient/kbtobexclient_sendfile.desktop
+===================================================================
+--- kdebluetooth/kbtobexclient/kbtobexclient_sendfile.desktop	(revision 713500)
++++ kdebluetooth/kbtobexclient/kbtobexclient_sendfile.desktop	(revision 1069754)
+@@ -27,6 +27,7 @@
+ Name[sr@Latn]=Pošalji bluetooth-om...
+ Name[sv]=Skicka med Blåtand...
+ Name[ta]=புலுடுத்துடன் அனுப்பு...
++Name[tg]=Интиқол ба воситаи Bluetooth...
+ Name[tr]=Bluetooth ile gönder...
+ Name[xx]=xxSend with Bluetooth...xx
+ 
+Index: kdebluetooth/libkbluetooth/sdpdevice.cpp
+===================================================================
+--- kdebluetooth/libkbluetooth/sdpdevice.cpp	(revision 713500)
++++ kdebluetooth/libkbluetooth/sdpdevice.cpp	(revision 1069754)
+@@ -9,6 +9,7 @@
+  *   (at your option) any later version.                                   *
+  ***************************************************************************/
+ 
++#include <stdlib.h>
+ #include <assert.h>
+ #include "sdpdevice.h"
+ #include <kdebug.h>
+Index: kdebluetooth/kbluelock/kbluelock.h
+===================================================================
+--- kdebluetooth/kbluelock/kbluelock.h	(revision 713500)
++++ kdebluetooth/kbluelock/kbluelock.h	(revision 1069754)
+@@ -107,6 +107,7 @@
+ 	void slotEnableSearch();
+ 	void setDiscoverStatusOn();
+ 	void activateUnlock(const QString&,int, short);
++	void slotStartPeriodicDisco();
+ 
+ };
+ 
+Index: kdebluetooth/kbluelock/kbluelock.desktop
+===================================================================
+--- kdebluetooth/kbluelock/kbluelock.desktop	(revision 713500)
++++ kdebluetooth/kbluelock/kbluelock.desktop	(revision 1069754)
+@@ -8,7 +8,9 @@
+ Name[es]=kbluelock
+ Name[xx]=xxKbluelockxx
+ GenericName=Bluetooth Monitor
++GenericName[de]=Bluetooth-Monitor
+ GenericName[es]=Monitor de bluetooth
++GenericName[et]=Bluetoothi jälgija
+ GenericName[it]=Monitor Bluetooth
+ GenericName[ja]=Bluetooth モニタ
+ GenericName[nl]=Bluetooth-monitor
+@@ -17,11 +19,14 @@
+ GenericName[sr]=Bluetooth надгледање
+ GenericName[sr@Latn]=Bluetooth nadgledanje
+ GenericName[sv]=Blåtandsövervakare
++GenericName[tg]=Намоишгари Bluetooth
+ GenericName[tr]=Bluetooth İzleyici
+ GenericName[xx]=xxBluetooth Monitorxx
+ Categories=Qt;KDE;System;Monitor;
+ Comment=KDE Bluetooth Monitor
++Comment[de]=KDE Bluetooth-Monitor
+ Comment[es]=Monitor de bluetooth para KDE
++Comment[et]=KDE Bluetoothi jälgija
+ Comment[it]=Monitor Bluetooth di KDE
+ Comment[ja]=KDE Bluetooth モニタ
+ Comment[nl]=KDE Bluetooth-monitor
+@@ -30,6 +35,7 @@
+ Comment[sr]=Надгледање Bluetooth-а за KDE
+ Comment[sr@Latn]=Nadgledanje Bluetooth-a za KDE
+ Comment[sv]=KDE:s blåtandsövervakare
++Comment[tg]=Намоишгари KDE Bluetooth
+ Comment[tr]=KDE Bluetooth İzleyici
+ Comment[xx]=xxKDE Bluetooth Monitorxx
+ 
+Index: kdebluetooth/kbluelock/kbluelock.cpp
+===================================================================
+--- kdebluetooth/kbluelock/kbluelock.cpp	(revision 713500)
++++ kdebluetooth/kbluelock/kbluelock.cpp	(revision 1069754)
+@@ -201,28 +201,18 @@
+ 			}
+ 			name = newdev->text(0);
+ 			addr = newdev->text(1);
+-
+-			adapter->cancelDiscovery();
+-			if (!adapter->isPeriodicDiscovery()) {
+-    	    			adapter->startPeriodicDiscovery();
+-				selfstart = 1;
+-			}
+-			connect(adapter, SIGNAL(remoteDeviceDisappeared(const QString&)), this, SLOT(activateLock(const QString&)));
+-			
++					
+ 			disableAction->setEnabled(1);
+ 			systray->show();
+ 			systray->setInactive();
+ 			QToolTip::add(systray,( i18n("<p align='center'>KBlueLock <b>ON</b></p>\n<p align='center'><i>%1</i></p>" ).arg(name) ));
+ 			connect(systray, SIGNAL(quitSelected()), SLOT(quitSysTray()));			
+-			if (unlockCheckBox->isChecked()) {
+-				connect(adapter, SIGNAL(remoteDeviceFound(const QString&, int, short)),this,SLOT(activateUnlock(const QString&, int, short)));
+-				unlock = 1;
+-
+-			} else 
+-				disconnect(adapter, SIGNAL(remoteDeviceFound(const QString &, int, short)),this ,SLOT(activateUnlock(const QString&, int, short)));
+-				unlock = 0;
+-				
+-
++	 	 	if (!searchButton->isEnabled())
++	 	 	 	connect(adapter, SIGNAL(discoveryCompleted()), SLOT(slotStartPeriodicDisco()));
++	 	 	 else
++	 	 	 	 slotStartPeriodicDisco();
++	 		//adapter->cancelDiscovery();
++			 		
+ 		} else {
+ 			QMessageBox::information(this, i18n("KBlueLock - No Device selectetd"), i18n("To enable KBlueLock you have to choose a Device."), QMessageBox::Ok|QMessageBox::Default, QMessageBox::NoButton, QMessageBox::NoButton);
+                 return;
+@@ -239,7 +229,29 @@
+ 	}
+ }
+ 
++void KBlueLock::slotStartPeriodicDisco() {
+ 
++	if (!adapter->isPeriodicDiscovery()) {
++		adapter->startPeriodicDiscovery();
++		selfstart = 1;
++	}
++	connect(adapter, SIGNAL(remoteDeviceDisappeared(const QString&)), this, SLOT(activateLock(const QString&)));
++
++
++	if (unlockCheckBox->isChecked()) {
++		connect(adapter, SIGNAL(remoteDeviceFound(const QString&, int, short)),
++	 	 	 	 this,SLOT(activateUnlock(const QString&, int, short)));
++		unlock = 1;
++
++	} else {
++		disconnect(adapter, SIGNAL(remoteDeviceFound(const QString &, int, short)),
++	 	 	 	 	 this ,SLOT(activateUnlock(const QString&, int, short)));
++  	    unlock = 0;
++	}
++	 disconnect(adapter, SIGNAL(discoveryCompleted()), this, SLOT(slotStartPeriodicDisco()));
++
++}
++
+ void KBlueLock::activateLock(const QString& rem_addr) {
+ 
+ 	if (rem_addr != addr)
+Index: kdebluetooth/kbluemon/kbluemon.desktop
+===================================================================
+--- kdebluetooth/kbluemon/kbluemon.desktop	(revision 713500)
++++ kdebluetooth/kbluemon/kbluemon.desktop	(revision 1069754)
+@@ -6,7 +6,9 @@
+ Name=kbluemon
+ Name[xx]=xxkbluemonxx
+ GenericName=Bluetooth Monitor
++GenericName[de]=Bluetooth-Monitor
+ GenericName[es]=Monitor de bluetooth
++GenericName[et]=Bluetoothi jälgija
+ GenericName[it]=Monitor Bluetooth
+ GenericName[ja]=Bluetooth モニタ
+ GenericName[nl]=Bluetooth-monitor
+@@ -15,11 +17,14 @@
+ GenericName[sr]=Bluetooth надгледање
+ GenericName[sr@Latn]=Bluetooth nadgledanje
+ GenericName[sv]=Blåtandsövervakare
++GenericName[tg]=Намоишгари Bluetooth
+ GenericName[tr]=Bluetooth İzleyici
+ GenericName[xx]=xxBluetooth Monitorxx
+ Categories=Qt;KDE;System;Monitor;
+ Comment=KDE Bluetooth Monitor
++Comment[de]=KDE Bluetooth-Monitor
+ Comment[es]=Monitor de bluetooth para KDE
++Comment[et]=KDE Bluetoothi jälgija
+ Comment[it]=Monitor Bluetooth di KDE
+ Comment[ja]=KDE Bluetooth モニタ
+ Comment[nl]=KDE Bluetooth-monitor
+@@ -28,6 +33,7 @@
+ Comment[sr]=Надгледање Bluetooth-а за KDE
+ Comment[sr@Latn]=Nadgledanje Bluetooth-a za KDE
+ Comment[sv]=KDE:s blåtandsövervakare
++Comment[tg]=Намоишгари KDE Bluetooth
+ Comment[tr]=KDE Bluetooth İzleyici
+ Comment[xx]=xxKDE Bluetooth Monitorxx
+ 
+Index: kdebluetooth/kbluemon/main.cpp
+===================================================================
+--- kdebluetooth/kbluemon/main.cpp	(revision 713500)
++++ kdebluetooth/kbluemon/main.cpp	(revision 1069754)
+@@ -24,6 +24,7 @@
+  */
+ 
+ #include <kcmdlineargs.h>
++#include <kmessagebox.h>
+ #include <kaboutdata.h>
+ #include <klocale.h>
+ #include <kdebug.h>
+@@ -65,9 +66,19 @@
+     KUniqueApplication a(argc, argv); 
+ 
+     Monitor mon;
+-    
+-    return mon.exec();
+ 
++	if (mon.noAdapter == true) {
++		KMessageBox::error(NULL,i18n("No Bluetooth Adapter found!\nUnable to start kbluemon.\n\n \
++									Check your Bluetooth Adapter or restart the bluetooth service."));
++		KUniqueApplication::kApplication()->quit();
++		return 0; 
+ 
++	} else if (mon.noDBus == true) {
++		KMessageBox::error(NULL,i18n("Can't connect to DBus!\nUnable to start kbluemon. \n\n \
++									Check your Bluetooth Adapter and restart the bluetooth service"));
++		KUniqueApplication::kApplication()->quit();
++		return 0;	
++	} else    
++		return mon.exec();
+ 
+ }
+Index: kdebluetooth/kbluemon/monitor.cpp
+===================================================================
+--- kdebluetooth/kbluemon/monitor.cpp	(revision 713500)
++++ kdebluetooth/kbluemon/monitor.cpp	(revision 1069754)
+@@ -37,9 +37,22 @@
+ Monitor::Monitor() : MonDialog()
+ {
+ 	KBluetooth::DBusInit *dbus = new KBluetooth::DBusInit();
++
++	noAdapter = 0;
++	noDBus = 0;
++
+ 	conn = dbus->getDBus();
+-	manager = new KBluetooth::Manager(conn);
+-	adapter = new KBluetooth::Adapter(manager->defaultAdapter(), conn);
++	if (!conn) {
++		noDBus = true;
++		return;
++	} else 
++		manager = new KBluetooth::Manager(conn);
++
++	if (!manager->listAdapters().count() || manager->defaultAdapter() == "") {
++		noAdapter = true;
++		return;
++	} else 
++		adapter = new KBluetooth::Adapter(manager->defaultAdapter(), conn);
+ 	
+ 
+ 	mainlogo =  KGlobal::iconLoader()->loadIcon("kdebluetooth", KIcon::Small, 16);
+Index: kdebluetooth/kbluemon/monitor.h
+===================================================================
+--- kdebluetooth/kbluemon/monitor.h	(revision 713500)
++++ kdebluetooth/kbluemon/monitor.h	(revision 1069754)
+@@ -86,10 +86,14 @@
+ 	RemoteDevice* createDevice(const QString& addr, short rssi );
+ 	void getServices(RemoteDevice* add);
+ 
++
+ public:
+ 	Monitor();
+ 	~Monitor();
++	bool noAdapter;
++	bool noDBus;
+ 
++
+ public slots:
+ 	void newdev(const QString&, int, short);
+ 	void chg_name(const QString&, const QString&);
+Index: kdebluetooth/kioslave/bluetooth/bluetooth_sidebarentry.desktop
+===================================================================
+--- kdebluetooth/kioslave/bluetooth/bluetooth_sidebarentry.desktop	(revision 713500)
++++ kdebluetooth/kioslave/bluetooth/bluetooth_sidebarentry.desktop	(revision 1069754)
+@@ -19,6 +19,7 @@
+ Name[it]=Navigatore Bluetooth
+ Name[ja]=Bluetooth ブラウザ
+ Name[lt]=Bluetooth naršyklė
++Name[ms]=Pelayar Bluetooth
+ Name[pa]=ਬਲਿਊਟੁੱਥ ਝਲਕਾਰਾ
+ Name[pl]=Przeglądarka Bluetooth
+ Name[pt]=Navegador Bluetooth
+Index: kdebluetooth/kioslave/obex/kio_obex/kioobex_start.desktop
+===================================================================
+--- kdebluetooth/kioslave/obex/kio_obex/kioobex_start.desktop	(revision 713500)
++++ kdebluetooth/kioslave/obex/kio_obex/kioobex_start.desktop	(revision 1069754)
+@@ -1,29 +1,35 @@
+ [Desktop Entry]
+ Encoding=UTF-8
+ Name=kioobex_start
++Name[es]=iniciar kioobex
++Name[sv]=Starta OBEX I/O-slav
+ Name[xx]=xxkioobex_startxx
+ Exec=kioobex_start %u
+ Icon=kdebluetooth
+ Type=Application
+ Comment=Browse Files with OBEX FTP
+ Comment[bg]=Разглеждане на файлове с OBEX FTP
++Comment[br]=Furchal restroù gant OBEX FTP
+ Comment[ca]=Explora els fitxers amb OBEX FTP
+ Comment[da]=Gennemse filer med OBEX FTP
+-Comment[de]=Dateien durchsuchen via OBEX FTP
++Comment[de]=Dateien durchsuchen via OBEX-FTP
+ Comment[el]=Περιήγηση αρχείων μέσω OBEX FTP
+-Comment[es]=Explorar los archivos con OBEX FTP
++Comment[es]=Navega por los archivos con OBEX FTP
+ Comment[et]=Failide sirvimine OBEX FTP vahendusel
+ Comment[fr]=Naviguer dans les fichiers avec OBEX FTP
++Comment[gl]=Navegue en Ficheiros con OBEX FTP
+ Comment[it]=Sfoglia file con OBEX FTP
++Comment[ja]=OBEX FTP でファイルをブラウズ
+ Comment[ka]=ფაილების დათვალიერება OBEX FTP-ით
+-Comment[nl]=Blader door bestanden met OBEX FTP
++Comment[lt]=Bylų naršymas su OBEX FTP
++Comment[nl]=Blader naar bestanden met OBEX FTP
+ Comment[pl]=Przeglądaj pliki przez OBEX FTP
+-Comment[pt]=Navegue em Ficheiros com o OBEX FTP
+-Comment[pt_BR]=Navegue em Ficheiros com o OBEX FTP
+-Comment[sr]=Прегледајте фајлове помоћу OBEX FTP
+-Comment[sr@Latn]=Pregledajte fajlove pomoću OBEX FTP
++Comment[pt]=Navegar nos Ficheiros com o FTP por OBEX
++Comment[pt_BR]=Navegar nos Ficheiros com o FTP por OBEX
++Comment[sr]=Листај фајлове помоћу OBEX FTP
++Comment[sr@Latn]=Листај фајлове помоћу OBEX FTP
+ Comment[sv]=Bläddra bland filer med OBEX FTP
+ Comment[ta]=OBEX FTPயில் கோப்புகளைப் பார்
+-Comment[tr]=Dosyaları OBEX FTP ile gezin
++Comment[tr]=OBEX FTP ile Dosyalara Gözat
+ Comment[xx]=xxBrowse Files with OBEX FTPxx
+ MimeType=bluetooth/obex-ftp-profile
+Index: kdebluetooth/kioslave/obex/kio_obex/obex.protocol
+===================================================================
+--- kdebluetooth/kioslave/obex/kio_obex/obex.protocol	(revision 713500)
++++ kdebluetooth/kioslave/obex/kio_obex/obex.protocol	(revision 1069754)
+@@ -24,26 +24,19 @@
+ source=false
+ 
+ Description=A kioslave for OBEX connections
+-Description[bg]=kioslave за OBEX връзки
+-Description[br]=Ur c'hioslave evit ar c'hevreadennoù OBEX
+-Description[ca]=Un kioslave per a les connexions OBEX
+-Description[da]=En kioslave til OBEX-forbindelser
+ Description[de]=Ein kioslave für OBEX-Verbindungen
+-Description[el]=Ένας υπηρέτης kio για συνδέσεις OBEX
+-Description[es]=Un 'kioslave' para conexiones OBEX
+-Description[et]=OBEX-ühenduste I/O-moodul
+-Description[fr]=Un kioslave pour les connexions OBEX
+-Description[it]=Un kioslave per connessioni OBEX
++Description[es]=Un kioslave para las conexiones OBEX
++Description[et]=OBEX-ühenduste KIO-moodul
++Description[it]=Un kioslave per le connessioni OBEX
+ Description[ja]=OBEX 接続のための kioslave
+-Description[ka]=kioslave OBEX კავშირებისთვის
+-Description[nl]=Een kioslave for OBEX-verbindingen
+-Description[pl]=Wtyczka protokołu dla połączeń OBEX
+-Description[pt]=Um 'kioslave' para ligações OBEX
+-Description[pt_BR]=Um 'kioslave' para ligações OBEX
+-Description[sr]=kioslave за OBEX везе
+-Description[sr@Latn]=kioslave za OBEX veze
++Description[lt]=OBEX prisijungimų pagalbinė programa (kioslave)
++Description[nl]=Een kioslave voor OBEX-verbindingen
++Description[pt]=Um 'kioslave' para as ligações OBEX
++Description[pt_BR]=Um 'kioslave' para as ligações OBEX
++Description[sr]=A kioslave за OBEX везе
++Description[sr@Latn]=A kioslave за OBEX везе
+ Description[sv]=En I/O-slav för OBEX-anslutningar
+-Description[ta]=ஒரு OBEX இணைப்பிற்க்காண kioslave.
++Description[tg]=kioslave барои пайвастагиҳои OBEX
+ Description[tr]=OBEX bağlantıları için bir kioslave
+ Description[xx]=xxA kioslave for OBEX connectionsxx
+ Icon=remote
