@@ -29,6 +29,7 @@ def install():
                "lock.png" : "actions/object-locked.png",
                "systemsettings.png": "apps/multimedia-volume-control.png",
                "printer.png": "devices/printer-printing.png",
+               "button_cancel.png": "actions/no.png",
                "kmenu.png": "apps/panel.png",
                "kmenu.png": "apps/panel_settings.png"}
 
