@@ -8,8 +8,11 @@
 from pisi.actionsapi import kde
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
+from pisi.actionsapi import pisitools
 
 shelltools.export("HOME", get.workDIR())
+
+KeepSpecial = ["libtool"]
 
 def setup():
     kde.configure()
@@ -19,3 +22,5 @@ def build():
 
 def install():
     kde.install()
+
+    pisitools.remove("%s/lib/libkatapult.la" % get.kdeDIR())
