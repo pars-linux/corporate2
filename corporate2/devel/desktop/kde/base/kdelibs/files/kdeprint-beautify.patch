@@ -1,0 +1,34 @@
+Index: kdelibs-3.5.10/kdeprint/kdeprintrc
+===================================================================
+--- kdelibs-3.5.10.orig/kdeprint/kdeprintrc
++++ kdelibs-3.5.10/kdeprint/kdeprintrc
+@@ -1,6 +1,6 @@
+ [General]
+ Orientation=1
+-ViewType=1
++ViewType=0
+ ViewToolBar=false
+ ViewMenuBar=true
+ ViewPrinterInfos=true
+Index: kdelibs-3.5.10/kdeprint/management/kmmainview.cpp
+===================================================================
+--- kdelibs-3.5.10.orig/kdeprint/management/kmmainview.cpp
++++ kdelibs-3.5.10/kdeprint/management/kmmainview.cpp
+@@ -182,13 +182,13 @@ void KMMainView::initActions()
+ 
+ 	KActionMenu	*stateAct = new KActionMenu(i18n("Start/Stop Printer"), "kdeprint_printstate", m_actions, "printer_state_change");
+ 	stateAct->setDelayed(false);
+-	stateAct->insert(new KAction(i18n("&Start Printer"),"kdeprint_enableprinter",0,this,SLOT(slotChangePrinterState()),m_actions,"printer_start"));
+-	stateAct->insert(new KAction(i18n("Sto&p Printer"),"kdeprint_stopprinter",0,this,SLOT(slotChangePrinterState()),m_actions,"printer_stop"));
++	stateAct->insert(new KAction(i18n("&Start Printer"),"apply",0,this,SLOT(slotChangePrinterState()),m_actions,"printer_start"));
++	stateAct->insert(new KAction(i18n("Sto&p Printer"),"button_cancel",0,this,SLOT(slotChangePrinterState()),m_actions,"printer_stop"));
+ 
+ 	stateAct = new KActionMenu(i18n("Enable/Disable Job Spooling"), "kdeprint_queuestate", m_actions, "printer_spool_change");
+ 	stateAct->setDelayed(false);
+-	stateAct->insert(new KAction(i18n("&Enable Job Spooling"),"kdeprint_enableprinter",0,this,SLOT(slotChangePrinterState()),m_actions,"printer_enable"));
+-	stateAct->insert(new KAction(i18n("&Disable Job Spooling"),"kdeprint_stopprinter",0,this,SLOT(slotChangePrinterState()),m_actions,"printer_disable"));
++	stateAct->insert(new KAction(i18n("&Enable Job Spooling"),"apply",0,this,SLOT(slotChangePrinterState()),m_actions,"printer_enable"));
++	stateAct->insert(new KAction(i18n("&Disable Job Spooling"),"button_cancel",0,this,SLOT(slotChangePrinterState()),m_actions,"printer_disable"));
+ 
+ 	new KAction(i18n("&Remove"),"edittrash",0,this,SLOT(slotRemove()),m_actions,"printer_remove");
+ 	new KAction(i18n("&Configure..."),"configure",0,this,SLOT(slotConfigure()),m_actions,"printer_configure");
