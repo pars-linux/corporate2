@@ -5,15 +5,16 @@
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import shelltools
-from pisi.actionsapi import pythonmodules
 from pisi.actionsapi import get
+
+SAMBA_SOURCE = "source3"
 
 def setup():
     shelltools.export("CFLAGS", "%s -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -DLDAP_DEPRECATED" % get.CFLAGS())
-    shelltools.cd("source/")
+    shelltools.cd(SAMBA_SOURCE)
 
     # Build VERSION
     shelltools.system("script/mkversion.sh")
@@ -32,6 +33,8 @@ def setup():
                          --with-fhs \
                          --with-winbind \
                          --with-cluster-support \
+                         --with-libtdb=no \
+                         --with-libtalloc=no \
                          --sysconfdir=/etc/samba \
                          --localstatedir=/var \
                          --libdir=/usr/lib \
@@ -41,47 +44,36 @@ def setup():
                          --with-logfilebase=/var/log/samba \
                          --with-pammodulesdir=/lib/security \
                          --with-privatedir=/var/lib/samba/private \
+                         --with-swatdir=/usr/share/swat \
                          --with-readline \
                          --with-ldap \
                          --with-cifsmount \
                          --with-cifsupcall \
+                         --enable-external-libtalloc=yes \
                          --enable-shared=yes \
                          --enable-static=no \
                          --enable-cups \
                          --enable-swat \
                          --with-shared-modules=idmap_rid,idmap_ad,idmap_adex,idmap_hash,idmap_tdb2")
 
-    # Reconfigure some libraries for forcing them to generate
-    # correct pkgconfig files
-
-    shelltools.cd("lib/tdb/")
-    shelltools.system("./autogen.sh")
-    autotools.rawConfigure("--prefix=/usr --libdir=/usr/lib")
-
-    shelltools.cd("../talloc/")
-    shelltools.system("./autogen.sh")
-    autotools.rawConfigure("--prefix=/usr --libdir=/usr/lib")
-
 def build():
-    shelltools.cd("source/")
+    shelltools.cd(SAMBA_SOURCE)
     autotools.make("proto")
     autotools.make("everything")
 
 def install():
-    shelltools.cd("source/")
+    shelltools.cd(SAMBA_SOURCE)
     autotools.rawInstall("DESTDIR=%s" % get.installDIR(), "install-everything")
 
     pisitools.insinto("/usr/lib/pkgconfig", "pkgconfig/*pc")
-    pisitools.insinto("/usr/lib/pkgconfig", "lib/talloc/talloc.pc")
-    pisitools.insinto("/usr/lib/pkgconfig", "lib/tdb/tdb.pc")
 
     # we have all mount.* helpers in /usr/bin
     pisitools.domove("/usr/sbin/mount.cifs","/usr/bin/")
     pisitools.domove("/usr/sbin/umount.cifs","/usr/bin/")
 
     # Nsswitch extensions. Make link for wins and winbind resolvers
-    pisitools.dolib_so("nsswitch/libnss_wins.so")
-    pisitools.dolib_so("nsswitch/libnss_winbind.so")
+    pisitools.dolib_so("../nsswitch/libnss_wins.so")
+    pisitools.dolib_so("../nsswitch/libnss_winbind.so")
     pisitools.dosym("libnss_wins.so", "/usr/lib/libnss_wins.so.2")
     pisitools.dosym("libnss_winbind.so", "/usr/lib/libnss_winbind.so.2")
 
@@ -127,12 +119,6 @@ def install():
     pisitools.dodir("/usr/lib/samba/auth")
     pisitools.dodir("/usr/lib/samba/idmap")
 
-    # Remove tdb stuff
-    pisitools.remove("/usr/include/tdb.h")
-    pisitools.remove("/usr/lib/libtdb*")
-    pisitools.remove("/usr/lib/pkgconfig/tdb.pc")
+    # These are coming from libtdb
     pisitools.remove("/usr/bin/tdb*")
     pisitools.remove("/usr/share/man/man8/tdb*")
-
-    # No swat
-    pisitools.removeDir("/usr/share/samba/swat/")
