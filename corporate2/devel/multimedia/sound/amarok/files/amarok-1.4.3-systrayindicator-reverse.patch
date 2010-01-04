@@ -1,0 +1,29 @@
+--- ./amarok/src/systray.cpp.orig	2006-10-05 13:58:08.733929744 +0300
++++ ./amarok/src/systray.cpp	2006-10-05 13:58:18.497445464 +0300
+@@ -181,6 +181,8 @@
+         KIconEffect::semiTransparent( tmpTrayIcon );
+         grayedIcon = tmpTrayIcon;
+     }
++    if ( mergePixels == 0 )
++        return blendOverlay( grayedIcon );
+ 
+     // make up the alternate icon (use hilight color but more saturated)
+     if ( alternateIcon.isNull() )
+@@ -196,16 +198,13 @@
+         KIconEffect::colorize( tmpTrayIcon, saturatedColor/* Qt::blue */, 0.9 );
+         alternateIcon = tmpTrayIcon;
+     }
+-
+     if ( mergePixels >= alternateIcon.height() )
+-        return blendOverlay( grayedIcon );
+-    if ( mergePixels == 0 )
+         return blendOverlay( alternateIcon );
+ 
+     // mix [ grayed <-> colored ] icons
+     QPixmap tmpTrayPixmap = alternateIcon;
+     copyBlt( &tmpTrayPixmap, 0,0, &grayedIcon, 0,0,
+-            alternateIcon.width(), mergePixels>0 ? mergePixels-1 : 0 );
++            alternateIcon.width(), alternateIcon.height() - mergePixels );
+     blendOverlay( tmpTrayPixmap );
+ }
+ 
