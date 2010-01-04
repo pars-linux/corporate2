@@ -684,53 +684,27 @@ def listEntries():
     if os.path.exists(CONF_GRUB):
         grub.parseConf(CONF_GRUB)
 
-    # Alternate menu configuration
-    grub_alt = grubConf()
-    if os.path.exists(CONF_GRUB_ALT):
-        grub_alt.parseConf(CONF_GRUB_ALT)
-
     entries = []
-    def _fetchEntries(_grub, shift=0):
-        for index, entry in enumerate(_grub.entries):
-            os_entry = parseGrubEntry(entry)
-            if os_entry["os_type"] == "unknown":
-                continue
-            if shift > 0:
-                index += shift
-            os_entry["index"] = str(index)
-            if not entry.getCommand("savedefault"):
-                default_index = _grub.getOption("default", "0")
-                if default_index != "saved" and int(default_index) == index:
-                    os_entry["default"] = "yes"
-            entries.append(os_entry)
-
-    _fetchEntries(grub)
-    _fetchEntries(grub_alt, shift=len(grub.entries))
+    for index, entry in enumerate(grub.entries):
+        os_entry = parseGrubEntry(entry)
+        if os_entry["os_type"] == "unknown":
+            continue
+        os_entry["index"] = str(index)
+        if not entry.getCommand("savedefault"):
+            default_index = grub.getOption("default", "0")
+            if default_index != "saved" and int(default_index) == index:
+                os_entry["default"] = "yes"
+        entries.append(os_entry)
 
     return entries
 
 def removeEntry(index, title, uninstall):
-    global CONF_GRUB, CONF_GRUB_ALT
-
     # Main menu configuration
     grub = grubConf()
     if os.path.exists(CONF_GRUB):
         grub.parseConf(CONF_GRUB)
 
-    # Alternate menu configuration
-    grub_alt = grubConf()
-    if os.path.exists(CONF_GRUB_ALT):
-        grub_alt.parseConf(CONF_GRUB_ALT)
-
     index = int(index)
-
-    # If index is greater than entry count,
-    # it's in alternative GRUB configuration
-    if index >= len(grub.entries):
-        # From now on, work on alternative GRUB configuration
-        index -= len(grub.entries)
-        CONF_GRUB = CONF_GRUB_ALT
-        grub = grub_alt
 
     # Check entry title
     entry = grub.entries[index]
@@ -767,8 +741,6 @@ def removeEntry(index, title, uninstall):
             removeKernel(kernel_version)
 
 def setEntry(title, os_type, root, kernel, initrd, options, default, index):
-    global CONF_GRUB, CONF_GRUB_ALT
-
     if not len(title):
         fail(FAIL_NOTITLE)
 
@@ -777,20 +749,7 @@ def setEntry(title, os_type, root, kernel, initrd, options, default, index):
     if os.path.exists(CONF_GRUB):
         grub.parseConf(CONF_GRUB)
 
-    # Alternate menu configuration
-    grub_alt = grubConf()
-    if os.path.exists(CONF_GRUB_ALT):
-        grub_alt.parseConf(CONF_GRUB_ALT)
-
     index = int(index)
-
-    # If index is greater than entry count,
-    # it's in alternative GRUB configuration
-    if index >= len(grub.entries):
-        # From now on, work on alternative GRUB configuration
-        index -= len(grub.entries)
-        CONF_GRUB = CONF_GRUB_ALT
-        grub = grub_alt
 
     entry = makeGrubEntry(title, os_type, root, kernel, initrd, options)
 
