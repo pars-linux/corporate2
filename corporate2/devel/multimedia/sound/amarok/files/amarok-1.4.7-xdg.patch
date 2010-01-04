@@ -1,0 +1,34 @@
+diff -up amarok-1.4.7/amarok/src/Options1.ui.h~ amarok-1.4.7/amarok/src/Options1.ui.h
+--- amarok-1.4.7/amarok/src/Options1.ui.h~	2007-08-07 20:48:28.000000000 +0300
++++ amarok-1.4.7/amarok/src/Options1.ui.h	2007-10-02 22:45:03.000000000 +0300
+@@ -27,8 +27,8 @@ void Options1::init()
+     //slotUpdateRatingsFrame();
+ 
+     QStringList browsers;
+-    browsers << "konqueror" << "firefox" << "opera" << "galeon" << "epiphany"
+-             << "safari" << "mozilla";
++    browsers << "xdg-open" << "konqueror" << "firefox" << "opera" << "galeon"
++             << "epiphany" << "safari" << "mozilla";
+ 
+     // Remove browsers which are not actually installed
+     for( QStringList::Iterator it = browsers.begin(), end = browsers.end(); it != end; ) {
+@@ -41,8 +41,8 @@ void Options1::init()
+     if ( KStandardDirs::findExe( "open" ) != QString::null )
+         browsers.prepend( i18n( "Default Browser" ) );
+ #else
+-    if ( KStandardDirs::findExe( "kfmclient" ) != QString::null )
+-        browsers.prepend( i18n( "Default KDE Browser" ) );
++    if ( KStandardDirs::findExe( "xdg-open" ) != QString::null )
++        browsers.prepend( i18n( "Default Browser" ) );
+ #endif
+ 
+     kComboBox_browser->insertStringList( browsers );
+@@ -54,7 +54,7 @@ void Options1::init()
+ #ifdef Q_WS_MAC
+             "open"
+ #else
+-            "kfmclient openURL"
++            "xdg-open"
+ #endif
+       )
+     {
