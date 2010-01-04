@@ -774,3 +774,39 @@ def setEntry(title, os_type, root, kernel, initrd, options, default, index):
 
     # Notify all COMAR clients
     notify("Boot.Loader", "Changed", "option")
+
+def listUnused():
+    # Main menu configuration
+    grub = grubConf()
+    if os.path.exists(CONF_GRUB):
+        grub.parseConf(CONF_GRUB)
+
+    root = getRoot()
+
+    # Find kernel entries
+    kernels_in_use = []
+    for entry in grub.entries:
+        os_entry = parseGrubEntry(entry)
+
+        # os_entry can have root or uuid depending on the distribution
+        if os_entry["os_type"] in ["linux", "xen"]:
+            if os_entry.get("root", "") == root or getDeviceByUUID(os_entry.get("uuid", "")) == root:
+                kernel_version = os_entry["kernel"].split("kernel-")[1]
+                kernels_in_use.append(kernel_version)
+
+    # Find installed kernels
+    kernels_installed = []
+    for _file in os.listdir(BOOT_DIR):
+        if _file.startswith("kernel-"):
+            kernel_version = _file.split("kernel-")[1]
+            kernels_installed.append(kernel_version)
+
+    kernels_unused = set(kernels_installed) - set(kernels_in_use)
+    kernels_unused = list(kernels_unused)
+
+    return kernels_unused
+
+def removeUnused(version):
+    if not version or version not in listUnused():
+        fail(FAIL_KERNEL_IN_USE % version)
+    removeKernel(version)
