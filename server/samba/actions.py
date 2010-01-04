@@ -33,7 +33,6 @@ def setup():
                          --with-fhs \
                          --with-winbind \
                          --with-cluster-support \
-                         --with-libtdb=no \
                          --with-libtalloc=no \
                          --sysconfdir=/etc/samba \
                          --localstatedir=/var \
@@ -119,6 +118,6 @@ def install():
     pisitools.dodir("/usr/lib/samba/auth")
     pisitools.dodir("/usr/lib/samba/idmap")
 
-    # These are coming from libtdb
-    pisitools.remove("/usr/bin/tdb*")
+    # Remove conflicting man pages
     pisitools.remove("/usr/share/man/man8/tdb*")
+
