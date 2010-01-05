@@ -141,6 +141,26 @@
     </Package>
 
     <Package>
+        <Name>qt-webkit</Name>
+        <RuntimeDependencies>
+            <Dependency>qt</Dependency>
+            <Dependency>phonon</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <!-- We've split out qtwebkit into a seperate binary package in rev 74 -->
+            <Package releaseTo="73">qt</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="data">/usr/lib/pkgconfig/*WebKit*</Path>
+            <Path fileType="data">/usr/qt/4/lib/pkgconfig/*WebKit*</Path>
+            <Path fileType="header">/usr/qt/4/include/Qt/*WebKit*</Path>
+            <Path fileType="header">/usr/qt/4/include/Qt/*webkit*</Path>
+            <Path fileType="header">/usr/qt/4/include/QtWebKit</Path>
+            <Path fileType="library">/usr/qt/4/lib/*WebKit*</Path>
+        </Files>
+    </Package>
+
+    <Package>
         <Name>qt-designer</Name>
         <RuntimeDependencies>
             <Dependency>qt</Dependency>
@@ -186,6 +206,8 @@
         <Name>qt-doc</Name>
         <RuntimeDependencies>
             <Dependency>qt</Dependency>
+            <!-- assistant uses QtWebKit -->
+            <Dependency>qt-webkit</Dependency>
             <Dependency>qt-sql-sqlite</Dependency>
         </RuntimeDependencies>
         <Replaces>
@@ -323,6 +345,13 @@
     -->
 
     <History>
+        <Update release="74">
+            <Date>2010-01-05</Date>
+            <Version>4.5.3</Version>
+            <Comment>Split out WebKit library as qt-webkit.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
         <Update release="73">
             <Date>2009-12-07</Date>
             <Version>4.5.3</Version>
