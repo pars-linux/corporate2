@@ -1,0 +1,103 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>openct</Name>
+        <Homepage>http://www.opensc-project.org/openct</Homepage>
+        <Packager>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Packager>
+        <License>LGPLv2.1</License>
+        <IsA>app:console</IsA>
+        <Summary>Drivers for smart card readers</Summary>
+        <Description>openct contains drivers for several smart card readers. See their homepage for a list.</Description>
+        <Archive sha1sum="b0c5bfa92683fd6c608e21eb07559dfd666f1883" type="targz">http://www.opensc-project.org/files/openct/openct-0.6.18.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>pcsc-lite</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">openct-0.6.16-nosleep.patch</Patch>
+            <Patch level="1">openct-0.6.16-udevadm.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>openct</Name>
+        <RuntimeDependencies>
+            <Dependency>pcsc-lite</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc</Path>
+            <Path fileType="data">/lib/udev/rules.d</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
+            <Path fileType="data">/var/run</Path>
+            <Path fileType="executable">/lib</Path>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="executable">/usr/sbin</Path>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="man">/usr/share/man</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/openct">openct.confd</AdditionalFile>
+        </AdditionalFiles>
+        <Provides>
+            <COMAR script="service.py">System.Service</COMAR>
+            <!--<COMAR script="package.py">System.Package</COMAR>-->
+        </Provides>
+    </Package>
+
+    <History>
+        <Update release="7">
+            <Date>2010-01-05</Date>
+            <Version>0.6.18</Version>
+            <Comment>Version bump</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2009-09-03</Date>
+            <Version>0.6.17</Version>
+            <Comment>Version bump</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2009-06-03</Date>
+            <Version>0.6.16</Version>
+            <Comment>Version bump, disable package.py for now.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2008-08-11</Date>
+            <Version>0.6.15</Version>
+            <Comment>svn snapshot.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2007-09-22</Date>
+            <Version>0.6.14</Version>
+            <Comment>New upstream release.</Comment>
+            <Name>Gürer Özen</Name>
+            <Email>gurer@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2007-05-23</Date>
+            <Version>0.6.11</Version>
+            <Comment>Updated Service script.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2007-04-11</Date>
+            <Version>0.6.11</Version>
+            <Comment>First release.</Comment>
+            <Name>Gürer Özen</Name>
+            <Email>gurer@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
