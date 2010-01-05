@@ -7,11 +7,14 @@
 
 from pisi.actionsapi import kde
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import autotools
 
 KeepSpecial = ["libtool"]
 
 def setup():
+    #kde.make("-f admin/Makefile.common")
     kde.configure("--with-xine \
+                   --with-ifp \
                    --with-libgpod \
                    --with-opengl \
                    --with-mp4v2 \
