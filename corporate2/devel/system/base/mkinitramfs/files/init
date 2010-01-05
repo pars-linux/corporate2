@@ -261,10 +261,17 @@ mount_cdroot() {
     echo "$MNTDIR" >> /newroot/etc/fstab
 }
 
-# ----- main -------
+####################
+# init starts here #
+####################
 
 mount -n -t proc proc /proc > /dev/null 2>&1
 mount -n -t sysfs sys /sys > /dev/null 2>&1
+
+# Probe DRM modules for early KMS
+# FIXME: zorg should recreate initramfs for blacklisting nouveau in favour of
+# proprietary drivers.
+/bin/coolplug --drm
 
 parse_cmdline
 
