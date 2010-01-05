@@ -8,11 +8,10 @@
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 
-NoStrip = "/"
-WorkDir = "coolplug"
+NoStrip = ["/"]
 
 def build():
-    autotools.make()
+    autotools.make("CC=dietlibc-gcc")
 
 def install():
     pisitools.dosbin("coolplug", "/sbin")
