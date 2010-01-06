@@ -29,3 +29,8 @@ def install():
 
     pisitools.dodoc("readme.txt")
     pisitools.dohtml("*.html")
+
+    pisitools.remove("/var/lib/texmf/web2c/pdftex/xmltex.log")
+    pisitools.remove("/var/lib/texmf/web2c/pdftex/pdfxmltex.log")
+    pisitools.remove("/var/lib/texmf/web2c/pdftex/xmltex.fmt")
+    pisitools.remove("/var/lib/texmf/web2c/pdftex/pdfxmltex.fmt")
