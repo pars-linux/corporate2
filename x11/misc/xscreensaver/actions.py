@@ -48,5 +48,5 @@ def install():
 
     # Remove webcollage its pr0n enabled
     pisitools.remove("/usr/libexec/xscreensaver/webcollage")
-    pisitools.remove("/usr/share/man/man6/webcollage.6")
+    pisitools.remove("/usr/share/man/man6/webcollage.*")
     pisitools.remove("/usr/share/xscreensaver/config/webcollage.xml")
