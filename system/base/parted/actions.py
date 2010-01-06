@@ -26,3 +26,5 @@ def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
     pisitools.dodoc("AUTHORS", "BUGS", "ChangeLog", "NEWS", "README", "THANKS", "TODO")
     pisitools.dodoc("doc/API", "doc/USER.jp", "doc/FAT")
+
+    pisitools.remove("/usr/bin/label")
