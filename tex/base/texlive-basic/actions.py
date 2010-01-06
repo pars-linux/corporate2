@@ -6,7 +6,7 @@
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from pisi.actionsapi import texlivemodules
-
+from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 WorkDir = "%s-%s" % (get.srcNAME(), get.srcVERSION().split("_")[-1])
@@ -16,4 +16,9 @@ def build():
 
 def install():
     texlivemodules.install()
+
+    pisitools.remove("/var/lib/texmf/web2c/metafont/mf.log")
+    pisitools.remove("/var/lib/texmf/web2c/tex/tex.log")
+    pisitools.remove("/var/lib/texmf/web2c/tex/tex.fmt")
+    pisitools.remove("/var/lib/texmf/web2c/metafont/mf.base")
 
