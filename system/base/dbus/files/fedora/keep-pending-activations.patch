@@ -1,0 +1,147 @@
+diff -u -r dbus-1.2.16/bus/activation.c hacked/bus/activation.c
+--- dbus-1.2.16/bus/activation.c	2009-07-14 13:06:31.000000000 -0400
++++ hacked/bus/activation.c	2009-12-17 21:36:56.447546354 -0500
+@@ -736,6 +736,101 @@
+ }
+ 
+ BusActivation*
++bus_activation_reload (BusActivation     *activation,
++                       const DBusString  *address,
++                       DBusList         **directories,
++                       DBusError         *error)
++{
++  DBusList      *link;
++  char          *dir;
++
++  dbus_free (activation->server_address);
++  if (!_dbus_string_copy_data (address, &activation->server_address))
++    {
++      BUS_SET_OOM (error);
++      goto failed;
++    }
++
++  _dbus_hash_table_unref (activation->entries);
++  activation->entries = _dbus_hash_table_new (DBUS_HASH_STRING, NULL,
++                                             (DBusFreeFunction)bus_activation_entry_unref);
++  if (activation->entries == NULL)
++    {
++      BUS_SET_OOM (error);
++      goto failed;
++    }
++
++  _dbus_hash_table_unref (activation->directories);
++  activation->directories = _dbus_hash_table_new (DBUS_HASH_STRING, NULL,
++                                                  (DBusFreeFunction)bus_service_directory_unref);
++
++  if (activation->directories == NULL)
++    {
++      BUS_SET_OOM (error);
++      goto failed;
++    }
++
++  link = _dbus_list_get_first_link (directories);
++  while (link != NULL)
++    {
++      BusServiceDirectory *s_dir;
++
++      dir = _dbus_strdup ((const char *) link->data);
++      if (!dir)
++        {
++          BUS_SET_OOM (error);
++          goto failed;
++        }
++
++      s_dir = dbus_new0 (BusServiceDirectory, 1);
++      if (!s_dir)
++        {
++          dbus_free (dir);
++          BUS_SET_OOM (error);
++          goto failed;
++        }
++
++      s_dir->refcount = 1;
++      s_dir->dir_c = dir;
++
++      s_dir->entries = _dbus_hash_table_new (DBUS_HASH_STRING, NULL,
++                                             (DBusFreeFunction)bus_activation_entry_unref);
++
++      if (!s_dir->entries)
++        {
++          bus_service_directory_unref (s_dir);
++          BUS_SET_OOM (error);
++          goto failed;
++        }
++
++      if (!_dbus_hash_table_insert_string (activation->directories, s_dir->dir_c, s_dir))
++        {
++          bus_service_directory_unref (s_dir);
++          BUS_SET_OOM (error);
++          goto failed;
++        }
++
++      /* only fail on OOM, it is ok if we can't read the directory */
++      if (!update_directory (activation, s_dir, error))
++        {
++          if (dbus_error_has_name (error, DBUS_ERROR_NO_MEMORY))
++            goto failed;
++          else
++            dbus_error_free (error);
++        }
++
++      link = _dbus_list_get_next_link (directories, link);
++    }
++
++  return activation;
++
++ failed:
++  if (activation)
++    bus_activation_unref (activation);
++  return NULL;
++}
++
++BusActivation*
+ bus_activation_new (BusContext        *context,
+                     const DBusString  *address,
+                     DBusList         **directories,
+diff -u -r dbus-1.2.16/bus/activation.h hacked/bus/activation.h
+--- dbus-1.2.16/bus/activation.h	2009-07-14 13:06:31.000000000 -0400
++++ hacked/bus/activation.h	2009-12-17 20:02:53.347545761 -0500
+@@ -32,6 +32,10 @@
+ 						const DBusString  *address,
+ 						DBusList         **directories,
+ 						DBusError         *error);
++BusActivation* bus_activation_reload           (BusActivation     *activation,
++						const DBusString  *address,
++						DBusList         **directories,
++						DBusError         *error);
+ BusActivation* bus_activation_ref              (BusActivation     *activation);
+ void           bus_activation_unref            (BusActivation     *activation);
+ 
+diff -u -r dbus-1.2.16/bus/bus.c hacked/bus/bus.c
+--- dbus-1.2.16/bus/bus.c	2009-07-14 13:06:31.000000000 -0400
++++ hacked/bus/bus.c	2009-12-17 20:04:08.006546566 -0500
+@@ -503,19 +503,17 @@
+     }
+   
+   /* Create activation subsystem */
+-  new_activation = bus_activation_new (context, &full_address,
+-                                       dirs, error);
+-  if (new_activation == NULL)
++  if (context->activation)
++    bus_activation_reload (context->activation, &full_address, dirs, error);
++  else
++    context->activation = bus_activation_new (context, &full_address, dirs, error);
++
++  if (context->activation == NULL)
+     {
+       _DBUS_ASSERT_ERROR_IS_SET (error);
+       goto failed;
+     }
+ 
+-  if (is_reload)
+-    bus_activation_unref (context->activation);
+-
+-  context->activation = new_activation;
+-
+   /* Drop existing conf-dir watches (if applicable) */
+ 
