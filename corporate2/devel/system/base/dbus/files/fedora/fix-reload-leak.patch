@@ -1,0 +1,12 @@
+diff -up dbus-1.2.16/bus/bus.c.policy-leak dbus-1.2.16/bus/bus.c
+--- dbus-1.2.16/bus/bus.c.policy-leak   2009-12-17 19:18:50.966795963 -0500
++++ dbus-1.2.16/bus/bus.c       2009-12-17 19:17:36.023796405 -0500
+@@ -438,6 +438,8 @@ process_config_every_time (BusContext   
+   /* get our limits and timeout lengths */
+   bus_config_parser_get_limits (parser, &context->limits);
+
++  if (context->policy)
++    bus_policy_unref (context->policy);
+   context->policy = bus_config_parser_steal_policy (parser);
+   _dbus_assert (context->policy != NULL);
+

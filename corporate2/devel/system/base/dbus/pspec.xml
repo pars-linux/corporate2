@@ -13,40 +13,51 @@
         <IsA>service</IsA>
         <Summary>A message bus system, a simple way for applications to talk to each other</Summary>
         <Description>D-Bus supplies both a system daemon (for events such as "new hardware device added" or "printer queue changed") and a per-user-login-session daemon (for general IPC needs among user applications). Also, the message bus is built on top of a general one-to-one message passing framework, which can be used by any two apps to communicate directly (without going through the message bus daemon). Currently the communicating applications are on one computer, but TCP/IP option is available and remote support planned.</Description>
-        <Archive sha1sum="f71219624885fe2ec1990bb8bdd599e184dd5774" type="targz">http://dbus.freedesktop.org/releases/dbus/dbus-1.2.4.6permissive.tar.gz</Archive>
+        <Archive sha1sum="28aa5c8839e60d82eb9ce934e3e244abdda913f7" type="targz">http://dbus.freedesktop.org/releases/dbus/dbus-1.2.16.tar.gz</Archive>
         <BuildDependencies>
-            <Dependency versionFrom="2.0">baselayout</Dependency>
-            <Dependency versionFrom="2.6">glib2</Dependency>
-            <Dependency>libcap</Dependency>
+            <Dependency>glib2</Dependency>
             <Dependency>audit</Dependency>
             <Dependency>expat</Dependency>
-            <Dependency>libX11-devel</Dependency>
-            <Dependency>libXdmcp</Dependency>
             <Dependency>libXau</Dependency>
+            <Dependency>libcap</Dependency>
             <Dependency>libxcb</Dependency>
+            <Dependency>libXdmcp</Dependency>
             <Dependency>e2fsprogs</Dependency>
+            <Dependency>baselayout</Dependency>
+            <Dependency>libX11-devel</Dependency>
         </BuildDependencies>
         <Patches>
+            <!-- Fedora patches -->
+
+            <Patch level="1">fedora/fix-timeout-accounting.patch</Patch>
+            <Patch level="1">fedora/dbus-1.2.16-capability.patch</Patch>
+            <Patch level="1">fedora/fix-reload-leak.patch</Patch>
+            <Patch level="1">fedora/fix-daemon-activation.patch</Patch>
+            <Patch level="1">fedora/keep-pending-activations.patch</Patch>
+            <Patch level="1">fedora/fix-reload-race.patch</Patch>
+
             <Patch>dbus-do-not-abort-on-check-thoenig-01.patch</Patch>
-            <Patch level="1">reply-timeout.patch</Patch>
+            <!--<Patch level="1">reply-timeout.patch</Patch>-->
             <Patch level="1">all-your-service-names-are-belong-to-us.patch</Patch>
+            <!--
             <Patch level="1">no-syslog.patch</Patch>
+            -->
         </Patches>
     </Source>
 
     <Package>
         <Name>dbus</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="2.0">baselayout</Dependency>
-            <Dependency versionFrom="2.6">glib2</Dependency>
-            <Dependency>libcap</Dependency>
+            <Dependency>glib2</Dependency>
             <Dependency>audit</Dependency>
             <Dependency>expat</Dependency>
             <Dependency>libX11</Dependency>
-            <Dependency>libXdmcp</Dependency>
+            <Dependency>libcap</Dependency>
             <Dependency>libXau</Dependency>
             <Dependency>libxcb</Dependency>
+            <Dependency>libXdmcp</Dependency>
             <Dependency>e2fsprogs</Dependency>
+            <Dependency>baselayout</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="config">/etc/dbus-1</Path>
@@ -55,6 +66,7 @@
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="library">/usr/libexec</Path>
             <Path fileType="data">/usr/share/dbus-1</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
             <Path fileType="doc">/usr/share/doc</Path>
             <Path fileType="man">/usr/share/man</Path>
             <Path fileType="data">/var/run/dbus</Path>
@@ -63,6 +75,13 @@
     </Package>
 
     <History>
+        <Update release="46">
+            <Date>2010-01-03</Date>
+            <Version>1.2.16</Version>
+            <Comment>Bump to 1.2.16</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="45">
             <Date>2009-05-19</Date>
             <Version>1.2.4.6</Version>
