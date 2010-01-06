@@ -25,3 +25,6 @@ def install():
     perlmodules.install()
 
     pisitools.dodoc("Changes", "README")
+
+    # conflicts with the man page in perl-doc package
+    pisitools.remove("usr/share/man/man3/Sys::Syslog.3pm")
