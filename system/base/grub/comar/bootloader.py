@@ -271,7 +271,7 @@ def addNewKernel(grub, version, root):
 
     # update default index, if it's after last entry
     if default_index != "saved":
-        if default_index > entry_index:
+        if default_index > entry_index and entry_index != -1:
             default_index += 1
             grub.setOption("default", default_index)
 
