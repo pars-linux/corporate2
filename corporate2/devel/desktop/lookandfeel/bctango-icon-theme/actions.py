@@ -25,17 +25,17 @@ def install():
     pisitools.rename("/usr/share/icons/bctangokde", "BCTango")
 
     # Symlinks
-    mapping = {"button_cancel.png": "actions/cancel.png",
-               "lock.png" : "actions/object-locked.png",
-               "systemsettings.png": "apps/multimedia-volume-control.png",
-               "printer.png": "devices/printer-printing.png",
-               "button_cancel.png": "actions/no.png",
-               "kmenu.png": "apps/panel.png",
-               "kmenu.png": "apps/panel_settings.png"}
+    mapping = { "lock.png" : ["actions/object-locked.png"],
+                "systemsettings.png": ["apps/multimedia-volume-control.png"],
+                "printer.png": ["devices/printer-printing.png"],
+                "button_cancel.png": ["actions/no.png", "actions/cancel.png"],
+                "kmenu.png": ["apps/panel.png", "apps/panel_settings.cpp"],
+                }
 
     for size in (16, 22, 32, 48, 64, 128):
-        for k in mapping.keys():
-            try:
-                pisitools.dosym(k, "usr/share/icons/BCTango/%dx%d/%s" % (size, size, mapping[k]))
-            except:
-                pass
+        for k,values in mapping.items():
+            for icon in values:
+                try:
+                    pisitools.dosym(k, "usr/share/icons/BCTango/%dx%d/%s" % (size, size, icon))
+                except:
+                    pass
