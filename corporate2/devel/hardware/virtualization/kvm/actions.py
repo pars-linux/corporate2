@@ -15,6 +15,9 @@ WorkDir="qemu-kvm-%s" % get.srcVERSION()
 
 soundDrivers = "alsa pa sdl oss"
 cflags = get.CFLAGS().replace("-fpie", "").replace("-fstack-protector", "")
+
+targetList = "i386-softmmu i386-linux-user"
+
 def setup():
     # disable fdt until dtc is in repo
     # pisitools.dosed("configure", 'fdt="yes"', 'fdt="no"')
@@ -48,5 +51,5 @@ def install():
     pisitools.remove("/usr/bin/qemu-img")
     pisitools.remove("/usr/share/man/man1/qemu-img.1")
     pisitools.remove("/usr/bin/qemu-nbd")
-    pisitools.remove("/usr/share/man/man8/qemu-nbd.8")
+    pisitools.removeDir("/usr/share/man/man8/")
     pisitools.removeDir("/usr/share/doc")
