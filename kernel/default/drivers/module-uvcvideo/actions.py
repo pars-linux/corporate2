@@ -11,7 +11,7 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = "uvcvideo-c57f47cfb0e8"
+WorkDir = "uvcvideo-75c97b2d1a2a"
 KDIR = kerneltools.getKernelVersion()
 
 def setup():
