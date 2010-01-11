@@ -23,7 +23,7 @@ def setup():
                          --with-driver=dri \
                          --without-demos \
                          --with-dri-driverdir=/usr/lib/xorg/modules/dri \
-                         --with-dri-drivers=i810,i915,i965,mach64,r128,r200,r300,r600,radeon,sis,tdfx,trident,ffb,swrast")
+                         --with-dri-drivers=i810,i915,i965,mach64,r128,r200,r300,r600,radeon,sis,tdfx,ffb,swrast")
 
 def build():
     autotools.make("-j1")
