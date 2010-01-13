@@ -495,15 +495,12 @@ def makeGrubEntry(title, os_type, root=None, kernel=None, initrd=None, options=N
         uuid = None
         if not root.startswith("/dev/"):
             uuid = root
-            root = getDeviceByUUID(root)
-            if not root:
-                fail(FAIL_NODEVICE % uuid)
-
-        try:
-            linux_disk, linux_part, grub_disk, grub_part = parseLinuxDevice(root)
-        except (ValueError, TypeError):
-            fail(FAIL_NODEVICE % root)
-        grub_device = "(%s,%s)" % (grub_disk, grub_part)
+        else:
+            try:
+                linux_disk, linux_part, grub_disk, grub_part = parseLinuxDevice(root)
+            except (ValueError, TypeError):
+                fail(FAIL_NODEVICE % root)
+            grub_device = "(%s,%s)" % (grub_disk, grub_part)
 
     if "kernel" in fields_req and not kernel:
         fail(FAIL_NOKERNEL)
@@ -533,7 +530,10 @@ def makeGrubEntry(title, os_type, root=None, kernel=None, initrd=None, options=N
         if initrd and "initrd" in fields_all:
             entry.setCommand("module", initrd, append=True)
     elif os_type == "memtest":
-        entry.setCommand("root", grub_device)
+        if uuid:
+            entry.setCommand("uuid", uuid)
+        elif root:
+            entry.setCommand("root", grub_device)
         entry.setCommand("kernel", "/boot/memtest")
     else: # linux
         if kernel and "kernel" in fields_all:
@@ -749,6 +749,11 @@ def setEntry(title, os_type, root, kernel, initrd, options, default, index):
     if os.path.exists(CONF_GRUB):
         grub.parseConf(CONF_GRUB)
 
+    # Alternative menu configuration
+    grub_alt = grubConf()
+    if os.path.exists(CONF_GRUB_ALT):
+        grub_alt.parseConf(CONF_GRUB_ALT)
+
     index = int(index)
 
     entry = makeGrubEntry(title, os_type, root, kernel, initrd, options)
@@ -768,6 +773,9 @@ def setEntry(title, os_type, root, kernel, initrd, options, default, index):
         default_index = grub.getOption("default", "0")
         if default_index != "saved" and int(default_index) == index:
             grub.setOption("default", "0")
+
+    # Relocate links
+    addLinks(grub, grub_alt, CONF_GRUB, CONF_GRUB_ALT)
 
     # Save changes to both files.
     grub.write(CONF_GRUB)
