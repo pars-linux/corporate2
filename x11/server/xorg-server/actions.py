@@ -34,6 +34,7 @@ def setup():
                          --disable-xfake \
                          --disable-xfbdev \
                          --with-pic \
+                         --without-dtrace \
                          --with-int10=x86emu \
                          --with-os-name=\"Pardus\" \
                          --with-os-vendor=\"TÜBİTAK, UEKAE\" \
