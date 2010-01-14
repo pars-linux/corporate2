@@ -1,0 +1,30 @@
+
+# HG changeset patch
+# User hans@rhel5-devel.localdomain
+# Date 1263305204 -3600
+# Node ID 5cdb0f8e65139ffa0cb61bb28f2e5410bcc0750e
+# Parent  2606f3ba3697de0540f1e4394705ddff1e98dd5f
+libv4l: Enable whitebalance by default on sonixb cams with TAS5110 sensors
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+libv4l: Enable whitebalance by default on sonixb cams with TAS5110 sensors
+
+Priority: normal
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+
+--- a/v4l2-apps/libv4l/libv4lconvert/control/libv4lcontrol.c	Sun Jan 10 08:41:30 2010 +0100
++++ b/v4l2-apps/libv4l/libv4lconvert/control/libv4lcontrol.c	Tue Jan 12 15:06:44 2010 +0100
+@@ -266,6 +266,10 @@
+     "Lenovo IdeaPad U330" },
+ 
+ /* Second: devices which should use some software processing by default */
++  /* sn9c101 / sn9c102 based devices (sonixb) */
++  { 0x0c45, 0x6001, 0,    NULL, NULL, V4LCONTROL_WANTS_WB }, /* TAS5110C */
++  { 0x0c45, 0x6005, 0,    NULL, NULL, V4LCONTROL_WANTS_WB }, /* TAS5110C */
++  { 0x0c45, 0x6007, 0,    NULL, NULL, V4LCONTROL_WANTS_WB }, /* TAS5110D */
+   /* Pac207 based devices */
+   { 0x041e, 0x4028, 0,    NULL, NULL, V4LCONTROL_WANTS_WB, 1500 },
+   { 0x093a, 0x2460, 0x1f, NULL, NULL, V4LCONTROL_WANTS_WB, 1500 },
+
