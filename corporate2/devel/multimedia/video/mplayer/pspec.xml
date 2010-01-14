@@ -14,7 +14,7 @@
         <IsA>app:console</IsA>
         <Summary>Media Player for Linux</Summary>
         <Description>MPlayer is a movie player that can run on many platforms. It plays most MPEG/VOB, AVI, Ogg/OGM, VIVO, ASF/WMA/WMV, QT/MOV/MP4, RealMedia, Matroska, NUT, NuppelVideo, FLI, YUV4MPEG, FILM, RoQ, PVA files, supported by many native codecs.</Description>
-        <Archive sha1sum="fefe300175cd5d26e2183840a141f960f02e00c3" type="targz">http://cekirdek.pardus.org.tr/~onur/distfiles/mplayer-20091229.tar.gz</Archive>
+        <Archive sha1sum="acde9cd23829fb909638352e36823b797bda61b9" type="targz">http://cekirdek.pardus.org.tr/~onur/distfiles/mplayer-20100114.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>DirectFB</Dependency>
             <Dependency>aalib</Dependency>
@@ -93,6 +93,10 @@
             <Patch>fix-dvd-sub.patch</Patch>
             <Patch>demux_mkv_seek.diff</Patch>
             <Patch level="1">awk_path.patch</Patch>
+            <Patch>flv_duration.patch</Patch>
+            <Patch>ogg-assumed-cont.patch</Patch>
+            <Patch>revert_mp3lib_priority.patch</Patch>
+            <Patch level="1">remove_vfw_bframe_warning.patch</Patch>
 
             <!-- don't let console config mess with gui config -->
             <Patch level="1">dont_override_gui_conf.patch</Patch>
@@ -110,7 +114,6 @@
             <Patch level="1">tta_for_mkv.patch</Patch>
             <Patch level="1">mmsplaylist.patch</Patch>
             <Patch level="1">config_per_protocol_and_extension-case.patch</Patch>
-            <Patch level="1">v4lw.patch</Patch>
             <Patch level="1">keep_volume_level.patch</Patch>
 
             <!-- Demuxer patches for eac3 support, can be epanded for provided samples -->
@@ -119,9 +122,13 @@
 
             <!-- for libvaapi support -->
             <Patch level="1">mplayer-vaapi.patch</Patch>
+            <Patch level="1">mplayer-vaapi_underlink.patch</Patch>
             <!-- too hacky, keep it in case we really need it
+            <Patch level="1">mplayer-vdpau.patch</Patch>
             <Patch level="1">mplayer-vaapi-gma500-workaround.patch</Patch>
             -->
+
+            <Patch level="1">v4lw.patch</Patch>
         </Patches>
     </Source>
 
@@ -205,6 +212,28 @@
     </Package>
 
     <History>
+        <Update release="118">
+            <Date>2010-01-14</Date>
+            <Version>0.0_20100114</Version>
+            <Comment>
+                Revert mp3lib priority changes
+                Remove vfw bframe warning
+                Remove vdpau vaapi patch for now
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="117">
+            <Date>2010-01-14</Date>
+            <Version>0.0_20100114</Version>
+            <Comment>
+                Bump snapshot to 30302, ffmpeg 21212
+                Fix vaapi support
+                Update internal libass
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
         <Update release="116">
             <Date>2009-12-29</Date>
             <Version>0.0_20091229</Version>

@@ -14,8 +14,8 @@ from pisi.actionsapi import get
 import os
 
 WorkDir = "mplayer-%s" % get.srcVERSION().split("_", 1)[1]
-mp_version = "30135"
-ff_version = "20964"
+mp_version = "30302"
+ff_version = "21212"
 
 def fixPermissions(dest):
     for root, dirs, files in os.walk(dest):
