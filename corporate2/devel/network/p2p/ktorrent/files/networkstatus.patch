@@ -1,0 +1,49 @@
+diff -ur ktorrent-2.2rc1.orig/apps/ktorrent/ktorrent.cpp ktorrent-2.2rc1/apps/ktorrent/ktorrent.cpp
+--- ktorrent-2.2rc1.orig/apps/ktorrent/ktorrent.cpp	2007-06-23 02:02:25.000000000 +0300
++++ ktorrent-2.2rc1/apps/ktorrent/ktorrent.cpp	2007-06-23 02:09:20.000000000 +0300
+@@ -97,7 +97,9 @@
+ #include "viewmanager.h"
+ #include "ktorrentviewitem.h"
+ 
+-
++/* network status */
++#include <networkstatusindicator.h>
++#include <connectionmanager.h>
+ 
+ namespace kt
+ {
+@@ -171,6 +173,11 @@
+ 	statusBar()->addWidget(m_statusSpeed);
+ 	statusBar()->addWidget(m_statusTransfer);
+ 
++	/* Indicator for desktop offline mode */
++	StatusBarNetworkStatusIndicator * indicator = new StatusBarNetworkStatusIndicator( this, "netstatusindicator" );
++	statusBar()->addWidget( indicator, 0, false );
++	indicator->init();
++
+ 	m_statusFirewall->hide(); 
+ 
+ 	setupActions();
+@@ -482,6 +489,10 @@
+ 
+ void KTorrent::setupActions()
+ {
++	/* network status */
++	ConnectionManager::self()->registerConnectSlot( this, SLOT( startAllDownloads() ));
++	ConnectionManager::self()->registerDisconnectSlot( this, SLOT( stopAllDownloads() ));
++
+ 	KStdAction::openNew(this,SLOT(fileNew()),actionCollection());
+ 	KStdAction::open(this, SLOT(fileOpen()), actionCollection());
+ 	KStdAction::quit(kapp, SLOT(quit()), actionCollection());
+diff -ur ktorrent-2.2rc1.orig/apps/ktorrent/Makefile.am ktorrent-2.2rc1/apps/ktorrent/Makefile.am
+--- ktorrent-2.2rc1.orig/apps/ktorrent/Makefile.am	2007-06-13 19:30:13.000000000 +0300
++++ ktorrent-2.2rc1/apps/ktorrent/Makefile.am	2007-06-23 02:05:42.000000000 +0300
+@@ -16,7 +16,7 @@
+ # the libraries to link against.
+ ktorrent_LDADD = ../../apps/ktorrent/newui/libnewui.la $(LIB_KFILE) \
+ 	$(LIB_KIO) $(LIB_KPARTS) ../../apps/ktorrent/groups/libgroups.la \
+-	../../libktorrent/libktorrent.la
++	../../libktorrent/libktorrent.la -lconnectionmanager
+ 
+ # which sources should be compiled for ktorrent
+ ktorrent_SOURCES = addpeerwidget.cpp addpeerwidget.h addpeerwidgetbase.ui \
