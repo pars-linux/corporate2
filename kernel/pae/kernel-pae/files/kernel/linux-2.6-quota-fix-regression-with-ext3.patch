@@ -1,0 +1,11 @@
+--- a/fs/quota/dquot.c.orig	2010-01-13 22:29:54.970804277 +0200
++++ b/fs/quota/dquot.c	2010-01-13 22:31:09.723806578 +0200
+@@ -1425,6 +1425,8 @@
+ static qsize_t inode_get_rsv_space(struct inode *inode)
+ {
+ 	qsize_t ret;
++	if (!inode->i_sb->dq_op->get_reserved_space)
++		return 0;
+ 	spin_lock(&inode->i_lock);
+ 	ret = *inode_reserved_space(inode);
+ 	spin_unlock(&inode->i_lock);
