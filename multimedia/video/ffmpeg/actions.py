@@ -11,7 +11,7 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 WorkDir = "ffmpeg"
-version = "20964"
+version = "21212"
 
 def setup():
     shelltools.export("CFLAGS","%s -DRUNTIME_CPUDETECT -O3 -ffast-math -fomit-frame-pointer" % get.CFLAGS())
