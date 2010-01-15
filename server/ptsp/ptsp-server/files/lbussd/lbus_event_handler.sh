@@ -26,7 +26,7 @@
 ACTION=$1
 
 DRIVEDIR=${DRIVE_DIR:-Drives}
-ICON="drive-removable-media-usb-pendrive"
+ICON="usbpendrive_mount"
 
 function create_icon {
   SHARENAME=$2
