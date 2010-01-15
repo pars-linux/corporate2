@@ -30,7 +30,7 @@ ICON="drive-removable-media-usb-pendrive"
 
 function create_icon {
   SHARENAME=$2
-  cat <<-EOF  >${HOME}/Desktop/${SHARENAME}.desktop
+  cat <<-EOF  >`/usr/bin/xdg-user-dir DESKTOP`/${SHARENAME}.desktop
 	[Desktop Entry]
 	Encoding=UTF-8
 	Name=${1}
@@ -58,8 +58,8 @@ function remove_all {
       done
     fi
 
-    if [ -d ${HOME}/Desktop ]; then
-      for desktop in ${HOME}/Desktop/*.desktop; do
+    if [ -d `/usr/bin/xdg-user-dir DESKTOP` ]; then
+      for desktop in `/usr/bin/xdg-user-dir DESKTOP`/*.desktop; do
         if [ -f ${desktop} ]; then
           if grep -q lbus_event_handler ${desktop}; then
             rm -f ${desktop}
@@ -87,7 +87,7 @@ case "${ACTION}" in
           block)  mkdir "${HOME}/${DRIVEDIR}/${SHARENAME}"
                   /usr/bin/ltspfs ${WS}:/tmp/drives/${SHARENAME} \
                                    "${HOME}/${DRIVEDIR}/${SHARENAME}"
-                  if [ -d ${HOME}/Desktop ]; then
+                  if [ -d `/usr/bin/xdg-user-dir DESKTOP` ]; then
                     create_icon "${DESC}" "${SHARENAME}" \
                                 "${HOME}/${DRIVEDIR}/${SHARENAME}"
                   fi
@@ -103,8 +103,8 @@ case "${ACTION}" in
       case "${DEVTYPE}" in
           block)  fusermount -u -z "${HOME}/${DRIVEDIR}/${SHARENAME}"
                   rmdir "${HOME}/${DRIVEDIR}/${SHARENAME}"
-                  if [ -d ${HOME}/Desktop ]; then
-                    rm -f "${HOME}/Desktop/${SHARENAME}.desktop"
+                  if [ -d `/usr/bin/xdg-user-dir DESKTOP` ]; then
+                    rm -f "`/usr/bin/xdg-user-dir DESKTOP`/${SHARENAME}.desktop"
                   fi
                   ;;
       esac
