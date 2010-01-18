@@ -13,13 +13,8 @@ from pisi.actionsapi import get
 
 def setup():
     # Don't use zlib from source
-    # pisitools.dosed("configure.in", "zlib/Makefile dnl", "dnl zlib/Makefile")
-
-    # autotools.autoreconf("-fi")
-
-    # shelltools.cd("innobase/")
-    # autotools.autoreconf("-fi")
-    # shelltools.cd("../")
+    pisitools.dosed("configure.in", "zlib/Makefile dnl", "dnl zlib/Makefile")
+    autotools.autoreconf("-fi")
 
     # Export flags
     shelltools.export("CFLAGS", "%s -DHAVE_ERRNO_AS_DEFINE=1 -fPIC" % get.CFLAGS())
