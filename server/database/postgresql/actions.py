@@ -75,7 +75,7 @@ def install():
     pisitools.remove("/usr/lib/*.a")
 
     pisitools.dodoc("README", "HISTORY", "COPYRIGHT")
-    pisitools.dodoc("doc/FAQ*", "doc/README.*", "doc/TODO", "doc/bug.template")
+    pisitools.dodoc("doc/README.*", "doc/TODO", "doc/bug.template")
     pisitools.dodir("/var/lib/postgresql")
     pisitools.dodir("/var/lib/postgresql/data")
     pisitools.dodir("/var/lib/postgresql/backups")
