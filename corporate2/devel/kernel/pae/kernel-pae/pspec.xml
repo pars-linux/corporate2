@@ -23,9 +23,14 @@
             <!-- fuse: fuse_ioctl_copy_user() denial of service (CVE-2009-4410) (#11842) -->
             <!-- firewire: ohci: handle receive packets with a data length of zero (CVE-2009-4138) (#11736) -->
             <!-- ext4: divide-by-zero error when trying to mount a corrupted file system (CVE-2009-4307) (#11720) -->
+            <!-- kernel/signal.c: fix kernel information leak with print-fatal-signals=1 (CVE-2010-0003) (#12072) -->
             <Patch level="1" compressionType="bz2">kernel/patch-2.6.31.11.bz2</Patch>
+            <Patch level="1" compressionType="bz2">kernel/patch-2.6.31.11-12.bz2</Patch>
 
-            <!-- Squashfs: Add lzma support from squashfs-devel.git -->
+            <!-- timer: Revert "Prevent clockevent_devices list corruption" to fix shutdown hangs (#12036) -->
+            <Patch level="1">kernel/linux-2.6-kernel-timer-revert-prevent-clockevent_devices-list-corruption.patch</Patch>
+
+            <!-- Squashfs-lzma support -->
             <Patch level="1">squashfs/linux-2.6-squashfs-constify-super_operations-struct.patch</Patch>
             <Patch level="1">squashfs/squashfs-devel-add-lzma-support.patch</Patch>
 
@@ -40,12 +45,6 @@
                  add possibility to set forced release bitmaps through sysfs -->
             <Patch level="1">kernel/linux-2.6-atkbd-forced-release-through-sysfs.patch</Patch>
             <Patch level="1">kernel/linux-2.6-atkbd-oqo-forced-release-quirk.patch</Patch>
-
-            <!-- quota: Fix regression on ext3 file-systems causing panic upon boot (#12008) -->
-            <Patch level="1">kernel/linux-2.6-quota-fix-regression-with-ext3.patch</Patch>
-
-            <!-- x86: cpu_debug: Revert 'Remove model information, encoding/decoding and reduce bookkeeping (#11939) -->
-            <Patch level="1">kernel/linux-2.6-revert-x86-cpu_debug-remove-model-information.patch</Patch>
 
             <!-- Fix x86 MCE malfunctioning (#11923) -->
             <Patch level="1">kernel/0001-x86-mce-thermal-monitoring-depends-on-APIC-being-enabled.patch</Patch>
@@ -393,8 +392,8 @@
     -->
 
     <History>
-        <Update release="130">
-            <Date>2010-01-07</Date>
+        <Update release="130" type="security">
+            <Date>2010-01-19</Date>
             <Version>2.6.31.11</Version>
             <Comment>
                 - Version bump to 2.6.31.11,
@@ -403,6 +402,9 @@
                 - Fix x86 MCE malfunctioning (#11923),
                 - Fix boot hangs on AMD Athlon XP processors (#11939),
                 - quota: Fix regression on ext3 file-systems causing panic upon boot (#12008).
+                - timer: Revert "Prevent clockevent_devices list corruption" to fix shutdown hangs (#12036),
+                - disable X86_CPU_DEBUG,
+                - kernel/signal.c: fix kernel information leak with print-fatal-signals=1 (CVE-2010-0003) (#12072).
             </Comment>
             <Name>Ozan Çağlayan</Name>
             <Email>ozan@pardus.org.tr</Email>
