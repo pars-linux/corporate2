@@ -12,11 +12,11 @@ Signed-off-by: Matthew Garrett <mjg59@srcf.ucam.org>
 Signed-off-by: Stefan Bader <stefan.bader@canonical.com>
 ---
 
-Index: 2008-devel/drivers/char/vt_ioctl.c
+Index: linux-2.6.32/drivers/char/vt_ioctl.c
 ===================================================================
---- 2008-devel.orig/drivers/char/vt_ioctl.c
-+++ 2008-devel/drivers/char/vt_ioctl.c
-@@ -35,6 +35,8 @@
+--- linux-2.6.32.orig/drivers/char/vt_ioctl.c
++++ linux-2.6.32/drivers/char/vt_ioctl.c
+@@ -38,6 +38,8 @@
  #include <linux/kbd_diacr.h>
  #include <linux/selection.h>
  
@@ -25,15 +25,15 @@ Index: 2008-devel/drivers/char/vt_ioctl.c
  char vt_dont_switch;
  extern struct tty_driver *console_driver;
  
-@@ -1166,6 +1168,7 @@ void vc_SAK(struct work_struct *work)
+@@ -1588,6 +1590,7 @@ fallback:
  static void complete_change_console(struct vc_data *vc)
  {
  	unsigned char old_vc_mode;
 +	struct vc_data *oldvc = vc_cons[fg_console].d;
+ 	int old = fg_console;
  
  	last_console = fg_console;
- 
-@@ -1174,9 +1177,27 @@ static void complete_change_console(stru
+@@ -1597,9 +1600,27 @@ static void complete_change_console(stru
  	 * KD_TEXT mode or vice versa, which means we need to blank or
  	 * unblank the screen later.
  	 */

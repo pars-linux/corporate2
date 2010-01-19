@@ -10,10 +10,9 @@
         </Packager>
         <License>GPLv2</License>
         <IsA>kernel</IsA>
-        <PartOf>kernel.default</PartOf>
         <Summary>The Linux kernel (the core of the Linux operating system) for Pardus Linux</Summary>
         <Description>kernel contains the Linux kernel, the core of any Linux operating system. The kernel handles the basic functions of the operating system: memory allocation, process allocation, device input and output, etc.</Description>
-        <Archive sha1sum="c6e0e6b473ba2b80d164e37cfabf294e783c03d9" type="tarbz2">http://www.kernel.org/pub/linux/kernel/v2.6/linux-2.6.31.tar.bz2</Archive>
+        <Archive sha1sum="410b4fc818023bfef60064e973ff0ab46d3bfb19" type="tarbz2">http://www.kernel.org/pub/linux/kernel/v2.6/linux-2.6.32.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>cpio</Dependency>
             <Dependency>xmlto</Dependency>
@@ -24,42 +23,20 @@
             <Dependency>bootsplash</Dependency>
         </BuildDependencies>
         <Patches>
-            <!-- fuse: fuse_ioctl_copy_user() denial of service (CVE-2009-4410) (#11842) -->
-            <!-- firewire: ohci: handle receive packets with a data length of zero (CVE-2009-4138) (#11736) -->
-            <!-- ext4: divide-by-zero error when trying to mount a corrupted file system (CVE-2009-4307) (#11720) -->
-            <!-- kernel/signal.c: fix kernel information leak with print-fatal-signals=1 (CVE-2010-0003) (#12072) -->
-            <Patch level="1" compressionType="bz2">kernel/patch-2.6.31.11.bz2</Patch>
-            <Patch level="1" compressionType="bz2">kernel/patch-2.6.31.11-12.bz2</Patch>
+            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.4.bz2</Patch>
 
             <!-- timer: Revert "Prevent clockevent_devices list corruption" to fix shutdown hangs (#12036) -->
             <Patch level="1">kernel/linux-2.6-kernel-timer-revert-prevent-clockevent_devices-list-corruption.patch</Patch>
 
-            <!-- Squashfs-lzma support -->
-            <Patch level="1">squashfs/linux-2.6-squashfs-constify-super_operations-struct.patch</Patch>
+            <!-- FIXME: Squashfs-lzma support (There's a cleaner patch for this in LKML) -->
             <Patch level="1">squashfs/squashfs-devel-add-lzma-support.patch</Patch>
-
-            <!-- Add more staging drivers from 2.6.32 (#11957) -->
-            <Patch level="1">kernel/linux-2.6.32-staging-add-rtl8192e-driver.patch</Patch>
-            <Patch level="1">kernel/linux-2.6.32-staging-add-rtl8192u-driver.patch</Patch>
-
-            <!-- cfq: Fix serious performance regression -->
-            <Patch level="1">kernel/linux-2.6-cfq-choose-new-next-req.patch</Patch>
-
-            <!-- atkbd: Consolidate multimedia keys into one table, add OQO keyboard quirk,
-                 add possibility to set forced release bitmaps through sysfs -->
-            <Patch level="1">kernel/linux-2.6-atkbd-forced-release-through-sysfs.patch</Patch>
-            <Patch level="1">kernel/linux-2.6-atkbd-oqo-forced-release-quirk.patch</Patch>
 
             <!-- Fix x86 MCE malfunctioning (#11923) -->
             <Patch level="1">kernel/0001-x86-mce-thermal-monitoring-depends-on-APIC-being-enabled.patch</Patch>
             <Patch level="1">kernel/0002-x86-mce-Clean-up-thermal-init-by-introducing-intel_t.patch</Patch>
 
-            <!-- Several sched patches for CFQ to improve desktop performance -->
-            <Patch level="1">kernel/0051-sched-Turn-off-child_runs_first.patch</Patch>
-            <Patch level="1">kernel/0052-sched-Ensure-that-a-child-can-t-gain-time-over-it-s-.patch</Patch>
-
             <!-- Add TuxOnIce 3.0.99.44 support -->
-            <Patch level="1" compressionType="bz2">tuxonice/tuxonice-3.0.99.44-for-2.6.31.patch.bz2</Patch>
+            <Patch level="1" compressionType="bz2">tuxonice/tuxonice-3.0.99.44-for-2.6.32.patch.bz2</Patch>
 
 
             <!-- Moblin patches -->
@@ -77,78 +54,11 @@
 
             <!-- Subset of Fedora Kernel Patches -->
 
-            <!-- ath9k: ath9k: add fixes suggested by upstream maintainer -->
-            <Patch level="1">fedora/linux-2.6-ath9k-fixes.patch</Patch>
+            <!-- FIXME: ath9k: add fixes suggested by upstream maintainer (partially applied to .32)
+            <Patch level="1">fedora/linux-2.6-ath9k-fixes.patch</Patch>-->
 
-            <!-- Several IOMMU fixes -->
-
-            <!-- Work around BIOS bugs by quiescing USB controllers earlier -->
-            <Patch level="1">fedora/linux-2.6-die-closed-source-bios-muppets-die.patch</Patch>
-
-            <!-- Some performance fixes, unify hw/sw passthrough support, and most importantly notice when
-            the BIOS points us to a region that returns all 0xFF and claims that there's an IOMMU there -->
-            <Patch level="1">fedora/linux-2.6-intel-iommu-updates.patch</Patch>
-            <Patch level="1">fedora/linux-2.6-iommu-at-zero.patch</Patch>
-            <Patch level="1">fedora/linux-2.6-iommu-dmar-all-1s.patch</Patch>
-            <Patch level="1">fedora/linux-2.6-iommu-another-hp-screwup.patch</Patch>
-            <Patch level="1">fedora/linux-2.6-iommu-sanity-checks-for-intr-remap-too.patch</Patch>
-            <Patch level="1">fedora/linux-2.6-iommu-hp-cantiga-resume.patch</Patch>
-
-            <!-- ACPI fixes form 2.6.32 -->
-            <Patch level="1">fedora/acpi-ec-merge-irq-and-poll-modes.patch</Patch>
-            <Patch level="1">fedora/acpi-ec-restart-command-even-if-no-interrupts-from-ec.patch</Patch>
-            <Patch level="1">fedora/acpi-ec-use-burst-mode-only-for-msi-notebooks.patch</Patch>
-
-            <!-- i8042: bypass AUX IRQ delivery test on laptops -->
-            <Patch level="1">fedora/input-i8042-bypass-aux-irq-delivery-test-on-laptops.patch</Patch>
-
-            <!-- i8042: try disabling and reenabling aux port at close -->
-            <Patch level="1">fedora/input-i8042-try-disabling-and-re-enabling-aux-port-at-close.patch</Patch>
-
-            <!-- sched: Update the clock of runqueue select_task_rq() selected -->
-            <Patch level="1">fedora/sched-update-the-clock-of-runqueue-select-task-rq-selected.patch</Patch>
-
-            <!-- sched: Re-tune the scheduler latency defaults to decrease worst-case latencies -->
-            <Patch level="1">fedora/sched-retune-scheduler-latency-defaults.patch</Patch>
-
-            <!-- sched: Remove shortcut from select_task_rq_fair() -->
-            <Patch level="1">fedora/sched-remove-shortcut-from-select-task-rq-fair.patch</Patch>
-
-            <!-- sched: Deal with low-load in wake_affine() -->
-            <Patch level="1">fedora/sched-deal-with-low-load-in-wake-affine.patch</Patch>
-
-            <!-- Add TG3 driver patches to fix large size transfer stalls -->
-            <Patch level="1">fedora/tg3-01-delay-mdio-bus-init-until-fw-finishes.patch</Patch>
-            <Patch level="1">fedora/tg3-02-fix-tso-test-against-wrong-flags-var.patch</Patch>
-            <Patch level="1">fedora/tg3-03-fix-57780-asic-rev-pcie-link-receiver-errors.patch</Patch>
-            <Patch level="1">fedora/tg3-04-prevent-tx-bd-corruption.patch</Patch>
-            <Patch level="1">fedora/tg3-05-assign-flags-to-fixes-in-start_xmit_dma_bug.patch</Patch>
-            <Patch level="1">fedora/tg3-06-fix-5906-transmit-hangs.patch</Patch>
-
-            <!-- Disable prism54 in favor of p54pci -->
-            <Patch level="1">fedora/prism54-remove-pci-dev-table.patch</Patch>
-
-            <!-- memcg: Improve resource counter scalability -->
-            <Patch level="1">fedora/improve-resource-counter-scalability.patch</Patch>
-
-            <!-- virtio_blk: add support for cache flush -->
-            <Patch level="1">fedora/linux-2.6-virtio_blk-add-support-for-cache-flush.patch</Patch>
-
-            <!-- cpuidle: Fix the menu governor to boost IO performance -->
-            <Patch level="1">fedora/linux-2.6.31-cpuidle-faster-io.patch</Patch>
-
-            <!-- nfs: Fixed hang during NFS installs -->
-            <Patch level="1">fedora/linux-2.6-nfs4-callback-hidden.patch</Patch>
-
-            <!-- nfs: NFSD v4 dynamic pseudo root patch which allows NFS v3 exports to be mounted
-                 by v4 clients -->
-            <Patch level="1">fedora/linux-2.6.31-nfsd-proot.patch</Patch>
-
-            <!-- input: Support for keys that toggle all rfkill state -->
-            <Patch level="1">fedora/linux-2.6-rfkill-all.patch</Patch>
-
-            <!-- sched: Introduce SCHED_RESET_ON_FORK flag -->
-            <Patch level="1">fedora/sched-introduce-SCHED_RESET_ON_FORK-scheduling-policy-flag.patch</Patch>
+            <!-- Add LIRC support -->
+            <Patch level="1">fedora/lirc-2.6.32.patch</Patch>
 
             <!-- Use UTF-8 by default on VFAT -->
             <Patch level="1">fedora/linux-2.6-defaults-fat-utf8.patch</Patch>
@@ -169,31 +79,34 @@
             <Patch level="1">fedora/linux-2.6-ata-quirk.patch</Patch>
             <Patch level="1">fedora/linux-2.6-e1000-ich9.patch</Patch>
 
-            <!-- cx25840: Fix CX23885 and CX241XX caused ivtv regression -->
-            <Patch level="1">fedora/v4l-dvb-fix-cx25840-firmware-load.patch</Patch>
+            <!-- Disable prism54 in favor of p54pci -->
+            <Patch level="1">fedora/prism54-remove-pci-dev-table.patch</Patch>
 
-            <!-- Add LIRC support -->
-            <Patch level="1">fedora/lirc-2.6.31.patch</Patch>
+            <!-- nfs: Fixed hang during NFS installs -->
+            <Patch level="1">fedora/linux-2.6-nfs4-callback-hidden.patch</Patch>
+
+            <!-- nfs: NFSD v4 dynamic pseudo root patch which allows NFS v3 exports to be mounted
+                 by v4 clients -->
+            <Patch level="1">fedora/linux-2.6.31-nfsd-proot.patch</Patch>
+
+            <!-- input: Support for keys that toggle all rfkill state -->
+            <Patch level="1">fedora/linux-2.6-rfkill-all.patch</Patch>
 
             <!-- hdpvr: Enable IR -->
             <Patch level="1">fedora/hdpvr-ir-enable.patch</Patch>
 
-            <!-- libata: Export AHCI capabilities through sysfs -->
-            <Patch level="1">fedora/linux-2.6-ahci-export-capabilities.patch</Patch>
 
-
-            <!-- DRM patches -->
-
+            <!-- FIXME: DRM patches
             <Patch level="1">drm/fedora/drm-next-b390f944.patch</Patch>
             <Patch level="1">drm/fedora/drm-edid-9340d8cf.patch</Patch>
             <Patch level="1">drm/fedora/drm-nouveau.patch</Patch>
             <Patch level="1">drm/fedora/drm-i915-resume-force-mode.patch</Patch>
             <Patch level="1">drm/fedora/drm-intel-no-tv-hotplug.patch</Patch>
             <Patch level="1">drm/fedora/drm-radeon-misc-fixes.patch</Patch>
-
             <Patch level="1">drm/fedora/linux-2.6-vga-arb.patch</Patch>
             <Patch level="1">drm/fedora/drm-vga-arb.patch</Patch>
             <Patch level="1">drm/fedora/drm-radeon-kms-arbiter-return-ignore.patch</Patch>
+            -->
 
 
             <!-- Subset of Ubuntu Kernel Patches -->
@@ -210,11 +123,10 @@
             <!-- Several SAUCE patches from jaunty and karmic -->
             <Patch level="1">ubuntu/0001-UBUNTU-SAUCE-Add-MODULE_ALIAS-for-Dell-WMI-module.patch</Patch>
             <Patch level="1">ubuntu/0002-UBUNTU-SAUCE-Dell-XPS710-reboot-quirk.patch</Patch>
-            <Patch level="1">ubuntu/0003-UBUNTU-SAUCE-Added-quirk-for-Linksys-WUSB600N-USB-wi.patch</Patch>
             <Patch level="1">ubuntu/0005-UBUNTU-SAUCE-Correctly-blacklist-Thinkpad-r40e-in-AC.patch</Patch>
             <Patch level="1">ubuntu/0006-UBUNTU-SAUCE-ipw2200-Enable-LED-by-default.patch</Patch>
 
-            <!-- Add Apparmor support (Enabled in Corporate2) -->
+            <!-- Add Apparmor support -->
             <Patch level="1">ubuntu/apparmor/apparmor.diff</Patch>
             <Patch level="1">ubuntu/apparmor/security-default-lsm.diff</Patch>
 
@@ -325,11 +237,6 @@
 
 
             <!-- Kernel configuration patches -->
-
-            <!-- Generic kernel configuration -->
-            <!-- Differences from 2009:
-                 AGP drivers are now built-in for easing KMS work
-                 -->
             <Patch>pardus/kernel-config.patch</Patch>
         </Patches>
     </Source>
@@ -429,6 +336,15 @@
     </Package>
 
     <History>
+        <Update release="131">
+            <Date>2010-01-19</Date>
+            <Version>2.6.32.4</Version>
+            <Comment>
+                - Version bump to 2.6.32.4,
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="130" type="security">
             <Date>2010-01-19</Date>
             <Version>2.6.31.11</Version>
