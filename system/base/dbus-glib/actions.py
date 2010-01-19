@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2007,2008 TUBITAK/UEKAE
+# Copyright 2007-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -10,20 +10,20 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
-    autotools.aclocal("-I m4")
-    autotools.automake()
-    autotools.autoconf()
+    autotools.libtoolize("--force --copy")
+    autotools.autoreconf("-fi")
 
-    autotools.libtoolize("--force")
-
-    autotools.configure("--with-xml=libxml \
-                         --localstatedir=/var \
+    autotools.configure("--localstatedir=/var \
+                         --enable-bash-completion \
                          --disable-doxygen-docs \
-                         --disable-static \
-                         --disable-xml-docs")
+                         --disable-gtk-doc \
+                         --disable-static")
 
 def build():
     autotools.make()
+
+def check():
+    autotools.make("check")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
