@@ -6,6 +6,7 @@
 MSG_CONNECTION_NAME = {
     "en": "Internet Sharing",
     "tr": "Internet Paylaşımı",
+    "sv": "Internetdelning",
     "fr": "Partage de connexion Internet",
     "es": "Compartir Internet",
     "de": "Internet Freigabe",
@@ -15,6 +16,7 @@ MSG_CONNECTION_NAME = {
 MSG_ALLOWED_PORTS = {
     "en": "Allowed Port Numbers",
     "tr": "İzin Verilen Port Numaraları",
+    "sv": "Tillåtna portar",
     "fr": "Numéros de port autorisés",
     "es": "Números de puertos permitidos",
     "de": "Erlaubte Ports",
@@ -24,12 +26,14 @@ MSG_ALLOWED_PORTS = {
 MSG_FORBIDDEN_PORTS = {
     "en": "Forbidden Port Numbers",
     "tr": "İzin Verilmeyen Port Numaraları",
+    "sv": "Otillåtna portar",
     "nl": "Verboden poortnummers",
 }
 
 MSG_GATEWAY_HOME = {
     "en": "Gate to Home Network",
     "tr": "Ev Ağına Çıkış",
+    "sv": "Länk till lokalt nätverk",
     "fr": "Passerelle vers le réseau local",
     "es": "Enlace a la red doméstica",
     "de": "Gateway zum Haus-Netzwerk",
@@ -39,6 +43,7 @@ MSG_GATEWAY_HOME = {
 MSG_GATEWAY_INTERNET = {
     "en": "Gate to Internet",
     "tr": "Internet'e Çıkış",
+    "sv": "Länk till internet",
     "fr": "Passerelle vers Internet",
     "es": "Enlace a Internet",
     "de": "Gateway zum Internet",
@@ -48,6 +53,7 @@ MSG_GATEWAY_INTERNET = {
 TITLE_BLOCK_INCOMING = {
     "en": "Block Incoming Connections",
     "tr": "Gelen Bağlantıları Engelle",
+    "sv": "Blockera inkommande anslutningar",
     "fr": "Bloquer les connexions entrantes",
     "es": "Bloquear conexiones entrantes",
     "de": "Eingehende Verbindungen blockieren",
@@ -56,6 +62,7 @@ TITLE_BLOCK_INCOMING = {
 DESCRIPTION_BLOCK_INCOMING = {
     "en": "Blocks all incoming connections to the computer. Exceptions can be set from configuration dialog.",
     "tr": "Bilgisayara gelen tüm bağlantıları engeller. İstisnalar ayarlar penceresinden belirlenebilir.",
+    "sv": "Blockerar alla inkommande anslutningar till datorn. Undantag kan läggas till under inställningar.",
     "fr": "Bloque  toute les connexions entrantes dans l'ordinateur. Des exceptions peuvent être définies dans la fenêtre de configuration.",
     "es": "Bloquea todas las conexiones entrantes a la computadora. Se puede especificar excepciones desde el dialogo de configuración.",
     "de": "Blockiert alle eingehenden Verbindungen. Im Konfigurations-Dialog können Ausnahmen angegeben werden.",
@@ -65,6 +72,7 @@ DESCRIPTION_BLOCK_INCOMING = {
 TITLE_BLOCK_OUTGOING = {
     "en": "Block Outgoing Connections",
     "tr": "Giden Bağlantıları Engelle",
+    "sv": "Blockera utgående anslutningar",
     "fr": "Bloquer les connexions sortantes",
     "es": "Bloquear conexiones salientes",
     "de": "Ausgehende Verbindungen blockieren",
@@ -73,12 +81,14 @@ TITLE_BLOCK_OUTGOING = {
 DESCRIPTION_BLOCK_OUTGOING = {
     "en": "Blocks outgoing connections. Forbidden ports can be set from configuration dialog.",
     "tr": "Dışarı yapılan bağlantıları engeller. Yasaklı port numaraları ayarlar penceresinden belirlenebilir.",
+    "sv": "Blockerar alla utgående anslutningar till datorn. Undantag kan läggas till under inställningar.",
     "nl": "Uitgaande verbindingen blokkeren. Verboden poorten kunnen in een configuratiedialoog ingesteld worden.",
 }
 
 TITLE_INTERNET_SHARING = {
     "en": "Internet Sharing",
     "tr": "Internet Paylaşımı",
+    "sv": "Internetdelning",
     "fr": "Partage de connexion Internet",
     "es": "Compartir Internet",
     "de": "Internet Freigabe",
@@ -87,6 +97,7 @@ TITLE_INTERNET_SHARING = {
 DESCRIPTION_INTERNET_SHARING = {
     "en": "Allows computers in your local network to connect Internet through this computer.",
     "tr": "Yerel ağınızdaki bilgisayarların, bu bilgisayarı kullanarak Internet'e bağlanmalarını sağlar.",
+    "sv": "Låter datorer i det lokala nätverket ansluta till internet via den här datorn.",
     "fr": "Permet aux ordinateurs de votre réseau domestique de se connecter à Internet via cet ordinateur.",
     "es": "Permitir a otros computadoras en su red local acceder a la Internet, a través de ésta computadora",
     "de": "Gibt anderen Computern aus dem lokalen Netzwer die Mäglichkeit, Internet durch diesen Computer hier zu benutzen.",
