@@ -52,7 +52,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
                                   mysql < %s' % '/tmp/pardus.sql')
 
         # Stop MySQL
-        os.system("/bin/kill $(cat /var/run/mysqld/mysqld.pid)")
+        os.kill(int(open("/var/run/mysqld/mysqld.pid", "r").read().strip()), 15)
 
         # Remove temporary SQL script
         os.unlink("/tmp/pardus.sql")
