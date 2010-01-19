@@ -14,6 +14,7 @@ shelltools.export("HOME", get.workDIR())
 
 def setup():
     pisitools.dosed("giscanner/Makefile.in", "py_compile = .*", "py_compile = /bin/true")
+    autotools.autoreconf("-fi")
     autotools.configure("--disable-static")
 
 def build():
