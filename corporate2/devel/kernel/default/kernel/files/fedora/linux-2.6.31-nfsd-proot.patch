@@ -1,7 +1,8 @@
-diff -up linux-2.6.31.i686/fs/nfsd/export.c.save linux-2.6.31.i686/fs/nfsd/export.c
---- linux-2.6.31.i686/fs/nfsd/export.c.save	2009-12-07 12:13:28.000000000 -0500
-+++ linux-2.6.31.i686/fs/nfsd/export.c	2009-12-07 12:15:32.000000000 -0500
-@@ -362,10 +362,12 @@ static struct svc_export *svc_export_loo
+Index: linux-2.6.32/fs/nfsd/export.c
+===================================================================
+--- linux-2.6.32.orig/fs/nfsd/export.c
++++ linux-2.6.32/fs/nfsd/export.c
+@@ -372,10 +372,12 @@ static struct svc_export *svc_export_loo
  static int check_export(struct inode *inode, int flags, unsigned char *uuid)
  {
  
@@ -16,7 +17,7 @@ diff -up linux-2.6.31.i686/fs/nfsd/export.c.save linux-2.6.31.i686/fs/nfsd/expor
  	    !S_ISREG(inode->i_mode))
  		return -ENOTDIR;
  
-@@ -1413,6 +1415,7 @@ static struct flags {
+@@ -1425,6 +1427,7 @@ static struct flags {
  	{ NFSEXP_CROSSMOUNT, {"crossmnt", ""}},
  	{ NFSEXP_NOSUBTREECHECK, {"no_subtree_check", ""}},
  	{ NFSEXP_NOAUTHNLM, {"insecure_locks", ""}},
@@ -24,7 +25,7 @@ diff -up linux-2.6.31.i686/fs/nfsd/export.c.save linux-2.6.31.i686/fs/nfsd/expor
  #ifdef MSNFS
  	{ NFSEXP_MSNFS, {"msnfs", ""}},
  #endif
-@@ -1493,7 +1496,7 @@ static int e_show(struct seq_file *m, vo
+@@ -1505,7 +1508,7 @@ static int e_show(struct seq_file *m, vo
  	struct svc_export *exp = container_of(cp, struct svc_export, h);
  
  	if (p == SEQ_START_TOKEN) {
@@ -33,10 +34,11 @@ diff -up linux-2.6.31.i686/fs/nfsd/export.c.save linux-2.6.31.i686/fs/nfsd/expor
  		seq_puts(m, "# Path Client(Flags) # IPs\n");
  		return 0;
  	}
-diff -up linux-2.6.31.i686/fs/nfsd/nfs4xdr.c.save linux-2.6.31.i686/fs/nfsd/nfs4xdr.c
---- linux-2.6.31.i686/fs/nfsd/nfs4xdr.c.save	2009-12-07 12:13:28.000000000 -0500
-+++ linux-2.6.31.i686/fs/nfsd/nfs4xdr.c	2009-12-07 12:15:32.000000000 -0500
-@@ -2206,11 +2206,14 @@ nfsd4_encode_dirent_fattr(struct nfsd4_r
+Index: linux-2.6.32/fs/nfsd/nfs4xdr.c
+===================================================================
+--- linux-2.6.32.orig/fs/nfsd/nfs4xdr.c
++++ linux-2.6.32/fs/nfsd/nfs4xdr.c
+@@ -2204,11 +2204,14 @@ nfsd4_encode_dirent_fattr(struct nfsd4_r
  	 * we will not follow the cross mount and will fill the attribtutes
  	 * directly from the mountpoint dentry.
  	 */
@@ -54,7 +56,7 @@ diff -up linux-2.6.31.i686/fs/nfsd/nfs4xdr.c.save linux-2.6.31.i686/fs/nfsd/nfs4
  		/*
  		 * Why the heck aren't we just using nfsd_lookup??
  		 * Different "."/".." handling?  Something else?
-@@ -2226,6 +2229,7 @@ nfsd4_encode_dirent_fattr(struct nfsd4_r
+@@ -2224,6 +2227,7 @@ nfsd4_encode_dirent_fattr(struct nfsd4_r
  			goto out_put;
  
  	}
@@ -62,9 +64,10 @@ diff -up linux-2.6.31.i686/fs/nfsd/nfs4xdr.c.save linux-2.6.31.i686/fs/nfsd/nfs4
  	nfserr = nfsd4_encode_fattr(NULL, exp, dentry, p, buflen, cd->rd_bmval,
  					cd->rd_rqstp, ignore_crossmnt);
  out_put:
-diff -up linux-2.6.31.i686/fs/nfsd/nfsfh.c.save linux-2.6.31.i686/fs/nfsd/nfsfh.c
---- linux-2.6.31.i686/fs/nfsd/nfsfh.c.save	2009-12-07 12:13:28.000000000 -0500
-+++ linux-2.6.31.i686/fs/nfsd/nfsfh.c	2009-12-07 12:15:32.000000000 -0500
+Index: linux-2.6.32/fs/nfsd/nfsfh.c
+===================================================================
+--- linux-2.6.32.orig/fs/nfsd/nfsfh.c
++++ linux-2.6.32/fs/nfsd/nfsfh.c
 @@ -109,6 +109,36 @@ static __be32 nfsd_setuser_and_check_por
  	return nfserrno(nfsd_setuser(rqstp, exp));
  }
@@ -116,10 +119,11 @@ diff -up linux-2.6.31.i686/fs/nfsd/nfsfh.c.save linux-2.6.31.i686/fs/nfsd/nfsfh.
  	error = nfsd_mode_check(rqstp, dentry->d_inode->i_mode, type);
  	if (error)
  		goto out;
-diff -up linux-2.6.31.i686/fs/nfsd/vfs.c.save linux-2.6.31.i686/fs/nfsd/vfs.c
---- linux-2.6.31.i686/fs/nfsd/vfs.c.save	2009-12-07 12:13:28.000000000 -0500
-+++ linux-2.6.31.i686/fs/nfsd/vfs.c	2009-12-07 12:22:32.000000000 -0500
-@@ -110,12 +110,21 @@ nfsd_cross_mnt(struct svc_rqst *rqstp, s
+Index: linux-2.6.32/fs/nfsd/vfs.c
+===================================================================
+--- linux-2.6.32.orig/fs/nfsd/vfs.c
++++ linux-2.6.32/fs/nfsd/vfs.c
+@@ -116,8 +116,16 @@ nfsd_cross_mnt(struct svc_rqst *rqstp, s
  
  	exp2 = rqst_exp_get_by_name(rqstp, &path);
  	if (IS_ERR(exp2)) {
@@ -138,13 +142,7 @@ diff -up linux-2.6.31.i686/fs/nfsd/vfs.c.save linux-2.6.31.i686/fs/nfsd/vfs.c
  		path_put(&path);
  		goto out;
  	}
--	if ((exp->ex_flags & NFSEXP_CROSSMOUNT) || EX_NOHIDE(exp2)) {
-+	if (nfsd_v4client(rqstp) ||
-+		(exp->ex_flags & NFSEXP_CROSSMOUNT) || EX_NOHIDE(exp2)) {
- 		/* successfully crossed mount point */
- 		/*
- 		 * This is subtle: path.dentry is *not* on path.mnt
-@@ -134,6 +143,19 @@ out:
+@@ -141,6 +149,19 @@ out:
  	return err;
  }
  
@@ -164,7 +162,7 @@ diff -up linux-2.6.31.i686/fs/nfsd/vfs.c.save linux-2.6.31.i686/fs/nfsd/vfs.c
  __be32
  nfsd_lookup_dentry(struct svc_rqst *rqstp, struct svc_fh *fhp,
  		   const char *name, unsigned int len,
-@@ -201,7 +223,7 @@ nfsd_lookup_dentry(struct svc_rqst *rqst
+@@ -208,7 +229,7 @@ nfsd_lookup_dentry(struct svc_rqst *rqst
  		/*
  		 * check if we have crossed a mount point ...
  		 */
@@ -173,9 +171,10 @@ diff -up linux-2.6.31.i686/fs/nfsd/vfs.c.save linux-2.6.31.i686/fs/nfsd/vfs.c
  			if ((host_err = nfsd_cross_mnt(rqstp, &dentry, &exp))) {
  				dput(dentry);
  				goto out_nfserr;
-diff -up linux-2.6.31.i686/include/linux/nfsd/export.h.save linux-2.6.31.i686/include/linux/nfsd/export.h
---- linux-2.6.31.i686/include/linux/nfsd/export.h.save	2009-12-07 12:13:28.000000000 -0500
-+++ linux-2.6.31.i686/include/linux/nfsd/export.h	2009-12-07 12:15:39.000000000 -0500
+Index: linux-2.6.32/include/linux/nfsd/export.h
+===================================================================
+--- linux-2.6.32.orig/include/linux/nfsd/export.h
++++ linux-2.6.32/include/linux/nfsd/export.h
 @@ -39,7 +39,17 @@
  #define NFSEXP_FSID		0x2000
  #define	NFSEXP_CROSSMOUNT	0x4000
@@ -195,10 +194,11 @@ diff -up linux-2.6.31.i686/include/linux/nfsd/export.h.save linux-2.6.31.i686/in
  
  /* The flags that may vary depending on security flavor: */
  #define NFSEXP_SECINFO_FLAGS	(NFSEXP_READONLY | NFSEXP_ROOTSQUASH \
-diff -up linux-2.6.31.i686/include/linux/nfsd/nfsd.h.save linux-2.6.31.i686/include/linux/nfsd/nfsd.h
---- linux-2.6.31.i686/include/linux/nfsd/nfsd.h.save	2009-12-07 12:13:28.000000000 -0500
-+++ linux-2.6.31.i686/include/linux/nfsd/nfsd.h	2009-12-07 12:15:39.000000000 -0500
-@@ -83,6 +83,7 @@ __be32		 nfsd_lookup_dentry(struct svc_r
+Index: linux-2.6.32/include/linux/nfsd/nfsd.h
+===================================================================
+--- linux-2.6.32.orig/include/linux/nfsd/nfsd.h
++++ linux-2.6.32/include/linux/nfsd/nfsd.h
+@@ -86,6 +86,7 @@ __be32		 nfsd_lookup_dentry(struct svc_r
  				struct svc_export **, struct dentry **);
  __be32		nfsd_setattr(struct svc_rqst *, struct svc_fh *,
  				struct iattr *, int, time_t);
@@ -206,7 +206,7 @@ diff -up linux-2.6.31.i686/include/linux/nfsd/nfsd.h.save linux-2.6.31.i686/incl
  #ifdef CONFIG_NFSD_V4
  __be32          nfsd4_set_nfs4_acl(struct svc_rqst *, struct svc_fh *,
                      struct nfs4_acl *);
-@@ -391,6 +392,10 @@ static inline u32 nfsd_suppattrs2(u32 mi
+@@ -394,6 +395,10 @@ static inline u32 nfsd_suppattrs2(u32 mi
  	return minorversion ? NFSD4_1_SUPPORTED_ATTRS_WORD2
  			    : NFSD4_SUPPORTED_ATTRS_WORD2;
  }
