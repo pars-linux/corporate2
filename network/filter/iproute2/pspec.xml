@@ -12,15 +12,19 @@
         <IsA>app:console</IsA>
         <Summary>Kernel routing and traffic control utilities</Summary>
         <Description>Iproute2 is a collection of utilites for controlling TCP/IP networking and traffic control in Linux.</Description>
-        <!-- keep the normal address
-        <Archive sha1sum="c73943aea21c047e3fe2e933b5ece3fcc8a20e10" type="tarbz2">http://developer.osdl.org/dev/iproute2/download/iproute2-2.6.25.tar.bz2</Archive>
-        -->
-        <Archive sha1sum="b6a43799bf5e8131307cf88b855031317af90eb4" type="tarbz2">http://devresources.linux-foundation.org/dev/iproute2/download/iproute2-2.6.29-1.tar.bz2</Archive>
+        <Archive sha1sum="e7dec62a4d6646f3fded4f5d34718e9fd98615e4" type="tarbz2">http://devresources.linux-foundation.org/dev/iproute2/download/iproute2-2.6.31.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>linux-atm</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">ldflags.patch</Patch>
+            <Patch level="1">man-pages.patch</Patch>
+            <Patch level="1">iproute2-2.6.29-kernel.patch</Patch>
+            <Patch level="1">iproute2-ss050901-opt_flags.patch</Patch>
+            <Patch level="1">iproute2-2.6.25-segfault.patch</Patch>
+            <Patch level="1">iproute2-sharepath.patch</Patch>
+            <Patch level="1">iproute2-2.6.31-tc_modules.patch</Patch>
+            <Patch level="1">iproute2-2.6.29-IPPROTO_IP_for_SA.patch</Patch>
+            <Patch level="1">iproute2-example-cbq-service.patch</Patch>
         </Patches>
     </Source>
 
@@ -33,7 +37,6 @@
         <Files>
             <Path fileType="config">/etc</Path>
             <Path fileType="executable">/sbin</Path>
-            <Path fileType="executable">/usr/sbin</Path>
             <Path fileType="library">/lib</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="man">/usr/share/man</Path>
@@ -42,6 +45,13 @@
     </Package>
 
     <History>
+        <Update release="13">
+            <Date>2010-01-21</Date>
+            <Version>2.6.31</Version>
+            <Comment>Bump to latest version</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="12">
             <Date>2009-05-10</Date>
             <Version>2.6.29.1</Version>
