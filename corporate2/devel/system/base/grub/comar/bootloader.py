@@ -204,7 +204,7 @@ def groupEntries(grub, root):
             version = e_kernel.value.split("kernel-")[1].split(" ")[0]
             try:
                 version, suffix = parseVersion("kernel-%s" % version)
-            except ValueError:
+            except (ValueError, TypeError):
                 __addItem("other", i)
                 continue
             if suffix:
