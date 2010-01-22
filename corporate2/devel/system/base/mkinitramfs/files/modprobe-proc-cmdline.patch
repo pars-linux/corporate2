@@ -1,28 +1,8 @@
-diff -Naur /var/pisi/mkinitramfs-1.15.3-61/work/busybox-1.15.3/modutils/modprobe.c /tmp/busybox-1.15.3/modutils/modprobe.c
---- busybox-1.15.3/modutils/modprobe.c	2009-12-12 23:13:28.000000000 +0200
-+++ busybox-1.15.3/modutils/modprobe.c	2010-01-09 19:17:39.603083389 +0200
-@@ -400,10 +400,16 @@
- 			add_probe(*argv++);
- 		} while (*argv);
- 	} else {
-+		char *cmdline_params, *kcmdline_params;
- 		/* First argument is module name, rest are parameters */
- 		DBG("probing just module %s", *argv);
- 		add_probe(argv[0]);
--		G.cmdline_mopts = parse_cmdline_module_options(argv);
-+		cmdline_params = parse_cmdline_module_options(argv);
-+		kcmdline_params = parse_kcmdline_module_options(*argv);
-+		G.cmdline_mopts = xzalloc(strlen(cmdline_params) + strlen(kcmdline_params) + 1);
-+		/* Allow overriding /proc/cmdline parameters with the ones given in command line */
-+		strcat(G.cmdline_mopts, kcmdline_params);
-+		strcat(G.cmdline_mopts, cmdline_params);
- 	}
- 
- 	/* Happens if all requested modules are already loaded */
-diff -Naur /var/pisi/mkinitramfs-1.15.3-61/work/busybox-1.15.3/modutils/modutils.c /tmp/busybox-1.15.3/modutils/modutils.c
---- busybox-1.15.3/modutils/modutils.c	2009-12-12 23:13:28.000000000 +0200
-+++ busybox-1.15.3/modutils/modutils.c	2010-01-09 18:00:23.353324254 +0200
-@@ -77,6 +77,48 @@
+Index: busybox-1.15.3/modutils/modutils.c
+===================================================================
+--- busybox-1.15.3.orig/modutils/modutils.c
++++ busybox-1.15.3/modutils/modutils.c
+@@ -77,6 +77,48 @@ char * FAST_FUNC parse_cmdline_module_op
  	return options;
  }
  
@@ -71,10 +51,11 @@ diff -Naur /var/pisi/mkinitramfs-1.15.3-61/work/busybox-1.15.3/modutils/modutils
  /* Return:
   * 0 on success,
   * -errno on open/read error,
-diff -Naur /var/pisi/mkinitramfs-1.15.3-61/work/busybox-1.15.3/modutils/modutils.h /tmp/busybox-1.15.3/modutils/modutils.h
---- busybox-1.15.3/modutils/modutils.h	2009-12-12 23:13:28.000000000 +0200
-+++ busybox-1.15.3/modutils/modutils.h	2010-01-09 18:00:23.353324254 +0200
-@@ -22,6 +22,7 @@
+Index: busybox-1.15.3/modutils/modutils.h
+===================================================================
+--- busybox-1.15.3.orig/modutils/modutils.h
++++ busybox-1.15.3/modutils/modutils.h
+@@ -22,6 +22,7 @@ char *replace_underscores(char *s) FAST_
  int string_to_llist(char *string, llist_t **llist, const char *delim) FAST_FUNC;
  char *filename2modname(const char *filename, char *modname) FAST_FUNC;
  char *parse_cmdline_module_options(char **argv) FAST_FUNC;
@@ -82,3 +63,15 @@ diff -Naur /var/pisi/mkinitramfs-1.15.3-61/work/busybox-1.15.3/modutils/modutils
  
  #define INSMOD_OPTS \
  	"vq" \
+Index: busybox-1.15.3/modutils/modprobe.c
+===================================================================
+--- busybox-1.15.3.orig/modutils/modprobe.c
++++ busybox-1.15.3/modutils/modprobe.c
+@@ -286,6 +286,7 @@ static int do_modprobe(struct module_ent
+ 
+ 		options = m2->options;
+ 		m2->options = NULL;
++		options = gather_options_str(options, parse_kcmdline_module_options(m2->modname));
+ 		if (m == m2)
+ 			options = gather_options_str(options, G.cmdline_mopts);
+ 		rc = bb_init_module(fn, options);
