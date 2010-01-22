@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2007-2009 TUBITAK/UEKAE
+# Copyright 2007-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -11,7 +11,10 @@ from pisi.actionsapi import get
 
 def setup():
     autotools.autoreconf("-fi")
+
+    # FIXME: Enable polkit when it hits repo
     autotools.configure("--disable-static \
+                         --disable-polkit \
                          --enable-pam-module \
                          --localstatedir=/var \
                          --with-pid-file=/var/run/ConsoleKit/pid")
