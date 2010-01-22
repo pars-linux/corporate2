@@ -12,7 +12,7 @@
         <IsA>app:console</IsA>
         <Summary>Linux dynamic and persistent device naming support</Summary>
         <Description>udev allows Linux users to have a dynamic /dev directory and it provides the ability to have persistent device names.</Description>
-        <Archive sha1sum="befdcfe5833e3905497a246fd1f91734cfa80ced" type="tarbz2">http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev-146.tar.bz2</Archive>
+        <Archive sha1sum="3c77d76d495adf1144be959401c90660adfd7a89" type="tarbz2">http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev-150.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>acl</Dependency>
             <Dependency>glib2</Dependency>
@@ -20,36 +20,26 @@
             <Dependency>libxslt</Dependency>
             <Dependency>usbutils</Dependency>
             <Dependency>pciutils</Dependency>
+            <Dependency versionFrom="0.4.1">ConsoleKit</Dependency>
         </BuildDependencies>
         <Patches>
             <!-- FIXME: GROUP conversion (floppy->pnp) -->
             <Patch level="1">replace-floppy-by-pnp.patch</Patch>
-
-            <!-- Eject CD-ROM parts of ZTE MF6xx modems. AVEA ships one of them too -->
-            <Patch level="1">extras-modem-modeswitch-eject-zte-mf6xx.patch</Patch>
-
-            <Patch level="1">hid2hci-remove-superfluous-bmAttributes-match.patch</Patch>
-
-            <!-- modem-modeswitch fixes -->
-            <Patch level="1">modem-match-more-devices.patch</Patch>
-            <Patch level="1">modem-fix-zte-ejecting.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>udev</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="2.15">util-linux</Dependency>
             <Dependency>acl</Dependency>
             <Dependency>glib2</Dependency>
-            <Dependency versionFrom="3.0.4">gperf</Dependency>
+            <Dependency>gperf</Dependency>
             <Dependency>libusb</Dependency>
             <Dependency>usbutils</Dependency>
             <Dependency>pciutils</Dependency>
+            <Dependency>util-linux</Dependency>
+            <Dependency versionFrom="0.4.1">ConsoleKit</Dependency>
         </RuntimeDependencies>
-        <Replaces>
-            <Package>udev-extras</Package>
-        </Replaces>
         <Files>
             <Path fileType="executable">/bin</Path>
             <Path fileType="executable">/sbin</Path>
@@ -76,6 +66,21 @@
     </Package>
 
     <History>
+        <Update release="57">
+            <Date>2010-01-23</Date>
+            <Version>150</Version>
+            <Comment>
+                - Version bump to 150,
+                - Cleanup useless additional rules,
+                - Depend on ConsoleKit 0.4.1,
+                - Disable gintrospection as it needs gobject-introspection dependency.
+            </Comment>
+            <Requires>
+                <Action>reverseDependencyUpdate</Action>
+            </Requires>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="56">
             <Date>2009-11-02</Date>
             <Version>146</Version>
