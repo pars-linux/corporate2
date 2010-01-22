@@ -67,6 +67,15 @@ Index: busybox-1.15.3/modutils/modprobe.c
 ===================================================================
 --- busybox-1.15.3.orig/modutils/modprobe.c
 +++ busybox-1.15.3/modutils/modprobe.c
+@@ -82,7 +82,7 @@ static char *gather_options_str(char *op
+ 	/* Speed-optimized. We call gather_options_str many times. */
+ 	if (opts == NULL) {
+ 		opts = xstrdup(append);
+-	} else {
++	} else if (append) {
+ 		int optlen = strlen(opts);
+ 		opts = xrealloc(opts, optlen + strlen(append) + 2);
+ 		sprintf(opts + optlen, " %s", append);
 @@ -286,6 +286,7 @@ static int do_modprobe(struct module_ent
  
  		options = m2->options;
