@@ -10,6 +10,8 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
+KeepSpecial=["perl"]
+
 def setup():
     shelltools.export("LC_ALL", "C")
 
