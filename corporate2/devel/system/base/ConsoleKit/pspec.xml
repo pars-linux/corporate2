@@ -12,7 +12,7 @@
         <IsA>library</IsA>
         <Summary>A framework for defining and tracking users, login sessions, and seats</Summary>
         <Description>ConsoleKit is a system daemon for tracking what users are logged into the system and how they interact with the computer (e.g. which keyboard and mouse they use).</Description>
-        <Archive sha1sum="e3b6156622cc14ebca7382a55b8ed15f2f2bad98" type="tarbz2">http://people.freedesktop.org/~mccann/dist/ConsoleKit-0.3.0.tar.bz2</Archive>
+        <Archive sha1sum="ab2b8643c1e696df4dc79d9ee0323bdc95aaa6a1" type="tarbz2">http://www.freedesktop.org/software/ConsoleKit/dist/ConsoleKit-0.4.1.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>dbus</Dependency>
             <Dependency>dbus-glib</Dependency>
@@ -20,18 +20,12 @@
             <Dependency>PolicyKit-devel</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">disable-policykit.patch</Patch>
-            <!-- ported http://bugs.freedesktop.org/show_bug.cgi?id=14053 -->
-            <Patch level="1">pam_console-compat.patch</Patch>
-            <Patch level="1">08-fix-double-close.patch</Patch>
-            <Patch level="1">09-directory-handle-leak.patch</Patch>
-            <Patch level="1">10-file_monitor_remove_watch_crash.patch</Patch>
-            <Patch level="1">11-unref-dbus-proxy.patch</Patch>
-
             <!-- Fedora patches -->
-            <Patch level="1">consolekit-dbus-permissions.patch</Patch>
-            <Patch level="1">ConsoleKit-0.3.0-get-vt-from-display-instead-of-controlling-tty.patch</Patch>
-            <Patch level="1">null-warning.patch</Patch>
+            <Patch level="1">nodaemon.patch</Patch>
+            <Patch level="1">reorder-initialization.patch</Patch>
+
+            <Patch level="1">pam_console-compat.patch</Patch>
+            <Patch level="1">disable-policykit.patch</Patch>
         </Patches>
     </Source>
 
@@ -52,14 +46,21 @@
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="header">/usr/include</Path>
             <Path fileType="data">/usr/share/dbus-1</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
             <Path fileType="man">/usr/share/man</Path>
             <Path fileType="doc">/usr/share/doc</Path>
-            <Path fileType="data">/usr/share/PolicyKit</Path>
             <Path fileType="data">/var</Path>
         </Files>
     </Package>
 
     <History>
+        <Update release="15">
+            <Date>2010-01-23</Date>
+            <Version>0.4.1</Version>
+            <Comment>Version bump</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="14">
             <Date>2009-10-26</Date>
             <Version>0.3.0</Version>
