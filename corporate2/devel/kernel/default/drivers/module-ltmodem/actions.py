@@ -29,6 +29,10 @@ KDIR = kerneltools.getKernelVersion()
 
 def setup():
     pisitools.dosed(udevFile, 'KERNEL="', 'KERNEL=="')
+
+    # NAME= is deprecated in udev >= 147
+    pisitools.dosed(udevFile, 'NAME="%k", ')
+
     pisitools.dosed("modules/Makefile", "^KRELEASE.*", "KRELEASE = %s" % KDIR)
     pisitools.dosed("modules/Makefile", "SUBDIRS=", "M=")
     pisitools.dosed("modules/Makefile", "`uname -r`", KDIR)
