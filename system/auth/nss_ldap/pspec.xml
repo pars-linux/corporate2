@@ -1,0 +1,96 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>nss_ldap</Name>
+        <Homepage>http://www.padl.com/OSS/nss_ldap.html</Homepage>
+        <Packager>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Packager>
+        <License>LGPLv2.1</License>
+        <IsA>library</IsA>
+        <Summary>NSS module for querying user information from LDAP</Summary>
+        <Description>The nss_ldap module provides the means for workstations to information such as users, hosts, and groups from LDAP directories.</Description>
+        <Archive sha1sum="b06a8ac04bf1cf6a4aaeef8ae6dbb3fad097a668" type="targz">http://www.padl.com/download/nss_ldap-264.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>openldap-client</Dependency>
+            <Dependency>cyrus-sasl</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">fix-build-borkage.patch</Patch>
+            <Patch>build-fix.patch</Patch>
+            <Patch>nss_ldap-249-sasl-compile.patch</Patch>
+            <Patch level="1">nss_ldap-252-reconnect-timeouts.patch</Patch>
+            <Patch level="1">nss_ldap-257.2-gssapi-headers.patch</Patch>
+            <Patch level="1">nss_ldap-257-nss_max_group_depth.patch</Patch>
+            <Patch level="1">nss_ldap-264-disable-automagic.patch</Patch>
+
+            <!-- Suse patches -->
+            <Patch level="1">suse/group-utf8.diff</Patch>
+            <Patch level="1">suse/nss_ldap.diff</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>nss_ldap</Name>
+        <RuntimeDependencies>
+            <Dependency>openldap-client</Dependency>
+            <Dependency>cyrus-sasl</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/lib</Path>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="man">/usr/share/man</Path>
+        </Files>
+    </Package>
+
+    <History>
+        <Update release="6">
+            <Date>2009-10-21</Date>
+            <Version>264</Version>
+            <Comment>
+                - Fixed sandbox problems,
+                - Add two suse patches (Ozan).
+            </Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2009-10-13</Date>
+            <Version>264</Version>
+            <Comment>Add Gentoo patches.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2009-01-16</Date>
+            <Version>264</Version>
+            <Comment>Version bump.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2008-08-22</Date>
+            <Version>261</Version>
+            <Comment>Version bump.</Comment>
+            <Name>Semen Cirit</Name>
+            <Email>semen@pardus.org.tr</Email>
+        </Update>
+        <Update release="2" type="security">
+            <Date>2007-06-21</Date>
+            <Version>256</Version>
+            <Comment>New release fixing CVE-2007-5794, and use same config with pam</Comment>
+            <Name>Gürer Özen</Name>
+            <Email>gurer@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2007-04-02</Date>
+            <Version>255</Version>
+            <Comment>First release.</Comment>
+            <Name>Gürer Özen</Name>
+            <Email>gurer@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
