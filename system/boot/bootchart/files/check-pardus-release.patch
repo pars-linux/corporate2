@@ -1,0 +1,11 @@
+--- bootchart-0.9.orig/script/bootchartd
++++ bootchart-0.9/script/bootchartd
+@@ -182,6 +184,8 @@ log_header()
+ 		echo "version = $VERSION"
+ 		echo "title = Boot chart for $( hostname | sed q ) ($( date ))"
+ 		echo "system.uname = $( uname -srvm | sed q )"
++		if [ -f /etc/pardus-release ]; then
++			echo "system.release = $( sed q /etc/pardus-release )"
+ 		if [ -f /etc/gentoo-release ]; then
+ 			echo "system.release = $( sed q /etc/gentoo-release )"
+ 		elif [ -f /etc/SuSE-release ]; then

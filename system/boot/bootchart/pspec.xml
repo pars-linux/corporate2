@@ -1,0 +1,67 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>bootchart</Name>
+        <Homepage>http://www.bootchart.org</Homepage>
+        <Packager>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <IsA>app:console</IsA>
+        <Summary>A tool for boot process performance visualization</Summary>
+        <Description>bootchart is a tool for performance analysis and visualization of the GNU/Linux boot process.</Description>
+        <Archive sha1sum="c94f8b7ee473cdfa6c08275e6f2b38170ffa0ca0" type="targz">http://cekirdek.pardus.org.tr/~ozan/dist/sources/bootchart_0.9.orig.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>sun-jdk</Dependency>
+            <Dependency>ant</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">fix-acct-stop.patch</Patch>
+            <Patch level="1">bootchart-0.9-readonly-root.patch</Patch>
+            <Patch level="1">change-output-filename.patch</Patch>
+            <Patch level="1">check-pardus-release.patch</Patch>
+            <Patch level="1">parse-exit_proc-from-cmdline.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>bootchart</Name>
+        <RuntimeDependencies>
+            <Dependency>sun-jre</Dependency>
+            <Dependency>acct</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/sbin</Path>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="library">/usr/share/java</Path>
+            <Path fileType="config">/etc</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0755" target="/usr/bin/bootchart">bootchart</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <History>
+        <Update release="2">
+            <Date>2009-11-04</Date>
+            <Version>0.9</Version>
+            <Comment>
+                - Check for /etc/pardus-release,
+                - Parse exit_proc from /proc/cmdline to wait for a specific process.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2009-03-04</Date>
+            <Version>0.9</Version>
+            <Comment>First release.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
+
