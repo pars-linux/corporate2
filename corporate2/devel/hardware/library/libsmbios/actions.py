@@ -24,8 +24,6 @@ def install():
     pisitools.dosym("/usr/sbin/smbios-wireless-ctl", "/usr/sbin/DellWirelessCtl")
 
     # Remove yum specific stuff
-    pisitools.remove("/etc/yum/pluginconf.d/dellsysidplugin2.conf")
-    pisitools.remove("/usr/lib/yum-plugins/dellsysidplugin2.py")
     pisitools.removeDir("/etc/yum")
     pisitools.removeDir("/usr/lib/yum-plugins")
 
