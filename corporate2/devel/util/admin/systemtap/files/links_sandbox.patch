@@ -1,0 +1,23 @@
+diff -Nur systemtap-1.1-old/configure.ac systemtap-1.1/configure.ac
+--- systemtap-1.1-old/configure.ac	2010-01-23 00:46:03.321062078 +0200
++++ systemtap-1.1/configure.ac	2010-01-23 00:48:55.498062114 +0200
+@@ -247,17 +247,8 @@
+    </book>
+ EOF
+ 
+-if test "x${have_xmlto}" == "xyes"; then
+-AC_MSG_CHECKING([for xmlto --stringparam support])
+-   xmlto --stringparam man.authors.section.enabled=0 txt conftest.xml >/dev/null 2>&1
+-   if test $? == 0; then
+-      have_xmlto_stringparam="yes"
+-      AC_MSG_RESULT([yes])
+-   else
+-      AC_MSG_RESULT([no])
+-   fi
+-   rm -f conftest.txt
+-fi
++dnl we do the checking by hand to prevent links sandbox violation
++have_xmlto_stringparam="yes"
+ AM_CONDITIONAL([XMLTO_STRINGPARAM], [test "$have_xmlto_stringparam" == "yes"])
+ 
+ if test "x${building_refdocs}" == "xyes"; then
