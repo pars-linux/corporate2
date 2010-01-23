@@ -1,0 +1,59 @@
+Index: bootchart-0.9/src/org/bootchart/Main.java
+===================================================================
+--- bootchart-0.9.orig/src/org/bootchart/Main.java
++++ bootchart-0.9/src/org/bootchart/Main.java
+@@ -30,6 +30,9 @@ import java.util.Arrays;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
++import java.util.Date;
++import java.text.DateFormat;
++import java.text.SimpleDateFormat;
+ import java.util.Properties;
+ import java.util.logging.Logger;
+ import java.util.zip.GZIPInputStream;
+@@ -79,6 +82,9 @@ public class Main {
+ 	 */
+ 	public static void main(String[] args) throws Exception {
+ 		long time = System.currentTimeMillis();
++        DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
++        DateFormat timeFormat = new SimpleDateFormat("HHmmss");
++        Date today = new Date();
+ 
+ 		Options options = getOptions();
+ 		CommandLineParser parser = new GnuParser();
+@@ -114,6 +120,11 @@ public class Main {
+ 			prune = false;
+ 		}
+ 
++        String suffix = new String("");
++        if (cmd.hasOption("s")) {
++            suffix = "_" + cmd.getOptionValue("s");
++        }
++
+ 		List inputFiles = new ArrayList();
+ 		String[] fileArgs = cmd.getArgs();
+ 		for (int i=0; i<fileArgs.length; i++) {
+@@ -151,7 +162,7 @@ public class Main {
+ 			name = name.replaceFirst("\\.?tgz$", "");
+ 			name = name.replaceFirst("\\.?gz$", "");
+ 			name = name.replaceFirst("\\.?tar$", "");
+-			String fileName = outputDir + "/" + name;
++			String fileName = outputDir + "/" + name + "_" + dateFormat.format(today) + "_" + timeFormat.format(today) + suffix;
+ 			render(file, format, prune, fileName);
+ 		}
+ 
+@@ -335,7 +346,12 @@ public class Main {
+ 			             "output directory where images are stored (default: .)");
+ 		opt.setArgName("dir");
+ 		options.addOption(opt);
+-		
++
++		opt = new Option("s", "suffix", true,
++			             "suffix to add to the end of the filename (default: '')");
++		opt.setArgName("suffix");
++		options.addOption(opt);
++	
+ 		options.addOption("n", "no-prune", false,
+ 			              "do not prune the process tree");
+ 		return options;

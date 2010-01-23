@@ -1,0 +1,22 @@
+diff -urN bootchart-0.9.orig/script/bootchartd bootchart-0.9/script/bootchartd
+--- bootchart-0.9.orig/script/bootchartd	2005-11-13 12:40:01.000000000 -0500
++++ bootchart-0.9/script/bootchartd	2008-03-19 15:32:32.000000000 -0400
+@@ -43,7 +43,8 @@
+ 	# boot), a tmpfs is mounted in /mnt.  The mount point is immediately
+ 	# released using a lazy umount, so the script must never leave that
+ 	# directory.
+-	LOG_DIR="$( mktemp -d /tmp/bootchart.XXXXXX 2>/dev/null )"
++        # /dev is used because it survives boot read-write even with readonly root
++	LOG_DIR="$( mktemp -d /dev/bootchart.XXXXXX 2>/dev/null )"
+ 	if [ -z "$LOG_DIR" ]; then
+ 		LOG_DIR="/mnt"
+ 		LAZY_UMOUNT="yes"
+@@ -117,7 +118,7 @@
+ 	local runlevel=$( sed -n 's/.*:\(.*\):initdefault:.*/\1/gp' /etc/inittab )
+ 
+ 	# The processes we have to wait for
+-	local exit_proc="gdmgreeter gdm-binary kdm_greet kdm"
++	local exit_proc="gdmgreeter gdm-binary kdm_greet kdm ldm"
+ 	# early_login in FC4 starts gdm early, so fall back to mingetty
+ 	local early_login="no"
+ 	grep -q early_login /proc/cmdline && early_login="yes"

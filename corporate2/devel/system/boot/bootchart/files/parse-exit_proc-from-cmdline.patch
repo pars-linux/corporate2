@@ -1,0 +1,11 @@
+--- bootchart-0.9.orig/script/bootchartd
++++ bootchart-0.9/script/bootchartd
+@@ -125,6 +125,8 @@ wait_boot()
+ 	if [ "$runlevel" -eq "2" -o "$runlevel" -eq "3" -o "$early_login" = "yes" ]; then
+ 		exit_proc="mingetty agetty rungetty getty"
+ 	fi
++	# Parse exit_proc= in /proc/cmdline to be able to wait for a specific process
++	grep -q "exit_proc" /proc/cmdline && exit_proc=`sed 's/^.*exit_proc=\(.*\)$/\1/' < cmdline`
+ 	while [ -f "$BOOTLOG_LOCK" ]; do
+ 		if [ -n "$( pidof $exit_proc )" ]; then
+ 			# Give the exit process some time to start
