@@ -11,7 +11,7 @@ from pisi.actionsapi import get
 
 WorkDir = "."
 NoStrip = "/"
-Name = "6u15"
+Name = "6u17"
 
 def setup():
     shelltools.system("chmod +x construct.sh")
