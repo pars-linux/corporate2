@@ -23,17 +23,15 @@
             <Dependency>bootsplash</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.4.bz2</Patch>
+            <!-- Fix x86 MCE malfunctioning (#11923) -->
+            <!-- Commit introduced with 2.6.32.5, reverted in fedora as it conflicts with drm update -->
+            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.5.bz2</Patch>
 
             <!-- timer: Revert "Prevent clockevent_devices list corruption" to fix shutdown hangs (#12036) -->
             <Patch level="1">kernel/linux-2.6-kernel-timer-revert-prevent-clockevent_devices-list-corruption.patch</Patch>
 
             <!-- FIXME: Squashfs-lzma support (There's a cleaner patch for this in LKML) -->
             <Patch level="1">squashfs/squashfs-devel-add-lzma-support.patch</Patch>
-
-            <!-- Fix x86 MCE malfunctioning (#11923) -->
-            <Patch level="1">kernel/0001-x86-mce-thermal-monitoring-depends-on-APIC-being-enabled.patch</Patch>
-            <Patch level="1">kernel/0002-x86-mce-Clean-up-thermal-init-by-introducing-intel_t.patch</Patch>
 
             <!-- Add TuxOnIce 3.0.99.44 support -->
             <Patch level="1" compressionType="bz2">tuxonice/tuxonice-3.0.99.44-for-2.6.32.patch.bz2</Patch>
@@ -56,6 +54,12 @@
 
             <!-- FIXME: ath9k: add fixes suggested by upstream maintainer (partially applied to .32)
             <Patch level="1">fedora/linux-2.6-ath9k-fixes.patch</Patch>-->
+
+            <!-- btrfs: Fix ACL -->
+            <Patch level="1">fedora/linux-2.6-btrfs-fix-acl.patch</Patch>
+
+            <!-- wireless: report reasonable bitrate for MCS rates through wext -->
+            <Patch level="1">fedora/linux-2.6-wireless_-report-reasonable-bitrate-for-MCS-rates-through-wext.patch</Patch>
 
             <!-- Add LIRC support -->
             <Patch level="1">fedora/lirc-2.6.32.patch</Patch>
@@ -85,15 +89,17 @@
             <!-- nfs: Fixed hang during NFS installs -->
             <Patch level="1">fedora/linux-2.6-nfs4-callback-hidden.patch</Patch>
 
-            <!-- nfs: NFSD v4 dynamic pseudo root patch which allows NFS v3 exports to be mounted
-                 by v4 clients -->
-            <Patch level="1">fedora/linux-2.6.31-nfsd-proot.patch</Patch>
-
             <!-- input: Support for keys that toggle all rfkill state -->
             <Patch level="1">fedora/linux-2.6-rfkill-all.patch</Patch>
 
             <!-- hdpvr: Enable IR -->
             <Patch level="1">fedora/hdpvr-ir-enable.patch</Patch>
+
+            <!-- drm: Add Broadcom CrystalHD video decoder driver from 2.6.34 staging -->
+            <Patch level="1">fedora/crystalhd-2.6.34-staging.patch</Patch>
+
+            <!-- hid: Add AppleIR lirc driver -->
+            <Patch level="1">fedora/add-appleir-usb-driver.patch</Patch>
 
 
             <!-- DRM patches -->
@@ -177,6 +183,37 @@
             <Patch level="1">suse/nfs4acl-ext3.diff</Patch>
             <Patch level="1">suse/nfs4acl-ai.diff</Patch>
 
+            <!-- sky2: Add 88E8059 support to sky2 -->
+            <Patch level="1">suse/sky2-88E8059-support.patch</Patch>
+
+            <!-- sky2: More fixes -->
+            <Patch level="1">suse/sky2-optima-tcp-offload-fix.patch</Patch>
+            <Patch level="1">suse/sky2-add-register-definitions.patch</Patch>
+            <Patch level="1">suse/sky2-optima-fix-pci-cfg.patch</Patch>
+
+            <!-- Broadcom PHY fixes -->
+            <Patch level="1">suse/phy-broadcom-bug-fixes-for-sp1.patch</Patch>
+
+            <!-- HID: fixup quirk for NCR devices (2.6.33 -->
+            <Patch level="1">suse/hid-fixup-ncr-quirk.patch</Patch>
+
+            <!-- tg3: Update to 3.104 -->
+            <Patch level="1">suse/tg3-update-version-to-3.104.patch</Patch>
+
+            <!-- fastboot stuff -->
+            <Patch level="1">suse/linux-2.6.29-enable-async-by-default.patch</Patch>
+            <Patch level="1">suse/linux-2.6.29-jbd-longer-commit-interval.patch</Patch>
+            <Patch level="1">suse/linux-2.6.29-even-faster-kms.patch</Patch>
+
+            <!-- mouse: Add more touch screen device IDs -->
+            <Patch level="1">suse/linux-2.6.29-touchkit.patch</Patch>
+
+            <!-- libata: ata_piix: detect and clear spurious IRQs -->
+            <Patch level="1">suse/libata-ata_piix-clear-spurious-IRQ.patch</Patch>
+
+            <!-- libata: libata-acpi: missing _SDD is not an error -->
+            <Patch level="1">suse/libata-missing-_SDD-is-not-an-error.patch</Patch>
+
             <!-- Bootsplash for current kernel -->
             <Patch level="1">suse/bootsplash.patch</Patch>
 
@@ -251,6 +288,9 @@
             <Dependency releaseFrom="54">mkinitramfs</Dependency>
         </RuntimeDependencies>
         <Replaces>
+            <!-- FIXME: Should we replace those with .32?
+            <Package>broadcom-wl</Package>
+            <Package>module-broadcom-wl</Package>-->
             <Package>lirc-drivers</Package>
             <Package>module-lirc</Package>
             <Package>sdricoh_cs</Package>
@@ -340,11 +380,15 @@
 
     <History>
         <Update release="131">
-            <Date>2010-01-19</Date>
-            <Version>2.6.32.4</Version>
+            <Date>2010-01-23</Date>
+            <Version>2.6.32.5</Version>
             <Comment>
-                - Version bump to 2.6.32.4,
+                - Version bump to 2.6.32.5,
                 - Use VESA mode in KMS (by Fatih),
+                - Enable async by default,
+                - Add Suse fixes for sky2, broadcom and tg3 network drivers,
+                - Add AppleIR driver,
+                - Add CrystalHD video decoder driver.
             </Comment>
             <Name>Ozan Çağlayan</Name>
             <Email>ozan@pardus.org.tr</Email>
