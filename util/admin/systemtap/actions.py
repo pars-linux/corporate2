@@ -11,13 +11,15 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import get
 
 def setup():
+    autotools.autoreconf("-vfi")
     autotools.configure("--enable-grapher \
                          --enable-sqlite \
                          --enable-pie \
                          --disable-server \
                          --disable-crash \
                          --disable-docs \
-                         --without-rpm")
+                         --docdir=/%s/%s \
+                         --without-rpm" % (get.docDIR(), get.srcNAME()))
 
 def build():
     autotools.make()
