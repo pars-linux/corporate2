@@ -10,11 +10,13 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
+from pisi.actionsapi import kerneltools
+
 WorkDir = "%s-%s" % (get.srcNAME(), get.srcVERSION().split("_")[1])
 
 def setup():
     pisitools.dosed("Makefile", "-O -Wall", get.CFLAGS())
-    pisitools.dosed("Makefile", "^KDIR = .*$", "KDIR = /lib/modules/%s/build" % get.curKERNEL())
+    pisitools.dosed("Makefile", "^KDIR = .*$", "KDIR = /lib/modules/%s/build" % kerneltools.getKernelVersion())
 
 def build():
     autotools.make()
