@@ -4,28 +4,26 @@
 # Pardus initramfs creator
 #
 
-
 import os
 import sys
 import glob
 import stat
-import tempfile
 import shutil
+import tempfile
 import subprocess
 
 from optparse import OptionParser
 
-config = {"rootDir": "/",
-          "initramfsConf": "/etc/initramfs.conf",
-          "kernelType": "kernel",
-          "kernelVersion": "",
-          "tmpDir": "",
-          "destDir": "/boot",
-          "blackList": ["pktcdvd", "floppy"],
-          "debug": False,
-          "dryrun": False
+config = {"rootDir"         : "/",
+          "tmpDir"          : "",
+          "debug"           : False,
+          "dryrun"          : False,
+          "destDir"         : "/boot",
+          "blackList"       : ["pktcdvd", "floppy"],
+          "kernelType"      : "kernel",
+          "initramfsConf"   : "/etc/initramfs.conf",
+          "kernelVersion"   : "",
 }
-
 
 def loadFile(_file):
     try:
@@ -61,7 +59,10 @@ def mknod(nodfile, nodtype, major, minor, perms=0666):
     os.mknod(nodfile, perms | devtype, os.makedev(major, minor))
 
 def copy(source, destination):
-    shutil.copy2(source, destination)
+    try:
+        shutil.copy2(source, destination)
+    except IOError:
+        printWarn("Could not find file %s" % source)
 
 def touch(_file):
     if os.path.exists(_file):
@@ -71,8 +72,8 @@ def touch(_file):
         f.close()
 
 def uniq(alist):
-    set = {}
-    return [set.setdefault(e,e) for e in alist if e not in set]
+    _set = {}
+    return [_set.setdefault(e,e) for e in alist if e not in _set]
 
 def capture(*cmd):
     a = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -109,23 +110,24 @@ class BaseSystem:
         self.tmpDir = config["tmpDir"]
         self.baseDirs = ["bin", "sbin", "etc/initramfs.d", "dev", "dev/loop", "lib", "newroot", "proc", "sys"]
 
-        self.deviceNodes = {"null": ["c", 1, 3],
-                            "console": ["c", 5, 1],
-                            "tty": ["c", 5, 0],
-                            "tty0": ["c", 4, 0],
-                            "tty1": ["c", 4, 1],
-                            "ram0": ["b", 1, 0],
-                            "fb0": ["c", 29, 0],
-                            "urandom": ["c", 1, 9],
-                            "kmsg": ["c", 1, 11]
+        self.deviceNodes = {"null"      : ["c", 1, 3],
+                            "console"   : ["c", 5, 1],
+                            "tty"       : ["c", 5, 0],
+                            "tty0"      : ["c", 4, 0],
+                            "tty1"      : ["c", 4, 1],
+                            "ram0"      : ["b", 1, 0],
+                            "fb0"       : ["c", 29, 0],
+                            "urandom"   : ["c", 1, 9],
+                            "kmsg"      : ["c", 1, 11],
                            }
 
-        self.baseFileList = {"/lib/initramfs/busybox": "/bin/",
-                             "/lib/initramfs/busybox.links": "/bin/",
-                             "/usr/bin/disktype": "/bin/",
-                             "/sbin/coolplug": "/bin/",
-                             "/lib/initramfs/init": "/",
-                             "/lib/initramfs/udhcpc.script": "/etc/"
+        self.baseFileList = {"/lib/initramfs/busybox"       : "/bin/",
+                             "/lib/initramfs/busybox.links" : "/bin/",
+                             "/lib/initramfs/hotplug"       : "/sbin/",
+                             "/usr/bin/disktype"            : "/bin/",
+                             "/sbin/coolplug"               : "/bin/",
+                             "/lib/initramfs/init"          : "/",
+                             "/lib/initramfs/udhcpc.script" : "/etc/",
                             }
 
         self.suspendFileList = {"/etc/suspend.conf": "/etc/",
@@ -214,7 +216,7 @@ class KernelModule:
         self.addNetworkModule = config["networkModule"]
         self.addNetworkModuleBasic = config["networkModuleBasic"]
 
-        self.addDRMModule = config["drmModule"]
+        self.addDRMModules = not config["excludeDRM"]
         self.findAllModules()
 
         self.scsiDirs = ["kernel/drivers/scsi"]
@@ -298,7 +300,7 @@ class KernelModule:
 
             else:
                 # FIXME: we miss lots of firmware !
-                # printWarn("Could not find firmware %s" % src)
+                printWarn("Could not find firmware %s" % src)
                 pass
 
     def addDir(self, mdir):
@@ -354,7 +356,7 @@ class KernelModule:
                 self.addModule(i)
 
     def addDRM(self):
-        if self.addDRMModule:
+        if self.addDRMModules:
             for i in glob.glob("%s/*/*.ko" % os.path.join(self.modulesDir, self.drmDir)):
                 # Check for drm_crtc_init symbol
                 if not os.system("grep -qw drm_crtc_init %s" % i):
@@ -468,7 +470,7 @@ class Tempdir:
 
     def cleanup(self):
         if self.keepTmp:
-            printWarn("keeping tempdir %s" % self.tmpDir)
+            printWarn("Keeping temporary directory %s" % self.tmpDir)
         else:
             shutil.rmtree(self.tmpDir)
 
@@ -497,8 +499,8 @@ if __name__ == "__main__":
             help="define modules to be blacklisted, seperated by comma. Example: e100,rtl819,ahci")
     parser.add_option("--network", action="store_true", dest="networkModule", default=False,
             help="add network modules")
-    parser.add_option("--drm", action="store_true", dest="drmModule", default=False,
-            help="add KMS capable DRM modules")
+    parser.add_option("--nodrm", action="store_true", dest="excludeDRM", default=False,
+            help="Don't include KMS capable DRM modules")
     parser.add_option("--network-generic", action="store_true", dest="networkModuleBasic", default=False,
             help="add only generic network modules")
     parser.add_option("--keeptmp", action="store_true", dest="keepTmp", default=False,
@@ -524,7 +526,7 @@ if __name__ == "__main__":
     config["kernelType"] = opts.type
     config["networkModule"] = opts.networkModule
     config["networkModuleBasic"] = opts.networkModuleBasic
-    config["drmModule"] = opts.drmModule
+    config["excludeDRM"] = opts.excludeDRM
 
     if "," in opts.blackList:
         config["blackList"].extend(opts.blackList.split(","))
