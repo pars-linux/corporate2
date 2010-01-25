@@ -26,11 +26,20 @@ Cc: stable@kernel.org
  kernel/time/clockevents.c |    3 ++-
  1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/kernel/time/clockevents.c b/kernel/time/clockevents.c
-index 6f740d9..d7395fd 100644
---- a/kernel/time/clockevents.c
-+++ b/kernel/time/clockevents.c
-@@ -259,7 +259,8 @@ void clockevents_notify(unsigned long reason, void *arg)
+Index: linux-2.6.32/kernel/time/clockevents.c
+===================================================================
+--- linux-2.6.32.orig/kernel/time/clockevents.c
++++ linux-2.6.32/kernel/time/clockevents.c
+@@ -20,6 +20,8 @@
+ #include <linux/sysdev.h>
+ #include <linux/tick.h>
+ 
++#include "tick-internal.h"
++
+ /* The registered clock event devices */
+ static LIST_HEAD(clockevent_devices);
+ static LIST_HEAD(clockevents_released);
+@@ -258,7 +260,8 @@ void clockevents_notify(unsigned long re
  		cpu = *((int *)arg);
  		list_for_each_entry_safe(dev, tmp, &clockevent_devices, list) {
  			if (cpumask_test_cpu(cpu, dev->cpumask) &&
@@ -40,6 +49,3 @@ index 6f740d9..d7395fd 100644
  				BUG_ON(dev->mode != CLOCK_EVT_MODE_UNUSED);
  				list_del(&dev->list);
  			}
--- 
-1.6.6.1
-
