@@ -1,0 +1,56 @@
+diff -up cups-1.4.2/cups/http.c.gnutls-gcrypt-threads cups-1.4.2/cups/http.c
+--- cups-1.4.2/cups/http.c.gnutls-gcrypt-threads	2009-12-21 16:50:58.931552118 +0000
++++ cups-1.4.2/cups/http.c	2009-12-21 16:51:15.047552357 +0000
+@@ -1161,6 +1161,9 @@ httpHead(http_t     *http,		/* I - Conne
+   return (http_send(http, HTTP_HEAD, uri));
+ }
+ 
++#ifdef HAVE_GNUTLS
++GCRY_THREAD_OPTION_PTHREAD_IMPL;
++#endif
+ 
+ /*
+  * 'httpInitialize()' - Initialize the HTTP interface library and set the
+@@ -1205,6 +1208,7 @@ httpInitialize(void)
+ #endif /* WIN32 */
+ 
+ #ifdef HAVE_GNUTLS
++  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+   gnutls_global_init();
+ #endif /* HAVE_GNUTLS */
+ 
+diff -up cups-1.4.2/cups/http-private.h.gnutls-gcrypt-threads cups-1.4.2/cups/http-private.h
+--- cups-1.4.2/cups/http-private.h.gnutls-gcrypt-threads	2009-04-07 16:48:14.000000000 +0100
++++ cups-1.4.2/cups/http-private.h	2009-12-21 16:51:15.049552624 +0000
+@@ -98,6 +98,8 @@ extern BIO_METHOD *_httpBIOMethods(void)
+  * The GNU TLS library is more of a "bare metal" SSL/TLS library...
+  */
+ #    include <gnutls/gnutls.h>
++#    include <gcrypt.h>
++#    include <pthread.h>
+ 
+ typedef struct
+ {
+diff -up cups-1.4.2/scheduler/server.c.gnutls-gcrypt-threads cups-1.4.2/scheduler/server.c
+--- cups-1.4.2/scheduler/server.c.gnutls-gcrypt-threads	2008-09-10 23:05:29.000000000 +0100
++++ cups-1.4.2/scheduler/server.c	2009-12-21 16:51:15.048553044 +0000
+@@ -35,7 +35,9 @@
+  */
+ 
+ static int	started = 0;
+-
++#if !defined(HAVE_LIBSSL) && defined(HAVE_GNUTLS)
++GCRY_THREAD_OPTION_PTHREAD_IMPL;
++#endif
+ 
+ /*
+  * 'cupsdStartServer()' - Start the server.
+@@ -75,7 +77,7 @@ cupsdStartServer(void)
+  /*
+   * Initialize the encryption libraries...
+   */
+-
++  gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+   gnutls_global_init();
+ #endif /* HAVE_LIBSSL */
+ 
