@@ -12,7 +12,7 @@
         <IsA>service</IsA>
         <Summary>Common Unix Printing System</Summary>
         <Description>cups provides a portable printing layer for *nix-based operating systems.</Description>
-        <Archive sha1sum="df5cfb64fb608fc128acadde670dc30af49bdb18" type="tarbz2">ftp://ftp.rz.tu-bs.de/pub/mirror/ftp.easysw.com/ftp/pub/cups/1.3.11/cups-1.3.11-source.tar.bz2</Archive>
+        <Archive sha1sum="84be13b1a83a981cf1f3f9f812d53f3a3ca247cf" type="tarbz2">ftp://ftp.rz.tu-bs.de/pub/mirror/ftp.easysw.com/ftp/pub/cups/1.4.2/cups-1.4.2-source.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>openldap-client</Dependency>
             <Dependency>mit-kerberos</Dependency>
@@ -24,50 +24,78 @@
             <Dependency>avahi</Dependency>
         </BuildDependencies>
         <Patches>
-            <!-- Fix for CVE-2009-2820 (#11532) -->
-            <Patch level="1">fedora/cups-CVE-2009-2820.patch</Patch>
-
-            <!-- Use-after-free (crash) due improper reference counting in abstract file descriptors handling interface (CVE-2009-3553) (#11663) -->
-            <Patch level="1">fedora/cups-CVE-2009-3553.patch</Patch>
-
             <!-- Strip *.gz from man pages -->
             <Patch level="1">fedora/cups-no-gzip-man.patch</Patch>
+            <Patch level="1">fedora/cups-1.1.16-system-auth.patch</Patch>
+            <Patch level="1">fedora/cups-serial.patch</Patch>
 
-            <!-- Accept Host: fields set to the ServerName value -->
-            <Patch level="1">fedora/cups-str3167.patch</Patch>
+            <!-- For x86_64 compatibility
+            <Patch level="1">fedora/cups-serverbin-compat.patch</Patch>
+            -->
 
-            <!-- Relaxes the behavioral change introduced by 1.3.10 in get-jobs -->
-            <Patch level="1">fedora/cups-get-jobs-printer-uri-relax.patch</Patch>
+            <Patch level="1">fedora/cups-no-export-ssllibs.patch</Patch>
+            <Patch level="1">fedora/cups-str3448.patch</Patch>
 
             <!-- Allow tweaking of direct usb uris -->
             <Patch level="1">fedora/cups-direct-usb.patch</Patch>
-
-            <!-- Fixed STR #1968 properly -->
-            <Patch level="1">fedora/cups-wbuffer.patch</Patch>
-
+            <Patch level="1">fedora/cups-lpr-help.patch</Patch>
             <!-- Fix build -->
             <Patch level="1">fedora/cups-peercred.patch</Patch>
 
             <!-- Create pid file for cupsd -->
             <Patch level="1">fedora/cups-pid.patch</Patch>
+            <Patch level="1">fedora/cups-page-label.patch</Patch>
+            <!--<Patch level="1">fedora/cups-eggcups.patch</Patch>-->
 
             <!-- Improve lprm's infinite password asking behaviour -->
             <Patch level="1">fedora/cups-getpass.patch</Patch>
 
             <!-- Increase timeout for ppd reading -->
             <Patch level="1">fedora/cups-driverd-timeout.patch</Patch>
+            <Patch level="1">fedora/cups-strict-ppd-line-length.patch</Patch>
+            <Patch level="1">fedora/cups-logrotate.patch</Patch>
 
             <!-- USB paperout support -->
             <Patch level="1">fedora/cups-usb-paperout.patch</Patch>
 
-            <!-- Better password prompting behaviour (bzrh: #215133, cups: #2101) -->
-            <Patch level="1">fedora/cups-str2101.patch</Patch>
+            <Patch level="1">fedora/cups-build.patch</Patch>
+            <Patch level="1">fedora/cups-res_init.patch</Patch>
+            <Patch level="1">fedora/cups-filter-debug.patch</Patch>
+            <Patch level="1">fedora/cups-uri-compat.patch</Patch>
+            <Patch level="1">fedora/cups-cups-get-classes.patch</Patch>
+            <Patch level="1">fedora/cups-avahi.patch</Patch>
+            <Patch level="1">fedora/cups-str3382.patch</Patch>
+            <Patch level="1">fedora/cups-str3285_v2.patch</Patch>
+            <Patch level="1">fedora/cups-str3390.patch</Patch>
+            <Patch level="1">fedora/cups-str3391.patch</Patch>
+            <Patch level="1">fedora/cups-str3381.patch</Patch>
+            <Patch level="1">fedora/cups-str3399.patch</Patch>
+            <Patch level="1">fedora/cups-str3403.patch</Patch>
+            <Patch level="1">fedora/cups-str3407.patch</Patch>
+            <Patch level="1">fedora/cups-str3418.patch</Patch>
+            <Patch level="1">fedora/cups-str3422.patch</Patch>
+            <Patch level="1">fedora/cups-str3413.patch</Patch>
+            <Patch level="1">fedora/cups-str3439.patch</Patch>
+            <Patch level="1">fedora/cups-str3440.patch</Patch>
+            <Patch level="1">fedora/cups-str3442.patch</Patch>
+            <Patch level="1">fedora/cups-negative-snmp-string-length.patch</Patch>
+            <Patch level="1">fedora/cups-sidechannel-intrs.patch</Patch>
+            <Patch level="1">fedora/cups-media-empty-warning.patch</Patch>
+            <Patch level="1">fedora/cups-str3435.patch</Patch>
+            <Patch level="1">fedora/cups-str3436.patch</Patch>
+            <Patch level="1">fedora/cups-str3425.patch</Patch>
+            <Patch level="1">fedora/cups-str3428.patch</Patch>
+            <Patch level="1">fedora/cups-str3431.patch</Patch>
+            <Patch level="1">fedora/cups-gnutls-gcrypt-threads.patch</Patch>
+            <Patch level="1">fedora/cups-str3458.patch</Patch>
+            <Patch level="1">fedora/cups-0755.patch</Patch>
+            <Patch level="1">fedora/cups-str3460.patch</Patch>
+
+            <!-- Use-after-free (crash) due improper reference counting in abstract file descriptors handling interface (CVE-2009-3553) (#11663) -->
+            <Patch level="1">fedora/cups-CVE-2009-3553.patch</Patch>
 
             <!-- Accept "Host: ::1" (bzrh: #497393) -->
             <Patch level="1">fedora/cups-localhost-ipv6.patch</Patch>
-
-            <!-- Fix incorrect operator in jpeg and bmp MIME type rules -->
-            <Patch level="1">fedora/0001-Fixed-incorrect-operator-in-jpeg-and-bmp-MIME-type-r.patch</Patch>
 
 
             <!-- Ubuntu patches -->
@@ -75,31 +103,12 @@
             <!-- Retry job when it's failed instead of stopping -->
             <Patch level="1">ubuntu/ubuntu-default-error-policy-retry-job.patch</Patch>
 
-            <!-- Fix typos in man pages -->
-            <Patch level="1">ubuntu/manpage-typos.patch</Patch>
-
-            <!-- Search Mime files in /usr/share (1.4) -->
-            <Patch level="1">ubuntu/search_mime_files_in_usr_share.patch</Patch>
-
-            <!-- Use pkgconfig for gnutls (1.4) -->
-            <Patch level="1">ubuntu/gnutls-pkgconfig.patch</Patch>
-
-            <!-- Remove CVS tags -->
-            <Patch level="1">ubuntu/removecvstag.patch</Patch>
-
-            <Patch level="1">ubuntu/ppd-poll-with-client-conf.patch</Patch>
+            <!-- Poppler fixes -->
+            <Patch level="1">ubuntu/poppler-based-pdftops-fixes.patch</Patch>
+            <Patch level="1">ubuntu/read-embedded-options-from-incoming-postscript-and-add-to-ipp-attrs.patch</Patch>
 
             <!-- Suppress bonjour warnings -->
             <Patch level="1">ubuntu/quiesce-bonjour-warning.patch</Patch>
-
-            <!-- Don't link with unnecessary dependencies -->
-            <Patch level="1">ubuntu/drop_unnecessary_dependencies.patch</Patch>
-
-            <!-- Reactivate recommended tag support -->
-            <Patch level="1">ubuntu/reactivate_recommended_driver.patch</Patch>
-
-            <Patch level="1">ubuntu/poppler-based-pdftops-fixes.patch</Patch>
-            <Patch level="1">ubuntu/read-embedded-options-from-incoming-postscript-and-add-to-ipp-attrs.patch</Patch>
 
             <!-- Don't mess with cupsd.conf permission -->
             <Patch level="1">ubuntu/confdirperms.patch</Patch>
@@ -111,16 +120,9 @@
             <Patch level="1">increase-cost-of-pstops.patch</Patch>
 
             <Patch level="1">backend-https.patch</Patch>
-            <Patch level="1">configure-acl.patch</Patch>
-
-            <!-- Link with -lpthread -->
-            <Patch level="1">add-lpthread-to-cupsimage.patch</Patch>
 
             <!-- Don't install desktop file -->
             <Patch level="1">remove-desktop-file-install.patch</Patch>
-
-            <!-- Switch loglevel to debug by default -->
-            <!--<Patch level="1">loglevel-debug.patch</Patch>-->
         </Patches>
     </Source>
 
@@ -133,10 +135,13 @@
             <Dependency>libtasn1</Dependency>
             <Dependency>libpaper</Dependency>
             <Dependency>openslp</Dependency>
-            <Dependency releaseFrom="30">poppler</Dependency>
+            <Dependency>poppler</Dependency>
             <Dependency>gnutls</Dependency>
             <Dependency>avahi</Dependency>
         </RuntimeDependencies>
+        <Replaces>
+            <Package>cupsddk</Package>
+        </Replaces>
         <Files>
             <Path fileType="config">/etc/cups/*conf</Path>
             <Path fileType="header">/usr/include</Path>
@@ -184,6 +189,17 @@
     </Package>
 
     <History>
+        <Update release="66">
+            <Date>2010-01-26</Date>
+            <Version>1.4.2</Version>
+            <Comment>
+                - Switch to 1.4,
+                - Sync fedora patches,
+                - Enable avahi support.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="65">
             <Date>2010-01-03</Date>
             <Version>1.3.11</Version>

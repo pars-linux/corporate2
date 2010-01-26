@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -15,8 +15,11 @@ def setup():
     shelltools.export("CFLAGS", "%s -DLDAP_DEPRECATED" % get.CFLAGS())
 
     # FIXME: pnp, pnpadmin -> lp, lpadmin
-    # Add --enable-avahi after porting avahi support.
     # pdftops from cups is currently overridden by our additional file
+
+    # For --enable-avahi
+    autotools.aclocal("-I config-scripts")
+    autotools.autoconf("-I config-scripts")
 
     autotools.configure('--with-cups-user=pnp \
                          --with-cups-group=pnp \
@@ -27,7 +30,8 @@ def setup():
                          --enable-slp \
                          --enable-acl \
                          --enable-libpaper \
-                         --with-pdftops=pdftops \
+                         --enable-debug \
+                         --enable-avahi \
                          --enable-ssl \
                          --enable-gnutls \
                          --enable-threads \
@@ -45,6 +49,7 @@ def setup():
                          --disable-openssl \
                          --disable-launchd \
                          --without-rcdir \
+                         --with-pdftops=pdftops \
                          --with-optim="%s -fstack-protector-all" \
                          --without-php' % get.CFLAGS())
 
@@ -64,10 +69,10 @@ def install():
     pisitools.dodir("/var/cache/cups")
     pisitools.dodir("/var/spool/cups/tmp")
 
-    pisitools.dodoc("CHANGES.txt", "CREDITS.txt", "LICENSE.txt", "README.txt")
-
     # cleanups
     pisitools.removeDir("/etc/pam.d")
 
     # Serial backend needs to run as root
     shelltools.chmod("%s/usr/lib/cups/backend/serial" % get.installDIR(), 0700)
+
+    pisitools.dodoc("CHANGES.txt", "CREDITS.txt", "LICENSE.txt", "README.txt")

@@ -1,0 +1,24 @@
+diff -up cups-1.4.2/CHANGES-1.4.txt.str3399 cups-1.4.2/CHANGES-1.4.txt
+diff -up cups-1.4.2/scheduler/process.c.str3399 cups-1.4.2/scheduler/process.c
+--- cups-1.4.2/scheduler/process.c.str3399	2009-05-16 04:04:48.000000000 +0100
++++ cups-1.4.2/scheduler/process.c	2009-11-16 17:15:26.104542409 +0000
+@@ -505,6 +505,7 @@ cupsdStartProcess(
+ #ifdef HAVE_SIGSET
+     sigset(SIGTERM, SIG_DFL);
+     sigset(SIGCHLD, SIG_DFL);
++    sigset(SIGPIPE, SIG_DFL);
+ #elif defined(HAVE_SIGACTION)
+     memset(&action, 0, sizeof(action));
+ 
+@@ -513,9 +514,11 @@ cupsdStartProcess(
+ 
+     sigaction(SIGTERM, &action, NULL);
+     sigaction(SIGCHLD, &action, NULL);
++    sigaction(SIGPIPE, &action, NULL);
+ #else
+     signal(SIGTERM, SIG_DFL);
+     signal(SIGCHLD, SIG_DFL);
++    signal(SIGPIPE, SIG_DFL);
+ #endif /* HAVE_SIGSET */
+ 
+     cupsdReleaseSignals();
