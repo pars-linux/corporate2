@@ -19,6 +19,7 @@ def setup():
 def build():
     perlmodules.make()
 
+# tests violate sandbox open ( /root/.pulse-cookie -> /root/.pulse-cookie )
 def check():
     perlmodules.make("test")
 
