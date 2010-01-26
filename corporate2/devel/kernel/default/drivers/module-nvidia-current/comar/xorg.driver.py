@@ -10,6 +10,10 @@ version = "190.53"
 driver = "nvidia-current"
 base = "/usr/lib/xorg/%s" % driver
 
+BLACKLIST_CONF = "/etc/modprobe.d/blacklist-nouveau.conf"
+ZORG_ENABLED_PACKAGE = "/var/lib/zorg/enabled_package"
+ZORG_KERNEL_MODULE = "/var/lib/zorg/kernel_module"
+
 def unlink(name):
     if os.path.lexists(name):
         os.unlink(name)
@@ -67,8 +71,11 @@ def enable():
     # Create other links
     subprocess.call(["/sbin/ldconfig"])
 
-    file("/var/lib/zorg/enabled_package", "w").write("xorg_video_%s" % driver.replace("-", "_"))
-    file("/var/lib/zorg/kernel_module", "w").write(driver)
+    open(BLACKLIST_CONF, "w").write("blacklist nouveau")
+    subprocess.call(["/sbin/mkinitramfs", "-t", "kernel"])
+
+    open(ZORG_ENABLED_PACKAGE, "w").write("xorg_video_%s" % driver.replace("-", "_"))
+    open(ZORG_KERNEL_MODULE, "w").write(driver)
 
     subprocess.call(["/sbin/rmmod", "-s", "nvidia"])
     subprocess.call(["/sbin/modprobe", "-s", "nvidia"])
@@ -81,8 +88,11 @@ def disable():
     symlink("../../std/extensions/libglx.so", "/usr/lib/xorg/modules/extensions/libglx.so")
     symlink("mesa/libGL.so.1.2", "/usr/lib/libGL.so.1.2")
 
-    unlink("/var/lib/zorg/enabled_package")
-    unlink("/var/lib/zorg/kernel_module")
+    unlink(BLACKLIST_CONF)
+    subprocess.call(["/sbin/mkinitramfs", "-t", "kernel"])
+
+    unlink(ZORG_ENABLED_PACKAGE)
+    unlink(ZORG_KERNEL_MODULE)
 
     subprocess.call(["/sbin/rmmod", "-s", "nvidia"])
 
