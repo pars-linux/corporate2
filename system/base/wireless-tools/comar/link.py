@@ -464,7 +464,7 @@ def setState(name, state):
         callScript(name, "down")
         return
     # Here we go...
-    device_mode = profile.info.get("device_mode", "managed")
+    device_mode = profile.info.get("device_mode", "managed").lower()
     if device_mode == "managed":
         if state == "up":
             # Stop other profiles on same device
