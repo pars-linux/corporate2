@@ -19,6 +19,7 @@
             <!-- This patch is essential for udhcp to request root-path from dhcpd and required by ptsp-->
             <Patch level="1">udhcp-rootpath-rq.patch</Patch>
 
+            <Patch level="1">suppress-job-control-warning.patch</Patch>
             <Patch level="1">modprobe-proc-cmdline.patch</Patch>
         </Patches>
     </Source>
@@ -28,9 +29,6 @@
         <RuntimeDependencies>
             <Dependency>disktype</Dependency>
         </RuntimeDependencies>
-        <Conflicts>
-            <Package>mkinitrd</Package>
-        </Conflicts>
         <Files>
             <Path fileType="config">/etc</Path>
             <Path fileType="executable">/sbin</Path>
@@ -41,11 +39,22 @@
             <AdditionalFile owner="root" permission="0755" target="/lib/initramfs/init">init</AdditionalFile>
             <AdditionalFile owner="root" permission="0755" target="/lib/initramfs/udhcpc.script">udhcpc.script</AdditionalFile>
             <AdditionalFile owner="root" permission="0755" target="/lib/initramfs/hotplug">hotplug</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/lib/initramfs/profile.rc">profile.rc</AdditionalFile>
             <AdditionalFile owner="root" permission="0644" target="/etc/initramfs.conf.example">initramfs.conf</AdditionalFile>
         </AdditionalFiles>
     </Package>
 
     <History>
+        <Update release="68">
+            <Date>2010-01-26</Date>
+            <Version>1.15.3</Version>
+            <Comment>
+                - Add /etc/profile for aliases and PS1 string,
+                - Use initramfs=shell/shellnoprobe for not garbling root= value.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="67">
             <Date>2010-01-25</Date>
             <Version>1.15.3</Version>
