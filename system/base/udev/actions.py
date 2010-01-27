@@ -36,7 +36,7 @@ def install():
     # pisitools.insinto("/lib/udev/rules.d", "rules/gentoo/40-gentoo.rules")
 
     # Install additional rules from packages/ directory
-    for rule in ("40-pilot-links.rules"):
+    for rule in ("40-pilot-links.rules",):
         pisitools.insinto("/lib/udev/rules.d", "rules/packages/%s" % rule)
 
     # FIXME: We have GROUP conversions here!
@@ -61,7 +61,7 @@ def install():
     pisitools.removeDir("/usr/share/gtk-doc")
 
     # FIXME: Remove keymap stuff for now
-    for p in ["keymap"]:
+    for p in ("keymap",):
         pisitools.remove("/lib/udev/%s" % p)
         pisitools.remove("/lib/udev/rules.d/*%s*.rules" % p)
 
