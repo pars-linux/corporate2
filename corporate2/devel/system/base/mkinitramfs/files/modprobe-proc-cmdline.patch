@@ -1,10 +1,10 @@
-Index: busybox-1.15.3/modutils/modutils.c
+Index: busybox-1.16.0/modutils/modutils.c
 ===================================================================
---- busybox-1.15.3.orig/modutils/modutils.c
-+++ busybox-1.15.3/modutils/modutils.c
-@@ -77,6 +77,48 @@ char * FAST_FUNC parse_cmdline_module_op
- 	return options;
+--- busybox-1.16.0.orig/modutils/modutils.c
++++ busybox-1.16.0/modutils/modutils.c
+@@ -111,6 +111,48 @@ void* FAST_FUNC try_to_mmap_module(const
  }
+ #endif
  
 +char * FAST_FUNC parse_kcmdline_module_options(char *modulename)
 +{
@@ -51,10 +51,10 @@ Index: busybox-1.15.3/modutils/modutils.c
  /* Return:
   * 0 on success,
   * -errno on open/read error,
-Index: busybox-1.15.3/modutils/modutils.h
+Index: busybox-1.16.0/modutils/modutils.h
 ===================================================================
---- busybox-1.15.3.orig/modutils/modutils.h
-+++ busybox-1.15.3/modutils/modutils.h
+--- busybox-1.16.0.orig/modutils/modutils.h
++++ busybox-1.16.0/modutils/modutils.h
 @@ -22,6 +22,7 @@ char *replace_underscores(char *s) FAST_
  int string_to_llist(char *string, llist_t **llist, const char *delim) FAST_FUNC;
  char *filename2modname(const char *filename, char *modname) FAST_FUNC;
@@ -63,20 +63,11 @@ Index: busybox-1.15.3/modutils/modutils.h
  
  #define INSMOD_OPTS \
  	"vq" \
-Index: busybox-1.15.3/modutils/modprobe.c
+Index: busybox-1.16.0/modutils/modprobe.c
 ===================================================================
---- busybox-1.15.3.orig/modutils/modprobe.c
-+++ busybox-1.15.3/modutils/modprobe.c
-@@ -82,7 +82,7 @@ static char *gather_options_str(char *op
- 	/* Speed-optimized. We call gather_options_str many times. */
- 	if (opts == NULL) {
- 		opts = xstrdup(append);
--	} else {
-+	} else if (append) {
- 		int optlen = strlen(opts);
- 		opts = xrealloc(opts, optlen + strlen(append) + 2);
- 		sprintf(opts + optlen, " %s", append);
-@@ -286,6 +286,7 @@ static int do_modprobe(struct module_ent
+--- busybox-1.16.0.orig/modutils/modprobe.c
++++ busybox-1.16.0/modutils/modprobe.c
+@@ -288,6 +288,7 @@ static int do_modprobe(struct module_ent
  
  		options = m2->options;
  		m2->options = NULL;
