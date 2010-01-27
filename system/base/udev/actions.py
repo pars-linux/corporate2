@@ -45,7 +45,6 @@ def install():
     pisitools.dosed("%s/lib/udev/rules.d/50-udev-default.rules" % get.installDIR(), 'GROUP="floppy"', 'GROUP="pnp"')
     pisitools.dosed("%s/lib/udev/rules.d/50-udev-default.rules" % get.installDIR(), 'GROUP="lp"', 'GROUP="pnp"')
     pisitools.dosed("%s/lib/udev/rules.d/50-udev-default.rules" % get.installDIR(), 'GROUP="cdrom"', 'GROUP="removable"')
-    pisitools.dosed("%s/lib/udev/rules.d/40-gentoo.rules" % get.installDIR(), 'GROUP="usb"', 'GROUP="removable"')
 
     # create needed directories
     for d in ("", "net", "pts", "shm"):
