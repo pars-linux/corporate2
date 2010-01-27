@@ -18,7 +18,7 @@ def setup():
     autotools.make("-f Makefile.cvs")
 
     # Fix tunepimp detection
-    autotools.autoreconf("-fi")
+    autotools.autoconf()
 
     kde.configure("--with-extra-includes=/usr/include/speex \
                    --with-cdparanoia \
@@ -27,8 +27,6 @@ def setup():
                    --with-vorbis \
                    --with-lame \
                    --with-flac \
-                   --with-speex \
-                   --with-libmad \
                    --with-xine \
                    --with-musicbrainz \
                    --without-arts")
