@@ -1,0 +1,52 @@
+Index: ltmodem-8.31_alpha10-20090420/modules/v8250.c
+===================================================================
+--- ltmodem-8.31_alpha10-20090420.orig/modules/v8250.c
++++ ltmodem-8.31_alpha10-20090420/modules/v8250.c
+@@ -178,7 +178,7 @@ static void serial8250_enable_ms(struct 
+ static void
+ receive_chars(struct vuart_8250_port *up, unsigned int *status)
+ {
+-	struct tty_struct *tty = up->port.info->port.tty;
++	struct tty_struct *tty = up->port.state->port.tty;
+ 	unsigned char ch, lsr = *status;
+ 	int max_count = 256;
+ 	char flag;
+@@ -240,7 +240,7 @@ receive_chars(struct vuart_8250_port *up
+ 
+ static void transmit_chars(struct vuart_8250_port *up)
+ {
+-	struct circ_buf *xmit = &up->port.info->xmit;
++	struct circ_buf *xmit = &up->port.state->xmit;
+ 	int count;
+ 
+ 	if (up->port.x_char) {
+@@ -281,7 +281,7 @@ static unsigned int check_modem_status(s
+ 	unsigned int status = serial_in(up, UART_MSR);
+ 
+ 	if (status & UART_MSR_ANY_DELTA && up->ier & UART_IER_MSI && 
+-	    up->port.info != NULL) {
++	    up->port.state != NULL) {
+ 		if (status & UART_MSR_TERI)
+ 			up->port.icount.rng++;
+ 		if (status & UART_MSR_DDSR)
+@@ -291,7 +291,7 @@ static unsigned int check_modem_status(s
+ 		if (status & UART_MSR_DCTS)
+ 			uart_handle_cts_change(&up->port, status & UART_MSR_CTS);
+ 
+-		wake_up_interruptible(&up->port.info->delta_msr_wait);
++		wake_up_interruptible(&up->port.state->port.delta_msr_wait);
+ 	}
+ 
+ 	return status;
+Index: ltmodem-8.31_alpha10-20090420/modules/ltdrv.c
+===================================================================
+--- ltmodem-8.31_alpha10-20090420.orig/modules/ltdrv.c
++++ ltmodem-8.31_alpha10-20090420/modules/ltdrv.c
+@@ -145,7 +145,6 @@ void work_func(struct work_struct *arg)
+ 
+ 		if (VMODEM_Timer_Active) {
+ 			/* conditional ? */
+-			struct _ltmodem *ltdev = (struct _ltmodem *)arg;
+ 			serial_v8250_interrupt(ltmodem.line);
+ 		}
+ 
