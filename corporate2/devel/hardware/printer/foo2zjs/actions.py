@@ -14,6 +14,9 @@ def setup():
     # Fix udev rule
     pisitools.dosed("hplj10xx.rules", "/etc/hotplug/usb", "/lib/udev")
 
+    # Use ATTR instead of SYSFS
+    pisitools.dosed("hplj10xx.rules", "SYSFS{", "ATTR{")
+
     # Remove these. They are supported well by Splix.
     shelltools.unlink("foomatic-db/printer/Xerox-Phaser_6110.xml")
     shelltools.unlink("PPD/Xerox-Phaser_6110.ppd")
