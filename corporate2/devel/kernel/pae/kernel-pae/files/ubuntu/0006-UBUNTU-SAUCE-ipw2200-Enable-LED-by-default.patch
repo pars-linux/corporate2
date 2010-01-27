@@ -19,10 +19,10 @@ Signed-off-by: Tim Gardner <tim.gardner@canonical.com>
  2 files changed, 12035 insertions(+), 1 deletions(-)
  create mode 100644 drivers/net/wireless/ipw2200.c
 
-Index: linux-2.6.30/Documentation/networking/README.ipw2200
+Index: linux-2.6.32/Documentation/networking/README.ipw2200
 ===================================================================
---- linux-2.6.30.orig/Documentation/networking/README.ipw2200
-+++ linux-2.6.30/Documentation/networking/README.ipw2200
+--- linux-2.6.32.orig/Documentation/networking/README.ipw2200
++++ linux-2.6.32/Documentation/networking/README.ipw2200
 @@ -171,7 +171,7 @@ Where the supported parameter are:
    
    led
@@ -32,23 +32,23 @@ Index: linux-2.6.30/Documentation/networking/README.ipw2200
  
    mode
  	Can be used to set the default mode of the adapter.  
-Index: linux-2.6.30/drivers/net/wireless/ipw2x00/ipw2200.c
+Index: linux-2.6.32/drivers/net/wireless/ipw2x00/ipw2200.c
 ===================================================================
---- linux-2.6.30.orig/drivers/net/wireless/ipw2x00/ipw2200.c
-+++ linux-2.6.30/drivers/net/wireless/ipw2x00/ipw2200.c
-@@ -89,7 +89,7 @@ static int mode = 0;
+--- linux-2.6.32.orig/drivers/net/wireless/ipw2x00/ipw2200.c
++++ linux-2.6.32/drivers/net/wireless/ipw2x00/ipw2200.c
+@@ -90,7 +90,7 @@ static int network_mode = 0;
  static u32 ipw_debug_level;
  static int associate;
  static int auto_create = 1;
--static int led = 0;
-+static int led = 1;
+-static int led_support = 0;
++static int led_support = 1;
  static int disable = 0;
  static int bt_coexist = 0;
  static int hwcrypto = 0;
-@@ -11951,7 +11951,7 @@ module_param(auto_create, int, 0444);
+@@ -11962,7 +11962,7 @@ module_param(auto_create, int, 0444);
  MODULE_PARM_DESC(auto_create, "auto create adhoc network (default on)");
  
- module_param(led, int, 0444);
+ module_param_named(led, led_support, int, 0444);
 -MODULE_PARM_DESC(led, "enable led control on some systems (default 0 off)");
 +MODULE_PARM_DESC(led, "enable led control on some systems (default 1 on)");
  
