@@ -7,18 +7,19 @@
 
 from pisi.actionsapi import kde
 from pisi.actionsapi import get
-from pisi.actionsapi import autotools
+from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 
 KeepSpecial=["libtool"]
 shelltools.export("HOME", get.workDIR())
 
 def setup():
-    shelltools.export("DO_NOT_COMPILE", "mpeglib mpeglib_artsplug kaboodle noatun")
-    autotools.make("-f Makefile.cvs")
+    # Fix automake and python detection
+    pisitools.dosed("admin/cvs.sh", "automake\*1\.10\*", "automake*1.1[0-5]*")
+    pisitools.dosed("admin/acinclude.m4.in", "KDE_CHECK_PYTHON_INTERN\(\"2.5", "KDE_CHECK_PYTHON_INTERN(\"%s" % get.curPYTHON().split("python")[1])
+    kde.make("-f admin/Makefile.common")
 
-    # Fix tunepimp detection
-    autotools.autoconf()
+    shelltools.export("DO_NOT_COMPILE", "mpeglib mpeglib_artsplug kaboodle noatun")
 
     kde.configure("--with-extra-includes=/usr/include/speex \
                    --with-cdparanoia \
@@ -28,8 +29,7 @@ def setup():
                    --with-lame \
                    --with-flac \
                    --with-xine \
-                   --with-musicbrainz \
-                   --without-arts")
+                   --with-musicbrainz")
 
 def build():
     kde.make("-j1")
