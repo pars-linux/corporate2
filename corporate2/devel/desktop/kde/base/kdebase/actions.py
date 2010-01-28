@@ -8,13 +8,17 @@
 
 from pisi.actionsapi import kde
 from pisi.actionsapi import get
-from pisi.actionsapi import shelltools
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import shelltools
 
 KeepSpecial=["libtool"]
 shelltools.export("HOME", get.workDIR())
 
 def setup():
+    # Fix automake and python detection
+    pisitools.dosed("admin/cvs.sh", "automake\*1\.10\*", "automake*1.1[0-5]*")
+    pisitools.dosed("admin/acinclude.m4.in", "KDE_CHECK_PYTHON_INTERN\(\"2.5", "KDE_CHECK_PYTHON_INTERN(\"2.6")
+
     kde.make("-f admin/Makefile.common")
 
     # the java test is problematic (see kde bug 100729) and
