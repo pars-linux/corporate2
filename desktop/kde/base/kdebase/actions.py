@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 #
@@ -18,7 +18,6 @@ def setup():
     # Fix automake and python detection
     pisitools.dosed("admin/cvs.sh", "automake\*1\.10\*", "automake*1.1[0-5]*")
     pisitools.dosed("admin/acinclude.m4.in", "KDE_CHECK_PYTHON_INTERN\(\"2.5", "KDE_CHECK_PYTHON_INTERN(\"%s" % get.curPYTHON().split("python")[1])
-
     kde.make("-f admin/Makefile.common")
 
     # the java test is problematic (see kde bug 100729) and
@@ -41,7 +40,6 @@ def setup():
                    --with-pam=yes \
                    --with-sudo-kdesu-backend \
                    --with-krb5auth \
-                   --without-arts \
                    --without-sensors \
                    --without-java")
 
