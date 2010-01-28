@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2007-2009 TUBITAK/UEKAE
+# Copyright 2007-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -22,14 +22,21 @@ nutconfig = {"USER": "ups",
              "MANDIR": "/%s" % get.manDIR(),
              "DATADIR": "/usr/share/nut",
              "DATAROOTDIR": "/usr/share/nut"
-             }
+}
+
+udevFixes = {"@RUN_AS_GROUP@": nutconfig["GROUP"],
+             "BUS": "SUBSYSTEM",
+             "SYSFS": "ATTR"
+}
 
 
 def setup():
+    pisitools.dosed("scripts/udev/Makefile.am", "52-nut-usbups.rules", "70-nut-usbups.rules")
+
+    for i in udevFixes:
+        pisitools.dosed("scripts/udev/nut-usbups.rules.in", i, udevFixes[i])
+
     autotools.autoreconf("-fi")
-
-    pisitools.dosed("scripts/udev/Makefile.in", "52_nut-usbups.rules", "70-nut-usbups.rules")
-
     autotools.configure("--enable-shared \
                          --disable-static \
                          --with-user=%(USER)s \
