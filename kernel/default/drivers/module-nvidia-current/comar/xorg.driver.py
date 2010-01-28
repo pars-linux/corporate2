@@ -72,7 +72,8 @@ def enable():
     subprocess.call(["/sbin/ldconfig"])
 
     open(BLACKLIST_CONF, "w").write("blacklist nouveau")
-    subprocess.call(["/sbin/mkinitramfs", "-t", "kernel"])
+    for kernel in os.listdir("/etc/kernel")
+        subprocess.call(["/sbin/mkinitramfs", "-t", kernel])
 
     open(ZORG_ENABLED_PACKAGE, "w").write("xorg_video_%s" % driver.replace("-", "_"))
     open(ZORG_KERNEL_MODULE, "w").write(driver)
@@ -89,7 +90,8 @@ def disable():
     symlink("mesa/libGL.so.1.2", "/usr/lib/libGL.so.1.2")
 
     unlink(BLACKLIST_CONF)
-    subprocess.call(["/sbin/mkinitramfs", "-t", "kernel"])
+    for kernel in os.listdir("/etc/kernel")
+        subprocess.call(["/sbin/mkinitramfs", "-t", kernel])
 
     unlink(ZORG_ENABLED_PACKAGE)
     unlink(ZORG_KERNEL_MODULE)
