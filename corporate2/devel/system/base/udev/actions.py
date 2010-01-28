@@ -42,6 +42,7 @@ def install():
     # FIXME: We have GROUP conversions here!
     # Only some gentoo and 50-udev-default.rules are affected by the renamings below
 
+    pisitools.dosed("%s/lib/udev/rules.d/60-floppy.rules" % get.installDIR(), '-G floppy', '-G pnp')
     pisitools.dosed("%s/lib/udev/rules.d/50-udev-default.rules" % get.installDIR(), 'GROUP="floppy"', 'GROUP="pnp"')
     pisitools.dosed("%s/lib/udev/rules.d/50-udev-default.rules" % get.installDIR(), 'GROUP="lp"', 'GROUP="pnp"')
     pisitools.dosed("%s/lib/udev/rules.d/50-udev-default.rules" % get.installDIR(), 'GROUP="cdrom"', 'GROUP="removable"')
