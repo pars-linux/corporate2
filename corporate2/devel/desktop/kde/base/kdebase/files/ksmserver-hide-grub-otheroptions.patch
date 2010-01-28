@@ -1,0 +1,26 @@
+Index: kdebase-3.5.10/ksmserver/shutdowndlg.cpp
+===================================================================
+--- kdebase-3.5.10.orig/ksmserver/shutdowndlg.cpp
++++ kdebase-3.5.10/ksmserver/shutdowndlg.cpp
+@@ -232,6 +232,8 @@ KSMShutdownDlg::KSMShutdownDlg( QWidget*
+ 	    {
+               QString label = (*it);
+               label=label.replace('&',"&&");
++              if (label == "otheroptions")
++                  continue;
+ 	      if (index == cur)
+ 		targets->insertItem( label + i18n("current option in boot loader", " (current)"), index);
+ 	      else
+Index: kdebase-3.5.10/kdm/kfrontend/kdmshutdown.cpp
+===================================================================
+--- kdebase-3.5.10.orig/kdm/kfrontend/kdmshutdown.cpp
++++ kdebase-3.5.10/kdm/kfrontend/kdmshutdown.cpp
+@@ -559,6 +559,8 @@ KDMSlimShutdown::KDMSlimShutdown( QWidge
+ 		QPopupMenu *targets = new QPopupMenu( this );
+ 		for (int i = 0; targetList[i]; i++) {
+ 			QString t( QString::fromLocal8Bit( targetList[i] ) );
++			if (t == "otheroptions")
++				continue;
+ 			targets->insertItem( i == cur ?
+ 			                     i18n("current option in boot loader",
+ 			                          "%1 (current)").arg( t ) :
