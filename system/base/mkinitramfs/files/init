@@ -17,6 +17,7 @@ LIVE=0
 NFSROOT=0
 QUIET=0
 RAID=0
+LVM=0
 VIRTIO=0
 COPYTORAM=0
 
@@ -125,6 +126,15 @@ probe_raid() {
     fi
 }
 
+probe_lvm() {
+    info "Probing LVM devices"
+    modprobe -qa dm-mod
+    if [ -x /sbin/lvm ]
+    then
+        /sbin/lvm vgscan --ignorelockingfailure
+        /sbin/lvm vgchange -ay --ignorelockingfailure
+    fi
+}
 probe_virtio() {
     info "Probing Virtio devices"
     modprobe -bqa virtio_pci virtio_balloon virtio_blk virtio_net
@@ -152,7 +162,7 @@ find_live_mount() {
                 # Check for cdroot image
                 if [ -e /newroot/mnt/cdrom/${LOOPBACKFILE} ]
                 then
-                    ROOT_DEVICE="${x}"
+                    ROOT_DEVICE="/newroot${x}"
                     if [ "$COPYTORAM" == "1" ]
                     then
                         info "Copying Live Media files to RAM"
@@ -179,13 +189,14 @@ manage_tmpfs() {
         mkdir -p "/newroot/${d}"
     done
 
-    mv /dev/* /newroot/dev/
+    # Those seemed redundant to me when using devtmpfs
+    #mv /dev/* /newroot/dev/
 
     # coolplug may continue making nodes
-    mount -o bind /newroot/dev /dev
+    #mount -o bind /newroot/dev /dev
 
     # just to make sure, may not be necessary
-    [ ! -e /newroot/dev/console ] && mknod /newroot/dev/console c 5 1
+    #[ ! -e /newroot/dev/console ] && mknod /newroot/dev/console c 5 1
 }
 
 mount_nfs() {
@@ -243,7 +254,10 @@ mount_cdroot() {
         fall2sh "Could not mount root image"
     fi
     FS_LOCATION="mnt/livecd"
-    umount /dev
+
+
+    # FIXME: Commenting this should fix the issue reported in 64bit list.
+    # umount /dev
 
     for x in ${ROOT_LINKS}
     do
@@ -277,6 +291,9 @@ parse_config() {
         case "${inputline}" in
             raid=*)
                 RAID=$(echo $inputline|cut -f2- -d=)
+            ;;
+            lvm=*)
+                LVM=$(echo $inputline|cut -f2- -d=)
             ;;
             thin=*)
                 NFSROOT=$(echo $inputline|cut -f2- -d=)
@@ -327,6 +344,9 @@ parse_cmdline() {
                         ;;
                         raid)
                             RAID=1
+                        ;;
+                        lvm)
+                            LVM=1
                         ;;
                         thin)
                             NFSROOT=1
@@ -415,6 +435,7 @@ fi
 probe_devices --with-kms
 
 [ "${RAID}" -eq "1" ] && probe_raid
+[ "${LVM}" -eq "1" ] && probe_lvm
 [ "${VIRTIO}" -eq "1" ] && probe_virtio
 
 if [ "${RESUME_DEVICE}" != "" ]
@@ -439,7 +460,7 @@ then
     for i in `seq 50`
     do
         t=`findfs ${LIVEROOT} 2>/dev/null`
-        find_live_mount "/newroot$t"
+        find_live_mount "$t"
 
         if [ "${ROOT_DEVICE}" != "" ]
         then
