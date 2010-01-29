@@ -1,0 +1,42 @@
+Index: kdebase-3.5.10/moodin/thememoodin.cpp
+===================================================================
+--- kdebase-3.5.10.orig/moodin/thememoodin.cpp
++++ kdebase-3.5.10/moodin/thememoodin.cpp
+@@ -66,6 +66,7 @@ void ThemeMoodin::readSettings()
+   mCurrentStatusIndex = 0;
+   mSplashRect = cfg->readRectEntry("SplashRect", &screen);
+   mBackgroundImage = cfg->readEntry("Background", QString::null);
++  mKeepXdmBackground = cfg->readBoolEntry("KeepXdmBackground", false);
+   mStatusColor = cfg->readColorEntry("StatusColor", &defaultColor);
+   mStatusFont = cfg->readFontEntry("StatusFont", &defaultStatusFont);
+   mStatusCoords = cfg->readPointEntry("StatusCoords", &defaultPoint);
+@@ -141,6 +142,17 @@ void ThemeMoodin::initBackground(QPainte
+ 
+   QString bgImage;
+ 
++  if (mKeepXdmBackground)
++  {
++    char *xdmManaged = getenv("XDM_MANAGED");
++    if (xdmManaged && !strstr(xdmManaged, "auto"))
++    {
++      QPixmap pixmap = QPixmap::grabWindow(QApplication::desktop()->winId());
++      p->drawPixmap(0, 0, pixmap);
++      return;
++    }
++  }
++
+   if (mUsersBackground)
+   {
+     KConfig kdesktoprc("kdesktoprc", true, false);
+Index: kdebase-3.5.10/moodin/thememoodin.h
+===================================================================
+--- kdebase-3.5.10.orig/moodin/thememoodin.h
++++ kdebase-3.5.10/moodin/thememoodin.h
+@@ -87,6 +87,7 @@ private:
+ 
+   QString mCurrentAction;
+   QString mBackgroundImage;
++  bool mKeepXdmBackground;
+   QStringList mStatusIcons;
+   QStringList mStatusMessages;
+   QStringList mLabels;
