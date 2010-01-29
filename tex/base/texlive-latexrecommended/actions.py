@@ -9,6 +9,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import texlivemodules
 
 from pisi.actionsapi import get
+from pisi.actionsapi import shelltools
 
 WorkDir = "%s-%s" % (get.srcNAME(), get.srcVERSION().split("_")[-1])
 
@@ -19,10 +20,6 @@ def install():
     texlivemodules.install()
 
     # Install texmf bin scripts
-    bindocs=["thumbpdf/thumbpdf.pl","oberdiek/pdfatfi.pl"]
-    for i in bindocs:
-        binsplitslash=i.split("/")
-        binsplitpoint=binsplitslash[1].split(".")
-        print binsplitpoint[0]
-        pisitools.dosym("%s/%s/texmf-dist/scripts/%s" % (get.workDIR(),WorkDir, i), "/usr/bin/%s" % binsplitpoint[0])
+    pisitools.dosym("/usr/share/texmf-dist/scripts/thumbpdf/thumbpdf.pl", "/usr/bin/thumbpdf" )
+    pisitools.dosym("/usr/share/texmf-dist/scripts/oberdiek/pdfatfi.pl", "/usr/bin/pdfatfi" )
 
