@@ -11,12 +11,13 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
+    autotools.autoreconf("-fi")
     autotools.configure("--disable-static \
                          --disable-man-pages \
                          --disable-gtk-doc")
 
 def build():
-    autotools.make("-j1")
+    autotools.make()
 
 def install():
     autotools.install()
