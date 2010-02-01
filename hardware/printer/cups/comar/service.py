@@ -31,8 +31,8 @@ def start():
 
 @synchronized
 def stop():
-    stopService(pidfile="/var/run/cups/cupsd.pid",
+    stopService(pidfile="/var/run/cupsd.pid",
                 donotify=True)
 
 def status():
-    return isServiceRunning(pidfile="/var/run/cups/cupsd.pid")
+    return isServiceRunning(pidfile="/var/run/cupsd.pid")
