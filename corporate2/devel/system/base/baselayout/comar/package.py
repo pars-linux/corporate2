@@ -78,7 +78,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
               "avahi", "ntp", "tss", "ejabberd", "tomcat", "ups", "partimag", "radiusd", "oprofile", \
               "mediatomb", "pulse", "pulse-access", "pulse-rt", "italc", "quassel", "bitlbee", "icecast", \
               "vboxusers", "virt", "svn", "pnp", "removable", "netuser", "netadmin", "power", "pnpadmin", \
-              "gnokii", "memcached"]
+              "gnokii", "memcached", "rtkit"]
 
     for group in groups:
         deleteGroup(group)
@@ -86,7 +86,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     users = ["dialout", "squid", "named", "mysql", "postgres", "apache", "dovecot", "hal", "postfix", "smmsp", \
              "firebird", "dhcp", "ldap", "clamav", "ntlmaps", "avahi", "ntp", "tss", "ejabberd", "tomcat", "ups", \
              "partimag", "radiusd", "oprofile", "mediatomb", "pulse", "quasselcore", "bitlbee", "vboxadd", \
-             "svn", "icecast", "pnp", "gnokii", "memcached", "spamd"]
+             "svn", "icecast", "pnp", "gnokii", "memcached", "spamd", "rtkit"]
 
     for user in users:
         deleteUser(user)
@@ -148,6 +148,9 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     # memcached
     hav("addGroup", (151, "memcached"))
 
+    # For realtimeKit
+    hav("addGroup", (152, "rtkit"))
+
     # Comar' profile groups
     hav("addGroup", (200, "pnp"))
     hav("addGroup", (201, "removable"))
@@ -192,6 +195,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     hav("addUser", (150, "svn", "Subversion", "/dev/null", "/bin/false", "", ["svn"], [], []))
     hav("addUser", (151, "icecast", "Icecast Server", "/dev/null", "/bin/false", "", ["icecast"], [], []))
     hav("addUser", (152, "memcached", "Memcached daemon", "/var/run/memcached", "/bin/false", "", ["memcached"], [], []))
+    hav("addUser", (153, "rtkit", "RealtimeKit", "/proc", "/sbin/nologin", "", ["rtkit"], [], []))
 
     # Comar' profile users
     hav("addUser", (200, "pnp", "PnP", "/dev/null", "/bin/false", "", ["pnp"], [], []))
