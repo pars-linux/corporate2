@@ -1,0 +1,30 @@
+Index: src/plugin_dbus.cpp
+===================================================================
+--- src/plugin_dbus.cpp	(revision 355)
++++ src/plugin_dbus.cpp	(revision 354)
+@@ -350,7 +350,6 @@
+     gint arg = 0;
+     gint ok;
+     gchar *app_name;
+-    gint count = 0;
+ 
+     //list_dump(instance->playlist);
+     //printf("Opening %s to connection %p\n",file, instance->connection);
+@@ -397,15 +396,12 @@
+         return;
+ 
+     } else {
+-        while (!(instance->playerready) && count < 1000) {
++        while (!(instance->playerready)) {
+             g_main_context_iteration(NULL, FALSE);
+-            count++;
+         }
+         if (item->controlid != 0) {
+-            count = 0;
+-            while (!(item->playerready) && count < 1000) {
++            while (!(item->playerready)) {
+                g_main_context_iteration(NULL, FALSE);
+-               count++;
+             }
+         }
+     }
