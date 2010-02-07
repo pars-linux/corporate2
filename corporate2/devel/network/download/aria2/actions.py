@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Licensed under the GNU General Public License, version 2.
@@ -21,6 +20,7 @@ def setup():
                          --with-libz")
 
 def build():
+    autotools.make("-C po update-gmo")
     autotools.make()
 
 def install():
