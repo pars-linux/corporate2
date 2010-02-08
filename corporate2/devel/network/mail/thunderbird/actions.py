@@ -10,7 +10,7 @@ from pisi.actionsapi import get
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 
-WorkDir = "thunderbird"
+WorkDir = "mozilla"
 
 shelltools.export("CFLAGS", "%s -Os -fno-strict-aliasing" % get.CFLAGS())
 
