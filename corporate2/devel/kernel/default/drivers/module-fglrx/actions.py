@@ -55,6 +55,9 @@ def install():
     pisitools.domove("/usr/lib/libGL.so.1.2", "/usr/lib/xorg/fglrx/lib")
     pisitools.domove("/usr/lib/xorg/modules/extensions", "/usr/lib/xorg/fglrx")
 
+    pisitools.dosym("libatiuki.so.1.0", "/usr/lib/libatiuki.so.1")
+    pisitools.dosym("libatiuki.so.1", "/usr/lib/libatiuki.so")
+
     pisitools.dosym("libfglrx_dm.so.1.0", "/usr/lib/libfglrx_dm.so.1")
     pisitools.dosym("libfglrx_dm.so.1", "/usr/lib/libfglrx_dm.so")
 
