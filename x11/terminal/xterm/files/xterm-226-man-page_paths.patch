@@ -1,8 +1,8 @@
-Index: xterm-239/xterm.man
+Index: xterm-255/xterm.man
 ===================================================================
---- xterm-239.orig/xterm.man
-+++ xterm-239/xterm.man
-@@ -689,7 +689,7 @@ xterm -e /bin/bash -l -c "my command her
+--- xterm-255.orig/xterm.man
++++ xterm-255/xterm.man
+@@ -702,7 +702,7 @@ xterm -e /bin/bash -l -c "my command her
  .RE
  .IP
  Finally, \fB-ls\fP is not completely ignored,
@@ -11,7 +11,7 @@ Index: xterm-239/xterm.man
  (if configured to do so),
  whereas \fIxterm\ -e\fP does not.
  .TP 8
-@@ -1625,17 +1625,17 @@ Since X11R6, bitmap fonts have been scal
+@@ -1701,17 +1701,17 @@ Since X11R6, bitmap fonts have been scal
  The font server claims to provide the bold font that \fIxterm\fP requests,
  but the result is not always readable.
  XFree86 provides a feature which can be used to suppress the scaling.
@@ -32,7 +32,7 @@ Index: xterm-239/xterm.man
  .RE
  .IP
  Depending on your configuration, the font server may have its own configuration
-@@ -4790,10 +4790,10 @@ may be defined to a nonstandard location
+@@ -5320,10 +5320,10 @@ may be defined to a nonstandard location
  .SH FILES
  The actual pathnames given may differ on your system.
  .TP 5
@@ -45,11 +45,11 @@ Index: xterm-239/xterm.man
  the system logfile, which records user logins and logouts.
  .TP 5
  .I __apploaddir__/XTerm
-Index: xterm-239/minstall.sh
+Index: xterm-255/minstall.sh
 ===================================================================
---- xterm-239.orig/minstall.sh
-+++ xterm-239/minstall.sh
-@@ -38,10 +38,17 @@ MY_MANSECT=$suffix
+--- xterm-255.orig/minstall.sh
++++ xterm-255/minstall.sh
+@@ -109,6 +109,10 @@ WTMP_PATH=$WTMP_PATH/$WTMP_NAME
  X_MANSECT=`man X 2>&1 | tr '\012' '\020' | sed -e 's/^[^0123456789]*\([^) ][^) ]*\).*/\1/'`
  test -z "$X_MANSECT" && X_MANSECT=$suffix
  
@@ -60,10 +60,13 @@ Index: xterm-239/minstall.sh
  sed	-e 's%__vendorversion__%"X Window System"%' \
  	-e s%__apploaddir__%$APPS_DIR% \
  	-e s%__mansuffix__%$MY_MANSECT%g \
- 	-e s%__miscmansuffix__%$X_MANSECT%g \
-+ 	-e s%__fontpath__%$fontpath%g \
-+ 	-e s%__xorgcfgdir__%$xorgcfgdir%g \
-+ 	-e s%__xorgcfgfil__%$xorgcfgfil%g \
+@@ -117,6 +121,9 @@ sed	-e 's%__vendorversion__%"X Window Sy
+ 	-e s%/etc/utmp%$UTMP_PATH%g \
+ 	-e s%fIwtmp'\\%fI'$WTMP_NAME'\\%g' \
+ 	-e s%/etc/wtmp%$WTMP_PATH%g \
++	-e s%__fontpath__%$fontpath%g \
++	-e s%__xorgcfgdir__%$xorgcfgdir%g \
++	-e s%__xorgcfgfil__%$xorgcfgfil%g \
  	$OLD_FILE >$NEW_FILE
  
  echo "$MINSTALL $OLD_FILE $END_FILE"
