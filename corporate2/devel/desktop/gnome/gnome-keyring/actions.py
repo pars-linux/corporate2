@@ -9,9 +9,10 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
-    autotools.configure("--disable-schemas-install\
-                         --with-pam-dir=/lib/security")
-    pisitools.dosed("libtool", " -shared ", " -Wl,--as-need -shared ")
+    autotools.autoreconf("-fiv")
+    autotools.configure("--disable-schemas-install \
+                         --with-pam-dir=/lib/security \
+                         --with-root-certs=/etc/ssl/certs")
 
 def build():
     autotools.make()
