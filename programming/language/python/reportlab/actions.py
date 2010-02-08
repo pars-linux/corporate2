@@ -18,3 +18,6 @@ def install():
 
     for doc in ["docs/*","demos", "CHANGES.txt", "LICENSE.txt", "README.txt", "VERSION.txt"]:
         pisitools.insinto("/%s/%s" % (get.docDIR(), get.srcNAME()), doc)
+
+    #Remove bundled fonts
+    pisitools.removeDir("/usr/lib/%s/site-packages/reportlab/fonts" % get.curPYTHON())
