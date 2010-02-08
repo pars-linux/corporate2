@@ -1,0 +1,41 @@
+Index: sysinfo/sysinfo.cpp
+===================================================================
+--- a/sysinfo/sysinfo.cpp	(revision 27806)
++++ b/sysinfo/sysinfo.cpp	(revision 27807)
+@@ -273,8 +273,7 @@
+ #define ngettext i18n
+        staticInfo += addToStock("kcmprocessor", i18n("%1 MHz").arg(
+                     KGlobal::locale()->formatNumber(m_info[CPU_SPEED].toFloat(), 2))+ " (" + ngettext("1 core", "%n cores", m_info[CPU_NOFCORE].toLong()) + ")");
+-        staticInfo += addToStock("kcmprocessor", (m_info[CPU_VT]=="Yes"?i18n("Processor supports virtualization"):
+-                                                                        i18n("Processor doesn't support virtualization")));
++        staticInfo += addToStock("kcmprocessor", m_info[CPU_VT]);
+         staticInfo += finishStock();
+     }
+ 
+@@ -314,11 +313,10 @@
+         staticInfo += addToStock("applications-other", i18n("Product: ") + m_info[PRODUCT]);
+         staticInfo += addToStock("applications-other", i18n("BIOS: ") + m_info[BIOSVENDOR] + " " + m_info[BIOSVERSION] + " " + m_info[BIOSDATE]);
+         staticInfo += finishStock();
+-
+-        // update content..
+-        content = content.arg(staticInfo);
+-        staticInfo = "";
+     }
++    // update content..
++    content = content.arg(staticInfo);
++    staticInfo = "";
+ 
+     // Send the data
+     data(QCString(content.utf8()));
+@@ -366,9 +364,11 @@
+         {
+             DiskInfo di = (*it);
+ 
++            /*
+             if (di.mounted && di.mountPoint == "/")
+                 // Skip root filesystem as it's listed above as 'Root Folder'
+                 continue;
++            */
+ 
+             unsigned long long usage,percent,peer;
+             QString label = di.userLabel.isEmpty() ? di.label : di.userLabel;
