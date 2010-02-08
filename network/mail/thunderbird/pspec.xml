@@ -15,15 +15,15 @@
         <IsA>app:gui</IsA>
         <Summary>Thunderbird Email Client</Summary>
         <Description>Thunderbird is an email client with advanced features like skinning and plugin support.</Description>
-        <Archive sha1sum="359ab3b486e7d857fd4b7f71e0c496856e133c7c" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/thunderbird-3.0.tar.lzma</Archive>
+        <Archive sha1sum="1fcda94ead35984a9b7f7bea4e859797d7ca9e57" type="tarlzma">http://cekirdek.pardus.org.tr/~ozan/dist/sources/thunderbird-3.0.1.tar.lzma</Archive>
         <BuildDependencies>
-            <Dependency>fontconfig</Dependency>
+            <Dependency versionFrom="3.12.3.0">nss</Dependency>
             <Dependency versionFrom="2.18.5">gtk2</Dependency>
+            <Dependency versionFrom="1.8.8">cairo</Dependency>
+            <Dependency versionFrom="4.8.0">nspr</Dependency>
+            <Dependency>fontconfig</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>libIDL</Dependency>
-            <Dependency versionFrom="1.8.8">cairo</Dependency>
-            <Dependency version="3.12.3.0">nss</Dependency>
-            <Dependency version="4.8.0">nspr</Dependency>
             <Dependency>gnome-vfs</Dependency>
             <Dependency>libgnomeui</Dependency>
         </BuildDependencies>
@@ -56,13 +56,13 @@
     <Package>
         <Name>thunderbird</Name>
         <RuntimeDependencies>
-            <Dependency>fontconfig</Dependency>
+            <Dependency versionFrom="3.12.3.0">nss</Dependency>
             <Dependency versionFrom="2.18.5">gtk2</Dependency>
+            <Dependency versionFrom="1.8.8">cairo</Dependency>
+            <Dependency versionFrom="4.8.0">nspr</Dependency>
+            <Dependency>fontconfig</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>libIDL</Dependency>
-            <Dependency versionFrom="1.8.8">cairo</Dependency> 
-            <Dependency version="3.12.3.0">nss</Dependency>
-            <Dependency version="4.8.0">nspr</Dependency>
             <Dependency>esound</Dependency>
             <Dependency>gnome-vfs</Dependency>
             <Dependency>libgnomeui</Dependency>
@@ -81,20 +81,27 @@
         <AdditionalFiles>
             <!-- wrapper -->
             <AdditionalFile target="/usr/bin/thunderbird" permission="0755" owner="root">thunderbird</AdditionalFile>
+
             <!-- Default options -->
             <AdditionalFile target="/usr/lib/MozillaThunderbird/greprefs/all-pardus.js" permission="0644" owner="root">default-prefs.js</AdditionalFile>
             <AdditionalFile target="/usr/lib/MozillaThunderbird/defaults/pref/all-pardus.js" permission="0644" owner="root">default-prefs.js</AdditionalFile>
-            <!-- env.d
-            <AdditionalFile target="/etc/env.d/10MozillaThunderbird" permission="0644" owner="root">10MozillaThunderbird</AdditionalFile>
-            -->
+
             <!-- Desktop file -->
             <AdditionalFile target="/usr/share/applications/mozillathunderbird.desktop" permission="0755" owner="root">mozillathunderbird.desktop</AdditionalFile>
+
             <!-- Notification sound file -->
             <AdditionalFile target="/usr/lib/MozillaThunderbird/sound.wav" permission="0644" owner="root">sound.wav</AdditionalFile>
         </AdditionalFiles>
     </Package>
 
     <History>
+        <Update release="51" type="security">
+            <Date>2010-02-03</Date>
+            <Version>3.0.1</Version>
+            <Comment>Fix multiple vulnerabilities (#12146).</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="50">
             <Date>2009-12-26</Date>
             <Version>3.0</Version>
