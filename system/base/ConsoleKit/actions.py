@@ -12,9 +12,7 @@ from pisi.actionsapi import get
 def setup():
     autotools.autoreconf("-fi")
 
-    # FIXME: Enable polkit when it hits repo
     autotools.configure("--disable-static \
-                         --disable-polkit \
                          --enable-pam-module \
                          --localstatedir=/var \
                          --with-pid-file=/var/run/ConsoleKit/pid")
