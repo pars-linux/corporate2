@@ -1,8 +1,8 @@
-Index: xorg-server-1.7.3/Makefile.am
-===================================================================
---- xorg-server-1.7.3.orig/Makefile.am
-+++ xorg-server-1.7.3/Makefile.am
-@@ -17,6 +17,10 @@ if RECORD
+Index: xorg-server-1.6.3.901/Makefile.am
+================================================================================
+--- xorg-server-1.7.4/Makefile.am
++++ xorg-server-1.7.4/Makefile.am
+@@ -17,6 +17,10 @@
  RECORD_DIR=record
  endif
  
@@ -13,7 +13,7 @@ Index: xorg-server-1.7.3/Makefile.am
  SUBDIRS = \
  	doc \
  	include \
-@@ -36,6 +40,7 @@ SUBDIRS = \
+@@ -36,6 +40,7 @@
  	damageext \
  	$(COMPOSITE_DIR) \
  	$(GLX_DIR) \
@@ -21,20 +21,18 @@ Index: xorg-server-1.7.3/Makefile.am
  	exa \
  	config \
  	hw \
-Index: xorg-server-1.7.3/configure.ac
-===================================================================
---- xorg-server-1.7.3.orig/configure.ac
-+++ xorg-server-1.7.3/configure.ac
-@@ -608,6 +608,8 @@ AC_ARG_ENABLE(int10-module,     AS_HELP_
+--- xorg-server-1.7.4/configure.ac
++++ xorg-server-1.7.4/configure.ac
+@@ -611,6 +611,8 @@
  
  dnl DDXes.
  AC_ARG_ENABLE(xorg,    	      AS_HELP_STRING([--enable-xorg], [Build Xorg server (default: auto)]), [XORG=$enableval], [XORG=auto])
 +AC_ARG_ENABLE(xcliplist,      AS_HELP_STRING([--enable-xcliplist], [Build XClipList extension (default: auto)]), [XCLIPLIST=$enableval], [XCLIPLIST=auto])
-+AC_ARG_ENABLE(vnc,    	      AS_HELP_STRING([--enable-vnc], [Build Xvnc server (default: yes)]), [VNC=$enableval], [VNC=auto])
++AC_ARG_ENABLE(vnc,                  AS_HELP_STRING([--enable-vnc], [Build Xvnc server (default: yes)]), [VNC=$enableval], [VNC=auto])
  AC_ARG_ENABLE(dmx,    	      AS_HELP_STRING([--enable-dmx], [Build DMX server (default: auto)]), [DMX=$enableval], [DMX=auto])
  AC_ARG_ENABLE(xvfb,    	      AS_HELP_STRING([--enable-xvfb], [Build Xvfb server (default: yes)]), [XVFB=$enableval], [XVFB=yes])
  AC_ARG_ENABLE(xnest,   	      AS_HELP_STRING([--enable-xnest], [Build Xnest server (default: auto)]), [XNEST=$enableval], [XNEST=auto])
-@@ -1088,6 +1090,20 @@ AM_CONDITIONAL(VGAHW, test "x$VGAHW" = x
+@@ -1091,6 +1093,20 @@
  AM_CONDITIONAL(VBE, test "x$VBE" = xyes)
  AM_CONDITIONAL(INT10MODULE, test "x$INT10MODULE" = xyes)
  
@@ -55,7 +53,7 @@ Index: xorg-server-1.7.3/configure.ac
  AC_DEFINE(SHAPE, 1, [Support SHAPE extension])
  
  AC_DEFINE_DIR(XKB_BASE_DIRECTORY, XKBPATH, [Path to XKB data])
-@@ -1364,6 +1380,40 @@ dnl ------------------------------------
+@@ -1373,6 +1389,40 @@
  dnl DDX section.
  dnl ---------------------------------------------------------------------------
  
@@ -96,7 +94,7 @@ Index: xorg-server-1.7.3/configure.ac
  dnl Xvfb DDX
  
  AC_MSG_CHECKING([whether to build Xvfb DDX])
-@@ -2040,6 +2090,7 @@ Xext/Makefile
+@@ -2065,6 +2115,7 @@
  Xi/Makefile
  xfixes/Makefile
  exa/Makefile
@@ -104,7 +102,7 @@ Index: xorg-server-1.7.3/configure.ac
  hw/Makefile
  hw/xfree86/Makefile
  hw/xfree86/common/Makefile
-@@ -2073,6 +2124,7 @@ hw/xfree86/ramdac/Makefile
+@@ -2098,6 +2149,7 @@
  hw/xfree86/shadowfb/Makefile
  hw/xfree86/vbe/Makefile
  hw/xfree86/vgahw/Makefile
@@ -112,7 +110,7 @@ Index: xorg-server-1.7.3/configure.ac
  hw/xfree86/x86emu/Makefile
  hw/xfree86/xaa/Makefile
  hw/xfree86/xf8_16bpp/Makefile
-@@ -2084,8 +2136,10 @@ hw/dmx/doc/Makefile
+@@ -2109,8 +2161,10 @@
  hw/dmx/examples/Makefile
  hw/dmx/input/Makefile
  hw/dmx/glxProxy/Makefile
@@ -123,11 +121,9 @@ Index: xorg-server-1.7.3/configure.ac
  hw/xnest/Makefile
  hw/xwin/Makefile
  hw/xquartz/Makefile
-Index: xorg-server-1.7.3/hw/Makefile.am
-===================================================================
---- xorg-server-1.7.3.orig/hw/Makefile.am
-+++ xorg-server-1.7.3/hw/Makefile.am
-@@ -22,6 +22,10 @@ if KDRIVE
+--- xorg-server-1.7.4/hw/Makefile.am
++++ xorg-server-1.7.4/hw/Makefile.am
+@@ -22,6 +22,10 @@
  KDRIVE_SUBDIRS = kdrive
  endif
  
@@ -138,7 +134,7 @@ Index: xorg-server-1.7.3/hw/Makefile.am
  if XQUARTZ
  XQUARTZ_SUBDIRS = xquartz
  endif
-@@ -32,10 +36,11 @@ SUBDIRS =			\
+@@ -32,10 +36,11 @@
  	$(XVFB_SUBDIRS)		\
  	$(XNEST_SUBDIRS)	\
  	$(DMX_SUBDIRS)		\
@@ -151,10 +147,8 @@ Index: xorg-server-1.7.3/hw/Makefile.am
  
  relink:
  	for i in $(SUBDIRS) ; do $(MAKE) -C $$i relink ; done
-Index: xorg-server-1.7.3/hw/dmx/Makefile.am
-===================================================================
---- xorg-server-1.7.3.orig/hw/dmx/Makefile.am
-+++ xorg-server-1.7.3/hw/dmx/Makefile.am
+--- xorg-server-1.7.4/hw/dmx/Makefile.am
++++ xorg-server-1.7.4/hw/dmx/Makefile.am
 @@ -1,6 +1,6 @@
 -DIST_SUBDIRS = input config glxProxy examples doc
 +DIST_SUBDIRS = input vnc config glxProxy examples doc
@@ -164,10 +158,8 @@ Index: xorg-server-1.7.3/hw/dmx/Makefile.am
  bin_PROGRAMS = Xdmx
  
  if XINERAMA
-Index: xorg-server-1.7.3/hw/dmx/dmx-config.h
-===================================================================
---- xorg-server-1.7.3.orig/hw/dmx/dmx-config.h
-+++ xorg-server-1.7.3/hw/dmx/dmx-config.h
+--- xorg-server-1.7.4/hw/dmx/dmx-config.h
++++ xorg-server-1.7.4/hw/dmx/dmx-config.h
 @@ -72,4 +72,7 @@
  /* Enable the DMX extension */
  #define DMXEXT
@@ -176,11 +168,9 @@ Index: xorg-server-1.7.3/hw/dmx/dmx-config.h
 +#define DMXVNC 1
 +
  #endif /* DMX_CONFIG_H */
-Index: xorg-server-1.7.3/hw/dmx/dmxinit.c
-===================================================================
---- xorg-server-1.7.3.orig/hw/dmx/dmxinit.c
-+++ xorg-server-1.7.3/hw/dmx/dmxinit.c
-@@ -79,6 +79,10 @@ extern void GlxSetVisualConfigs(
+--- xorg-server-1.7.4/hw/dmx/dmxinit.c
++++ xorg-server-1.7.4/hw/dmx/dmxinit.c
+@@ -79,6 +79,10 @@
  );
  #endif /* GLXEXT */
  
@@ -191,7 +181,7 @@ Index: xorg-server-1.7.3/hw/dmx/dmxinit.c
  /* Global variables available to all Xserver/hw/dmx routines. */
  int             dmxNumScreens;
  DMXScreenInfo  *dmxScreens;
-@@ -807,6 +811,9 @@ void InitOutput(ScreenInfo *pScreenInfo,
+@@ -807,6 +811,9 @@
  
      dmxLog(dmxInfo, "Shadow framebuffer support %s\n",
  	   dmxShadowFB ? "enabled" : "disabled");
@@ -201,7 +191,7 @@ Index: xorg-server-1.7.3/hw/dmx/dmxinit.c
  }
  
  /* RATS: Assuming the fp string (which comes from the command-line argv
-@@ -1033,3 +1040,14 @@ void ddxUseMsg(void)
+@@ -1033,3 +1040,14 @@
      ErrorF("        Ctrl-Alt-q    Quit (core devices only)\n");
      ErrorF("        Ctrl-Alt-F*   Switch to VC (local only)\n");
  }
@@ -216,11 +206,9 @@ Index: xorg-server-1.7.3/hw/dmx/dmxinit.c
 +    return tp.tv_sec * 1000 + tp.tv_usec / 1000;
 +}
 +#endif
-Index: xorg-server-1.7.3/hw/dmx/dmxsync.c
-===================================================================
---- xorg-server-1.7.3.orig/hw/dmx/dmxsync.c
-+++ xorg-server-1.7.3/hw/dmx/dmxsync.c
-@@ -99,9 +99,16 @@ static void dmxSyncBlockHandler(pointer 
+--- xorg-server-1.7.4/hw/dmx/dmxsync.c
++++ xorg-server-1.7.4/hw/dmx/dmxsync.c
+@@ -99,9 +99,16 @@
      TimerForce(dmxSyncTimer);
  }
  
@@ -237,11 +225,9 @@ Index: xorg-server-1.7.3/hw/dmx/dmxsync.c
  }
  
  /** Request the XSync() batching optimization with the specified \a
-Index: xorg-server-1.7.3/hw/dmx/input/Makefile.am
-===================================================================
---- xorg-server-1.7.3.orig/hw/dmx/input/Makefile.am
-+++ xorg-server-1.7.3/hw/dmx/input/Makefile.am
-@@ -61,6 +61,7 @@ endif	    
+--- xorg-server-1.7.4/hw/dmx/input/Makefile.am
++++ xorg-server-1.7.4/hw/dmx/input/Makefile.am
+@@ -61,6 +61,7 @@
  AM_CFLAGS = $(DIX_CFLAGS) \
              -I$(top_srcdir)/hw/dmx \
              -DHAVE_DMX_CONFIG_H \
@@ -249,11 +235,9 @@ Index: xorg-server-1.7.3/hw/dmx/input/Makefile.am
              $(GLX_DEFS) \
              @DMXMODULES_CFLAGS@
  
-Index: xorg-server-1.7.3/hw/dmx/input/dmxcommon.c
-===================================================================
---- xorg-server-1.7.3.orig/hw/dmx/input/dmxcommon.c
-+++ xorg-server-1.7.3/hw/dmx/input/dmxcommon.c
-@@ -648,7 +648,6 @@ void dmxCommonRestoreState(pointer priva
+--- xorg-server-1.7.4/hw/dmx/input/dmxcommon.c
++++ xorg-server-1.7.4/hw/dmx/input/dmxcommon.c
+@@ -648,7 +648,6 @@
              dmxLogInput(dmxInput, "Keyboard busy, waiting\n");
          else
              dmxLogInput(dmxInput, "Keyboard error, waiting\n");
@@ -261,32 +245,32 @@ Index: xorg-server-1.7.3/hw/dmx/input/dmxcommon.c
                                  /* Don't generate X11 protocol for a bit */
          for (tmp = GetTimeInMillis(); GetTimeInMillis() - tmp < 250;) {
              usleep(250);            /* This ends up sleeping only until
-Index: xorg-server-1.7.3/hw/dmx/input/dmxinputinit.c
-===================================================================
---- xorg-server-1.7.3.orig/hw/dmx/input/dmxinputinit.c
-+++ xorg-server-1.7.3/hw/dmx/input/dmxinputinit.c
-@@ -374,6 +374,10 @@ static int dmxKeyboardOn(DeviceIntPtr pD
+--- xorg-server-1.7.4/hw/dmx/input/dmxinputinit.c
++++ xorg-server-1.7.4/hw/dmx/input/dmxinputinit.c
+@@ -372,6 +372,11 @@
+ static int dmxKeyboardOn(DeviceIntPtr pDevice, DMXLocalInitInfo *info)
+ {
      GETDMXINPUTFROMPDEVICE;
-     XkbRMLVOSet rmlvo;
- 
++
 +#ifdef DMXVNC
 +    vncSetKeyboardDevice(pDevice);
 +#endif
 +
+     XkbRMLVOSet rmlvo;
+ 
      rmlvo.rules = dmxConfigGetXkbRules();
-     rmlvo.model = dmxConfigGetXkbModel();
-     rmlvo.layout = dmxConfigGetXkbLayout();
-@@ -450,6 +454,9 @@ static int dmxDeviceOnOff(DeviceIntPtr p
-             break;
+@@ -451,7 +456,9 @@
          }
          if (info.keyClass) {
-+#ifdef DMXVNC
-+            vncSetKeyboardDevice(pDevice);
-+#endif
              XkbRMLVOSet rmlvo;
- 
+-
++#ifdef DMXVNC
++	    vncSetKeyboardDevice(pDevice);
++#endif
              rmlvo.rules = dmxConfigGetXkbRules();
-@@ -499,6 +506,9 @@ static int dmxDeviceOnOff(DeviceIntPtr p
+             rmlvo.model = dmxConfigGetXkbModel();
+             rmlvo.layout = dmxConfigGetXkbLayout();
+@@ -499,6 +506,9 @@
                                             info.res[i], info.minres[i],
                                             info.maxres[i]);
              }
@@ -296,11 +280,9 @@ Index: xorg-server-1.7.3/hw/dmx/input/dmxinputinit.c
          }
          if (info.focusClass)       InitFocusClassDeviceStruct(pDevice);
          if (info.proximityClass)   InitProximityClassDeviceStruct(pDevice);
-Index: xorg-server-1.7.3/hw/dmx/input/dmxinputinit.h
-===================================================================
---- xorg-server-1.7.3.orig/hw/dmx/input/dmxinputinit.h
-+++ xorg-server-1.7.3/hw/dmx/input/dmxinputinit.h
-@@ -288,4 +288,9 @@ extern int          dmxInputAttachConsol
+--- xorg-server-1.7.4/hw/dmx/input/dmxinputinit.h
++++ xorg-server-1.7.4/hw/dmx/input/dmxinputinit.h
+@@ -288,4 +288,9 @@
  extern int          dmxInputAttachBackend(int physicalScreen, int isCore,
                                            int *id);
  
@@ -310,10 +292,8 @@ Index: xorg-server-1.7.3/hw/dmx/input/dmxinputinit.h
 +#endif
 +
  #endif
-Index: xorg-server-1.7.3/hw/dmx/vnc/.gitignore
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/dmx/vnc/.gitignore
+--- xorg-server-1.7.4/hw/dmx/vnc/.gitignore
++++ xorg-server-1.7.4/hw/dmx/vnc/.gitignore
 @@ -0,0 +1,36 @@
 +auth.c
 +cmap.c
@@ -351,10 +331,8 @@ Index: xorg-server-1.7.3/hw/dmx/vnc/.gitignore
 +vncext.c
 +xistubs.c
 +zlib.c
-Index: xorg-server-1.7.3/hw/dmx/vnc/Makefile.am
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/dmx/vnc/Makefile.am
+--- xorg-server-1.7.4/hw/dmx/vnc/Makefile.am
++++ xorg-server-1.7.4/hw/dmx/vnc/Makefile.am
 @@ -0,0 +1,43 @@
 +noinst_LIBRARIES = libdmxvnc.a
 +
@@ -399,10 +377,8 @@ Index: xorg-server-1.7.3/hw/dmx/vnc/Makefile.am
 +            @DMXMODULES_CFLAGS@
 +
 +###EXTRA_DIST = dmxdetach.c
-Index: xorg-server-1.7.3/hw/dmx/vnc/vncInit.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/dmx/vnc/vncInit.c
+--- xorg-server-1.7.4/hw/dmx/vnc/vncInit.c
++++ xorg-server-1.7.4/hw/dmx/vnc/vncInit.c
 @@ -0,0 +1,453 @@
 +/*
 + *  Copyright (C) 2002 Alan Hourihane.  All Rights Reserved.
@@ -857,10 +833,8 @@ Index: xorg-server-1.7.3/hw/dmx/vnc/vncInit.c
 +    rfbCheckFds(pScreen);
 +    httpCheckFds(pScreen);
 +}
-Index: xorg-server-1.7.3/hw/dmx/vnc/vncint.h
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/dmx/vnc/vncint.h
+--- xorg-server-1.7.4/hw/dmx/vnc/vncint.h
++++ xorg-server-1.7.4/hw/dmx/vnc/vncint.h
 @@ -0,0 +1,153 @@
 +/*
 + *  Copyright (C) 2002 Alan Hourihane.  All Rights Reserved.
@@ -1015,10 +989,8 @@ Index: xorg-server-1.7.3/hw/dmx/vnc/vncint.h
 +
 +#endif /* _VNCINT_H_ */
 +
-Index: xorg-server-1.7.3/hw/vnc/LICENCE.TXT
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/LICENCE.TXT
+--- xorg-server-1.7.4/hw/vnc/LICENCE.TXT
++++ xorg-server-1.7.4/hw/vnc/LICENCE.TXT
 @@ -0,0 +1,340 @@
 +		    GNU GENERAL PUBLIC LICENSE
 +		       Version 2, June 1991
@@ -1360,10 +1332,8 @@ Index: xorg-server-1.7.3/hw/vnc/LICENCE.TXT
 +consider it more useful to permit linking proprietary applications with the
 +library.  If this is what you want to do, use the GNU Library General
 +Public License instead of this License.
-Index: xorg-server-1.7.3/hw/vnc/Makefile.am
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/Makefile.am
+--- xorg-server-1.7.4/hw/vnc/Makefile.am
++++ xorg-server-1.7.4/hw/vnc/Makefile.am
 @@ -0,0 +1,54 @@
 +# XXX This Makefile.am probably needs some work.
 +
@@ -1419,10 +1389,8 @@ Index: xorg-server-1.7.3/hw/vnc/Makefile.am
 +
 +relink:
 +	rm -f Xvnc && $(MAKE) Xvnc
-Index: xorg-server-1.7.3/hw/vnc/README
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/README
+--- xorg-server-1.7.4/hw/vnc/README
++++ xorg-server-1.7.4/hw/vnc/README
 @@ -0,0 +1,14 @@
 +
 +This is the directory containing the code specific to the TightVNC X server (Xvnc).
@@ -1438,10 +1406,8 @@ Index: xorg-server-1.7.3/hw/vnc/README
 +
 +Moved to X.org modular tree by Brian Paul.
 +
-Index: xorg-server-1.7.3/hw/vnc/auth.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/auth.c
+--- xorg-server-1.7.4/hw/vnc/auth.c
++++ xorg-server-1.7.4/hw/vnc/auth.c
 @@ -0,0 +1,566 @@
 +/*
 + * auth.c - deal with authentication.
@@ -2009,10 +1975,8 @@ Index: xorg-server-1.7.3/hw/vnc/auth.c
 +    return pVNC->rfbAuthTooManyTries;
 +}
 +
-Index: xorg-server-1.7.3/hw/vnc/cmap.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/cmap.c
+--- xorg-server-1.7.4/hw/vnc/cmap.c
++++ xorg-server-1.7.4/hw/vnc/cmap.c
 @@ -0,0 +1,166 @@
 +/*
 + * cmap.c
@@ -2180,10 +2144,8 @@ Index: xorg-server-1.7.3/hw/vnc/cmap.c
 +    pmap->pScreen->StoreColors = rfbStoreColors;
 +#endif
 +}
-Index: xorg-server-1.7.3/hw/vnc/corre.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/corre.c
+--- xorg-server-1.7.4/hw/vnc/corre.c
++++ xorg-server-1.7.4/hw/vnc/corre.c
 @@ -0,0 +1,353 @@
 +/*
 + * corre.c
@@ -2538,10 +2500,8 @@ Index: xorg-server-1.7.3/hw/vnc/corre.c
 +  
 +  return maxclr;
 +}
-Index: xorg-server-1.7.3/hw/vnc/cursor.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/cursor.c
+--- xorg-server-1.7.4/hw/vnc/cursor.c
++++ xorg-server-1.7.4/hw/vnc/cursor.c
 @@ -0,0 +1,407 @@
 +/*
 + * cursor.c - support for cursor shape updates.
@@ -2950,10 +2910,8 @@ Index: xorg-server-1.7.3/hw/vnc/cursor.c
 +DEFINE_RICH_ENCODE(16)
 +DEFINE_RICH_ENCODE(32)
 +
-Index: xorg-server-1.7.3/hw/vnc/cutpaste.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/cutpaste.c
+--- xorg-server-1.7.4/hw/vnc/cutpaste.c
++++ xorg-server-1.7.4/hw/vnc/cutpaste.c
 @@ -0,0 +1,87 @@
 +/*
 + * cutpaste.c - routines to deal with cut & paste buffers / selection.
@@ -3042,10 +3000,8 @@ Index: xorg-server-1.7.3/hw/vnc/cutpaste.c
 +    if (!inSetXCutText)
 +	rfbSendServerCutText(str, len);
 +}
-Index: xorg-server-1.7.3/hw/vnc/d3des.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/d3des.c
+--- xorg-server-1.7.4/hw/vnc/d3des.c
++++ xorg-server-1.7.4/hw/vnc/d3des.c
 @@ -0,0 +1,437 @@
 +/*
 + * This is D3DES (V5.09) by Richard Outerbridge with the double and
@@ -3484,10 +3440,8 @@ Index: xorg-server-1.7.3/hw/vnc/d3des.c
 + *
 + * d3des V5.0a rwo 9208.07 18:44 Graven Imagery
 + **********************************************************************/
-Index: xorg-server-1.7.3/hw/vnc/d3des.h
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/d3des.h
+--- xorg-server-1.7.4/hw/vnc/d3des.h
++++ xorg-server-1.7.4/hw/vnc/d3des.h
 @@ -0,0 +1,51 @@
 +/*
 + * This is D3DES (V5.09) by Richard Outerbridge with the double and
@@ -3540,10 +3494,8 @@ Index: xorg-server-1.7.3/hw/vnc/d3des.h
 +
 +/* d3des.h V5.09 rwo 9208.04 15:06 Graven Imagery
 + ********************************************************************/
-Index: xorg-server-1.7.3/hw/vnc/dispcur.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/dispcur.c
+--- xorg-server-1.7.4/hw/vnc/dispcur.c
++++ xorg-server-1.7.4/hw/vnc/dispcur.c
 @@ -0,0 +1,792 @@
 +/*
 + * dispcur.c
@@ -4337,10 +4289,8 @@ Index: xorg-server-1.7.3/hw/vnc/dispcur.c
 +			    0, 0, w, h, x, y);
 +    return TRUE;
 +}
-Index: xorg-server-1.7.3/hw/vnc/dpmsstubs.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/dpmsstubs.c
+--- xorg-server-1.7.4/hw/vnc/dpmsstubs.c
++++ xorg-server-1.7.4/hw/vnc/dpmsstubs.c
 @@ -0,0 +1,52 @@
 +/* $Xorg: dpmsstubs.c,v 1.3 2000/08/17 19:47:56 cpqbld Exp $ */
 +/*****************************************************************
@@ -4390,14 +4340,12 @@ Index: xorg-server-1.7.3/hw/vnc/dpmsstubs.c
 +    return -1;
 +}
 +
-+void DPMSSet(int level)
++int DPMSSet(ClientPtr client, int level)
 +{
-+
++    return FALSE;
 +}
-Index: xorg-server-1.7.3/hw/vnc/draw.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/draw.c
+--- xorg-server-1.7.4/hw/vnc/draw.c
++++ xorg-server-1.7.4/hw/vnc/draw.c
 @@ -0,0 +1,2021 @@
 +/*
 + * draw.c - drawing routines for the RFB X server.  This is a set of
@@ -6420,10 +6368,8 @@ Index: xorg-server-1.7.3/hw/vnc/draw.c
 +    VNCSCREENPTR(pScreen);
 +    SCHEDULE_FB_UPDATE(pScreen, pVNC);
 +}
-Index: xorg-server-1.7.3/hw/vnc/hextile.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/hextile.c
+--- xorg-server-1.7.4/hw/vnc/hextile.c
++++ xorg-server-1.7.4/hw/vnc/hextile.c
 @@ -0,0 +1,350 @@
 +/*
 + * hextile.c
@@ -6775,10 +6721,8 @@ Index: xorg-server-1.7.3/hw/vnc/hextile.c
 +DEFINE_SEND_HEXTILES(8)
 +DEFINE_SEND_HEXTILES(16)
 +DEFINE_SEND_HEXTILES(32)
-Index: xorg-server-1.7.3/hw/vnc/httpd.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/httpd.c
+--- xorg-server-1.7.4/hw/vnc/httpd.c
++++ xorg-server-1.7.4/hw/vnc/httpd.c
 @@ -0,0 +1,519 @@
 +/*
 + * httpd.c - a simple HTTP server
@@ -7299,10 +7243,8 @@ Index: xorg-server-1.7.3/hw/vnc/httpd.c
 +    return TRUE;
 +}
 +
-Index: xorg-server-1.7.3/hw/vnc/init.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/init.c
+--- xorg-server-1.7.4/hw/vnc/init.c
++++ xorg-server-1.7.4/hw/vnc/init.c
 @@ -0,0 +1,1078 @@
 +/*
 + * init.c
@@ -8382,10 +8324,8 @@ Index: xorg-server-1.7.3/hw/vnc/init.c
 +    rfbLog("");
 +    perror(str);
 +}
-Index: xorg-server-1.7.3/hw/vnc/kbdptr.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/kbdptr.c
+--- xorg-server-1.7.4/hw/vnc/kbdptr.c
++++ xorg-server-1.7.4/hw/vnc/kbdptr.c
 @@ -0,0 +1,458 @@
 +/*
 + * kbdptr.c - deal with keyboard and pointer device over TCP & UDP.
@@ -8845,10 +8785,8 @@ Index: xorg-server-1.7.3/hw/vnc/kbdptr.c
 +        break;
 +    }
 +}
-Index: xorg-server-1.7.3/hw/vnc/keyboard.h
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/keyboard.h
+--- xorg-server-1.7.4/hw/vnc/keyboard.h
++++ xorg-server-1.7.4/hw/vnc/keyboard.h
 @@ -0,0 +1,167 @@
 +/*
 + *  Copyright (C) 2002 Alan Hourihane.  All Rights Reserved.
@@ -9017,10 +8955,8 @@ Index: xorg-server-1.7.3/hw/vnc/keyboard.h
 +};
 +
 +#define N_PREDEFINED_KEYS (sizeof(map) / (sizeof(KeySym) * GLYPHS_PER_KEY))
-Index: xorg-server-1.7.3/hw/vnc/loginauth.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/loginauth.c
+--- xorg-server-1.7.4/hw/vnc/loginauth.c
++++ xorg-server-1.7.4/hw/vnc/loginauth.c
 @@ -0,0 +1,143 @@
 +/*
 + * loginauth.c - deal with login-style Unix authentication.
@@ -9165,10 +9101,8 @@ Index: xorg-server-1.7.3/hw/vnc/loginauth.c
 +    cl->state = RFB_INITIALISATION;
 +}
 +
-Index: xorg-server-1.7.3/hw/vnc/rdp.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/rdp.c
+--- xorg-server-1.7.4/hw/vnc/rdp.c
++++ xorg-server-1.7.4/hw/vnc/rdp.c
 @@ -0,0 +1,147 @@
 +/*
 + *  Copyright (C) 2004 Alan Hourihane.  All Rights Reserved.
@@ -9317,10 +9251,8 @@ Index: xorg-server-1.7.3/hw/vnc/rdp.c
 +	rdpNewClient(pScreen, sock);
 +    }
 +}
-Index: xorg-server-1.7.3/hw/vnc/rfb.h
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/rfb.h
+--- xorg-server-1.7.4/hw/vnc/rfb.h
++++ xorg-server-1.7.4/hw/vnc/rfb.h
 @@ -0,0 +1,751 @@
 +/*
 + * rfb.h - header file for RFB DDX implementation.
@@ -10069,14 +10001,12 @@ Index: xorg-server-1.7.3/hw/vnc/rfb.h
 +
 +extern Bool DPMSSupported(void);
 +extern int DPSMGet(int *level);
-+extern void DPMSSet(int level);
++extern int DPMSSet(ClientPtr client, int level);
 +
 +
 +#endif /* RFB_H_INCLUDED */
-Index: xorg-server-1.7.3/hw/vnc/rfbkeyb.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/rfbkeyb.c
+--- xorg-server-1.7.4/hw/vnc/rfbkeyb.c
++++ xorg-server-1.7.4/hw/vnc/rfbkeyb.c
 @@ -0,0 +1,405 @@
 +/*
 + *  Copyright (C) 2002 Alan Hourihane.  All Rights Reserved.
@@ -10483,10 +10413,8 @@ Index: xorg-server-1.7.3/hw/vnc/rfbkeyb.c
 +
 +#endif /* XFree86LOADER */
 +#endif
-Index: xorg-server-1.7.3/hw/vnc/rfbmouse.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/rfbmouse.c
+--- xorg-server-1.7.4/hw/vnc/rfbmouse.c
++++ xorg-server-1.7.4/hw/vnc/rfbmouse.c
 @@ -0,0 +1,260 @@
 +/*
 + *  Copyright (C) 2002 Alan Hourihane.  All Rights Reserved.
@@ -10748,10 +10676,8 @@ Index: xorg-server-1.7.3/hw/vnc/rfbmouse.c
 +
 +#endif /* XFree86LOADER */
 +#endif
-Index: xorg-server-1.7.3/hw/vnc/rfbproto.h
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/rfbproto.h
+--- xorg-server-1.7.4/hw/vnc/rfbproto.h
++++ xorg-server-1.7.4/hw/vnc/rfbproto.h
 @@ -0,0 +1,1362 @@
 +/*
 + *  Copyright (C) 2000-2004 Constantin Kaplinsky. All Rights Reserved.
@@ -12115,10 +12041,8 @@ Index: xorg-server-1.7.3/hw/vnc/rfbproto.h
 +    rfbChromiumStopMsg csd;
 +    rfbChromiumExposeMsg cse;
 +} rfbClientToServerMsg;
-Index: xorg-server-1.7.3/hw/vnc/rfbserver.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/rfbserver.c
+--- xorg-server-1.7.4/hw/vnc/rfbserver.c
++++ xorg-server-1.7.4/hw/vnc/rfbserver.c
 @@ -0,0 +1,2308 @@
 +/*
 + * rfbserver.c - deal with server-side of the RFB protocol.
@@ -14428,10 +14352,8 @@ Index: xorg-server-1.7.3/hw/vnc/rfbserver.c
 +	rfbDisconnectUDPSock(pScreen);
 +    }
 +}
-Index: xorg-server-1.7.3/hw/vnc/rre.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/rre.c
+--- xorg-server-1.7.4/hw/vnc/rre.c
++++ xorg-server-1.7.4/hw/vnc/rre.c
 @@ -0,0 +1,324 @@
 +/*
 + * rre.c
@@ -14757,10 +14679,8 @@ Index: xorg-server-1.7.3/hw/vnc/rre.c
 +  
 +  return maxclr;
 +}
-Index: xorg-server-1.7.3/hw/vnc/sockets.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/sockets.c
+--- xorg-server-1.7.4/hw/vnc/sockets.c
++++ xorg-server-1.7.4/hw/vnc/sockets.c
 @@ -0,0 +1,656 @@
 +/*
 + * sockets.c - deal with TCP & UDP sockets.
@@ -15418,10 +15338,8 @@ Index: xorg-server-1.7.3/hw/vnc/sockets.c
 +    return TRUE;
 +}
 +#endif
-Index: xorg-server-1.7.3/hw/vnc/sprite.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/sprite.c
+--- xorg-server-1.7.4/hw/vnc/sprite.c
++++ xorg-server-1.7.4/hw/vnc/sprite.c
 @@ -0,0 +1,2279 @@
 +/*
 + * sprite.c
@@ -17702,10 +17620,8 @@ Index: xorg-server-1.7.3/hw/vnc/sprite.c
 +    *py = pScreenPriv->y;
 +}
 +
-Index: xorg-server-1.7.3/hw/vnc/sprite.h
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/sprite.h
+--- xorg-server-1.7.4/hw/vnc/sprite.h
++++ xorg-server-1.7.4/hw/vnc/sprite.h
 @@ -0,0 +1,141 @@
 +/*
 + * sprite.h
@@ -17848,10 +17764,8 @@ Index: xorg-server-1.7.3/hw/vnc/sprite.h
 +    int *       /*py*/
 +#endif
 +);
-Index: xorg-server-1.7.3/hw/vnc/spritest.h
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/spritest.h
+--- xorg-server-1.7.4/hw/vnc/spritest.h
++++ xorg-server-1.7.4/hw/vnc/spritest.h
 @@ -0,0 +1,138 @@
 +/*
 + * spritest.h
@@ -17991,10 +17905,8 @@ Index: xorg-server-1.7.3/hw/vnc/spritest.h
 +
 +#define LINE_OVERLAP(pCbox,x1,y1,x2,y2,lw2) \
 +    BOX_OVERLAP((pCbox), (x1)-(lw2), (y1)-(lw2), (x2)+(lw2), (y2)+(lw2))
-Index: xorg-server-1.7.3/hw/vnc/stats.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/stats.c
+--- xorg-server-1.7.4/hw/vnc/stats.c
++++ xorg-server-1.7.4/hw/vnc/stats.c
 @@ -0,0 +1,117 @@
 +/*
 + * stats.c
@@ -18113,10 +18025,8 @@ Index: xorg-server-1.7.3/hw/vnc/stats.c
 +			   cl->rfbLastRectBytesSent));
 +    }
 +}
-Index: xorg-server-1.7.3/hw/vnc/symlink-vnc.sh
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/symlink-vnc.sh
+--- xorg-server-1.7.4/hw/vnc/symlink-vnc.sh
++++ xorg-server-1.7.4/hw/vnc/symlink-vnc.sh
 @@ -0,0 +1,198 @@
 +#!/bin/sh
 +
@@ -18316,10 +18226,8 @@ Index: xorg-server-1.7.3/hw/vnc/symlink-vnc.sh
 +}
 +
 +main $1 $2
-Index: xorg-server-1.7.3/hw/vnc/tableinitcmtemplate.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/tableinitcmtemplate.c
+--- xorg-server-1.7.4/hw/vnc/tableinitcmtemplate.c
++++ xorg-server-1.7.4/hw/vnc/tableinitcmtemplate.c
 @@ -0,0 +1,93 @@
 +/*
 + * tableinitcmtemplate.c - template for initialising lookup tables for
@@ -18414,10 +18322,8 @@ Index: xorg-server-1.7.3/hw/vnc/tableinitcmtemplate.c
 +#undef OUT_T
 +#undef SwapOUT
 +#undef rfbInitColourMapSingleTableOUT
-Index: xorg-server-1.7.3/hw/vnc/tableinittctemplate.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/tableinittctemplate.c
+--- xorg-server-1.7.4/hw/vnc/tableinittctemplate.c
++++ xorg-server-1.7.4/hw/vnc/tableinittctemplate.c
 @@ -0,0 +1,146 @@
 +/*
 + * tableinittctemplate.c - template for initialising lookup tables for
@@ -18565,10 +18471,8 @@ Index: xorg-server-1.7.3/hw/vnc/tableinittctemplate.c
 +#undef rfbInitTrueColourSingleTableOUT
 +#undef rfbInitTrueColourRGBTablesOUT
 +#undef rfbInitOneRGBTableOUT
-Index: xorg-server-1.7.3/hw/vnc/tabletranstemplate.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/tabletranstemplate.c
+--- xorg-server-1.7.4/hw/vnc/tabletranstemplate.c
++++ xorg-server-1.7.4/hw/vnc/tabletranstemplate.c
 @@ -0,0 +1,135 @@
 +/*
 + * tabletranstemplate.c - template for translation using lookup tables.
@@ -18705,10 +18609,8 @@ Index: xorg-server-1.7.3/hw/vnc/tabletranstemplate.c
 +#undef OUT_T
 +#undef rfbTranslateWithSingleTableINtoOUT
 +#undef rfbTranslateWithRGBTablesINtoOUT
-Index: xorg-server-1.7.3/hw/vnc/tight.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/tight.c
+--- xorg-server-1.7.4/hw/vnc/tight.c
++++ xorg-server-1.7.4/hw/vnc/tight.c
 @@ -0,0 +1,1827 @@
 +/*
 + * tight.c
@@ -20537,10 +20439,8 @@ Index: xorg-server-1.7.3/hw/vnc/tight.c
 +    cinfo->dest = &jpegDstManager;
 +}
 +
-Index: xorg-server-1.7.3/hw/vnc/translate.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/translate.c
+--- xorg-server-1.7.4/hw/vnc/translate.c
++++ xorg-server-1.7.4/hw/vnc/translate.c
 @@ -0,0 +1,502 @@
 +/*
 + * translate.c - translate between different pixel formats
@@ -21044,10 +20944,8 @@ Index: xorg-server-1.7.3/hw/vnc/translate.c
 +	}
 +    }
 +}
-Index: xorg-server-1.7.3/hw/vnc/vncauth.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/vncauth.c
+--- xorg-server-1.7.4/hw/vnc/vncauth.c
++++ xorg-server-1.7.4/hw/vnc/vncauth.c
 @@ -0,0 +1,252 @@
 +/*
 + *  Copyright (C) 1999 AT&T Laboratories Cambridge.  All Rights Reserved.
@@ -21301,10 +21199,8 @@ Index: xorg-server-1.7.3/hw/vnc/vncauth.c
 +	des(bytes+i, bytes+i);
 +    }
 +}
-Index: xorg-server-1.7.3/hw/vnc/vncauth.h
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/vncauth.h
+--- xorg-server-1.7.4/hw/vnc/vncauth.h
++++ xorg-server-1.7.4/hw/vnc/vncauth.h
 @@ -0,0 +1,33 @@
 +/*
 + *  Copyright (C) 1999 AT&T Laboratories Cambridge.  All Rights Reserved.
@@ -21339,10 +21235,8 @@ Index: xorg-server-1.7.3/hw/vnc/vncauth.h
 +extern int vncEncryptAndStorePasswd2(char *passwd, char *passwdViewOnly, char *fname);
 +extern int vncDecryptPasswdFromFile2(char *fname, char *passwdFullControl, char *passwdViewOnly);
 +
-Index: xorg-server-1.7.3/hw/vnc/vncext.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/vncext.c
+--- xorg-server-1.7.4/hw/vnc/vncext.c
++++ xorg-server-1.7.4/hw/vnc/vncext.c
 @@ -0,0 +1,800 @@
 +/*
 + *  Copyright (C) 2002 Alan Hourihane.  All Rights Reserved.
@@ -22144,10 +22038,8 @@ Index: xorg-server-1.7.3/hw/vnc/vncext.c
 +	(EventSwapPtr)SwapVncChromiumConnectedEvent;
 +#endif
 +} /* VncExtensionInit */
-Index: xorg-server-1.7.3/hw/vnc/xistubs.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/xistubs.c
+--- xorg-server-1.7.4/hw/vnc/xistubs.c
++++ xorg-server-1.7.4/hw/vnc/xistubs.c
 @@ -0,0 +1,323 @@
 +/* $Xorg: stubs.c,v 1.4 2001/02/09 02:04:35 xorgcvs Exp $ */
 +
@@ -22472,10 +22364,8 @@ Index: xorg-server-1.7.3/hw/vnc/xistubs.c
 +	    return (BadMatch);
 +	}
 +    }
-Index: xorg-server-1.7.3/hw/vnc/zlib.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/vnc/zlib.c
+--- xorg-server-1.7.4/hw/vnc/zlib.c
++++ xorg-server-1.7.4/hw/vnc/zlib.c
 @@ -0,0 +1,310 @@
 +/*
 + * zlib.c
@@ -22787,11 +22677,9 @@ Index: xorg-server-1.7.3/hw/vnc/zlib.c
 +}
 +
 +
-Index: xorg-server-1.7.3/hw/xfree86/Makefile.am
-===================================================================
---- xorg-server-1.7.3.orig/hw/xfree86/Makefile.am
-+++ xorg-server-1.7.3/hw/xfree86/Makefile.am
-@@ -4,6 +4,10 @@ if DRI
+--- xorg-server-1.7.4/hw/xfree86/Makefile.am
++++ xorg-server-1.7.4/hw/xfree86/Makefile.am
+@@ -4,6 +4,10 @@
  DRI_SUBDIR = dri
  endif
  
@@ -22802,7 +22690,7 @@ Index: xorg-server-1.7.3/hw/xfree86/Makefile.am
  if DRI2
  DRI2_SUBDIR = dri2
  endif
-@@ -32,13 +36,13 @@ DOC_SUBDIR = doc
+@@ -32,13 +36,13 @@
  
  SUBDIRS = common ddc i2c x86emu $(INT10_SUBDIR) fbdevhw os-support parser \
  	  ramdac shadowfb $(VBE_SUBDIR) $(VGAHW_SUBDIR) $(XAA_SUBDIR) \
@@ -22818,11 +22706,9 @@ Index: xorg-server-1.7.3/hw/xfree86/Makefile.am
  
  bin_PROGRAMS = Xorg
  Xorg_SOURCES = xorg.c
-Index: xorg-server-1.7.3/hw/xfree86/dixmods/Makefile.am
-===================================================================
---- xorg-server-1.7.3.orig/hw/xfree86/dixmods/Makefile.am
-+++ xorg-server-1.7.3/hw/xfree86/dixmods/Makefile.am
-@@ -10,6 +10,10 @@ if DBE
+--- xorg-server-1.7.4/hw/xfree86/dixmods/Makefile.am
++++ xorg-server-1.7.4/hw/xfree86/dixmods/Makefile.am
+@@ -10,6 +10,10 @@
  DBEMOD = libdbe.la
  endif
  
@@ -22833,7 +22719,7 @@ Index: xorg-server-1.7.3/hw/xfree86/dixmods/Makefile.am
  if RECORD
  RECORDMOD = librecord.la
  endif
-@@ -21,11 +25,13 @@ module_LTLIBRARIES = libfb.la \
+@@ -21,11 +25,13 @@
  extsmoduledir = $(moduledir)/extensions
  extsmodule_LTLIBRARIES = $(RECORDMOD) \
  			 $(DBEMOD) \
@@ -22847,7 +22733,7 @@ Index: xorg-server-1.7.3/hw/xfree86/dixmods/Makefile.am
             -I$(top_srcdir)/hw/xfree86/loader \
             -I$(top_srcdir)/miext/shadow \
             -I$(top_srcdir)/glx
-@@ -34,6 +40,10 @@ libdbe_la_LDFLAGS = -avoid-version
+@@ -34,6 +40,10 @@
  libdbe_la_LIBADD = $(top_builddir)/dbe/libdbe.la
  libdbe_la_SOURCES = dbemodule.c
  
@@ -22858,10 +22744,8 @@ Index: xorg-server-1.7.3/hw/xfree86/dixmods/Makefile.am
  libfb_la_LDFLAGS = -avoid-version
  libfb_la_LIBADD = $(top_builddir)/fb/libfb.la
  libfb_la_SOURCES = $(top_builddir)/fb/fbcmap_mi.c fbmodule.c
-Index: xorg-server-1.7.3/hw/xfree86/vnc/.gitignore
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/xfree86/vnc/.gitignore
+--- xorg-server-1.7.4/hw/xfree86/vnc/.gitignore
++++ xorg-server-1.7.4/hw/xfree86/vnc/.gitignore
 @@ -0,0 +1,36 @@
 +auth.c
 +cmap.c
@@ -22899,10 +22783,8 @@ Index: xorg-server-1.7.3/hw/xfree86/vnc/.gitignore
 +vncext.c
 +xistubs.c
 +zlib.c
-Index: xorg-server-1.7.3/hw/xfree86/vnc/Makefile.am
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/xfree86/vnc/Makefile.am
+--- xorg-server-1.7.4/hw/xfree86/vnc/Makefile.am
++++ xorg-server-1.7.4/hw/xfree86/vnc/Makefile.am
 @@ -0,0 +1,51 @@
 +AM_CFLAGS = $(DIX_CFLAGS)
 +
@@ -22955,16 +22837,12 @@ Index: xorg-server-1.7.3/hw/xfree86/vnc/Makefile.am
 +	zlib.c
 +
 +#sdk_HEADERS = vncint.h
-Index: xorg-server-1.7.3/hw/xfree86/vnc/README
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/xfree86/vnc/README
+--- xorg-server-1.7.4/hw/xfree86/vnc/README
++++ xorg-server-1.7.4/hw/xfree86/vnc/README
 @@ -0,0 +1 @@
 +This directory contains the sources for building the vnc.so server extension module.
-Index: xorg-server-1.7.3/hw/xfree86/vnc/vncInit.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/xfree86/vnc/vncInit.c
+--- xorg-server-1.7.4/hw/xfree86/vnc/vncInit.c
++++ xorg-server-1.7.4/hw/xfree86/vnc/vncInit.c
 @@ -0,0 +1,618 @@
 +/*
 + *  Copyright (C) 2002 Alan Hourihane.  All Rights Reserved.
@@ -23584,10 +23462,8 @@ Index: xorg-server-1.7.3/hw/xfree86/vnc/vncInit.c
 +    return (pointer)TRUE;
 +}
 +#endif
-Index: xorg-server-1.7.3/hw/xfree86/vnc/vncint.h
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/hw/xfree86/vnc/vncint.h
+--- xorg-server-1.7.4/hw/xfree86/vnc/vncint.h
++++ xorg-server-1.7.4/hw/xfree86/vnc/vncint.h
 @@ -0,0 +1,151 @@
 +/*
 + *  Copyright (C) 2002 Alan Hourihane.  All Rights Reserved.
@@ -23740,11 +23616,9 @@ Index: xorg-server-1.7.3/hw/xfree86/vnc/vncint.h
 +
 +#endif /* _VNC_H_ */
 +
-Index: xorg-server-1.7.3/mi/miinitext.c
-===================================================================
---- xorg-server-1.7.3.orig/mi/miinitext.c
-+++ xorg-server-1.7.3/mi/miinitext.c
-@@ -90,6 +90,18 @@ SOFTWARE.
+--- xorg-server-1.7.4/mi/miinitext.c
++++ xorg-server-1.7.4/mi/miinitext.c
+@@ -90,6 +90,18 @@
  #undef XF86VIDMODE
  #endif
  
@@ -23763,10 +23637,8 @@ Index: xorg-server-1.7.3/mi/miinitext.c
  #include "misc.h"
  #include "extension.h"
  #include "micmap.h"
-Index: xorg-server-1.7.3/xcliplist/Makefile.am
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/xcliplist/Makefile.am
+--- xorg-server-1.7.4/xcliplist/Makefile.am
++++ xorg-server-1.7.4/xcliplist/Makefile.am
 @@ -0,0 +1,18 @@
 +#noinst_LTLIBRARIES = libxcliplist.la
 +libxcliplist_la_LTLIBRARIES = libxcliplist.la
@@ -23786,10 +23658,8 @@ Index: xorg-server-1.7.3/xcliplist/Makefile.am
 +if XORG
 +sdk_HEADERS =
 +endif
-Index: xorg-server-1.7.3/xcliplist/cliplist.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/xcliplist/cliplist.c
+--- xorg-server-1.7.4/xcliplist/cliplist.c
++++ xorg-server-1.7.4/xcliplist/cliplist.c
 @@ -0,0 +1,128 @@
 +/*
 + * Server-side code for the Xcliplist extension
@@ -23919,10 +23789,8 @@ Index: xorg-server-1.7.3/xcliplist/cliplist.c
 +      XClipListErrorBase = extEntry->errorBase;
 +   }
 +}
-Index: xorg-server-1.7.3/xcliplist/cliplistmod.c
-===================================================================
---- /dev/null
-+++ xorg-server-1.7.3/xcliplist/cliplistmod.c
+--- xorg-server-1.7.4/xcliplist/cliplistmod.c
++++ xorg-server-1.7.4/xcliplist/cliplistmod.c
 @@ -0,0 +1,46 @@
 +
 +#include "../hw/xfree86/common/xf86Module.h"
