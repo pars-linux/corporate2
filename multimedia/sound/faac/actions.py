@@ -16,7 +16,7 @@ def setup():
     autotools.autoreconf("-fi")
     libtools.libtoolize("--force --install")
     autotools.configure("--disable-static \
-                         --with-mp4v2")
+                         --with-external-mp4v2")
 
 def build():
     autotools.make()
