@@ -14,4 +14,5 @@ WorkDir = "WebOb-%s" % get.srcVERSION()
 def install():
     pythonmodules.install()
 
-    pisitools.insinto("%s/%s" % (get.docDIR(), get.srcNAME()), "docs/*")
+    pisitools.dohtml("docs/_build/*")
+    pisitools.insinto("%s/%s" % (get.docDIR(), get.srcNAME()), "docs/*.txt")
