@@ -10,6 +10,8 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 WorkDir="x264-snapshot-%s-2245" % get.srcVERSION().split("_")[1]
+MAJOR = "0"
+MINOR = "84"
 
 def setup():
     autotools.rawConfigure("--prefix=/usr \
@@ -23,6 +25,8 @@ def build():
 
 def install():
     autotools.install()
+
+    pisitools.dosym("libx264.so.%s.%s" % (MAJOR, MINOR), "/usr/lib/libx264.so.%s" % MAJOR)
 
     # No static libs
     pisitools.remove("/usr/lib/libx264.a")
