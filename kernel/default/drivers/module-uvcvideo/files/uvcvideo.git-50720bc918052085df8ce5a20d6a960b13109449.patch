@@ -1,0 +1,27 @@
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 19 Jan 2010 11:59:21 +0000 (+0100)
+Subject: uvcvideo: Increase the streaming control timeout to 5 seconds
+X-Git-Url: http://git.linuxtv.org/pinchartl/uvcvideo.git?a=commitdiff_plain;h=50720bc918052085df8ce5a20d6a960b13109449
+
+uvcvideo: Increase the streaming control timeout to 5 seconds
+
+This fixes timeout issues with some Logitech webcams. The timeout value
+seems to match the one used in the Logitech Windows driver, so no
+further increase should be necessary.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+
+diff --git a/linux/drivers/media/video/uvc/uvcvideo.h b/linux/drivers/media/video/uvc/uvcvideo.h
+index 6aa9b2c..d0d3e25 100644
+--- a/linux/drivers/media/video/uvc/uvcvideo.h
++++ b/linux/drivers/media/video/uvc/uvcvideo.h
+@@ -152,7 +152,7 @@ struct uvc_xu_control {
+ #define UVC_MAX_STATUS_SIZE	16
+ 
+ #define UVC_CTRL_CONTROL_TIMEOUT	300
+-#define UVC_CTRL_STREAMING_TIMEOUT	3000
++#define UVC_CTRL_STREAMING_TIMEOUT	5000
+ 
+ /* Devices quirks */
+ #define UVC_QUIRK_STATUS_INTERVAL	0x00000001
