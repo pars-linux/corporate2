@@ -42,6 +42,6 @@ def build():
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+    pisitools.remove("/usr/lib/libquicktime.la")
 
-    # FIXME: keep la files if they are needed
     pisitools.dodoc("README", "TODO", "ChangeLog")
