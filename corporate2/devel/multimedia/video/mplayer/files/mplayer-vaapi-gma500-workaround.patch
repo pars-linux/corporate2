@@ -1,11 +1,11 @@
-commit 18766911989dd83a30892588e2736c8b7d2d2d71
+commit 7d70d28f190e37cfa3a9a827877ddd6bb81408d3
 Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
 Date:   Mon Dec 28 08:52:56 2009 +0000
 
     Add GMA500 workaround for H.264 DPB. This is disabled by default. Enable with GMA500_WORKAROUND=yes environment variable.
 
 diff --git a/libavcodec/vaapi_h264.c b/libavcodec/vaapi_h264.c
-index 265cd3f..5522b7e 100644
+index 9f440c0..0139d64 100644
 --- a/libavcodec/vaapi_h264.c
 +++ b/libavcodec/vaapi_h264.c
 @@ -28,6 +28,60 @@
@@ -66,10 +66,10 @@ index 265cd3f..5522b7e 100644
 +    return gma500_workaround;
 +}
 +
- /** Reconstructs bitstream slice_type. */
- static int get_slice_type(H264Context *h)
- {
-@@ -136,6 +190,7 @@ static int fill_vaapi_ReferenceFrames(VAPictureParameterBufferH264 *pic_param,
+ /**
+  * Initializes an empty VA API picture.
+  *
+@@ -123,6 +177,7 @@ static int fill_vaapi_ReferenceFrames(VAPictureParameterBufferH264 *pic_param,
  {
      DPB dpb;
      int i;
@@ -77,7 +77,7 @@ index 265cd3f..5522b7e 100644
  
      dpb.size     = 0;
      dpb.max_size = FF_ARRAY_ELEMS(pic_param->ReferenceFrames);
-@@ -143,6 +198,17 @@ static int fill_vaapi_ReferenceFrames(VAPictureParameterBufferH264 *pic_param,
+@@ -130,6 +185,17 @@ static int fill_vaapi_ReferenceFrames(VAPictureParameterBufferH264 *pic_param,
      for (i = 0; i < dpb.max_size; i++)
          init_vaapi_pic(&dpb.va_pics[i]);
  

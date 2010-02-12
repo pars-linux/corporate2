@@ -1,9 +1,9 @@
 --- stream/http.c~	2008-04-19 21:59:18.000000000 +0200
 +++ stream/http.c	2008-04-19 21:54:02.000000000 +0200
 @@ -822,6 +822,36 @@
- 						mp_msg(MSGT_NETWORK,MSGL_V,"Content-Length: [%s]\n", http_get_field(http_hdr, "Content-Length"));
- 						stream->end_pos = atoi(content_length);
- 					}
+				content_type = http_get_field( http_hdr, "Content-Type" );
+				if( content_type!=NULL ) {
+					mp_msg(MSGT_NETWORK,MSGL_V,"Content-Type: [%s]\n", content_type );
 +					// Check for ASF redirection
 +					if (!strcasecmp(content_type, "audio/x-ms-wax") || !strcasecmp(content_type, "audio/x-ms-wma") || !strcasecmp(content_type, "video/x-ms-asf") || !strcasecmp(content_type, "video/x-ms-afs") || !strcasecmp(content_type, "video/x-ms-wmv")) {
 +						if (http_hdr->body_size > 7) {

@@ -14,8 +14,8 @@ from pisi.actionsapi import get
 import os
 
 WorkDir = "mplayer-%s" % get.srcVERSION().split("_", 1)[1]
-mp_version = "30302"
-ff_version = "21212"
+mp_version = "30538"
+ff_version = "21761"
 
 def fixPermissions(dest):
     for root, dirs, files in os.walk(dest):
@@ -26,7 +26,7 @@ def fixPermissions(dest):
 
 def setup():
     fixPermissions("DOCS")
-    shelltools.export("LINGUAS", "tr")
+    #shelltools.export("LINGUAS", "tr")
 
     shelltools.unlink("version.sh")
     shelltools.echo("version.sh", '#!/bin/bash\necho "#define VERSION \\\"dev-SVN-r%s\\\"" > version.h' % mp_version)
@@ -120,7 +120,6 @@ def setup():
                             --enable-xv \
                             --enable-xvmc \
                             --with-xvmclib=XvMCW \
-                            --language=tr \
                             --charset=UTF-8 \
                             --codecsdir=/usr/lib/%(esdir)s \
                             --win32codecsdir=/usr/lib/%(esdir)s \
@@ -136,6 +135,7 @@ def setup():
                             # --enable-fontconfig \
                             # --enable-xvid \
                             # --enable-theora \
+                            # --language=tr \
 
 def build():
     autotools.make("-j1")
