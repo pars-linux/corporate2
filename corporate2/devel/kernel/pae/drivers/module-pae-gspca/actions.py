@@ -11,7 +11,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-WorkDir = "gspca-e71d8236f603"
+WorkDir = "gspca-dfa82cf98a85"
 KDIR = kerneltools.getKernelVersion()
 
 def setup():
