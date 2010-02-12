@@ -20,5 +20,5 @@ def build():
 def install():
     pythonmodules.install()
 
-    pisitools.dodoc("docs/*.txt")
+    pisitools.dodoc("docs/*.rst")
     pisitools.dohtml("docs/_build/html/*")
