@@ -12,8 +12,9 @@ from pisi.actionsapi import get
 
 
 def setup():
-    #autotools.autoreconf("-fi")
-    shelltools.system("./autogen.sh --disable-gtk-doc --disable-docbook")
+    shelltools.export("AUTOPOINT", "true")
+    autotools.autoreconf("-fi")
+    #shelltools.system("./autogen.sh --disable-gtk-doc --disable-docbook")
 
     autotools.configure("--with-package-name=\"GStreamer package for Pardus\" \
                          --with-package-origin=\"http://www.pardus.org.tr/eng\" \
