@@ -1,0 +1,26 @@
+From cd3875de24fc55c5852ea1d166ab959333863fac Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Fatih=20A=C5=9F=C4=B1c=C4=B1?= <fatih@pardus.org.tr>
+Date: Wed, 10 Feb 2010 11:51:34 +0200
+Subject: [PATCH 2/3] Revert "drm/i915: Reload hangcheck timer too for Ironlake"
+
+This reverts commit 61d4374b51386dd40c03fd15df5a7f97347de688.
+---
+ drivers/gpu/drm/i915/i915_irq.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpu/drm/i915/i915_irq.c b/drivers/gpu/drm/i915/i915_irq.c
+index 2d468e9..7d1357e 100644
+--- a/drivers/gpu/drm/i915/i915_irq.c
++++ b/drivers/gpu/drm/i915/i915_irq.c
+@@ -282,8 +282,6 @@ irqreturn_t igdng_irq_handler(struct drm_device *dev)
+ 		dev_priv->mm.irq_gem_seqno = seqno;
+ 		trace_i915_gem_request_complete(dev, seqno);
+ 		DRM_WAKEUP(&dev_priv->irq_queue);
+-		dev_priv->hangcheck_count = 0;
+-		mod_timer(&dev_priv->hangcheck_timer, jiffies + DRM_I915_HANGCHECK_PERIOD);
+ 	}
+ 
+ 	I915_WRITE(GTIIR, gt_iir);
+-- 
+1.6.5.6
+
