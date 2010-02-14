@@ -8,11 +8,11 @@ Subject: [PATCH 2/6] drm/nouveau: support needed for multiple xservers
  drivers/gpu/drm/nouveau/nouveau_state.c |   66 +++++++++++++++++++++++++++++++
  2 files changed, 68 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/gpu/drm/nouveau/nouveau_drv.h b/drivers/gpu/drm/nouveau/nouveau_drv.h
-index 5f8cbb7..bf9acc6 100644
---- a/drivers/gpu/drm/nouveau/nouveau_drv.h
-+++ b/drivers/gpu/drm/nouveau/nouveau_drv.h
-@@ -593,6 +593,8 @@ struct drm_nouveau_private {
+Index: linux-2.6.32/drivers/gpu/drm/nouveau/nouveau_drv.h
+===================================================================
+--- linux-2.6.32.orig/drivers/gpu/drm/nouveau/nouveau_drv.h
++++ linux-2.6.32/drivers/gpu/drm/nouveau/nouveau_drv.h
+@@ -620,6 +620,8 @@ struct drm_nouveau_private {
  	struct {
  		struct dentry *channel_root;
  	} debugfs;
@@ -21,10 +21,10 @@ index 5f8cbb7..bf9acc6 100644
  };
  
  static inline struct drm_nouveau_private *
-diff --git a/drivers/gpu/drm/nouveau/nouveau_state.c b/drivers/gpu/drm/nouveau/nouveau_state.c
-index e76ec2d..36f8268 100644
---- a/drivers/gpu/drm/nouveau/nouveau_state.c
-+++ b/drivers/gpu/drm/nouveau/nouveau_state.c
+Index: linux-2.6.32/drivers/gpu/drm/nouveau/nouveau_state.c
+===================================================================
+--- linux-2.6.32.orig/drivers/gpu/drm/nouveau/nouveau_state.c
++++ linux-2.6.32/drivers/gpu/drm/nouveau/nouveau_state.c
 @@ -37,6 +37,50 @@
  static int nouveau_stub_init(struct drm_device *dev) { return 0; }
  static void nouveau_stub_takedown(struct drm_device *dev) {}
@@ -76,7 +76,7 @@ index e76ec2d..36f8268 100644
  static int nouveau_init_engine_ptrs(struct drm_device *dev)
  {
  	struct drm_nouveau_private *dev_priv = dev->dev_private;
-@@ -712,6 +756,8 @@ static void nouveau_close(struct drm_device *dev)
+@@ -750,6 +794,8 @@ static void nouveau_close(struct drm_dev
  /* KMS: we need mmio at load time, not when the first drm client opens. */
  void nouveau_lastclose(struct drm_device *dev)
  {
@@ -85,7 +85,7 @@ index e76ec2d..36f8268 100644
  	if (drm_core_check_feature(dev, DRIVER_MODESET))
  		return;
  
-@@ -750,6 +796,8 @@ int nouveau_ioctl_getparam(struct drm_device *dev, void *data,
+@@ -788,6 +834,8 @@ int nouveau_ioctl_getparam(struct drm_de
  {
  	struct drm_nouveau_private *dev_priv = dev->dev_private;
  	struct drm_nouveau_getparam *getparam = data;
@@ -94,7 +94,7 @@ index e76ec2d..36f8268 100644
  
  	NOUVEAU_CHECK_INITIALISED_WITH_RETURN;
  
-@@ -795,6 +843,24 @@ int nouveau_ioctl_getparam(struct drm_device *dev, void *data,
+@@ -833,6 +881,24 @@ int nouveau_ioctl_getparam(struct drm_de
  	case NOUVEAU_GETPARAM_VM_VRAM_BASE:
  		getparam->value = dev_priv->vm_vram_base;
  		break;
@@ -116,9 +116,6 @@ index e76ec2d..36f8268 100644
 +
 +		getparam->value = dev_priv->sfb_gem->size;
 +		break;
- 	default:
- 		NV_ERROR(dev, "unknown parameter %lld\n", getparam->param);
- 		return -EINVAL;
--- 
-1.6.5.2
-
+ 	case NOUVEAU_GETPARAM_GRAPH_UNITS:
+ 		/* NV40 and NV50 versions are quite different, but register
+ 		 * address is the same. User is supposed to know the card
