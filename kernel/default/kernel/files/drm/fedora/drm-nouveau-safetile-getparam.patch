@@ -7,20 +7,17 @@ Subject: [PATCH 5/6] f12: add getparam to know scanout tile_flags is safe
  drivers/gpu/drm/nouveau/nouveau_state.c |    3 +++
  1 files changed, 3 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/gpu/drm/nouveau/nouveau_state.c b/drivers/gpu/drm/nouveau/nouveau_state.c
-index 36f8268..27c4d48 100644
---- a/drivers/gpu/drm/nouveau/nouveau_state.c
-+++ b/drivers/gpu/drm/nouveau/nouveau_state.c
-@@ -861,6 +861,9 @@ int nouveau_ioctl_getparam(struct drm_device *dev, void *data,
+Index: linux-2.6.32/drivers/gpu/drm/nouveau/nouveau_state.c
+===================================================================
+--- linux-2.6.32.orig/drivers/gpu/drm/nouveau/nouveau_state.c
++++ linux-2.6.32/drivers/gpu/drm/nouveau/nouveau_state.c
+@@ -899,6 +899,9 @@ int nouveau_ioctl_getparam(struct drm_de
  
  		getparam->value = dev_priv->sfb_gem->size;
  		break;
 +	case 0xdeadcafe00000003: /* NOUVEAU_GETPARAM_SCANOUT_TILEFLAGS */
 +		getparam->value = 1;
 +		break;
- 	default:
- 		NV_ERROR(dev, "unknown parameter %lld\n", getparam->param);
- 		return -EINVAL;
--- 
-1.6.5.2
-
+ 	case NOUVEAU_GETPARAM_GRAPH_UNITS:
+ 		/* NV40 and NV50 versions are quite different, but register
+ 		 * address is the same. User is supposed to know the card
