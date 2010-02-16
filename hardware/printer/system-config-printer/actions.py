@@ -23,6 +23,5 @@ def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     pisitools.dodir("/var/run/udev-configure-printer")
-    pisitools.remove("/usr/share/applications/my-default-printer.desktop")
 
     pisitools.dodoc("README", "AUTHORS", "NEWS", "COPYING", "ChangeLog")
