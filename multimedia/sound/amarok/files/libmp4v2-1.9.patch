@@ -1,0 +1,128 @@
+Index: amarok-1.4.10/amarok/configure.in.in
+===================================================================
+--- amarok-1.4.10.orig/amarok/configure.in.in
++++ amarok-1.4.10/amarok/configure.in.in
+@@ -977,7 +977,7 @@ if test "$have_mp4v2" != "no"; then
+     ac_cppflags_save=$CPPFLAGS
+     CPPFLAGS="$CPPFLAGS -I."
+     AC_CHECK_HEADERS(systems.h)
+-    AC_CHECK_HEADERS([mp4.h], [have_mp4_h=yes], [],
++    AC_CHECK_HEADERS([mp4v2/mp4v2.h], [have_mp4_h=yes], [],
+         [#ifdef HAVE_SYSTEMS_H
+          # include <systems.h>
+          #endif
+Index: amarok-1.4.10/amarok/src/metadata/mp4/mp4properties.h
+===================================================================
+--- amarok-1.4.10.orig/amarok/src/metadata/mp4/mp4properties.h
++++ amarok-1.4.10/amarok/src/metadata/mp4/mp4properties.h
+@@ -24,7 +24,7 @@ email                : andrew.leadbetter
+ 
+ #include <audioproperties.h>
+ #include <tstring.h>
+-#include <mp4.h>
++#include <mp4v2/mp4v2.h>
+ // mp4.h drags in mp4_config.h that defines these
+ // get rid of them so they don't conflict with our config.h
+ #undef VERSION
+Index: amarok-1.4.10/amarok/src/metadata/mp4/mp4tag.h
+===================================================================
+--- amarok-1.4.10.orig/amarok/src/metadata/mp4/mp4tag.h
++++ amarok-1.4.10/amarok/src/metadata/mp4/mp4tag.h
+@@ -23,7 +23,7 @@ email                : andrew.leadbetter
+ 
+ #include <tag.h>
+ #include "mp4file.h"
+-#include <mp4.h>
++#include <mp4v2/mp4v2.h>
+ 
+ namespace TagLib {
+ 
+Index: amarok-1.4.10/configure.in
+===================================================================
+--- amarok-1.4.10.orig/configure.in
++++ amarok-1.4.10/configure.in
+@@ -1057,7 +1057,7 @@ if test "$have_mp4v2" != "no"; then
+     ac_cppflags_save=$CPPFLAGS
+     CPPFLAGS="$CPPFLAGS -I."
+     AC_CHECK_HEADERS(systems.h)
+-    AC_CHECK_HEADERS([mp4.h], [have_mp4_h=yes], [],
++    AC_CHECK_HEADERS([mp4v2/mp4v2.h], [have_mp4_h=yes], [],
+         [#ifdef HAVE_SYSTEMS_H
+          # include <systems.h>
+          #endif
+Index: amarok-1.4.10/amarok/src/metadata/mp4/mp4file.cpp
+===================================================================
+--- amarok-1.4.10.orig/amarok/src/metadata/mp4/mp4file.cpp
++++ amarok-1.4.10/amarok/src/metadata/mp4/mp4file.cpp
+@@ -30,6 +30,7 @@ email                : aumuell@reserv.at
+ #include <audioproperties.h>
+ 
+ #include <stdint.h>
++#include <stdlib.h>
+ 
+ #define MP4V2_HAS_WRITE_BUG 1
+ 
+@@ -133,7 +134,7 @@ bool MP4::File::save()
+     if(mp4tag->year())
+         snprintf(buf, sizeof(buf), "%u", mp4tag->year());
+     MP4SetMetadataYear(handle, buf);
+-    u_int16_t t1, t2;
++    uint16_t t1, t2;
+     MP4GetMetadataTrack(handle, &t1, &t2);
+     MP4SetMetadataTrack(handle, mp4tag->track(), t2);
+     if(mp4tag->bpm() != 0)
+@@ -142,7 +143,7 @@ bool MP4::File::save()
+         MP4SetMetadataCompilation(handle, mp4tag->compilation());
+     }
+ 
+-    MP4SetMetadataCoverArt(handle, mp4tag->cover().size() ? const_cast<u_int8_t *>( reinterpret_cast<const u_int8_t *>( mp4tag->cover().data() ) ) : 0, mp4tag->cover().size());
++    MP4SetMetadataCoverArt(handle, mp4tag->cover().size() ? const_cast<uint8_t *>( reinterpret_cast<const uint8_t *>( mp4tag->cover().data() ) ) : 0, mp4tag->cover().size());
+ 
+ #ifdef MP4V2_HAS_WRITE_BUG
+     // set the saved data again
+Index: amarok-1.4.10/amarok/src/metadata/mp4/mp4properties.cpp
+===================================================================
+--- amarok-1.4.10.orig/amarok/src/metadata/mp4/mp4properties.cpp
++++ amarok-1.4.10/amarok/src/metadata/mp4/mp4properties.cpp
+@@ -76,9 +76,9 @@ int MP4::Properties::channels() const
+ 
+ void MP4::Properties::readMP4Properties( MP4FileHandle mp4File )
+ {
+-    u_int32_t numTracks = MP4GetNumberOfTracks(mp4File);
++    uint32_t numTracks = MP4GetNumberOfTracks(mp4File);
+ 
+-    for (u_int32_t i = 0; i < numTracks; i++)
++    for (uint32_t i = 0; i < numTracks; i++)
+     {
+         MP4TrackId trackId = MP4FindTrackId(mp4File, i);
+ 
+@@ -97,7 +97,7 @@ void MP4::Properties::readMP4Properties(
+ void MP4::Properties::readAudioTrackProperties(MP4FileHandle mp4File,  MP4TrackId trackId )
+ {
+ 
+-    u_int32_t timeScale =
++    uint32_t timeScale =
+         MP4GetTrackTimeScale(mp4File, trackId);
+ 
+     MP4Duration trackDuration =
+@@ -107,7 +107,7 @@ void MP4::Properties::readAudioTrackProp
+         UINT64_TO_DOUBLE(MP4ConvertFromTrackDuration(mp4File, trackId,
+                     trackDuration, MP4_MSECS_TIME_SCALE));
+ 
+-    u_int32_t avgBitRate =
++    uint32_t avgBitRate =
+         MP4GetTrackBitRate(mp4File, trackId);
+ 
+     m_bitrate = (avgBitRate + 500) / 1000;
+Index: amarok-1.4.10/amarok/src/metadata/mp4/mp4tag.cpp
+===================================================================
+--- amarok-1.4.10.orig/amarok/src/metadata/mp4/mp4tag.cpp
++++ amarok-1.4.10/amarok/src/metadata/mp4/mp4tag.cpp
+@@ -24,6 +24,7 @@ email                : andrew.leadbetter
+ 
+ #include <tag.h>
+ #include <stdint.h>
++#include <stdlib.h>
+ 
+ using namespace TagLib;
+ 
