@@ -17,9 +17,9 @@ def setup():
                    --with-ifp \
                    --with-libgpod \
                    --with-opengl \
-                   --with-mp4v2 \
                    --with-libnjb \
                    --with-libmtp \
+                   --with-mp4v2 \
                    --without-gstreamer \
                    --without-xmms")
 
