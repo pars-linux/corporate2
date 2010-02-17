@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Licensed under the GNU General Public License, version 2.
@@ -23,8 +22,7 @@ kheaders = ("drm.h",
 def setup():
     autotools.autoreconf("-vif")
     autotools.configure("--enable-udev \
-                         --enable-nouveau-experimental-api \
-                         --enable-radeon-experimental-api")
+                         --enable-nouveau-experimental-api")
 
 def build():
     autotools.make()
