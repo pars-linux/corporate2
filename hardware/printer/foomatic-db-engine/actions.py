@@ -11,8 +11,6 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = "foomatic-db-engine-devel-%s" % get.srcVERSION().replace("4.0.3_", "4.0-")
-
 def setup():
     # The LANG vars aren't reset early enough so when sed tries to use [a-zA-Z], it borks
     shelltools.export("LC_ALL", "C")
