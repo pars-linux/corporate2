@@ -2368,7 +2368,7 @@ index 332d743..b98384d 100644
  }
  EXPORT_SYMBOL(drm_handle_vblank);
 diff --git a/drivers/gpu/drm/drm_mm.c b/drivers/gpu/drm/drm_mm.c
-index 97dc5a4..cdec329 100644
+index 97dc5a4..2ac074c 100644
 --- a/drivers/gpu/drm/drm_mm.c
 +++ b/drivers/gpu/drm/drm_mm.c
 @@ -226,6 +226,44 @@ struct drm_mm_node *drm_mm_get_block_generic(struct drm_mm_node *node,
@@ -2425,7 +2425,7 @@ index 97dc5a4..cdec329 100644
  				best = entry;
  				best_size = entry->size;
  			}
-@@ -331,6 +369,56 @@ struct drm_mm_node *drm_mm_search_free(const struct drm_mm *mm,
+@@ -331,6 +369,57 @@ struct drm_mm_node *drm_mm_search_free(const struct drm_mm *mm,
  }
  EXPORT_SYMBOL(drm_mm_search_free);
  
@@ -2465,7 +2465,8 @@ index 97dc5a4..cdec329 100644
 +				wasted += alignment - tmp;
 +		}
 +
-+		if (entry->size >= size + wasted) {
++		if (entry->size >= size + wasted &&
++		    (entry->start + wasted + size) <= end) {
 +			if (!best_match)
 +				return entry;
 +			if (entry->size < best_size) {
@@ -2482,7 +2483,7 @@ index 97dc5a4..cdec329 100644
  int drm_mm_clean(struct drm_mm * mm)
  {
  	struct list_head *head = &mm->ml_entry;
-@@ -381,6 +469,26 @@ void drm_mm_takedown(struct drm_mm * mm)
+@@ -381,6 +470,26 @@ void drm_mm_takedown(struct drm_mm * mm)
  }
  EXPORT_SYMBOL(drm_mm_takedown);
  
@@ -2509,7 +2510,7 @@ index 97dc5a4..cdec329 100644
  #if defined(CONFIG_DEBUG_FS)
  int drm_mm_dump_table(struct seq_file *m, struct drm_mm *mm)
  {
-@@ -395,7 +503,7 @@ int drm_mm_dump_table(struct seq_file *m, struct drm_mm *mm)
+@@ -395,7 +504,7 @@ int drm_mm_dump_table(struct seq_file *m, struct drm_mm *mm)
  		else
  			total_used += entry->size;
  	}
@@ -51173,10 +51174,18 @@ index 6d0183c..c714179 100644
 +
 +
 diff --git a/drivers/gpu/drm/radeon/atom.c b/drivers/gpu/drm/radeon/atom.c
-index d67c425..e3b4456 100644
+index d67c425..2a3df55 100644
 --- a/drivers/gpu/drm/radeon/atom.c
 +++ b/drivers/gpu/drm/radeon/atom.c
-@@ -58,6 +58,7 @@ typedef struct {
+@@ -24,6 +24,7 @@
+ 
+ #include <linux/module.h>
+ #include <linux/sched.h>
++#include <asm/unaligned.h>
+ 
+ #define ATOM_DEBUG
+ 
+@@ -58,6 +59,7 @@ typedef struct {
  } atom_exec_context;
  
  int atom_debug = 0;
@@ -51184,7 +51193,18 @@ index d67c425..e3b4456 100644
  void atom_execute_table(struct atom_context *ctx, int index, uint32_t * params);
  
  static uint32_t atom_arg_mask[8] =
-@@ -245,6 +246,9 @@ static uint32_t atom_get_src_int(atom_exec_context *ctx, uint8_t attr,
+@@ -211,7 +213,9 @@ static uint32_t atom_get_src_int(atom_exec_context *ctx, uint8_t attr,
+ 	case ATOM_ARG_PS:
+ 		idx = U8(*ptr);
+ 		(*ptr)++;
+-		val = le32_to_cpu(ctx->ps[idx]);
++		/* get_unaligned_le32 avoids unaligned accesses from atombios
++		 * tables, noticed on a DEC Alpha. */
++		val = get_unaligned_le32((u32 *)&ctx->ps[idx]);
+ 		if (print)
+ 			DEBUG("PS[0x%02X,0x%04X]", idx, val);
+ 		break;
+@@ -245,6 +249,9 @@ static uint32_t atom_get_src_int(atom_exec_context *ctx, uint8_t attr,
  		case ATOM_WS_ATTRIBUTES:
  			val = gctx->io_attr;
  			break;
@@ -51194,7 +51214,7 @@ index d67c425..e3b4456 100644
  		default:
  			val = ctx->ws[idx];
  		}
-@@ -263,10 +267,10 @@ static uint32_t atom_get_src_int(atom_exec_context *ctx, uint8_t attr,
+@@ -263,10 +270,10 @@ static uint32_t atom_get_src_int(atom_exec_context *ctx, uint8_t attr,
  	case ATOM_ARG_FB:
  		idx = U8(*ptr);
  		(*ptr)++;
@@ -51207,7 +51227,7 @@ index d67c425..e3b4456 100644
  	case ATOM_ARG_IMM:
  		switch (align) {
  		case ATOM_SRC_DWORD:
-@@ -384,6 +388,32 @@ static uint32_t atom_get_src(atom_exec_context *ctx, uint8_t attr, int *ptr)
+@@ -384,6 +391,32 @@ static uint32_t atom_get_src(atom_exec_context *ctx, uint8_t attr, int *ptr)
  	return atom_get_src_int(ctx, attr, ptr, NULL, 1);
  }
  
@@ -51240,7 +51260,7 @@ index d67c425..e3b4456 100644
  static uint32_t atom_get_dst(atom_exec_context *ctx, int arg, uint8_t attr,
  			     int *ptr, uint32_t *saved, int print)
  {
-@@ -481,6 +511,9 @@ static void atom_put_dst(atom_exec_context *ctx, int arg, uint8_t attr,
+@@ -481,6 +514,9 @@ static void atom_put_dst(atom_exec_context *ctx, int arg, uint8_t attr,
  		case ATOM_WS_ATTRIBUTES:
  			gctx->io_attr = val;
  			break;
@@ -51250,7 +51270,7 @@ index d67c425..e3b4456 100644
  		default:
  			ctx->ws[idx] = val;
  		}
-@@ -488,9 +521,9 @@ static void atom_put_dst(atom_exec_context *ctx, int arg, uint8_t attr,
+@@ -488,9 +524,9 @@ static void atom_put_dst(atom_exec_context *ctx, int arg, uint8_t attr,
  	case ATOM_ARG_FB:
  		idx = U8(*ptr);
  		(*ptr)++;
@@ -51262,7 +51282,7 @@ index d67c425..e3b4456 100644
  	case ATOM_ARG_PLL:
  		idx = U8(*ptr);
  		(*ptr)++;
-@@ -573,7 +606,7 @@ static void atom_op_calltable(atom_exec_context *ctx, int *ptr, int arg)
+@@ -573,7 +609,7 @@ static void atom_op_calltable(atom_exec_context *ctx, int *ptr, int arg)
  	else
  		SDEBUG("   table: %d\n", idx);
  	if (U16(ctx->ctx->cmd_table + 4 + 2 * idx))
@@ -51271,7 +51291,7 @@ index d67c425..e3b4456 100644
  }
  
  static void atom_op_clear(atom_exec_context *ctx, int *ptr, int arg)
-@@ -676,7 +709,7 @@ static void atom_op_mask(atom_exec_context *ctx, int *ptr, int arg)
+@@ -676,7 +712,7 @@ static void atom_op_mask(atom_exec_context *ctx, int *ptr, int arg)
  	SDEBUG("   dst: ");
  	dst = atom_get_dst(ctx, arg, attr, ptr, &saved, 1);
  	SDEBUG("   src1: ");
@@ -51280,7 +51300,7 @@ index d67c425..e3b4456 100644
  	SDEBUG("   src2: ");
  	src2 = atom_get_src(ctx, attr, ptr);
  	dst &= src1;
-@@ -808,6 +841,38 @@ static void atom_op_setregblock(atom_exec_context *ctx, int *ptr, int arg)
+@@ -808,6 +844,38 @@ static void atom_op_setregblock(atom_exec_context *ctx, int *ptr, int arg)
  	SDEBUG("   base: 0x%04X\n", ctx->ctx->reg_block);
  }
  
@@ -51319,7 +51339,7 @@ index d67c425..e3b4456 100644
  static void atom_op_shl(atom_exec_context *ctx, int *ptr, int arg)
  {
  	uint8_t attr = U8((*ptr)++), shift;
-@@ -817,7 +882,7 @@ static void atom_op_shl(atom_exec_context *ctx, int *ptr, int arg)
+@@ -817,7 +885,7 @@ static void atom_op_shl(atom_exec_context *ctx, int *ptr, int arg)
  	attr |= atom_def_dst[attr >> 3] << 6;
  	SDEBUG("   dst: ");
  	dst = atom_get_dst(ctx, arg, attr, ptr, &saved, 1);
@@ -51328,7 +51348,7 @@ index d67c425..e3b4456 100644
  	SDEBUG("   shift: %d\n", shift);
  	dst <<= shift;
  	SDEBUG("   dst: ");
-@@ -833,7 +898,7 @@ static void atom_op_shr(atom_exec_context *ctx, int *ptr, int arg)
+@@ -833,7 +901,7 @@ static void atom_op_shr(atom_exec_context *ctx, int *ptr, int arg)
  	attr |= atom_def_dst[attr >> 3] << 6;
  	SDEBUG("   dst: ");
  	dst = atom_get_dst(ctx, arg, attr, ptr, &saved, 1);
@@ -51337,7 +51357,7 @@ index d67c425..e3b4456 100644
  	SDEBUG("   shift: %d\n", shift);
  	dst >>= shift;
  	SDEBUG("   dst: ");
-@@ -936,18 +1001,18 @@ static struct {
+@@ -936,18 +1004,18 @@ static struct {
  	atom_op_or, ATOM_ARG_FB}, {
  	atom_op_or, ATOM_ARG_PLL}, {
  	atom_op_or, ATOM_ARG_MC}, {
@@ -51368,7 +51388,7 @@ index d67c425..e3b4456 100644
  	atom_op_mul, ATOM_ARG_REG}, {
  	atom_op_mul, ATOM_ARG_PS}, {
  	atom_op_mul, ATOM_ARG_WS}, {
-@@ -1040,7 +1105,7 @@ static struct {
+@@ -1040,7 +1108,7 @@ static struct {
  	atom_op_shr, ATOM_ARG_MC}, {
  atom_op_debug, 0},};
  
@@ -51377,7 +51397,7 @@ index d67c425..e3b4456 100644
  {
  	int base = CU16(ctx->cmd_table + 4 + 2 * index);
  	int len, ws, ps, ptr;
-@@ -1057,8 +1122,6 @@ void atom_execute_table(struct atom_context *ctx, int index, uint32_t * params)
+@@ -1057,8 +1125,6 @@ void atom_execute_table(struct atom_context *ctx, int index, uint32_t * params)
  
  	SDEBUG(">> execute %04X (len %d, WS %d, PS %d)\n", base, len, ws, ps);
  
@@ -51386,7 +51406,7 @@ index d67c425..e3b4456 100644
  	ectx.ctx = ctx;
  	ectx.ps_shift = ps / 4;
  	ectx.start = base;
-@@ -1092,6 +1155,19 @@ void atom_execute_table(struct atom_context *ctx, int index, uint32_t * params)
+@@ -1092,6 +1158,19 @@ void atom_execute_table(struct atom_context *ctx, int index, uint32_t * params)
  		kfree(ectx.ws);
  }
  
@@ -51406,7 +51426,7 @@ index d67c425..e3b4456 100644
  static int atom_iio_len[] = { 1, 2, 3, 3, 3, 3, 4, 4, 4, 3 };
  
  static void atom_index_iio(struct atom_context *ctx, int base)
-@@ -1214,3 +1290,28 @@ void atom_parse_cmd_header(struct atom_context *ctx, int index, uint8_t * frev,
+@@ -1214,3 +1293,28 @@ void atom_parse_cmd_header(struct atom_context *ctx, int index, uint8_t * frev,
  		*crev = CU8(idx + 3);
  	return;
  }
@@ -52223,7 +52243,7 @@ index 19f93f2..af464e3 100644
  static void atombios_crtc_commit(struct drm_crtc *crtc)
 diff --git a/drivers/gpu/drm/radeon/atombios_dp.c b/drivers/gpu/drm/radeon/atombios_dp.c
 new file mode 100644
-index 0000000..b32eeea
+index 0000000..99915a6
 --- /dev/null
 +++ b/drivers/gpu/drm/radeon/atombios_dp.c
 @@ -0,0 +1,789 @@
@@ -52579,7 +52599,7 @@ index 0000000..b32eeea
 +	atom_execute_table(rdev->mode_info.atom_context, index, (uint32_t *)&args);
 +
 +	if (args.ucReplyStatus && !args.ucDataOutLen) {
-+		if (args.ucReplyStatus == 0x20 && retry_count < 10)
++		if (args.ucReplyStatus == 0x20 && retry_count++ < 10)
 +			goto retry;
 +		DRM_DEBUG("failed to get auxch %02x%02x %02x %02x 0x%02x %02x after %d retries\n",
 +			  req_bytes[1], req_bytes[0], req_bytes[2], req_bytes[3],
@@ -68338,7 +68358,7 @@ index b0a9de7..1e138f5 100644
  
  obj-$(CONFIG_DRM_TTM) += ttm.o
 diff --git a/drivers/gpu/drm/ttm/ttm_bo.c b/drivers/gpu/drm/ttm/ttm_bo.c
-index 87c0625..1a3e909 100644
+index 87c0625..c7320ce 100644
 --- a/drivers/gpu/drm/ttm/ttm_bo.c
 +++ b/drivers/gpu/drm/ttm/ttm_bo.c
 @@ -27,6 +27,14 @@
@@ -69053,7 +69073,7 @@ index 87c0625..1a3e909 100644
  {
  	struct ttm_bo_global *glob = bo->glob;
  	int ret = 0;
-@@ -899,147 +991,132 @@ int ttm_bo_move_buffer(struct ttm_buffer_object *bo,
+@@ -899,147 +991,138 @@ int ttm_bo_move_buffer(struct ttm_buffer_object *bo,
  	 * Have the driver move function wait for idle when necessary,
  	 * instead of doing it here.
  	 */
@@ -69102,6 +69122,12 @@ index 87c0625..1a3e909 100644
 -
 -	return 1;
 +	int i;
++	struct drm_mm_node *node = mem->mm_node;
++
++	if (node && placement->lpfn != 0 &&
++	    (node->start < placement->fpfn ||
++	     node->start + node->size > placement->lpfn))
++		return -1;
 +
 +	for (i = 0; i < placement->num_placement; i++) {
 +		if ((placement->placement[i] & mem->placement &
@@ -69272,7 +69298,7 @@ index 87c0625..1a3e909 100644
  {
  	int ret = 0;
  	unsigned long num_pages;
-@@ -1065,6 +1142,7 @@ int ttm_buffer_object_init(struct ttm_bo_device *bdev,
+@@ -1065,6 +1148,7 @@ int ttm_buffer_object_init(struct ttm_bo_device *bdev,
  	bo->glob = bdev->glob;
  	bo->type = type;
  	bo->num_pages = num_pages;
@@ -69280,7 +69306,7 @@ index 87c0625..1a3e909 100644
  	bo->mem.mem_type = TTM_PL_SYSTEM;
  	bo->mem.num_pages = bo->num_pages;
  	bo->mem.mm_node = NULL;
-@@ -1077,29 +1155,21 @@ int ttm_buffer_object_init(struct ttm_bo_device *bdev,
+@@ -1077,29 +1161,21 @@ int ttm_buffer_object_init(struct ttm_bo_device *bdev,
  	bo->acc_size = acc_size;
  	atomic_inc(&bo->glob->bo_count);
  
@@ -69312,7 +69338,7 @@ index 87c0625..1a3e909 100644
  	if (ret)
  		goto out_err;
  
-@@ -1112,7 +1182,7 @@ out_err:
+@@ -1112,7 +1188,7 @@ out_err:
  
  	return ret;
  }
@@ -69321,7 +69347,7 @@ index 87c0625..1a3e909 100644
  
  static inline size_t ttm_bo_size(struct ttm_bo_global *glob,
  				 unsigned long num_pages)
-@@ -1123,19 +1193,19 @@ static inline size_t ttm_bo_size(struct ttm_bo_global *glob,
+@@ -1123,19 +1199,19 @@ static inline size_t ttm_bo_size(struct ttm_bo_global *glob,
  	return glob->ttm_bo_size + 2 * page_array_size;
  }
  
@@ -69351,7 +69377,7 @@ index 87c0625..1a3e909 100644
  
  	size_t acc_size =
  	    ttm_bo_size(bdev->glob, (size + PAGE_SIZE - 1) >> PAGE_SHIFT);
-@@ -1150,76 +1220,41 @@ int ttm_buffer_object_create(struct ttm_bo_device *bdev,
+@@ -1150,76 +1226,41 @@ int ttm_buffer_object_create(struct ttm_bo_device *bdev,
  		return -ENOMEM;
  	}
  
@@ -69443,7 +69469,7 @@ index 87c0625..1a3e909 100644
  	return 0;
  }
  
-@@ -1246,7 +1281,7 @@ int ttm_bo_clean_mm(struct ttm_bo_device *bdev, unsigned mem_type)
+@@ -1246,7 +1287,7 @@ int ttm_bo_clean_mm(struct ttm_bo_device *bdev, unsigned mem_type)
  
  	ret = 0;
  	if (mem_type > 0) {
@@ -69452,7 +69478,7 @@ index 87c0625..1a3e909 100644
  
  		spin_lock(&glob->lru_lock);
  		if (drm_mm_clean(&man->manager))
-@@ -1279,12 +1314,12 @@ int ttm_bo_evict_mm(struct ttm_bo_device *bdev, unsigned mem_type)
+@@ -1279,12 +1320,12 @@ int ttm_bo_evict_mm(struct ttm_bo_device *bdev, unsigned mem_type)
  		return 0;
  	}
  
@@ -69467,7 +69493,7 @@ index 87c0625..1a3e909 100644
  {
  	int ret = -EINVAL;
  	struct ttm_mem_type_manager *man;
-@@ -1314,7 +1349,7 @@ int ttm_bo_init_mm(struct ttm_bo_device *bdev, unsigned type,
+@@ -1314,7 +1355,7 @@ int ttm_bo_init_mm(struct ttm_bo_device *bdev, unsigned type,
  			       type);
  			return ret;
  		}
@@ -69476,7 +69502,7 @@ index 87c0625..1a3e909 100644
  		if (ret)
  			return ret;
  	}
-@@ -1463,7 +1498,7 @@ int ttm_bo_device_init(struct ttm_bo_device *bdev,
+@@ -1463,7 +1504,7 @@ int ttm_bo_device_init(struct ttm_bo_device *bdev,
  	 * Initialize the system memory buffer type.
  	 * Other types need to be driver / IOCTL initialized.
  	 */
@@ -69485,7 +69511,7 @@ index 87c0625..1a3e909 100644
  	if (unlikely(ret != 0))
  		goto out_no_sys;
  
-@@ -1693,7 +1728,7 @@ int ttm_bo_block_reservation(struct ttm_buffer_object *bo, bool interruptible,
+@@ -1693,7 +1734,7 @@ int ttm_bo_block_reservation(struct ttm_buffer_object *bo, bool interruptible,
  			ret = wait_event_interruptible
  			    (bo->event_queue, atomic_read(&bo->reserved) == 0);
  			if (unlikely(ret != 0))
@@ -69494,7 +69520,7 @@ index 87c0625..1a3e909 100644
  		} else {
  			wait_event(bo->event_queue,
  				   atomic_read(&bo->reserved) == 0);
-@@ -1722,12 +1757,14 @@ int ttm_bo_synccpu_write_grab(struct ttm_buffer_object *bo, bool no_wait)
+@@ -1722,12 +1763,14 @@ int ttm_bo_synccpu_write_grab(struct ttm_buffer_object *bo, bool no_wait)
  	ttm_bo_unreserve(bo);
  	return ret;
  }
@@ -69509,7 +69535,7 @@ index 87c0625..1a3e909 100644
  
  /**
   * A buffer object shrink method that tries to swap out the first
-@@ -1808,6 +1845,9 @@ static int ttm_bo_swapout(struct ttm_mem_shrink *shrink)
+@@ -1808,6 +1851,9 @@ static int ttm_bo_swapout(struct ttm_mem_shrink *shrink)
  	 * anyone tries to access a ttm page.
  	 */
  
@@ -69519,7 +69545,7 @@ index 87c0625..1a3e909 100644
  	ret = ttm_tt_swapout(bo->ttm, bo->persistant_swap_storage);
  out:
  
-@@ -1828,3 +1868,4 @@ void ttm_bo_swapout_all(struct ttm_bo_device *bdev)
+@@ -1828,3 +1874,4 @@ void ttm_bo_swapout_all(struct ttm_bo_device *bdev)
  	while (ttm_bo_swapout(&bdev->glob->shrink) == 0)
  		;
  }
