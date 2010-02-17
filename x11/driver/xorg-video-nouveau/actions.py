@@ -10,7 +10,6 @@ WorkDir = "xf86-video-nouveau-%s" % get.srcVERSION()
 
 def setup():
     autotools.autoreconf("-vif")
-    #autotools.configure("--disable-static --with-kms=yes")
     autotools.configure()
 
 def build():
