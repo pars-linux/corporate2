@@ -16,7 +16,7 @@ def setup():
     shelltools.export("LC_ALL", "C")
 
     shelltools.system('sh Configure -des \
-                      -Darchname=i686-linux \
+                      -Darchname=%s-linux \
                       -Dcccdlflags=-fPIC \
                       -Dccdlflags=-rdynamic \
                       -Dcc=%s \
@@ -50,7 +50,7 @@ def setup():
                       -Dd_gethostent_r_proto -Ud_endhostent_r_proto -Ud_sethostent_r_proto \
                       -Ud_endprotoent_r_proto -Ud_setprotoent_r_proto \
                       -Ud_endservent_r_proto -Ud_setservent_r_proto \
-                      ' %(get.CC(), get.CFLAGS(), get.installDIR(), get.installDIR()))
+                      ' %(get.ARCH(), get.CC(), get.CFLAGS(), get.installDIR(), get.installDIR()))
 
 def build():
     # colorgcc uses Term::ANSIColor
@@ -76,10 +76,10 @@ def install():
     pisitools.dosym("/usr/bin/sperl5.10.1", "/usr/bin/suidperl")
 
     # Perl5 library
-    pisitools.dosym("/usr/lib/perl5/5.10.1/i686-linux-thread-multi/CORE/libperl.so.1.5.8", "/usr/lib/libperl.so")
-    pisitools.dosym("/usr/lib/perl5/5.10.1/i686-linux-thread-multi/CORE/libperl.so.1.5.8", "/usr/lib/libperl.so.1")
-    pisitools.dosym("/usr/lib/perl5/5.10.1/i686-linux-thread-multi/CORE/libperl.so.1.5.8", "/usr/lib/libperl.so.1.5")
-    pisitools.dosym("/usr/lib/perl5/5.10.1/i686-linux-thread-multi/CORE/libperl.so.1.5.8", "/usr/lib/libperl.so.1.5.8")
+    pisitools.dosym("/usr/lib/perl5/5.10.1/%s-linux-thread-multi/CORE/libperl.so.1.5.8" % get.ARCH(), "/usr/lib/libperl.so")
+    pisitools.dosym("/usr/lib/perl5/5.10.1/%s-linux-thread-multi/CORE/libperl.so.1.5.8" % get.ARCH(), "/usr/lib/libperl.so.1")
+    pisitools.dosym("/usr/lib/perl5/5.10.1/%s-linux-thread-multi/CORE/libperl.so.1.5.8" % get.ARCH(), "/usr/lib/libperl.so.1.5")
+    pisitools.dosym("/usr/lib/perl5/5.10.1/%s-linux-thread-multi/CORE/libperl.so.1.5.8" % get.ARCH(), "/usr/lib/libperl.so.1.5.8")
 
     # Remove duplicated docs
     pisitools.remove("/usr/share/man/man3/Digest::MD5.3pm")
