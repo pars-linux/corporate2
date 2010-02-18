@@ -14,12 +14,14 @@ NoStrip = ["/lib/modules/"]
 WorkDir = "."
 
 BuildDir = "common/lib/modules/fglrx/build_mod"
+Target = get.ARCH().replace("i686", "x86")
+
 
 def setup():
     shelltools.export("SETUP_NOCHECK", "1")
     shelltools.system("sh ati-driver-installer-%s-x86.x86_64.run --extract ." % get.srcVERSION().replace(".", "-"))
 
-    shelltools.sym("../../../../../arch/x86/lib/modules/fglrx/build_mod/libfglrx_ip.a.GCC4", "%s/libfglrx_ip.a.GCC4" % BuildDir)
+    shelltools.sym("../../../../../arch/%s/lib/modules/fglrx/build_mod/libfglrx_ip.a.GCC4" % Target, "%s/libfglrx_ip.a.GCC4" % BuildDir)
 
     pisitools.dosed("%s/make.sh" % BuildDir, r"^linuxincludes=.*", "linuxincludes=/lib/modules/%s/build/include" % KDIR)
     pisitools.dosed("%s/make.sh" % BuildDir, r"^uname_r=.*", "uname_r=%s" % KDIR)
@@ -31,17 +33,17 @@ def build():
     shelltools.system("sh make.sh")
 
 def install():
-    pisitools.dobin("arch/x86/usr/X11R6/bin/*")
+    pisitools.dobin("arch/%s/usr/X11R6/bin/*" % Target)
     pisitools.dobin("common/usr/X11R6/bin/*")
-    pisitools.dosbin("arch/x86/usr/sbin/*")
+    pisitools.dosbin("arch/%s/usr/sbin/*" % Target)
     pisitools.dosbin("common/usr/sbin/*")
 
     DIRS = {
             "common/usr/share/doc/fglrx/examples/etc/acpi/events":  "/etc/acpi",
             "common/etc":               "/",
             "common/usr/X11R6/include": "/usr",
-            "arch/x86/usr/X11R6/lib/*": "/usr/lib",
-            "arch/x86/usr/lib/*":       "/usr/lib",
+            "arch/%s/usr/X11R6/lib/*" % Target: "/usr/lib",
+            "arch/%s/usr/lib/*" % Target:       "/usr/lib",
             "common/usr/include/GL/":   "/usr/lib/xorg/fglrx/include",
             "common/usr/share":         "/usr"
             }
