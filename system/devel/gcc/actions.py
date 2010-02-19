@@ -11,8 +11,9 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 def setup():
-    shelltools.export("CFLAGS", "-march=i686 -O2 -pipe -fomit-frame-pointer")
-    shelltools.export("CXXFLAGS", "-march=i686 -O2 -pipe -fomit-frame-pointer")
+    arch = get.ARCH().replace("x86_64", "x86-64")
+    shelltools.export("CFLAGS", "-march=%s -O2 -pipe -fomit-frame-pointer" % arch)
+    shelltools.export("CXXFLAGS", "-march=%s -O2 -pipe -fomit-frame-pointer" % arch)
 
     shelltools.makedirs("build")
     shelltools.cd("build")
@@ -50,8 +51,9 @@ def setup():
 
 
 def build():
-    shelltools.export("CFLAGS", "-march=i686 -O2 -pipe -fomit-frame-pointer")
-    shelltools.export("CXXFLAGS", "-march=i686 -O2 -pipe -fomit-frame-pointer")
+    arch = get.ARCH().replace("x86_64", "x86-64")
+    shelltools.export("CFLAGS", "-march=%s -O2 -pipe -fomit-frame-pointer" % arch)
+    shelltools.export("CXXFLAGS", "-march=%s -O2 -pipe -fomit-frame-pointer" % arch)
 
     shelltools.cd("build")
     autotools.make('BOOT_CFLAGS="%s" profiledbootstrap' % get.CFLAGS())
