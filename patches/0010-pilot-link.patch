@@ -1,0 +1,56 @@
+diff --git a/hardware/mobile/pilot-link/actions.py b/hardware/mobile/pilot-link/actions.py
+index 067d977..68afba6 100644
+--- a/hardware/mobile/pilot-link/actions.py
++++ b/hardware/mobile/pilot-link/actions.py
+@@ -35,6 +35,6 @@ def install():
+     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+ 
+     pythonmodules.fixCompiledPy()
+-    pisitools.remove("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/PDA/Pilot/.packlist" % get.curPERL())
++    pisitools.remove("/usr/lib/perl5/vendor_perl/%s/x86_64-linux-thread-multi/auto/PDA/Pilot/.packlist" % get.curPERL())
+ 
+     pisitools.dodoc("ChangeLog", "README", "doc/README*", "doc/TODO", "NEWS", "AUTHORS")
+diff --git a/hardware/mobile/pilot-link/files/pilot-link-0.12.3-int_types.patch b/hardware/mobile/pilot-link/files/pilot-link-0.12.3-int_types.patch
+new file mode 100644
+index 0000000..23fcbc3
+--- /dev/null
++++ b/hardware/mobile/pilot-link/files/pilot-link-0.12.3-int_types.patch
+@@ -0,0 +1,24 @@
++--- pilot-link-0.12.3/include/pi-md5.h	2006-10-17 15:24:07.000000000 +0200
+++++ pilot-link/include/pi-md5.h	2007-12-18 04:03:09.000000000 +0100
++@@ -13,8 +13,20 @@
++ #ifndef MD5_H
++ #define MD5_H
++ 
+++#include "config.h"
+++#if HAVE_INTTYPES_H
+++#include <inttypes.h>
+++#endif
+++#if HAVE_STDINT_H
+++#include <stdint.h>
+++#endif
+++#ifdef HAVE_INTTYPES_H || HAVE_STDINT_H
+++#define UINT8 uint8_t
+++#define UINT32 uint32_t
+++#else
++ #define UINT8 unsigned char
++-#define UINT32 unsigned long
+++#define UINT32 unsigned int
+++#endif
++ 
++ struct MD5Context {
++ 	UINT32 buf[4];
+diff --git a/hardware/mobile/pilot-link/pspec.xml b/hardware/mobile/pilot-link/pspec.xml
+index 060cb60..14f9abb 100644
+--- a/hardware/mobile/pilot-link/pspec.xml
++++ b/hardware/mobile/pilot-link/pspec.xml
+@@ -20,7 +20,8 @@
+         <Patches>
+             <Patch>bluetooth-session-register.diff</Patch>
+             <Patch level="1">use-lpthread.patch</Patch>
+-            <Patch level="1">pilot-link-0.12.3-md5.patch</Patch>
++            <!--Patch level="1">pilot-link-0.12.3-md5.patch</Patch-->
++            <Patch level="1">pilot-link-0.12.3-int_types.patch</Patch>
+             <Patch level="1">pilot-link-0.12.1-var.patch</Patch>
+             <Patch level="1">pilot-link-0.12.3-clio.patch</Patch>
+             <Patch level="1">pilot-link-0.12.2-Zire.patch</Patch>

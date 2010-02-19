@@ -1,0 +1,22 @@
+diff --git a/kernel/default/drivers/module-nvidia-current/actions.py b/kernel/default/drivers/module-nvidia-current/actions.py
+index ae61023..29b3c68 100644
+--- a/kernel/default/drivers/module-nvidia-current/actions.py
++++ b/kernel/default/drivers/module-nvidia-current/actions.py
+@@ -10,7 +10,7 @@ from pisi.actionsapi import autotools
+ from pisi.actionsapi import pisitools
+ from pisi.actionsapi import get
+ 
+-WorkDir = "NVIDIA-Linux-x86-%s" % get.srcVERSION()
++WorkDir = "NVIDIA-Linux-x86_64-%s" % get.srcVERSION()
+ KDIR = kerneltools.getKernelVersion()
+ NoStrip = ["/lib/modules"]
+ 
+@@ -21,7 +21,7 @@ def setup():
+     # Remove VDPAU headers and wrapper library
+     shelltools.unlinkDir("usr/include/vdpau")
+     shelltools.unlink("usr/lib/libvdpau.so.%s" % get.srcVERSION())
+-    shelltools.unlink("usr/lib/vdpau/libvdpau_trace.so.%s" % get.srcVERSION())
++    shelltools.unlink("usr/lib/libvdpau_trace.so.%s" % get.srcVERSION())
+ 
+ def build():
+     shelltools.export("SYSSRC", "/lib/modules/%s/build" % KDIR)

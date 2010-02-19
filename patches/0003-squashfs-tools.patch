@@ -1,0 +1,15 @@
+diff --git a/hardware/disk/squashfs-tools/actions.py b/hardware/disk/squashfs-tools/actions.py
+index 2b259b9..c614ac3 100644
+--- a/hardware/disk/squashfs-tools/actions.py
++++ b/hardware/disk/squashfs-tools/actions.py
+@@ -12,6 +12,10 @@ from pisi.actionsapi import get
+ 
+ WorkDir = "squashfs-tools-%s-with-lzma465" % get.srcVERSION()
+ 
++def setup():
++    for f in ["LZMA/C/LzFind.o", "LZMA/C/LzmaDec.o", "LZMA/C/LzmaEnc.o", "LZMA/C/LzmaLib.o", "LZMA/C/Alloc.o"]:
++        shelltools.unlink(f)
++
+ def build():
+     autotools.make('CC="%s"' % get.CC())
+ 
