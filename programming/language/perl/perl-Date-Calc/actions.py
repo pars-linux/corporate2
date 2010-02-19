@@ -26,4 +26,4 @@ def check():
 def install():
     perlmodules.install()
 
-    pisitools.removeDir("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/" % get.curPERL())
+    pisitools.removeDir("/usr/lib/perl5/vendor_perl/%s/%s-linux-thread-multi/" % (get.curPERL(), get.ARCH()))

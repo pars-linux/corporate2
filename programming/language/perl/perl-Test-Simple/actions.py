@@ -25,7 +25,7 @@ def install():
 
     pisitools.dodoc("README", "TODO", "Changes")
 
-    pisitools.removeDir("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/" % get.curPERL())
+    pisitools.removeDir("/usr/lib/perl5/vendor_perl/%s/%s-linux-thread-multi/" % (get.curPERL(), get.ARCH()))
 
     # these man pages conflicts with the perl-doc package
     for manpage in ["Simple", "Builder::Tester", "Builder::Tester::Color", "Builder::Module", "More", "Tutorial", "Builder"]:
