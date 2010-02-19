@@ -16,6 +16,7 @@ import os
 WorkDir = "klibc-%s" % get.srcVERSION()
 NoStrip = "/"
 KDIR = kerneltools.getKernelVersion()
+klibcarch = "x86_64" if get.ARCH() == "x86_64" else "i386"
 
 docs = {"usr/klibc/arch/README": "README.arch",
         "usr/dash/README.klibc": "README.dash",
@@ -47,12 +48,12 @@ def build():
     autotools.make('EXTRA_KLIBCAFLAGS="-Wa,--noexecstack" \
                     EXTRA_KLIBCLDFLAGS="-z,noexecstack" \
                     HOSTCC="%s" CC="%s" \
-                    KLIBCARCH=i386 \
+                    KLIBCARCH=%s \
                     KLIBCASMARCH=x86 \
                     libdir=/usr/lib \
                     SHLIBDIR=/lib \
                     mandir=/usr/share/man \
-                    INSTALLDIR=/usr/lib/klibc' % (get.CC(), get.CC()))
+                    INSTALLDIR=/usr/lib/klibc' % (get.CC(), get.CC(), klibcarch))
 
 def install():
     shelltools.export("ARCH", "")
