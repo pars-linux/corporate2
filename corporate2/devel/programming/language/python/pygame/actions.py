@@ -30,7 +30,9 @@ def setup():
 
 def build():
     pythonmodules.compile()
-    shelltools.copy("lib/pygame_icon.bmp", "build/lib.linux-i686-%s/pygame/" % get.curPYTHON().replace("python", ""))
+
+    # FIXME: Is this really needed?
+    shelltools.copy("lib/pygame_icon.bmp", "build/lib.linux-%s-%s/pygame/" % (get.ARCH(), get.curPYTHON().replace("python", "")))
 
 def install():
     pythonmodules.install()
