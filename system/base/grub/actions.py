@@ -14,7 +14,7 @@ def setup():
     # do not delete, testing if this line is necessary
     # shelltools.export("CFLAGS", "%s -fno-stack-protector -DNDEBUG -fno-strict-aliasing -minline-all-stringops" % get.CFLAGS())
     shelltools.export("CFLAGS", "")
-    shelltools.export("LDFLAGS", "")
+    shelltools.export("LDFLAGS", "-static")
     shelltools.export("grub_cv_prog_objcopy_absolute", "yes")
 
     autotools.autoreconf()
