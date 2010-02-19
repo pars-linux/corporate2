@@ -34,7 +34,6 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    pythonmodules.fixCompiledPy()
-    pisitools.remove("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/PDA/Pilot/.packlist" % get.curPERL())
+    pisitools.remove("/usr/lib/perl5/vendor_perl/%s/%s-linux-thread-multi/auto/PDA/Pilot/.packlist" % (get.curPERL(), get.ARCH()))
 
     pisitools.dodoc("ChangeLog", "README", "doc/README*", "doc/TODO", "NEWS", "AUTHORS")
