@@ -1,0 +1,30 @@
+diff --git a/kernel/default/drivers/module-syntekdriver/files/v4l_compat_ioctl32.patch b/kernel/default/drivers/module-syntekdriver/files/v4l_compat_ioctl32.patch
+new file mode 100644
+index 0000000..b489c51
+--- /dev/null
++++ b/kernel/default/drivers/module-syntekdriver/files/v4l_compat_ioctl32.patch
+@@ -0,0 +1,12 @@
++diff -Nuar stk11xx-2.1.0.orig/stk11xx-v4l.c stk11xx-2.1.0/stk11xx-v4l.c
++--- stk11xx-2.1.0.orig/stk11xx-v4l.c	2009-12-30 12:15:45.925583135 +0200
+++++ stk11xx-2.1.0/stk11xx-v4l.c	2009-12-30 12:16:52.388334924 +0200
++@@ -1733,7 +1733,7 @@
++ 	.poll = v4l_stk11xx_poll,
++ 	.mmap = v4l_stk11xx_mmap,
++ 	.ioctl = v4l_stk11xx_ioctl,
++-#ifdef CONFIG_COMPAT
+++#if defined(CONFIG_COMPAT) && defined(v4l_compat_ioctl32)
++ 	.compat_ioctl = v4l_compat_ioctl32,
++ #endif
++ };
+diff --git a/kernel/default/drivers/module-syntekdriver/pspec.xml b/kernel/default/drivers/module-syntekdriver/pspec.xml
+index a1dbb52..cd1c696 100644
+--- a/kernel/default/drivers/module-syntekdriver/pspec.xml
++++ b/kernel/default/drivers/module-syntekdriver/pspec.xml
+@@ -18,6 +18,7 @@
+         </BuildDependencies>
+         <Patches>
+             <Patch>makefile.patch</Patch>
++            <Patch level="1">v4l_compat_ioctl32.patch</Patch>
+         </Patches>
+     </Source>
+ 

@@ -1,0 +1,14 @@
+diff --git a/science/library/lapack/actions.py b/science/library/lapack/actions.py
+index fcdd742..e5d116f 100644
+--- a/science/library/lapack/actions.py
++++ b/science/library/lapack/actions.py
+@@ -14,7 +14,8 @@ WorkDir = "lapack-lite-%s" % get.srcVERSION()
+ def setup():
+     shelltools.copy("INSTALL/make.inc.gfortran", "make.inc")
+ 
+-    pisitools.dosed("make.inc", "-O2", "%s -fPIC -funroll-all-loops" % get.CFLAGS())
++    pisitools.dosed("make.inc", "-O2", "%s -fPIC -m64 -funroll-all-loops" % get.CFLAGS())
++    pisitools.dosed("make.inc", "NOOPT    =", "NOOPT    =-m64 -fPIC ")
+ 
+ def build():
+     autotools.make("-j1")

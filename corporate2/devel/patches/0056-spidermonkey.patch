@@ -1,0 +1,33 @@
+diff --git a/programming/library/spidermonkey/actions.py b/programming/library/spidermonkey/actions.py
+index a4e153d..6b64975 100644
+--- a/programming/library/spidermonkey/actions.py
++++ b/programming/library/spidermonkey/actions.py
+@@ -18,11 +18,11 @@ def install():
+     # make is picky about the order of install
+     autotools.make("-f Makefile.ref install DESTDIR=%s" % (get.installDIR()))
+ 
+-    pisitools.remove("/usr/lib/libjs.a")
++    pisitools.remove("/usr/lib64/libjs.a")
+ 
+     # Make versioned *.so and create needed symlinks
+-    pisitools.rename("/usr/lib/libjs.so", "libjs.so.1")
+-    pisitools.dosym("/usr/lib/libjs.so.1", "/usr/lib/libjs.so")
++    pisitools.rename("/usr/lib64/libjs.so", "libjs.so.1")
++    pisitools.dosym("/usr/lib64/libjs.so.1", "/usr/lib/libjs.so")
+ 
+     pisitools.dodoc("../jsd/README")
+     pisitools.dohtml("README.html")
+diff --git a/programming/library/spidermonkey/pspec.xml b/programming/library/spidermonkey/pspec.xml
+index 9328d7e..cd6d676 100644
+--- a/programming/library/spidermonkey/pspec.xml
++++ b/programming/library/spidermonkey/pspec.xml
+@@ -33,7 +33,8 @@
+         <Files>
+             <Path fileType="executable">/usr/bin</Path>
+             <Path fileType="header">/usr/include/js</Path>
+-            <Path fileType="library">/usr/lib</Path>
++             <Path fileType="library">/usr/lib</Path> 
++             <Path fileType="library">/usr/lib64</Path>
+             <Path fileType="doc">/usr/share/doc</Path>
+         </Files>
+     </Package>
