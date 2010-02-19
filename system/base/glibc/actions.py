@@ -17,7 +17,11 @@ def undef_variables():
     shelltools.export("LANG","C")
     shelltools.export("LC_ALL","C")
 
-    shelltools.export("CFLAGS", "-mtune=generic -march=i686 -O3 -pipe -fomit-frame-pointer -mno-tls-direct-seg-refs -g -ggdb")
+    if get.ARCH() == "i686":
+        shelltools.export("CFLAGS", "-mtune=generic -march=i686 -O3 -pipe -fomit-frame-pointer -mno-tls-direct-seg-refs -g -ggdb")
+    elif get.ARCH() == "x86_64":
+        # FIXME: This may need additional flags on x86_64. Note that x86-64 is the correct keyword for march
+        shelltools.export("CFLAGS", "-mtune=generic -march=x86-64 -O3 -pipe -fomit-frame-pointer -mno-tls-direct-seg-refs -g -ggdb")
 
 def setup():
     undef_variables()
