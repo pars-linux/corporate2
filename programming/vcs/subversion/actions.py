@@ -68,7 +68,7 @@ def install():
     # shelltools.chmod("%s/usr/bin/svnmerge" % get.installDIR(), 0755)
 
     # remove useless .packlist by hand.
-    pisitools.remove("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/SVN/_Core/.packlist" % get.curPERL())
+    pisitools.remove("/usr/lib/perl5/vendor_perl/%s/%s-linux-thread-multi/auto/SVN/_Core/.packlist" % (get.curPERL(), get.ARCH()))
 
     # Documentation and etc.
     pisitools.insinto("/usr/share/doc/%s" % get.srcNAME(), "contrib")
