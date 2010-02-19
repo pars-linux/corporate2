@@ -17,22 +17,30 @@ def setup():
     shelltools.export("LDFLAGS", "-static")
     shelltools.export("grub_cv_prog_objcopy_absolute", "yes")
 
-    autotools.autoreconf()
-    autotools.configure("--libdir=/lib \
-                         --datadir=/usr/lib/grub \
-                         --exec-prefix=/ \
-                         --disable-ffs \
-                         --disable-ufs2 \
-                         --disable-auto-linux-mem-opt")
+    if not get.ARCH() == "x86_64":
+        autotools.autoreconf()
+        autotools.configure("--libdir=/lib \
+                             --datadir=/usr/lib/grub \
+                             --exec-prefix=/ \
+                             --disable-ffs \
+                             --disable-ufs2 \
+                             --disable-auto-linux-mem-opt")
 
 def build():
-    autotools.make("-j1")
+    if not get.ARCH() == "x86_64":
+        autotools.make("-j1")
 
 def check():
-    autotools.make("check")
+    if not get.ARCH() == "x86_64":
+        autotools.make("check")
 
 def install():
-    autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+    if get.ARCH() == "x86_64":
+        for i in shelltools.ls("compiled-static/"):
+            pisitools.insinto("/", "compiled-static/%s" % i)
 
-    pisitools.newdoc("docs/menu.lst", "grub.conf.sample")
-    pisitools.dodoc("AUTHORS", "BUGS", "COPYING", "ChangeLog", "NEWS", "README", "THANKS", "TODO")
+    else:
+        autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+
+        pisitools.newdoc("docs/menu.lst", "grub.conf.sample")
+        pisitools.dodoc("AUTHORS", "BUGS", "COPYING", "ChangeLog", "NEWS", "README", "THANKS", "TODO")
