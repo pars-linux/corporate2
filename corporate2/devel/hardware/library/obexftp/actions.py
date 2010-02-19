@@ -27,5 +27,5 @@ def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     for f in [".packlist", "OBEXFTP.bs"]:
-        pisitools.remove("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/OBEXFTP/%s" % (get.curPERL(), f))
+        pisitools.remove("/usr/lib/perl5/vendor_perl/%s/%s-linux-thread-multi/auto/OBEXFTP/%s" % (get.curPERL(), get.ARCH(), f))
 
