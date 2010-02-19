@@ -6,6 +6,7 @@
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from pisi.actionsapi import kerneltools
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
@@ -14,6 +15,7 @@ WorkDir = "linux-2.6.32"
 NoStrip = ["/"]
 
 def setup():
+    shelltools.copy("configs/kernel-%s-config" % get.ARCH(), ".config")
     kerneltools.configure()
 
 def build():
