@@ -18,5 +18,3 @@ def build():
 def install():
     pisitools.dobin("mksquashfs")
     pisitools.dobin("unsquashfs")
-
-    #pisitools.dodoc("CHANGES", "README-4.0", "COPYING", "ACKNOWLEDGEMENTS", "PERFORMANCE*")
