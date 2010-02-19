@@ -11,8 +11,6 @@ from pisi.actionsapi import get
 
 WorkDir="SDL_Perl-v%s" % get.srcVERSION()
 
-perlautodir = "/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto" % get.curPERL()
-
 def setup():
     perlmodules.configure()
 
