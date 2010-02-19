@@ -32,7 +32,7 @@ def install():
 
     # Clean .packlists
     pisitools.removeDir("/usr/lib/perl5/%s" % get.curPERL())
-    pisitools.removeDir("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi" % get.curPERL())
+    pisitools.removeDir("/usr/lib/perl5/vendor_perl/%s/%s-linux-thread-multi" % (get.curPERL(), get.ARCH()))
 
     shelltools.cd("..")
     pisitools.dodoc("ChangeLog", "COPYING", "README", "TODO", "USAGE")
