@@ -203,7 +203,7 @@ class Wireless:
         point = AccessPoint(ssid)
         buffer = array.array('c', point.ssid + '\x00')
         addr, length = buffer.buffer_info()
-        arg = struct.pack("iHH", addr, length, 1)
+        arg = struct.pack("lHH", addr, length, 1)
         self._call(SIOCSIWESSID, arg)
         if self.getSSID() is point.ssid:
             return True
