@@ -18,10 +18,6 @@ def setup():
     pisitools.dosed("qscintilla.pro", "DESTDIR = \$\(QTDIR\)/lib", "DESTDIR = %s/%s/lib" % (get.installDIR(), get.qtDIR()))
     shelltools.system("qmake -o Makefile qscintilla.pro")
 
-    # Change C/XXFLAGS
-    pisitools.dosed("Makefile", "^CFLAGS   = -pipe -w -mcpu=i686 -O2 -pipe", "CFLAGS   = %s -w" % get.CFLAGS())
-    pisitools.dosed("Makefile", "^CXXFLAGS = -pipe -w -mcpu=i686 -O2 -pipe", "CXXFLAGS = %s -w" % get.CXXFLAGS())
-
 def install():
     pisitools.dodoc("ChangeLog", "LICENSE", "NEWS", "README")
 
