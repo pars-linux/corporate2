@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2008 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -20,7 +20,6 @@ def setup():
                          --with-zlib \
                          --with-bzip2 \
                          --with-id3 \
-                         --disable-amd64 \
                          --enable-mmx")
 
 def build():
