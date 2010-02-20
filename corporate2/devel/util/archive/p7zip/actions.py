@@ -1,15 +1,24 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 WorkDir = "p7zip_%s" % get.srcVERSION()
+
+makefiles = {
+             'i686'     : "makefile.linux_x86_asm_gcc_4.X",
+             'x86_64'   : "makefile.linux_amd64_asm"
+            }
+
+def setup():
+    shelltools.copy(makefiles[get.ARCH()], "makefile.machine")
 
 def build():
     autotools.make('OPTFLAGS="%s -DHAVE_GCCVISIBILITYPATCH -fvisibility=hidden -fvisibility-inlines-hidden" \
