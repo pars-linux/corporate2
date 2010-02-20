@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Licensed under the GNU General Public License, version 2.
@@ -10,14 +9,18 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = "NVIDIA-Linux-x86-%s" % get.srcVERSION()
+WorkDir = "."
 KDIR = kerneltools.getKernelVersion()
 NoStrip = ["/lib/modules"]
 
+arch = get.ARCH().replace("i686", "x86")
 driver = "nvidia-current"
 base = "/usr/lib/xorg/%s" % driver
 
 def setup():
+    shelltools.system("sh NVIDIA-Linux-%s-%s-pkg0.run -x --target tmp" % (arch, get.srcVERSION()))
+    shelltools.move("tmp/*", ".")
+
     # Remove VDPAU headers and wrapper library
     shelltools.unlinkDir("usr/include/vdpau")
     shelltools.unlink("usr/lib/libvdpau.so.%s" % get.srcVERSION())
@@ -34,8 +37,8 @@ def install():
     pisitools.insinto("/lib/modules/%s/extra/nvidia" % KDIR, "usr/src/nv/nvidia.ko", "%s.ko" % driver)
 
     # Command line tools and their man pages
-    pisitools.dobin("usr/bin/*")
-    pisitools.doman("usr/share/man/*/*")
+    pisitools.dobin("usr/bin/nvidia-smi")
+    pisitools.doman("usr/share/man/*/nvidia-smi*")
 
     # Libraries and X modules
     pisitools.insinto("%s/lib" % base, "usr/X11R6/lib/*")
@@ -49,9 +52,14 @@ def install():
     # Our libc is TLS enabled so use TLS library
     pisitools.remove("%s/lib/libnvidia-tls.so.*" % base)
 
+    # Remove static libraries
+    pisitools.remove("%s/lib/*.a" % base)
+
     # xorg-server provides libwfb.so
     pisitools.remove("%s/libnvidia-wfb.so.*" % base)
 
     # Documentation
-    pisitools.dodoc("usr/share/doc/[!h]*", destDir="xorg-video-%s" % driver)
-    pisitools.dohtml("usr/share/doc/html/*", destDir="xorg-video-%s" % driver)
+    docdir = "xorg-video-%s" % driver
+    pisitools.dodoc("LICENSE", destDir=docdir)
+    pisitools.dodoc("usr/share/doc/[!h]*", destDir=docdir)
+    pisitools.dohtml("usr/share/doc/html/*", destDir=docdir)
