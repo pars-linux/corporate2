@@ -12,6 +12,9 @@ from pisi.actionsapi import get
 
 WorkDir="ATLAS"
 
+bits = {"i686"  : "32",
+        "x86_64": "64"}
+
 def setup():
     shelltools.makedirs("build")
     shelltools.cd("build")
@@ -19,8 +22,8 @@ def setup():
     shelltools.system("../configure \
                        -Si cputhrchk 0 \
                        -Fa alg -fPIC \
-                       -b 32 \
-                       --with-netlib-lapack=/usr/lib/liblapack.a")
+                       -b %s \
+                       --with-netlib-lapack=/usr/lib/liblapack.a" % bits[get.ARCH()])
 
 def build():
     shelltools.cd("build")
