@@ -33,7 +33,8 @@ def fixperms(d):
             shelltools.chmod(os.path.join(root, name), 0644)
 
 def setup():
-    shelltools.sym("/lib/modules/%s/build" % KDIR, "linux")
+    # we include headers for a while
+    # shelltools.sym("/lib/modules/%s/build" % KDIR, "linux")
 
     # set the build directory
     shelltools.echo("MCONFIG", "KRNLOBJ = /lib/modules/%s/build" % KDIR)
@@ -60,13 +61,13 @@ def install():
     autotools.rawInstall('EXTRA_KLIBCAFLAGS="-Wa,--noexecstack" \
                           EXTRA_KLIBCLDFLAGS="-z,noexecstack" \
                           HOSTCC="%s" CC="%s" \
-                          KLIBCARCH=i386 \
+                          KLIBCARCH=%s \
                           KLIBCASMARCH=x86 \
                           libdir=/usr/lib \
                           SHLIBDIR=/lib \
                           mandir=/usr/share/man \
                           INSTALLROOT="%s" \
-                          INSTALLDIR=/usr/lib/klibc' % (get.CC(), get.CC(), get.installDIR()))
+                          INSTALLDIR=/usr/lib/klibc' % (get.CC(), get.CC(), klibcarch, get.installDIR()))
 
     asmSrcDir = "linux/arch/x86/include/asm"
     asmTargetDir = "/usr/lib/klibc/include/asm"
