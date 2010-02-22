@@ -13,23 +13,54 @@
         <IsA>service</IsA>
         <Summary>IEEE 802.1X/WPA supplicant for secure wireless transfers</Summary>
         <Description>wpa_supplicant is a WPA supplicant with support for WPA and WPA2.</Description>
-        <Archive type="targz" sha1sum="c17a992bdcbe0d2427f0968c5a921e54cf28306f">http://hostap.epitest.fi/releases/wpa_supplicant-0.6.4.tar.gz</Archive>
+        <Archive type="targz" sha1sum="cadf5aeed2a3c0a0e0686d163b16182877b2d7e5">http://hostap.epitest.fi/releases/wpa_supplicant-0.6.8.tar.gz</Archive>
+        <AdditionalFiles>
+            <AdditionalFile target="wpa_supplicant/.config">wpa_supplicant.config</AdditionalFile>
+        </AdditionalFiles>
+        <BuildDependencies>
+            <Dependency>qt3</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">fedora/wpa_supplicant-assoc-timeout.patch</Patch>
+            <Patch level="1">fedora/wpa_supplicant-0.5.7-qmake-location.patch</Patch>
+            <Patch level="1">fedora/wpa_supplicant-0.5.7-flush-debug-output.patch</Patch>
+            <Patch level="1">fedora/wpa_supplicant-0.5.10-dbus-service-file.patch</Patch>
+            <Patch level="1">fedora/wpa_supplicant-0.6.7-quiet-scan-results-message.patch</Patch>
+            <Patch level="1">fedora/wpa_supplicant-0.6.8-disconnect-fixes.patch</Patch>
+            <Patch level="1">fedora/wpa_supplicant-0.6.8-disconnect-init-deinit.patch</Patch>
+            <Patch level="1">fedora/wpa_supplicant-0.6.8-handle-driver-disconnect-spam.patch</Patch>
+            <Patch level="1">fedora/wpa_supplicant-0.6.8-ap-stability.patch</Patch>
+            <Patch level="1">fedora/wpa_supplicant-0.6.8-scanning-property.patch</Patch>
+            <Patch level="1">fedora/wpa_supplicant-0.6.9-scan-faster.patch</Patch>
+            <Patch level="1">fedora/wpa_supplicant-0.6.9-eapol-race-fix.patch</Patch>
+            <Patch level="1">fedora/wpa_supplicant-0.6.8-openssl-init.patch</Patch>
+        </Patches>
     </Source>
 
     <Package>
         <Name>wpa_supplicant</Name>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
         <Files>
             <Path fileType="config">/etc</Path>
+            <Path fileType="data">/etc/dbus-1</Path>
             <Path fileType="executable">/usr/sbin</Path>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="doc">/usr/share/doc</Path>
             <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="data">/usr/share/dbus-1/system-services</Path>
+            <Path fileType="data">/var/run/wpa_supplicant</Path>
         </Files>
         <AdditionalFiles>
-            <AdditionalFile target="/etc/wpa_supplicant.conf" permission="0600" owner="root">wpa_supplicant.conf</AdditionalFile>
-            <AdditionalFile target="/etc/conf.d/wpa_supplicant" permission="0644" owner="root">wpa_supplicant.confd</AdditionalFile>
-            <AdditionalFile target="/usr/lib/python2.6/site-packages/wpa_supplicant.py" permission="0644" owner="root">wpa_supplicant.py</AdditionalFile>
+            <AdditionalFile owner="root" permission="0600" target="/etc/wpa_supplicant.conf">wpa_supplicant.conf</AdditionalFile>
+            <!-- This is the fedora one
+            <AdditionalFile owner="root" permission="0600" target="/etc/wpa_supplicant.conf">wpa_supplicant.conf.fedora</AdditionalFile>
+            -->
+            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/wpa_supplicant">wpa_supplicant.confd</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/logrotate.d/wpa_supplicant">wpa_supplicant.logrotate</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/lib/python2.6/site-packages/wpa_supplicant.py">wpa_supplicant.py</AdditionalFile>
         </AdditionalFiles>
         <Provides>
             <COMAR script="service.py">System.Service</COMAR>
@@ -37,6 +68,13 @@
     </Package>
 
     <History>
+        <Update release="34">
+            <Date>2010-02-22</Date>
+            <Version>0.6.8</Version>
+            <Comment>Version bump</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="33">
             <Date>2008-11-30</Date>
             <Version>0.6.4</Version>

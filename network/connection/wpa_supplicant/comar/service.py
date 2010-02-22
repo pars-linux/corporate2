@@ -3,7 +3,7 @@ from comar.service import *
 
 serviceType = "local"
 serviceDesc = _({"en": "WPA Daemon",
-                 "tr": "WPA Servisi"})
+                 "tr": "WPA Hizmeti"})
 
 pidfile = "/var/run/wpa_supplicant.pid"
 

@@ -1,0 +1,241 @@
+diff --git a/wpa_supplicant/ctrl_iface_dbus.c b/wpa_supplicant/ctrl_iface_dbus.c
+index 26a3e9d..9e3ae69 100644
+--- a/wpa_supplicant/ctrl_iface_dbus.c
++++ b/wpa_supplicant/ctrl_iface_dbus.c
+@@ -541,6 +541,8 @@ static DBusHandlerResult wpas_iface_message_handler(DBusConnection *connection,
+ 								      wpa_s);
+ 		else if (!strcmp(method, "state"))
+ 			reply = wpas_dbus_iface_get_state(message, wpa_s);
++		else if (!strcmp(method, "scanning"))
++			reply = wpas_dbus_iface_get_scanning(message, wpa_s);
+ 		else if (!strcmp(method, "setBlobs"))
+ 			reply = wpas_dbus_iface_set_blobs(message, wpa_s);
+ 		else if (!strcmp(method, "removeBlobs"))
+@@ -753,6 +755,58 @@ out:
+ }
+ 
+ 
++/**
++ * wpa_supplicant_dbus_notify_scanning - send scanning status
++ * @wpa_s: %wpa_supplicant network interface data
++ * Returns: 0 on success, -1 on failure
++ *
++ * Notify listeners of interface scanning state changes
++ */
++void wpa_supplicant_dbus_notify_scanning(struct wpa_supplicant *wpa_s)
++{
++	struct ctrl_iface_dbus_priv *iface = wpa_s->global->dbus_ctrl_iface;
++	DBusMessage *_signal;
++	const char *path;
++	dbus_bool_t scanning = wpa_s->scanning ? TRUE : FALSE;
++
++	/* Do nothing if the control interface is not turned on */
++	if (iface == NULL)
++		return;
++
++	path = wpa_supplicant_get_dbus_path(wpa_s);
++	if (path == NULL) {
++		perror("wpa_supplicant_dbus_notify_scanning[dbus]: interface "
++		       "didn't have a dbus path");
++		wpa_printf(MSG_ERROR,
++		           "%s[dbus]: interface didn't have a dbus path; can't "
++		           " send scan result signal.", __FUNCTION__);
++		return;
++	}
++	_signal = dbus_message_new_signal(path, WPAS_DBUS_IFACE_INTERFACE,
++					  "Scanning");
++	if (_signal == NULL) {
++		perror("wpa_supplicant_dbus_notify_scanning[dbus]: couldn't "
++		       "create dbus signal; likely out of  memory");
++		wpa_printf(MSG_ERROR, "%s[dbus]: dbus control interface: not "
++		           "enough memory to send scan results signal.",
++		           __FUNCTION__);
++		return;
++	}
++
++	if (dbus_message_append_args(_signal,
++	                             DBUS_TYPE_BOOLEAN, &scanning,
++	                             DBUS_TYPE_INVALID)) {
++		dbus_connection_send(iface->con, _signal, NULL);
++	} else {
++		perror("wpa_supplicant_dbus_notify_scanning[dbus]: not enough "
++		       "memory to construct signal.");
++		wpa_printf(MSG_ERROR, "%s[dbus]: not enough memory to construct"
++		           " signal.", __FUNCTION__);
++	}
++	dbus_message_unref(_signal);
++}
++
++
+ #ifdef CONFIG_WPS
+ void wpa_supplicant_dbus_notify_wps_cred(struct wpa_supplicant *wpa_s,
+ 					 const struct wps_credential *cred)
+diff --git a/wpa_supplicant/ctrl_iface_dbus.h b/wpa_supplicant/ctrl_iface_dbus.h
+index 8e9036d..0e3ec79 100644
+--- a/wpa_supplicant/ctrl_iface_dbus.h
++++ b/wpa_supplicant/ctrl_iface_dbus.h
+@@ -92,6 +92,7 @@ struct ctrl_iface_dbus_priv *
+ wpa_supplicant_dbus_ctrl_iface_init(struct wpa_global *global);
+ void wpa_supplicant_dbus_ctrl_iface_deinit(struct ctrl_iface_dbus_priv *iface);
+ void wpa_supplicant_dbus_notify_scan_results(struct wpa_supplicant *wpa_s);
++void wpa_supplicant_dbus_notify_scanning(struct wpa_supplicant *wpa_s);
+ void wpa_supplicant_dbus_notify_state_change(struct wpa_supplicant *wpa_s,
+ 					     wpa_states new_state,
+ 					     wpa_states old_state);
+@@ -136,6 +137,11 @@ wpa_supplicant_dbus_notify_scan_results(struct wpa_supplicant *wpa_s)
+ }
+ 
+ static inline void
++wpa_supplicant_dbus_notify_scanning(struct wpa_supplicant *wpa_s)
++{
++}
++
++static inline void
+ wpa_supplicant_dbus_notify_state_change(struct wpa_supplicant *wpa_s,
+ 					wpa_states new_state,
+ 					wpa_states old_state)
+diff --git a/wpa_supplicant/ctrl_iface_dbus_handlers.c b/wpa_supplicant/ctrl_iface_dbus_handlers.c
+index e9dd9a5..a30bce0 100644
+--- a/wpa_supplicant/ctrl_iface_dbus_handlers.c
++++ b/wpa_supplicant/ctrl_iface_dbus_handlers.c
+@@ -1338,6 +1338,35 @@ DBusMessage * wpas_dbus_iface_get_state(DBusMessage *message,
+ 
+ 
+ /**
++ * wpas_dbus_iface_get_scanning - Get interface scanning state
++ * @message: Pointer to incoming dbus message
++ * @wpa_s: wpa_supplicant structure for a network interface
++ * Returns: A dbus message containing whether the interface is scanning
++ *
++ * Handler function for "scanning" method call.
++ */
++DBusMessage * wpas_dbus_iface_get_scanning(DBusMessage *message,
++					   struct wpa_supplicant *wpa_s)
++{
++	DBusMessage *reply = NULL;
++	dbus_bool_t scanning = wpa_s->scanning ? TRUE : FALSE;
++
++	reply = dbus_message_new_method_return(message);
++	if (reply != NULL) {
++		dbus_message_append_args(reply, DBUS_TYPE_BOOLEAN, &scanning,
++					 DBUS_TYPE_INVALID);
++	} else {
++		perror("wpas_dbus_iface_get_scanning[dbus]: out of "
++		       "memory.");
++		wpa_printf(MSG_ERROR, "dbus control interface: not enough"
++			   "memory to return scanning state.");
++	}
++
++	return reply;
++}
++
++
++/**
+  * wpas_dbus_iface_set_blobs - Store named binary blobs (ie, for certificates)
+  * @message: Pointer to incoming dbus message
+  * @wpa_s: %wpa_supplicant data structure
+diff --git a/wpa_supplicant/ctrl_iface_dbus_handlers.h b/wpa_supplicant/ctrl_iface_dbus_handlers.h
+index 0df5f3e..6564b54 100644
+--- a/wpa_supplicant/ctrl_iface_dbus_handlers.h
++++ b/wpa_supplicant/ctrl_iface_dbus_handlers.h
+@@ -77,6 +77,9 @@ DBusMessage * wpas_dbus_iface_set_smartcard_modules(
+ DBusMessage * wpas_dbus_iface_get_state(DBusMessage *message,
+ 					struct wpa_supplicant *wpa_s);
+ 
++DBusMessage * wpas_dbus_iface_get_scanning(DBusMessage *message,
++					   struct wpa_supplicant *wpa_s);
++
+ DBusMessage * wpas_dbus_iface_set_blobs(DBusMessage *message,
+ 				        struct wpa_supplicant *wpa_s);
+ 
+diff --git a/wpa_supplicant/events.c b/wpa_supplicant/events.c
+index 56c57fb..159b024 100644
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -615,6 +615,8 @@ static void wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s)
+ 	int qual = 0, max_qual = 0, qual_valid = 0, bssid_valid = 0, i;
+ 	struct cur_ap cur;
+ 
++	wpa_supplicant_notify_scanning(wpa_s, 0);
++
+ 	if (wpa_supplicant_get_scan_results(wpa_s) < 0) {
+ 		if (wpa_s->conf->ap_scan == 2)
+ 			return;
+diff --git a/wpa_supplicant/scan.c b/wpa_supplicant/scan.c
+index 1f53e23..a30e387 100644
+--- a/wpa_supplicant/scan.c
++++ b/wpa_supplicant/scan.c
+@@ -21,6 +21,7 @@
+ #include "wpa_supplicant_i.h"
+ #include "mlme.h"
+ #include "wps_supplicant.h"
++#include "ctrl_iface_dbus.h"
+ 
+ 
+ static void wpa_supplicant_gen_assoc_event(struct wpa_supplicant *wpa_s)
+@@ -328,6 +328,8 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
+ 	}
+ #endif /* CONFIG_WPS */
+ 
++	wpa_supplicant_notify_scanning(wpa_s, 1);
++
+ 	if (wpa_s->use_client_mlme) {
+ 		ieee80211_sta_set_probe_req_ie(wpa_s, extra_ie, extra_ie_len);
+ 		ret = ieee80211_sta_req_scan(wpa_s, ssid ? ssid->ssid : NULL,
+@@ -344,6 +346,7 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
+ 
+ 	if (ret) {
+ 		wpa_printf(MSG_WARNING, "Failed to initiate AP scan.");
++		wpa_supplicant_notify_scanning(wpa_s, 0);
+ 		wpa_supplicant_req_scan(wpa_s, 10, 0);
+ 	} else
+ 		wpa_s->scan_runs++;
+@@ -402,3 +405,13 @@ void wpa_supplicant_cancel_scan(struct wpa_supplicant *wpa_s)
+ 	wpa_msg(wpa_s, MSG_DEBUG, "Cancelling scan request");
+ 	eloop_cancel_timeout(wpa_supplicant_scan, wpa_s, NULL);
+ }
++
++void wpa_supplicant_notify_scanning(struct wpa_supplicant *wpa_s,
++				    int scanning)
++{
++	if (wpa_s->scanning != scanning) {
++		wpa_s->scanning = scanning;
++		wpa_supplicant_dbus_notify_scanning(wpa_s);
++	}
++}
++
+diff --git a/wpa_supplicant/wpa_supplicant.c b/wpa_supplicant/wpa_supplicant.c
+index 723e2ed..3bfffa2 100644
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -514,6 +514,9 @@ void wpa_supplicant_set_state(struct wpa_supplicant *wpa_s, wpa_states state)
+ 		   wpa_supplicant_state_txt(wpa_s->wpa_state),
+ 		   wpa_supplicant_state_txt(state));
+ 
++	if (state != WPA_SCANNING)
++		wpa_supplicant_notify_scanning(wpa_s, 0);
++
+ 	wpa_supplicant_dbus_notify_state_change(wpa_s, state,
+ 						wpa_s->wpa_state);
+ 
+diff --git a/wpa_supplicant/wpa_supplicant_i.h b/wpa_supplicant/wpa_supplicant_i.h
+index 8d131fc..63984d8 100644
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -329,6 +329,7 @@ struct wpa_supplicant {
+ 	struct ctrl_iface_priv *ctrl_iface;
+ 
+ 	wpa_states wpa_state;
++	int scanning;
+ 	int new_connection;
+ 	int reassociated_connection;
+ 
+@@ -431,6 +432,8 @@ int wpa_supplicant_scard_init(struct wpa_supplicant *wpa_s,
+ /* scan.c */
+ void wpa_supplicant_req_scan(struct wpa_supplicant *wpa_s, int sec, int usec);
+ void wpa_supplicant_cancel_scan(struct wpa_supplicant *wpa_s);
++void wpa_supplicant_notify_scanning(struct wpa_supplicant *wpa_s,
++				    int scanning);
+ 
+ /* events.c */
+ void wpa_supplicant_mark_disassoc(struct wpa_supplicant *wpa_s);
