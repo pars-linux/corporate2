@@ -1,0 +1,104 @@
+From: Jouni Malinen <jouni.malinen@atheros.com>
+Date: Fri, 4 Sep 2009 15:04:41 +0000 (+0300)
+Subject: Delay processing of EAPOL frames when not associated
+X-Git-Url: http://w1.fi/gitweb/gitweb.cgi?p=hostap.git;a=commitdiff_plain;h=1ff733383f3d5c73233ef452a738765667021609
+
+Delay processing of EAPOL frames when not associated
+
+If an EAPOL frame is received while wpa_supplicant thinks the driver is
+not associated, queue the frame for processing at the moment when the
+association event is received. This is a workaround to a race condition
+in receiving data frames and management events from the kernel.
+
+The pending EAPOL frame will not be processed unless an association
+event is received within 100 msec for the same BSSID.
+---
+
+diff --git a/wpa_supplicant/events.c b/wpa_supplicant/events.c
+index e5e799d..2ea9279 100644
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -943,6 +943,25 @@ static void wpa_supplicant_event_assoc(struct wpa_supplicant *wpa_s,
+ 		eapol_sm_notify_portValid(wpa_s->eapol, TRUE);
+ 		eapol_sm_notify_eap_success(wpa_s->eapol, TRUE);
+ 	}
++
++	if (wpa_s->pending_eapol_rx) {
++		struct os_time now, age;
++		os_get_time(&now);
++		os_time_sub(&now, &wpa_s->pending_eapol_rx_time, &age);
++		if (age.sec == 0 && age.usec < 100000 &&
++		    os_memcmp(wpa_s->pending_eapol_rx_src, bssid, ETH_ALEN) ==
++		    0) {
++			wpa_printf(MSG_DEBUG, "Process pending EAPOL frame "
++				   "that was received just before association "
++				   "notification");
++			wpa_supplicant_rx_eapol(
++				wpa_s, wpa_s->pending_eapol_rx_src,
++				wpabuf_head(wpa_s->pending_eapol_rx),
++				wpabuf_len(wpa_s->pending_eapol_rx));
++		}
++		wpabuf_free(wpa_s->pending_eapol_rx);
++		wpa_s->pending_eapol_rx = NULL;
++	}
+ }
+ 
+ 
+diff --git a/wpa_supplicant/wpa_supplicant.c b/wpa_supplicant/wpa_supplicant.c
+index d03e9da..c68dd82 100644
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -405,6 +405,9 @@ static void wpa_supplicant_cleanup(struct wpa_supplicant *wpa_s)
+ 	ieee80211_sta_deinit(wpa_s);
+ 
+ 	wpas_wps_deinit(wpa_s);
++
++	wpabuf_free(wpa_s->pending_eapol_rx);
++	wpa_s->pending_eapol_rx = NULL;
+ }
+ 
+ 
+@@ -1574,6 +1577,27 @@ void wpa_supplicant_rx_eapol(void *ctx, const u8 *src_addr,
+ 	wpa_printf(MSG_DEBUG, "RX EAPOL from " MACSTR, MAC2STR(src_addr));
+ 	wpa_hexdump(MSG_MSGDUMP, "RX EAPOL", buf, len);
+ 
++	if (wpa_s->wpa_state < WPA_ASSOCIATED) {
++		/*
++		 * There is possible race condition between receiving the
++		 * association event and the EAPOL frame since they are coming
++		 * through different paths from the driver. In order to avoid
++		 * issues in trying to process the EAPOL frame before receiving
++		 * association information, lets queue it for processing until
++		 * the association event is received.
++		 */
++		wpa_printf(MSG_DEBUG, "Not associated - Delay processing of "
++			   "received EAPOL frame");
++		wpabuf_free(wpa_s->pending_eapol_rx);
++		wpa_s->pending_eapol_rx = wpabuf_alloc_copy(buf, len);
++		if (wpa_s->pending_eapol_rx) {
++			os_get_time(&wpa_s->pending_eapol_rx_time);
++			os_memcpy(wpa_s->pending_eapol_rx_src, src_addr,
++				  ETH_ALEN);
++		}
++		return;
++	}
++
+ 	if (wpa_s->key_mgmt == WPA_KEY_MGMT_NONE) {
+ 		wpa_printf(MSG_DEBUG, "Ignored received EAPOL frame since "
+ 			   "no key management is configured");
+diff --git a/wpa_supplicant/wpa_supplicant_i.h b/wpa_supplicant/wpa_supplicant_i.h
+index 63984d8..e814f86 100644
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -364,6 +364,10 @@ struct wpa_supplicant {
+ 	int wps_success; /* WPS success event received */
+ 	int blacklist_cleared;
+ 
++	struct wpabuf *pending_eapol_rx;
++	struct os_time pending_eapol_rx_time;
++	u8 pending_eapol_rx_src[ETH_ALEN];
++
+ 	int disconnect_count;
+ };
+ 
+

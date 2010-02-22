@@ -1,0 +1,52 @@
+diff -up wpa_supplicant-0.6.4/src/drivers/driver_wext.c.disconnect-on-init wpa_supplicant-0.6.4/src/drivers/driver_wext.c
+--- wpa_supplicant-0.6.4/src/drivers/driver_wext.c.disconnect-on-init	2009-05-12 14:38:30.000000000 -0400
++++ wpa_supplicant-0.6.4/src/drivers/driver_wext.c	2009-05-12 15:00:09.000000000 -0400
+@@ -155,6 +155,7 @@ enum {
+ static int wpa_driver_wext_flush_pmkid(void *priv);
+ static int wpa_driver_wext_get_range(void *priv);
+ static void wpa_driver_wext_finish_drv_init(struct wpa_driver_wext_data *drv);
++static void wpa_driver_wext_disconnect(struct wpa_driver_wext_data *drv);
+ 
+ 
+ static int wpa_driver_wext_send_oper_ifla(struct wpa_driver_wext_data *drv,
+@@ -1142,6 +1143,12 @@ static void wpa_driver_wext_finish_drv_i
+ 
+ 	wpa_driver_wext_get_range(drv);
+ 
++	/* Unlock the driver's BSSID and force to a random SSID so clear any
++	 * previous association the driver might have when the supplicant starts
++	 * up.
++	 */
++	wpa_driver_wext_disconnect(drv);
++
+ 	drv->ifindex = if_nametoindex(drv->ifname);
+ 
+ 	if (os_strncmp(drv->ifname, "wlan", 4) == 0) {
+@@ -1181,8 +1188,7 @@ void wpa_driver_wext_deinit(void *priv)
+ 	 * Clear possibly configured driver parameters in order to make it
+ 	 * easier to use the driver after wpa_supplicant has been terminated.
+ 	 */
+-	(void) wpa_driver_wext_set_bssid(drv,
+-					 (u8 *) "\x00\x00\x00\x00\x00\x00");
++	wpa_driver_wext_disconnect(drv);
+ 
+ 	wpa_driver_wext_send_oper_ifla(priv, 0, IF_OPER_UP);
+ 
+@@ -2072,7 +2078,6 @@ static int wpa_driver_wext_mlme(struct w
+ static void wpa_driver_wext_disconnect(struct wpa_driver_wext_data *drv)
+ {
+ 	struct iwreq iwr;
+-	const u8 null_bssid[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
+ 	u8 ssid[32];
+ 	int i;
+ 
+@@ -2094,7 +2099,8 @@ static void wpa_driver_wext_disconnect(s
+ 		 * even if it does not understand SIOCSIWMLME commands (or tries
+ 		 * to associate automatically after deauth/disassoc).
+ 		 */
+-		wpa_driver_wext_set_bssid(drv, null_bssid);
++		(void) wpa_driver_wext_set_bssid(drv,
++					     (u8 *) "\x00\x00\x00\x00\x00\x00");
+ 
+ 		for (i = 0; i < 32; i++)
+ 			ssid[i] = rand() & 0xFF;
