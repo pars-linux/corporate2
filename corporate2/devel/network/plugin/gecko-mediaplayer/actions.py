@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008-2009 TUBITAK/UEKAE
+# Copyright 2008-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/copyleft/gpl.txt.
 
@@ -10,7 +10,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-WorkDir = "gecko-mediaplayer"
+#WorkDir = "gecko-mediaplayer"
 
 def setup():
     shelltools.export("AT_M4DIR", "m4")
