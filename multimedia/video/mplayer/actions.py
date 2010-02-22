@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -14,8 +14,14 @@ from pisi.actionsapi import get
 import os
 
 WorkDir = "mplayer-%s" % get.srcVERSION().split("_", 1)[1]
-mp_version = "30538"
-ff_version = "21761"
+mp_version = "30713"
+ff_version = "21967"
+
+dllloader = "" if get.ARCH() == "x86_64" else "--enable-win32dll \
+                                               --codecsdir=/usr/lib/%(esdir)s \
+                                               --win32codecsdir=/usr/lib/%(esdir)s \
+                                               --xanimcodecsdir=/usr/lib/%(esdir)s \
+                                               --realcodecsdir=/usr/lib/%(esdir)s " % {"esdir": "essential"}
 
 def fixPermissions(dest):
     for root, dirs, files in os.walk(dest):
@@ -42,6 +48,7 @@ def setup():
                             --disable-3dfx \
                             --disable-altivec \
                             --disable-arts \
+                            --disable-ass-internal \
                             --disable-bitmap-font \
                             --disable-debug \
                             --disable-dvdread-internal \
@@ -112,7 +119,6 @@ def setup():
                             --enable-v4lw \
                             --enable-vaapi \
                             --enable-vdpau \
-                            --enable-win32dll \
                             --enable-x11 \
                             --enable-xf86keysym \
                             --enable-xinerama \
@@ -121,13 +127,10 @@ def setup():
                             --enable-xvmc \
                             --with-xvmclib=XvMCW \
                             --charset=UTF-8 \
-                            --codecsdir=/usr/lib/%(esdir)s \
-                            --win32codecsdir=/usr/lib/%(esdir)s \
-                            --xanimcodecsdir=/usr/lib/%(esdir)s \
-                            --realcodecsdir=/usr/lib/%(esdir)s \
-                            --extra-libs="-lopenal -ljack" \
+                            %s \
+                            --extra-libs="-lopenal -ljack -lass" \
                             --disable-rpath' \
-                            % {"esdir": "essential"})
+                            % dllloader)
 
                             # stuff that fail hede=yes check, but working with hede=auto
                             # --disable-faad-external \
