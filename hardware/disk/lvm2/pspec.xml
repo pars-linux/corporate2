@@ -1,0 +1,209 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>lvm2</Name>
+        <Homepage>http://sources.redhat.com/lvm/</Homepage>
+        <Packager>
+            <Name>Mete Alpaslan</Name>
+            <Email>mete@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <IsA>app:console</IsA>
+        <Summary>Userland logical volume management tools</Summary>
+        <Description>LVM2 includes all of the support for handling read/write operations physical and logical volumes.</Description>
+        <Archive sha1sum="1a70cb4d4fe7566aace9d38ee18413c79e91b684" type="targz">ftp://sources.redhat.com/pub/lvm2/LVM2.2.02.56.tgz</Archive>
+        <Patches>
+            <Patch level="1">lvm2-diet.patch</Patch>
+            <Patch level="1">cluster-locking-built-in.patch</Patch>
+            <Patch level="1">device-mapper-dmsetup-export.patch</Patch>
+            <Patch level="1">fix-underlinking.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>device-mapper</Name>
+        <Summary>Light-weight kernel component can support user-space tools for logical volume management</Summary>
+        <Description>Device-mapper includes the driver enables the definition of new block devices composed of ranges of sectors of existing devices to define disk partitions or logical volumes.</Description>
+        <Files>
+            <Path fileType="header">/usr/include/libdevmapper.h</Path>
+            <Path fileType="header">/usr/include/libdevmapper-event.h</Path>
+            <Path fileType="executable">/usr/sbin/dmsetup</Path>
+            <Path fileType="executable">/usr/sbin/dmeventd</Path>
+            <Path fileType="library">/usr/lib/libdevmapper-event.so*</Path>
+            <Path fileType="library">/usr/lib/libdevmapper.so*</Path>
+            <Path fileType="data">/usr/lib/pkgconfig/devmapper.pc</Path>
+            <Path fileType="data">/usr/lib/pkgconfig/devmapper-event.pc</Path>
+            <Path fileType="doc">/usr/share/doc/VERSION_DM</Path>
+            <Path fileType="doc">/usr/share/doc/WHATS_NEW_DM</Path>
+            <Path fileType="man">/usr/share/man/man8/dmsetup.8</Path>
+       </Files>
+    </Package>
+    <Package>
+        <Name>lvm2</Name>
+        <Summary>Userland logical volume management tools</Summary>
+        <Description>LVM2 includes all of the support for handling read/write operations on physical volumes,creating volume groups from one or more physical volumes and creating one or more logical volumes in volume groups.</Description>
+        <RuntimeDependencies>
+            <Dependency versionFrom="2.02.56">device-mapper</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="header">/usr/include/lvm2cmd.h</Path>
+            <Path fileType="header">/usr/include/lvm2app.h</Path>
+            <Path fileType="library">/usr/lib/libdevmapper-event-*</Path>
+            <Path fileType="library">/usr/lib/liblvm2app.so*</Path>
+            <Path fileType="library">/usr/lib/liblvm2cmd.so*</Path>
+            <Path fileType="executable">/sbin/lvmconf</Path>
+            <Path fileType="executable">/usr/sbin/fsadm</Path>
+            <Path fileType="executable">/usr/sbin/lv*</Path>
+            <Path fileType="executable">/usr/sbin/vg*</Path>
+            <Path fileType="executable">/usr/sbin/pv*</Path>
+            <Path fileType="config">/etc/lvm/lvm.conf</Path>
+            <Path fileType="data">/usr/lib/pkgconfig/lvm2app.pc</Path>
+            <Path fileType="data">/etc/lvm/archive</Path>
+            <Path fileType="data">/etc/lvm/backup</Path>
+            <Path fileType="data">/etc/lvm/cache</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="man">/usr/share/man/man5/lvm.conf.5</Path>
+            <Path fileType="man">/usr/share/man/man8/fsadm.8</Path>
+            <Path fileType="man">/usr/share/man/man8/*pv*</Path>
+            <Path fileType="man">/usr/share/man/man8/*lv*</Path>
+            <Path fileType="man">/usr/share/man/man8/*vg*</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>dietlibc-libdevmapper</Name>
+        <PartOf>system.devel</PartOf>
+        <Summary>Static devmapper library built with dietlibc</Summary>
+        <Description>device mapper contains ioctl library and utilities for use with logical volume management (LVM2) built with dietlibc</Description>
+        <Files>
+            <Path fileType="library">/usr/lib/dietlibc/lib-i386/libdevmapper.a</Path>
+       </Files>
+    </Package>
+    <Package>
+        <Name>device-mapper-static</Name>
+        <Summary>Staticaly linked Device-mapper library and utility</Summary>
+        <Description>device mapper contains statically linked libraries and utility for initramfs.</Description>
+        <Files>
+            <Path fileType="executable">/sbin/dmsetup.static</Path>
+       </Files>
+    </Package>
+    <Package>
+        <Name>lvm2-static</Name>
+        <Summary>Staticaly linked Logical Volume Management utilities</Summary>
+        <Description>Number of utilities for creating, checking, and repairing logical volumes - statically linked for initramfs.</Description>
+        <Files>
+            <Path fileType="executable">/sbin/lvm.static</Path>
+       </Files>
+   </Package>
+
+   <History>
+        <Update release="15">
+            <Date>2009-09-29</Date>
+            <Version>2.02.56</Version>
+            <Comment>
+                -Version bump.
+                -Add dietlibc support.
+            </Comment>
+            <Name>Mete Alpaslan</Name>
+            <Email>mete@pardus.org.tr</Email>
+       </Update>
+       <Update release="14">
+            <Date>2009-01-30</Date>
+            <Version>2.02.44</Version>
+            <Comment>Add static linking support</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2009-01-30</Date>
+            <Version>2.02.44</Version>
+            <Comment>Fixed lvm.conf</Comment>
+            <Name>Mete Alpaslan</Name>
+            <Email>alpaslanmete@gmail.com</Email>
+        </Update>
+        <Update release="12">
+            <Date>2009-01-28</Date>
+            <Version>2.02.44</Version>
+            <Comment>new release</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2008-11-13</Date>
+            <Version>2.02.43</Version>
+            <Comment>device-mapper merged to lvm tree</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2008-10-26</Date>
+            <Version>2.02.42</Version>
+            <Comment>Stable release, no changes</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="9">
+            <Date>2008-10-18</Date>
+            <Version>2.02.41</Version>
+            <Comment>Bugfix release</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2008-09-20</Date>
+            <Version>2.02.40</Version>
+            <Comment>version bump</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2008-06-29</Date>
+            <Version>2.02.39</Version>
+            <Comment>version bump</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2008-06-14</Date>
+            <Version>2.02.38</Version>
+            <Comment>Stable</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2008-06-09</Date>
+            <Version>2.02.37</Version>
+            <Comment>Version</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2008-05-13</Date>
+            <Version>2.02.36</Version>
+            <Comment>Stable Bump</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2008-04-15</Date>
+            <Version>2.02.35</Version>
+            <Comment>Bugfix</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2008-04-11</Date>
+            <Version>2.02.34</Version>
+            <Comment>Bump to working release</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2008-01-22</Date>
+            <Version>2.01.15</Version>
+            <Comment>First release</Comment>
+            <Name>İşbaran Akçayır</Name>
+            <Email>isbaran@comu.edu.tr</Email>
+        </Update>
+    </History>
+</PISI>
