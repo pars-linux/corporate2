@@ -8,11 +8,9 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def install():
-    pythonmodules.install()
+    # Install into /usr/lib/pardus so we can protect ourself from python updates
+    pythonmodules.install("--install-lib=/usr/lib/pardus")
 
-    # Move PİSİ into /usr/lib/pisi so we can protect ourself from python updates
-    pisitools.domove("/usr/lib/%s/site-packages/pisi/" % get.curPYTHON(), "/usr/lib/pardus/", "pisi")
-
-    pisitools.dosym("/usr/bin/pisi-cli", "/usr/bin/pisi")
+    pisitools.dosym("pisi-cli", "/usr/bin/pisi")
 
     pisitools.insinto("/etc/pisi", "pisi.conf-%s" % get.ARCH(), "pisi.conf")
