@@ -16,7 +16,8 @@ def setup():
     shelltools.export("AT_M4DIR", "m4")
     autotools.autoreconf("-vfi")
 
-    autotools.configure("--disable-schemas-install")
+    autotools.configure("--disable-schemas-install \
+                         --with-plugin-dir=/usr/lib/nsbrowser/plugins")
 
 def build():
     autotools.make()
@@ -26,6 +27,5 @@ def install():
     # installing schemas by hand since make install causes sandboxviolations
     pisitools.insinto("/etc/gconf/schemas/", "gecko-mediaplayer.schemas")
 
-    pisitools.rename("/usr/lib/mozilla", "nsbrowser")
     pisitools.remove("/%s/%s/INSTALL" % (get.docDIR(), get.srcNAME()))
 
