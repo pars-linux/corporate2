@@ -10,11 +10,14 @@
         </Packager>
         <License>GPLv2</License>
         <IsA>service</IsA>
-        <Summary>Virtual private network solution</Summary>
+        <Summary>A full featured SSL VPN solution</Summary>
         <Description>OpenVPN is a full-featured SSL VPN solution which can accomodate a wide range of configurations, including remote access, site-to-site VPNs, WiFi security, and enterprise-scale remote access solutions with load balancing, failover, and fine-grained access-controls.</Description>
         <Archive sha1sum="4b18e71b07236760f3b4defa941661e94b731a5a" type="targz">http://openvpn.net/release/openvpn-2.1.1.tar.gz</Archive>
+        <AdditionalFiles>
+            <AdditionalFile permission="0755" target="openvpn-test.sh">openvpn-test.sh</AdditionalFile>
+        </AdditionalFiles>
         <BuildDependencies>
-            <Dependency versionFrom="2.03">lzo</Dependency>
+            <Dependency>lzo</Dependency>
             <Dependency>iproute2</Dependency>
         </BuildDependencies>
         <Patches>
@@ -26,24 +29,33 @@
     <Package>
         <Name>openvpn</Name>
          <RuntimeDependencies>
-            <Dependency versionFrom="2.03">lzo</Dependency>
+            <Dependency>lzo</Dependency>
             <Dependency>iproute2</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/sbin</Path>
-            <Path fileType="data">/usr/share/openvpn</Path>
-            <Path fileType="data">/usr/share/easy-rsa</Path>
             <Path fileType="library">/usr/lib</Path>
+            <Path fileType="config">/etc</Path>
+            <Path fileType="data">/usr/share/openvpn</Path>
+            <Path fileType="data">/var/run/openvpn</Path>
             <Path fileType="man">/usr/share/man</Path>
             <Path fileType="doc">/usr/share/doc</Path>
-            <Path fileType="config">/etc</Path>
         </Files>
         <AdditionalFiles>
             <AdditionalFile owner="root" permission="0644" target="/etc/openvpn/openvpn.conf">openvpn.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/openvpn/sample-config-files/roadwarrior-client.conf">roadwarrior-client.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/openvpn/sample-config-files/roadwarrior-server.conf">roadwarrior-server.conf</AdditionalFile>
         </AdditionalFiles>
    </Package>
 
    <History>
+        <Update release="8">
+            <Date>2010-02-22</Date>
+            <Version>2.1.1</Version>
+            <Comment>Install plugins correctly, add test script from fedora, add simple client/server configurations.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="7">
             <Date>2010-01-14</Date>
             <Version>2.1.1</Version>
