@@ -2,7 +2,7 @@ from comar.service import *
 import os
 
 serviceType = "local"
-serviceDefault = "on"
+serviceDefault = "off"
 serviceDesc = _({"en": "Modem Manager",
                  "tr": "Modem Yöneticisi"})
 
