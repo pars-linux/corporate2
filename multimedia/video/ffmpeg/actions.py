@@ -11,7 +11,9 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 WorkDir = "ffmpeg"
-version = "21831"
+version = "21967"
+minimumcpu = "" if get.ARCH() == "x86_64" else "--cpu=i686"
+
 
 def setup():
     shelltools.export("CFLAGS","%s -DRUNTIME_CPUDETECT -O3 -ffast-math -fomit-frame-pointer" % get.CFLAGS())
@@ -23,8 +25,8 @@ def setup():
     shelltools.chmod("version.sh", 0755)
 
     # CPU thing is just used for CMOV detection
-    autotools.rawConfigure("--cpu=i686 \
-                            --prefix=/usr \
+    autotools.rawConfigure("--prefix=/usr \
+                            %s \
                             --mandir=/usr/share/man \
                             --enable-runtime-cpudetect \
                             --enable-gpl \
@@ -55,7 +57,7 @@ def setup():
                             --enable-yasm \
                             --disable-stripping \
                             --disable-static \
-                            --disable-debug")
+                            --disable-debug" % minimumcpu)
 
                             # Not yet
                             # --enable-avfilter \
