@@ -10,7 +10,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def build():
-    autotools.make('CFLAGS="%s" BACKEND=x86emu' % get.CFLAGS())
+    autotools.make('CFLAGS="%s -fPIC" BACKEND=x86emu' % get.CFLAGS())
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
