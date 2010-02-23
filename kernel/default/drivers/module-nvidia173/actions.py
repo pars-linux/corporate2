@@ -9,12 +9,17 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = "NVIDIA-Linux-x86-%s" % get.srcVERSION()
+WorkDir = "."
 KDIR = kerneltools.getKernelVersion()
 NoStrip = ["/lib/modules"]
 
+arch = get.ARCH().replace("i686", "x86")
 driver = "nvidia173"
 base = "/usr/lib/xorg/%s" % driver
+
+def setup():
+    shelltools.system("sh NVIDIA-Linux-%s-%s-pkg0.run -x --target tmp" % (arch, get.srcVERSION()))
+    shelltools.move("tmp/*", ".")
 
 def build():
     shelltools.export("SYSSRC", "/lib/modules/%s/build" % KDIR)
@@ -38,9 +43,14 @@ def install():
     # Our libc is TLS enabled so use TLS library
     pisitools.remove("%s/lib/libnvidia-tls.so.*" % base)
 
+    # Remove static libraries
+    pisitools.remove("%s/lib/*.a" % base)
+
     # xorg-server provides libwfb.so
     pisitools.remove("%s/libnvidia-wfb.so.*" % base)
 
     # Documentation
-    pisitools.dodoc("usr/share/doc/[!h]*", destDir="xorg-video-%s" % driver)
-    pisitools.dohtml("usr/share/doc/html/*", destDir="xorg-video-%s" % driver)
+    docdir = "xorg-video-%s" % driver
+    pisitools.dodoc("LICENSE", destDir=docdir)
+    pisitools.dodoc("usr/share/doc/[!h]*", destDir=docdir)
+    pisitools.dohtml("usr/share/doc/html/*", destDir=docdir)
