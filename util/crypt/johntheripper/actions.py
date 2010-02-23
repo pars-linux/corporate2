@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008-2009 TUBITAK/UEKAE
+# Copyright 2008-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/copyleft/gpl.txt.
 
@@ -12,10 +12,20 @@ from pisi.actionsapi import get
 
 WorkDir = "john-%s" % get.srcVERSION()
 
-conf = {"CC": get.CC(),
-        "CXX": get.CXX(),
-        "CFLAGS": "%s -fno-PIC -fno-PIE" % get.CFLAGS(),
-        "LDFLAGS": "%s -nopie" % get.LDFLAGS()}
+arch =  {
+            "i686"      :   "linux-x86-sse2",
+            "x86_64"    :   "linux-x86-64",
+            "alpha"     :   "linux-alpha",
+            "sparc"     :   "linux-sparc",
+        }
+
+conf =  {
+            "CC"        : get.CC(),
+            "CXX"       : get.CXX(),
+            "CFLAGS"    : "%s -fno-PIC -fno-PIE" % get.CFLAGS(),
+            "LDFLAGS"   : "%s -nopie" % get.LDFLAGS(),
+            "ARCH"      : arch[get.ARCH()],
+        }
 
 def build():
     shelltools.cd("src")
@@ -26,7 +36,7 @@ def build():
                     CFLAGS="-c -Wall %(CFLAGS)s -DJOHN_SYSTEMWIDE -DJOHN_SYSTEMWIDE_HOME=\\\"\\\\\\\"/etc/john\\\\\\\"\\\"" \
                     LDFLAGS="%(LDFLAGS)s" \
                     OPT_NORMAL="" \
-                    linux-x86-sse2' % conf)
+                    %(ARCH)s' % conf)
 
 def install():
     pisitools.dosbin("run/john")
