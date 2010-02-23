@@ -6,7 +6,7 @@
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = get.srcDIR() + ".i686"
+WorkDir = "%s-%s.%s" % (get.srcNAME(), get.srcVERSION(), get.ARCH())
 
 def install():
     pisitools.insinto("/", "usr")
