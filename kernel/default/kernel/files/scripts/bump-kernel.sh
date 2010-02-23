@@ -12,4 +12,4 @@ svn add "files/kernel/patch-$1.bz2"
 
 sed -i "s:$OLD_PATCH:kernel/`basename $PATCH_URL`:" pspec.xml
 
-bump $1 "Version bump to $1."
+bump $1 "$2"
