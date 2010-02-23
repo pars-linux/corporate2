@@ -1,18 +1,21 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2008 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 WorkDir="mozilla"
 
 def build():
+    if get.ARCH() == "x86_64":
+        shelltools.export("USE_64", "1")
+
     shelltools.export("BUILD_OPT","1")
     shelltools.export("NSS_ENABLE_ECC","1")
     shelltools.export("OPT_FLAGS","%s -g -fno-strict-aliasing" % get.CFLAGS())
