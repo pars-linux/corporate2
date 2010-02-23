@@ -40,19 +40,20 @@ def install():
 
     DIRS = {
             "common/usr/share/doc/fglrx/examples/etc/acpi/events":  "/etc/acpi",
-            "common/etc":               "/",
-            "common/usr/X11R6/include": "/usr",
-            "arch/%s/usr/X11R6/lib/*" % Target: "/usr/lib",
-            "arch/%s/usr/lib/*" % Target:       "/usr/lib",
-            "common/usr/include/GL/":   "/usr/lib/xorg/fglrx/include",
-            "common/usr/share":         "/usr"
+            "common/etc":                           "/",
+            "common/usr/X11R6/include":             "/usr",
+            "arch/%s/usr/X11R6/lib*/*" % Target:    "/usr/lib",
+            "arch/%s/usr/lib*/*" % Target:          "/usr/lib",
+            "common/usr/include/GL/":               "/usr/lib/xorg/fglrx/include",
+            "common/usr/share":                     "/usr"
             }
 
     for source, target in DIRS.items():
         pisitools.insinto(target, source)
 
     pisitools.domove("/usr/lib/modules", "/usr/lib/xorg")
-    pisitools.insinto("/usr/lib/xorg/modules", "x740/usr/X11R6/lib/modules/*")
+    arch_suffix = "_64a" if Target == "x86_64" else ""
+    pisitools.insinto("/usr/lib/xorg/modules", "x740%s/usr/X11R6/lib*/modules/*" % arch_suffix)
 
     pisitools.domove("/usr/lib/libGL.so.1.2", "/usr/lib/xorg/fglrx/lib")
     pisitools.domove("/usr/lib/xorg/modules/extensions", "/usr/lib/xorg/fglrx")
