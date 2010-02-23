@@ -26,4 +26,6 @@ def install():
 
     pisitools.remove("/lib/*.a")
 
+    shelltools.chmod("%s/lib/libacl.so.*.*.*" % get.installDIR(), 0755)
+
     pisitools.dodoc("README")
