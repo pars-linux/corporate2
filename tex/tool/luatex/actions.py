@@ -17,7 +17,7 @@ GetWorkdir = "%s/%s" % (get.workDIR(), WorkDir)
 
 def setup():
     shelltools.cd("source")
-    autotools.autoreconf()
+    autotools.autoreconf("-vif")
     libtools.libtoolize()
 
     shelltools.export("LC_ALL","C")
