@@ -19,7 +19,8 @@ def setup():
     shelltools.system('../mozilla/nsprpub/configure \
                        --prefix=/usr \
                        --disable-debug \
-                       --enable-optimize="%s -fno-strict-aliasing"' % get.CFLAGS())
+                       %s \
+                       --enable-optimize="%s -fno-strict-aliasing"' % ("--enable-64bit" if get.ARCH() == "x86_64" else "", get.CFLAGS()))
 
 def build():
     shelltools.cd("build")
