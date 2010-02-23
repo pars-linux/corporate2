@@ -39,7 +39,7 @@ def setup():
                     --enable-pythoninterp \
                     --with-tlib=ncurses \
                     --disable-acl \
-                    --with-compiledby=Pardus-2009 \
+                    --with-compiledby=http://bugs.pardus.org.tr \
                     --with-modified-by=http://bugs.pardus.org.tr"
 
     shelltools.copytree("%s/vim72" % get.workDIR(),"build-gui")
