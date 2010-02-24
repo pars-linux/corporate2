@@ -10,5 +10,9 @@ from pisi.actionsapi import get
 
 WorkDir  = "bsddb3-%s" % get.srcVERSION()
 
+def build():
+    pythonmodules.compile()
+
 def install():
     pythonmodules.install("--berkeley-db=/usr")
+
