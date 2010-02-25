@@ -11,21 +11,22 @@ from pisi.actionsapi import get
 
 WorkDir = "."
 NoStrip = "/"
-Name = "6u17"
+Name = "6u18"
+Arch = "amd64" if get.ARCH() == "x86_64" else "i586"
 
 def setup():
-    shelltools.system("chmod +x construct.sh")
-    shelltools.system("sh jdk-%s-dlj-linux-i586.bin --accept-license" % Name)
+    shelltools.system("sh jdk-%s-dlj-linux-%s.bin --accept-license" % (Name, Arch))
 
 def install():
     pisitools.dodir("/opt")
-    shelltools.system("./construct.sh . %s/opt/sun-jdk %s/opt/sun-jre"% (get.installDIR(),get.installDIR()))
+    shelltools.system("./construct . %s/opt/sun-jdk %s/opt/sun-jre"% (get.installDIR(),get.installDIR()))
 
-    # Install mozilla plugin
-    pisitools.dodir("/usr/lib/nsbrowser/plugins")
-    pisitools.dosym("/opt/sun-jre/plugin/i386/ns7/libjavaplugin_oji.so", "/usr/lib/nsbrowser/plugins/javaplugin.so")
+    # Install mozilla plugin (not available for x86_64)
+    if Arch == "i586":
+        pisitools.dodir("/usr/lib/nsbrowser/plugins")
+        pisitools.dosym("/opt/sun-jre/plugin/i386/ns7/libjavaplugin_oji.so", "/usr/lib/nsbrowser/plugins/javaplugin.so")
 
     for doc in ["COPYRIGHT", "LICENSE", "README.html", "README_ja.html", "README_zh_CN.html", "THIRDPARTYLICENSEREADME.txt"]:
-        file = "%s/opt/sun-jdk/%s" % (get.installDIR(),doc)
+        file = "%s/opt/sun-jdk/%s" % (get.installDIR(), doc)
         pisitools.dodoc(file)
         shelltools.unlink(file)

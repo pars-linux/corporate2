@@ -13,7 +13,11 @@
         <IsA>library</IsA>
         <Summary>Sun's J2SE Development Kit</Summary>
         <Description>Java Platform, Standard Edition (also known as Java 2 Platform) lets you develop and deploy Java applications on desktops and servers, as well as today's demanding Embedded and Real-Time environments.</Description>
-        <Archive sha1sum="bca59cb275f37b492e69ceecbda75a573d94b553" type="binary">http://download.java.net/dlj/binaries/jdk-6u17-dlj-linux-i586.bin</Archive>
+        <Archive sha1sum="f7d0cefd581f523ac96ca99eb54ba4116fa29e0a" type="binary">http://download.java.net/dlj/binaries/jdk-6u18-dlj-linux-i586.bin</Archive>
+        <Archive sha1sum="4c16d02ecb7b0f729e3888da67310f7ea2e9f668" type="binary">http://download.java.net/dlj/binaries/jdk-6u18-dlj-linux-amd64.bin</Archive>
+        <AdditionalFiles>
+            <AdditionalFile permission="0755" target="construct">construct.sh</AdditionalFile>
+        </AdditionalFiles>
         <BuildDependencies>
             <Dependency>alsa-lib</Dependency>
             <Dependency>unixODBC</Dependency>
@@ -21,9 +25,6 @@
             <Dependency>libXi</Dependency>
             <Dependency>libXtst</Dependency>
         </BuildDependencies>
-        <Patches>
-            <Patch>construct.patch</Patch>
-        </Patches>
     </Source>
 
     <Package>
@@ -35,9 +36,6 @@
             <Dependency>libXi</Dependency>
             <Dependency>libXtst</Dependency>
         </RuntimeDependencies>
-        <Conflicts>
-            <Package>blackdown-jre</Package>
-        </Conflicts>
         <Files>
             <Path fileType="config">/etc/env.d/20java_jre</Path>
             <Path fileType="data">/opt/sun-jdk/jre</Path>
@@ -68,9 +66,6 @@
         <RuntimeDependencies>
             <Dependency versionFrom="1.6.0">sun-jre</Dependency>
         </RuntimeDependencies>
-        <Conflicts>
-            <Package>blackdown-jdk</Package>
-        </Conflicts>
         <Files>
             <Path fileType="executable">/opt/sun-jdk/bin</Path>
             <Path fileType="header">/opt/sun-jdk/include</Path>
@@ -112,16 +107,46 @@
         </RuntimeDependencies>
         <Files>
             <Path fileType="doc">/opt/sun-jdk/db/index.html</Path>
+            <Path fileType="doc">/opt/sun-jdk/db/register.html</Path>
             <Path fileType="doc">/opt/sun-jdk/db/docs</Path>
             <Path fileType="data">/opt/sun-jdk/db/javadoc</Path>
         </Files>
     </Package>
 
     <History>
+        <Update release="24">
+            <Date>2010-02-08</Date>
+            <Version>1.6.0_p18</Version>
+            <Comment>
+                * Make binaries in jdk/bin executable
+            </Comment>
+            <Name>Eren Türkay</Name>
+            <Email>eren@pardus.org.tr</Email>
+        </Update>
+        <Update release="23">
+            <Date>2010-02-03</Date>
+            <Version>1.6.0_p18</Version>
+            <Comment>
+                * Version update to 1.6.0_p18
+                * Fix broken links
+                * Fix unneeded package conflict blackdown-jre
+            </Comment>
+            <Name>Mete Alpaslan</Name>
+            <Email>mete@pardus.org.tr</Email>
+        </Update>
+        <Update release="22" type="security">
+            <Date>2010-02-03</Date>
+            <Version>1.6.0_p17</Version>
+            <Comment>
+                * Fix directory permission issue. The permission of /opt/sun-jre was 0777 due to the error in postInstall script. See #12209 for further information
+            </Comment>
+            <Name>Eren Türkay</Name>
+            <Email>eren@pardus.org.tr</Email>
+        </Update>
         <Update release="21" type="security">
             <Date>2010-01-23</Date>
             <Version>1.6.0_p17</Version>
-            <Comment>Version bump to fix several vulnerabilities (bug#11946)</Comment>
+            <Comment>Version bump to fix execution of arbitrary code vulnerability (bug#11946)</Comment>
             <Name>Mete Alpaslan</Name>
             <Email>mete@pardus.org.tr</Email>
         </Update>
