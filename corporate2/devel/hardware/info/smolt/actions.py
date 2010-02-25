@@ -29,8 +29,8 @@ def install():
                     "/usr/bin/smoltSendProfile")
     pisitools.dosym("/usr/share/smolt/client/deleteProfile.py",
                     "/usr/bin/smoltDeleteProfile")
-    pisitools.dosym("/usr/share/smolt/client/smoltGui.py",
-                    "/usr/bin/smoltGui")
+    #pisitools.dosym("/usr/share/smolt/client/smoltGui.py",
+    #                "/usr/bin/smoltGui")
 
 
     shelltools.touch("%s/etc/smolt/pub-uuid-smolt.pardus.org.tr" % get.installDIR())
