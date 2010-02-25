@@ -6,11 +6,13 @@ from comar.service import *
 
 @synchronized
 def start():
-    startService(command="/usr/sbin/nmbd",
+    startService(command="/usr/sbin/smbd",
                  args="-D",
                  donotify=True)
-    startService(command="/usr/sbin/smbd",
+
+    startService(command="/usr/sbin/nmbd",
                  args="-D")
+
     if config.get("winbind", "no") == "yes":
         startService(command="/usr/sbin/winbindd",
                      args="-D")
@@ -32,4 +34,7 @@ def reload():
                 signalno=signal.SIGHUP)
 
 def status():
-    return isServiceRunning("/var/run/samba/smbd.pid")
+    result = isServiceRunning("/var/run/samba/smbd.pid") and isServiceRunning("/var/run/samba/nmbd.pid")
+    if config.get("winbind", "no") == "yes":
+        result = result and isServiceRunning("/var/run/samba/winbindd.pid")
+    return result
