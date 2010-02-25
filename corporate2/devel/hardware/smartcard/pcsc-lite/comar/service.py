@@ -5,24 +5,27 @@ serviceDefault = "off"
 serviceDesc = _({"en": "PC/SC SmartCard Reader Service",
                  "tr": "PC/SC Akıllı Kart Okuyucu Servisi"})
 
+PIDFILE = "/var/run/pcscd/pcscd.pid"
+
 @synchronized
 def start():
     startDependencies("hal")
 
     # pcscd wont start if these exist
     import os
-    if os.path.exists("/var/run/pcscd.comm"):
-        os.unlink("/var/run/pcscd.comm")
-    if os.path.exists("/var/run/pcscd.pub"):
-        os.unlink("/var/run/pcscd.pub")
+    try:
+        os.unlink("/var/run/pcscd/pcscd.comm")
+        os.unlink("/var/run/pcscd/pcscd.pub")
+    except OSError:
+        pass
 
     startService(command="/usr/sbin/pcscd",
                  donotify=True)
 
 @synchronized
 def stop():
-    stopService(command="/usr/sbin/pcscd",
+    stopService(pidfile=PIDFILE,
                 donotify=True)
 
 def status():
-    return isServiceRunning(command="/usr/sbin/pcscd")
+    return isServiceRunning(pidfile=PIDFILE)
