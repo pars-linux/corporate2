@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright 2005-2009 TUBITAK/UEKAE
@@ -7,17 +6,20 @@
 
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import get
 
 #This package using ltdl. .la files should be deleted only for plugins
 KeepSpecial = ["libtool"]
 
 def setup():
+    cpu = "x86-64" if get.ARCH() == "x86_64" else "sse"
+
     pisitools.dosed("configure", "-faltivec")
     autotools.configure('--with-audio="alsa oss" \
-                         --with-cpu=sse \
+                         --with-cpu=%s \
                          --with-optimization=2 \
                          --enable-network=yes \
-                         --disable-ltdl-install')
+                         --disable-ltdl-install' % cpu)
 
 def build():
     autotools.make()
@@ -25,6 +27,6 @@ def build():
 def install():
     autotools.install()
 
-    pisitools.dodoc("ChangeLog","COPYING","NEWS", "README", "AUTHORS")
+    pisitools.dodoc("ChangeLog", "COPYING", "NEWS", "README", "AUTHORS")
 
     pisitools.remove("/usr/lib/libmpg123.la")
