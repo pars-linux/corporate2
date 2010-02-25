@@ -15,6 +15,7 @@ WorkDir = "linux-2.6.32"
 NoStrip = ["/"]
 
 def setup():
+    shelltools.copy("configs/kernel-%s-config" % get.ARCH(), ".config")
     kerneltools.configure()
 
     # Enable PAE and update kernel configuration
