@@ -78,7 +78,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
               "avahi", "ntp", "tss", "ejabberd", "tomcat", "ups", "partimag", "radiusd", "oprofile", \
               "mediatomb", "pulse", "pulse-access", "pulse-rt", "italc", "quassel", "bitlbee", "icecast", \
               "vboxusers", "virt", "svn", "pnp", "removable", "netuser", "netadmin", "power", "pnpadmin", \
-              "gnokii", "memcached", "rtkit"]
+              "gnokii", "memcached", "rtkit", "nm-openconnect"]
 
     for group in groups:
         deleteGroup(group)
@@ -86,7 +86,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     users = ["dialout", "squid", "named", "mysql", "postgres", "apache", "dovecot", "hal", "postfix", "smmsp", \
              "firebird", "dhcp", "ldap", "clamav", "ntlmaps", "avahi", "ntp", "tss", "ejabberd", "tomcat", "ups", \
              "partimag", "radiusd", "oprofile", "mediatomb", "pulse", "quasselcore", "bitlbee", "vboxadd", \
-             "svn", "icecast", "pnp", "gnokii", "memcached", "spamd", "rtkit"]
+             "svn", "icecast", "pnp", "gnokii", "memcached", "spamd", "rtkit", "nm-openconnect"]
 
     for user in users:
         deleteUser(user)
@@ -151,6 +151,9 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     # For realtimeKit
     hav("addGroup", (152, "rtkit"))
 
+    # NetworkManager user for OpenConnect VPN helper
+    hav("addGroup", (153, "nm-openconnect"))
+
     # Comar' profile groups
     hav("addGroup", (200, "pnp"))
     hav("addGroup", (201, "removable"))
@@ -196,6 +199,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     hav("addUser", (151, "icecast", "Icecast Server", "/dev/null", "/bin/false", "", ["icecast"], [], []))
     hav("addUser", (152, "memcached", "Memcached daemon", "/var/run/memcached", "/bin/false", "", ["memcached"], [], []))
     hav("addUser", (153, "rtkit", "RealtimeKit", "/proc", "/sbin/nologin", "", ["rtkit"], [], []))
+    hav("addUser", (154, "nm-openconnect", "NetworkManager user for OpenConnect", "/", "/sbin/nologin", "", ["nm-openconnect"], [], []))
 
     # Comar' profile users
     hav("addUser", (200, "pnp", "PnP", "/dev/null", "/bin/false", "", ["pnp"], [], []))
