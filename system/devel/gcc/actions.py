@@ -10,10 +10,15 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
+arch = get.ARCH().replace("x86_64", "x86-64")
+
 def setup():
-    arch = get.ARCH().replace("x86_64", "x86-64")
     shelltools.export("CFLAGS", "-march=%s -O2 -pipe -fomit-frame-pointer" % arch)
     shelltools.export("CXXFLAGS", "-march=%s -O2 -pipe -fomit-frame-pointer" % arch)
+
+    # FIXME: this may not be necessary for biarch
+    shelltools.export("CC", "gcc")
+    shelltools.export("CXX", "g++")
 
     shelltools.makedirs("build")
     shelltools.cd("build")
@@ -27,6 +32,7 @@ def setup():
                        --mandir=/usr/share/man \
                        --infodir=/usr/share/info \
                        --with-gxx-include-dir=/usr/include/c++ \
+                       --build=%s \
                        --disable-libgcj \
                        --disable-multilib \
                        --disable-nls \
@@ -47,13 +53,18 @@ def setup():
                        --with-system-zlib \
                        --with-tune=generic \
                        --with-pkgversion="Pardus Linux" \
-                       --with-bugurl=http://bugs.pardus.org.tr')
+                       --with-bugurl=http://bugs.pardus.org.tr' % get.HOST())
+                       # FIXME: this is supposed to be detected automatically
+                       #--enable-long-long \
 
 
 def build():
-    arch = get.ARCH().replace("x86_64", "x86-64")
     shelltools.export("CFLAGS", "-march=%s -O2 -pipe -fomit-frame-pointer" % arch)
     shelltools.export("CXXFLAGS", "-march=%s -O2 -pipe -fomit-frame-pointer" % arch)
+
+    # FIXME: this may not be necessary for biarch
+    shelltools.export("CC", "gcc")
+    shelltools.export("CXX", "g++")
 
     shelltools.cd("build")
     autotools.make('BOOT_CFLAGS="%s" profiledbootstrap' % get.CFLAGS())
@@ -70,7 +81,7 @@ def install():
     pisitools.removeDir("/usr/lib/gcc/*/*/install-tools")
 
     # This one comes with binutils
-    pisitools.remove("/usr/lib/libiberty.a")
+    pisitools.remove("/usr/lib*/libiberty.a")
 
     # cc symlink
     pisitools.dosym("/usr/bin/gcc" , "/usr/bin/cc")
