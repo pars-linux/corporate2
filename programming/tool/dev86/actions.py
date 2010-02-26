@@ -12,6 +12,10 @@ from pisi.actionsapi import get
 WorkDir="dev86-%s" % get.srcVERSION()
 
 def build():
+    if get.ARCH() == "x86_64":
+        pisitools.dosed("makefile.in", "alt-libs elksemu", "alt-libs")
+        pisitools.dosed("makefile.in", "install-lib install-emu", "install-lib")
+
     autotools.make("-j1 < /dev/null")
 
 def install():
