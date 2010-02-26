@@ -10,11 +10,13 @@
 
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 WorkDir = "nut"
 
 def build():
+    shelltools.export("CFLAGS", "%s -fPIC" % get.CFLAGS())
     autotools.make("-j1")
 
 def install():
