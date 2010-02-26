@@ -10,12 +10,19 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 WorkDir = "%s+-%s" % (get.srcNAME(), get.srcVERSION())
+docompile = False if get.ARCH() == "x86_64" else True
 
 def build():
-    autotools.make()
+    if docompile:
+        autotools.make()
 
 def install():
-    pisitools.insinto("/boot", "memtest.bin", "memtest")
+    if docompile:
+        finalbin = "memtest.bin"
+    else:
+        finalbin = "precomp.bin"
+
+    pisitools.insinto("/boot", finalbin, "memtest")
 
     pisitools.dodoc("FAQ", "README*")
 
