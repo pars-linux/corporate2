@@ -12,6 +12,7 @@ from pisi.actionsapi import get
 
 def setup():
     shelltools.move("Makefile.def", "Makefile")
+    pisitools.dosed("Makefile","options= ","options= $(CFLAGS) -DNOFUNCDEF -DUTIME_H $(LDFLAGS) ")
 
 def build():
     autotools.make()
