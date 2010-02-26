@@ -14,7 +14,11 @@ WorkDir = "lapack-lite-%s" % get.srcVERSION()
 def setup():
     shelltools.copy("INSTALL/make.inc.gfortran", "make.inc")
 
-    pisitools.dosed("make.inc", "-O2", "%s -fPIC -funroll-all-loops" % get.CFLAGS())
+    if get.ARCH() == "x86_64":
+        pisitools.dosed("make.inc", "-O2", "%s -fPIC -m64 -funroll-all-loops" % get.CFLAGS())
+        pisitools.dosed("make.inc", "NOOPT    =", "NOOPT    =-m64 -fPIC ")
+    else:
+        pisitools.dosed("make.inc", "-O2", "%s -fPIC -funroll-all-loops" % get.CFLAGS())
 
 def build():
     autotools.make("-j1")
