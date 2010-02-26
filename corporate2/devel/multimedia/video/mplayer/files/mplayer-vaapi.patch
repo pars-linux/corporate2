@@ -1,8 +1,8 @@
 diff --git a/Makefile b/Makefile
-index a3971dd..77fc9f7 100644
+index 49de59b..da1a2a4 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -623,6 +623,7 @@ SRCS_MPLAYER-$(TDFXVID)       += libvo/vo_tdfx_vid.c
+@@ -631,6 +631,7 @@ SRCS_MPLAYER-$(TDFXVID)       += libvo/vo_tdfx_vid.c
  SRCS_MPLAYER-$(TGA)           += libvo/vo_tga.c
  SRCS_MPLAYER-$(V4L2)          += libvo/vo_v4l2.c
  SRCS_MPLAYER-$(V4L2)          += libao2/ao_v4l2.c
@@ -10,7 +10,7 @@ index a3971dd..77fc9f7 100644
  SRCS_MPLAYER-$(VDPAU)         += libvo/vo_vdpau.c
  SRCS_MPLAYER-$(VESA)          += libvo/gtf.c libvo/vo_vesa.c libvo/vesa_lvo.c
  SRCS_MPLAYER-$(VIDIX)         += libvo/vo_cvidix.c \
-@@ -676,6 +677,7 @@ SRCS_MPLAYER = command.c \
+@@ -684,6 +685,7 @@ SRCS_MPLAYER = command.c \
                 libvo/aspect.c \
                 libvo/geometry.c \
                 libvo/spuenc.c \
@@ -19,10 +19,10 @@ index a3971dd..77fc9f7 100644
                 libvo/vo_mpegpes.c \
                 libvo/vo_null.c \
 diff --git a/cfg-common-opts.h b/cfg-common-opts.h
-index d9bfd8c..5eaf993 100644
+index dd9b691..2e30132 100644
 --- a/cfg-common-opts.h
 +++ b/cfg-common-opts.h
-@@ -228,6 +228,7 @@
+@@ -246,6 +246,7 @@
  //	{"ac", &audio_codec, CONF_TYPE_STRING, 0, 0, 0, NULL},
  	{"ac", &audio_codec_list, CONF_TYPE_STRING_LIST, 0, 0, 0, NULL},
  	{"vc", &video_codec_list, CONF_TYPE_STRING_LIST, 0, 0, 0, NULL},
@@ -31,10 +31,10 @@ index d9bfd8c..5eaf993 100644
  	// postprocessing:
  #ifdef CONFIG_LIBAVCODEC
 diff --git a/codec-cfg.c b/codec-cfg.c
-index 840fb94..5d05b91 100644
+index 5d79627..692258e 100644
 --- a/codec-cfg.c
 +++ b/codec-cfg.c
-@@ -198,6 +198,13 @@ static int add_to_format(char *s, char *alias,unsigned int *fourcc, unsigned int
+@@ -214,6 +214,13 @@ static int add_to_format(char *s, char *alias,unsigned int *fourcc, unsigned int
  		{"IDCT_MPEG2",IMGFMT_XVMC_IDCT_MPEG2},
  		{"MOCO_MPEG2",IMGFMT_XVMC_MOCO_MPEG2},
  
@@ -49,7 +49,7 @@ index 840fb94..5d05b91 100644
  		{"VDPAU_MPEG2",IMGFMT_VDPAU_MPEG2},
  		{"VDPAU_H264",IMGFMT_VDPAU_H264},
 diff --git a/configure b/configure
-index ed5d89c..39fef26 100755
+index ab3a347..8a3c7ba 100755
 --- a/configure
 +++ b/configure
 @@ -357,6 +357,9 @@ Codecs:
@@ -62,16 +62,17 @@ index ed5d89c..39fef26 100755
  Video output:
    --disable-vidix          disable VIDIX [for x86 *nix]
    --with-vidix-drivers[=*] list of VIDIX drivers to be compiled in
-@@ -545,6 +548,8 @@ _libavcodec_a=auto
- _libopencore_amrnb=auto
- _libopencore_amrwb=auto
- libopenjpeg=auto
-+_libavhwaccels_all=$(sed -n 's/^[^#]*HWACCEL.*(.*, *\(.*\)).*/\1_hwaccel/p' libavcodec/allcodecs.c | tr '[a-z]' '[A-Z]')
-+_libavhwaccels="$_libavhwaccels_all"
- _libavdecoders_all=$(sed -n 's/^[^#]*DEC.*(.*, *\(.*\)).*/\1_decoder/p' libavcodec/allcodecs.c | tr '[a-z]' '[A-Z]')
- _libavdecoders=$(echo $_libavdecoders_all | sed -e 's/ LIB[A-Z0-9_]*_DECODER//g' -e s/MPEG4AAC_DECODER//)
- _libavencoders_all=$(sed -n 's/^[^#]*ENC.*(.*, *\(.*\)).*/\1_encoder/p' libavcodec/allcodecs.c | tr '[a-z]' '[A-Z]')
-@@ -569,6 +574,9 @@ _libswscale_so=auto
+@@ -556,8 +559,7 @@ _libavparsers=$_libavparsers_all
+ _libavbsfs_all=$(sed -n 's/^[^#]*BSF.*(.*, *\(.*\)).*/\1_bsf/p' libavcodec/allcodecs.c | tr '[a-z]' '[A-Z]')
+ _libavbsfs=$_libavbsfs_all
+ _libavhwaccels_all=$(sed -n 's/^[^#]*HWACCEL.*(.*, *\(.*\)).*/\1_hwaccel/p' libavcodec/allcodecs.c | tr '[a-z]' '[A-Z]')
+-# Disable all hardware accelerators for now.
+-_libavhwaccels=
++_libavhwaccels=$(for h in $_libavhwaccels_all; do case $h in (*_VAAPI_HWACCEL) echo $h;; esac; done)
+ _libavdemuxers_all=$(sed -n 's/^[^#]*DEMUX.*(.*, *\(.*\)).*/\1_demuxer/p' libavformat/allformats.c | tr '[a-z]' '[A-Z]')
+ _libavdemuxers=$(echo $_libavdemuxers_all | sed -e 's/ LIB[A-Z0-9_]*_DEMUXER//g' -e s/REDIR_DEMUXER// -e s/AVISYNTH_DEMUXER//)
+ _libavmuxers_all=$(sed -n 's/^[^#]*_MUX.*(.*, *\(.*\)).*/\1_muxer/p' libavformat/allformats.c | tr '[a-z]' '[A-Z]')
+@@ -574,6 +576,9 @@ _libswscale_so=auto
  _libavcodec_mpegaudio_hp=yes
  _mencoder=yes
  _mplayer=yes
@@ -81,7 +82,7 @@ index ed5d89c..39fef26 100755
  _x11=auto
  _xshape=auto
  _xss=auto
-@@ -926,6 +934,8 @@ for ac_option do
+@@ -932,6 +937,8 @@ for ac_option do
    --disable-xv)         _xv=no          ;;
    --enable-xvmc)        _xvmc=yes       ;;
    --disable-xvmc)       _xvmc=no        ;;
@@ -90,7 +91,7 @@ index ed5d89c..39fef26 100755
    --enable-vdpau)       _vdpau=yes      ;;
    --disable-vdpau)      _vdpau=no       ;;
    --enable-sdl)         _sdl=yes        ;;
-@@ -3909,6 +3919,28 @@ fi
+@@ -4012,6 +4019,28 @@ fi
  echores "$_gettimeofday"
  
  
@@ -119,7 +120,7 @@ index ed5d89c..39fef26 100755
  echocheck "glob()"
  cat > $TMPC << EOF
  #include <stdio.h>
-@@ -4337,7 +4369,7 @@ else
+@@ -4440,7 +4469,7 @@ else
    _novomodules="x11 $_novomodules"
    _res_comment="check if the dev(el) packages are installed"
    # disable stuff that depends on X
@@ -128,7 +129,7 @@ index ed5d89c..39fef26 100755
  fi
  echores "$_x11"
  
-@@ -4468,7 +4500,7 @@ if test "$_vdpau" = yes ; then
+@@ -4571,7 +4600,7 @@ if test "$_vdpau" = yes ; then
  else
    def_vdpau='#define CONFIG_VDPAU 0'
    _novomodules="vdpau $_novomodules"
@@ -137,7 +138,7 @@ index ed5d89c..39fef26 100755
  fi
  echores "$_vdpau"
  
-@@ -5056,6 +5088,65 @@ else
+@@ -5159,6 +5188,65 @@ else
  fi
  echores "$_gl"
  
@@ -203,7 +204,7 @@ index ed5d89c..39fef26 100755
  
  echocheck "MatrixView"
  if test "$_gl" = no ; then
-@@ -5071,6 +5162,31 @@ fi
+@@ -5174,6 +5262,31 @@ fi
  echores "$matrixview"
  
  
@@ -235,7 +236,7 @@ index ed5d89c..39fef26 100755
  echocheck "PNG support"
  if test "$_png" = auto ; then
    _png=no
-@@ -8540,6 +8656,7 @@ TV_V4L2 = $_tv_v4l2
+@@ -8676,6 +8789,7 @@ TV_V4L2 = $_tv_v4l2
  TWOLAME=$_twolame
  UNRAR_EXEC = $_unrar_exec
  V4L2 = $_v4l2
@@ -243,7 +244,7 @@ index ed5d89c..39fef26 100755
  VCD = $_vcd
  VDPAU = $_vdpau
  VESA = $_vesa
-@@ -8624,6 +8741,7 @@ CONFIG_GPL=yes
+@@ -8761,6 +8875,7 @@ CONFIG_GPL=yes
  CONFIG_LIBDIRAC_DECODER=$_libdirac_lavc
  CONFIG_LIBDIRAC_ENCODER=$_libdirac_lavc
  CONFIG_LIBFAAC_ENCODER=$_faac_lavc
@@ -251,7 +252,7 @@ index ed5d89c..39fef26 100755
  CONFIG_LIBMP3LAME_ENCODER=$_mp3lame_lavc
  CONFIG_LIBOPENCORE_AMRNB_DECODER=$_libopencore_amrnb
  CONFIG_LIBOPENCORE_AMRNB_ENCODER=$_libopencore_amrnb
-@@ -8640,6 +8758,7 @@ CONFIG_MUXERS=$_mencoder
+@@ -8777,6 +8892,7 @@ CONFIG_MUXERS=$_mencoder
  CONFIG_POSTPROC = yes
  # Prevent building libavcodec/imgresample.c with conflicting symbols
  CONFIG_SWSCALE=yes
@@ -259,15 +260,7 @@ index ed5d89c..39fef26 100755
  CONFIG_VDPAU=$_vdpau
  CONFIG_XVMC=$_xvmc
  CONFIG_ZLIB=$_zlib
-@@ -8649,6 +8768,7 @@ HAVE_SHM = $_shm
- HAVE_W32THREADS = $_w32threads
- HAVE_YASM = $_have_yasm
- 
-+$(echo $_libavhwaccels | tr '[a-z] ' '[A-Z]\n' | sed 's/^/CONFIG_/;s/$/=yes/')
- $(echo $_libavdecoders | tr '[a-z] ' '[A-Z]\n' | sed 's/^/CONFIG_/;s/$/=yes/')
- $(echo $_libavencoders | tr '[a-z] ' '[A-Z]\n' | sed 's/^/CONFIG_/;s/$/=yes/')
- $(echo $_libavparsers | tr '[a-z] ' '[A-Z]\n' | sed 's/^/CONFIG_/;s/$/=yes/')
-@@ -8755,6 +8875,7 @@ $def_winsock2_h
+@@ -8893,6 +9009,7 @@ $def_winsock2_h
  
  
  /* system functions */
@@ -275,7 +268,7 @@ index ed5d89c..39fef26 100755
  $def_gethostbyname2
  $def_gettimeofday
  $def_glob
-@@ -8793,6 +8914,7 @@ $def_extern_asm
+@@ -8923,6 +9040,7 @@ $def_extern_asm
  $def_extern_prefix
  $def_iconv
  $def_kstat
@@ -283,7 +276,7 @@ index ed5d89c..39fef26 100755
  $def_macosx_bundle
  $def_macosx_finder
  $def_maemo
-@@ -9020,6 +9142,8 @@ $def_tdfxfb
+@@ -9153,6 +9271,8 @@ $def_tdfxfb
  $def_tdfxvid
  $def_tga
  $def_v4l2
@@ -292,19 +285,11 @@ index ed5d89c..39fef26 100755
  $def_vdpau
  $def_vesa
  $def_vidix
-@@ -9148,6 +9272,7 @@ $def_mp3lame_lavc
- $def_x264_lavc
- $def_xvid_lavc
- 
-+$(ff_config_enable "$_libavhwaccels_all" "$_libavhwaccels")
- $(ff_config_enable "$_libavdecoders_all" "$_libavdecoders")
- $(ff_config_enable "$_libavencoders_all" "$_libavencoders")
- $(ff_config_enable "$_libavparsers_all"  "$_libavparsers")
 diff --git a/etc/codecs.conf b/etc/codecs.conf
-index df6177d..15c6e8d 100644
+index 26a0529..615f069 100644
 --- a/etc/codecs.conf
 +++ b/etc/codecs.conf
-@@ -181,6 +181,7 @@ videocodec ffmpeg2
+@@ -190,6 +190,7 @@ videocodec ffmpeg2
    fourcc slif ; SoftLab MPEG-2 I-frames Codec
    driver ffmpeg
    dll "mpeg2video"
@@ -312,7 +297,7 @@ index df6177d..15c6e8d 100644
    out YV12,I420,IYUV
    out 422P,444P
  
-@@ -881,6 +882,7 @@ videocodec ffwmv3
+@@ -888,6 +889,7 @@ videocodec ffwmv3
    fourcc WMV3,wmv3
    driver ffmpeg
    dll wmv3
@@ -320,7 +305,7 @@ index df6177d..15c6e8d 100644
    out YV12,I420,IYUV
  
  videocodec ffwmv3vdpau
-@@ -898,6 +900,7 @@ videocodec ffvc1
+@@ -905,6 +907,7 @@ videocodec ffvc1
    fourcc vc-1,VC-1
    driver ffmpeg
    dll vc1
@@ -328,7 +313,7 @@ index df6177d..15c6e8d 100644
    out YV12,I420,IYUV
  
  videocodec ffvc1vdpau
-@@ -919,6 +922,7 @@ videocodec ffh264
+@@ -926,6 +929,7 @@ videocodec ffh264
    format 0x10000005
    driver ffmpeg
    dll h264
@@ -336,15 +321,15 @@ index df6177d..15c6e8d 100644
    out YV12,I420,IYUV
  
  videocodec ffh264vdpau
-@@ -986,6 +990,7 @@ videocodec ffodivx
-   fourcc EPHV,SN40
+@@ -994,6 +998,7 @@ videocodec ffodivx
+   fourcc uldx,ULDX,VSPX
    driver ffmpeg
    dll mpeg4 ;opendivx
 +  out VAAPI_MPEG4
    out YV12,I420,IYUV
  
  videocodec ffodivxvdpau
-@@ -1551,6 +1556,7 @@ videocodec ffh263
+@@ -1561,6 +1566,7 @@ videocodec ffh263
    fourcc VX1K     ; Agora Labs VX1000S H263
    driver ffmpeg
    dll h263
@@ -353,7 +338,7 @@ index df6177d..15c6e8d 100644
  
  videocodec ffzygo
 diff --git a/fmt-conversion.c b/fmt-conversion.c
-index 9371ab1..a9ba43d 100644
+index 013e3fe..f053dc8 100644
 --- a/fmt-conversion.c
 +++ b/fmt-conversion.c
 @@ -18,12 +18,14 @@
@@ -369,9 +354,9 @@ index 9371ab1..a9ba43d 100644
      enum PixelFormat pix_fmt;
 +    enum CodecID codec_id;
  } conversion_map[] = {
-     {IMGFMT_BGR32, PIX_FMT_RGB32},
-     {IMGFMT_BGR24, PIX_FMT_BGR24},
-@@ -85,6 +87,17 @@ static const struct {
+     {IMGFMT_ARGB, PIX_FMT_ARGB},
+     {IMGFMT_BGRA, PIX_FMT_BGRA},
+@@ -91,6 +93,17 @@ static const struct {
      {IMGFMT_VDPAU_WMV3,      PIX_FMT_VDPAU_WMV3},
      {IMGFMT_VDPAU_VC1,       PIX_FMT_VDPAU_VC1},
      {IMGFMT_VDPAU_MPEG4,     PIX_FMT_VDPAU_MPEG4},
@@ -389,7 +374,7 @@ index 9371ab1..a9ba43d 100644
      {0, PIX_FMT_NONE}
  };
  
-@@ -101,12 +114,14 @@ enum PixelFormat imgfmt2pixfmt(int fmt)
+@@ -107,12 +120,14 @@ enum PixelFormat imgfmt2pixfmt(int fmt)
      return pix_fmt;
  }
  
@@ -407,10 +392,10 @@ index 9371ab1..a9ba43d 100644
      fmt = conversion_map[i].fmt;
      if (!fmt)
 diff --git a/fmt-conversion.h b/fmt-conversion.h
-index a4ee820..480fda7 100644
+index 9e133a8..962ca4e 100644
 --- a/fmt-conversion.h
 +++ b/fmt-conversion.h
-@@ -5,6 +5,6 @@
+@@ -23,6 +23,6 @@
  #include "libavutil/avutil.h"
  
  enum PixelFormat imgfmt2pixfmt(int fmt);
@@ -419,10 +404,10 @@ index a4ee820..480fda7 100644
  
  #endif /* MPLAYER_FMT_CONVERSION_H */
 diff --git a/gui/mplayer/gtk/opts.c b/gui/mplayer/gtk/opts.c
-index a1c8d22..06e1269 100644
+index f086819..3a02a9f 100644
 --- a/gui/mplayer/gtk/opts.c
 +++ b/gui/mplayer/gtk/opts.c
-@@ -63,9 +63,11 @@ static GtkWidget * CLVDrivers;
+@@ -64,9 +64,11 @@ static GtkWidget * CLVDrivers;
         GtkWidget * prEFontName;
         GtkWidget * prEDVDDevice;
         GtkWidget * prECDRomDevice;
@@ -434,7 +419,7 @@ index a1c8d22..06e1269 100644
  static GtkWidget * CBVFM;
  static GtkWidget * CBAFM;
  static GtkWidget * CBAudioEqualizer;
-@@ -353,6 +355,26 @@ void ShowPreferences( void )
+@@ -354,6 +356,26 @@ void ShowPreferences( void )
  // -- 5. page
   gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON( CBNonInterlaved ),force_ni );
   if ( index_mode == 1 ) gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON( CBIndex ),1 );
@@ -461,7 +446,7 @@ index a1c8d22..06e1269 100644
   {
    int     i;
    GList * Items = NULL;
-@@ -599,6 +621,17 @@ void prButton( GtkButton * button,gpointer user_data )
+@@ -600,6 +622,17 @@ static void prButton( GtkButton * button, gpointer user_data )
  	if ( gtk_toggle_button_get_active( GTK_TOGGLE_BUTTON( CBIndex ) ) ) index_mode=1;
  
  	{
@@ -479,7 +464,7 @@ index a1c8d22..06e1269 100644
  	 int i;
  	 const char * tmp = gtk_entry_get_text( GTK_ENTRY( EVFM ) );
           for( i=0;mpcodecs_vd_drivers[i];i++ )
-@@ -1198,6 +1231,20 @@ GtkWidget * create_Preferences( void )
+@@ -1199,6 +1232,20 @@ GtkWidget * create_Preferences( void )
  
    hbox5=AddHBox( vbox602,1 );
  
@@ -501,7 +486,7 @@ index a1c8d22..06e1269 100644
  
    CBVFM=gtk_combo_new();
 diff --git a/help/help_mp-en.h b/help/help_mp-en.h
-index 84e38e4..5963a05 100644
+index 3b8cbd8..162d6cb 100644
 --- a/help/help_mp-en.h
 +++ b/help/help_mp-en.h
 @@ -719,6 +719,7 @@ static const char help_text[]=
@@ -521,16 +506,16 @@ index 84e38e4..5963a05 100644
  // libmpcodecs/ve_lavc.c
  #define MSGTR_MPCODECS_HighQualityEncodingSelected "[VE_LAVC] High quality encoding selected (non-realtime)!\n"
 diff --git a/libmpcodecs/dec_video.c b/libmpcodecs/dec_video.c
-index 6d9eb97..a2ab62b 100644
+index 3572565..aef04d2 100644
 --- a/libmpcodecs/dec_video.c
 +++ b/libmpcodecs/dec_video.c
-@@ -39,9 +39,47 @@ extern double vout_time_usage;
+@@ -56,9 +56,47 @@ extern double vout_time_usage;
  int field_dominance=-1;
  
  int divx_quality=0;
 +char *video_hwaccel_name=NULL;
  
- vd_functions_t* mpvdec=NULL;
+ const vd_functions_t* mpvdec=NULL;
  
 +int get_video_hwaccel(void)
 +{
@@ -573,10 +558,10 @@ index 6d9eb97..a2ab62b 100644
    vf_instance_t* vf=sh_video->vfilter;
    if(vf){
 diff --git a/libmpcodecs/dec_video.h b/libmpcodecs/dec_video.h
-index 7a08a04..aa9e8ae 100644
+index 8b28202..bf727cd 100644
 --- a/libmpcodecs/dec_video.h
 +++ b/libmpcodecs/dec_video.h
-@@ -3,6 +3,14 @@
+@@ -21,6 +21,14 @@
  
  #include "libmpdemux/stheader.h"
  
@@ -591,7 +576,7 @@ index 7a08a04..aa9e8ae 100644
  // dec_video.c:
  void vfm_help(void);
  
-@@ -21,6 +29,11 @@ int set_rectangle(sh_video_t *sh_video, int param, int value);
+@@ -39,6 +47,11 @@ int set_rectangle(sh_video_t *sh_video, int param, int value);
  void resync_video_stream(sh_video_t *sh_video);
  int get_current_video_decoder_lag(sh_video_t *sh_video);
  
@@ -604,10 +589,10 @@ index 7a08a04..aa9e8ae 100644
  
  #endif /* MPLAYER_DEC_VIDEO_H */
 diff --git a/libmpcodecs/img_format.c b/libmpcodecs/img_format.c
-index cc7bee1..f131116 100644
+index 5b858fa..d3b158b 100644
 --- a/libmpcodecs/img_format.c
 +++ b/libmpcodecs/img_format.c
-@@ -76,6 +76,14 @@ const char *vo_format_name(int format)
+@@ -94,6 +94,14 @@ const char *vo_format_name(int format)
  	case IMGFMT_ZRMJPEGIB: return "Zoran MJPEG bottom field first";
  	case IMGFMT_XVMC_MOCO_MPEG2: return "MPEG1/2 Motion Compensation";
  	case IMGFMT_XVMC_IDCT_MPEG2: return "MPEG1/2 Motion Compensation and IDCT";
@@ -623,10 +608,10 @@ index cc7bee1..f131116 100644
  	case IMGFMT_VDPAU_MPEG2: return "MPEG2 VDPAU acceleration";
  	case IMGFMT_VDPAU_H264: return "H.264 VDPAU acceleration";
 diff --git a/libmpcodecs/img_format.h b/libmpcodecs/img_format.h
-index 6bab566..7e99683 100644
+index 2c4db36..37b0132 100644
 --- a/libmpcodecs/img_format.h
 +++ b/libmpcodecs/img_format.h
-@@ -138,6 +138,26 @@
+@@ -172,6 +172,26 @@
  #define IMGFMT_XVMC_MOCO_MPEG2 (IMGFMT_XVMC|0x02)
  #define IMGFMT_XVMC_IDCT_MPEG2 (IMGFMT_XVMC|0x82)
  
@@ -654,10 +639,10 @@ index 6bab566..7e99683 100644
  #define IMGFMT_VDPAU               0x1DC80000
  #define IMGFMT_VDPAU_MASK          0xFFFF0000
 diff --git a/libmpcodecs/mp_image.h b/libmpcodecs/mp_image.h
-index a53ef8a..c50a587 100644
+index ba69e72..86ace62 100644
 --- a/libmpcodecs/mp_image.h
 +++ b/libmpcodecs/mp_image.h
-@@ -111,6 +111,7 @@ static inline void mp_image_setfmt(mp_image_t* mpi,unsigned int out_fmt){
+@@ -129,6 +129,7 @@ static inline void mp_image_setfmt(mp_image_t* mpi,unsigned int out_fmt){
      // compressed formats
      if(out_fmt == IMGFMT_MPEGPES ||
         out_fmt == IMGFMT_ZRMJPEGNI || out_fmt == IMGFMT_ZRMJPEGIT || out_fmt == IMGFMT_ZRMJPEGIB ||
@@ -666,10 +651,10 @@ index a53ef8a..c50a587 100644
  	mpi->bpp=0;
  	return;
 diff --git a/libmpcodecs/vd.c b/libmpcodecs/vd.c
-index 3de3c15..1c354c5 100644
+index 6f18ed3..4bbd3cd 100644
 --- a/libmpcodecs/vd.c
 +++ b/libmpcodecs/vd.c
-@@ -348,3 +348,12 @@ void mpcodecs_draw_slice(sh_video_t *sh, unsigned char** src, int* stride, int w
+@@ -373,3 +373,12 @@ void mpcodecs_draw_slice(sh_video_t *sh, unsigned char** src, int* stride, int w
    if(vf->draw_slice)
      vf->draw_slice(vf,src,stride,w,h,x,y);
  }
@@ -683,10 +668,10 @@ index 3de3c15..1c354c5 100644
 +    return NULL;
 +}
 diff --git a/libmpcodecs/vd.h b/libmpcodecs/vd.h
-index f05241b..31a804c 100644
+index 33d9ec5..63e0b8a 100644
 --- a/libmpcodecs/vd.h
 +++ b/libmpcodecs/vd.h
-@@ -34,6 +34,7 @@ extern int vd_use_slices;
+@@ -53,6 +53,7 @@ extern float movie_aspect;
  int mpcodecs_config_vo(sh_video_t *sh, int w, int h, unsigned int preferred_outfmt);
  mp_image_t* mpcodecs_get_image(sh_video_t *sh, int mp_imgtype, int mp_imgflag, int w, int h);
  void mpcodecs_draw_slice(sh_video_t *sh, unsigned char** src, int* stride, int w,int h, int x, int y);
@@ -695,18 +680,18 @@ index f05241b..31a804c 100644
  #define VDFLAGS_DROPFRAME 3
  
 diff --git a/libmpcodecs/vd_ffmpeg.c b/libmpcodecs/vd_ffmpeg.c
-index 1a6290c..1e8e71f 100644
+index 8c1e9ae..7a42160 100644
 --- a/libmpcodecs/vd_ffmpeg.c
 +++ b/libmpcodecs/vd_ffmpeg.c
-@@ -14,6 +14,7 @@
+@@ -32,6 +32,7 @@
  #include "fmt-conversion.h"
  
  #include "vd_internal.h"
 +#include "dec_video.h"
  
- static vd_info_t info = {
+ static const vd_info_t info = {
      "FFmpeg's libavcodec codec family",
-@@ -209,8 +210,8 @@ static void set_format_params(struct AVCodecContext *avctx, enum PixelFormat fmt
+@@ -227,8 +228,8 @@ static void set_format_params(struct AVCodecContext *avctx, enum PixelFormat fmt
      int imgfmt;
      if (fmt == PIX_FMT_NONE)
          return;
@@ -717,7 +702,7 @@ index 1a6290c..1e8e71f 100644
          sh_video_t *sh     = avctx->opaque;
          vd_ffmpeg_ctx *ctx = sh->context;
          ctx->do_dr1    = 1;
-@@ -267,6 +268,12 @@ static int init(sh_video_t *sh){
+@@ -285,6 +286,12 @@ static int init(sh_video_t *sh){
      avctx->codec_type = CODEC_TYPE_VIDEO;
      avctx->codec_id = lavc_codec->id;
  
@@ -730,7 +715,7 @@ index 1a6290c..1e8e71f 100644
  #if CONFIG_VDPAU
      if(lavc_codec->capabilities & CODEC_CAP_HWACCEL_VDPAU){
          avctx->get_format = get_format;
-@@ -460,7 +467,7 @@ static void draw_slice(struct AVCodecContext *s,
+@@ -478,7 +485,7 @@ static void draw_slice(struct AVCodecContext *s,
                          const AVFrame *src, int offset[4],
                          int y, int type, int height){
      sh_video_t *sh = s->opaque;
@@ -739,7 +724,7 @@ index 1a6290c..1e8e71f 100644
      int strides[MP_MAX_PLANES] = {src->linesize[0], src->linesize[1], src->linesize[2]};
  #if 0
      int start=0, i;
-@@ -526,9 +533,10 @@ static int init_vo(sh_video_t *sh, enum PixelFormat pix_fmt){
+@@ -544,9 +551,10 @@ static int init_vo(sh_video_t *sh, enum PixelFormat pix_fmt){
          sh->disp_w = width;
          sh->disp_h = height;
          ctx->pix_fmt = pix_fmt;
@@ -751,7 +736,7 @@ index 1a6290c..1e8e71f 100644
          ctx->vo_initialized = 1;
      }
      return 0;
-@@ -579,7 +587,9 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
+@@ -597,7 +605,9 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
          return avctx->get_buffer(avctx, pic);
      }
  
@@ -762,7 +747,7 @@ index 1a6290c..1e8e71f 100644
          type =  MP_IMGTYPE_NUMBERED | (0xffff << 16);
      } else
      if (!pic->buffer_hints) {
-@@ -611,6 +621,11 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
+@@ -629,6 +639,11 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
          avctx->draw_horiz_band= draw_slice;
      } else
          avctx->draw_horiz_band= NULL;
@@ -774,7 +759,7 @@ index 1a6290c..1e8e71f 100644
      if(IMGFMT_IS_VDPAU(mpi->imgfmt)) {
          avctx->draw_horiz_band= draw_slice;
      }
-@@ -922,24 +937,62 @@ static mp_image_t *decode(sh_video_t *sh, void *data, int len, int flags){
+@@ -940,24 +955,62 @@ static mp_image_t *decode(sh_video_t *sh, void *data, int len, int flags){
      return mpi;
  }
  
@@ -851,10 +836,10 @@ index 1a6290c..1e8e71f 100644
 -#endif /* CONFIG_XVMC || CONFIG_VDPAU */
 +#endif /* CONFIG_XVMC || CONFIG_VAAPI || CONFIG_VDPAU */
 diff --git a/libmpcodecs/vf.h b/libmpcodecs/vf.h
-index 67c2272..01301c2 100644
+index 91a57f2..00de007 100644
 --- a/libmpcodecs/vf.h
 +++ b/libmpcodecs/vf.h
-@@ -89,6 +89,7 @@ typedef struct vf_seteq_s
+@@ -107,6 +107,7 @@ typedef struct vf_seteq_s
  #define VFCTRL_GET_PTS         17 /* Return last pts value that reached vf_vo*/
  #define VFCTRL_SET_DEINTERLACE 18 /* Set deinterlacing status */
  #define VFCTRL_GET_DEINTERLACE 19 /* Get deinterlacing status */
@@ -863,10 +848,10 @@ index 67c2272..01301c2 100644
  #include "vfcap.h"
  
 diff --git a/libmpcodecs/vf_vo.c b/libmpcodecs/vf_vo.c
-index 7960c3d..498e9c8 100644
+index fafdc1b..c75cace 100644
 --- a/libmpcodecs/vf_vo.c
 +++ b/libmpcodecs/vf_vo.c
-@@ -154,6 +154,12 @@ static int control(struct vf_instance_s* vf, int request, void* data)
+@@ -173,6 +173,12 @@ static int control(struct vf_instance_s* vf, int request, void* data)
  	*(double *)data = vf->priv->pts;
  	return CONTROL_TRUE;
      }
@@ -879,7 +864,7 @@ index 7960c3d..498e9c8 100644
      }
      // return video_out->control(request,data);
      return CONTROL_UNKNOWN;
-@@ -173,6 +179,7 @@ static void get_image(struct vf_instance_s* vf,
+@@ -192,6 +198,7 @@ static void get_image(struct vf_instance_s* vf,
      if(!vo_config_count) return;
      // GET_IMAGE is required for hardware-accelerated formats
      if(vo_directrendering ||
@@ -1160,7 +1145,7 @@ index 6db664a..8259927 100644
  };
  
 diff --git a/libvo/video_out.h b/libvo/video_out.h
-index b9380fa..7e06a05 100644
+index 1fce2c2..0d3f00a 100644
 --- a/libvo/video_out.h
 +++ b/libvo/video_out.h
 @@ -98,6 +98,10 @@ typedef struct {
@@ -1176,10 +1161,10 @@ index b9380fa..7e06a05 100644
  #define VO_ERROR	-1
 diff --git a/libvo/vo_vaapi.c b/libvo/vo_vaapi.c
 new file mode 100644
-index 0000000..60e5e9d
+index 0000000..ddc9eac
 --- /dev/null
 +++ b/libvo/vo_vaapi.c
-@@ -0,0 +1,2167 @@
+@@ -0,0 +1,2201 @@
 +/*
 + * VA API output module
 + *
@@ -1248,6 +1233,14 @@ index 0000000..60e5e9d
 +#else
 +#define USE_VAAPI_COLORSPACE 0
 +#endif
++
++/* Defined to 1 if VA/GLX 'bind' API is available */
++#define USE_VAAPI_GLX_BIND                                \
++    (VA_MAJOR_VERSION == 0 &&                             \
++     ((VA_MINOR_VERSION == 30 &&                          \
++       VA_MICRO_VERSION == 4 && VA_SDS_VERSION >= 5) ||   \
++      (VA_MINOR_VERSION == 31 &&                          \
++       VA_MICRO_VERSION == 0 && VA_SDS_VERSION < 5)))
 +
 +/* Compatibility glue with VA-API >= 0.31 */
 +#if defined VA_CHECK_VERSION
@@ -1819,6 +1812,7 @@ index 0000000..60e5e9d
 +    int i, is_rgb;
 +    int r_idx = -1, g_idx = -1, b_idx = -1;
 +    int y_idx = -1, u_idx = -1, v_idx = -1;
++    int i_idx = -1, a_idx = -1;
 +
 +    if (image->num_palette_entries < 1)
 +        return NULL;
@@ -1835,6 +1829,8 @@ index 0000000..60e5e9d
 +        case 'Y': y_idx = i; is_rgb = 0; break;
 +        case 'U': u_idx = i; is_rgb = 0; break;
 +        case 'V': v_idx = i; is_rgb = 0; break;
++        case 'I': i_idx = i; break;
++        case 'A': a_idx = i; break;
 +        }
 +    }
 +
@@ -1850,8 +1846,17 @@ index 0000000..60e5e9d
 +        for (i = 0; i < image->num_palette_entries; i++) {
 +            const int n = i * image->entry_bytes;
 +            palette[n + y_idx] = i * 0xff / (image->num_palette_entries - 1);
-+            palette[n + u_idx] = 0xff;
-+            palette[n + v_idx] = 0xff;
++            palette[n + u_idx] = 0x80;
++            palette[n + v_idx] = 0x80;
++        }
++    }
++    else if (i_idx != -1 && a_idx != -1) {/* AYUV format (GMA500 "psb" bug) */
++        for (i = 0; i < image->num_palette_entries; i++) {
++            const int n = i * image->entry_bytes;
++            palette[n + 0] = 0x80;
++            palette[n + 1] = 0x80;
++            palette[n + 2] = 16 + i * 220 / (image->num_palette_entries - 1);
++            palette[n + 3] = 0;
 +        }
 +    }
 +    else {
@@ -2045,7 +2050,9 @@ index 0000000..60e5e9d
 +#endif
 +#if CONFIG_GL
 +    { "gl",          OPT_ARG_BOOL, &gl_enabled,   NULL },
++#if USE_VAAPI_GLX_BIND
 +    { "bind",        OPT_ARG_BOOL, &gl_binding,   NULL },
++#endif
 +    { "reflect",     OPT_ARG_BOOL, &gl_reflect,   NULL },
 +#endif
 +    { NULL, }
@@ -2083,8 +2090,10 @@ index 0000000..60e5e9d
 +#if CONFIG_GL
 +               "  gl\n"
 +               "    Enable OpenGL rendering\n"
++#if USE_VAAPI_GLX_BIND
 +               "  bind\n"
 +               "    Use VA surface binding instead of copy\n"
++#endif
 +               "  reflect\n"
 +               "    Enable OpenGL reflection effects\n"
 +#endif
@@ -2690,7 +2699,7 @@ index 0000000..60e5e9d
 +static inline int get_field_flags(int i)
 +{
 +    return (g_deint ? 
-+            ((g_top_field_first == i) ^ (g_deint > 1) ?
++            ((g_top_field_first ^ i) == 0 ?
 +             VA_BOTTOM_FIELD : VA_TOP_FIELD) : VA_FRAME_PICTURE);
 +}
 +
@@ -2745,6 +2754,7 @@ index 0000000..60e5e9d
 +    int i;
 +
 +    if (gl_binding) {
++#if USE_VAAPI_GLX_BIND
 +        for (i = 0; i <= !!(g_deint > 1); i++) {
 +            status = vaAssociateSurfaceGLX(va_context->display,
 +                                           gl_surface,
@@ -2753,8 +2763,13 @@ index 0000000..60e5e9d
 +            if (!check_status(status, "vaAssociateSurfaceGLX()"))
 +                return;
 +        }
++#else
++        mp_msg(MSGT_VO, MSGL_WARN, "vaAssociateSurfaceGLX() is not implemented\n");
++        gl_binding = 0;
++#endif
 +    }
-+    else {
++
++    if (!gl_binding) {
 +        for (i = 0; i <= !!(g_deint > 1); i++) {
 +            status = vaCopySurfaceGLX(va_context->display,
 +                                      gl_surface,
@@ -2782,11 +2797,13 @@ index 0000000..60e5e9d
 +    glEnable(GL_TEXTURE_2D);
 +    BindTexture(GL_TEXTURE_2D, gl_texture);
 +
++#if USE_VAAPI_GLX_BIND
 +    if (gl_binding) {
 +        status = vaBeginRenderSurfaceGLX(va_context->display, gl_surface);
 +        if (!check_status(status, "vaBeginRenderSurfaceGLX()"))
 +            return -1;
 +    }
++#endif
 +    return 0;
 +}
 +
@@ -2794,11 +2811,13 @@ index 0000000..60e5e9d
 +{
 +    VAStatus status;
 +
++#if USE_VAAPI_GLX_BIND
 +    if (gl_binding) {
 +        status = vaEndRenderSurfaceGLX(va_context->display, gl_surface);
 +        if (!check_status(status, "vaEndRenderSurfaceGLX()"))
 +            return -1;
 +    }
++#endif
 +
 +    BindTexture(GL_TEXTURE_2D, 0);
 +    glDisable(GL_TEXTURE_2D);

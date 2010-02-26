@@ -3,14 +3,14 @@ index 39fef26..3a97c6e 100755
 --- a/configure
 +++ b/configure
 @@ -549,7 +549,7 @@ _libopencore_amrnb=auto
- _libopencore_amrwb=auto
- libopenjpeg=auto
+ _libavbsfs_all=$(sed -n 's/^[^#]*BSF.*(.*, *\(.*\)).*/\1_bsf/p' libavcodec/allcodecs.c | tr '[a-z]' '[A-Z]')
+ _libavbsfs=$_libavbsfs_all
  _libavhwaccels_all=$(sed -n 's/^[^#]*HWACCEL.*(.*, *\(.*\)).*/\1_hwaccel/p' libavcodec/allcodecs.c | tr '[a-z]' '[A-Z]')
--_libavhwaccels="$_libavhwaccels_all"
+-_libavhwaccels=$(for h in $_libavhwaccels_all; do case $h in (*_VAAPI_HWACCEL) echo $h;; esac; done)
 +_libavhwaccels=$(for h in $_libavhwaccels_all; do case $h in (*_VDPAU_HWACCEL|*_VAAPI_HWACCEL) echo $h;; esac; done)
- _libavdecoders_all=$(sed -n 's/^[^#]*DEC.*(.*, *\(.*\)).*/\1_decoder/p' libavcodec/allcodecs.c | tr '[a-z]' '[A-Z]')
- _libavdecoders=$(echo $_libavdecoders_all | sed -e 's/ LIB[A-Z0-9_]*_DECODER//g' -e s/MPEG4AAC_DECODER//)
- _libavencoders_all=$(sed -n 's/^[^#]*ENC.*(.*, *\(.*\)).*/\1_encoder/p' libavcodec/allcodecs.c | tr '[a-z]' '[A-Z]')
+ _libavdemuxers_all=$(sed -n 's/^[^#]*DEMUX.*(.*, *\(.*\)).*/\1_demuxer/p' libavformat/allformats.c | tr '[a-z]' '[A-Z]')
+ _libavdemuxers=$(echo $_libavdemuxers_all | sed -e 's/ LIB[A-Z0-9_]*_DEMUXER//g' -e s/REDIR_DEMUXER// -e s/AVISYNTH_DEMUXER//)
+ _libavmuxers_all=$(sed -n 's/^[^#]*_MUX.*(.*, *\(.*\)).*/\1_muxer/p' libavformat/allformats.c | tr '[a-z]' '[A-Z]')
 @@ -4500,7 +4500,7 @@ if test "$_vdpau" = yes ; then
  else
    def_vdpau='#define CONFIG_VDPAU 0'
@@ -48,7 +48,7 @@ index 15c6e8d..8f6a122 100644
    out YV12,I420,IYUV
    out 422P,444P
  
-@@ -300,43 +303,6 @@ videocodec ffmpeg12mc
+@@ -307,44 +310,6 @@ videocodec ffmpeg12mc
    out IDCT_MPEG2
    out MOCO_MPEG2
  
@@ -60,7 +60,6 @@ index 15c6e8d..8f6a122 100644
 -  fourcc mpg1,mpg2,MPG2
 -  fourcc PIM1        ; Pinnacle hardware-MPEG-1
 -  fourcc PIM2        ; Pinnacle hardware-MPEG-2
--  fourcc VCR2
 -  fourcc "DVR "
 -  fourcc hdv2
 -  fourcc MPEG
@@ -89,9 +88,11 @@ index 15c6e8d..8f6a122 100644
 -  out VDPAU_MPEG1
 -  out VDPAU_MPEG2
 -
- ; we have only native open source codecs for these:
- 
+-; we have only native open source codecs for these:
+-
  videocodec ffnuv
+   info "NuppelVideo"
+   status working
 @@ -883,15 +849,8 @@ videocodec ffwmv3
    driver ffmpeg
    dll wmv3
@@ -148,7 +149,7 @@ index 15c6e8d..8f6a122 100644
  
  videocodec coreavcwindows
    info "CoreAVC H.264 for x86 - http://corecodec.org/"
-@@ -991,38 +931,8 @@ videocodec ffodivx
+@@ -994,39 +933,8 @@ videocodec ffodivx
    driver ffmpeg
    dll mpeg4 ;opendivx
    out VAAPI_MPEG4
@@ -181,6 +182,7 @@ index 15c6e8d..8f6a122 100644
 -  fourcc DCOD,MVXM,EM4A,PM4V
 -  fourcc M4T3,DMK2,DIGI,INMC
 -  fourcc EPHV,SN40
+-  fourcc uldx,ULDX,VSPX
 -  driver ffmpeg
 -  dll mpeg4_vdpau
    out VDPAU_MPEG4
@@ -1147,11 +1149,11 @@ diff --git a/libavutil/pixfmt.h b/libavutil/pixfmt.h
 index ddd17fb..1f17073 100644
 --- a/libavutil/pixfmt.h
 +++ b/libavutil/pixfmt.h
-@@ -124,6 +124,7 @@ enum PixelFormat {
-     PIX_FMT_YUV444P16LE,  ///< planar YUV 4:4:4, 48bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian
+@@ -127,6 +127,7 @@ enum PixelFormat {
      PIX_FMT_YUV444P16BE,  ///< planar YUV 4:4:4, 48bpp, (1 Cr & Cb sample per 1x1 Y samples), big-endian
      PIX_FMT_VDPAU_MPEG4,  ///< MPEG4 HW decoding with VDPAU, data[0] contains a vdpau_render_state struct which contains the bitstream of the slices as well as various fields extracted from headers
-+    PIX_FMT_VDPAU,     ///< HW decoding with VDPAU, data[3] contains a vdpau_render_state struct which contains the bitstream of the slices as well as various fields extracted from headers
+     PIX_FMT_DXVA2_VLD,    ///< HW decoding through DXVA2, Picture.data[3] contains a LPDIRECT3DSURFACE9 pointer
++    PIX_FMT_VDPAU,        ///< HW decoding with VDPAU, Picture.data[3] contains a vdpau_render_state struct which contains the bitstream of the slices as well as various fields extracted from headers
      PIX_FMT_NB,        ///< number of pixel formats, DO NOT USE THIS if you want to link with shared libav* because the number of formats might differ between versions
  };
  

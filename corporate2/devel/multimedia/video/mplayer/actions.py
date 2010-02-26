@@ -14,8 +14,8 @@ from pisi.actionsapi import get
 import os
 
 WorkDir = "mplayer-%s" % get.srcVERSION().split("_", 1)[1]
-mp_version = "30713"
-ff_version = "21967"
+mp_version = "30741"
+ff_version = "22071"
 
 dllloader = "" if get.ARCH() == "x86_64" else "--enable-win32dll \
                                                --codecsdir=/usr/lib/%(esdir)s \
@@ -141,7 +141,7 @@ def setup():
                             # --language=tr \
 
 def build():
-    autotools.make("-j1")
+    autotools.make()
 
 def install():
     autotools.install("prefix=%(D)s/usr \
