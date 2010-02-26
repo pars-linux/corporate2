@@ -1,7 +1,7 @@
 from comar.service import *
 
 serviceType = "local"
-serviceDefault = "off"
+serviceDefault = "on"
 serviceDesc = _({"en": "PC/SC SmartCard Reader Service",
                  "tr": "PC/SC Akıllı Kart Okuyucu Servisi"})
 
