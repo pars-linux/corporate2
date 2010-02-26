@@ -1,6 +1,6 @@
-diff -Naupr memtest86+-2.11-orig/Makefile memtest86+-2.11/Makefile
---- memtest86+-2.11-orig/Makefile	2009-01-03 12:51:46.000000000 +0100
-+++ memtest86+-2.11/Makefile	2009-01-03 12:53:40.000000000 +0100
+diff -Nuar --exclude '*.orig' --exclude '*rej' --exclude '*~' memtest86+-4.00.orig/Makefile memtest86+-4.00/Makefile
+--- memtest86+-4.00.orig/Makefile	2009-09-21 17:35:46.000000000 -0700
++++ memtest86+-4.00/Makefile	2009-09-25 09:04:23.000000000 -0700
 @@ -8,10 +8,9 @@
  #
  FDISK=/dev/fd0
@@ -8,14 +8,14 @@ diff -Naupr memtest86+-2.11-orig/Makefile memtest86+-2.11/Makefile
 -AS=as -32
 -CC=gcc
 -
--CFLAGS= -Wall -march=i486 -m32 -Os -fomit-frame-pointer -fno-builtin -ffreestanding -fPIC
+-CFLAGS= -Wall -march=i486 -m32 -O2 -fomit-frame-pointer -fno-builtin -ffreestanding -fPIC
 +CPPFLAGS=-m32
 +CFLAGS=-Wall -march=i486 -m32 -O1 -fomit-frame-pointer -fno-builtin -ffreestanding -fPIC -fno-stack-protector
 +ASFLAGS=-32
  
  OBJS= head.o reloc.o main.o test.o init.o lib.o patn.o screen_buffer.o \
-       config.o linuxbios.o memsize.o pci.o controller.o random.o extra.o \
-@@ -47,10 +46,10 @@ memtest.bin: memtest_shared.bin bootsect
+       config.o linuxbios.o memsize.o pci.o controller.o random.o spd.o \
+@@ -47,10 +46,10 @@
  	memtest_shared.bin -o memtest.bin
  
  reloc.o: reloc.c
