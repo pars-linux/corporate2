@@ -10,7 +10,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def build():
-    autotools.make('CC=%s CPPFLAGS="%s" CFLAGS="%s" LDFLAGS="%s"' % \
+    autotools.make('CC=%s CPPFLAGS="%s" CFLAGS="%s" LDFLAGS="%s" lib64=lib' % \
                    (get.CC(), get.CXXFLAGS(), get.CFLAGS(), get.LDFLAGS()))
 
 def install():
