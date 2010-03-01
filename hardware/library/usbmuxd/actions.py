@@ -14,7 +14,7 @@ WorkDir = "%s-%s" % (get.srcNAME(), get.srcVERSION().replace("_", "-"))
 def setup():
     pisitools.dosed("udev/85-usbmuxd.rules.in", "-u -U", "-u")
 
-    cmaketools.configure("-DCMAKE_SKIP_RPATH=ON")
+    cmaketools.configure("-DCMAKE_SKIP_RPATH=ON -DLIB_SUFFIX=''")
 
 def build():
     cmaketools.make()
