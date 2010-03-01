@@ -12,7 +12,7 @@
         <IsA>library</IsA>
         <Summary>A graphics library for fast image creation</Summary>
         <Description>ESP Ghostscript is a customized version of GPL Ghostscript that includes an enhanced autoconf-based configuration script, the CUPS raster driver to support CUPS raster printer drivers, and additional patches and drivers from various Linux distributors.</Description>
-        <Archive sha1sum="4e4132713258c680a4fbec577e6dfc82b980ec01" type="tarbz2">http://ghostscript.com/releases/ghostscript-8.70.tar.bz2</Archive>
+        <Archive sha1sum="629299140f612fac32f6289be0904107dfd1b555" type="targz">http://ghostscript.com/releases/ghostscript-8.71.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>cups</Dependency>
             <Dependency>libXt</Dependency>
@@ -26,17 +26,48 @@
             <Patch level="1">ubuntu/02_gs-man-fix-for-debian.patch</Patch>
 
             <!-- Fedora patches -->
-            <Patch level="1">fedora/ghostscript-fPIC.patch</Patch>
             <Patch level="1">fedora/ghostscript-multilib.patch</Patch>
-            <Patch level="1">fedora/ghostscript-noopt.patch</Patch>
-            <Patch level="1">fedora/ghostscript-pksmraw.patch</Patch>
-            <Patch level="1">fedora/ghostscript-runlibfileifexists.patch</Patch>
+
+            <!-- Fix some shell scripts -->
             <Patch level="1">fedora/ghostscript-scripts.patch</Patch>
+
+            <!-- Build igcref.c with -O0 -->
+            <Patch level="1">fedora/ghostscript-noopt.patch</Patch>
+
+            <!-- Fix shared library build -->
+            <Patch level="1">fedora/ghostscript-fPIC.patch</Patch>
+
+            <!-- Define .runlibfileifexists -->
+            <Patch level="1">fedora/ghostscript-runlibfileifexists.patch</Patch>
+
+            <!-- Use system jasper -->
             <Patch level="1">fedora/ghostscript-system-jasper.patch</Patch>
+
+            <!-- Fix pksmraw output -->
+            <Patch level="1">fedora/ghostscript-pksmraw.patch</Patch>
+
+            <!-- Fix NULL dereference in JBIG2 decoder -->
             <Patch level="1">fedora/ghostscript-jbig2dec-nullderef.patch</Patch>
+
+            <!-- Fix scripts so they don't get broken on install -->
             <Patch level="1">fedora/ghostscript-gs-executable.patch</Patch>
+
+            <!-- Fix debugging output from gdevcups -->
             <Patch level="1">fedora/ghostscript-CVE-2009-4270.patch</Patch>
+
+            <!-- Harden ghostscript's debugging output functions -->
             <Patch level="1">fedora/ghostscript-vsnprintf.patch</Patch>
+
+            <!-- Fix LDFLAGS when building dynamically linked executables -->
+            <Patch level="1">fedora/ghostscript-ldflags.patch</Patch>
+
+            <!-- Fix pdf2dsc.ps -->
+            <Patch level="1">fedora/ghostscript-pdf2dsc.patch</Patch>
+
+            <!-- Actually revert the upstream gdevcups changes -->
+            <Patch level="1">fedora/ghostscript-gdevcups-y-axis.patch</Patch>
+
+            <!-- Fix pdftoraster so that it waits for its sub-process to exit -->
             <Patch level="1">fedora/ghostscript-pdftoraster-exit.patch</Patch>
 
             <!-- Other stuff -->
@@ -84,6 +115,13 @@
     </Package>
 
     <History>
+        <Update release="27">
+            <Date>2010-02-26</Date>
+            <Version>8.71</Version>
+            <Comment>Version bump, sync fedora patches.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="26">
             <Date>2010-02-17</Date>
             <Version>8.70</Version>

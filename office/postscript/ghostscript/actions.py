@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -15,6 +15,8 @@ def setup():
     for directory in ["jpeg", "libpng", "zlib", "jasper", "expat"]:
         shelltools.unlinkDir(directory)
 
+    shelltools.export("CFLAGS", "%s -fno-strict-aliasing" % get.CFLAGS())
+
     autotools.autoreconf("-fi")
 
     autotools.configure("--disable-compile-inits \
@@ -22,6 +24,7 @@ def setup():
                          --disable-cairo \
                          --enable-dynamic \
                          --enable-cups \
+                         --with-system-libtiff \
                          --with-ijs \
                          --with-drivers=ALL \
                          --with-libpaper \
@@ -39,9 +42,9 @@ def setup():
                        --enable-shared")
 
 def build():
-    autotools.make("-j1 so all")
-    autotools.make("-j1 -C ijs/")
-
+    autotools.make()
+    autotools.make("so")
+    autotools.make("-C ijs")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
@@ -54,9 +57,9 @@ def install():
     pisitools.insinto("/usr/include/ghostscript", "base/errors.h")
 
     # Install ijs
-    shelltools.cd("ijs")
-    autotools.rawInstall("DESTDIR=%s" % get.installDIR())
-    shelltools.cd("..")
+    #shelltools.cd("ijs")
+    autotools.rawInstall("-C ijs DESTDIR=%s" % get.installDIR())
+    #shelltools.cd("..")
 
     # Remove ijs examples
     pisitools.remove("/usr/bin/ijs_*_example")
