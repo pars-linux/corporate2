@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright 2005-2009 TUBITAK/UEKAE
@@ -10,6 +9,8 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
+    autotools.autoreconf("-vif")
+
     # for using posix-shm see https://bugzilla.novell.com/show_bug.cgi?id=337972
     autotools.configure("--enable-html-docs \
                          --with-html-dir=/usr/share/doc/%s \
