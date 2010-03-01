@@ -39,6 +39,7 @@ def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     pisitools.removeDir("/usr/share/doc/Linux-PAM/")
+    pisitools.removeDir("/var")
 
     pisitools.doman("doc/man/*.[0-9]")
     pisitools.dodoc("CHANGELOG", "Copyright", "README")
