@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Licensed under the GNU General Public License, version 2.
@@ -20,4 +19,4 @@ def install():
     # This library is deprecated. Make its usage hard.
     pisitools.rename("/usr/lib/libXp.so", "libdeprecatedXp.so")
     pisitools.removeDir("/usr/lib/pkgconfig")
-    pisitools.removeDir("/usr/share/man")
+    pisitools.removeDir("/usr/share")
