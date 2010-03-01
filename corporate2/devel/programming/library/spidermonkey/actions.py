@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright 2006-2009 TUBITAK/UEKAE
@@ -12,7 +11,8 @@ from pisi.actionsapi import get
 WorkDir = "js/src"
 
 def build():
-    autotools.make("-j1 -f Makefile.ref JS_THREADSAFE=1")
+    autotools.make("-j1 -f Makefile.ref JS_THREADSAFE=1 "
+                   "CC=%s CCC=%s" % (get.CC(), get.CXX()))
 
 def install():
     # make is picky about the order of install
