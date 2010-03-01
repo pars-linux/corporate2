@@ -1,7 +1,7 @@
-From 883ed64cd23ad286250894b42c04603da85b65b5 Mon Sep 17 00:00:00 2001
+From db8422a4f5b617c792f43b656ee9cb1747d6a4ad Mon Sep 17 00:00:00 2001
 From: Peter Hutterer <peter.hutterer@who-t.net>
-Date: Wed, 16 Dec 2009 13:43:22 +1000
-Subject: [PATCH] dix: if owner-events is true for passive grabs, add the window mask (#25400)
+Date: Thu, 18 Feb 2010 16:18:33 +1000
+Subject: [PATCH] dix: Use DeliverGrabbedEvent for implicit passive grabs (#25400)
 
 A client requesting a GrabModeSync button grab, owner-events true, with only
 the ButtonRelease mask set would never receive the press event even if the
@@ -10,75 +10,115 @@ grab window had the ButtonPress mask set.
 The protocol requires that if owner-events is true, then the delivery mask
 is the combination of the grab mask + the window event mask.
 
-X.Org Bug 25400 <http://bugs.freedesktop.org/show_bug.cgi?id=25400>
+DeliverGrabbedEvents does this already for us, checking first the delivery
+based on owner_events and then based on the grab mask. AFAICT, the device
+cannot enter the states FREEZE_BOTH_NEXT_EVENT or FREEZE_NEXT_EVENT that
+would be handled by DGE in any possible path here.
 
-Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
-Tested-by: Jim Ramsay <i.am@jimramsay.com>
+Bonus point - CheckPassiveGrabsOnWindows suddenly becomes a lot lesss
+complicated.
+
+X.Org Bug 25400 <http://bugs.freedesktop.org/show_bug.cgi?id=25400>
 ---
- dix/events.c |   36 ++++++++++++++++++++++++++++++++++++
- 1 files changed, 36 insertions(+), 0 deletions(-)
+ dix/events.c |   63 +---------------------------------------------------------
+ 1 files changed, 1 insertions(+), 62 deletions(-)
 
 diff --git a/dix/events.c b/dix/events.c
-index 85c8f9a..b854d98 100644
+index 4eb8afa..30cbadf 100644
 --- a/dix/events.c
 +++ b/dix/events.c
-@@ -3580,6 +3580,8 @@ CheckPassiveGrabsOnWindow(
-                 xE = &core;
-                 count = 1;
-                 mask = grab->eventMask;
-+                if (grab->ownerEvents)
-+                    mask |= pWin->eventMask;
-             } else if (match & XI2_MATCH)
-             {
-                 rc = EventToXI2((InternalEvent*)event, &xE);
-@@ -3601,6 +3603,24 @@ CheckPassiveGrabsOnWindow(
-                     mask = grab->xi2mask[device->id][((xGenericEvent*)xE)->evtype/8];
-                 else if (event->type == XI_Enter || event->type == XI_FocusIn)
-                     mask = grab->xi2mask[device->id][event->type/8];
-+
-+                if (grab->ownerEvents && wOtherInputMasks(grab->window))
-+                {
-+                    InputClientsPtr icp =
-+                        wOtherInputMasks(grab->window)->inputClients;
-+
-+                    while(icp)
-+                    {
-+                        if (rClient(icp) == rClient(grab))
-+                        {
-+                            int evtype = (xE) ? ((xGenericEvent*)xE)->evtype : event->type;
-+                            mask |= icp->xi2mask[device->id][evtype/8];
-+                            break;
-+                        }
-+
-+                        icp = icp->next;
-+                    }
-+                }
-             } else
-             {
-                 rc = EventToXI((InternalEvent*)event, &xE, &count);
-@@ -3612,6 +3632,22 @@ CheckPassiveGrabsOnWindow(
-                     continue;
-                 }
-                 mask = grab->eventMask;
-+                if (grab->ownerEvents && wOtherInputMasks(grab->window))
-+                {
-+                    InputClientsPtr icp =
-+                        wOtherInputMasks(grab->window)->inputClients;
-+
-+                    while(icp)
-+                    {
-+                        if (rClient(icp) == rClient(grab))
-+                        {
-+                            mask |= icp->mask[device->id];
-+                            break;
-+                        }
-+
-+                        icp = icp->next;
-+                    }
-+                }
+@@ -3458,7 +3458,6 @@ CheckPassiveGrabsOnWindow(
+     {
+ 	DeviceIntPtr	gdev;
+ 	XkbSrvInfoPtr	xkbi = NULL;
+-	Mask		mask = 0;
+ 
+ 	gdev= grab->modifierDevice;
+         if (grab->grabtype == GRABTYPE_CORE)
+@@ -3511,10 +3510,6 @@ CheckPassiveGrabsOnWindow(
+ 	     (grab->confineTo->realized &&
+ 				BorderSizeNotEmpty(device, grab->confineTo))))
+ 	{
+-            int rc, count = 0;
+-            xEvent *xE = NULL;
+-            xEvent core;
+-
+             event->corestate &= 0x1f00;
+             event->corestate |= tempGrab.modifiersDetail.exact & (~0x1f00);
+             grabinfo = &device->deviceGrab;
+@@ -3561,62 +3556,8 @@ CheckPassiveGrabsOnWindow(
              }
  
+ 
+-            if (match & CORE_MATCH)
+-            {
+-                rc = EventToCore((InternalEvent*)event, &core);
+-                if (rc != Success)
+-                {
+-                    if (rc != BadMatch)
+-                        ErrorF("[dix] %s: core conversion failed in CPGFW "
+-                                "(%d, %d).\n", device->name, event->type, rc);
+-                    continue;
+-                }
+-                xE = &core;
+-                count = 1;
+-                mask = grab->eventMask;
+-            } else if (match & XI2_MATCH)
+-            {
+-                rc = EventToXI2((InternalEvent*)event, &xE);
+-                if (rc != Success)
+-                {
+-                    if (rc != BadMatch)
+-                        ErrorF("[dix] %s: XI2 conversion failed in CPGFW "
+-                                "(%d, %d).\n", device->name, event->type, rc);
+-                    continue;
+-                }
+-                count = 1;
+-
+-                /* FIXME: EventToXI2 returns NULL for enter events, so
+-                 * dereferencing the event is bad. Internal event types are
+-                 * aligned with core events, so the else clause is valid.
+-                 * long-term we should use internal events for enter/focus
+-                 * as well */
+-                if (xE)
+-                    mask = grab->xi2mask[device->id][((xGenericEvent*)xE)->evtype/8];
+-                else if (event->type == XI_Enter || event->type == XI_FocusIn)
+-                    mask = grab->xi2mask[device->id][event->type/8];
+-            } else
+-            {
+-                rc = EventToXI((InternalEvent*)event, &xE, &count);
+-                if (rc != Success)
+-                {
+-                    if (rc != BadMatch)
+-                        ErrorF("[dix] %s: XI conversion failed in CPGFW "
+-                                "(%d, %d).\n", device->name, event->type, rc);
+-                    continue;
+-                }
+-                mask = grab->eventMask;
+-            }
+-
  	    (*grabinfo->ActivateGrab)(device, grab, currentTime, TRUE);
+-
+-            if (xE)
+-            {
+-                FixUpEventFromWindow(device, xE, grab->window, None, TRUE);
+-
+-                TryClientEvents(rClient(grab), device, xE, count, mask,
+-                                       GetEventFilter(device, xE), grab);
+-            }
++            DeliverGrabbedEvent((InternalEvent*)event, device, FALSE);
+ 
+ 	    if (grabinfo->sync.state == FROZEN_NO_EVENT)
+ 	    {
+@@ -3626,8 +3567,6 @@ CheckPassiveGrabsOnWindow(
+ 		grabinfo->sync.state = FROZEN_WITH_EVENT;
+             }
+ 
+-            if (match & (XI_MATCH | XI2_MATCH))
+-                xfree(xE); /* on core match xE == &core */
+ 	    return TRUE;
+ 	}
+     }
 -- 
-1.6.6
+1.6.6.1
 
