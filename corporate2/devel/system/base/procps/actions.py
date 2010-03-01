@@ -14,7 +14,7 @@ def build():
                    (get.CC(), get.CXXFLAGS(), get.CFLAGS(), get.LDFLAGS()))
 
 def install():
-    autotools.rawInstall('ln_f="ln -sf" ldconfig="true" DESTDIR=%s' % get.installDIR())
+    autotools.rawInstall('ln_f="ln -sf" ldconfig="true" lib64=lib DESTDIR=%s' % get.installDIR())
 
     pisitools.insinto("/usr/include/proc/", "proc/*.h")
 
