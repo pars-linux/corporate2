@@ -14,6 +14,10 @@ SAMBA_SOURCE = "source3"
 
 def setup():
     shelltools.export("CFLAGS", "%s -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -DLDAP_DEPRECATED" % get.CFLAGS())
+
+    # Manually fix manpages
+    pisitools.dosed("docs/manpages/*", "\$LOCKDIR", "/var/run/samba")
+
     shelltools.cd(SAMBA_SOURCE)
 
     # Build VERSION
