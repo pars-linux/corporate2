@@ -1,0 +1,151 @@
+From xorg-devel-bounces@lists.x.org Tue Feb 16 14:03:24 2010
+Delivered-To: skeggsb@gmail.com
+Received: by 10.142.106.9 with SMTP id e9cs132621wfc; Tue, 16 Feb 2010
+ 14:03:24 -0800 (PST)
+Received: by 10.141.108.20 with SMTP id k20mr4713141rvm.49.1266357797527;
+ Tue, 16 Feb 2010 14:03:17 -0800 (PST)
+Return-Path: <xorg-devel-bounces@lists.x.org>
+Received: from gabe.freedesktop.org (gabe.freedesktop.org
+ [131.252.210.177]) by mx.google.com with ESMTP id
+ 31si7059272pxi.60.2010.02.16.14.03.11; Tue, 16 Feb 2010 14:03:17 -0800 (PST)
+Received-SPF: neutral (google.com: 131.252.210.177 is neither permitted nor
+ denied by best guess record for domain of xorg-devel-bounces@lists.x.org)
+ client-ip=131.252.210.177;
+Authentication-Results: mx.google.com; spf=neutral (google.com:
+ 131.252.210.177 is neither permitted nor denied by best guess record for
+ domain of xorg-devel-bounces@lists.x.org)
+ smtp.mail=xorg-devel-bounces@lists.x.org
+Received: from gabe.freedesktop.org (localhost [127.0.0.1]) by
+ gabe.freedesktop.org (Postfix) with ESMTP id 933269F0F7; Tue, 16 Feb 2010
+ 14:03:09 -0800 (PST)
+X-Original-To: xorg-devel@lists.freedesktop.org
+Delivered-To: xorg-devel@lists.freedesktop.org
+X-Greylist: delayed 438 seconds by postgrey-1.30 at gabe; Tue, 16 Feb 2010
+ 14:03:07 PST
+Received: from mail-ew0-f212.google.com (mail-ew0-f212.google.com
+ [209.85.219.212]) by gabe.freedesktop.org (Postfix) with ESMTP id
+ 143419F0EF for <xorg-devel@lists.freedesktop.org>; Tue, 16 Feb 2010
+ 14:03:07 -0800 (PST)
+Received: by ewy4 with SMTP id 4so1461826ewy.7 for
+ <xorg-devel@lists.freedesktop.org>; Tue, 16 Feb 2010 14:03:06 -0800 (PST)
+Received: by 10.213.96.221 with SMTP id i29mr1983687ebn.99.1266357348641;
+ Tue, 16 Feb 2010 13:55:48 -0800 (PST)
+Received: from madman2003@gmail.com (82-136-228-38.ip.telfort.nl
+ [82.136.228.38]) by mx.google.com with ESMTPS id
+ 7sm7808619eyg.1.2010.02.16.13.55.46 (version=TLSv1/SSLv3 cipher=RC4-MD5);
+ Tue, 16 Feb 2010 13:55:47 -0800 (PST)
+Received: by madman2003@gmail.com (sSMTP sendmail emulation); Tue, 16 Feb
+ 2010 22:55:45 +0100
+From: Maarten Maathuis <madman2003@gmail.com>
+To: xorg-devel@lists.freedesktop.org
+Subject: [PATCH] exa/mixed: fix gnome-panel corruption
+Date: Tue, 16 Feb 2010 22:55:36 +0100
+Message-Id: <1266357336-18965-1-git-send-email-madman2003@gmail.com>
+X-Mailer: git-send-email 1.7.0
+MIME-Version: 1.0
+Cc: =?UTF-8?q?Michel=20D=C3=A4nzer?= <daenzer@vmware.com>
+X-BeenThere: xorg-devel@lists.x.org
+X-Mailman-Version: 2.1.9
+Precedence: list
+List-Id: "X.Org development list" <xorg-devel.lists.x.org>
+List-Unsubscribe: <http://lists.x.org/mailman/listinfo/xorg-devel>,
+ <mailto:xorg-devel-request@lists.x.org?subject=unsubscribe>
+List-Archive: <http://lists.x.org/archives/xorg-devel>
+List-Post: <mailto:xorg-devel@lists.x.org>
+List-Help: <mailto:xorg-devel-request@lists.x.org?subject=help>
+List-Subscribe: <http://lists.x.org/mailman/listinfo/xorg-devel>,
+ <mailto:xorg-devel-request@lists.x.org?subject=subscribe>
+Content-Type: text/plain; charset="utf-8"
+Sender: xorg-devel-bounces@lists.x.org
+Errors-To: xorg-devel-bounces@lists.x.org
+X-Evolution-Source: imap://skeggsb%40gmail.com@imap.gmail.com/
+Content-Transfer-Encoding: 8bit
+
+- A mapped pixmap can't be used for acceleration, any decent memory manager
+will refuse this.
+- Source pixmaps migrated with a bounding region are incomplete (from the
+gpu point of view), so do the upload unconditionally, instead of just for
+deferred destination pixmaps.
+- Fixes fd.o bug #26076.
+
+Signed-off-by: Maarten Maathuis <madman2003@gmail.com>
+Signed-off-by: Michel Dänzer <daenzer@vmware.com>
+---
+ exa/exa_migration_mixed.c |   48 ++++++++++++++++++++++++++++----------------
+ 1 files changed, 30 insertions(+), 18 deletions(-)
+
+diff --git a/exa/exa_migration_mixed.c b/exa/exa_migration_mixed.c
+index 6816e6c..fb47151 100644
+--- a/exa/exa_migration_mixed.c
++++ b/exa/exa_migration_mixed.c
+@@ -165,9 +165,37 @@ void
+ exaPrepareAccessReg_mixed(PixmapPtr pPixmap, int index, RegionPtr pReg)
+ {
+     ExaPixmapPriv(pPixmap);
++    Bool has_gpu_copy = exaPixmapHasGpuCopy(pPixmap);
++    Bool success;
++
++    success = ExaDoPrepareAccess(pPixmap, index);
++
++    if (success && has_gpu_copy && pExaPixmap->pDamage) {
++	/* You cannot do accelerated operations while a buffer is mapped. */
++	exaFinishAccess(&pPixmap->drawable, index);
++	/* Update the gpu view of both deferred destination pixmaps and of
++	 * source pixmaps that were migrated with a bounding region.
++	 */
++	exaMoveInPixmap_mixed(pPixmap);
++	success = ExaDoPrepareAccess(pPixmap, index);
++
++	if (success) {
++	    /* We have a gpu pixmap that can be accessed, we don't need the cpu
++	     * copy anymore. Drivers that prefer DFS, should fail prepare
++	     * access.
++	     */
++	    DamageUnregister(&pPixmap->drawable, pExaPixmap->pDamage);
++	    DamageDestroy(pExaPixmap->pDamage);
++	    pExaPixmap->pDamage = NULL;
++
++	    free(pExaPixmap->sys_ptr);
++	    pExaPixmap->sys_ptr = NULL;
++
++	    return;
++	}
++    }
+ 
+-    if (!ExaDoPrepareAccess(pPixmap, index)) {
+-	Bool has_gpu_copy = exaPixmapHasGpuCopy(pPixmap);
++    if (!success) {
+ 	ExaMigrationRec pixmaps[1];
+ 
+ 	/* Do we need to allocate our system buffer? */
+@@ -228,22 +256,6 @@ exaPrepareAccessReg_mixed(PixmapPtr pPixmap, int index, RegionPtr pReg)
+ 	pPixmap->devPrivate.ptr = pExaPixmap->sys_ptr;
+ 	pPixmap->devKind = pExaPixmap->sys_pitch;
+ 	pExaPixmap->use_gpu_copy = FALSE;
+-    /* We have a gpu pixmap that can be accessed, we don't need the cpu copy
+-     * anymore. Drivers that prefer DFS, should fail prepare access. */
+-    } else if (pExaPixmap->pDamage && exaPixmapHasGpuCopy(pPixmap)) {
+-	ExaScreenPriv(pPixmap->drawable.pScreen);
+-
+-	/* Copy back any deferred content if needed. */
+-	if (pExaScr->deferred_mixed_pixmap &&
+-	    pExaScr->deferred_mixed_pixmap == pPixmap)
+-	    exaMoveInPixmap_mixed(pPixmap);
+-
+-	DamageUnregister(&pPixmap->drawable, pExaPixmap->pDamage);
+-	DamageDestroy(pExaPixmap->pDamage);
+-	pExaPixmap->pDamage = NULL;
+-
+-	free(pExaPixmap->sys_ptr);
+-	pExaPixmap->sys_ptr = NULL;
+     }
+ }
+ 
+-- 
+1.7.0
+
+_______________________________________________
+xorg-devel mailing list
+xorg-devel@lists.x.org
+http://lists.x.org/mailman/listinfo/xorg-devel
+

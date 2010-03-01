@@ -59,6 +59,9 @@ def install():
     pisitools.remove("/usr/lib/xorg/modules/*.la")
     pisitools.remove("/usr/lib/xorg/modules/*/*.la")
 
+    # Remove empty dir
+    pisitools.removeDir("/var/log")
+
     # Move glx and dri modules for dynamic switching
     pisitools.domove("/usr/lib/xorg/modules/extensions/libglx.so", "/usr/lib/xorg/std/extensions")
     pisitools.domove("/usr/lib/xorg/modules/extensions/libdri.so", "/usr/lib/xorg/std/extensions")
