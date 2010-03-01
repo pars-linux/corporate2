@@ -18,6 +18,8 @@ def setup():
     autotools.configure("--with-xml=libxml \
                          --localstatedir=/var \
                          --disable-doxygen-docs \
+                         --disable-api-docs \
+                         --disable-html-docs \
                          --disable-static \
                          --disable-xml-docs")
 
