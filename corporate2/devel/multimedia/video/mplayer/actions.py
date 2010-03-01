@@ -14,8 +14,8 @@ from pisi.actionsapi import get
 import os
 
 WorkDir = "mplayer-%s" % get.srcVERSION().split("_", 1)[1]
-mp_version = "30741"
-ff_version = "22071"
+mp_version = "30800"
+ff_version = "22131"
 
 dllloader = "" if get.ARCH() == "x86_64" else "--enable-win32dll \
                                                --codecsdir=/usr/lib/%(esdir)s \
