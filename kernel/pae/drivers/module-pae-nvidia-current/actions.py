@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Licensed under the GNU General Public License, version 2.
@@ -10,11 +9,16 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = "NVIDIA-Linux-x86-%s" % get.srcVERSION()
+WorkDir = "."
 KDIR = kerneltools.getKernelVersion()
 NoStrip = ["/lib/modules"]
 
+arch = get.ARCH().replace("i686", "x86")
 driver = "nvidia-current"
+
+def setup():
+    shelltools.system("sh NVIDIA-Linux-%s-%s-pkg0.run -x --target tmp" % (arch, get.srcVERSION()))
+    shelltools.move("tmp/*", ".")
 
 def build():
     shelltools.export("SYSSRC", "/lib/modules/%s/build" % KDIR)
