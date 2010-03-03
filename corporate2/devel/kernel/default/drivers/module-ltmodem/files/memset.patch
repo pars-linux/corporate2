@@ -1,0 +1,23 @@
+diff -Nur ltmodem-8.31_alpha10-20090420-old/modules/lib.c ltmodem-8.31_alpha10-20090420/modules/lib.c
+--- ltmodem-8.31_alpha10-20090420-old/modules/lib.c	2010-03-03 17:43:58.800456751 +0200
++++ ltmodem-8.31_alpha10-20090420/modules/lib.c	2010-03-03 17:44:05.125338104 +0200
+@@ -3,6 +3,7 @@
+  * based on LSI interface code improved by Aleksey Kondratenko
+  */
+ 
++#include <linux/version.h>
+ #include <linux/module.h>
+ #include <asm/linkage.h>
+ #include <linux/pci.h>
+@@ -11,7 +12,11 @@
+ asmlinkage
+ void *memset(void *p, int val, size_t cnt)
+ {
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 31)
+ 	return __memset(p, val, cnt);
++#else
++	return memset(p, val, cnt);
++#endif
+ }
+ 
+ asmlinkage
