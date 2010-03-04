@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright 2008-2009 TUBITAK/UEKAE
@@ -18,5 +17,9 @@ def build():
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+
+    # Remove empty dirs
+    pisitools.removeDir("/usr/include")
+    pisitools.removeDir("/usr/lib")
 
     pisitools.dodoc("AUTHORS", "ChangeLog", "NEWS", "README")
