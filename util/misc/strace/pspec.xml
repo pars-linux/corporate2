@@ -12,7 +12,13 @@
         <IsA>app:console</IsA>
         <Summary>Tracks and displays system calls associated with a running process</Summary>
         <Description>strace intercepts and records the system calls called and received by a running process. strace can print a record of each system call, its arguments and its return value.</Description>
-	<Archive sha1sum="5554c2fd8ffae5c1e2b289b2024aa85a0889c989" type="tarbz2">mirrors://sourceforge/strace/strace-4.5.19.tar.bz2</Archive>
+        <Archive sha1sum="5554c2fd8ffae5c1e2b289b2024aa85a0889c989" type="tarbz2">mirrors://sourceforge/strace/strace-4.5.19.tar.bz2</Archive>
+        <BuildDependencies>
+            <Dependency>libaio</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">correct_socket_types.patch</Patch>
+        </Patches>
     </Source>
 
     <Package>
@@ -25,25 +31,35 @@
     </Package>
 
     <History>
-	<Update release="8">
-	    <Date>2009-11-02</Date>
-	    <Version>4.5.19</Version>
-	    <Comment>
-	      * When command exits, strace now exits with the same exit status. If command is terminated
-            by a signal, strace terminates itself with the same signal, so that strace can be used as a
-            wrapper process transparent to the invoking parent process.
-	      * Implemented decoding of new Linux syscalls: accept4, dup3, epoll_create1, eventfd2,
-            inotify_init1, pipe2, signalfd4.
-	      * Implemented decoding of socket type flags introduced in Linux 2.6.27.
-	      * Implemented decoding of accept4 socketcall
-	      * Fixed syscall numbers for tee and sync_file_range.
-	      * Marked sendfile(2) as a network syscall.
-	      * Fixed accept(2) decoding.
-	      * Fixed sigtimedwait(2) decoding.
-	    </Comment>
-	    <Name>Faik Uygur</Name>
-	    <Email>faik@pardus.org.tr</Email>
-	</Update>
+        <Update release="9">
+            <Date>2010-03-05</Date>
+            <Version>4.5.19</Version>
+            <Comment>
+                Add missing libaio build dependency (no it is not runtime dependency)
+                Correct socket types to fix build with newer kernels and 64bit
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="8">
+            <Date>2009-11-02</Date>
+            <Version>4.5.19</Version>
+            <Comment>
+                * When command exits, strace now exits with the same exit status. If command is terminated
+                by a signal, strace terminates itself with the same signal, so that strace can be used as a
+                wrapper process transparent to the invoking parent process.
+                * Implemented decoding of new Linux syscalls: accept4, dup3, epoll_create1, eventfd2,
+                inotify_init1, pipe2, signalfd4.
+                * Implemented decoding of socket type flags introduced in Linux 2.6.27.
+                * Implemented decoding of accept4 socketcall
+                * Fixed syscall numbers for tee and sync_file_range.
+                * Marked sendfile(2) as a network syscall.
+                * Fixed accept(2) decoding.
+                * Fixed sigtimedwait(2) decoding.
+            </Comment>
+            <Name>Faik Uygur</Name>
+            <Email>faik@pardus.org.tr</Email>
+        </Update>
         <Update release="7">
             <Date>2009-05-26</Date>
             <Version>4.5.18</Version>
