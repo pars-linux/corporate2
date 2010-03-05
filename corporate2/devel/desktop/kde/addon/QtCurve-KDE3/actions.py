@@ -12,7 +12,7 @@ from pisi.actionsapi import get
 shelltools.export('HOME', get.workDIR())
 
 def setup():
-    cmaketools.configure(installPrefix="/usr/kde/3.5")
+    cmaketools.configure("-DQTC_BUILD_CONFIG_MODULE=true", installPrefix="/usr/kde/3.5")
 
 def build():
     cmaketools.make()
