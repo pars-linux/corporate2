@@ -135,4 +135,7 @@ def install():
     # Remove cgi scripts which are vulnerable, see CVE-2007-4049
     pisitools.remove("/var/www/localhost/cgi-bin/*")
 
+    # remove empty bin dir
+    pisitools.removeDir("/usr/bin")
+
     pisitools.dodoc("ABOUT_APACHE", "CHANGES", "LAYOUT", "LICENSE", "README*")
