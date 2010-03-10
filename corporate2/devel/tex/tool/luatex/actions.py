@@ -106,3 +106,5 @@ def install():
 
     autotools.rawInstall("DESTDIR=%s bin_PROGRAMS='luatex' SUBDIRS='' nodist_man_MANS=''" % get.installDIR())
     pisitools.dodoc("%s/README" % GetWorkdir, "%s/manual/*.pdf" % GetWorkdir)
+
+    pisitools.removeDir("/usr/share/man/")
