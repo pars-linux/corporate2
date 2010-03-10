@@ -60,13 +60,5 @@ def install():
     # Remove gtk-doc
     pisitools.removeDir("/usr/share/gtk-doc")
 
-    # FIXME: Remove keymap stuff for now
-    for p in ("keymap",):
-        pisitools.remove("/lib/udev/%s" % p)
-        pisitools.remove("/lib/udev/rules.d/*%s*.rules" % p)
-
-    pisitools.removeDir("/lib/udev/keymaps")
-    pisitools.remove("/lib/udev/findkeyboards")
-
     # Install docs
     pisitools.dodoc("COPYING", "ChangeLog", "README", "TODO")
