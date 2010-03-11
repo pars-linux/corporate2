@@ -5,10 +5,19 @@
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
+
+ownerships = {
+    "/var/spool/cups/tmp"   : ["root", "pnp", 01770],
+    "/var/spool/cups"       : ["root", "pnp", 0710],
+    "/var/run/cups"         : ["root", "pnp", 0755],
+    "/etc/cups"             : ["root", "pnp", 0755],
+    "/var/log/cups"         : ["pnp", "adm", 0755],
+    "/var/run/cups/certs"   : ["pnp", "adm", 0511],
+    }
 
 def setup():
     shelltools.export("DSOFLAGS", get.LDFLAGS())
@@ -63,16 +72,16 @@ def install():
     autotools.rawInstall("BUILDROOT=%s" % get.installDIR())
 
     pisitools.dodir("/usr/share/cups/profiles")
-    pisitools.dodir("/usr/libexec/cups/driver")
-    pisitools.dodir("/var/log/cups")
-    pisitools.dodir("/var/run/cups/certs")
-    pisitools.dodir("/var/cache/cups")
-    pisitools.dodir("/var/spool/cups/tmp")
 
     # cleanups
-    pisitools.removeDir("/etc/pam.d")
+    #pisitools.removeDir("/etc/pam.d")
 
     # Serial backend needs to run as root
     shelltools.chmod("%s/usr/lib/cups/backend/serial" % get.installDIR(), 0700)
+
+    # Fix ownerships and permissions
+    for d,perms in ownerships.items():
+        shelltools.chmod("%s%s" % (get.installDIR(), d), perms[2])
+        shelltools.chown("%s%s" % (get.installDIR(), d), perms[0], perms[1])
 
     pisitools.dodoc("CHANGES.txt", "CREDITS.txt", "LICENSE.txt", "README.txt")

@@ -29,9 +29,8 @@
             <Patch level="1">fedora/cups-1.1.16-system-auth.patch</Patch>
             <Patch level="1">fedora/cups-serial.patch</Patch>
 
-            <!-- For x86_64 compatibility
+            <!-- For x86_64 compatibility -->
             <Patch level="1">fedora/cups-serverbin-compat.patch</Patch>
-            -->
 
             <Patch level="1">fedora/cups-no-export-ssllibs.patch</Patch>
             <Patch level="1">fedora/cups-str3448.patch</Patch>
@@ -39,6 +38,7 @@
             <!-- Allow tweaking of direct usb uris -->
             <Patch level="1">fedora/cups-direct-usb.patch</Patch>
             <Patch level="1">fedora/cups-lpr-help.patch</Patch>
+
             <!-- Fix build -->
             <Patch level="1">fedora/cups-peercred.patch</Patch>
 
@@ -93,6 +93,7 @@
 
             <!-- Use-after-free (crash) due improper reference counting in abstract file descriptors handling interface (CVE-2009-3553) (#11663) -->
             <Patch level="1">fedora/cups-CVE-2009-3553.patch</Patch>
+            <Patch level="1">fedora/cups-CVE-2010-0302.patch</Patch>
 
             <!-- Accept "Host: ::1" (bzrh: #497393) -->
             <Patch level="1">fedora/cups-localhost-ipv6.patch</Patch>
@@ -151,6 +152,10 @@
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="executable">/usr/sbin</Path>
             <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="data">/var/cache/cups/rss</Path>
+            <Path fileType="data">/var/spool/cups/tmp</Path>
+            <Path fileType="data">/var/run/cups/certs</Path>
+            <Path fileType="data">/var/log/cups</Path>
             <Path fileType="data">/etc</Path>
             <Path fileType="data">/lib/udev/rules.d</Path>
             <Path fileType="data">/usr/share/cups</Path>
@@ -186,12 +191,18 @@
             <AdditionalFile owner="root" permission="0644" target="/lib/udev/rules.d/70-cups-libusb.rules">cups-libusb.rules</AdditionalFile>
         </AdditionalFiles>
         <Provides>
-            <COMAR script="package.py">System.Package</COMAR>
             <COMAR script="service.py">System.Service</COMAR>
         </Provides>
     </Package>
 
     <History>
+        <Update release="69">
+            <Date>2010-03-11</Date>
+            <Version>1.4.2</Version>
+            <Comment>Sync fedora patches, drop postInstall, handle directories in actions.py</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="68">
             <Date>2010-02-16</Date>
             <Version>1.4.2</Version>
