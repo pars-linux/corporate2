@@ -1,6 +1,6 @@
 diff -up cups-1.4.2/scheduler/job.c.str3425 cups-1.4.2/scheduler/job.c
---- cups-1.4.2/scheduler/job.c.str3425	2009-12-23 11:00:06.070056898 +0000
-+++ cups-1.4.2/scheduler/job.c	2009-12-23 11:02:22.889056232 +0000
+--- cups-1.4.2/scheduler/job.c.str3425	2010-03-09 16:59:12.000000000 +0100
++++ cups-1.4.2/scheduler/job.c	2010-03-09 17:02:57.000000000 +0100
 @@ -253,7 +253,7 @@ cupsdCancelJobs(const char *dest,	/* I -
        if (purge)
  	cupsdSetJobState(job, IPP_JOB_CANCELED, CUPSD_JOB_PURGE,
@@ -24,27 +24,54 @@ diff -up cups-1.4.2/scheduler/job.c.str3425 cups-1.4.2/scheduler/job.c
         job = (cupsd_job_t *)cupsArrayNext(Jobs))
      if (job->state_value >= IPP_JOB_CANCELED && !job->printer)
        cupsdDeleteJob(job, CUPSD_JOB_PURGE);
-@@ -2498,8 +2498,6 @@ cupsdSetJobState(
- 	  job->dirty = 1;
+@@ -2286,12 +2286,14 @@ cupsdSetJobState(
+   if (!cupsdLoadJob(job))
+     return;
+ 
+- /*
+-  * Don't do anything if the state is unchanged...
+-  */
+-
+-  if (newstate == (oldstate = job->state_value))
+-    return;
++  /*
++   * Don't do anything if the state is unchanged and we aren't purging the
++   * job...
++   */
++
++   oldstate = job->state_value;
++   if (newstate == oldstate && action != CUPSD_JOB_PURGE)
++     return;
+ 
+  /*
+   * Stop any processes that are working on the current job...
+@@ -2499,7 +2501,14 @@ cupsdSetJobState(
  	  cupsdMarkDirty(CUPSD_DIRTY_JOBS);
  	}
--	else if (!job->printer)
--	  cupsdDeleteJob(job, CUPSD_JOB_PURGE);
+ 	else if (!job->printer)
++	{
++	 /*
++	  * Delete the job immediately if not actively printing...
++	  */
++
+ 	  cupsdDeleteJob(job, CUPSD_JOB_PURGE);
++	  job = NULL;
++	}
  	break;
    }
  
-@@ -2507,7 +2505,7 @@ cupsdSetJobState(
+@@ -2507,7 +2516,7 @@ cupsdSetJobState(
    * Finalize the job immediately if we forced things...
    */
  
 -  if (action == CUPSD_JOB_FORCE)
-+  if (action >= CUPSD_JOB_FORCE && job->printer)
++  if (action >= CUPSD_JOB_FORCE && job && job->printer)
      finalize_job(job);
  
   /*
 diff -up cups-1.4.2/scheduler/main.c.str3425 cups-1.4.2/scheduler/main.c
---- cups-1.4.2/scheduler/main.c.str3425	2009-12-23 11:00:05.687056970 +0000
-+++ cups-1.4.2/scheduler/main.c	2009-12-23 11:00:06.156057773 +0000
+--- cups-1.4.2/scheduler/main.c.str3425	2010-03-09 16:59:12.000000000 +0100
++++ cups-1.4.2/scheduler/main.c	2010-03-09 16:59:12.000000000 +0100
 @@ -389,7 +389,7 @@ main(int  argc,				/* I - Number of comm
      * parent's file descriptors to be blocking.  This is a workaround for a
      * limitation of userland libpthread on OpenBSD.
