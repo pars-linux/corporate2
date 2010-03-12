@@ -10,6 +10,9 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
+# enable loader builds DLL loader for ELF i386 platforms only
+dllloader = "" if get.ARCH() == "x86_64" else "--enable-loader"
+
 def setup():
     # Make it build with libtool 1.5
     shelltools.system("rm -rf m4/lt* m4/libtool.m4")
@@ -53,7 +56,6 @@ def setup():
                          --enable-png \
                          --enable-faad \
                          --enable-aa \
-                         --enable-loader \
                          --enable-x11 \
                          --enable-xvideo \
                          --enable-glx \
@@ -66,7 +68,6 @@ def setup():
                          --enable-svg \
                          --enable-skins2 \
                          --enable-alsa \
-                         --enable-arts \
                          --enable-pulse \
                          --enable-lirc \
                          --enable-gnutls \
@@ -81,7 +82,7 @@ def setup():
                          --disable-bonjour \
                          --disable-jack \
                          --disable-growl \
-                         --disable-portaudio")
+                         --disable-portaudio %s " % dllloader )
 
 def build():
     autotools.make()
