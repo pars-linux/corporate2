@@ -1,0 +1,94 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>slocate</Name>
+        <Homepage>http://slocate.trakker.ca/</Homepage>
+        <Packager>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <IsA>app:console</IsA>
+        <Summary>Secure way to index and quickly search for files on your system</Summary>
+        <Description>Secure locate provides a secure way to index and quickly search for files on your system. It uses incremental encoding just like GNU locate to compress its database to make searching faster, but it will also check file permissions and ownership so that users will not see files they do not have access to.</Description>
+        <Archive sha1sum="e427552664385b86931b7626c26bd95ae5f9f085" type="targz">http://fresh.t-systems-sfr.com/unix/src/misc/slocate-3.1.tar.gz</Archive>
+        <Patches>
+            <Patch>slocate-3.1-build.patch</Patch>
+            <Patch>slocate-3.1-incompat-warning.patch</Patch>
+            <Patch>slocate-3.1-cron2.patch</Patch>
+            <Patch level="1">CVE-2007-0227.patch</Patch>
+            <Patch level="1">slocate-3.1-NUL.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>slocate</Name>
+        <Files>
+            <Path fileType="config">/etc</Path>
+            <Path fileType="executable">/etc/cron.daily</Path>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="data">/var/lib/slocate</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/updatedb.conf">updatedb.conf</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <History>
+        <Update release="7">
+            <Date>2009-04-13</Date>
+            <Version>3.1</Version>
+            <Comment>
+                - Add several gentoo patches to improve things,
+                - updatedb wants the group locate instead of slocate.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2009-01-03</Date>
+            <Version>3.1</Version>
+            <Comment>Fix sandbox violation.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="5" type="security">
+            <Date>2007-02-22</Date>
+            <Version>3.1</Version>
+            <Comment>Fix CVE-2007-0227</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="4">
+            <Date>2006-09-27</Date>
+            <Version>3.1</Version>
+            <Comment>New release.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2005-10-16</Date>
+            <Version>2.7</Version>
+            <Comment>COMARized file ownership assignments.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2005-10-13</Date>
+            <Version>2.7</Version>
+            <Comment>Added missing group ownership assignment.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2005-10-13</Date>
+            <Version>2.7</Version>
+            <Comment>First release.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
