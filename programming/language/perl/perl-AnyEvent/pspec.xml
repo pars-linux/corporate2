@@ -13,7 +13,7 @@
         <IsA>library</IsA>
         <Summary>AnyEvent - provide framework for multiple event loops</Summary>
         <Description>AnyEvent provides an identical interface to multiple event loops. This allows module authors to utilise an event loop without forcing module users to use the same event loop (as only a single event loop can coexist peacefully at any one time).</Description>
-        <Archive sha1sum="b36613667ccf76a4795da45c72d2fc80fa3eb72b" type="targz">mirrors://cpan/authors/id/M/ML/MLEHMANN/AnyEvent-5.21.tar.gz</Archive>
+        <Archive sha1sum="bf393b4dd344f24a154aebd699decd24a764782c" type="targz">mirrors://cpan/authors/id/M/ML/MLEHMANN/AnyEvent-5.25.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>perl-Event</Dependency>
             <Dependency versionFrom="5.10.1">perl</Dependency>
@@ -37,6 +37,39 @@
     </Package>
 
     <History>
+        <Update release="7">
+            <Date>2010-03-15</Date>
+            <Version>5.25</Version>
+            <Comment>Remove empty dir and Version bump:
+                5.25
+                - fix a race condition in AnyEvent::Handle that would cause a "bio_read: unsupported method" error (in _another_ssl connection) after user code threw an exception.
+                - added AnyEvent::Handle->destroyed method.
+                - speed up AnyEvent::Socket::format_address and ::format_ipv6.
+                - the AnyEvent::Util::fh_nonblocking function worked only by lucky accident on win32.
+                - smaller and faster AnyEvent::Util::fh_nonblocking.
+                - when the (required!) Time::HiRes module is missing, AnyEvent did not fall back to built-in time properly.
+                - do not load Fcntl at runtime, saving memory and loading time.
+                - precompile a number of constants and use them instead of runtime detection and eval.
+                - free detection code after detection and similar memory optimisations.
+                - Perl backend timer interval best effort drift has been improved (ame algorithm as EV).
+                - update unicode idna mapping table.
+                5.24
+                - improve idle watcher documentation slightly.
+                5.23
+                - support IDNs in resolve_sockaddr, and therefore in tcp_connect.
+                - implement punycode_encode/decode, idn_nameprep, idn_to_ascii and idn_to_unicode operations in AnyEvent::Util.
+                - provide $AE::VERSION.
+                - removed traces of "no strict 'refs'".
+                5.22
+                - downgrade-or-fail in AnyEvent::Handle::push_write, to diagnose encoding failures earlier and more succinctly. (this works around bugs in perl, throwing away encoding info when passing scalar data to extensions).
+                - add more examples to AnyEvent::Socket manpage.
+                - upgrade internal warning set to the same as common::sense 2.03.
+                - AnyEvent::Socket::inet_aton now properly supports ipv6, as documented.
+                - add google public dns servers to fallback server set and make sure we load-balance properly between the three sets. also add all fallback dns servers, not just a random one, to each dns config.
+            </Comment>
+            <Name>Serdar Dalgıç</Name>
+            <Email>serdar@pardus.org.tr</Email>
+        </Update>
         <Update release="6">
             <Date>2009-12-04</Date>
             <Version>5.21</Version>
