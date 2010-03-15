@@ -1,0 +1,144 @@
+diff -ur kdevelop-3.5.2/languages/cpp/app_templates/kde4app/kde4app.kdevelop kdevelop-3.5.2-kde4template/languages/cpp/app_templates/kde4app/kde4app.kdevelop
+--- kdevelop-3.5.2/languages/cpp/app_templates/kde4app/kde4app.kdevelop	2007-09-26 11:42:09.000000000 +0200
++++ kdevelop-3.5.2-kde4template/languages/cpp/app_templates/kde4app/kde4app.kdevelop	2008-06-07 01:10:11.000000000 +0200
+@@ -113,18 +113,11 @@
+   </cppsupportpart>
+   <kdevcustomproject>
+     <run>
+-      <mainprogram>%{dest}/build/%{APPNAMELC}</mainprogram>
++      <mainprogram>%{dest}/%{APPNAMELC}</mainprogram>
+       <programargs/>
+       <terminal>false</terminal>
+-      <autocompile>false</autocompile>
+-      <envvars>
+-        <envvar value="" name="KDEDIRS" />
+-        <envvar value="" name="KDEHOME" />
+-        <envvar value="" name="LD_LIBRARY_PATH" />
+-        <envvar value="" name="PATH" />
+-        <envvar value="" name="PKG_CONFIG_PATH" />
+-        <envvar value="" name="QT_PLUGIN_PATH" />
+-      </envvars>
++      <autocompile>true</autocompile>
++      <envvars/>
+       <autoinstall>false</autoinstall>
+       <autokdesu>false</autokdesu>
+       <globaldebugarguments/>
+@@ -134,7 +127,7 @@
+     </run>
+     <build>
+       <buildtool>make</buildtool>
+-      <builddir>%{dest}/build</builddir>
++      <builddir>%{dest}</builddir>
+     </build>
+     <make>
+       <abortonerror>false</abortonerror>
+@@ -146,14 +139,7 @@
+       <makeoptions/>
+       <selectedenvironment>default</selectedenvironment>
+       <environments>
+-        <default>
+-          <envvar value="" name="KDEDIRS" />
+-          <envvar value="" name="KDEHOME" />
+-          <envvar value="" name="LD_LIBRARY_PATH" />
+-          <envvar value="" name="PATH" />
+-          <envvar value="" name="PKG_CONFIG_PATH" />
+-          <envvar value="" name="QT_PLUGIN_PATH" />
+-        </default>
++        <default/>
+       </environments>
+     </make>
+     <filetypes>
+@@ -179,7 +165,10 @@
+       </environments>
+     </other>
+     <blacklist>
+-        <path>build</path>
++        <path>CMakeFiles</path>
++        <path>CMakeTmp</path>
++        <path>cmake_install.cmake</path>
++        <path>cmake_uninstall.cmake</path>
+     </blacklist>
+   </kdevcustomproject>
+   <kdevcppsupport>
+@@ -189,7 +178,6 @@
+       <includestyle>4</includestyle>
+       <designerintegration>ExternalDesigner</designerintegration>
+       <designer>/usr/bin/designer-qt4</designer>
+-      <root>/usr/lib/qt4</root>
+     </qt>
+   </kdevcppsupport>
+   <kdevclassview>
+diff -ur kdevelop-3.5.2/languages/cpp/app_templates/kde4app/kde4app.kdevtemplate kdevelop-3.5.2-kde4template/languages/cpp/app_templates/kde4app/kde4app.kdevtemplate
+--- kdevelop-3.5.2/languages/cpp/app_templates/kde4app/kde4app.kdevtemplate	2008-02-11 12:22:37.000000000 +0100
++++ kdevelop-3.5.2-kde4template/languages/cpp/app_templates/kde4app/kde4app.kdevtemplate	2008-06-07 01:08:10.000000000 +0200
+@@ -43,7 +43,7 @@
+ Comment[sv]=Skapar ett enkelt KDE 4-program med ett toppnivåfönster, menyer och verktygsrader.
+ Comment[zh_TW]=產生一個簡單的 KDE4 應用程式，內含頂層視窗、選單與工具列。
+ FileTemplates=h,CStyle,cpp,CStyle
+-ShowFilesAfterGeneration=%{dest}/README
++ShowFilesAfterGeneration=%{dest}/%{APPNAMELC}.cpp
+ Archive=kde4app.tar.gz
+ 
+ [FILE1]
+@@ -112,24 +112,22 @@
+ Source=%{src}/settings.kcfgc
+ Dest=%{dest}/settings.kcfgc
+ 
+-[FILE13]
+-Type=install
+-Source=%{src}/README
+-Dest=%{dest}/README
+ 
+-[FILE14]
++[FILE13]
+ Type=install
+ Source=%{src}/kde4app.kdevelop
+ Dest=%{dest}/%{APPNAMELC}.kdevelop
+ 
+-[FILE15]
++[FILE14]
+ Type=install
+ Source=%{src}/kde4app.kdevelop.filelist
+ Dest=%{dest}/%{APPNAMELC}.kdevelop.filelist
+ 
+-[MKDIR1]
+-Type=mkdir
+-Dir=%{dest}/build
++[CMAKE]
++Type=finishcmd
++Command=cmake ./ -GKDevelop3
++Directory=%{dest}
++
+ 
+ [MSG]
+ Type=message
+diff -ur kdevelop-3.5.2/languages/cpp/app_templates/kde4app/Makefile.am kdevelop-3.5.2-kde4template/languages/cpp/app_templates/kde4app/Makefile.am
+--- kdevelop-3.5.2/languages/cpp/app_templates/kde4app/Makefile.am	2007-09-26 11:42:09.000000000 +0200
++++ kdevelop-3.5.2-kde4template/languages/cpp/app_templates/kde4app/Makefile.am	2008-06-07 00:37:23.000000000 +0200
+@@ -1,6 +1,6 @@
+ dataFiles = kapp4.cpp kapp4.h prefs_base.ui kapp4view.cpp kapp4view.h kapp4view_base.ui \
+ 	main.cpp kde4appui.rc CMakeLists.txt kapp4.desktop kapp4.kcfg settings.kcfgc \
+-	kde4app.png README kde4app.kdevelop kde4app.kdevelop.filelist
++	kde4app.png kde4app.kdevelop kde4app.kdevelop.filelist
+ 
+ templateName = kde4app
+ 
+diff -ur kdevelop-3.5.2/languages/cpp/app_templates/kde4app/Makefile.in kdevelop-3.5.2-kde4template/languages/cpp/app_templates/kde4app/Makefile.in
+--- kdevelop-3.5.2/languages/cpp/app_templates/kde4app/Makefile.in	2008-05-13 16:23:40.000000000 +0200
++++ kdevelop-3.5.2-kde4template/languages/cpp/app_templates/kde4app/Makefile.in	2008-06-07 00:37:30.000000000 +0200
+@@ -373,7 +373,7 @@
+ xdg_menudir = @xdg_menudir@
+ dataFiles = kapp4.cpp kapp4.h prefs_base.ui kapp4view.cpp kapp4view.h kapp4view_base.ui \
+ 	main.cpp kde4appui.rc CMakeLists.txt kapp4.desktop kapp4.kcfg settings.kcfgc \
+-	kde4app.png README kde4app.kdevelop kde4app.kdevelop.filelist
++	kde4app.png kde4app.kdevelop kde4app.kdevelop.filelist
+ 
+ templateName = kde4app
+ 
+diff -ur kdevelop-3.5.2/languages/cpp/app_templates/kdecpp.appwizard kdevelop-3.5.2-kde4template/languages/cpp/app_templates/kdecpp.appwizard
+--- kdevelop-3.5.2/languages/cpp/app_templates/kdecpp.appwizard	2007-04-10 01:44:25.000000000 +0200
++++ kdevelop-3.5.2-kde4template/languages/cpp/app_templates/kdecpp.appwizard	2008-06-06 23:52:16.000000000 +0200
+@@ -1,2 +1,2 @@
+ [General]
+-List=kdedcop,kioslave,kxt,kdevlang,kmake,kapp,kconfig35,kdevlang,kdevpart,kateplugin,kdevpart2,kopart,noatunui,kateplugin2,kfileplugin,konqnavpanel,noatunvisual,dcopservice,khello,kpartapp,khello2,kpartplugin,kcmodule,kicker,kscreensaver,kscons_kxt,kscons_kmdi
++List=kde4app,kdedcop,kioslave,kxt,kdevlang,kmake,kapp,kconfig35,kdevlang,kdevpart,kateplugin,kdevpart2,kopart,noatunui,kateplugin2,kfileplugin,konqnavpanel,noatunvisual,dcopservice,khello,kpartapp,khello2,kpartplugin,kcmodule,kicker,kscreensaver,kscons_kxt,kscons_kmdi
