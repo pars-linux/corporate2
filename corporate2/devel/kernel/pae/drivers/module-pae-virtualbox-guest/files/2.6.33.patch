@@ -1,0 +1,16 @@
+Index: work/vboxvideo/vboxvideo_drm.c
+===================================================================
+--- work.orig/vboxvideo/vboxvideo_drm.c
++++ work/vboxvideo/vboxvideo_drm.c
+@@ -87,7 +87,11 @@ static struct drm_driver driver = {
+ 		 .owner = THIS_MODULE,
+ 		 .open = drm_open,
+ 		 .release = drm_release,
++#if defined(DRM_UNLOCKED) || LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 33)
++		 .unlocked_ioctl = drm_ioctl,
++#else
+ 		 .ioctl = drm_ioctl,
++#endif
+ 		 .mmap = drm_mmap,
+ 		 .poll = drm_poll,
+ 		 .fasync = drm_fasync,
