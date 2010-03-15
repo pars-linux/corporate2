@@ -36,8 +36,9 @@ def setup():
                          --with-utmp \
                          --with-fhs \
                          --with-winbind \
-                         --with-cluster-support \
+                         --with-cluster-support=auto \
                          --with-libtalloc=no \
+                         --with-libtdb=no \
                          --sysconfdir=/etc/samba \
                          --localstatedir=/var \
                          --libdir=/usr/lib \
@@ -51,8 +52,10 @@ def setup():
                          --with-readline \
                          --with-ldap \
                          --with-cifsmount \
+                         --with-cifsumount \
                          --with-cifsupcall \
                          --enable-external-libtalloc=yes \
+                         --enable-external-libtdb=yes \
                          --enable-shared=yes \
                          --enable-static=no \
                          --enable-cups \
@@ -71,8 +74,8 @@ def install():
     pisitools.insinto("/usr/lib/pkgconfig", "pkgconfig/*pc")
 
     # we have all mount.* helpers in /usr/bin
-    pisitools.domove("/usr/sbin/mount.cifs","/usr/bin/")
-    pisitools.domove("/usr/sbin/umount.cifs","/usr/bin/")
+    pisitools.domove("/usr/sbin/mount.cifs", "/usr/bin/")
+    pisitools.domove("/usr/sbin/umount.cifs", "/usr/bin/")
 
     # Nsswitch extensions. Make link for wins and winbind resolvers
     pisitools.dolib_so("../nsswitch/libnss_wins.so")
@@ -85,10 +88,9 @@ def install():
     pisitools.doexe("bin/pam_winbind.so", "/lib/security")
 
     # Move mount helpers to /sbin
-    cifs_bin = ["mount.cifs", "umount.cifs"]
     pisitools.dodir("/sbin")
 
-    for f in cifs_bin:
+    for f in ("mount.cifs", "umount.cifs"):
         pisitools.domove("/usr/bin/%s" % f, "/sbin")
 
     pisitools.domove("/usr/sbin/cifs.upcall", "/sbin")
