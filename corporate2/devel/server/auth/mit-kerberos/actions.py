@@ -45,6 +45,7 @@ def setup():
     autotools.configure("--with-system-et \
                          --with-system-ss \
                          --with-pam \
+                         --with-ldap \
                          --with-netlib=-lresolv \
                          --without-selinux \
                          --without-tcl \
