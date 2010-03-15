@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -64,25 +64,25 @@ def build():
 
 def check():
     import tempfile
+    import shutil
     tmpdir = tempfile.mkdtemp(prefix='pisitest')
     autotools.make("-C src/ check TMPDIR=%s -j1" % tmpdir)
-    shelltools.system("rm -rf %s" % tmpdir)
+    shutil.rmtree("rm -rf %s" % tmpdir)
 
 def install():
     shelltools.cd("src")
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     # Install additional headers
-    shelltools.cd("include")
-    shelltools.system("find kadm5 krb5 gssrpc gssapi -name '*.h' | cpio -pdm  %s/usr/include" % get.installDIR())
-    shelltools.cd("..")
+    for d in ("kadm5", "krb5"):
+        pisitools.insinto("/usr/include/%s" % d, "include/%s/*.h" % d)
 
     # Add "k" prefix to some apps and manpages to resolve conflicts
-    for app in ["telnetd","ftpd"]:
+    for app in ["telnetd", "ftpd"]:
         pisitools.rename("/usr/share/man/man8/%s.8" % app, "k%s.8" % app)
         pisitools.rename("/usr/sbin/%s" % app, "k%s" % app)
 
-    for app in ["rcp","rsh","telnet","ftp","rlogin"]:
+    for app in ["rcp", "rsh", "telnet", "ftp", "rlogin"]:
         pisitools.rename("/usr/share/man/man1/%s.1" % app, "k%s.1" % app)
         pisitools.rename("/usr/bin/%s" % app, "k%s" % app)
 
