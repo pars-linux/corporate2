@@ -16,6 +16,7 @@ WorkDir="kvm-kmod-%s" % get.srcVERSION()
 def setup():
     # Fix PREFIX
     pisitools.dosed("Makefile", "^PREFIX =.*$", "PREFIX = /usr")
+    pisitools.dosed("Makefile", "etc\/udev", "lib\/udev")
 
     autotools.rawConfigure('--arch=%s \
                             --kerneldir=/lib/modules/%s/build' % (get.ARCH().replace("i686", "x86"),
@@ -26,7 +27,3 @@ def build():
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
-
-    # FIXME: Remove internal rules for now, they're more bleeding-edge oriented
-    pisitools.removeDir("/etc/udev/rules.d")
-    pisitools.removeDir("/usr")
