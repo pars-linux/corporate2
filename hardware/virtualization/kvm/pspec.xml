@@ -5,14 +5,14 @@
         <Name>kvm</Name>
         <Homepage>http://linux-kvm.org</Homepage>
         <Packager>
-            <Name>Ekin Meroğlu</Name>
-            <Email>ekin@pardus.org.tr</Email>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
         </Packager>
         <License>GPLv2</License>
         <IsA>app:console</IsA>
         <Summary>Userspace tools for Kernel-based Virtual Machine</Summary>
         <Description>KVM (for Kernel-based Virtual Machine) is a full virtualization solution for Linux on x86 hardware containing virtualization extensions (Intel VT or AMD-V). This package includes the userspace tools needed to use KVM.</Description>
-        <Archive sha1sum="27bb9b55e6539c0dc6b57e08812df76b02544c62" type="targz">mirrors://sourceforge/kvm/qemu-kvm/0.12.2/qemu-kvm-0.12.2.tar.gz</Archive>
+        <Archive sha1sum="235a790056a1b751791e64dd499129b2dbf55be8" type="targz">mirrors://sourceforge/kvm/qemu-kvm/0.12.3/qemu-kvm-0.12.3.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>pulseaudio</Dependency>
             <Dependency>cyrus-sasl</Dependency>
@@ -22,6 +22,7 @@
             <Dependency>libaio</Dependency>
             <Dependency>gnutls</Dependency>
             <Dependency>bluez</Dependency>
+            <!-- Without aalib, sdl support is not enabled -->
             <Dependency>aalib</Dependency>
         </BuildDependencies>
         <Patches>
@@ -30,25 +31,7 @@
             <Patch level="1">export-lc-all-in-configure.patch</Patch>
 
             <!-- Don't fallback to plain qemu is kvm fails -->
-            <!-- FIXME: Why not?
             <Patch level="1">kvm-qemu-no-fallback-if-open-kvm-fails.patch</Patch>
-            -->
-
-            <!--Mac OS X support
-            <Patch level="1">kvm-qemu-lpc.patch</Patch>
-            <Patch level="1">kvm-qemu-applesmc.patch</Patch>
-            <Patch level="1">kvm-qemu-ide-ich6.patch</Patch>
-            <Patch level="1">kvm-qemu-rtl8139-link.patch</Patch>
-
-            <Patch level="1">kvm-maccpuid.patch</Patch>
-            <Patch level="1">kvm-qemu-macmodel.patch</Patch>
-            <Patch level="1">kvm-qemu-multiboot.patch</Patch>
-            <Patch level="1">kvm-add-macbios.patch</Patch>
-            <Patch level="1">kvm-bios.patch</Patch>
-            -->
-
-            <!-- adds support for a relatively basic boot device selection menu to the bochs bios code -->
-            <!--<Patch>kvm-bootmenu.patch</Patch>-->
         </Patches>
     </Source>
 
@@ -63,8 +46,9 @@
             <Dependency>cyrus-sasl</Dependency>
             <Dependency>alsa-lib</Dependency>
             <Dependency>libsdl</Dependency>
+            <Dependency>libaio</Dependency>
             <Dependency>gnutls</Dependency>
-            <Dependency>aalib</Dependency>
+            <Dependency>bluez</Dependency>
             <Dependency>qemu</Dependency>
         </RuntimeDependencies>
         <Files>
@@ -75,6 +59,13 @@
     </Package>
 
     <History>
+        <Update release="52">
+            <Date>2010-03-15</Date>
+            <Version>0.12.3</Version>
+            <Comment>Version bump, refactor dependencies.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="51">
             <Date>2010-02-10</Date>
             <Version>0.12.2</Version>
