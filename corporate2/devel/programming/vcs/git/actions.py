@@ -1,7 +1,5 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2006-2009 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -10,24 +8,34 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir="git-%s" % get.srcVERSION().replace("_",".")
+config = """
+V                       = 1
+CFLAGS                  = %s
+LDFLAGS                 = %s
+INSTALLDIRS             = vendor
+DESTDIR                 = %s
+prefix                  = /usr
+htmldir                 = /usr/share/doc/git
+ETC_GITCONFIG           = /etc/gitconfig
+GITWEB_CSS              = /gitweb/gitweb.css
+GITWEB_LOGO             = /gitweb/git-logo.png
+GITWEB_FAVICON          = /gitweb/git-favicon.png
+ASCIIDOC8               = 1
+ASCIIDOC_NO_ROFF        = 1
+BLK_SHA1                = 1
+NEEDS_CRYPTO_WITH_SSL   = 1
+NO_PYTHON               = 1
+""" % (get.CFLAGS(), get.LDFLAGS(), get.installDIR())
 
-make_git = 'CFLAGS="%s" \
-            LDFLAGS="%s" \
-            DESTDIR=%s \
-            prefix=/usr \
-            htmldir=/usr/share/doc/%s \
-            INSTALLDIRS=vendor \
-            GITWEB_CSS="/gitweb/gitweb.css" \
-            GITWEB_LOGO="/gitweb/git-logo.png" \
-            GITWEB_FAVICON="/gitweb/git-favicon.png"' % (get.CFLAGS(), get.LDFLAGS(), get.installDIR(), get.srcNAME())
+def setup():
+    shelltools.echo("config.mak", config)
 
 def build():
     pisitools.dosed("Makefile", "^CC = .*$", "CC = %s" % get.CC())
-    autotools.make('%s all doc gitweb/gitweb.cgi V=1' % make_git)
+    autotools.make("all doc gitweb/gitweb.cgi")
 
 def install():
-    autotools.rawInstall("%s install-doc" % make_git)
+    autotools.rawInstall("install-doc")
 
     # Emacs stuff
     pisitools.insinto("/usr/share/emacs/site-lisp", "contrib/emacs/*.el")
@@ -46,7 +54,7 @@ def install():
 
     # Remove useless perl directories
     pisitools.removeDir("/usr/lib/perl5/%s" % get.curPERL())
-    pisitools.removeDir("/usr/lib/perl5/vendor_perl/%s/%s-linux-thread-multi" % (get.curPERL(), get.ARCH()))
+    pisitools.removeDir("/usr/lib/perl5/site_perl/%s/%s-linux-thread-multi" % (get.curPERL(), get.ARCH()))
 
     # Some docs
     pisitools.dodoc("README", "COPYING", "Documentation/SubmittingPatches")
