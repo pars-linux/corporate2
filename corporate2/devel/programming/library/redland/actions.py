@@ -14,10 +14,15 @@ def setup():
     autotools.autoreconf("-fi")
 
     #Caution!!! --enable-storages option is buggy! Do not use it, it causes storages other than memory not to be compiled!! And it's enabled by default!!
+    #Using iODBC driver manager instead of unixODBC, as unixODBC needs to be compiled statically.
     autotools.configure("--disable-static \
                          --disable-gtk-doc \
                          --with-raptor=system \
-                         --with-rasqal=system")
+                         --with-rasqal=system \
+                         --with-virtuoso \
+                         --with-iodbc=/%s \
+                         --without-unixodbc \
+                         " % get.defaultprefixDIR())
 
 def build():
     autotools.make()
