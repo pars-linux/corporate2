@@ -178,7 +178,7 @@ def setFace(uid, homedir):
 
 def checkName(name):
     first_valid = ascii_letters
-    valid = ascii_letters + "_" + digits
+    valid = ascii_letters + "_-" + digits
     if len(name) == 0 or len(filter(lambda x: not x in valid, name)) != 0 or not name[0] in first_valid:
         fail(_(invalid_username_msg))
 
