@@ -17,7 +17,6 @@ def setup():
     pisitools.dosed("util/Makefile.in", "mknod", "echo Disabled: mknod ")
 
     autotools.configure("--disable-static \
-                         --disable-kernel-module \
                          --disable-rpath \
                          --exec-prefix=/ \
                          --bindir=/bin")
@@ -28,6 +27,7 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
+    pisitools.removeDir("/dev")
     pisitools.removeDir("/etc")
 
     # Make compat symlinks into /usr/bin
