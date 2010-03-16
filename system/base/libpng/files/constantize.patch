@@ -1,7 +1,8 @@
-diff -Nur libpng-1.2.33-old/png.h libpng-1.2.33/png.h
---- libpng-1.2.33-old/png.h	2008-11-07 21:59:25.000000000 +0200
-+++ libpng-1.2.33/png.h	2008-11-07 22:05:55.000000000 +0200
-@@ -3024,56 +3024,56 @@
+Index: libpng-1.2.43/png.h
+===================================================================
+--- libpng-1.2.43.orig/png.h
++++ libpng-1.2.43/png.h
+@@ -3164,27 +3164,27 @@ extern PNG_EXPORT(void,png_save_uint_16)
   * define the name here, and add an invocation of the macro in png.c and
   * wherever it's needed.
   */
@@ -26,9 +27,6 @@ diff -Nur libpng-1.2.33-old/png.h libpng-1.2.33/png.h
 -#define PNG_tIME png_byte png_tIME[5] = {116,  73,  77,  69, '\0'}
 -#define PNG_tRNS png_byte png_tRNS[5] = {116,  82,  78,  83, '\0'}
 -#define PNG_zTXt png_byte png_zTXt[5] = {122,  84,  88, 116, '\0'}
--#define PNG_acTL png_byte png_acTL[5] = { 97,  99,  84,  76, '\0'}
--#define PNG_fcTL png_byte png_fcTL[5] = {102,  99,  84,  76, '\0'}
--#define PNG_fdAT png_byte png_fdAT[5] = {102, 100,  65,  84, '\0'}
 +#define PNG_IHDR const png_byte png_IHDR[5] = { 73,  72,  68,  82, '\0'}
 +#define PNG_IDAT const png_byte png_IDAT[5] = { 73,  68,  65,  84, '\0'}
 +#define PNG_IEND const png_byte png_IEND[5] = { 73,  69,  78,  68, '\0'}
@@ -50,9 +48,11 @@ diff -Nur libpng-1.2.33-old/png.h libpng-1.2.33/png.h
 +#define PNG_tIME const png_byte png_tIME[5] = {116,  73,  77,  69, '\0'}
 +#define PNG_tRNS const png_byte png_tRNS[5] = {116,  82,  78,  83, '\0'}
 +#define PNG_zTXt const png_byte png_zTXt[5] = {122,  84,  88, 116, '\0'}
-+#define PNG_acTL const png_byte png_acTL[5] = { 97,  99,  84,  76, '\0'}
-+#define PNG_fcTL const png_byte png_fcTL[5] = {102,  99,  84,  76, '\0'}
-+#define PNG_fdAT const png_byte png_fdAT[5] = {102, 100,  65,  84, '\0'}
+ #ifdef PNG_APNG_SUPPORTED
+ #define PNG_acTL png_byte png_acTL[5] = { 97,  99,  84,  76, '\0'}
+ #define PNG_fcTL png_byte png_fcTL[5] = {102,  99,  84,  76, '\0'}
+@@ -3192,27 +3192,27 @@ extern PNG_EXPORT(void,png_save_uint_16)
+ #endif
  
  #ifdef PNG_USE_GLOBAL_ARRAYS
 -PNG_EXPORT_VAR (png_byte FARDATA) png_IHDR[5];
@@ -76,9 +76,6 @@ diff -Nur libpng-1.2.33-old/png.h libpng-1.2.33/png.h
 -PNG_EXPORT_VAR (png_byte FARDATA) png_tIME[5];
 -PNG_EXPORT_VAR (png_byte FARDATA) png_tRNS[5];
 -PNG_EXPORT_VAR (png_byte FARDATA) png_zTXt[5];
--PNG_EXPORT_VAR (png_byte FARDATA) png_acTL[5];
--PNG_EXPORT_VAR (png_byte FARDATA) png_fcTL[5];
--PNG_EXPORT_VAR (png_byte FARDATA) png_fdAT[5];
 +PNG_EXPORT_VAR (const png_byte FARDATA) png_IHDR[5];
 +PNG_EXPORT_VAR (const png_byte FARDATA) png_IDAT[5];
 +PNG_EXPORT_VAR (const png_byte FARDATA) png_IEND[5];
@@ -100,9 +97,6 @@ diff -Nur libpng-1.2.33-old/png.h libpng-1.2.33/png.h
 +PNG_EXPORT_VAR (const png_byte FARDATA) png_tIME[5];
 +PNG_EXPORT_VAR (const png_byte FARDATA) png_tRNS[5];
 +PNG_EXPORT_VAR (const png_byte FARDATA) png_zTXt[5];
-+PNG_EXPORT_VAR (const png_byte FARDATA) png_acTL[5];
-+PNG_EXPORT_VAR (const png_byte FARDATA) png_fcTL[5];
-+PNG_EXPORT_VAR (const png_byte FARDATA) png_fdAT[5];
- #endif /* PNG_USE_GLOBAL_ARRAYS */
- 
- #if defined(PNG_1_0_X) || defined (PNG_1_2_X)
+ #ifdef PNG_APNG_SUPPORTED
+ PNG_EXPORT_VAR (png_byte FARDATA) png_acTL[5];
+ PNG_EXPORT_VAR (png_byte FARDATA) png_fcTL[5];
