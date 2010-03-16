@@ -10,15 +10,6 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-ownerships = {
-    "/var/spool/cups/tmp"   : ["root", "pnp", 01770],
-    "/var/spool/cups"       : ["root", "pnp", 0710],
-    "/var/run/cups"         : ["root", "pnp", 0755],
-    "/etc/cups"             : ["root", "pnp", 0755],
-    "/var/log/cups"         : ["pnp", "adm", 0755],
-    "/var/run/cups/certs"   : ["pnp", "adm", 0511],
-    }
-
 def setup():
     shelltools.export("DSOFLAGS", get.LDFLAGS())
     shelltools.export("CFLAGS", "%s -DLDAP_DEPRECATED" % get.CFLAGS())
@@ -35,6 +26,8 @@ def setup():
                          --with-system-groups=pnpadmin \
                          --with-docdir=/usr/share/cups/html \
                          --with-dbusdir=/etc/dbus-1 \
+                         --with-pdftops=pdftops \
+                         --with-optim="%s -fstack-protector-all" \
                          --localstatedir=/var \
                          --enable-slp \
                          --enable-acl \
@@ -58,8 +51,6 @@ def setup():
                          --disable-openssl \
                          --disable-launchd \
                          --without-rcdir \
-                         --with-pdftops=pdftops \
-                         --with-optim="%s -fstack-protector-all" \
                          --without-php' % get.CFLAGS())
 
 def build():
@@ -73,15 +64,7 @@ def install():
 
     pisitools.dodir("/usr/share/cups/profiles")
 
-    # cleanups
-    #pisitools.removeDir("/etc/pam.d")
-
     # Serial backend needs to run as root
     shelltools.chmod("%s/usr/lib/cups/backend/serial" % get.installDIR(), 0700)
-
-    # Fix ownerships and permissions
-    for d,perms in ownerships.items():
-        shelltools.chmod("%s%s" % (get.installDIR(), d), perms[2])
-        shelltools.chown("%s%s" % (get.installDIR(), d), perms[0], perms[1])
 
     pisitools.dodoc("CHANGES.txt", "CREDITS.txt", "LICENSE.txt", "README.txt")

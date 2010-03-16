@@ -7,6 +7,8 @@ serviceDesc = _({"en": "CUPS Printer Server",
                  "tr": "CUPS Yazıcı Sunucusu"})
 serviceConf = "cups"
 
+PIDFILE = "/var/run/cupsd.pid"
+
 @synchronized
 def start():
     # FIXME: After avahi before hal
@@ -30,9 +32,14 @@ def start():
                                --property-match=DEVNAME=\"/dev/usb/lp*\"")
 
 @synchronized
+def reload():
+    if os.path.exists(PIDFILE):
+        # 1 is SIGHUP
+        os.kill(int(open(PIDFILE, "r").read().strip()), 1)
+
+@synchronized
 def stop():
-    stopService(pidfile="/var/run/cupsd.pid",
-                donotify=True)
+    stopService(pidfile=PIDFILE, donotify=True)
 
 def status():
-    return isServiceRunning(pidfile="/var/run/cupsd.pid")
+    return isServiceRunning(pidfile=PIDFILE)
