@@ -78,7 +78,8 @@ def install():
     pisitools.dosym("/usr/lib/cups/filter/foomatic-rip", "/usr/lib/cups/filter/foomatic-rip-hplip")
 
     # Remove the hal preprobe rules as they were causing breakage (bug #479648).
-    pisitools.removeDir("/usr/share/hal/fdi/preprobe")
+    # Remove hal directory as well.
+    pisitools.removeDir("/usr/share/hal/")
 
     # Do not mess with sane, init, foomatic etc.
     pisitools.removeDir("/etc/sane.d")
