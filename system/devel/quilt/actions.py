@@ -19,4 +19,4 @@ def build():
 
 def install():
     autotools.rawInstall("BUILD_ROOT=%s" % get.installDIR())
-    pisitools.remove("/usr/share/emacs/site-lisp/quilt.el")
+    pisitools.removeDir("/usr/share/emacs")
