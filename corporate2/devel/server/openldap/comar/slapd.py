@@ -3,6 +3,7 @@ from comar.service import *
 serviceType = "server"
 serviceDesc = _({"en": "OpenLDAP Server",
                  "tr": "OpenLDAP Sunucusu"})
+serviceConf = "slapd"
 
 def start():
     import os
@@ -10,7 +11,7 @@ def start():
     os.environ["LANG"] = "C"
 
     startService(command="/usr/libexec/slapd",
-                 args="-u ldap -g ldap",
+                 args="-u ldap -g ldap -h %s %s" % (config.get("SERVE", "ldap://"), config.get("OPTS", "")),
                  pidfile="/var/run/openldap/slapd.pid",
                  donotify=True)
 
