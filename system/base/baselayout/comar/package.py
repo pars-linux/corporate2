@@ -129,10 +129,6 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     # a user should be a member of the 'pulse-access' group.
     hav("addGroup", (139, "pulse-access"))
 
-    # For realtime per-user PA initialization, a user should
-    # be a member of the 'pulse-rt' group.
-    hav("addGroup", (140, "pulse-rt"))
-
     hav("addGroup", (141, "italc"))
     hav("addGroup", (142, "quassel"))
     hav("addGroup", (143, "bitlbee"))
