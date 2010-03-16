@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009 TUBITAK/UEKAE
+# Copyright 2009-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/copyleft/gpl.txt.
 
@@ -10,9 +10,9 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-WorkDir = "timezone"
-tzcode  = "tzcode2009r"
-tzdata  = "tzdata2009s"
+WorkDir = "tzdata"
+tzcode  = "tzcode2010c"
+tzdata  = "tzdata2010c"
 
 configTemplate = """
 objpfx = %(pwd)s/obj/
