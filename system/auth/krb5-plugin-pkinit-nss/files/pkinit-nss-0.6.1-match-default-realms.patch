@@ -1,0 +1,136 @@
+Index: src/certs.c
+===================================================================
+--- src/certs.c.orig
++++ src/certs.c
+@@ -1334,6 +1334,92 @@ cert_eku_matches_eku_for_realm(struct mo
+ 	return status;
+ }
+ 
++static PRBool
++cert_san_matches_upn_check (struct module_context *mcontext,
++                            krb5_context kcontext,
++                            SECItem *unparsed_name,
++                            char *unparsed_realm,
++                            SECItem *ms_upn_name)
++{
++        unsigned char *ms_upn_domain;
++        SECItem unparsed_tmp, ms_upn_tmp;
++        int rc;
++        PRBool ret;
++        char **realms;
++        char *ms_upn_host;
++        int len;
++
++        /* And it matches, then we're okay. */
++        if (SECITEM_ItemsAreEqual(ms_upn_name, unparsed_name)) {
++                pkinit_debug(mcontext, 2, "UPN Matched.\n");
++                return PR_TRUE;
++        }
++        
++        if (!unparsed_realm) {
++                return PR_FALSE;
++        }
++
++        ms_upn_domain = memchr (ms_upn_name->data, '@', ms_upn_name->len);
++        if (!ms_upn_domain) {
++                return PR_FALSE;
++        }
++
++        ms_upn_domain++;
++        
++        unparsed_tmp.data = unparsed_name->data;
++        unparsed_tmp.len = unparsed_realm - (char *)unparsed_name->data;
++        
++        ms_upn_tmp.data = ms_upn_name->data;
++        ms_upn_tmp.len = ms_upn_domain - ms_upn_name->data;
++
++        /* compare user names... */
++        if (!SECITEM_ItemsAreEqual(&ms_upn_tmp, &unparsed_tmp)) {
++                return PR_FALSE;
++        }
++        
++        len = ms_upn_name->len - ms_upn_tmp.len;
++        ms_upn_host = malloc (len + 2); /* dot and nil */
++        if (!ms_upn_host) {
++            pkinit_debug (mcontext, 2,
++                          "Could not alloc upn_host: length was %d.\n",
++                          len);
++            return PR_FALSE;
++        }
++
++        /* ms_upn_domain isn't NULL terminated, so we need to copy it
++         * out... */
++        ms_upn_host[0] = '.';
++        strncpy (ms_upn_host + 1, (char *)ms_upn_domain, len);
++        ms_upn_host[len + 1] = '\0';
++        rc = krb5_get_host_realm (kcontext, ms_upn_host, &realms);
++        free (ms_upn_host);
++        ms_upn_host = NULL;
++        if (rc != 0) {
++                pkinit_debug (mcontext, 2, 
++                              "Could not get host realm for .%s: %d.\n",
++                              ms_upn_domain, rc);
++                return PR_FALSE;
++        } else {
++                pkinit_debug (mcontext, 2,
++                              "Found domain \".%.*s\" mapped to realm \"%s\".\n",
++                              len, ms_upn_domain, realms[0]);
++        }
++
++        ms_upn_tmp.data = (unsigned char *)realms[0];
++        ms_upn_tmp.len = strlen (realms[0]);
++
++        unparsed_tmp.data = (unsigned char *)unparsed_realm;
++        unparsed_tmp.len = len;
++
++        ret = SECITEM_ItemsAreEqual (&ms_upn_tmp, &unparsed_tmp);
++        if (ret) {
++                pkinit_debug (mcontext, 2, "UPN Matched.\n");
++        }
++        free (realms[0]);
++        free (realms);
++        return ret;
++}
++
+ /* Check if the certificate subjectAltName UPN value matches the principal. */
+ static SECStatus
+ cert_san_matches_upn(struct module_context *mcontext, CERTCertificate *cert,
+@@ -1342,7 +1428,7 @@ cert_san_matches_upn(struct module_conte
+ {
+ 	struct subject_alt_name **names;
+ 	SECItem san_value, unparsed_name, ms_upn_name;
+-	char *unparsed;
++	char *unparsed, *unparsed_realm;
+ 	int i;
+ 
+ 	i = 0;
+@@ -1376,6 +1462,11 @@ cert_san_matches_upn(struct module_conte
+ 	unparsed_name.data = (unsigned char *) unparsed;
+ 	unparsed_name.len = strlen(unparsed);
+ 
++        unparsed_realm = memchr (unparsed_name.data, '@', unparsed_name.len);
++        if (unparsed_realm != NULL) {
++            unparsed_realm++;
++        }
++
+ 	/* Iterate over all of the values. */
+ 	*matches = PR_FALSE;
+ 	for (i = 0; (names != NULL) && (names[i] != NULL) && !(*matches); i++) {
+@@ -1392,12 +1483,11 @@ cert_san_matches_upn(struct module_conte
+ 						       ms_upn_name_template,
+ 						       &names[i]->subject_alt_name_value.other_name.data) == SECSuccess) {
+ 					/* And it matches, then we're okay. */
+-					if (SECITEM_ItemsAreEqual(&ms_upn_name,
+-								  &unparsed_name)) {
+-						pkinit_debug(mcontext, 2,
+-							     "UPN Matched.\n");
+-						*matches = PR_TRUE;
+-					} else {
++                                        *matches = cert_san_matches_upn_check (mcontext, kcontext, 
++                                                                               &unparsed_name,
++                                                                               unparsed_realm,
++                                                                               &ms_upn_name);
++                                        if (!*matches) {
+ 						pkinit_debug(mcontext, 2,
+ 							     "\"%.*s\" != "
+ 							     "\"%.*s\"\n",
