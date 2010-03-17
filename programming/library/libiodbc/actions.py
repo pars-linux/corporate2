@@ -25,3 +25,4 @@ def install():
     pisitools.dodoc("AUTHORS", "ChangeLog", "NEWS", "README")
 
     pisitools.domove("/usr/share/libiodbc/samples", "/usr/share/doc/libiodbc")
+    pisitools.removeDir("/usr/share/libiodbc")
