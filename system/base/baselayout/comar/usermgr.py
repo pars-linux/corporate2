@@ -19,7 +19,10 @@ import hashlib
 from string import ascii_letters, digits
 
 #import python-polkit bindings
-import polkit
+try:
+    import polkit
+except ImportError:
+    pass
 
 from pardus.fileutils import FileLock
 
@@ -484,7 +487,10 @@ def deleteUser(uid, deletefiles):
     u = db.users.get(uid, None)
     if u:
         #delete authorizations of user
-        polkit.auth_revoke_all(uid)
+        try:
+            polkit.auth_revoke_all(uid)
+        except:
+            pass
 
         home = u.homedir[:]
         db.set_groups(u.name, [])
