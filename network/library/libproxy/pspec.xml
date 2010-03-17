@@ -5,38 +5,95 @@
         <Name>libproxy</Name>
         <Homepage>http://code.google.com/p/libproxy/</Homepage>
         <Packager>
-            <Name>Burak Çalışkan</Name>
-            <Email>burakclskn@gmail.com</Email>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
         </Packager>
         <License>LGPLv2.1</License>
         <IsA>app:console</IsA>
         <Summary>Proxy configuration library</Summary>
         <Description>libproxy is a library that provides automatic proxy configuration management.</Description>
-        <Archive sha1sum="2b2b00a179740548035a1145bbae600db9b0a2ce" type="targz">http://libproxy.googlecode.com/files/libproxy-0.2.3.tar.gz</Archive>
+        <Archive sha1sum="4d9dc92dd40255a51e541099b39d9852563dbc6a" type="targz">http://libproxy.googlecode.com/files/libproxy-0.4.0.tar.gz</Archive>
         <BuildDependencies>
+            <Dependency>qt</Dependency>
             <Dependency>gconf</Dependency>
             <Dependency>libXmu</Dependency>
+            <Dependency>webkit-gtk-devel</Dependency>
+            <Dependency>kdelibs-devel</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">as-needed.patch</Patch>
+            <Patch level="1">libproxy-libexecpath.patch</Patch>
+            <Patch level="1">libproxy-pkgconfig.patch</Patch>
+            <Patch level="1">libproxy-pysitelib.patch</Patch>
+            <Patch level="1">fix-werror.diff</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>libproxy</Name>
-        <RuntimeDependencies>
-            <Dependency>gconf</Dependency>
-            <Dependency>libXmu</Dependency>
-        </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="header">/usr/include</Path>
             <Path fileType="library">/usr/lib</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
             <Path fileType="doc">/usr/share/doc</Path>
         </Files>
     </Package>
 
+    <Package>
+        <Name>libproxy-gnome</Name>
+        <RuntimeDependencies>
+            <Dependency versionFrom="0.4.0">libproxy</Dependency>
+            <Dependency>gconf</Dependency>
+            <Dependency>libXmu</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libproxy/*/modules/config_gnome.*</Path>
+            <!-- add gconf helper to gnome package -->
+            <Path fileType="executable">/usr/lib/libproxy/pxgconf</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>libproxy-kde</Name>
+        <RuntimeDependencies>
+            <Dependency versionFrom="0.4.0">libproxy</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libproxy/*/modules/config_kde*</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>libproxy-webkit-gtk</Name>
+        <RuntimeDependencies>
+            <Dependency versionFrom="0.4.0">libproxy</Dependency>
+            <Dependency>webkit-gtk</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libproxy/*/modules/pacrunner_webkit*</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>libproxy-mozjs</Name>
+        <RuntimeDependencies>
+            <Dependency versionFrom="0.4.0">libproxy</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libproxy/*/modules/pacrunner_mozjs*</Path>
+        </Files>
+    </Package>
+
     <History>
+        <Update release="2">
+            <Date>2010-03-15</Date>
+            <Version>0.4.0</Version>
+            <Comment>Version bump to latest release and split libproxy modules.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
         <Update release="1">
             <Date>2009-03-06</Date>
             <Version>0.2.3</Version>

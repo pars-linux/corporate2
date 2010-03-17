@@ -4,21 +4,17 @@
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-from pisi.actionsapi import autotools
+from pisi.actionsapi import cmaketools
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import get
 
 def setup():
-    autotools.autoreconf("-fi")
-    autotools.configure("--disable-static\
-                         --without-networkmanager\
-                         --without-mozjs")
-    pisitools.dosed("libtool", " -shared ", " -Wl,--as-needed -shared ")
+    cmaketools.configure()
 
 def build():
-    autotools.make()
+    cmaketools.make()
 
 def install():
-    autotools.install()
-    pisitools.remove("/usr/lib/libproxy.la")
+    cmaketools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     pisitools.dodoc("README", "ChangeLog", "COPYING")
