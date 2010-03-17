@@ -71,7 +71,9 @@ def install():
     pisitools.remove("/usr/qt/4/lib/libphonon*")
     pisitools.removeDir("/usr/qt/4/include/phonon")
     pisitools.remove("/usr/qt/4/lib/pkgconfig/phonon*")
-    pisitools.remove("/usr/share/dbus-1/interfaces/org.kde.Phonon.AudioOutput.xml")
+
+    # FIXME:
+    pisitools.remove("/usr/share/dbus-1")
 
     for app in ["qmake", "designer", "assistant", "linguist", "qtconfig", "uic", "rcc", "moc", "lrelease", "lupdate", "lconvert"]:
         pisitools.dosym("/usr/qt/4/bin/%s" % app, "/usr/bin/%s-qt4" % app)
@@ -98,7 +100,7 @@ def install():
         # Remove unnecessary spec files..
         if root.endswith(mkspecPath):
             for dir in dirs:
-                if not dir.startswith("linux") and dir not in ["common","qws","features","default"]:
+                if not dir.startswith("linux") and dir not in ["common", "qws", "features", "default"]:
                     pisitools.removeDir(os.path.join(mkspecPath,dir))
         for name in files:
             if name.endswith(".prl"):
