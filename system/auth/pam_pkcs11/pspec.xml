@@ -15,39 +15,46 @@
         <Description>pam_pkcs11 is a pluggable authentication module(pam) which allows X.509 certificate based user login. The certificate and its dedicated private key are thereby accessed by means of an appropriate PKCS #11 module.</Description>
         <Archive sha1sum="4baa9ee35f3a818e3e1a33ae4bb612edccf17941" type="targz">http://www.opensc-project.org/files/pam_pkcs11/pam_pkcs11-0.6.2.tar.gz</Archive>
         <BuildDependencies>
-            <Dependency>libp11</Dependency>
+            <Dependency>nss</Dependency>
+            <Dependency>nspr</Dependency>
             <Dependency>pcsc-lite</Dependency>
-            <Dependency>cyrus-sasl</Dependency>
-            <Dependency>mit-kerberos</Dependency>
             <Dependency>openldap-client</Dependency>
         </BuildDependencies>
+        <Patches>
+            <Patch level="1">pam_pkcs11-0.5.3-nss-conf.patch</Patch>
+            <Patch level="1">pam_pkcs11-0.6.0-nss-autoconf.patch</Patch>
+        </Patches>
     </Source>
 
     <Package>
         <Name>pam_pkcs11</Name>
         <RuntimeDependencies>
-            <Dependency>libp11</Dependency>
-            <Dependency>opensc</Dependency>
+            <Dependency>nss</Dependency>
+            <Dependency>nspr</Dependency>
             <Dependency>pcsc-lite</Dependency>
-            <Dependency>cyrus-sasl</Dependency>
-            <Dependency>mit-kerberos</Dependency>
             <Dependency>openldap-client</Dependency>
         </RuntimeDependencies>
         <Files>
+            <Path fileType="localedata">/usr/share/locale</Path>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="library">/lib</Path>
+            <Path fileType="config">/etc/pam_pkcs11/*.conf</Path>
             <Path fileType="data">/etc/pam_pkcs11</Path>
-            <Path fileType="config">/etc/pam_pkcs11/pam_pkcs11.conf</Path>
+            <Path fileType="data">/usr/share/pam_pkcs11</Path>
             <Path fileType="doc">/usr/share/doc</Path>
             <Path fileType="man">/usr/share/man</Path>
-            <Path fileType="data">/usr/share/pam_pkcs11</Path>
-            <Path fileType="localedata">/usr/share/locale</Path>
-            <Path fileType="config">/etc</Path>
         </Files>
     </Package>
 
     <History>
+        <Update release="6">
+            <Date>2010-03-17</Date>
+            <Version>0.6.2</Version>
+            <Comment>Switch to nss</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="5">
             <Date>2010-01-07</Date>
             <Version>0.6.2</Version>
