@@ -8,6 +8,8 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
+WorkDir = "Mesa-%s" % get.srcVERSION().replace("_", "-")
+
 def setup():
     shelltools.export("CFLAGS", "%s -DNDEBUG" % get.CFLAGS())
 
@@ -38,11 +40,12 @@ def install():
     pisitools.dobin("progs/xdemos/glxgears")
 
     # Don't install unused headers
-    for header in ("[a-fh-wyz]*.h", "gg*.h", "glf*.h", "*glut*.h"):
+    #for header in ("[a-fh-wyz]*.h", "gg*.h", "glf*.h", "*glut*.h"):
+    for header in ("[a-fh-wyz]*.h", "gg*.h", "glf*.h"):
         pisitools.remove("/usr/include/GL/%s" % header)
 
     # Moving libGL for dynamic switching
     pisitools.domove("/usr/lib/libGL.so.1.2", "/usr/lib/mesa")
 
-    pisitools.dodoc("docs/COPYING", "docs/enums.txt")
+    pisitools.dodoc("docs/COPYING")
     pisitools.dohtml("docs/*")
