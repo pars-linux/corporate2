@@ -73,7 +73,7 @@ def install():
     pisitools.remove("/usr/qt/4/lib/pkgconfig/phonon*")
 
     # FIXME:
-    pisitools.remove("/usr/share/dbus-1")
+    pisitools.removeDir("/usr/share/dbus-1")
 
     for app in ["qmake", "designer", "assistant", "linguist", "qtconfig", "uic", "rcc", "moc", "lrelease", "lupdate", "lconvert"]:
         pisitools.dosym("/usr/qt/4/bin/%s" % app, "/usr/bin/%s-qt4" % app)
