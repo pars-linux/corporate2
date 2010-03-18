@@ -27,11 +27,14 @@ def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     # Move pam module to /lib
-    pisitools.domove("/usr/lib/security/pam_pkcs11.so", "/lib")
+    pisitools.domove("/usr/lib/security/pam_pkcs11.so", "/lib/security")
 
     # Create necessary directories
     pisitools.dodir("/etc/pam_pkcs11/cacerts")
     pisitools.dodir("/etc/pam_pkcs11/crls")
+
+    # Create symlink to /etc/ssl/nssdb
+    pisitools.dosym("/etc/ssl/nssdb", "/etc/pam_pkcs11/nssdb")
 
     # Install conf files
     for f in shelltools.ls("etc/*.conf.example"):
