@@ -6,9 +6,12 @@ import os
 
 serviceType = "local"
 serviceDesc = _({"en": "TrouSerS TCG Core Services daemon",
-                 "tr": "TrouSers TCG Hizmeti"})
+                 "tr": "TrouSers TCG Hizmeti",
+                })
 
-tpm_modules = ("tpm", "%s" % config.get("TPM_MODULES", ""))
+MSG_NOTPM   = _({"en": "Failed starting trousers",
+                 "tr": "trousers hizmeti başlatılamadı",
+                })
 
 TCSD = "/usr/sbin/tcsd"
 PID_FILE = "/var/run/tcsd.pid"
@@ -21,7 +24,7 @@ def load_drivers():
         drivers = glob.glob1(DRIVER_DIR % platform.uname()[2], "tpm_*")
 
     for driver in drivers:
-        os.system("modprobe -q %s" % driver)
+        os.system("modprobe -q %s" % driver.split(".ko")[0])
 
 def check_drivers():
     return len(glob.glob("/sys/module/tpm_*")) > 0
@@ -31,9 +34,12 @@ def start():
     if not check_drivers():
         load_drivers()
 
-    startService(command=TCSD,
-                 pidfile=PID_FILE,
-                 donotify=True)
+    ret = startService(command=TCSD,
+                       pidfile=PID_FILE)
+
+    if ret != 0:
+        # Probably there aren't any TPM devices
+        fail(MSG_NOTPM)
 
 @synchronized
 def stop():
