@@ -1,0 +1,76 @@
+From 347625b8e187c4ab696cd1dad95e49c31ced12f6 Mon Sep 17 00:00:00 2001
+From: Markus Strobl <markus.strobl@gmx.at>
+Date: Wed, 10 Mar 2010 18:26:33 -0800
+Subject: [PATCH 2/3] Bug #19817: Add support for GeForce 7025 and 7050.
+
+Signed-off-by: Aaron Plattner <aplattner@nvidia.com>
+---
+ src/nv_driver.c |    5 +++++
+ src/nv_hw.c     |    7 +++++--
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/src/nv_driver.c b/src/nv_driver.c
+index 31fe78b..99d172f 100644
+--- a/src/nv_driver.c
++++ b/src/nv_driver.c
+@@ -380,6 +380,9 @@ static SymTabRec NVKnownChipsets[] =
+   { 0x10DE03D2, "GeForce 6100 nForce 400" },
+   { 0x10DE03D5, "GeForce 6100 nForce 420" },
+ 
++  { 0x10DE053E, "GeForce 7025" },
++  { 0x10DE053B, "GeForce 7050" },
++
+ /*************** G8x ***************/
+   { 0x10DE0191, "GeForce 8800 GTX" },
+   { 0x10DE0193, "GeForce 8800 GTS" },
+@@ -817,6 +820,7 @@ NVIsSupported(CARD32 id)
+     case 0x0340:
+     case 0x0390:
+     case 0x03D0:
++    case 0x0530:
+         return TRUE;
+     }
+ 
+@@ -1741,6 +1745,7 @@ NVPreInit(ScrnInfoPtr pScrn, int flags)
+     case 0x0290:   /* GeForce 7900 */
+     case 0x0390:   /* GeForce 7600 */
+     case 0x0240:   /* GeForce 6100 */
++    case 0x0530:   /* GeForce 7050, 7025 */
+     case 0x03D0:
+          pNv->Architecture =  NV_ARCH_40;
+          break;
+diff --git a/src/nv_hw.c b/src/nv_hw.c
+index 83eeab2..9291912 100644
+--- a/src/nv_hw.c
++++ b/src/nv_hw.c
+@@ -890,7 +890,8 @@ void NVCalcStateExt (
+         case NV_ARCH_30:
+         default:
+             if(((pNv->Chipset & 0xfff0) == 0x0240) ||
+-               ((pNv->Chipset & 0xfff0) == 0x03D0))
++               ((pNv->Chipset & 0xfff0) == 0x03D0) ||
++               ((pNv->Chipset & 0xfff0) == 0x0530))
+             {
+                 state->arbitration0 = 128; 
+                 state->arbitration1 = 0x0480; 
+@@ -1226,6 +1227,7 @@ void NVLoadStateExt (
+               case 0x01D0:
+               case 0x0240:
+               case 0x03D0:
++              case 0x0530:
+                  pNv->PMC[0x1700/4] = pNv->PFB[0x020C/4];
+                  pNv->PMC[0x1704/4] = 0;
+                  pNv->PMC[0x1708/4] = 0;
+@@ -1316,7 +1318,8 @@ void NVLoadStateExt (
+                    pNv->PGRAPH[(0x0900/4) + i] = pNv->PFB[(0x0600/4) + i];
+                    if(((pNv->Chipset & 0xfff0) != 0x0160) &&
+                       ((pNv->Chipset & 0xfff0) != 0x0220) &&
+-                      ((pNv->Chipset & 0xfff0) != 0x0240))
++                      ((pNv->Chipset & 0xfff0) != 0x0240) &&
++                      ((pNv->Chipset & 0xfff0) != 0x0530))
+                    {
+                       pNv->PGRAPH[(0x6900/4) + i] = pNv->PFB[(0x0600/4) + i];
+                    }
+-- 
+1.7.0.2
+

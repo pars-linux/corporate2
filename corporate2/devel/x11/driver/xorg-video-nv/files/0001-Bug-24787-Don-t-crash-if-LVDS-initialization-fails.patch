@@ -1,0 +1,50 @@
+From e6b046329480a26ecebadf4314673db3f107f83e Mon Sep 17 00:00:00 2001
+From: Aaron Plattner <aplattner@nvidia.com>
+Date: Mon, 8 Mar 2010 16:49:24 -0800
+Subject: [PATCH 1/3] Bug #24787: Don't crash if LVDS initialization fails
+
+Signed-off-by: Aaron Plattner <aplattner@nvidia.com>
+---
+ src/g80_output.c |   23 +++++++++++++----------
+ 1 files changed, 13 insertions(+), 10 deletions(-)
+
+diff --git a/src/g80_output.c b/src/g80_output.c
+index 887208b..5744d94 100644
+--- a/src/g80_output.c
++++ b/src/g80_output.c
+@@ -481,19 +481,22 @@ G80CreateOutputs(ScrnInfoPtr pScrn)
+ 
+     if(pNv->lvds.present) {
+         xf86OutputPtr lvds = G80CreateSor(pScrn, pNv->lvds.or, LVDS);
+-        G80OutputPrivPtr pPriv = lvds->driver_private;
+ 
+-        pPriv->scale = G80_SCALE_ASPECT;
++        if (lvds) {
++            G80OutputPrivPtr pPriv = lvds->driver_private;
+ 
+-        if(pNv->lvds.i2cPort != -1) {
+-            char i2cName[16];
++            pPriv->scale = G80_SCALE_ASPECT;
++
++            if(pNv->lvds.i2cPort != -1) {
++                char i2cName[16];
+ 
+-            snprintf(i2cName, sizeof(i2cName), "I2C%i (LVDS)", pNv->lvds.i2cPort);
+-            pPriv->i2c = G80I2CInit(pScrn, i2cName, pNv->lvds.i2cPort);
+-            if(!pPriv->i2c) {
+-                xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+-                           "Failed to initialize I2C for port %i (LVDS)!\n",
+-                           pNv->lvds.i2cPort);
++                snprintf(i2cName, sizeof(i2cName), "I2C%i (LVDS)", pNv->lvds.i2cPort);
++                pPriv->i2c = G80I2CInit(pScrn, i2cName, pNv->lvds.i2cPort);
++                if(!pPriv->i2c) {
++                    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
++                               "Failed to initialize I2C for port %i (LVDS)!\n",
++                               pNv->lvds.i2cPort);
++                }
+             }
+         }
+     }
+-- 
+1.7.0.2
+
