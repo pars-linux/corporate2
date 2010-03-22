@@ -10,6 +10,8 @@ from pisi.actionsapi import get
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 
+KeepSpecial = ["libtool"]
+
 def setup():
     # Update the admin dir used in KDE template projects.
     for i in shelltools.ls("admin/*"):
