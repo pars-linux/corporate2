@@ -18,6 +18,9 @@ def setup():
     pisitools.dosed("Makefile", "^PREFIX =.*$", "PREFIX = /usr")
     pisitools.dosed("Makefile", "etc\/udev", "lib\/udev")
 
+    # GROUP conversion here (kvm->virt)
+    pisitools.dosed("scripts/65-kvm.rules", "GROUP=\"kvm\"", "GROUP=\"virt\"")
+
     autotools.rawConfigure('--arch=%s \
                             --kerneldir=/lib/modules/%s/build' % (get.ARCH().replace("i686", "x86"),
                                                                   kerneltools.getKernelVersion()))
