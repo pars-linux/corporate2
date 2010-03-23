@@ -25,6 +25,7 @@ def setup():
                          --disable-acpi-ibm \
                          --disable-parted \
                          --disable-sonypic \
+                         --without-keymaps \
                          --without-dell-backlight \
                          --without-deprecated-keys \
                          --enable-acpi-acpid \
