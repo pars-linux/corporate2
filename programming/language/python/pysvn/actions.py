@@ -1,23 +1,35 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-from pisi.actionsapi import autotools
 from pisi.actionsapi import shelltools
+from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = "pysvn-%s/Source" % get.srcVERSION()
-
 def setup():
-    shelltools.system("python setup.py configure")
+    shelltools.cd("Source")
+    shelltools.system("python setup.py configure --enable-debug --verbose --fixed-module-name")
+
+    # Fix compiler flags
+    pisitools.dosed("Makefile", "^CCC=.*$", "CCC=%s" % get.CXX())
+    pisitools.dosed("Makefile", "^CC=.*$", "CC=%s" % get.CC())
+    pisitools.dosed("Makefile", "^LDSHARED=.*$", "LDSHARED=%s -shared %s" % (get.CXX(), get.LDFLAGS()))
+
+    # Fix linking order
+    pisitools.dosed("Makefile", "\$\(LDSHARED\) (-o \$@) (.*)", "$(LDSHARED) \\2 \\1")
 
 def build():
-    autotools.make()
+    autotools.make("-C Source")
+
+def check():
+    autotools.make("-C Tests")
 
 def install():
-    pisitools.insinto("/usr/lib/%s/site-packages/pysvn" % get.curPYTHON(), "pysvn/__init__.py")
-    pisitools.insinto("/usr/lib/%s/site-packages/pysvn" % get.curPYTHON(), "pysvn/_pysvn_*.so")
+    pisitools.insinto("/usr/lib/%s/site-packages/pysvn" % get.curPYTHON(), "Source/pysvn/__init__.py")
+    pisitools.insinto("/usr/lib/%s/site-packages/pysvn" % get.curPYTHON(), "Source/pysvn/_pysvn.so")
+
+    pisitools.dodoc("LICENSE.txt")
