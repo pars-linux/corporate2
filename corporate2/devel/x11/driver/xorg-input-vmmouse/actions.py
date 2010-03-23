@@ -1,7 +1,5 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/copyleft/gpl.txt.
 
@@ -11,7 +9,7 @@ from pisi.actionsapi import get
 WorkDir = "xf86-input-vmmouse-%s" % get.srcVERSION()
 
 def setup():
-    autotools.configure()
+    autotools.configure("--with-hal-callouts-dir=/usr/libexec")
 
 def build():
     autotools.make()
