@@ -14,6 +14,8 @@ def setup():
     autotools.configure("--disable-static \
                          --enable-pcre \
                          --enable-xml2 \
+                         --with-raptor=system \
+                         --with-regex-library=pcre \
                          --disable-gtk-doc \
                          --with-html-dir=%s" % docdir)
 
