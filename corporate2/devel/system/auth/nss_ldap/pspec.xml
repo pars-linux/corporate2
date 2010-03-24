@@ -8,19 +8,19 @@
             <Name>Bahadır Kandemir</Name>
             <Email>bahadir@pardus.org.tr</Email>
         </Packager>
-        <License>LGPLv2.1</License>
+        <License>LGPLv2+</License>
         <IsA>library</IsA>
         <Summary>NSS module for querying user information from LDAP</Summary>
         <Description>The nss_ldap module provides the means for workstations to information such as users, hosts, and groups from LDAP directories.</Description>
-        <Archive sha1sum="b06a8ac04bf1cf6a4aaeef8ae6dbb3fad097a668" type="targz">http://www.padl.com/download/nss_ldap-264.tar.gz</Archive>
+        <Archive sha1sum="743581914fc8c9b4d33955c2cc7acd0c3c44a430" type="targz">http://www.padl.com/download/nss_ldap-265.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>openldap-client</Dependency>
+            <Dependency>mit-kerberos</Dependency>
             <Dependency>cyrus-sasl</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">fix-build-borkage.patch</Patch>
-            <Patch>build-fix.patch</Patch>
-            <Patch>nss_ldap-249-sasl-compile.patch</Patch>
+            <Patch level="1">fix-build-vers_string.patch</Patch>
+            <Patch level="1">nss_ldap-249-sasl-compile.patch</Patch>
             <Patch level="1">nss_ldap-252-reconnect-timeouts.patch</Patch>
             <Patch level="1">nss_ldap-257.2-gssapi-headers.patch</Patch>
             <Patch level="1">nss_ldap-257-nss_max_group_depth.patch</Patch>
@@ -29,6 +29,15 @@
             <!-- Suse patches -->
             <Patch level="1">suse/group-utf8.diff</Patch>
             <Patch level="1">suse/nss_ldap.diff</Patch>
+
+            <!-- Fedora patches -->
+
+            <!-- Assume that there are no supplemental groups for these named users like dbus, named, root, etc. -->
+            <Patch level="1">fedora/pam_ldap-180-local_users.patch</Patch>
+            <Patch level="1">fedora/nss_ldap-259-res_init.patch</Patch>
+            <Patch level="1">fedora/nss_ldap-254-soname.patch</Patch>
+            <Patch level="1">fedora/nss_ldap-264-cloexec.patch</Patch>
+            <Patch level="1">fedora/nss_ldap-264-ent_internal.patch</Patch>
         </Patches>
     </Source>
 
@@ -36,9 +45,11 @@
         <Name>nss_ldap</Name>
         <RuntimeDependencies>
             <Dependency>openldap-client</Dependency>
+            <Dependency>mit-kerberos</Dependency>
             <Dependency>cyrus-sasl</Dependency>
         </RuntimeDependencies>
         <Files>
+            <Path fileType="config">/etc</Path>
             <Path fileType="library">/lib</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="doc">/usr/share/doc</Path>
@@ -47,6 +58,17 @@
     </Package>
 
     <History>
+        <Update release="7">
+            <Date>2010-03-24</Date>
+            <Version>265</Version>
+            <Comment>
+                - Version bump to 265,
+                - Install ldap.conf into /etc,
+                - Enable configurable krb5 gssapi.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="6">
             <Date>2009-10-21</Date>
             <Version>264</Version>

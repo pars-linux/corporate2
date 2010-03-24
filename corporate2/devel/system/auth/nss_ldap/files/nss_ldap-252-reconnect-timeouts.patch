@@ -6,26 +6,28 @@ Also add a note that 'ssl on' is broken and TLS should be used instead.
 
 Signed-off-by: Robin H. Johnson <robbat2@gentoo.org>
 
-diff -Nuar --exclude '*~' nss_ldap-250.orig/ldap-nss.h nss_ldap-250/ldap-nss.h
---- nss_ldap-250.orig/ldap-nss.h	2006-04-26 18:19:00.000000000 -0700
-+++ nss_ldap-250/ldap-nss.h	2006-06-14 01:58:01.933005492 -0700
+Index: nss_ldap-265/ldap-nss.h
+===================================================================
+--- nss_ldap-265.orig/ldap-nss.h
++++ nss_ldap-265/ldap-nss.h
 @@ -96,9 +96,9 @@
   * unacceptable, in which case you may wish to adjust
   * the constants below.
   */
--#define LDAP_NSS_TRIES           5	/* number of sleeping reconnect attempts */
+-#define LDAP_NSS_TRIES	   5	/* number of sleeping reconnect attempts */
 -#define LDAP_NSS_SLEEPTIME       4	/* seconds to sleep; doubled until max */
 -#define LDAP_NSS_MAXSLEEPTIME    64	/* maximum seconds to sleep */
-+#define LDAP_NSS_TRIES           4	/* number of sleeping reconnect attempts */
++#define LDAP_NSS_TRIES	   4	/* number of sleeping reconnect attempts */
 +#define LDAP_NSS_SLEEPTIME       1	/* seconds to sleep; doubled until max */
 +#define LDAP_NSS_MAXSLEEPTIME    16	/* maximum seconds to sleep */
  #define LDAP_NSS_MAXCONNTRIES    2	/* reconnect attempts before sleeping */
  
  #if defined(HAVE_NSSWITCH_H) || defined(HAVE_IRS_H)
-diff -Nuar --exclude '*~' nss_ldap-250.orig/ldap.conf nss_ldap-250/ldap.conf
---- nss_ldap-250.orig/ldap.conf	2006-04-26 18:19:00.000000000 -0700
-+++ nss_ldap-250/ldap.conf	2006-06-14 02:12:02.008444745 -0700
-@@ -283,7 +283,8 @@
+Index: nss_ldap-265/ldap.conf
+===================================================================
+--- nss_ldap-265.orig/ldap.conf
++++ nss_ldap-265/ldap.conf
+@@ -279,7 +279,8 @@ base dc=padl,dc=com
  # OpenLDAP SSL mechanism
  # start_tls mechanism uses the normal LDAP port, LDAPS typically 636
  #ssl start_tls
@@ -35,7 +37,7 @@ diff -Nuar --exclude '*~' nss_ldap-250.orig/ldap.conf nss_ldap-250/ldap.conf
  
  # OpenLDAP SSL options
  # Require and verify server certificate (yes/no)
-@@ -315,3 +316,27 @@
+@@ -311,3 +312,27 @@ base dc=padl,dc=com
  # Override the default Kerberos ticket cache location.
  #krb5_ccname FILE:/etc/.ldapcache
  

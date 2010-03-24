@@ -1,0 +1,11 @@
+diff -up nss_ldap-264/ldap-nss.c nss_ldap-264/ldap-nss.c
+--- nss_ldap-264/ldap-nss.c	2009-07-23 18:55:15.290388484 -0400
++++ nss_ldap-264/ldap-nss.c	2009-07-23 19:01:33.328398737 -0400
+@@ -896,6 +896,7 @@ do_drop_connection(int sd, int closeSd)
+         /* we must let dup2 close sd for us to avoid race conditions
+          * in multithreaded code.
+          */
++	fcntl (dummyfd, F_SETFD, 1L);
+ 	do_dupfd (dummyfd, sd);
+ 	do_closefd (dummyfd);
+       }

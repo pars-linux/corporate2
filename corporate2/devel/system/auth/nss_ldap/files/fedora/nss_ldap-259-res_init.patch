@@ -1,0 +1,146 @@
+Workaround for a NetworkManager/Upstart combination making things
+interesting.  When an application starts before the network is up,
+/etc/resolv.conf is empty, causing the application to attempt to use a
+local resolver.  When the network comes up later, /etc/resolv.conf gets
+populated with nameserver addresses, but the application doesn't re-read
+it.  This screws nss_ldap later on, because the LDAP client library
+needs to be able to resolve the directory server's address, but it can't
+without a local resolver which is probably not started.
+
+diff -up nss_ldap-259/configure.in nss_ldap-259/configure.in
+--- nss_ldap-259/configure.in	2008-04-16 10:42:15.000000000 -0400
++++ nss_ldap-259/configure.in	2008-04-16 10:42:15.000000000 -0400
+@@ -176,6 +176,7 @@ AC_CHECK_HEADERS(alignof.h)
+ AC_CHECK_HEADERS(rpc/rpcent.h)
+ AC_CHECK_HEADERS(sys/byteorder.h)
+ AC_CHECK_HEADERS(sys/un.h)
++AC_CHECK_HEADERS(sys/stat.h)
+ AC_CHECK_HEADERS(libc-lock.h)
+ AC_CHECK_HEADERS(bits/libc-lock.h)
+ AC_CHECK_HEADERS(sasl.h sasl/sasl.h)
+diff -up nss_ldap-259/ldap-nss.c nss_ldap-259/ldap-nss.c
+--- nss_ldap-259/ldap-nss.c	2008-04-16 10:42:15.000000000 -0400
++++ nss_ldap-259/ldap-nss.c	2008-04-16 10:48:02.000000000 -0400
+@@ -44,10 +44,16 @@ static char rcsId[] =
+ #include <syslog.h>
+ #include <signal.h>
+ #include <fcntl.h>
++#ifdef HAVE_SYS_STAT_H
++#include <sys/stat.h>
++#endif
+ #include <sys/time.h>
+ #include <sys/socket.h>
+ #include <sys/param.h>
+ #include <errno.h>
++#ifdef HAVE_RESOLV_H
++#include <resolv.h>
++#endif
+ #ifdef HAVE_SYS_UN_H
+ #include <sys/un.h>
+ #endif
+@@ -1021,8 +1027,31 @@ _nss_ldap_close (void)
+   do_close ();
+ }
+ 
++static void
++_nss_ldap_res_init (const char *uri)
++{
++  if (strncmp(uri, "ldapi://", 8) != 0)
++    {
++      struct stat st;
++      static time_t last_mtime = (time_t) -1;
++#if defined(HAVE_RESOLV_H) && defined(_PATH_RESCONF)
++      NSS_LDAP_DEFINE_LOCK (_nss_ldap_res_init_lock);
++      NSS_LDAP_LOCK (_nss_ldap_res_init_lock);
++      if (stat(_PATH_RESCONF, &st) == 0)
++        {
++          if (last_mtime != st.st_mtime)
++            {
++              last_mtime = st.st_mtime;
++              res_init();
++            }
++        }
++      NSS_LDAP_UNLOCK (_nss_ldap_res_init_lock);
++#endif
++    }
++}
++
+ static NSS_STATUS
+-do_init_session (LDAP ** ld, const char *uri, int defport)
++do_init_session (LDAP ** ld, const char *uri, int defport, int res_init_hack)
+ {
+   int rc;
+   int ldaps;
+@@ -1050,6 +1079,8 @@ do_init_session (LDAP ** ld, const char 
+       uri = uribuf;
+     }
+ 
++  if (res_init_hack)
++    _nss_ldap_res_init(uri);
+   rc = ldap_initialize (ld, uri);
+ #else
+   if (strncasecmp (uri, "ldap://", sizeof ("ldap://") - 1) != 0)
+@@ -1075,6 +1106,8 @@ do_init_session (LDAP ** ld, const char 
+       defport = atoi (p + 1);
+       uri = uribuf;
+     }
++  if (res_init_hack)
++    _nss_ldap_res_init(NULL);
+ # ifdef HAVE_LDAP_INIT
+   *ld = ldap_init (uri, defport);
+ # else
+@@ -1346,7 +1379,8 @@ do_init (void)
+ 
+   stat = do_init_session (&__session.ls_conn,
+ 			  cfg->ldc_uris[__session.ls_current_uri],
+-			  cfg->ldc_port);
++			  cfg->ldc_port,
++			  cfg->ldc_resolv_conf_res_init_hack);
+   if (stat != NSS_SUCCESS)
+     {
+       debug ("<== do_init (failed to initialize LDAP session)");
+diff -up nss_ldap-259/ldap-nss.h nss_ldap-259/ldap-nss.h
+--- nss_ldap-259/ldap-nss.h	2008-04-16 10:45:49.000000000 -0400
++++ nss_ldap-259/ldap-nss.h	2008-04-16 10:45:52.000000000 -0400
+@@ -400,6 +400,9 @@ struct ldap_config
+   time_t ldc_mtime;
+ 
+   char **ldc_initgroups_ignoreusers;
++
++  /* disable the do-res_init()-on-resolv.conf-changes hack */
++  unsigned int ldc_resolv_conf_res_init_hack;
+ };
+ 
+ typedef struct ldap_config ldap_config_t;
+diff -up nss_ldap-259/util.c nss_ldap-259/util.c
+--- nss_ldap-259/util.c	2008-04-16 10:48:08.000000000 -0400
++++ nss_ldap-259/util.c	2008-04-16 10:50:14.000000000 -0400
+@@ -680,6 +680,8 @@ NSS_STATUS _nss_ldap_init_config (ldap_c
+ 	}
+     }
+ 
++  result->ldc_resolv_conf_res_init_hack = 1;
++
+   return NSS_SUCCESS;
+ }
+ 
+@@ -1204,6 +1206,19 @@ _nss_ldap_readconfig (ldap_config_t ** p
+ 	{
+ 	  t = &result->ldc_srv_domain;
+ 	}
++      else if (!strcasecmp (k, "nss_resolv_conf_res_init_hack"))
++	{
++	  if (!strcasecmp (v, "on") || !strcasecmp (v, "yes")
++	      || !strcasecmp (v, "true"))
++	    {
++	      result->ldc_resolv_conf_res_init_hack = 1;
++	    }
++	  else if (!strcasecmp (v, "off") || !strcasecmp (v, "no")
++		   || !strcasecmp (v, "false"))
++	    {
++	      result->ldc_resolv_conf_res_init_hack = 0;
++	    }
++	}
+       else
+ 	{
+ 	  /*
