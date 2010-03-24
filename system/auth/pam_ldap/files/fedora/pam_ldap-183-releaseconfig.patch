@@ -1,0 +1,75 @@
+diff -up pam_ldap/pam_ldap.c pam_ldap/pam_ldap.c
+--- pam_ldap/pam_ldap.c	2009-07-22 15:55:42.000000000 -0400
++++ pam_ldap/pam_ldap.c	2009-07-22 16:00:23.000000000 -0400
+@@ -437,6 +437,7 @@ static void
+ _release_config (pam_ldap_config_t ** pconfig)
+ {
+   pam_ldap_config_t *c;
++  pam_ssd_t *ssd, *next_ssd;
+ 
+   c = *pconfig;
+   if (c == NULL)
+@@ -445,6 +446,9 @@ _release_config (pam_ldap_config_t ** pc
+   if (c->configFile != NULL)
+     free (c->configFile);
+ 
++  if (c->uri != NULL)
++    free (c->uri);
++
+   if (c->host != NULL)
+     free (c->host);
+ 
+@@ -474,6 +478,16 @@ _release_config (pam_ldap_config_t ** pc
+       free (c->sslpath);
+     }
+ 
++  ssd = c->ssd;
++  while ( ssd != NULL )
++    {
++      next_ssd = ssd->next;
++      free (ssd->base);
++      free (ssd->filter);
++      free (ssd);
++      ssd = next_ssd;
++    }
++
+   if (c->userattr != NULL)
+     {
+       free (c->userattr);
+@@ -509,6 +523,36 @@ _release_config (pam_ldap_config_t ** pc
+       free (c->logdir);
+     }
+ 
++  if (c->tls_cacertfile != NULL)
++    {
++      free (c->tls_cacertfile);
++    }
++
++  if (c->tls_cacertdir != NULL)
++    {
++      free (c->tls_cacertdir);
++    }
++
++  if (c->tls_ciphers != NULL)
++    {
++      free (c->tls_ciphers);
++    }
++
++  if (c->tls_cert != NULL)
++    {
++      free (c->tls_cert);
++    }
++
++  if (c->tls_key != NULL)
++    {
++      free (c->tls_key);
++    }
++
++  if (c->tls_randfile != NULL)
++    {
++      free (c->tls_randfile);
++    }
++
+   if (c->sasl_mechanism != NULL)
+     {
+       free (c->sasl_mechanism);
