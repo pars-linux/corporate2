@@ -1,0 +1,17 @@
+When deciding whether or not to try to use ldap_modify to change the user's
+password, skip it if we're in "pam_password exop_send_old", just as we would
+for "pam_password exop".  Upstream #321.
+
+diff -up pam_ldap-176/pam_ldap.c pam_ldap-176/pam_ldap.c
+--- pam_ldap-176/pam_ldap.c	2007-10-04 10:07:32.000000000 -0400
++++ pam_ldap-176/pam_ldap.c	2007-10-04 10:07:40.000000000 -0400
+@@ -3025,7 +3025,8 @@ _update_authtok (pam_handle_t *pamh,
+       break;
+     }				/* end switch */
+ 
+-  if (session->conf->password_type != PASSWORD_EXOP)
++  if ((session->conf->password_type != PASSWORD_EXOP) &&
++      (session->conf->password_type != PASSWORD_EXOP_SEND_OLD))
+     {
+       rc = ldap_modify_s (session->ld, session->info->userdn, mods);
+       if (rc != LDAP_SUCCESS)

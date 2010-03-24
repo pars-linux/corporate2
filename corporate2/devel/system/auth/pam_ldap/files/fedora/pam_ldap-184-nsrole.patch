@@ -1,0 +1,85 @@
+Submitted to upstream #382.
+
+diff -up pam_ldap-184/pam_ldap.5 pam_ldap-184/pam_ldap.5
+--- pam_ldap-184/pam_ldap.5	2008-11-17 13:36:03.000000000 -0500
++++ pam_ldap-184/pam_ldap.5	2008-11-17 13:37:35.000000000 -0500
+@@ -333,6 +333,10 @@ group specified in the
+ .B pam_groupdn
+ option.
+ .TP
++.B pam_nsrole <role>
++Specifies a value which the user's entry's "nsRole" attribute must match
++for logon authorization to succeed.
++.TP
+ .B pam_min_uid <uid>
+ If specified, a user must have a POSIX user ID of at least
+ .B uid
+diff -up pam_ldap-184/pam_ldap.c pam_ldap-184/pam_ldap.c
+--- pam_ldap-184/pam_ldap.c	2008-11-17 13:35:52.000000000 -0500
++++ pam_ldap-184/pam_ldap.c	2008-11-17 13:35:56.000000000 -0500
+@@ -499,6 +499,11 @@ _release_config (pam_ldap_config_t ** pc
+       free (c->groupdn);
+     }
+ 
++  if (c->nsrole != NULL)
++    {
++      free (c->nsrole);
++    }
++
+   if (c->filter != NULL)
+     {
+       free (c->filter);
+@@ -639,6 +644,7 @@ _alloc_config (pam_ldap_config_t ** pres
+   result->userattr = NULL;
+   result->groupattr = NULL;
+   result->groupdn = NULL;
++  result->nsrole = NULL;
+   result->getpolicy = 0;
+   result->checkhostattr = 0;
+   result->checkserviceattr = 0;
+@@ -1043,6 +1049,10 @@ _read_config (const char *configFile, pa
+ 	{
+ 	  CHECKPOINTER (result->groupattr = strdup (v));
+ 	}
++      else if (!strcasecmp (k, "pam_nsrole"))
++	{
++	  CHECKPOINTER (result->nsrole = strdup (v));
++	}
+       else if (!strcasecmp (k, "pam_min_uid"))
+ 	{
+ 	  result->min_uid = (uid_t) atol (v);
+@@ -4136,6 +4146,23 @@ pam_sm_acct_mgmt (pam_handle_t * pamh, i
+ 	rc = success;
+     }
+ 
++  /* check the user's entry's nsRole attribute for the required value */
++  if (rc == success && session->conf->nsrole != NULL)
++    {
++      rc = ldap_compare_s (session->ld,
++			   session->info->userdn,
++			   "nsRole", session->conf->nsrole);
++      if (rc != LDAP_COMPARE_TRUE)
++	{
++	  snprintf (buf, sizeof buf, "You must have the %s role to login.",
++		    session->conf->nsrole);
++	  _conv_sendmsg (appconv, buf, PAM_ERROR_MSG, no_warn);
++	  return PAM_PERM_DENIED;
++	}
++      else
++	rc = success;
++    }
++
+   if (rc == success && session->conf->checkserviceattr)
+     {
+       rc = _service_ok (pamh, session);
+--- pam_ldap-184/pam_ldap.h	2008-11-17 13:39:49.000000000 -0500
++++ pam_ldap-184/pam_ldap.h	2008-11-17 13:39:50.000000000 -0500
+@@ -95,6 +95,8 @@
+     char *groupdn;
+     /* group membership attribute; defaults to uniquemember */
+     char *groupattr;
++    /* role name; optional, for access authorization */
++    char *nsrole;
+     /* LDAP protocol version */
+     int version;
+     /* search timelimit */
