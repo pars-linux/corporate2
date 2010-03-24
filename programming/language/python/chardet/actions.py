@@ -7,6 +7,13 @@
 
 from pisi.actionsapi import pythonmodules
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import get
+
+
+WorkDir = "%s-%s-%s" % (get.curPYTHON().split('.')[0], get.srcNAME(), get.srcVERSION())
+
+def setup():
+    pythonmodules.compile()
 
 def install():
     pythonmodules.install()
