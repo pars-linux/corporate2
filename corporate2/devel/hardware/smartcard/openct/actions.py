@@ -5,17 +5,17 @@
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 def setup():
     shelltools.export("CFLAGS", "%s -D_GNU_SOURCE" % get.CFLAGS())
     autotools.configure("--disable-static \
                          --enable-usb \
-                         --enable-pcsc \
                          --enable-doc \
+                         --enable-pcsc \
                          --localstatedir=/var \
                          --with-bundle=/usr/lib/pcsc/drivers \
                          --with-udev=/lib/udev")
@@ -35,7 +35,7 @@ def install():
 
     pisitools.dodir("/var/run/openct")
     shelltools.chmod("%s/var/run/openct" % get.installDIR(), 0755)
-    shelltools.chown("%s/var/run/openct" % get.installDIR(), gid="pnp")
+    #shelltools.chown("%s/var/run/openct" % get.installDIR(), gid="pnp")
 
     pisitools.remove("/usr/lib/openct-ifd.so")
 
