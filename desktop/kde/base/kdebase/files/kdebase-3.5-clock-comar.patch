@@ -141,15 +141,18 @@ Index: kcontrol/clock/Makefile.am
 ===================================================================
 --- kcontrol/clock/Makefile.am.orig
 +++ kcontrol/clock/Makefile.am
-@@ -3,9 +3,9 @@ kde_module_LTLIBRARIES = kcm_clock.la
- kcm_clock_la_SOURCES = dtime.cpp tzone.cpp main.cpp 
+@@ -1,11 +1,11 @@
+ kde_module_LTLIBRARIES = kcm_clock.la
+ 
+-kcm_clock_la_SOURCES = dtime.cpp tzone.cpp main.cpp 
++kcm_clock_la_SOURCES = dtime.cpp tzone.cpp main.cpp
  
  kcm_clock_la_LDFLAGS = $(all_libraries) -module -avoid-version -no-undefined
 -kcm_clock_la_LIBADD = $(LIB_KIO)
-+kcm_clock_la_LIBADD = $(LIB_KIO) -lpolkit-grant -lglib-2.0 -lpolkit -ldbus-1 -lpolkit-dbus
++kcm_clock_la_LIBADD = $(LIB_KIO) -lpolkit-gobject-1 -lglib-2.0 -ldbus-1
  
 -AM_CPPFLAGS = $(all_includes)
-+AM_CPPFLAGS = $(all_includes) -I/usr/include/PolicyKit -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include
++AM_CPPFLAGS = $(all_includes) -I/usr/include/polkit-1 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include
   
  METASOURCES = AUTO
  
@@ -364,7 +367,7 @@ Index: kicker/applets/clock/clock.cpp
 ===================================================================
 --- kicker/applets/clock/clock.cpp.orig
 +++ kicker/applets/clock/clock.cpp
-@@ -1476,11 +1476,8 @@ void ClockApplet::contextMenuActivated(i
+@@ -1547,11 +1547,8 @@ void ClockApplet::contextMenuActivated(i
              preferences();
              break;
          case 103:
@@ -392,23 +395,60 @@ Index: kcontrol/clock/main.cpp
  
  #include "main.h"
  #include "main.moc"
-@@ -77,11 +79,78 @@ KclockModule::KclockModule(QWidget *pare
+@@ -77,11 +79,116 @@ KclockModule::KclockModule(QWidget *pare
      setButtons(Help);
  }
  
 +bool KclockModule::obtain()
 +{
 +    kdDebug() << "*** In obtain" << endl;
-+    const char *v_action = "tr.org.pardus.comar.time.clock.set";
-+    dbus_int32_t v_win = 0;
-+    dbus_int32_t v_pid = getpid();
++    //dbus_int32_t v_win = 0;
++    //dbus_int32_t v_pid = getpid();
++    //
++
++    g_type_init();
++
++    const char *pk_action = "tr.org.pardus.comar.time.clock.set";
++    bool res = FALSE;
++
++    PolkitCheckAuthorizationFlags pk_flags = POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION;
++    PolkitAuthorizationResult *pk_result;
++    PolkitAuthority *pk_authority;
++    PolkitSubject *pk_subject;
++    GError *error = NULL;
++
++    // Populate objects
++    pk_authority = polkit_authority_get();
++
++    if (pk_authority == NULL)
++        return res;
++
++    pk_subject = polkit_unix_process_new(getpid());
 +
 +    // Check for authorization
-+    if (polkit_check_auth(getpid(), v_action, NULL)) {
-+        kdDebug() << "*** polkit returned true" << endl;
-+        return TRUE;
-+    }
++    pk_result = polkit_authority_check_authorization_sync(pk_authority,
++                                                          pk_subject,
++                                                          pk_action,
++                                                          NULL,
++                                                          pk_flags,
++                                                          NULL,
++                                                          &error);
 +
++    /*
++    if (error != NULL)
++        // hata
++    */
++
++    if (!pk_result)
++        // Unknown
++        res = FALSE;
++    else
++        res = polkit_authorization_result_get_is_authorized(pk_result);
++
++    g_object_unref(pk_result);
++    return res;
++
++    /*
 +    DBusError dbus_err;
 +    dbus_error_init(&dbus_err);
 +
@@ -457,6 +497,7 @@ Index: kcontrol/clock/main.cpp
 +
 +    kdDebug() << "*** obtain returns: " << v_grant << endl;
 +    return v_grant;
++    */
 +}
 +
  void KclockModule::save()
@@ -478,18 +519,17 @@ Index: kcontrol/clock/main.h
 ===================================================================
 --- kcontrol/clock/main.h.orig
 +++ kcontrol/clock/main.h
-@@ -21,6 +21,10 @@
+@@ -21,6 +21,9 @@
  #ifndef main_included
  #define main_included
  
-+#include <polkit-grant/polkit-grant.h>
-+#include <polkit-dbus/polkit-dbus.h>
++#include <polkit/polkit.h>
 +#include <dbus/dbus.h>
 +
  #include <kcmodule.h>
  
  class Dtime;
-@@ -34,9 +38,10 @@ class KclockModule : public KCModule
+@@ -34,9 +37,10 @@ class KclockModule : public KCModule
  
  public:
    KclockModule(QWidget *parent, const char *name, const QStringList &);
