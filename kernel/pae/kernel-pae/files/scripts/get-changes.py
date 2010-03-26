@@ -18,4 +18,4 @@ print default
 os.system("svn up")
 rev = os.popen("svn info | grep 'Last Changed Rev: '").read().split("Last Changed Rev:")[1].strip()
 os.system("svn up %s" % default)
-os.system("svn merge -r %d:HEAD %s ." % (int(rev)+1, default))
+os.system("svn merge -r %d:HEAD %s ." % (int(rev), default))
