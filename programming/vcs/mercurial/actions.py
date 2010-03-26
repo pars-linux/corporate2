@@ -8,6 +8,9 @@
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import pythonmodules
 
+def setup():
+    pythonmodules.compile()
+
 def install():
     pythonmodules.install()
 
