@@ -6,10 +6,12 @@
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from pisi.actionsapi import pythonmodules
-#from pisi.actionsapi import shelltools
+from pisi.actionsapi import get
+
+WorkDir = "%s-%s" % ( get.srcNAME(), get.srcVERSION().replace(".2", ".1"))
+
+def setup():
+    pythonmodules.compile()
 
 def install():
     pythonmodules.install()
-    #documentation can be created after python-sphinx package is merged.
-    #shelltools.cd("doc")
-    #pythonmodules.run("make.py all")
