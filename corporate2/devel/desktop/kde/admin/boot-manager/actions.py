@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2007 TUBITAK/UEKAE
+# Copyright 2007-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 #
@@ -19,4 +19,4 @@ def install():
     binpath = "%s/bin/boot-manager" % get.kdeDIR()
     pisitools.remove(binpath)
     pisitools.dosym("%s/share/apps/boot-manager/boot-manager.py" % get.kdeDIR(), binpath)
-    pisitools.removeDir("/usr/share/doc/")
+    #pisitools.removeDir("/usr/share/doc/")
