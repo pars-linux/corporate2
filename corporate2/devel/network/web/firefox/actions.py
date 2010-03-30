@@ -13,6 +13,12 @@ from pisi.actionsapi import get
 WorkDir = "mozilla"
 
 def setup():
+    #Use autoconf-213 which we provide via a hacky pathc to produce configure
+    shelltools.system("/bin/bash ./autoconf-213/autoconf-2.13 --macro-dir=autoconf-213/m4")
+    shelltools.cd("js/src")
+    shelltools.system("/bin/bash ../../autoconf-213/autoconf-2.13 --macro-dir=../../autoconf-213/m4")
+    shelltools.cd("../..")
+
     shelltools.makedirs("objdir")
     shelltools.cd("objdir")
     #this dummy configure is needed to build locales.
