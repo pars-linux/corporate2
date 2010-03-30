@@ -1,40 +1,68 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009 TUBITAK/UEKAE
+# Copyright 2009-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-# package is compiled so that we support CGI, CLI and mod_php in 1 package
+def extensions():
+    configure_disabled = []
 
-WorkDir = "php-%s" % get.srcVERSION()
+    configure_enabled = [
+        'exif', 'ftp', 'soap', 'sockets', 'sqlite-utf8', 'bcmath',
+        'dom', 'wddx', 'tokenizer', 'simplexml', 'mbstring', 'calendar',
+        'gd-native-ttf'
+    ]
+    configure_shared = [
+        'dba', 'dbase', 'embedded-mysqli'
+    ]
+    configure_with = [
+        'bz2', 'curl', 'iconv', 'mysql', 'mysqli', 'kerberos', 'sqlite', 'mime-magic',
+        'xsl', 'curlwrappers', 'gdbm', 'db4', 'ldap', 'gd', 'ttf', 'gettext',
+        'ncurses', 'regex=php', 'pic', 'pcre-regex', 'pgsql'
+    ]
+    configure_without = []
+
+    conf = []
+    for i in configure_disabled:
+        conf.append("--disable-%s" % i)
+    for i in configure_enabled:
+        conf.append("--enable-%s " % i)
+    for i in configure_shared:
+        conf.append("--enable-%s=shared" % i)
+    for i in configure_with:
+        conf.append("--with-%s" % i)
+    for i in configure_without:
+        conf.append("--without-%s" % i)
+
+    return ' '.join(conf)
 
 def setup():
     # create directories for apache and fcgi's Makefiles
     shelltools.makedirs("fcgi")
     shelltools.makedirs("apache")
+
     # link configure script
     shelltools.sym("../configure", "fcgi/configure")
     shelltools.sym("../configure", "apache/configure")
 
     shelltools.export("LC_ALL", "C")
-    shelltools.export("CFLAGS","%s -fwrapv" % get.CFLAGS())
+    shelltools.export("CFLAGS", "%s -fwrapv" % get.CFLAGS())
     shelltools.export("NO_INTERACTION", "1")
+    shelltools.export("EXTENSION_DIR", "/usr/lib/php/modules")
 
     pisitools.dosed("configure.in", "PHP_UNAME=.*", 'PHP_UNAME="Pardus Linux 2009"')
     pisitools.dosed("ext/pgsql/config.m4", "include/postgresql", " include/postgresql/pgsql")
-
 
     # Don't touch apache.conf
     for i in pisitools.ls("sapi/*/config.m4"):
         pisitools.dosed(i, "\\-i \\-a \\-n php5", "-i -n php5")
         pisitools.dosed(i, "\\-i \\-A \\-n php5", "-i -n php5")
-
 
     autotools.autoconf()
 
@@ -95,34 +123,5 @@ def install():
     pisitools.dosed("%s/etc/php/php.ini" % get.installDIR(), "(extension_dir = .*)", ";\\1")
     pisitools.dosed("%s/etc/php/php.ini" % get.installDIR(), r";include_path = \".:/php/includes\"",
                                                              "include_path = \".:/usr/share/php5/PEAR\"")
-def extensions():
-    configure_disabled = []
 
-    configure_enabled = [
-        'exif', 'ftp', 'soap', 'sockets', 'sqlite-utf8', 'bcmath',
-        'dom', 'wddx', 'tokenizer', 'simplexml', 'mbstring', 'calendar',
-        'gd-native-ttf'
-    ]
-    configure_shared = [
-        'dba', 'dbase', 'embedded-mysqli'
-    ]
-    configure_with = [
-        'bz2', 'curl', 'iconv', 'mysql', 'mysqli', 'kerberos', 'sqlite', 'mime-magic',
-        'xsl', 'curlwrappers', 'gdbm', 'db4', 'ldap', 'gd', 'ttf', 'gettext',
-        'ncurses', 'regex=php', 'pic', 'pcre-regex', 'pgsql'
-    ]
-    configure_without = []
-
-    conf = []
-    for i in configure_disabled:
-        conf.append("--disable-%s" % i)
-    for i in configure_enabled:
-        conf.append("--enable-%s " % i)
-    for i in configure_shared:
-        conf.append("--enable-%s=shared" % i)
-    for i in configure_with:
-        conf.append("--with-%s" % i)
-    for i in configure_without:
-        conf.append("--without-%s" % i)
-
-    return ' '.join(conf)
+    pisitools.dodir("/etc/php/ext")
