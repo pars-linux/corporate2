@@ -12,8 +12,9 @@
         <IsA>library</IsA>
         <Summary>Network Security Services</Summary>
         <Description>Network Security Services (NSS) is a set of libraries designed to support cross-platform development of security-enabled client and server applications. Applications built with NSS can support SSL v2 and v3, TLS, PKCS #5, PKCS #7, PKCS #11, PKCS #12, S/MIME, X.509 v3 certificates, and other security standards.</Description>
-        <Archive sha1sum="82085e8b4179fd4a2e0f9cdb4ea4341d72ba776c" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/nss-3.12.5.0.tar.lzma</Archive>
-        <BuildDependencies>
+        <Archive sha1sum="67ac359052ef3b521e2888b0008c27d57efce6b4" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/nss-3.12.6.tar.lzma</Archive>
+
+       <BuildDependencies>
             <Dependency releaseFrom="24">nspr</Dependency>
         </BuildDependencies>
         <Patches>
@@ -21,9 +22,9 @@
             <Patch>cflags.patch</Patch>
             <Patch>char.patch</Patch>
             <Patch>system-nspr.patch</Patch>
+            <Patch>system-sqlite.patch</Patch>
 
             <!-- Patches from Fedora -->
-            <Patch level="1">system-sqlite.patch</Patch>
             <Patch>nss-no-rpath.patch</Patch>
         </Patches>
     </Source>
@@ -43,10 +44,22 @@
             <AdditionalFile owner="root" permission="0644" target="/usr/lib/pkgconfig/nss.pc">nss.pc</AdditionalFile>
             <AdditionalFile owner="root" permission="0755" target="/usr/bin/nss-config">nss-config</AdditionalFile>
             <AdditionalFile owner="root" permission="0644" target="/etc/env.d/50nss">50nss</AdditionalFile>
+
+            <!-- legacy blank NSS db files from Fedora -->
+            <AdditionalFile owner="root" target="/etc/ssl/nssdb/cert8.db" permission="0644">nssdb/cert8.db</AdditionalFile>
+            <AdditionalFile owner="root" target="/etc/ssl/nssdb/key3.db" permission="0644">nssdb/key3.db</AdditionalFile>
+            <AdditionalFile owner="root" target="/etc/ssl/nssdb/secmod.db" permission="0644">nssdb/secmod.db</AdditionalFile>
         </AdditionalFiles>
     </Package>
 
     <History>
+        <Update release="31">
+            <Date>2010-03-30</Date>
+            <Version>3.12.6.0</Version>
+            <Comment>Version bump to 3.12.6 version. Also add blank NSS DB files.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
         <Update release="30">
             <Date>2010-02-23</Date>
             <Version>3.12.5.0</Version>

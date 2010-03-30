@@ -18,6 +18,7 @@ def build():
 
     shelltools.export("BUILD_OPT","1")
     shelltools.export("NSS_ENABLE_ECC","1")
+    shelltools.export("NSS_USE_SYSTEM_SQLITE","1")
     shelltools.export("OPT_FLAGS","%s -g -fno-strict-aliasing" % get.CFLAGS())
     # use system zlib
     shelltools.export("PKG_CONFIG_ALLOW_SYSTEM_LIBS", "1")
@@ -40,3 +41,9 @@ def install():
     # Drop executable bits from headers
     shelltools.chmod("%s/usr/include/nss/*.h" % get.installDIR(), mode=0644)
 
+    # create empty NSS database
+    pisitools.dodir("/etc/ssl/nssdb")
+    shelltools.export("LD_LIBRARY_PATH", "%s/usr/lib/nss" % get.installDIR())
+    shelltools.system("%s/usr/bin/modutil -force -dbdir \"sql:%s/etc/ssl/nssdb\" -create" % (get.installDIR(), get.installDIR()))
+    shelltools.chmod("%s/etc/ssl/nssdb/*" % get.installDIR(), 0644)
+    pisitools.dosed("%s/etc/ssl/nssdb/*" % get.installDIR(), get.installDIR(), "")
