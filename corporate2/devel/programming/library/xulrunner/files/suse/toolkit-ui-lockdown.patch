@@ -1,11 +1,15 @@
-From: Robert O'Callahan
-Subject: Lockdown feature for Toolkit UI
-References:
+From: various contributors
+Subject: toolkit ui lockdown hooks
 
 diff --git a/toolkit/components/passwordmgr/content/passwordManager.js b/toolkit/components/passwordmgr/content/passwordManager.js
 --- a/toolkit/components/passwordmgr/content/passwordManager.js
 +++ b/toolkit/components/passwordmgr/content/passwordManager.js
-@@ -120,8 +120,17 @@ function LoadSignons() {
+@@ -119,19 +119,28 @@ function LoadSignons() {
+   // SignonColumnSort) assumes we want to toggle the sort
+   // direction but here we don't so we have to trick it
+   lastSignonSortAscending = !lastSignonSortAscending;
+   SignonColumnSort(lastSignonSortColumn);
+ 
    // disable "remove all signons" button if there are no signons
    var element = document.getElementById("removeAllSignons");
    var toggle = document.getElementById("togglePasswords");
@@ -18,12 +22,23 @@ diff --git a/toolkit/components/passwordmgr/content/passwordManager.js b/toolkit
 +  }
    if (signons.length == 0 || gSelectUserInUse) {
      element.setAttribute("disabled","true");
-+    toggle.setAttribute("disabled","true");
-+  } else if (viewLocked) {
      toggle.setAttribute("disabled","true");
++  } else if (viewLocked) {
++    toggle.setAttribute("disabled","true");
    } else {
      element.removeAttribute("disabled");
-@@ -167,6 +176,18 @@ function DeleteAllSignons() {
+     toggle.removeAttribute("disabled");
+   }
+ 
+   return true;
+ }
+ 
+@@ -166,16 +175,28 @@ function DeleteAllSignons() {
+   var syncNeeded = (signonsTreeView._filterSet.length != 0);
+   DeleteAllFromTree(signonsTree, signonsTreeView,
+                         signonsTreeView._filterSet.length ? signonsTreeView._filterSet : signons,
+                         deletedSignons, "removeSignon", "removeAllSignons");
+   FinalizeSignonDeletions(syncNeeded);
  }
  
  function TogglePasswordVisible() {
@@ -42,10 +57,20 @@ diff --git a/toolkit/components/passwordmgr/content/passwordManager.js b/toolkit
    if (showingPasswords || ConfirmShowPasswords()) {
      showingPasswords = !showingPasswords;
      document.getElementById("togglePasswords").label = kSignonBundle.getString(showingPasswords ? "hidePasswords" : "showPasswords");
+     document.getElementById("togglePasswords").accessKey = kSignonBundle.getString(showingPasswords ? "hidePasswordsAccessKey" : "showPasswordsAccessKey");
+     document.getElementById("passwordCol").hidden = !showingPasswords;
+     _filterPasswords();
+   }
+ 
 diff --git a/toolkit/components/printing/content/printdialog.js b/toolkit/components/printing/content/printdialog.js
 --- a/toolkit/components/printing/content/printdialog.js
 +++ b/toolkit/components/printing/content/printdialog.js
-@@ -50,6 +50,7 @@ var gWebBrowserPrint   = null;
+@@ -45,16 +45,17 @@ var printService       = null;
+ var gOriginalNumCopies = 1;
+ 
+ var paramBlock;
+ var gPrefs             = null;
+ var gPrintSettings     = null;
  var gWebBrowserPrint   = null;
  var gPrintSetInterface = Components.interfaces.nsIPrintSettings;
  var doDebug            = false;
@@ -53,7 +78,17 @@ diff --git a/toolkit/components/printing/content/printdialog.js b/toolkit/compon
  
  //---------------------------------------------------
  function initDialog()
-@@ -87,11 +88,23 @@ function initDialog()
+ {
+   dialog = new Object;
+ 
+   dialog.propertiesButton = document.getElementById("properties");
+   dialog.descText         = document.getElementById("descText");
+@@ -82,21 +83,33 @@ function initDialog()
+ 
+   dialog.printButton     = document.documentElement.getButton("accept");
+ 
+   // <data> elements
+   dialog.printName       = document.getElementById("printButton");
    dialog.fpDialog        = document.getElementById("fpDialog");
  
    dialog.enabled         = false;
@@ -77,3 +112,8 @@ diff --git a/toolkit/components/printing/content/printdialog.js b/toolkit/compon
    var value = element.value;
    if (value && value.length > 0) {
      value = value.replace(/[^0-9]/g,"");
+     if (!value) value = "";
+     element.value = value;
+   }
+   if (!value || value < 1 || value > 999)
+     dialog.printButton.setAttribute("disabled","true");

@@ -15,7 +15,14 @@ WorkDir = "mozilla"
 NoStrip = ["/usr/include", "/usr/share/idl"]
 
 def setup():
-    autotools.configure('--enable-optimize="%s -fno-strict-aliasing" --disable-strip --disable-install-strip' % get.CXXFLAGS())
+    #Use autoconf-213 which we provide via a hacky pathc to produce configure
+    shelltools.system("/bin/bash ./autoconf-213/autoconf-2.13 --macro-dir=autoconf-213/m4")
+    shelltools.cd("js/src")
+
+    shelltools.system("/bin/bash ../../autoconf-213/autoconf-2.13 --macro-dir=../../autoconf-213/m4")
+    shelltools.cd("../..")
+
+    autotools.configure('--enable-optimize="%s -Os -fno-strict-aliasing" --disable-strip --disable-install-strip' % get.CXXFLAGS())
 
 def build():
     autotools.make()
@@ -38,7 +45,3 @@ def install():
         for root, dirs, files in os.walk(d):
             for file in files:
                 shelltools.chmod(os.path.join(root, file), 0644)
-
-    pisitools.remove("/usr/lib/pkgconfig/mozilla-nss.pc")
-    pisitools.remove("/usr/lib/pkgconfig/mozilla-nspr.pc")
-

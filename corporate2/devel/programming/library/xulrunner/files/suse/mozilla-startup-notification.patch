@@ -1,14 +1,14 @@
-From: Lubos Lunak <llunak@suse.cz>
+From: Lubos Lunak <llunak@suse.cz>, Ginn Chen <ginn.chen@sun.com>
 Subject: Firefox 3.5 broken startup notification
 References:
 http://bugzilla.novell.com/show_bug.cgi?id=518603
 https://bugzilla.mozilla.org/show_bug.cgi?id=416053
-
+https://bugzilla.mozilla.org/show_bug.cgi?id=534845
 
 diff --git a/toolkit/xre/nsAppRunner.cpp b/toolkit/xre/nsAppRunner.cpp
 --- a/toolkit/xre/nsAppRunner.cpp
 +++ b/toolkit/xre/nsAppRunner.cpp
-@@ -3168,23 +3168,16 @@ XRE_main(int argc, char* argv[], const n
+@@ -3370,23 +3370,16 @@ XRE_main(int argc, char* argv[], const n
          }
          dirProvider.DoStartup();
  
@@ -32,14 +32,14 @@ diff --git a/toolkit/xre/nsAppRunner.cpp b/toolkit/xre/nsAppRunner.cpp
            cmdLine = do_CreateInstance("@mozilla.org/toolkit/command-line;1");
            NS_ENSURE_TRUE(cmdLine, 1);
  
-@@ -3200,16 +3193,23 @@ XRE_main(int argc, char* argv[], const n
-             chromeObserver->Observe(cmdLine, "command-line-startup", nsnull);
-           }
+@@ -3404,16 +3397,23 @@ XRE_main(int argc, char* argv[], const n
  
            NS_TIMELINE_ENTER("appStartup->CreateHiddenWindow");
            rv = appStartup->CreateHiddenWindow();
            NS_TIMELINE_LEAVE("appStartup->CreateHiddenWindow");
            NS_ENSURE_SUCCESS(rv, 1);
+ 
+           MOZ_SPLASHSCREEN_UPDATE(50);
  
 +#if defined(HAVE_DESKTOP_STARTUP_ID) && defined(MOZ_WIDGET_GTK2)
 +          nsRefPtr<nsGTKToolkit> toolkit = GetGTKToolkit();
@@ -53,6 +53,44 @@ diff --git a/toolkit/xre/nsAppRunner.cpp b/toolkit/xre/nsAppRunner.cpp
              nsCOMPtr<nsIExtensionManager> em(do_GetService("@mozilla.org/extensions/manager;1"));
              NS_ENSURE_TRUE(em, 1);
  
-             ar = CheckArg("install-global-extension", PR_TRUE);
-             if (ar == ARG_BAD) {
-               PR_fprintf(PR_STDERR, "Error: argument -install-global-extension is invalid when argument -osint is specified\n");
+             if (upgraded) {
+               rv = em->CheckForMismatches(&needsRestart);
+               if (NS_FAILED(rv)) {
+@@ -3581,30 +3581,23 @@ XRE_main(int argc, char* argv[], const n
+ #ifdef XP_MACOSX
+       if (gBinaryPath) {
+         static char kEnvVar[MAXPATHLEN];
+         sprintf(kEnvVar, "XRE_BINARY_PATH=%s", gBinaryPath);
+         PR_SetEnv(kEnvVar);
+       }
+ #endif
+ 
+-// XXXkt s/MOZ_TOOLKIT_GTK2/MOZ_WIDGET_GTK2/?
+-// but the hidden window has been destroyed so toolkit is NULL anyway.
+-#if defined(HAVE_DESKTOP_STARTUP_ID) && defined(MOZ_TOOLKIT_GTK2)
+-      nsGTKToolkit* toolkit = GetGTKToolkit();
+-      if (toolkit) {
+-        nsCAutoString currentDesktopStartupID;
+-        toolkit->GetDesktopStartupID(&currentDesktopStartupID);
+-        if (!currentDesktopStartupID.IsEmpty()) {
+-          nsCAutoString desktopStartupEnv;
+-          desktopStartupEnv.AssignLiteral("DESKTOP_STARTUP_ID=");
+-          desktopStartupEnv.Append(currentDesktopStartupID);
+-          // Leak it with extreme prejudice!
+-          PR_SetEnv(ToNewCString(desktopStartupEnv));
+-        }
++#if defined(HAVE_DESKTOP_STARTUP_ID) && defined(MOZ_WIDGET_GTK2)
++      if (!desktopStartupID.IsEmpty()) {
++        nsCAutoString desktopStartupEnv;
++        desktopStartupEnv.AssignLiteral("DESKTOP_STARTUP_ID=");
++        desktopStartupEnv.Append(desktopStartupID);
++        // Leak it with extreme prejudice!
++        PR_SetEnv(ToNewCString(desktopStartupEnv));
+       }
+ #endif
+ 
+ #ifdef MOZ_WIDGET_GTK2
+       MOZ_gdk_display_close(display);
+ #endif
+ 
+       rv = LaunchChild(nativeApp, appInitiatedRestart);

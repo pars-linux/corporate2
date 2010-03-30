@@ -12,7 +12,7 @@
         <IsA>library</IsA>
         <Summary>XUL Runtime for Gecko Applications</Summary>
         <Description>xulrunner provides the XUL Runtime environment for Gecko applications.</Description>
-        <Archive sha1sum="1f11dc287e6b2d5dedcb6d244360cc21e91da956" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/mozilla-1.9.1.7.tar.lzma</Archive>
+        <Archive sha1sum="5a01e82fc46c926e237044dddddce30db5b89429" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/mozilla-1.9.2.tar.lzma</Archive>
         <BuildDependencies>
             <Dependency releaseFrom="26">nss</Dependency>
             <Dependency releaseFrom="24">nspr</Dependency>
@@ -26,38 +26,34 @@
             <Dependency>startup-notification</Dependency>
             <Dependency>gnome-vfs</Dependency>
             <Dependency>libgnomeui</Dependency>
+            <Dependency versionFrom="0.4.0">libproxy</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">mozilla-191-path.patch</Patch>
+            <!-- Bump to 1.9.2.2 -->
+            <Patch level="1">192-to-1922.diff</Patch>
+
             <Patch level="1">xulrunner-version.patch</Patch>
             <Patch level="1">mozilla-ps-pdf-simplify-operators.patch</Patch>
-            <Patch>pardus-nsplugin-path.patch</Patch>
-            <Patch>xulrunner-mozconfig.patch</Patch>
 
             <!-- SuSe patches -->
-            <Patch>suse/locale.patch</Patch>
-            <Patch compressionType="bz2">suse/mozilla-system-hunspell.patch.bz2</Patch>
-            <!--<Patch>suse/gecko-lockdown.patch</Patch>-->
-            <Patch>suse/mozilla-helper-app.patch</Patch>
-            <Patch level="1">suse/toolkit-ui-lockdown.patch</Patch>
+            <Patch level="1">suse/mozilla-libproxy.patch</Patch>
             <Patch level="1">suse/mozilla-pkgconfig.patch</Patch>
-            <Patch level="1">suse/mozilla-clipboard.patch</Patch>
+            <Patch level="1">suse/mozilla-helper-app.patch</Patch>
             <Patch level="1">suse/mozilla-startup-notification.patch</Patch>
-            <Patch level="1">suse/mozilla-gtkfilepicker-buttonorder.patch</Patch>
-
-
-            <!-- Ubuntu patches -->
-            <Patch level="1">ubuntu/bz461277_att344402_eliminate_deprecated_gtk_type_macros.patch</Patch>
-            <Patch level="1">ubuntu/bz466923_att350251_password_prompt_branding_fallback.patch</Patch>
-            <Patch level="1">ubuntu/bz467738_att351145_lockPref_everywhere.patch</Patch>
-            <Patch level="1">ubuntu/bz467766_att351173-dont-reset-user-prefs-on-upgrade.patch</Patch>
-            <Patch level="1">ubuntu/bzXXX_no_zlib_export_if_native.patch</Patch>
-            <Patch level="1">ubuntu/bzXXX_pc_honour_system_nspr_nss.patch</Patch>
-            <Patch level="1">ubuntu/bzXXX_urlclassifier_prefs_in_toolkit.patch</Patch>
-            <Patch level="1">ubuntu/dont_install_so_in_dev.patch</Patch>
+            <Patch level="1">suse/mozilla-kde.patch</Patch>
+            <Patch level="1">suse/mozilla-gconf-backend.patch</Patch>
+            <Patch level="1">suse/gecko-lockdown.patch</Patch>
+            <Patch level="1">suse/toolkit-ui-lockdown.patch</Patch>
+            <Patch level="1">suse/mozilla-ua-locale-pref.patch</Patch>
 
             <!-- Pardus -->
-            <Patch>zemberek-firefox3.patch</Patch>
+            <Patch>pardus/zemberek-firefox3.patch</Patch>
+            <Patch level="1">pardus/autoconf-213-hack.diff</Patch>
+            <Patch>pardus/pardus-nsplugin-path.patch</Patch>
+            <Patch>pardus/xulrunner-mozconfig.patch</Patch>
+            <Patch>pardus/as-needed.diff</Patch>
+
+            <Patch level="1">fedora/mozilla-jemalloc-526152.patch</Patch>
         </Patches>
     </Source>
 
@@ -75,6 +71,7 @@
             <Dependency>startup-notification</Dependency>
             <Dependency>gnome-vfs</Dependency>
             <Dependency>libgnomeui</Dependency>
+            <Dependency versionFrom="0.4.0">libproxy</Dependency>
         </RuntimeDependencies>
         <Conflicts>
             <!-- We have moved sdk libraries to base package -->
@@ -82,11 +79,14 @@
         </Conflicts>
         <Files>
             <Path fileType="config">/etc/gre.d</Path>
+            <Path fileType="config">/etc/env.d</Path>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="library">/usr/lib/xulrunner-1.9</Path>
         </Files>
         <AdditionalFiles>
-            <AdditionalFile target="/usr/lib/xulrunner-1.9/defaults/pref/xulrunner-pardus.js" permission="0644" owner="root">default-prefs.js</AdditionalFile>
+            <AdditionalFile target="/usr/lib/xulrunner-1.9/greprefs/all-pardus.js" permission="0644" owner="root">all-pardus.js</AdditionalFile>
+            <AdditionalFile target="/usr/lib/xulrunner-1.9/greprefs/lockdown.js" permission="0644" owner="root">toolkit-lockdown.js</AdditionalFile>
+            <AdditionalFile target="/etc/env.d/20xulrunner" permission="0644" owner="root">20xulrunner</AdditionalFile>
         </AdditionalFiles>
     </Package>
 
@@ -106,6 +106,36 @@
     </Package>
 
     <History>
+        <Update release="29" type="security">
+            <Date>2010-03-30</Date>
+            <Version>1.9.2.2</Version>
+            <Comment>Version bump to new security release. reverseDependencyUpdate is added since 1.9.2 series breaks API/ABI.</Comment>
+            <Requires>
+                <Action>reverseDependencyUpdate</Action>
+            </Requires>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="28">
+            <Date>2010-03-19</Date>
+            <Version>1.9.2</Version>
+            <Comment>Version bump to new release.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="27" type="security">
+            <Date>2010-02-23</Date>
+            <Version>1.9.1.8</Version>
+            <Comment>Bump to new security release (#12316):
+                * XSS hazard using SVG document and binary Content-Type
+                * XSS due to window.dialogArguments being readable cross-domain
+                * Use-after-free crash in HTML parser
+                * Web Worker Array Handling Heap Corruption Vulnerability
+                * Crashes with evidence of memory corruption (rv:1.9.1.8/ 1.9.0.18)
+            </Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
         <Update release="26">
             <Date>2010-01-07</Date>
             <Version>1.9.1.7</Version>
