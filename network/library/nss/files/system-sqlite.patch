@@ -1,53 +1,63 @@
-diff -up mozilla/security/nss/lib/Makefile.nolocalsql mozilla/security/nss/lib/Makefile
---- mozilla/security/nss/lib/Makefile.nolocalsql	2007-11-06 15:12:37.000000000 +0100
-+++ mozilla/security/nss/lib/Makefile	2007-11-06 15:13:35.000000000 +0100
-@@ -62,11 +62,11 @@ ifeq ($(OS_TARGET), WINCE)
- DIRS := $(filter-out fortcrypt,$(DIRS))
+Index: security/nss/cmd/platlibs.mk
+===================================================================
+RCS file: /cvsroot/mozilla/security/nss/cmd/platlibs.mk,v
+retrieving revision 1.66
+diff -u -r1.66 platlibs.mk
+--- security/nss/cmd/platlibs.mk	4 Feb 2010 18:59:10 -0000	1.66
++++ security/nss/cmd/platlibs.mk	9 Mar 2010 12:06:11 -0000
+@@ -80,7 +80,11 @@
+ endif
  endif
  
--ifndef MOZILLA_CLIENT
--ifndef NSS_USE_SYSTEM_SQLITE
--DIRS := sqlite $(DIRS)
--endif
--endif
-+#ifndef MOZILLA_CLIENT
-+#ifndef NSS_USE_SYSTEM_SQLITE
-+#DIRS := sqlite $(DIRS)
-+#endif
-+#endif
++ifdef NSS_USE_SYSTEM_SQLITE
+ SQLITE=-lsqlite3
++else
++SQLITE=-lnsssqlite3
++endif
  
- #######################################################################
- # (5) Execute "global" rules. (OPTIONAL)                              #
-diff -up mozilla/security/nss/lib/softoken/legacydb/manifest.mn.nolocalsql mozilla/security/nss/lib/softoken/legacydb/manifest.mn
---- mozilla/security/nss/lib/softoken/legacydb/manifest.mn.nolocalsql	2007-11-06 15:10:59.000000000 +0100
-+++ mozilla/security/nss/lib/softoken/legacydb/manifest.mn	2007-11-06 15:11:07.000000000 +0100
-@@ -46,9 +46,9 @@ MAPFILE = $(OBJDIR)/nssdbm.def
+ ifdef NSS_DISABLE_DBM
+ DBMLIB = $(NULL)
+Index: security/nss/lib/softoken/config.mk
+===================================================================
+RCS file: /cvsroot/mozilla/security/nss/lib/softoken/config.mk,v
+retrieving revision 1.29
+diff -u -r1.29 config.mk
+--- security/nss/lib/softoken/config.mk	11 Jun 2009 00:55:48 -0000	1.29
++++ security/nss/lib/softoken/config.mk	9 Mar 2010 12:06:12 -0000
+@@ -57,12 +57,16 @@
+ 	-L$(DIST)/lib \
+ 	-L$(NSSUTIL_LIB_DIR) \
+ 	-lnssutil3 \
+-	-lsqlite3 \
+ 	-L$(NSPR_LIB_DIR) \
+ 	-lplc4 \
+ 	-lplds4 \
+ 	-lnspr4 \
+ 	$(NULL)
++ifdef NSS_USE_SYSTEM_SQLITE
++EXTRA_SHARED_LIBS += -lsqlite3
++else
++EXTRA_SHARED_LIBS += -lnsssqlite3
++endif
+ else # ! NS_USE_GCC
  
- DEFINES += -DSHLIB_SUFFIX=\"$(DLL_SUFFIX)\" -DSHLIB_PREFIX=\"$(DLL_PREFIX)\" -DSOFTOKEN_LIB_NAME=\"$(notdir $(SHARED_LIBRARY))\"
+ EXTRA_SHARED_LIBS += \
+Index: security/nss/lib/sqlite/manifest.mn
+===================================================================
+RCS file: /cvsroot/mozilla/security/nss/lib/sqlite/manifest.mn,v
+retrieving revision 1.4
+diff -u -r1.4 manifest.mn
+--- security/nss/lib/sqlite/manifest.mn	9 Jan 2010 05:04:37 -0000	1.4
++++ security/nss/lib/sqlite/manifest.mn	9 Mar 2010 12:06:12 -0000
+@@ -38,9 +38,10 @@
  
--ifdef MOZILLA_CLIENT
--INCLUDES += -I$(DIST)/include/sqlite3
--endif
-+#ifdef MOZILLA_CLIENT
-+#INCLUDES += -I$(DIST)/include/sqlite3
-+#endif
+ MODULE = nss
  
- CSRCS = \
- 	dbmshim.c \
-diff -up mozilla/security/nss/lib/softoken/manifest.mn.nolocalsql mozilla/security/nss/lib/softoken/manifest.mn
---- mozilla/security/nss/lib/softoken/manifest.mn.nolocalsql	2007-11-06 15:08:14.000000000 +0100
-+++ mozilla/security/nss/lib/softoken/manifest.mn	2007-11-06 15:10:21.000000000 +0100
-@@ -47,9 +47,9 @@ MAPFILE = $(OBJDIR)/softokn.def
- 
- DEFINES += -DSHLIB_SUFFIX=\"$(DLL_SUFFIX)\" -DSHLIB_PREFIX=\"$(DLL_PREFIX)\" -DSOFTOKEN_LIB_NAME=\"$(notdir $(SHARED_LIBRARY))\" -DSHLIB_VERSION=\"$(LIBRARY_VERSION)\"
- 
--ifdef MOZILLA_CLIENT
--INCLUDES += -I$(DIST)/include/sqlite3
--endif
-+#ifdef MOZILLA_CLIENT
-+#INCLUDES += -I$(DIST)/include/sqlite3
-+#endif
+-LIBRARY_NAME = sqlite
++LIBRARY_NAME = nsssqlite
+ LIBRARY_VERSION = 3
+ MAPFILE = $(OBJDIR)/sqlite.def
++MAPFILE_SOURCE = sqlite.def
+ DEFINES += -DSQLITE_THREADSAFE=1
  
  EXPORTS = \
- 	pkcs11.h \
-diff -up mozilla/security/nss/lib/softoken/config.mk.nolocalsql mozilla/security/nss/lib/softoken/config.mk
