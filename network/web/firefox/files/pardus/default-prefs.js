@@ -13,7 +13,6 @@ pref("browser.backspace_action", 0);
 pref("browser.display.screen_resolution", 0);
 pref("browser.display.show_image_placeholders", false);
 pref("browser.display.use_document_fonts", 1);
-pref("browser.display.use_system_colors", true);
 pref("browser.link.open_external", 3);
 pref("browser.startup.homepage_override.mstone", "ignore");
 pref("browser.startup.page", 3);

@@ -15,9 +15,12 @@
         <IsA>app:gui</IsA>
         <Summary>Firefox Web Browser</Summary>
         <Description>It is more secure and faster to browse the web with Firefox web browser. You can personalize your web browser with many specifications that is not enough to explain in two sentences.</Description>
-        <Archive sha1sum="1f11dc287e6b2d5dedcb6d244360cc21e91da956" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/mozilla-1.9.1.7.tar.lzma</Archive>
+        <Archive sha1sum="5a01e82fc46c926e237044dddddce30db5b89429" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/mozilla-1.9.2.tar.lzma</Archive>
+        <AdditionalFiles>
+            <AdditionalFile target="browser/app/profile/kde.js" permission="0644">suse/kde.js</AdditionalFile>
+        </AdditionalFiles>
         <BuildDependencies>
-            <Dependency versionFrom="1.9.1.7">xulrunner-devel</Dependency>
+            <Dependency versionFrom="1.9.2.2">xulrunner-devel</Dependency>
             <Dependency>fontconfig</Dependency>
             <Dependency versionFrom="2.18.5">gtk2</Dependency>
             <Dependency>pango</Dependency>
@@ -26,16 +29,21 @@
             <Dependency>startup-notification</Dependency>
             <Dependency>dbus-glib</Dependency>
             <Dependency>hunspell</Dependency>
+            <Dependency versionFrom="0.4.0">libproxy</Dependency>
         </BuildDependencies>
         <Patches>
+            <!-- Bump to 3.6.2 -->
+            <Patch level="1">192-to-1922.diff</Patch>
+
             <!-- default config values -->
             <Patch>mozconfig.patch</Patch>
 
-            <!-- No automatic update -->
-            <Patch level="1">suse/firefox-no-update.patch</Patch>
-
             <!-- No default browser patch -->
             <Patch>suse/firefox-appname.patch</Patch>
+            <Patch level="1">suse/firefox-kde.patch</Patch>
+            <Patch level="1">suse/firefox-browser-css.patch</Patch>
+            <Patch level="1">suse/firefox-ui-lockdown.patch</Patch>
+            <Patch level="1">suse/firefox-cross-desktop.patch</Patch>
 
             <!-- When KWin restores firefox, it runs /usr/lib/MozillaFirefox/firefox-bin
             instead of /usr/bin/firefox. /usr/bin/firefox is a shell script which scans
@@ -45,13 +53,17 @@
             <Patch level="1">pardus/fix-kde-session.patch</Patch>
 
             <Patch>pardus/as-needed.diff</Patch>
+
+            <Patch>pardus/fix-downloaddir-translation.diff</Patch>
+
+            <Patch level="1">pardus/autoconf-213-hack.diff</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>firefox</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="1.9.1.7">xulrunner</Dependency>
+            <Dependency versionFrom="1.9.2.2">xulrunner</Dependency>
             <Dependency>fontconfig</Dependency>
             <Dependency versionFrom="2.18.5">gtk2</Dependency>
             <Dependency>pango</Dependency>
@@ -60,6 +72,7 @@
             <Dependency>startup-notification</Dependency>
             <Dependency>dbus-glib</Dependency>
             <Dependency>hunspell</Dependency>
+            <Dependency versionFrom="0.4.0">libproxy</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="config">/etc/</Path>
@@ -69,6 +82,7 @@
             <Path fileType="data">/usr/lib/pkgconfig</Path>
             <Path fileType="data">/usr/share/applications</Path>
             <Path fileType="data">/usr/share/pixmaps</Path>
+            <Path fileType="data">/usr/share/mime</Path>
             <Path fileType="doc">/usr/share/doc</Path>
         </Files>
         <AdditionalFiles>
@@ -79,8 +93,8 @@
             <AdditionalFile target="/usr/share/applications/mozillafirefox.desktop" permission="0644" owner="root">pardus/mozillafirefox.desktop</AdditionalFile>
 
             <!-- Default options -->
-            <AdditionalFile target="/usr/lib/MozillaFirefox/defaults/pref/firefox-pardus.js" permission="0644" owner="root">pardus/default-prefs.js</AdditionalFile>
-            <AdditionalFile target="/usr/lib/MozillaFirefox/defaults/pref/firefox-l10n.js" permission="0644" owner="root">pardus/firefox-l10n.js</AdditionalFile>
+            <AdditionalFile target="/usr/lib/MozillaFirefox/defaults/preferences/firefox-pardus.js" permission="0644" owner="root">pardus/default-prefs.js</AdditionalFile>
+            <AdditionalFile target="/usr/lib/MozillaFirefox/defaults/preferences/firefox-l10n.js" permission="0644" owner="root">pardus/firefox-l10n.js</AdditionalFile>
             <!-- Browser homepage settings are set here -->
             <AdditionalFile target="/usr/lib/MozillaFirefox/browserconfig.properties" permission="0644" owner="root">pardus/browserconfig.properties</AdditionalFile>
 
@@ -107,8 +121,10 @@
             <AdditionalFile target="/usr/lib/MozillaFirefox/pardus/bookmarks-nl.html" permission="0644" owner="root">pardus/pardus_bookmark-nl.html</AdditionalFile>
             <AdditionalFile target="/usr/lib/MozillaFirefox/pardus/bookmarks-de.html" permission="0644" owner="root">pardus/pardus_bookmark-de.html</AdditionalFile>
 
-            <!-- KMail Wrapper -->
-            <AdditionalFile target="/usr/bin/kmail-firefox" permission="0755" owner="root">kmail-firefox.py</AdditionalFile>
+            <!-- Mimetype for XPI files -->
+            <AdditionalFile target="/usr/share/mime/packages/firefox.xml" permission="0644" owner="root">suse/firefox-mimeinfo.xml</AdditionalFile>
+
+            <AdditionalFile target="/usr/lib/MozillaFirefox/defaults/preferences/lockdown.js" permission="0644" owner="root">suse/firefox-lockdown.js</AdditionalFile>
         </AdditionalFiles>
         <Provides>
             <COMAR script='package.py'>System.Package</COMAR>
@@ -116,6 +132,33 @@
     </Package>
 
     <History>
+        <Update release="124" type="security">
+            <Date>2010-03-30</Date>
+            <Version>3.6.2</Version>
+            <Comment>Version bump to new release</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="123">
+            <Date>2010-03-19</Date>
+            <Version>3.6</Version>
+            <Comment>Version bump to new release</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="122" type="security">
+            <Date>2010-02-23</Date>
+            <Version>3.5.8</Version>
+            <Comment>Bump to new security release (#12316):
+                * XSS hazard using SVG document and binary Content-Type
+                * XSS due to window.dialogArguments being readable cross-domain
+                * Use-after-free crash in HTML parser
+                * Web Worker Array Handling Heap Corruption Vulnerability
+                * Crashes with evidence of memory corruption (rv:1.9.1.8/ 1.9.0.18)
+            </Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
         <Update release="121">
             <Date>2010-01-08</Date>
             <Version>3.5.7</Version>
