@@ -49,6 +49,8 @@ def install():
 
     pisitools.remove("/usr/bin/firefox")
 
+    pisitools.dosed("%s/usr/lib/MozillaFirefox/application.ini" % get.installDIR(), "^MaxVersion=1\\.9\\.2$", "MaxVersion=1.9.2.2")
+
     #install locales
     locales = ["be", "ca", "de", "es-AR", "es-ES", "fr", "it", "nl", "pl", "pt-BR", "sv-SE", "tr"]
     for locale in locales:
