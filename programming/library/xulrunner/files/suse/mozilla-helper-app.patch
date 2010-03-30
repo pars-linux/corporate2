@@ -4,72 +4,18 @@ References:
 https://bugzilla.novell.com/show_bug.cgi?id=406979
 https://bugzilla.mozilla.org/show_bug.cgi?id=327323
 
-Index: uriloader/exthandler/nsMIMEInfoImpl.cpp
-===================================================================
-RCS file: /cvsroot/mozilla/uriloader/exthandler/nsMIMEInfoImpl.cpp,v
-retrieving revision 1.69
-diff -u -p -6 -r1.69 nsMIMEInfoImpl.cpp
---- uriloader/exthandler/nsMIMEInfoImpl.cpp	19 Oct 2007 04:15:43 -0000	1.69
-+++ uriloader/exthandler/nsMIMEInfoImpl.cpp	20 Aug 2008 15:45:32 -0000
-@@ -408,13 +408,13 @@ nsMIMEInfoBase::LaunchWithURI(nsIURI* aU
- }
- 
- void
- nsMIMEInfoBase::CopyBasicDataTo(nsMIMEInfoBase* aOther)
- {
-   aOther->mType = mType;
--  aOther->mDefaultAppDescription = mDefaultAppDescription;
-+  //aOther->mDefaultAppDescription = mDefaultAppDescription;
-   aOther->mExtensions = mExtensions;
- 
-   aOther->mMacType = mMacType;
-   aOther->mMacCreator = mMacCreator;
- }
- 
-Index: uriloader/exthandler/unix/nsOSHelperAppService.cpp
-===================================================================
-RCS file: /cvsroot/mozilla/uriloader/exthandler/unix/nsOSHelperAppService.cpp,v
-retrieving revision 1.74
-diff -u -p -6 -r1.74 nsOSHelperAppService.cpp
---- uriloader/exthandler/unix/nsOSHelperAppService.cpp	20 Feb 2008 06:10:33 -0000	1.74
-+++ uriloader/exthandler/unix/nsOSHelperAppService.cpp	20 Aug 2008 15:45:33 -0000
-@@ -1621,12 +1621,16 @@ nsOSHelperAppService::GetMIMEInfoFromOS(
-       
-       return retval;
-     }
- 
-     // Copy the attributes of retval onto miByExt, to return it
-     retval->CopyBasicDataTo(miByExt);
-+    // But set the extensions primary since CopyBasicDataTo overwrites the
-+    // list
-+    if (!aFileExt.IsEmpty())
-+      retval->SetPrimaryExtension(aFileExt);
- 
-     miByExt.swap(retval);
-   }
-   return retval;
- }
- 
---- uriloader/exthandler/unix/nsMIMEInfoUnix.cpp.orig	2008-10-01 00:19:35.000000000 +0200
-+++ uriloader/exthandler/unix/nsMIMEInfoUnix.cpp	2008-10-01 00:22:16.000000000 +0200
-@@ -46,12 +46,13 @@
+diff --git a/uriloader/exthandler/unix/nsMIMEInfoUnix.cpp b/uriloader/exthandler/unix/nsMIMEInfoUnix.cpp
+--- a/uriloader/exthandler/unix/nsMIMEInfoUnix.cpp
++++ b/uriloader/exthandler/unix/nsMIMEInfoUnix.cpp
+@@ -47,6 +47,7 @@
  #include "nsMIMEInfoUnix.h"
  #include "nsGNOMERegistry.h"
  #include "nsIGnomeVFSService.h"
++#include "nsAutoPtr.h"
  #ifdef MOZ_ENABLE_DBUS
  #include "nsDBusHandlerApp.h"
  #endif
-+#include "nsAutoPtr.h"
- 
- 
- nsresult
- nsMIMEInfoUnix::LoadUriInternal(nsIURI * aURI)
- { 
-   nsresult rv = nsGNOMERegistry::LoadURL(aURI);
-@@ -71,19 +72,22 @@ nsMIMEInfoUnix::LoadUriInternal(nsIURI *
- }
- 
- NS_IMETHODIMP
+@@ -74,13 +75,16 @@ NS_IMETHODIMP
  nsMIMEInfoUnix::GetHasDefaultHandler(PRBool *_retval)
  {
    *_retval = PR_FALSE;
@@ -80,9 +26,9 @@ diff -u -p -6 -r1.74 nsOSHelperAppService.cpp
 -      *_retval = PR_TRUE;
 +  nsRefPtr<nsMIMEInfoBase> mimeInfo = nsGNOMERegistry::GetFromType(mType);
 +  if (!mimeInfo) {
-+     nsCAutoString ext;
-+     GetPrimaryExtension(ext);
-+     mimeInfo = nsGNOMERegistry::GetFromExtension(ext);
++    nsCAutoString ext;
++    GetPrimaryExtension(ext);
++    mimeInfo = nsGNOMERegistry::GetFromExtension(ext);
    }
  
 +  if (mimeInfo)
@@ -91,13 +37,7 @@ diff -u -p -6 -r1.74 nsOSHelperAppService.cpp
    if (*_retval)
      return NS_OK;
  
- #ifdef MOZ_PLATFORM_HILDON
-   HildonURIAction *action = hildon_uri_get_default_action(mType.get(), nsnull);
-   if (action) {
-@@ -106,12 +110,22 @@ nsMIMEInfoUnix::LaunchDefaultWithFile(ns
-   nsCOMPtr<nsIGnomeVFSService> vfs = do_GetService(NS_GNOMEVFSSERVICE_CONTRACTID);
- 
-   if (vfs) {
+@@ -113,6 +117,16 @@ nsMIMEInfoUnix::LaunchDefaultWithFile(ns
      nsCOMPtr<nsIGnomeVFSMimeApp> app;
      if (NS_SUCCEEDED(vfs->GetAppForMimeType(mType, getter_AddRefs(app))) && app)
        return app->Launch(nativePath);
@@ -114,6 +54,24 @@ diff -u -p -6 -r1.74 nsOSHelperAppService.cpp
    }
  
    if (!mDefaultApplication)
-     return NS_ERROR_FILE_NOT_FOUND;
+diff --git a/uriloader/exthandler/unix/nsOSHelperAppService.cpp b/uriloader/exthandler/unix/nsOSHelperAppService.cpp
+--- a/uriloader/exthandler/unix/nsOSHelperAppService.cpp
++++ b/uriloader/exthandler/unix/nsOSHelperAppService.cpp
+@@ -1580,8 +1580,16 @@ nsOSHelperAppService::GetMIMEInfoFromOS(
+       return retval;
+     }
  
-   return LaunchWithIProcess(mDefaultApplication, nativePath);
+-    // Copy the attributes of retval onto miByExt, to return it
++    // Copy the attributes of retval (mimeinfo from type) onto miByExt, to
++    // return it 
++    // but reset to just collected mDefaultAppDescription (from ext)
++    // and preserve the primary extension as well
++    nsAutoString byExtDefault;
++    miByExt->GetDefaultDescription(byExtDefault);
++    retval->SetDefaultDescription(byExtDefault);
+     retval->CopyBasicDataTo(miByExt);
++    if (!aFileExt.IsEmpty())
++      miByExt->SetPrimaryExtension(aFileExt);
+ 
+     miByExt.swap(retval);
+   }
