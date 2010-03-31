@@ -1,0 +1,313 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>wireshark</Name>
+        <Homepage>http://www.wireshark.org</Homepage>
+        <Packager>
+            <Name>Eren Türkay</Name>
+            <Email>eren@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <Icon>wireshark</Icon>
+        <IsA>app:gui</IsA>
+        <Summary>A commercial-quality network protocol analyzer</Summary>
+        <Description>Wireshark is a commercial-quality network protocol analyzer useful to investigate packets on the network.</Description>
+        <Archive sha1sum="62f5571e4786d3fa0cfc3d528f69a5c431e42d75" type="targz">http://www.wireshark.org/download/src/wireshark-1.2.6.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>gnutls</Dependency>
+            <Dependency>libcap</Dependency>
+            <Dependency>libpcap</Dependency>
+            <Dependency>net-snmp</Dependency>
+            <Dependency>mit-kerberos</Dependency>
+            <Dependency versionFrom="2.18.5">gtk2</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch>wireshark-except-double-free.diff</Patch>
+            <Patch level="1">wireshark-1.1.2--as-needed.patch</Patch>
+            <Patch level="1">wireshark-1.1.2-nfs41-backchnl-decode.patch</Patch>
+            <Patch>wireshark-1.0.5-text2pcap-protos.patch</Patch>
+            <Patch>wireshark-desktop.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>wireshark</Name>
+        <RuntimeDependencies>
+            <Dependency>pango</Dependency>
+            <Dependency>geoip</Dependency>
+            <Dependency>gnutls</Dependency>
+            <Dependency>libcap</Dependency>
+            <Dependency>c-ares</Dependency>
+            <Dependency>libpcap</Dependency>
+            <Dependency>net-snmp</Dependency>
+            <Dependency>xdg-utils</Dependency>
+            <Dependency>mit-kerberos</Dependency>
+            <Dependency versionFrom="2.18.5">gtk2</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="data">/usr/share/icons</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="data">/usr/share/applications</Path>
+            <Path fileType="data">/usr/share/wireshark</Path>
+        </Files>
+    </Package>
+    <History>
+        <Update release="34">
+            <Date>2010-03-31</Date>
+            <Version>1.2.6</Version>
+            <Comment>Add libcap dependency.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="33" type="security">
+            <Date>2010-01-29</Date>
+            <Version>1.2.6</Version>
+            <Comment>
+                - Version bump to fix buffer overflows in LWRES dissector (#12168)
+            </Comment>
+            <Name>Eren Türkay</Name>
+            <Email>eren@pardus.org.tr</Email>
+        </Update>
+        <Update release="32" type="security">
+            <Date>2009-12-29</Date>
+            <Version>1.2.5</Version>
+            <Comment>
+                Version bump to fix 2 security vulnerabilies. (#11827)
+
+                    - SMB2 dissector crash (CVE-2009-4377)
+                    - Buffer overflow in SNA file parser (CVE-2009-4376)
+            </Comment>
+            <Name>Eren Türkay</Name>
+            <Email>eren@pardus.org.tr</Email>
+        </Update>
+        <Update release="31" type="security">
+            <Date>2009-10-29</Date>
+            <Version>1.2.3</Version>
+            <Comment>Security release for multiple vulnerabilities (CVE-2009-3549, CVE-2009-3550, CVE-2009-3551, Bug#11466)</Comment>
+            <Name>Taner Taş</Name>
+            <Email>taner@pardus.org.tr</Email>
+        </Update>
+        <Update release="30" type="security">
+            <Date>2009-09-16</Date>
+            <Version>1.2.2</Version>
+            <Comment>
+                Version bump to fix multiple minor vulnerabilities
+                Remove system.base dependencies
+            </Comment>
+            <Name>Taner Taş</Name>
+            <Email>taner@pardus.org.tr</Email>
+        </Update>
+        <Update release="29" type="security">
+            <Date>2009-05-22</Date>
+            <Version>1.2.1</Version>
+            <Comment>Stable version bump to fix multiple vulnerabilities (#10596).</Comment>
+            <Name>Pınar Yanardağ</Name>
+            <Email>pinar@pardus.org.tr</Email>
+        </Update>
+        <Update release="28" type="security">
+            <Date>2009-05-22</Date>
+            <Version>1.0.8</Version>
+            <Comment>Version bump to PCNFSD vulnerability, (#9792).</Comment>
+            <Name>Pınar Yanardağ</Name>
+            <Email>pinar@pardus.org.tr</Email>
+        </Update>
+        <Update release="27" type="security">
+            <Date>2009-04-09</Date>
+            <Version>1.0.7</Version>
+            <Comment>Version bump to fix multiple vulnerabilities (CVE-2009-{1210-1268-1269}), (bug#9530).</Comment>
+            <Name>Pınar Yanardağ</Name>
+            <Email>pinar@pardus.org.tr</Email>
+        </Update>
+        <Update release="26" type="security">
+            <Date>2009-03-10</Date>
+            <Version>1.0.6</Version>
+            <Comment>
+                Add patches from upstream and fixbug#7102:
+                    * Add fix for building error in function 'dissect_sflow_sample_rawheaderdata'
+                    * And make_XOPEN_SOURCE 600.
+                    * Wireshark requires xdg-su now.
+            </Comment>
+            <Name>Pınar Yanardağ</Name>
+            <Email>pinar@pardus.org.tr</Email>
+        </Update>
+        <Update release="25" type="security">
+            <Date>2009-02-10</Date>
+            <Version>1.0.6</Version>
+            <Comment>Version bump to fix NetScreen Snoop Capture File Buffer Overflow Vulnerability (bug#9210)</Comment>
+            <Name>Pınar Yanardağ</Name>
+            <Email>pinar@pardus.org.tr</Email>
+        </Update>
+        <Update release="24" type="security">
+            <Date>2008-11-25</Date>
+            <Version>1.0.5_pre1</Version>
+            <Comment>Version bump to pre release to fix Denial of Service Vulnerability (bug#8717)</Comment>
+            <Name>Pınar Yanardağ</Name>
+            <Email>pinar@pardus.org.tr</Email>
+        </Update>
+        <Update release="23" type="security">
+            <Date>2008-10-21</Date>
+            <Version>1.0.4</Version>
+            <Comment>Version bump to fix multiple Denial of Service Vulnerabilities (bug#8476).</Comment>
+            <Name>Pınar Yanardağ</Name>
+            <Email>pinar@pardus.org.tr</Email>
+        </Update>
+        <Update release="22" type="security">
+            <Date>2008-09-04</Date>
+            <Version>1.0.3</Version>
+            <Comment>Version bump to fix Denial of Service Vulnerabilities (bugzilla#8119).</Comment>
+            <Name>Pınar Yanardağ</Name>
+            <Email>pinar@pardus.org.tr</Email>
+        </Update>
+        <Update release="21" type="security">
+            <Date>2008-07-11</Date>
+            <Version>1.0.2</Version>
+            <Comment>Version bump. Minor security fixes.</Comment>
+            <Name>Ekin Meroğlu</Name>
+            <Email>ekin@pardus.org.tr</Email>
+        </Update>
+        <Update release="20" type="security">
+            <Date>2008-07-01</Date>
+            <Version>1.0.1</Version>
+            <Comment>Version bump. Minor security fixes.</Comment>
+            <Name>Kenan Pelit</Name>
+            <Email>kpelit@gmail.com</Email>
+        </Update>
+        <Update release="19">
+            <Date>2008-06-19</Date>
+            <Version>1.0.0</Version>
+            <Comment>Enable more plugins, fix gui help</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="18" type="security">
+            <Date>2008-03-31</Date>
+            <Version>1.0.0</Version>
+            <Comment>Stable release</Comment>
+            <Name>Kenan Pelit</Name>
+            <Email>kpelit@gmail.com</Email>
+        </Update>
+        <Update release="17" type="security">
+            <Date>2008-02-28</Date>
+            <Version>0.99.8</Version>
+            <Comment>Version bump</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="16">
+            <Date>2007-12-18</Date>
+            <Version>0.99.7</Version>
+            <Comment>Update to stable release</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="15" type="security">
+            <Date>2007-11-30</Date>
+            <Version>0.99.7_pre2</Version>
+            <Comment>Version bump to fix crashes with Turkish locale</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="14" type="security">
+            <Date>2007-11-22</Date>
+            <Version>0.99.7_pre1</Version>
+            <Comment>Version bump to fix lots of security bugs</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2007-07-06</Date>
+            <Version>0.99.6</Version>
+            <Comment>Stable update</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2007-06-29</Date>
+            <Version>0.99.6_pre2</Version>
+            <Comment>Version bump</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="11" type="security">
+            <Date>2007-06-22</Date>
+            <Version>0.99.6_pre1</Version>
+            <Comment>Version bump for multiple security fixes</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2007-02-03</Date>
+            <Version>0.99.5</Version>
+            <Comment>Stable update</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="9" type="security">
+            <Date>2007-02-01</Date>
+            <Version>0.99.4</Version>
+            <Comment>Fix CVE-2007-045{6,7,8,9}</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="8" type="security">
+            <Date>2006-11-01</Date>
+            <Version>0.99.4</Version>
+            <Comment>Version bump to fix CVE-2006-4574, CVE-2006-4805, CVE-2006-5468, CVE-2006-5469, CVE-2006-5740</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="7" type="security">
+            <Date>2006-08-24</Date>
+            <Version>0.99.3</Version>
+            <Comment>Version bump to fix CVE-2006-4330, CVE-2006-4331, CVE-2006-4332, CVE-2006-4333</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="6" type="security">
+            <Date>2006-07-29</Date>
+            <Version>0.99.2</Version>
+            <Comment>Readd pie patch</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="5" type="security">
+            <Date>2006-07-19</Date>
+            <Version>0.99.2</Version>
+            <Comment>Renamed to Wireshark and fix multiple vulnerabilities</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="4" type="security">
+            <Date>2006-04-25</Date>
+            <Version>0.99.0</Version>
+            <Comment>Version bump to fix 28 security vulnerabilities</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="3" type="security">
+            <Date>2005-12-29</Date>
+            <Version>0.10.14</Version>
+            <Comment>Version bump to fix multiple security vulnerabilities</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="2" type="security">
+            <Date>2005-12-12</Date>
+            <Version>0.10.13</Version>
+            <Comment>Fix CVE-2005-3651</Comment>
+            <Name>İsmail Dönmez</Name>
+            <Email>ismail@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2005-11-15</Date>
+            <Version>0.10.13</Version>
+            <Comment>First release</Comment>
+            <Name>Furkan Duman</Name>
+            <Email>coderlord@gmail.com</Email>
+        </Update>
+    </History>
+</PISI>
