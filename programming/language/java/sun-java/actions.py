@@ -24,9 +24,9 @@ def install():
     # Install mozilla plugin (not available for x86_64)
     if Arch == "i586":
         pisitools.dodir("/usr/lib/nsbrowser/plugins")
-        pisitools.dosym("/opt/sun-jre/plugin/i386/ns7/libjavaplugin_oji.so", "/usr/lib/nsbrowser/plugins/javaplugin.so")
 
         # Next generation Java plugin is needed by Firefox 3.6+
+        # http://java.sun.com/javase/6/webnotes/install/jre/manual-plugin-install-linux.html
         pisitools.dosym("/opt/sun-jre/lib/i386/libnpjp2.so", "/usr/lib/nsbrowser/plugins/javaplugin-new.so")
 
     for doc in ["COPYRIGHT", "LICENSE", "README.html", "README_ja.html", "README_zh_CN.html", "THIRDPARTYLICENSEREADME.txt"]:
