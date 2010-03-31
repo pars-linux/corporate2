@@ -29,4 +29,8 @@ def install():
     # Replace with our grub hook
     pisitools.remove("/usr/lib/pm-utils/sleep.d/01grub")
 
+    # Create some initial directories
+    for d in ("locks", "storage"):
+        pisitools.dodir("/var/run/pm-utils/%s" % d)
+
     pisitools.dodoc("COPYING", "ChangeLog", "AUTHORS")
