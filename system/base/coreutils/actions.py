@@ -23,6 +23,7 @@ def setup():
                          --enable-acl \
                          --enable-xattr \
                          --enable-install-program=arch \
+                         --disable-libcap \
                          --without-included-regex \
                          --without-gmp \
                          --enable-no-install-program=faillog,hostname,login,lastlog,uptime")
