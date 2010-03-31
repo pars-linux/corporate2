@@ -25,7 +25,7 @@ def install():
 
     # Next generation Java plugin is needed by Firefox 3.6+
     # http://java.sun.com/javase/6/webnotes/install/jre/manual-plugin-install-linux.html
-    pisitools.dosym("/opt/sun-jre/lib/%s/libnpjp2.so" % Arch.replace("i586", "i386"), "/usr/lib/nsbrowser/plugins/javaplugin-new.so")
+    pisitools.dosym("/opt/sun-jre/lib/%s/libnpjp2.so" % Arch.replace("i586", "i386"), "/usr/lib/nsbrowser/plugins/javaplugin.so")
 
     for doc in ["COPYRIGHT", "LICENSE", "README.html", "README_ja.html", "README_zh_CN.html", "THIRDPARTYLICENSEREADME.txt"]:
         file = "%s/opt/sun-jdk/%s" % (get.installDIR(), doc)
