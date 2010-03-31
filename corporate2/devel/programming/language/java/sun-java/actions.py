@@ -21,13 +21,11 @@ def install():
     pisitools.dodir("/opt")
     shelltools.system("./construct . %s/opt/sun-jdk %s/opt/sun-jre"% (get.installDIR(),get.installDIR()))
 
-    # Install mozilla plugin (not available for x86_64)
-    if Arch == "i586":
-        pisitools.dodir("/usr/lib/nsbrowser/plugins")
+    pisitools.dodir("/usr/lib/nsbrowser/plugins")
 
-        # Next generation Java plugin is needed by Firefox 3.6+
-        # http://java.sun.com/javase/6/webnotes/install/jre/manual-plugin-install-linux.html
-        pisitools.dosym("/opt/sun-jre/lib/i386/libnpjp2.so", "/usr/lib/nsbrowser/plugins/javaplugin-new.so")
+    # Next generation Java plugin is needed by Firefox 3.6+
+    # http://java.sun.com/javase/6/webnotes/install/jre/manual-plugin-install-linux.html
+    pisitools.dosym("/opt/sun-jre/lib/%s/libnpjp2.so" % Arch.replace("i586", "i386"), "/usr/lib/nsbrowser/plugins/javaplugin-new.so")
 
     for doc in ["COPYRIGHT", "LICENSE", "README.html", "README_ja.html", "README_zh_CN.html", "THIRDPARTYLICENSEREADME.txt"]:
         file = "%s/opt/sun-jdk/%s" % (get.installDIR(), doc)
