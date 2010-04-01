@@ -70,4 +70,6 @@ def install():
     # drv is built into CUPS so drop the man page
     pisitools.remove("/usr/share/man/man7/drv.7")
 
+    pisitools.removeDir("/etc/xinetd.d/")
+
     pisitools.dodoc("CHANGES.txt", "CREDITS.txt", "LICENSE.txt", "README.txt")
