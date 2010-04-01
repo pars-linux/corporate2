@@ -1,6 +1,6 @@
-diff -up cups-1.4.1/cups/tempfile.c.str3382 cups-1.4.1/cups/tempfile.c
---- cups-1.4.1/cups/tempfile.c.str3382	2008-12-10 06:03:11.000000000 +0100
-+++ cups-1.4.1/cups/tempfile.c	2009-10-20 15:08:39.000000000 +0200
+diff -up cups-1.4.3/cups/tempfile.c.str3382 cups-1.4.3/cups/tempfile.c
+--- cups-1.4.3/cups/tempfile.c.str3382	2010-01-18 19:47:12.000000000 +0100
++++ cups-1.4.3/cups/tempfile.c	2010-03-31 13:26:52.000000000 +0200
 @@ -35,6 +35,7 @@
  #  include <io.h>
  #else
@@ -33,8 +33,8 @@ diff -up cups-1.4.1/cups/tempfile.c.str3382 cups-1.4.1/cups/tempfile.c
 -    * Format a string using the hex time values...
 -    */
 -
--    snprintf(filename, len - 1, "%s/%08lx%05lx", tmpdir,
--             (unsigned long)curtime.tv_sec, (unsigned long)curtime.tv_usec);
+-    snprintf(filename, len - 1, "%s/%05x%08x", tmpdir, (unsigned)getpid(),
+-             (unsigned)(curtime.tv_sec + curtime.tv_usec + tries));
 -#endif /* WIN32 */
  
     /*

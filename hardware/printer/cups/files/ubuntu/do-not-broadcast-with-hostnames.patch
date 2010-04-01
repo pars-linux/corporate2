@@ -1,0 +1,45 @@
+diff -urNad cups-1.4.1~/scheduler/client.c cups-1.4.1/scheduler/client.c
+--- cups-1.4.1~/scheduler/client.c	2009-07-15 01:02:05.000000000 +0200
++++ cups-1.4.1/scheduler/client.c	2009-10-12 22:47:06.000000000 +0200
+@@ -422,7 +422,7 @@
+     {
+       if (httpAddrLocalhost(&temp))
+         strlcpy(con->servername, "localhost", sizeof(con->servername));
+-      else if (HostNameLookups || RemotePort)
++      else if (HostNameLookups)
+         httpAddrLookup(&temp, con->servername, sizeof(con->servername));
+       else
+         httpAddrString(&temp, con->servername, sizeof(con->servername));
+@@ -435,7 +435,7 @@
+     {
+       if (httpAddrLocalhost(&temp))
+         strlcpy(con->servername, "localhost", sizeof(con->servername));
+-      else if (HostNameLookups || RemotePort)
++      else if (HostNameLookups)
+         httpAddrLookup(&temp, con->servername, sizeof(con->servername));
+       else
+         httpAddrString(&temp, con->servername, sizeof(con->servername));
+diff -urNad cups-1.4.1~/scheduler/conf.c cups-1.4.1/scheduler/conf.c
+--- cups-1.4.1~/scheduler/conf.c	2009-05-26 17:41:04.000000000 +0200
++++ cups-1.4.1/scheduler/conf.c	2009-10-12 22:47:06.000000000 +0200
+@@ -746,7 +746,7 @@
+     cupsdAddAlias(ServerAlias, temp);
+     cupsdLogMessage(CUPSD_LOG_DEBUG, "Added auto ServerAlias %s", temp);
+ 
+-    if (HostNameLookups || RemotePort)
++    if (HostNameLookups)
+     {
+       struct hostent	*host;		/* Host entry to get FQDN */
+ 
+diff -urNad cups-1.4.1~/scheduler/network.c cups-1.4.1/scheduler/network.c
+--- cups-1.4.1~/scheduler/network.c	2009-04-28 02:23:38.000000000 +0200
++++ cups-1.4.1/scheduler/network.c	2009-10-12 22:47:06.000000000 +0200
+@@ -155,7 +155,7 @@
+     * Try looking up the hostname for the address as needed...
+     */
+ 
+-    if (HostNameLookups || RemotePort)
++    if (HostNameLookups)
+       httpAddrLookup((http_addr_t *)(addr->ifa_addr), hostname,
+                      sizeof(hostname));
+     else
