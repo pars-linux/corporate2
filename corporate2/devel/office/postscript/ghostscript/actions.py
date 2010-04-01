@@ -42,9 +42,10 @@ def setup():
                        --enable-shared")
 
 def build():
-    autotools.make()
-    autotools.make("so")
     autotools.make("-C ijs")
+    autotools.make("so")
+    autotools.make()
+    autotools.make("cups")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
@@ -57,13 +58,11 @@ def install():
     pisitools.insinto("/usr/include/ghostscript", "base/errors.h")
 
     # Install ijs
-    #shelltools.cd("ijs")
     autotools.rawInstall("-C ijs DESTDIR=%s" % get.installDIR())
-    #shelltools.cd("..")
+    pisitools.removeDir("/usr/lib/pkgconfig")
 
     # Remove ijs examples
     pisitools.remove("/usr/bin/ijs_*_example")
-    #pisitools.removeDir("/usr/lib/pkgconfig")
 
     # Install docs
     pisitools.remove("/usr/share/doc/ghostscript/*.htm*")
