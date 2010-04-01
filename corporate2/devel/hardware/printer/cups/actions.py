@@ -44,7 +44,6 @@ def setup():
                          --enable-png \
                          --enable-jpeg \
                          --enable-tiff \
-                         --enable-pie \
                          --enable-relro \
                          --enable-dnssd \
                          --enable-browsing \
@@ -52,6 +51,7 @@ def setup():
                          --disable-openssl \
                          --disable-launchd \
                          --without-rcdir' % get.CFLAGS())
+
 
 def build():
     autotools.make()
@@ -66,5 +66,8 @@ def install():
 
     # Serial backend needs to run as root
     shelltools.chmod("%s/usr/lib/cups/backend/serial" % get.installDIR(), 0700)
+
+    # drv is built into CUPS so drop the man page
+    pisitools.remove("/usr/share/man/man7/drv.7")
 
     pisitools.dodoc("CHANGES.txt", "CREDITS.txt", "LICENSE.txt", "README.txt")
