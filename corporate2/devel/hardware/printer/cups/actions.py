@@ -28,6 +28,7 @@ def setup():
                          --with-dbusdir=/etc/dbus-1 \
                          --with-pdftops=pdftops \
                          --with-optim="%s -fstack-protector-all" \
+                         --with-php=/usr/bin/php-cgi \
                          --localstatedir=/var \
                          --enable-slp \
                          --enable-acl \
@@ -50,8 +51,7 @@ def setup():
                          --enable-ldap \
                          --disable-openssl \
                          --disable-launchd \
-                         --without-rcdir \
-                         --without-php' % get.CFLAGS())
+                         --without-rcdir' % get.CFLAGS())
 
 def build():
     autotools.make()

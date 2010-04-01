@@ -12,84 +12,108 @@
         <IsA>service</IsA>
         <Summary>Common Unix Printing System</Summary>
         <Description>cups provides a portable printing layer for *nix-based operating systems.</Description>
-        <Archive sha1sum="84be13b1a83a981cf1f3f9f812d53f3a3ca247cf" type="tarbz2">ftp://ftp.rz.tu-bs.de/pub/mirror/ftp.easysw.com/ftp/pub/cups/1.4.2/cups-1.4.2-source.tar.bz2</Archive>
+        <Archive sha1sum="0dd9e3d709614d26cce77728b9263556c94c9559" type="tarbz2">ftp://ftp.easysw.com/pub/cups/1.4.3/cups-1.4.3-source.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>openldap-client</Dependency>
             <Dependency>mit-kerberos</Dependency>
             <Dependency>cyrus-sasl</Dependency>
             <Dependency>libtasn1</Dependency>
             <Dependency>libpaper</Dependency>
+            <Dependency>php-cli</Dependency>
             <Dependency>openslp</Dependency>
             <Dependency>gnutls</Dependency>
             <Dependency>avahi</Dependency>
         </BuildDependencies>
         <Patches>
-            <!-- Strip *.gz from man pages -->
+            <!-- Fedora patches -->
+
+            <!-- Don't gzip man pages in the Makefile, let rpmbuild do it. -->
             <Patch level="1">fedora/cups-no-gzip-man.patch</Patch>
+
+            <!-- Use the system pam configuration. -->
             <Patch level="1">fedora/cups-1.1.16-system-auth.patch</Patch>
+
+            <!-- Fix compilation of serial backend. -->
             <Patch level="1">fedora/cups-serial.patch</Patch>
 
+            <!-- Don't export SSLLIBS to cups-config. -->
             <Patch level="1">fedora/cups-no-export-ssllibs.patch</Patch>
-            <Patch level="1">fedora/cups-str3448.patch</Patch>
 
-            <!-- Allow tweaking of direct usb uris -->
+            <!-- Allow file-based usb device URIs. -->
             <Patch level="1">fedora/cups-direct-usb.patch</Patch>
+
+            <!-- Add help option to lpr. -->
             <Patch level="1">fedora/cups-lpr-help.patch</Patch>
 
-            <!-- Fix build -->
+            <!-- Fix compilation of peer credentials support. -->
             <Patch level="1">fedora/cups-peercred.patch</Patch>
 
-            <!-- Create pid file for cupsd -->
+            <!-- Maintain a cupsd.pid file. -->
             <Patch level="1">fedora/cups-pid.patch</Patch>
-            <Patch level="1">fedora/cups-page-label.patch</Patch>
-            <!--<Patch level="1">fedora/cups-eggcups.patch</Patch>-->
 
-            <!-- Improve lprm's infinite password asking behaviour -->
+            <!-- Fix orientation of page labels. -->
+            <Patch level="1">fedora/cups-page-label.patch</Patch>
+
+            <!-- Fix implementation of com.redhat.PrinterSpooler D-Bus object. -->
+            <Patch level="1">fedora/cups-eggcups.patch</Patch>
+
+            <!-- More sophisticated implementation of cupsGetPassword than getpass. -->
             <Patch level="1">fedora/cups-getpass.patch</Patch>
 
-            <!-- Increase timeout for ppd reading -->
+            <!-- Increase driverd timeout to 70s to accommodate foomatic. -->
             <Patch level="1">fedora/cups-driverd-timeout.patch</Patch>
+
+            <!-- Only enforce maximum PPD line length when in strict mode. -->
             <Patch level="1">fedora/cups-strict-ppd-line-length.patch</Patch>
+
+            <!-- Re-open the log if it has been logrotated under us. -->
             <Patch level="1">fedora/cups-logrotate.patch</Patch>
 
-            <!-- USB paperout support -->
+            <!-- Support for errno==ENOSPACE-based USB paper-out reporting. -->
             <Patch level="1">fedora/cups-usb-paperout.patch</Patch>
 
+            <!-- Simplify the DNSSD parts so they can build using the compat library. -->
             <Patch level="1">fedora/cups-build.patch</Patch>
-            <Patch level="1">fedora/cups-res_init.patch</Patch>
-            <Patch level="1">fedora/cups-filter-debug.patch</Patch>
-            <Patch level="1">fedora/cups-uri-compat.patch</Patch>
-            <Patch level="1">fedora/cups-cups-get-classes.patch</Patch>
-            <Patch level="1">fedora/cups-avahi.patch</Patch>
-            <Patch level="1">fedora/cups-str3382.patch</Patch>
-            <Patch level="1">fedora/cups-str3285_v2.patch</Patch>
-            <Patch level="1">fedora/cups-str3390.patch</Patch>
-            <Patch level="1">fedora/cups-str3391.patch</Patch>
-            <Patch level="1">fedora/cups-str3381.patch</Patch>
-            <Patch level="1">fedora/cups-str3399.patch</Patch>
-            <Patch level="1">fedora/cups-str3403.patch</Patch>
-            <Patch level="1">fedora/cups-str3407.patch</Patch>
-            <Patch level="1">fedora/cups-str3418.patch</Patch>
-            <Patch level="1">fedora/cups-str3422.patch</Patch>
-            <Patch level="1">fedora/cups-str3413.patch</Patch>
-            <Patch level="1">fedora/cups-str3439.patch</Patch>
-            <Patch level="1">fedora/cups-str3440.patch</Patch>
-            <Patch level="1">fedora/cups-str3442.patch</Patch>
-            <Patch level="1">fedora/cups-negative-snmp-string-length.patch</Patch>
-            <Patch level="1">fedora/cups-sidechannel-intrs.patch</Patch>
-            <Patch level="1">fedora/cups-media-empty-warning.patch</Patch>
-            <Patch level="1">fedora/cups-str3435.patch</Patch>
-            <Patch level="1">fedora/cups-str3436.patch</Patch>
-            <Patch level="1">fedora/cups-str3425.patch</Patch>
-            <Patch level="1">fedora/cups-str3428.patch</Patch>
-            <Patch level="1">fedora/cups-str3431.patch</Patch>
-            <Patch level="1">fedora/cups-gnutls-gcrypt-threads.patch</Patch>
-            <Patch level="1">fedora/cups-str3458.patch</Patch>
-            <Patch level="1">fedora/cups-0755.patch</Patch>
-            <Patch level="1">fedora/cups-str3460.patch</Patch>
 
-            <!-- Use-after-free (crash) due improper reference counting in abstract file descriptors handling interface (CVE-2009-3553) (#11663) -->
-            <Patch level="1">fedora/cups-CVE-2009-3553.patch</Patch>
+            <!-- Re-initialise the resolver on failure in httpAddrGetList(). -->
+            <Patch level="1">fedora/cups-res_init.patch</Patch>
+
+            <!-- Log extra debugging information if no filters are available. -->
+            <Patch level="1">fedora/cups-filter-debug.patch</Patch>
+
+            <!-- Allow the usb backend to understand old-style URI formats. -->
+            <Patch level="1">fedora/cups-uri-compat.patch</Patch>
+
+            <!-- Fix support for older CUPS servers in cupsGetDests. -->
+            <Patch level="1">fedora/cups-cups-get-classes.patch</Patch>
+
+            <!-- Avahi support in the dnssd backend. -->
+            <Patch level="1">fedora/cups-avahi.patch</Patch>
+
+            <!-- Fix temporary filename creation. -->
+            <Patch level="1">fedora/cups-str3382.patch</Patch>
+
+            <!-- Fix cupsGetNamedDest() when a name is specified. -->
+            <Patch level="1">fedora/cups-str3503.patch</Patch>
+
+            <!-- Don't treat SIGPIPE as an error. -->
+            <Patch level="1">fedora/cups-str3399.patch</Patch>
+
+            <!-- <Patch level="1">fedora/cups-gnutls-gcrypt-threads.patch</Patch> -->
+
+            <!-- Use mode 0755 for binaries and libraries where appropriate. -->
+            <Patch level="1">fedora/cups-0755.patch</Patch>
+
+            <!-- Re-initialise the resolver on failure in httpAddrLookup(). -->
+            <Patch level="1">fedora/cups-EAI_AGAIN.patch</Patch>
+
+            <!-- Update classes.conf when a class member printer is deleted -->
+            <Patch level="1">fedora/cups-str3505.patch</Patch>
+
+            <!-- Fix lpstat to adhere to -o option. -->
+            <Patch level="1">fedora/cups-str3541.patch</Patch>
+
+            <!-- Security fix for CVE-2010-0302 -->
             <Patch level="1">fedora/cups-CVE-2010-0302.patch</Patch>
 
             <!-- Accept "Host: ::1" (bzrh: #497393) -->
@@ -98,7 +122,7 @@
 
             <!-- Ubuntu patches -->
 
-            <!-- One usb backend for both libusb-based and usblp-based accesses -->
+            <!-- One USB backend for both libusb-based and usblp-based accesses -->
             <Patch level="1">ubuntu/usb-backend-both-usblp-and-libusb.patch</Patch>
 
             <!-- Retry job when it's failed instead of stopping -->
@@ -114,19 +138,34 @@
             <!-- Don't mess with cupsd.conf permission -->
             <Patch level="1">ubuntu/confdirperms.patch</Patch>
 
+            <!-- Deactivate CUPS' internal logrotating -->
+            <Patch level="1">ubuntu/default-log-settings.patch</Patch>
+
+            <!-- Change 200 to 99999 to keep failed print job logging unlimited -->
+            <Patch level="1">ubuntu/log-debug-history-nearly-unlimited.patch</Patch>
+
+            <!-- Do not use host names for broadcasting print queues and managing print queues
+                 broadcasted from other servers by default. Many networks do not have valid host
+                 name for all machines -->
+            <Patch level="1">ubuntu/do-not-broadcast-with-hostnames.patch</Patch>
+
+            <!-- Set RIP cache size to available memory/4 -->
+            <Patch level="1">ubuntu/dynamic-default-ripcache-size.patch</Patch>
+
+            <!-- Don't write timestamps in conf files to keep them unchanged between releases -->
+            <Patch level="1">ubuntu/no-conffile-timestamp.patch</Patch>
+
 
             <!-- Other patches -->
 
             <!-- Increase the cost of pstops to prefer PDF filter chain for PS printers -->
-            <Patch level="1">increase-cost-of-pstops.patch</Patch>
+            <Patch level="1">pardus/increase-cost-of-pstops.patch</Patch>
 
-            <Patch level="1">backend-https.patch</Patch>
+            <!-- Create symbolic link backend/https -->
+            <Patch level="1">pardus/backend-https.patch</Patch>
 
             <!-- Don't install desktop file -->
-            <Patch level="1">remove-desktop-file-install.patch</Patch>
-
-            <!-- fix lppasswd privilege escalation. (CVE-2010-0393) (#12438) -->
-            <Patch>CVE-2010-0393-lppasswd-privilege-escalation.patch</Patch>
+            <Patch level="1">pardus/remove-desktop-file-install.patch</Patch>
         </Patches>
     </Source>
 
@@ -139,6 +178,7 @@
             <Dependency>libtasn1</Dependency>
             <Dependency>libpaper</Dependency>
             <Dependency>openslp</Dependency>
+            <Dependency>php-cli</Dependency>
             <Dependency>poppler</Dependency>
             <Dependency>gnutls</Dependency>
             <Dependency>avahi</Dependency>
@@ -177,6 +217,9 @@
             <!-- Default client.conf file from Ubuntu -->
             <AdditionalFile owner="root" permission="0644" target="/etc/cups/client.conf">client.conf</AdditionalFile>
 
+            <!-- php extension file -->
+            <AdditionalFile owner="root" permission="0644" target="/etc/php/ext/cups.ini">cups.php.ini</AdditionalFile>
+
             <!-- Generic textonly ppd from Fedora which is also used by Ubuntu -->
             <AdditionalFile owner="root" permission="0644" target="/usr/share/cups/model/textonly.ppd">fedora/textonly.ppd</AdditionalFile>
 
@@ -196,7 +239,31 @@
         </Provides>
     </Package>
 
+    <Package>
+        <Name>cups-php</Name>
+        <Summary>CUPS API for PHP programming language</Summary>
+        <RuntimeDependencies>
+            <Dependency>cups</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/php/modules</Path>
+            <Path fileType="data">/etc/php/ext/cups.ini</Path>
+        </Files>
+    </Package>
+
     <History>
+        <Update release="71">
+            <Date>2010-04-01</Date>
+            <Version>1.4.3</Version>
+            <Comment>
+                - Version bump to 1.4.3 bugfix release,
+                - Sync Fedora patches,
+                - Grab some important fixes from Ubuntu,
+                - Enable php to provide a CUPS PHP module.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="70">
             <Date>2010-03-16</Date>
             <Version>1.4.2</Version>
