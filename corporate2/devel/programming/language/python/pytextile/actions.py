@@ -9,5 +9,8 @@ from pisi.actionsapi import get
 
 WorkDir="textile-%s" % get.srcVERSION()
 
+def setup():
+    pythonmodules.compile()
+
 def install():
     pythonmodules.install()
