@@ -1,0 +1,39 @@
+#
+# commit c0887695c2838f2d653821050c265c5143b43df2
+# Author: Alexis Menard <alexis.menard@nokia.com>
+# Date:   Mon Mar 22 08:04:46 2010 +0100
+#
+#    Fix a crash when reparenting an item in QGraphicsView.
+#    
+#    Before calling addItem we need to invalidate the depth otherwise if
+#    someone call anything relating to sorting when itemChange is called
+#    (because of the scene change for instance) then qt_closestItemFirst
+#    for example can crash because of an invalid state.
+#    
+#    Task-number:QTBUG-6932
+#    Reviewed-by:pending
+# 
+
+Index: src/gui/graphicsview/qgraphicsitem.cpp
+===================================================================
+--- src/gui/graphicsview/qgraphicsitem.cpp
++++ src/gui/graphicsview/qgraphicsitem.cpp	2010-03-22 09:00:52.000000000 +0100
+@@ -1125,6 +1125,9 @@
+         }
+     }
+ 
++    // Resolve depth.
++    invalidateDepthRecursively();
++
+     if ((parent = newParent)) {
+         if (parent->d_func()->scene && parent->d_func()->scene != scene) {
+             // Move this item to its new parent's scene
+@@ -1175,8 +1178,6 @@
+         }
+     }
+ 
+-    // Resolve depth.
+-    invalidateDepthRecursively();
+     dirtySceneTransform = 1;
+ 
+     // Restore the sub focus chain.
