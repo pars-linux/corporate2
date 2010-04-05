@@ -52,12 +52,10 @@ def install():
     f.close()
 
     # Generate UDEV rule which will replace the HAL FDI when HAL is deprecated
-    """
     pisitools.dodir("/lib/udev/rules.d")
     f = open(os.path.join(get.installDIR(), UDEV_RULES), "w")
-    f.write(os.popen("%s/%s udev-rules version 136 mode 0664 group pnp" % (get.installDIR(), CAM_LIST)).read())
+    f.write(os.popen("%s/%s udev-rules version 136" % (get.installDIR(), CAM_LIST)).read())
     f.close()
-    """
 
     pisitools.removeDir("/usr/share/doc/libgphoto2_port")
 
