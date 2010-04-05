@@ -19,7 +19,7 @@ def setup():
     pisitools.dosed("admin/acinclude.m4.in", "KDE_CHECK_PYTHON_INTERN\(\"2.5", "KDE_CHECK_PYTHON_INTERN(\"%s" % get.curPYTHON().split("python")[1])
     kde.make("-f admin/Makefile.common")
 
-    shelltools.export("DO_NOT_COMPILE", "kedit kdessh klaptopdaemon")
+    shelltools.export("DO_NOT_COMPILE", "kdessh klaptopdaemon")
     kde.configure("--without-snmp \
                    --without-xmms")
 
