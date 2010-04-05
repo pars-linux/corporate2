@@ -9,5 +9,8 @@ from pisi.actionsapi import get
 
 WorkDir="BeautifulSoup-%s" % get.srcVERSION().replace("_","")
 
+def setup():
+    pythonmodules.compile()
+
 def install():
     pythonmodules.install()
