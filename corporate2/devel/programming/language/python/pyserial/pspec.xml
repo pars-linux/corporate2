@@ -11,19 +11,47 @@
         <License>PSF-2.2</License>
         <IsA>library</IsA>
         <Summary>Python Serial Port Extension</Summary>
-        <Description>Python Serial Port Extension</Description>
-        <Archive sha1sum="9536434736aa92da17fd05eed260efd3864ff9bd" type="targz">mirrors://sourceforge/pyserial/pyserial-2.4.tar.gz</Archive>
+        <Description>Python Serial Port Extension.</Description>
+        <Archive sha1sum="811823f352d3cf075238bd0cccadfa14d9b88e28" type="targz">mirrors://sourceforge/pyserial/pyserial/2.5-rc2/pyserial-2.5-rc2.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>python-sphinx</Dependency>
+        </BuildDependencies>
     </Source>
 
     <Package>
         <Name>pyserial</Name>
         <Files>
+            <Path fileType="executable">/usr/bin</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="doc">/usr/share/doc/pyserial</Path>
         </Files>
     </Package>
 
     <History>
+        <Update release="4">
+            <Date>2010-04-05</Date>
+            <Version>2.5_rc2</Version>
+            <Comment>Version bump:
+                New Features:
+                - Documentation update, now written with Sphinx/ReST
+                - Updated miniterm.py example
+                - experimental RFC-2217 client support (serial.rfc2217.Serial, see docs)
+                - add ``loop://`` device for testing.
+                - add ``serial.serial_for_url`` factory function (support for native ports and ``rfc2217``, ``socket`` and ``loop`` URLs)
+                - add new example: ``rfc2217_server.py``
+                - tests live in their own directory now (no longer in examples)
+                Bugfixes:
+                - [Bug 2915810] Fix for suboption parsing in rfc2217
+                - Packaging bug (missed some files)
+                Bugfixes (posix):
+                - improve write timeout behavior
+                - [Bug 2836297] move Linux specific constants to not break other platforms
+                - ``poll`` based implementation for ``read`` is in a separate class ``PosixPollSerial``, as it is not supported well on all platforms (the default ``Serial`` class uses select).
+                - changed error handling in ``read`` so that disconnected devices are detected.
+            </Comment>
+            <Name>Serdar Dalgıç</Name>
+            <Email>serdar@pardus.org.tr</Email>
+        </Update>
         <Update release="3">
             <Date>2009-06-26</Date>
             <Version>2.4</Version>
