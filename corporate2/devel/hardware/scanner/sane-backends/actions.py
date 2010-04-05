@@ -21,8 +21,8 @@ def setup():
     autotools.configure("--enable-ipv6 \
                          --enable-avahi \
                          --enable-libusb \
-                         --disable-locking \
                          --disable-rpath \
+                         --disable-locking \
                          --with-docdir=/usr/share/doc/%s \
                          --with-gphoto2" % get.srcNAME())
 def build():
@@ -31,9 +31,8 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    # Install HAL fdi file
-    pisitools.dodir("/usr/share/hal/fdi/policy/20thirdparty")
-    pisitools.insinto("/usr/share/hal/fdi/policy/20thirdparty", "tools/hal/libsane.fdi", "19-libsane.fdi")
+    # Install udev rule
+    pisitools.insinto("/lib/udev/rules.d", "tools/udev/libsane.rules", "65-libsane.rules")
 
     # we add hplip backend here not to let it turn into newconfig all the time
     shelltools.echo("%s/etc/sane.d/dll.conf" % get.installDIR(), "\n# Added for hplip backends\nhpaio\n")
