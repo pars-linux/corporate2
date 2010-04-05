@@ -6,8 +6,9 @@
 
 from pisi.actionsapi import pythonmodules
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import get
 
-WorkDir="pyinotify"
+WorkDir="%s" % get.srcNAME()
 
 def build():
     pythonmodules.compile()
@@ -15,5 +16,5 @@ def build():
 def install():
     pythonmodules.install()
 
-    pisitools.dohtml("docstrings/*")
+    pisitools.dohtml("python2/docstrings/*")
 
