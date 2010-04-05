@@ -15,6 +15,10 @@ WorkDir = "qt-x11-opensource-src-%s" % get.srcVERSION().replace('_','-')
 qtbase = "/usr/qt/4"
 
 def setup():
+    #make sure we don't use them
+    for d in ('libjpeg', 'freetype', 'libpng', 'zlib', 'libtiff'):
+        shelltools.unlinkDir("src/3rdparty/%s" % d)
+
     filteredCFLAGS = get.CFLAGS().replace("-g3", "-g")
     filteredCXXFLAGS = get.CXXFLAGS().replace("-g3", "-g")
 
