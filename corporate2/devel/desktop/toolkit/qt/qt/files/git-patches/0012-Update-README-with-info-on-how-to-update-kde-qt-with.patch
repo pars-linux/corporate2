@@ -1,0 +1,88 @@
+From 751d05c0917b8514e1b8a19be136c68b846da106 Mon Sep 17 00:00:00 2001
+From: Thiago Macieira <thiago@kde.org>
+Date: Tue, 1 Dec 2009 20:03:35 +0100
+Subject: [PATCH 12/12] Update README with info on how to update kde-qt with a new Qt release
+
+---
+ README.kde-qt |   61 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 60 insertions(+), 1 deletions(-)
+
+diff --git a/README.kde-qt b/README.kde-qt
+index 88f9ee7..cbbd970 100644
+--- a/README.kde-qt
++++ b/README.kde-qt
+@@ -180,7 +180,7 @@ To create a patch, do the following:
+       git checkout master
+       git merge 4.5.1-patched
+ 
+-  f) push the changes you made to your branch and to the main server:
++  g) push the changes you made to your branch and to the main server:
+       git push git@gitorious.org:qt/kde-qt.git master 4.5.1-patched patches/0180-window-role
+   (Don't forget to list all 3 branch names)
+ 
+@@ -208,3 +208,62 @@ If you think you may have run "make install" on an install-less Qt
+ 	rm -rf include
+ 	bin/syncqt
+ 
++10. Maintenance: updating kde-qt to a newer Qt version
++======================================================
++
++When a new version of Qt is released, do the following to update the
++repository (assuming Qt 4.6.1 is the release you're updating to):
++
++ a) rebase each of the individual patches against this new version.
++      for branch in patches/*; do
++        git checkout -b $branch origin/$branch
++        git rebase v4.6.1
++        resolve conflicts
++      done   # Note: pseudo-shell, don't try to run this
++
++    If a given branch is no longer valid (it's been applied to this Qt
++    version), then delete it on the server:
++      git push origin :$branch
++
++ b) create a new "patched" branch locally, starting on the release tag:
++      git checkout -b 4.6.1-patched v4.6.1
++
++ c) merge the patch branches and the README branch, one by one. There
++    should be no conflicts at this stage; if there are, it indicates
++    one patch conflicts with another.
++      git merge patches/0997-patch1
++      git merge patches/0998-patch2
++      git merge patches/0999-patch3
++      # etc.
++      git merge README
++
++ d) overwrite the master branch's contents with the new branch. If the
++    Git merge strategy "theirs" exist (it doesn't as of Git 1.6), use
++    it:
++      git checkout master
++      git merge -s theirs 4.6.1-patched
++
++    If it doesn't exist, do the equivalent by inverting the point of
++    view:
++      git checkout -b tmp 4.6.1-patched
++      git merge -s ours master
++      git checkout master
++      git merge tmp
++      git branch -d tmp
++
++    Also possible using Git plumbing:
++      git checkout master
++      git merge -s ours --no-commit 4.6.1-patched
++      rm .git/index
++      git read-tree 4.6.1-patched
++      git commit
++
++  e) push everything to kde-qt.git, including the new Qt. Note that
++     the individiual patch branches will require force, because they
++     have been rebased (that is, the new branch tip is no longer a
++     direct descendant of the previous tip).
++
++      # Push the individual patch branches with force
++      git push -f origin patches/0997-patch1 patches/0998-patch2 patches/0999-patch3 etc
++      # Push the tag, the new patched branch and master
++      git push v4.6.1 4.6.1-patched master
+-- 
+1.6.5.6
+

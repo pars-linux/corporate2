@@ -1,0 +1,64 @@
+From 4316a8e366e4f66e4a7aca4ac57fe3a3bf65172e Mon Sep 17 00:00:00 2001
+From: Thiago Macieira <thiago@kde.org>
+Date: Tue, 1 Dec 2009 19:31:10 +0100
+Subject: [PATCH 11/12] Update README with instructions for patching after new model is in
+
+---
+ README.kde-qt |   20 ++++++++++++++------
+ 1 files changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/README.kde-qt b/README.kde-qt
+index 6a10def..88f9ee7 100644
+--- a/README.kde-qt
++++ b/README.kde-qt
+@@ -161,21 +161,28 @@ To create a patch, do the following:
+       git tag
+ 
+   c) make your changes to the Qt source code and verify that it
+-  compiles, links and works (please run the respective unit tests).
++  compiles, links and works (please run the respective unit tests from
++  tests/auto in the source tree).
+ 
+   c) commit your changes to Git, using the "git commit" command. Please
+   see http://qt.gitorious.org/qt/pages/GitIntroductionWithQt and
+   http://qt.gitorious.org/qt/pages/QtCodingStyle for information on
+   how to create commits
+-  Note that you can create multiple commits.
+ 
+-  e) merge the change to the main branch, for example, 4.5.1-patched:
++  Note that you are allowed to create as many commits as necessary to
++  accomplish a working change that can be easily reviewed.
++
++  e) merge the change to the patch branch, for example, 4.5.1-patched:
+       git checkout 4.5.1-patched
+       git merge patches/0180-window-role
+ 
++  f) merge the patch branch to master:
++      git checkout master
++      git merge 4.5.1-patched
++
+   f) push the changes you made to your branch and to the main server:
+-      git push git@gitorious.org:qt/kde-qt.git 4.5.1-patched patches/0180-window-role
+-  (Don't forget to list both branch names)
++      git push git@gitorious.org:qt/kde-qt.git master 4.5.1-patched patches/0180-window-role
++  (Don't forget to list all 3 branch names)
+ 
+ Don't forget to submit your patch to using the Qt Contribution Model,
+ along with the long description of the issue found. See
+@@ -184,7 +191,7 @@ information how. You can submit the branch you've just sent to the
+ server.
+ 
+ 9. Troubleshooting: Re-configuring and re-compiling
+-==================================================
++===================================================
+ 
+ For those updating the source in a directory where Qt has already
+ been compiled, you may need to run the following commands from the
+@@ -200,3 +207,4 @@ If you think you may have run "make install" on an install-less Qt
+ 
+ 	rm -rf include
+ 	bin/syncqt
++
+-- 
+1.6.5.6
+

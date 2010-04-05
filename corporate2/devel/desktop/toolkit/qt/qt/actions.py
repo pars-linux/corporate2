@@ -11,7 +11,7 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 import os
 
-WorkDir = "qt-x11-opensource-src-%s" % get.srcVERSION().replace('_','-')
+WorkDir = "qt-everywhere-opensource-src-%s" % get.srcVERSION().replace('_','-')
 qtbase = "/usr/qt/4"
 
 def setup():
@@ -62,6 +62,7 @@ def setup():
                             -dbus-linked \
                             -xmlpatterns \
                             -opensource \
+                            -reduce-relocations \
                             -confirm-license " % (qtbase, qtbase))
 
 def build():
@@ -75,6 +76,7 @@ def install():
     pisitools.remove("/usr/qt/4/lib/libphonon*")
     pisitools.removeDir("/usr/qt/4/include/phonon")
     pisitools.remove("/usr/qt/4/lib/pkgconfig/phonon*")
+    #pisitools.remove("/usr/share/dbus-1/interfaces/org.kde.Phonon.AudioOutput.xml")
 
     # FIXME:
     pisitools.removeDir("/usr/share/dbus-1")
@@ -84,7 +86,7 @@ def install():
 
     pisitools.insinto("/usr/qt/4/bin", "tools/qdoc3/qdoc3")
 
-    for app in ["qdbus", "qdbuscpp2xml", "qdbusxml2cpp", "qt3to4", "qtdemo", "uic3", "pixeltool", "qdoc3", "qhelpgenerator"]:
+    for app in ["qdbus", "qdbuscpp2xml", "qdbusxml2cpp", "qt3to4", "qtdemo", "uic3", "pixeltool", "qdoc3", "qhelpgenerator", "qhelpconverter", "qdbusviewer", "qttracereplay", "xmlpatterns", "xmlpatternsvalidator"]:
         pisitools.dosym("/usr/qt/4/bin/%s" % app, "/usr/bin/%s" % app)
 
     # Turkish translations
@@ -104,8 +106,11 @@ def install():
         # Remove unnecessary spec files..
         if root.endswith(mkspecPath):
             for dir in dirs:
-                if not dir.startswith("linux") and dir not in ["common", "qws", "features", "default"]:
+                if not dir.startswith("linux") and dir not in ["common","qws","features","default"]:
                     pisitools.removeDir(os.path.join(mkspecPath,dir))
         for name in files:
             if name.endswith(".prl"):
                 pisitools.dosed(os.path.join(root, name), "^QMAKE_PRL_BUILD_DIR.*", "")
+
+    # Remove useless image directory, images of HTML docs are in doc/html/images
+    pisitools.removeDir("/usr/qt/4/doc/src")
