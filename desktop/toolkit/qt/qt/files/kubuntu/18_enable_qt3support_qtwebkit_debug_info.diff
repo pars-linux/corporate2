@@ -3,20 +3,28 @@ author: Fathi Boudra <fabo@debian.org>
 On Qt >= 4.5, debug info are disabled for Qt3Support and QtWebkit.
 This patch enable them.
 
---- a/src/3rdparty/webkit/WebCore/WebCore.pro
-+++ b/src/3rdparty/webkit/WebCore/WebCore.pro
-@@ -2030,9 +2030,3 @@ HEADERS += $$WEBKIT_API_HEADERS
+Index: qt-everywhere-opensource-src-4.6.0/src/3rdparty/webkit/WebCore/WebCore.pro
+===================================================================
+--- qt-everywhere-opensource-src-4.6.0.orig/src/3rdparty/webkit/WebCore/WebCore.pro
++++ qt-everywhere-opensource-src-4.6.0/src/3rdparty/webkit/WebCore/WebCore.pro
+@@ -3357,13 +3357,6 @@ HEADERS += $$WEBKIT_API_HEADERS
      }
  }
  
 -CONFIG(QTDIR_build):isEqual(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 4) {
 -    # start with 4.5
+-    # Remove the following 2 lines if you want debug information in WebCore
 -    CONFIG -= separate_debug_info
 -    CONFIG += no_debug_info
 -}
 -
---- a/src/qt3support/qt3support.pro
-+++ b/src/qt3support/qt3support.pro
+ !win32-g++:win32:contains(QMAKE_HOST.arch, x86_64):{
+     asm_compiler.commands = ml64 /c
+     asm_compiler.commands +=  /Fo ${QMAKE_FILE_OUT} ${QMAKE_FILE_IN}
+Index: qt-everywhere-opensource-src-4.6.0/src/qt3support/qt3support.pro
+===================================================================
+--- qt-everywhere-opensource-src-4.6.0.orig/src/qt3support/qt3support.pro
++++ qt-everywhere-opensource-src-4.6.0/src/qt3support/qt3support.pro
 @@ -34,6 +34,3 @@ MOCDIR = .moc
  
  *-g++*: QMAKE_CXXFLAGS += -fno-strict-aliasing

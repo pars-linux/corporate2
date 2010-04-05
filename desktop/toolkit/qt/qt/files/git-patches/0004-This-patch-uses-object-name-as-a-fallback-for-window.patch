@@ -1,0 +1,117 @@
+From c119289d63c7357c515c9ecf8f79393c806364b2 Mon Sep 17 00:00:00 2001
+From: Lubos Lunak <l.lunak@kde.org>
+Date: Sat, 23 Feb 2008 16:44:52 +0100
+Subject: [PATCH 04/12] This patch uses object name as a fallback for window role if no window
+ role is set explicitly using setWindowRole(). Since Qt3 always used
+ the object name as the window role and most Qt3/KDE3 code is ported to
+ call setObjectName(),
+
+this makes the window role set in many cases (which KWin uses for window identifying).
+
+NOTE: It is suggested to apply patch #0209 as well when this patch is used.
+
+qt-bugs@ issue : 167704
+Trolltech task ID : 168283 (status: "fixed" for Qt 4.4.0, but effectively refused)
+---
+ src/corelib/kernel/qobject.cpp |    8 ++++++++
+ src/corelib/kernel/qobject_p.h |    3 +++
+ src/gui/kernel/qwidget_p.h     |    1 +
+ src/gui/kernel/qwidget_x11.cpp |   27 +++++++++++++++++++++------
+ 4 files changed, 33 insertions(+), 6 deletions(-)
+
+diff --git a/src/corelib/kernel/qobject.cpp b/src/corelib/kernel/qobject.cpp
+index 9614e7a..58493a5 100644
+--- a/src/corelib/kernel/qobject.cpp
++++ b/src/corelib/kernel/qobject.cpp
+@@ -1136,8 +1136,16 @@ void QObject::setObjectName(const QString &name)
+ {
+     Q_D(QObject);
+     d->objectName = name;
++#if defined(Q_WS_X11)
++    d->checkWindowRole();
++#endif
+ }
+ 
++#if defined(Q_WS_X11)
++void QObjectPrivate::checkWindowRole()
++{
++}
++#endif
+ 
+ #ifdef QT3_SUPPORT
+ /*! \internal
+diff --git a/src/corelib/kernel/qobject_p.h b/src/corelib/kernel/qobject_p.h
+index e75f24e..52cd772 100644
+--- a/src/corelib/kernel/qobject_p.h
++++ b/src/corelib/kernel/qobject_p.h
+@@ -157,6 +157,9 @@ public:
+     void sendPendingChildInsertedEvents();
+     void removePendingChildInsertedEvents(QObject *child);
+ #endif
++#if defined(Q_WS_X11)
++    virtual void checkWindowRole();
++#endif
+ 
+     static Sender *setCurrentSender(QObject *receiver,
+                                     Sender *sender);
+diff --git a/src/gui/kernel/qwidget_p.h b/src/gui/kernel/qwidget_p.h
+index 7832393..18c331a 100644
+--- a/src/gui/kernel/qwidget_p.h
++++ b/src/gui/kernel/qwidget_p.h
+@@ -661,6 +661,7 @@ public:
+     static QWidget *keyboardGrabber;
+ 
+     void setWindowRole();
++    virtual void checkWindowRole();
+     void sendStartupMessage(const char *message) const;
+     void setNetWmWindowTypes();
+     void x11UpdateIsOpaque();
+diff --git a/src/gui/kernel/qwidget_x11.cpp b/src/gui/kernel/qwidget_x11.cpp
+index 3135ece..aab7941 100644
+--- a/src/gui/kernel/qwidget_x11.cpp
++++ b/src/gui/kernel/qwidget_x11.cpp
+@@ -825,13 +825,17 @@ void QWidgetPrivate::create_sys(WId window, bool initializeWindow, bool destroyO
+         data.fstrut_dirty = 1;
+ 
+         // declare the widget's window role
++        QByteArray windowRole;
+         if (QTLWExtra *topData = maybeTopData()) {
+-            if (!topData->role.isEmpty()) {
+-                QByteArray windowRole = topData->role.toUtf8();
+-                XChangeProperty(dpy, id,
+-                                ATOM(WM_WINDOW_ROLE), XA_STRING, 8, PropModeReplace,
+-                                (unsigned char *)windowRole.constData(), windowRole.length());
+-            }
++            if (!topData->role.isEmpty())
++                windowRole = topData->role.toUtf8();
++        }
++        if (windowRole.isEmpty()) // use object name as a fallback
++            windowRole = objectName.toUtf8();
++        if (!windowRole.isEmpty()) {
++            XChangeProperty(dpy, id,
++                            ATOM(WM_WINDOW_ROLE), XA_STRING, 8, PropModeReplace,
++                            (unsigned char *)windowRole.constData(), windowRole.length());
+         }
+ 
+         // set client leader property
+@@ -2919,6 +2923,17 @@ void QWidgetPrivate::setWindowRole()
+                     (unsigned char *)windowRole.constData(), windowRole.length());
+ }
+ 
++void QWidgetPrivate::checkWindowRole()
++{
++    Q_Q(QWidget);
++    if( !q->windowRole().isEmpty() || !q->internalWinId())
++        return;
++    QByteArray windowRole = objectName.toUtf8(); // use as a fallback
++    XChangeProperty(X11->display, q->internalWinId(),
++                    ATOM(WM_WINDOW_ROLE), XA_STRING, 8, PropModeReplace,
++                    (unsigned char *)windowRole.constData(), windowRole.length());
++}
++
+ Q_GLOBAL_STATIC(QX11PaintEngine, qt_widget_paintengine)
+ QPaintEngine *QWidget::paintEngine() const
+ {
+-- 
+1.6.5.6
+
