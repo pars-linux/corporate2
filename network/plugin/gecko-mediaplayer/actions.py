@@ -10,7 +10,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-#WorkDir = "gecko-mediaplayer"
+WorkDir = "gecko-mediaplayer"
 
 def setup():
     shelltools.export("AT_M4DIR", "m4")
