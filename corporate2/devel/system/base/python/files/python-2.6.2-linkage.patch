@@ -1,6 +1,8 @@
---- configure.in~	2009-06-28 11:29:11.000000000 -0400
-+++ configure.in	2009-06-28 11:40:15.000000000 -0400
-@@ -1193,7 +1193,7 @@
+Index: configure.in
+===================================================================
+--- configure.in.orig
++++ configure.in
+@@ -1238,7 +1238,7 @@ then
  AC_MSG_CHECKING(whether $CC accepts -pthread)
  AC_CACHE_VAL(ac_cv_thread,
  [ac_save_cc="$CC"
@@ -9,7 +11,7 @@
  AC_TRY_RUN([
  #include <pthread.h>
  
-@@ -1232,7 +1232,7 @@
+@@ -1277,7 +1277,7 @@ then
    ac_cv_cxx_thread=yes
  elif test "$ac_cv_pthread" = "yes"
  then 
@@ -18,7 +20,7 @@
    ac_cv_cxx_thread=yes
  fi
  
-@@ -1487,7 +1487,7 @@
+@@ -1536,7 +1536,7 @@ then CC="$CC -Kpthread"
  elif test "$ac_cv_kthread" = "yes"
  then CC="$CC -Kthread"
  elif test "$ac_cv_pthread" = "yes"
@@ -27,7 +29,7 @@
  fi
  AC_MSG_CHECKING(for pthread_t)
  have_pthread_t=no
-@@ -2031,10 +2031,7 @@
+@@ -2128,10 +2128,7 @@ then
      THREADOBJ="Python/thread.o"
  elif test "$ac_cv_pthread" = "yes"
  then
@@ -39,9 +41,11 @@
      AC_DEFINE(WITH_THREAD)
      posix_threads=yes
      THREADOBJ="Python/thread.o"
---- setup.py.linkage	2009-06-28 11:47:01.000000000 -0400
-+++ setup.py	2009-06-28 11:53:42.000000000 -0400
-@@ -542,7 +542,7 @@
+Index: setup.py
+===================================================================
+--- setup.py.orig
++++ setup.py
+@@ -556,7 +556,7 @@ class PyBuildExt(build_ext):
          # Operations on audio samples
          # According to #993173, this one should actually work fine on
          # 64-bit platforms.
@@ -50,7 +54,7 @@
  
          # Disabled on 64-bit platforms
          if sys.maxint != 9223372036854775807L:
-@@ -1238,7 +1238,7 @@
+@@ -1256,7 +1256,7 @@ class PyBuildExt(build_ext):
              # This requires sizeof(int) == sizeof(long) == sizeof(char*)
              dl_inc = find_file('dlfcn.h', [], inc_dirs)
              if (dl_inc is not None) and (platform not in ['atheos']):
@@ -59,15 +63,15 @@
              else:
                  missing.append('dl')
          else:
-@@ -1323,6 +1323,7 @@
- 
-         exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
-                                  define_macros=macros.items(),
-+				 libraries=['pthread'],
-                                  include_dirs=["Modules/_multiprocessing"]))
-         # End multiprocessing
- 
-@@ -1752,10 +1753,13 @@
+@@ -1342,6 +1342,7 @@ class PyBuildExt(build_ext):
+         if sysconfig.get_config_var('WITH_THREAD'):
+             exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
+                                     define_macros=macros.items(),
++                                    libraries=['pthread'],
+                                     include_dirs=["Modules/_multiprocessing"]))
+         else:
+             missing.append('_multiprocessing')
+@@ -1784,10 +1785,13 @@ class PyBuildExt(build_ext):
                          include_dirs=include_dirs,
                          extra_compile_args=extra_compile_args,
                          extra_link_args=extra_link_args,
