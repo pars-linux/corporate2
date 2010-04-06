@@ -10,9 +10,10 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-# WorkDir = "gnome-mplayer"
+WorkDir = "gnome-mplayer"
 
 def setup():
+    autotools.autoreconf("-vfi")
     autotools.configure("--disable-dependency-tracking \
                          --with-gio \
                          --enable-nautilus=no \
