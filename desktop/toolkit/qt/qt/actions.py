@@ -9,6 +9,7 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
+
 import os
 
 WorkDir = "qt-everywhere-opensource-src-%s" % get.srcVERSION().replace('_','-')
@@ -76,10 +77,8 @@ def install():
     pisitools.remove("/usr/qt/4/lib/libphonon*")
     pisitools.removeDir("/usr/qt/4/include/phonon")
     pisitools.remove("/usr/qt/4/lib/pkgconfig/phonon*")
-    #pisitools.remove("/usr/share/dbus-1/interfaces/org.kde.Phonon.AudioOutput.xml")
-
-    # FIXME:
-    pisitools.removeDir("/usr/share/dbus-1")
+    pisitools.remove("/usr/share/dbus-1/interfaces/org.kde.Phonon.AudioOutput.xml")
+    os.removedirs("%s/usr/share/dbus-1/interfaces" % get.installDIR())
 
     for app in ["qmake", "designer", "assistant", "linguist", "qtconfig", "uic", "rcc", "moc", "lrelease", "lupdate", "lconvert"]:
         pisitools.dosym("/usr/qt/4/bin/%s" % app, "/usr/bin/%s-qt4" % app)
