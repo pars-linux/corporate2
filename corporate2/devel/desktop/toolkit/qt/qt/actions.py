@@ -84,8 +84,6 @@ def install():
     for app in ["qmake", "designer", "assistant", "linguist", "qtconfig", "uic", "rcc", "moc", "lrelease", "lupdate", "lconvert"]:
         pisitools.dosym("/usr/qt/4/bin/%s" % app, "/usr/bin/%s-qt4" % app)
 
-    pisitools.insinto("/usr/qt/4/bin", "tools/qdoc3/qdoc3")
-
     for app in ["qdbus", "qdbuscpp2xml", "qdbusxml2cpp", "qt3to4", "qtdemo", "uic3", "pixeltool", "qdoc3", "qhelpgenerator", "qhelpconverter", "qdbusviewer", "qttracereplay", "xmlpatterns", "xmlpatternsvalidator"]:
         pisitools.dosym("/usr/qt/4/bin/%s" % app, "/usr/bin/%s" % app)
 
