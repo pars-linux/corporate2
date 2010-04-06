@@ -1,13 +1,14 @@
-Index: qt-x11-opensource-src-4.5.3/src/gui/itemviews/qlistwidget.cpp
+Index: qt-everywhere-opensource-src-4.6.2/src/corelib/kernel/qabstractitemmodel.cpp
 ===================================================================
---- qt-x11-opensource-src-4.5.3.orig/src/gui/itemviews/qlistwidget.cpp
-+++ qt-x11-opensource-src-4.5.3/src/gui/itemviews/qlistwidget.cpp
-@@ -687,7 +687,7 @@ QVariant QListWidgetItem::data(int role)
- */
- bool QListWidgetItem::operator<(const QListWidgetItem &other) const
- {
--    return text() < other.text();
-+    return QString::localeAwareCompare(text(), other.text()) < 0;
+--- qt-everywhere-opensource-src-4.6.2.orig/src/corelib/kernel/qabstractitemmodel.cpp
++++ qt-everywhere-opensource-src-4.6.2/src/corelib/kernel/qabstractitemmodel.cpp
+@@ -532,7 +532,8 @@ bool QAbstractItemModelPrivate::variantL
+     case 1: //floating point
+         return v1.toReal() < v2.toReal();
+     default:
+-        return v1.toString() < v2.toString();
++        return QString::localeAwareCompare(v1.toString(), v2.toString()) < 0;
++
+     }
  }
  
- #ifndef QT_NO_DATASTREAM
