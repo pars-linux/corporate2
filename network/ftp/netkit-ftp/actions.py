@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -11,14 +11,23 @@ from pisi.actionsapi import get
 
 def setup():
     autotools.rawConfigure("--prefix=/usr \
-                            --enable-ssl \
+                            --with-c-compiler=gcc \
                             --enable-ipv6")
+
+    pisitools.dosed("MCONFIG", "^CC=.*", "CC=cc")
+    pisitools.dosed("MCONFIG", "-O2", "%s -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64" % get.CFLAGS())
+    pisitools.dosed("MCONFIG", "^LDFLAGS=.*", "LDFLAGS=%s" % get.LDFLAGS())
+
+    pisitools.dosed("MCONFIG", "^BINDIR=.*", "BINDIR=/usr/bin")
+    pisitools.dosed("MCONFIG", "^MANDIR=.*", "MANDIR=/usr/share/man")
+    pisitools.dosed("MCONFIG", "^SBINDIR=.*", "SBINDIR=/usr/sbin")
+
 
 def build():
     autotools.make('CC="%s" LDFLAGS="%s"' % (get.CC(), get.LDFLAGS()))
 
 def install():
-    pisitools.dobin("ftp/ftp")
+    autotools.rawInstall("INSTALLROOT=%s" % get.installDIR())
+    pisitools.remove("/usr/bin/pftp")
 
-    pisitools.doman("ftp/ftp.1", "ftp/netrc.5")
     pisitools.dodoc("ChangeLog", "README", "BUGS")
