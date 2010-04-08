@@ -49,10 +49,11 @@ def setup():
 def build():
     autotools.make()
 
-def check():
-    # for sandbox violations
-    shelltools.export("HOME", get.workDIR())
-    autotools.make("-C tests/check check")
+#FIXME: tests now tries to 
+#def check():
+#    # for sandbox violations
+#    shelltools.export("HOME", get.workDIR())
+#    autotools.make("-C tests/check check")
 
 def install():
     autotools.install()
