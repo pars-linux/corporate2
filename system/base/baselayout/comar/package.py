@@ -78,7 +78,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
               "avahi", "ntp", "tss", "ejabberd", "tomcat", "ups", "partimag", "radiusd", "oprofile", \
               "mediatomb", "pulse", "pulse-access", "pulse-rt", "italc", "quassel", "bitlbee", "icecast", \
               "vboxusers", "virt", "svn", "pnp", "removable", "netuser", "netadmin", "power", "pnpadmin", \
-              "gnokii", "memcached", "rtkit", "nm-openconnect", "qemu", "kvm"]
+              "gnokii", "memcached", "rtkit", "nm-openconnect", "qemu", "kvm", "usbmuxd"]
 
     for group in groups:
         deleteGroup(group)
@@ -86,7 +86,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     users = ["dialout", "squid", "named", "mysql", "postgres", "apache", "dovecot", "hal", "postfix", "smmsp", \
              "firebird", "dhcp", "ldap", "clamav", "ntlmaps", "avahi", "ntp", "tss", "ejabberd", "tomcat", "ups", \
              "partimag", "radiusd", "oprofile", "mediatomb", "pulse", "quasselcore", "bitlbee", "vboxadd", \
-             "svn", "icecast", "pnp", "gnokii", "memcached", "spamd", "rtkit", "nm-openconnect", "qemu"]
+             "svn", "icecast", "pnp", "gnokii", "memcached", "spamd", "rtkit", "nm-openconnect", "qemu", "usbmuxd"]
 
     for user in users:
         deleteUser(user)
@@ -154,6 +154,9 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     hav("addGroup", (154, "qemu"))
     hav("addGroup", (155, "kvm"))
 
+    # usbmuxd
+    hav("addGroup", (160, "usbmuxd"))
+
     # Comar' profile groups
     hav("addGroup", (200, "pnp"))
     hav("addGroup", (201, "removable"))
@@ -201,6 +204,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     hav("addUser", (153, "rtkit", "RealtimeKit", "/proc", "/sbin/nologin", "", ["rtkit"], [], []))
     hav("addUser", (154, "nm-openconnect", "NetworkManager user for OpenConnect", "/", "/sbin/nologin", "", ["nm-openconnect"], [], []))
     hav("addUser", (155, "qemu", "QEMU", "/", "/sbin/nologin", "", ["qemu", "kvm"], [], []))
+    hav("addUser", (160, "usbmuxd", "usbmuxd daemon", "/dev/null", "/bin/false", "", ["usbmuxd"], [], []))
 
     # Comar' profile users
     hav("addUser", (200, "pnp", "PnP", "/dev/null", "/bin/false", "", ["pnp"], [], []))
