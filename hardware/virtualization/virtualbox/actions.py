@@ -70,7 +70,7 @@ def install():
     pisitools.dobin("additions/VBoxControl")
 
     pisitools.dosbin("additions/VBoxService")
-    pisitools.dosbin("additions/mount.vboxsf")
+    pisitools.dosbin("additions/mount.vboxsf", "/sbin")
 
     pisitools.dolib("additions/VBoxOGL*")
     pisitools.dosym("../../../VBoxOGL.so", "/usr/lib/xorg/modules/dri/vboxvideo_dri.so")
