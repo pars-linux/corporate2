@@ -67,9 +67,6 @@ def install():
     # Serial backend needs to run as root
     shelltools.chmod("%s/usr/lib/cups/backend/serial" % get.installDIR(), 0700)
 
-    # drv is built into CUPS so drop the man page
-    pisitools.remove("/usr/share/man/man7/drv.7")
-
     pisitools.removeDir("/etc/xinetd.d/")
 
     pisitools.dodoc("CHANGES.txt", "CREDITS.txt", "LICENSE.txt", "README.txt")
