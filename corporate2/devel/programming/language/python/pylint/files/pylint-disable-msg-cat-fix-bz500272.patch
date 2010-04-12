@@ -1,0 +1,24 @@
+--- a/utils.py  
++++ a/utils.py  
+@@ -18,7 +18,7 @@ 
+ main pylint class
+ """
+ 
+-import sys
++import sys, types
+ from os import linesep
+ 
+ from logilab.common.textutils import normalize_text
+@@ -181,8 +181,10 @@ class MessagesHandlerMixIn:
+             self.config.enable_msg = [mid for mid, val in msgs.items() if val]
+ 
+     def _cat_ids(self, categories):
++        if isinstance(categories, types.StringType):
++            categories = [categories]
+         for catid in categories:
+-            catid = catid.upper()
++            catid = catid[0].upper()
+             if not catid in MSG_TYPES:
+                 raise Exception('Unknown category identifier %s' % catid)
+             yield catid
+
