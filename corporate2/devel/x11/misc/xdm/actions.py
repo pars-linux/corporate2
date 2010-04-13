@@ -13,7 +13,6 @@ def setup():
     autotools.configure("--disable-static \
                          --enable-unix-transport \
                          --enable-tcp-transport \
-                         --enable-IPv6 \
                          --enable-local-transport \
                          --enable-secure-rpc \
                          --enable-xpm-logos \
