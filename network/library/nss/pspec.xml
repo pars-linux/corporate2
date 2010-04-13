@@ -13,8 +13,12 @@
         <Summary>Network Security Services</Summary>
         <Description>Network Security Services (NSS) is a set of libraries designed to support cross-platform development of security-enabled client and server applications. Applications built with NSS can support SSL v2 and v3, TLS, PKCS #5, PKCS #7, PKCS #11, PKCS #12, S/MIME, X.509 v3 certificates, and other security standards.</Description>
         <Archive sha1sum="67ac359052ef3b521e2888b0008c27d57efce6b4" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/nss-3.12.6.tar.lzma</Archive>
-
-       <BuildDependencies>
+        <AdditionalFiles>
+            <AdditionalFile target="dist/pkgconfig/nss.pc.in">nss.pc.in</AdditionalFile>
+            <AdditionalFile target="dist/pkgconfig/nss-config.in">nss-config.in</AdditionalFile>
+            <AdditionalFile permission="0755" target="generate-pc-config.sh">generate-pc-config.sh</AdditionalFile>
+        </AdditionalFiles>
+        <BuildDependencies>
             <Dependency releaseFrom="24">nspr</Dependency>
         </BuildDependencies>
         <Patches>
@@ -41,8 +45,6 @@
             <Path fileType="config">/etc</Path>
         </Files>
         <AdditionalFiles>
-            <AdditionalFile owner="root" permission="0644" target="/usr/lib/pkgconfig/nss.pc">nss.pc</AdditionalFile>
-            <AdditionalFile owner="root" permission="0755" target="/usr/bin/nss-config">nss-config</AdditionalFile>
             <AdditionalFile owner="root" permission="0644" target="/etc/env.d/50nss">50nss</AdditionalFile>
 
             <!-- legacy blank NSS db files from Fedora -->
@@ -53,8 +55,15 @@
     </Package>
 
     <History>
+        <Update release="32">
+            <Date>2010-04-13</Date>
+            <Version>3.12.6.0</Version>
+            <Comment>Dynamically create nss.pc and nss-config to reflect the real versions</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="31">
-            <Date>2010-03-30</Date>
+            <Date>2010-03-19</Date>
             <Version>3.12.6.0</Version>
             <Comment>Version bump to 3.12.6 version. Also add blank NSS DB files.</Comment>
             <Name>Gökçen Eraslan</Name>
