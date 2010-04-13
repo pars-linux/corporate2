@@ -12,15 +12,20 @@ from pisi.actionsapi import get
 
 WorkDir="mozilla"
 
+def setup():
+    # Create nss.pc and nss-config dynamically
+    shelltools.system("./generate-pc-config.sh")
+
 def build():
     if get.ARCH() == "x86_64":
         shelltools.export("USE_64", "1")
 
-    shelltools.export("BUILD_OPT","1")
-    shelltools.export("NSS_ENABLE_ECC","1")
-    shelltools.export("NSS_USE_SYSTEM_SQLITE","1")
+    shelltools.export("BUILD_OPT", "1")
+    shelltools.export("NSS_ENABLE_ECC", "1")
+    shelltools.export("NSS_USE_SYSTEM_SQLITE", "1")
     shelltools.export("OPT_FLAGS","%s -g -fno-strict-aliasing" % get.CFLAGS())
-    # use system zlib
+
+    # Use system zlib
     shelltools.export("PKG_CONFIG_ALLOW_SYSTEM_LIBS", "1")
     shelltools.export("PKG_CONFIG_ALLOW_SYSTEM_CFLAGS", "1")
 
@@ -40,6 +45,10 @@ def install():
 
     # Drop executable bits from headers
     shelltools.chmod("%s/usr/include/nss/*.h" % get.installDIR(), mode=0644)
+
+    # Install nss-config and nss.pc
+    pisitools.insinto("/usr/lib/pkgconfig", "dist/pkgconfig/nss.pc")
+    pisitools.insinto("/usr/bin", "dist/pkgconfig/nss-config")
 
     # create empty NSS database
     pisitools.dodir("/etc/ssl/nssdb")
