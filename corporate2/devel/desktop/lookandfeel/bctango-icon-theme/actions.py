@@ -29,7 +29,9 @@ def install():
                 "systemsettings.png": ["apps/multimedia-volume-control.png"],
                 "printer.png": ["devices/printer-printing.png"],
                 "button_cancel.png": ["actions/no.png", "actions/cancel.png"],
-                "kmenu.png": ["apps/panel.png", "apps/panel_settings.cpp"],
+                "kmenu.png": ["apps/panel.png", "apps/panel_settings.png"],
+                "mail_replyall.png": ["actions/mail-reply-all.png"],
+                "mail_reply.png": ["actions/mail-reply.png"],
                 }
 
     for size in (16, 22, 32, 48, 64, 128):
