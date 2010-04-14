@@ -7,5 +7,6 @@
 from pisi.actionsapi import pisitools
 
 def install():
+    pisitools.dosed("usr/kde/3.5/share/config/kdeglobals", "BCTango", "Tango")
     for d in ("etc", "usr"):
         pisitools.insinto("/", d)
