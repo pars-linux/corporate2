@@ -15,6 +15,7 @@ shelltools.export("HOME", get.workDIR())
 def setup():
     autotools.configure("--disable-static \
                          --disable-rpath \
+                         --disable-examples \
                          --enable-libvisual \
                          --enable-experimental \
                          --with-package-name='Pardus gstreamer-plugins-base package' \
