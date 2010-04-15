@@ -20,8 +20,11 @@ def setup():
                        -DSQLITE_DISABLE_DIRSYNC=1 \
                        -DSQLITE_ENABLE_FTS3=3 \
                        -DSQLITE_ENABLE_RTREE=1 \
-                       -fno-strict-aliasing" % get.CFLAGS())
-    autotools.configure("--disable-static")
+                       -O3 -DNDEBUG=1 -fno-strict-aliasing" % get.CFLAGS())
+
+    autotools.configure("--disable-static \
+                         --enable-readline \
+                         --enable-threadsafe")
 
 def build():
     autotools.make()
