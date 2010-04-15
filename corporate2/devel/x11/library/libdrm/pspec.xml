@@ -10,17 +10,17 @@
         </Packager>
         <License>MIT</License>
         <IsA>library</IsA>
-        <Summary>X.Org libdrm library</Summary>
-        <Description>LibDRM provides the userspace interface library to kernel DRM services. DRM (Direct Rendering Manager) is an enhancement to Xorg that adds 3D acceleration for cards by adding the kernel module necessary for direct rendering.</Description>
-        <Archive sha1sum="eaf66dd1a74e39830daab8249197e9eb02c5a81e" type="tarbz2">http://dri.freedesktop.org/libdrm/libdrm-2.4.18.tar.bz2</Archive>
+        <Summary>Userspace interface to kernel DRM services</Summary>
+        <Description>libdrm is a library providing the userspace interface to kernel DRM services.</Description>
+        <Archive sha1sum="f1448ac0f1c7a5f74a86d2fb50941fc12dc932db" type="tarbz2">http://dri.freedesktop.org/libdrm/libdrm-2.4.20.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency releaseFrom="127">kernel-headers</Dependency>
         </BuildDependencies>
         <Patches>
+            <Patch level="1">master-branch.patch</Patch>
             <Patch level="1">disable-cairo.patch</Patch>
             <Patch level="1">libdrm-2.4.0-no-bc.patch</Patch>
             <Patch level="1">libdrm-make-dri-perms-okay.patch</Patch>
-            <Patch level="1">nouveau-revert-to-abi15.patch</Patch>
         </Patches>
     </Source>
 
@@ -28,17 +28,84 @@
         <Name>libdrm</Name>
         <Files>
             <Path fileType="config">/etc</Path>
-            <Path fileType="header">/usr/include</Path>
-            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="header">/usr/include/libdrm</Path>
+            <Path fileType="header">/usr/include/xf86drm*</Path>
+            <Path fileType="library">/usr/lib/libdrm.*</Path>
             <Path fileType="data">/lib/udev/rules.d</Path>
-            <Path fileType="data">/usr/lib/pkgconfig</Path>
+            <Path fileType="data">/usr/lib/pkgconfig/libdrm.pc</Path>
         </Files>
         <AdditionalFiles>
             <AdditionalFile owner="root" permission="0644" target="/lib/udev/rules.d/91-drm-modeset.rules">91-drm-modeset.rules</AdditionalFile>
         </AdditionalFiles>
     </Package>
 
+    <Package>
+        <Name>libdrm-intel</Name>
+        <Summary>Userspace interface to kernel DRM services for intel</Summary>
+        <RuntimeDependencies>
+            <Dependency>libdrm</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="30">libdrm</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="library">/usr/lib/libdrm_intel.*</Path>
+            <Path fileType="data">/usr/lib/pkgconfig/libdrm_intel.pc</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>libdrm-nouveau</Name>
+        <Summary>Userspace interface to kernel DRM services for nouveau</Summary>
+        <RuntimeDependencies>
+            <Dependency>libdrm</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="30">libdrm</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="header">/usr/include/nouveau</Path>
+            <Path fileType="library">/usr/lib/libdrm_nouveau.*</Path>
+            <Path fileType="data">/usr/lib/pkgconfig/libdrm_nouveau.pc</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>libdrm-radeon</Name>
+        <Summary>Userspace interface to kernel DRM services for radeon</Summary>
+        <RuntimeDependencies>
+            <Dependency>libdrm</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="30">libdrm</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="library">/usr/lib/libdrm_radeon.*</Path>
+            <Path fileType="data">/usr/lib/pkgconfig/libdrm_radeon.pc</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>libkms</Name>
+        <Summary>Userspace library for kernel mode setting</Summary>
+        <Files>
+            <Path fileType="header">/usr/include/libkms</Path>
+            <Path fileType="library">/usr/lib/libkms.*</Path>
+            <Path fileType="data">/usr/lib/pkgconfig/libkms.pc</Path>
+        </Files>
+    </Package>
+
     <History>
+        <Update release="31">
+            <Date>2010-04-14</Date>
+            <Version>2.4.20</Version>
+            <Comment>Split package and bump to new stable release</Comment>
+            <Requires>
+                <Action package="libdrm">reverseDependencyUpdate</Action>
+            </Requires>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
         <Update release="30">
             <Date>2010-02-17</Date>
             <Version>2.4.18</Version>
