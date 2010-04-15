@@ -19,7 +19,7 @@ def setup():
     shelltools.export("AUTOPOINT", "/bin/true")
 
     libtools.libtoolize("--force --copy")
-    autotools.autoreconf("-fi")
+    autotools.autoreconf("-vfi")
     autotools.configure(" \
                       --prefix=/usr \
                       --mandir=/usr/share/man \
@@ -67,7 +67,7 @@ def setup():
                       # --with-fontconfig \
 
 def build():
-    autotools.make("-j1")
+    autotools.make()
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
