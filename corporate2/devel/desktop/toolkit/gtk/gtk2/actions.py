@@ -22,6 +22,7 @@ def setup():
                          --with-xinput=yes \
                          --enable-xkb \
                          --enable-shm \
+                         --disable-introspection \
                          --with-included-loaders=png")
     pisitools.dosed("libtool"," -shared ", " -Wl,--as-needed -shared ")
 
