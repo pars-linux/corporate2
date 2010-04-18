@@ -11,7 +11,11 @@ from pisi.actionsapi import get
 
 WorkDir = "iniparse-%s" % get.srcVERSION()
 
+def build():
+    pythonmodules.compile()
+
 def install():
     pythonmodules.install()
 
     pisitools.removeDir("/usr/share/doc/iniparse-%s" % get.srcVERSION())
+    pisitools.dohtml("html/*")
