@@ -106,3 +106,7 @@ def create_directories():
     # FHS compatibility symlinks stuff
     pisitools.dosym("/var/tmp", "/usr/tmp")
     pisitools.dosym("share/man", "/usr/local/man")
+
+    if get.ARCH() == "x86_64":
+        # Hack for binary blobs built on multi-lib systems
+        pisitools.dosym("lib", "/lib64")
