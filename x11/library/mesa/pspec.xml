@@ -13,15 +13,21 @@
         <IsA>app:console</IsA>
         <Summary>Mesa graphics libraries and utilities</Summary>
         <Description>Mesa is an open-source implementation of the OpenGL specification - a system for rendering interactive 3D graphics.</Description>
-        <Archive sha1sum="31500d7e3e3bbf9288b3bee4fbddd26a5e0b7782" type="tarbz2">ftp://ftp.freedesktop.org/pub/mesa/7.7.1/MesaLib-7.7.1.tar.bz2</Archive>
-        <Archive sha1sum="32cb484bf0963e58f47bdfe16f127e4195f1f7ad" type="tarbz2">ftp://ftp.freedesktop.org/pub/mesa/7.7.1/MesaDemos-7.7.1.tar.bz2</Archive>
+        <Archive sha1sum="1c15c62f845ef9b648366aa804410f68f7f79172" type="tarbz2">ftp://ftp.freedesktop.org/pub/mesa/7.8.1/MesaLib-7.8.1.tar.bz2</Archive>
+        <Archive sha1sum="42618c17fb7be6d96ef73ff007e41aac5d3ded65" type="tarbz2">ftp://ftp.freedesktop.org/pub/mesa/7.8.1/MesaDemos-7.8.1.tar.bz2</Archive>
+        <AdditionalFiles>
+            <AdditionalFile permission="0644" target="src/gallium/drivers/nouveau/nouveau_class.h">nouveau_class.h</AdditionalFile>
+        </AdditionalFiles>
         <BuildDependencies>
-            <Dependency versionFrom="2.4.17">libdrm</Dependency>
             <Dependency>libXdamage</Dependency>
             <Dependency>libXext</Dependency>
             <Dependency>libXfixes</Dependency>
             <Dependency>libXxf86vm</Dependency>
-            <Dependency releaseFrom="23">xorg-proto</Dependency>
+            <Dependency>libdrm</Dependency>
+            <Dependency>libdrm-intel</Dependency>
+            <Dependency>libdrm-nouveau</Dependency>
+            <Dependency>libdrm-radeon</Dependency>
+            <Dependency releaseFrom="27">xorg-proto</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">mesa-7.1-link-shared.patch</Patch>
@@ -31,11 +37,14 @@
     <Package>
         <Name>mesa</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="2.4.17">libdrm</Dependency>
             <Dependency>libXdamage</Dependency>
             <Dependency>libXext</Dependency>
             <Dependency>libXfixes</Dependency>
             <Dependency>libXxf86vm</Dependency>
+            <Dependency>libdrm</Dependency>
+            <Dependency>libdrm-intel</Dependency>
+            <Dependency>libdrm-nouveau</Dependency>
+            <Dependency>libdrm-radeon</Dependency>
         </RuntimeDependencies>
         <Conflicts>
             <Package releaseTo="48">xorg-server</Package>
@@ -61,6 +70,16 @@
     </Package>
 
     <History>
+        <Update release="22">
+            <Date>2010-04-18</Date>
+            <Version>7.8.1</Version>
+            <Comment>
+                - Switch to 7.8 branch
+                - Build nouveau drivers
+            </Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
         <Update release="21">
             <Date>2010-03-29</Date>
             <Version>7.7.1</Version>

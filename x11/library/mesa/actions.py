@@ -13,6 +13,8 @@ WorkDir = "Mesa-%s" % get.srcVERSION().replace("_", "-")
 def setup():
     shelltools.export("CFLAGS", "%s -DNDEBUG" % get.CFLAGS())
 
+    shelltools.sym("../../../../gallium/drivers/nouveau/nouveau_class.h", "src/mesa/drivers/dri/nouveau/nouveau_class.h")
+
     autotools.autoreconf("-vif")
     autotools.configure("--enable-pic \
                          --disable-xcb \
@@ -21,11 +23,13 @@ def setup():
                          --disable-egl \
                          --disable-glw \
                          --disable-glut \
-                         --disable-gallium \
+                         --enable-gallium \
+                         --enable-gallium-nouveau \
                          --with-driver=dri \
                          --without-demos \
                          --with-dri-driverdir=/usr/lib/xorg/modules/dri \
-                         --with-dri-drivers=i810,i915,i965,mach64,r128,r200,r300,r600,radeon,sis,tdfx,ffb,swrast")
+                         --with-dri-drivers=i810,i915,i965,mach64,nouveau,r128,r200,r300,r600,radeon,sis,tdfx,swrast \
+                         --with-state-trackers=dri,glx")
 
 def build():
     autotools.make("-j1")
@@ -41,7 +45,7 @@ def install():
 
     # Don't install unused headers
     #for header in ("[a-fh-wyz]*.h", "gg*.h", "glf*.h", "*glut*.h"):
-    for header in ("[a-fh-wyz]*.h", "gg*.h", "glf*.h"):
+    for header in ("[a-fh-wyz]*.h", "glf*.h"):
         pisitools.remove("/usr/include/GL/%s" % header)
 
     # Moving libGL for dynamic switching
