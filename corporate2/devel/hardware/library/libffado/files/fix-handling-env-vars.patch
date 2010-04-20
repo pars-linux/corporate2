@@ -1,0 +1,58 @@
+Index: libffado-2.0.0/SConstruct
+===================================================================
+--- libffado-2.0.0.orig/SConstruct
++++ libffado-2.0.0/SConstruct
+@@ -93,13 +93,29 @@ env = Environment( tools=['default','sca
+ if os.environ.has_key('LDFLAGS'):
+ 	env['LINKFLAGS'] = os.environ['LDFLAGS']
+ 
++if os.environ.has_key('CC'):
++	env['CC'] = os.environ['CC']
++
++if os.environ.has_key('CXX'):
++	env['CXX'] = os.environ['CXX']
++
+ # grab OS CFLAGS / CCFLAGS
+-env['OS_CFLAGS']=[]
++#env['OS_CFLAGS']=[]
+ if os.environ.has_key('CFLAGS'):
+ 	env['OS_CFLAGS'] = os.environ['CFLAGS']
+-env['OS_CCFLAGS']=[]
++	env['CFLAGS'] = os.environ['CFLAGS']
++#env['OS_CCFLAGS']=[]
+ if os.environ.has_key('CCFLAGS'):
+ 	env['OS_CCFLAGS'] = os.environ['CCFLAGS']
++	env['CCFLAGS'] = os.environ['CCFLAGS']
++
++if os.environ.has_key('CXXFLAGS'):
++	env['OS_CCFLAGS'] = os.environ['CXXFLAGS']
++	env['CXXFLAGS'] = os.environ['CXXFLAGS']
++
++if os.environ.has_key('CPPFLAGS'):
++	env['OS_CPPFLAGS'] = os.environ['CPPFLAGS']
++	env['CPPFLAGS'] = os.environ['CPPFLAGS']
+ 
+ Help( """
+ For building ffado you can set different options as listed below. You have to
+@@ -359,7 +375,7 @@ config_kernel = 2
+ config_os = 3
+ config = config_guess.split ("-")
+ 
+-needs_fPIC = False
++needs_fPIC = True
+ 
+ # Autodetect
+ if env['DIST_TARGET'] == 'auto':
+Index: libffado-2.0.0/src/SConscript
+===================================================================
+--- libffado-2.0.0.orig/src/SConscript
++++ libffado-2.0.0/src/SConscript
+@@ -199,7 +199,7 @@ libenv.PrependUnique( LIBS=["libconfigpp
+ libname_versioned = "libffado.so.%s" % libenv['VERSION']
+ libname_versioned_short = "libffado.so.%s" % libenv['VERSION'].split('.')[0]
+ 
+-libenv.AppendUnique( LINKFLAGS = env.Split("-Wl,-soname=%s" % libname_versioned_short) )
++libenv["LINKFLAGS"] = "%s -Wl,-soname=%s" % (env["LINKFLAGS"], libname_versioned_short)
+ ffadolib = libenv.SharedLibrary( "ffado", source )
+ 
+ #libenv.Install( "$libdir", ffadolib )
