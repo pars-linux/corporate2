@@ -15,9 +15,6 @@
         <Description>Mesa is an open-source implementation of the OpenGL specification - a system for rendering interactive 3D graphics.</Description>
         <Archive sha1sum="1c15c62f845ef9b648366aa804410f68f7f79172" type="tarbz2">ftp://ftp.freedesktop.org/pub/mesa/7.8.1/MesaLib-7.8.1.tar.bz2</Archive>
         <Archive sha1sum="42618c17fb7be6d96ef73ff007e41aac5d3ded65" type="tarbz2">ftp://ftp.freedesktop.org/pub/mesa/7.8.1/MesaDemos-7.8.1.tar.bz2</Archive>
-        <AdditionalFiles>
-            <AdditionalFile permission="0644" target="src/gallium/drivers/nouveau/nouveau_class.h">nouveau_class.h</AdditionalFile>
-        </AdditionalFiles>
         <BuildDependencies>
             <Dependency>libXdamage</Dependency>
             <Dependency>libXext</Dependency>
@@ -30,7 +27,11 @@
             <Dependency releaseFrom="27">xorg-proto</Dependency>
         </BuildDependencies>
         <Patches>
+            <Patch level="1">nouveau-legacy-update.patch</Patch>
+            <Patch level="1">0001-nouveau-Import-latest-nouveau_class.h-from-renouveau.patch</Patch>
+            <!--
             <Patch level="1">mesa-7.1-link-shared.patch</Patch>
+            -->
         </Patches>
     </Source>
 
@@ -70,6 +71,16 @@
     </Package>
 
     <History>
+        <Update release="23">
+            <Date>2010-04-20</Date>
+            <Version>7.8.1</Version>
+            <Comment>
+                - Get upstream fixes for nouveau legacy driver
+                - Disable link-shared patch as it breaks nouveau legacy driver
+            </Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
         <Update release="22">
             <Date>2010-04-18</Date>
             <Version>7.8.1</Version>
