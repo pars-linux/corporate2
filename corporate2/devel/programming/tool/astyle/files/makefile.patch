@@ -1,0 +1,37 @@
+--- build/gcc/Makefile.orig	2008-04-11 13:13:16.000000000 +0300
++++ build/gcc/Makefile	2008-04-11 14:36:20.000000000 +0300
+@@ -28,21 +28,22 @@
+ bindir = ../bin
+ objdir = obj
+ ipath=$(prefix)/bin
+-CBASEFLAGS = -W -Wall -fno-rtti -fno-exceptions
++libdir=$(prefix)/lib
++CBASEFLAGS = $(CFLAGS) -W -Wall -fno-rtti -fno-exceptions
+ JAVAINCS   = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
+ CXX = g++
+ INSTALL=install -o $(USER) -g $(USER)
++LN_S=ln -s
+ 
+ ##################################################
+ 
+ # define compile options for each build
+-CFLAGS   = -DNDEBUG -O3 $(CBASEFLAGS)
+ CFLAGSd  = -g $(CBASEFLAGS)
+ CFLAGSs  = -DNDEBUG -DASTYLE_LIB -O3 -fpic $(CBASEFLAGS)
+ CFLAGSsd = -DASTYLE_LIB -g -fpic $(CBASEFLAGS)
+ CFLAGSa  = -DNDEBUG -DASTYLE_LIB -O3 $(CBASEFLAGS)
+ CFLAGSad = -DASTYLE_LIB -g $(CBASEFLAGS)
+-CFLAGSsj  = -DNDEBUG -DASTYLE_JNI -O3 -fpic $(CBASEFLAGS) $(JAVAINCS)
++CFLAGSsj  = -DNDEBUG -DASTYLE_JNI -fpic $(CBASEFLAGS) $(JAVAINCS)
+ CFLAGSsjd = -DASTYLE_JNI -g -fpic $(CBASEFLAGS) $(JAVAINCS)
+ 
+ # object files are built from the source list $(SRC)
+@@ -104,7 +105,7 @@
+ release:  astyle
+ astyle:  $(OBJ)
+ 	@ mkdir -p $(bindir)
+-	$(CXX) -s -o $(bindir)/$@ $^
++	$(CXX) -o $(bindir)/$@ $^
+ 	@ echo
+ 
+ debug:  astyled
