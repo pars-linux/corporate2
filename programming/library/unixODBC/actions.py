@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -12,16 +12,18 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 def setup():
+    # Use system libtool instead of bundled one
     shelltools.unlinkDir("libltdl")
     libtools.libtoolize("-c -f --ltdl")
     autotools.autoreconf("-fi")
 
     autotools.configure("--sysconfdir=/etc/unixODBC \
+                         --disable-dependency-tracking \
                          --disable-gui \
                          --enable-threads \
                          --enable-drivers \
-                         --disable-stats \
-                         --x-libraries=/usr/lib")
+                         --enable-driver-conf \
+                         --disable-stats ")
 
 def build():
     autotools.make()
