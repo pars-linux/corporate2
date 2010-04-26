@@ -1,0 +1,76 @@
+From: Hans Petter Jansson <hpj@copyleft.no>
+      Wolfgang Rosenauer <wr@rosenauer.org>
+Subject: use libnsssharedhelper if available at compile time
+         (can be disabled by exporting MOZ_XRE_NO_NSSHELPER=1)
+References:
+
+
+diff --git a/config/autoconf.mk.in b/config/autoconf.mk.in
+--- a/config/autoconf.mk.in
++++ config/autoconf.mk.in
+@@ -478,16 +478,20 @@ MOZ_XIE_LIBS		= @MOZ_XIE_LIBS@
+ XT_LIBS			= @XT_LIBS@
+ 
+ MOZ_ALSA_LIBS           = @MOZ_ALSA_LIBS@
+ 
+ GLIB_CFLAGS	= @GLIB_CFLAGS@
+ GLIB_LIBS	= @GLIB_LIBS@
+ GLIB_GMODULE_LIBS	= @GLIB_GMODULE_LIBS@
+ 
++MOZ_ENABLE_NSSHELPER = @MOZ_ENABLE_NSSHELPER@
++NSSHELPER_CFLAGS = @NSSHELPER_CFLAGS@
++NSSHELPER_LIBS = @NSSHELPER_LIBS@
++
+ MOZ_NATIVE_MAKEDEPEND	= @SYSTEM_MAKEDEPEND@
+ 
+ # Used for LD_LIBRARY_PATH
+ LIBS_PATH       = @LIBS_PATH@
+ 
+ MOZ_AUTO_DEPS	= @MOZ_AUTO_DEPS@
+ COMPILER_DEPEND = @COMPILER_DEPEND@
+ MDDEPDIR        := @MDDEPDIR@
+diff --git a/configure.in b/configure.in
+--- a/configure.in
++++ configure.in
+@@ -6979,16 +6979,31 @@ AC_SUBST(MOZ_CAIRO_LIBS)
+ 
+ dnl qcms
+ dnl ========================================================
+ 
+ QCMS_LIBS='$(DEPTH)/mozilla/gfx/qcms/$(LIB_PREFIX)mozqcms.$(LIB_SUFFIX)'    
+ AC_SUBST(QCMS_LIBS)
+ 
+ dnl ========================================================
++dnl Check for nss-shared-helper
++dnl ========================================================
++
++  PKG_CHECK_MODULES(NSSHELPER, nss-shared-helper, 
++   [MOZ_ENABLE_NSSHELPER=1],
++   [MOZ_ENABLE_NSSHELPER=])
++
++if test "$MOZ_ENABLE_NSSHELPER"; then
++  AC_DEFINE(MOZ_ENABLE_NSSHELPER)
++fi
++AC_SUBST(MOZ_ENABLE_NSSHELPER)
++AC_SUBST(NSSHELPER_CFLAGS)
++AC_SUBST(NSSHELPER_LIBS)
++
++dnl ========================================================
+ dnl disable xul
+ dnl ========================================================
+ MOZ_ARG_DISABLE_BOOL(xul,
+ [  --disable-xul           Disable XUL],
+     MOZ_XUL= )
+ if test "$MOZ_XUL"; then
+   AC_DEFINE(MOZ_XUL)
+ fi
+--- mail/app/Makefile.in.orig	2009-02-26 11:02:11.000000000 +0100
++++ mail/app/Makefile.in	2009-02-26 11:04:00.000000000 +0100
+@@ -129,6 +129,7 @@
+ 	$(EXTRA_DSO_LIBS) \
+ 	$(APP_XPCOM_LIBS) \
+ 	$(NSPR_LIBS) \
++	$(NSSHELPER_LIBS) \
+ 	$(TK_LIBS) \
+ 	$(NULL)
+ 

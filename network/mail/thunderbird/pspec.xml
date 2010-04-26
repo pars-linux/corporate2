@@ -10,43 +10,77 @@
         </Packager>
         <License>MPL-1.1</License>
         <License>NPL-1.1</License>
-        <License>GPLv2</License>
+        <License>GPLv2+</License>
         <Icon>thunderbird</Icon>
         <IsA>app:gui</IsA>
-        <Summary>Thunderbird Email Client</Summary>
-        <Description>Thunderbird is an email client with advanced features like skinning and plugin support.</Description>
-        <Archive sha1sum="1fcda94ead35984a9b7f7bea4e859797d7ca9e57" type="tarlzma">http://cekirdek.pardus.org.tr/~ozan/dist/sources/thunderbird-3.0.1.tar.lzma</Archive>
+        <Summary>The Stand-Alone Mozilla Mail Component</Summary>
+        <Description>Thunderbird is a redesign of the Mozilla Mail Component. It is written using the XUL user interface language and designed to be cross-platform.</Description>
+        <Archive sha1sum="a6ff63f8210bab80bf8c168fab198ee099ecda60" type="tarbz2">http://cekirdek.pardus.org.tr/~ozan/dist/sources/thunderbird/thunderbird-3.0.4-source.tar.bz2</Archive>
+        <Archive sha1sum="2752d8e38d49f68ec70da602d61d4a2ff77cacac" type="tarbz2" target="thunderbird">http://cekirdek.pardus.org.tr/~ozan/dist/sources/thunderbird/l10n-3.0.4.tar.bz2</Archive>
+        <AdditionalFiles>
+            <AdditionalFile target=".mozconfig">pardus/mozconfig</AdditionalFile>
+            <AdditionalFile target=".pardus-default-prefs.js">pardus/pardus-default-prefs.js</AdditionalFile>
+        </AdditionalFiles>
         <BuildDependencies>
-            <Dependency versionFrom="3.12.3.0">nss</Dependency>
-            <Dependency versionFrom="2.18.5">gtk2</Dependency>
+            <Dependency versionFrom="3.6.22">sqlite</Dependency>
             <Dependency versionFrom="1.8.8">cairo</Dependency>
+            <Dependency versionFrom="2.18.5">gtk2</Dependency>
             <Dependency versionFrom="4.8.0">nspr</Dependency>
-            <Dependency>fontconfig</Dependency>
+            <Dependency releaseFrom="31">nss</Dependency>
+            <Dependency>atk</Dependency>
+            <Dependency>libXt</Dependency>
+            <Dependency>gconf</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>libIDL</Dependency>
+            <Dependency>alsa-lib</Dependency>
+            <Dependency>hunspell</Dependency>
+            <Dependency>libgnome</Dependency>
+            <Dependency>xdg-utils</Dependency>
             <Dependency>gnome-vfs</Dependency>
             <Dependency>libgnomeui</Dependency>
+            <Dependency>fontconfig</Dependency>
+            <Dependency>libXrender</Dependency>
+            <Dependency>openldap-client</Dependency>
+            <Dependency>startup-notification</Dependency>
         </BuildDependencies>
         <Patches>
-            <!--
-            <Patch level="1">embed-typeaheadfind.patch</Patch>
-            -->
-            <Patch level="1">mozconfig.patch</Patch>
-            <!--<Patch level="1">utf8-username.patch</Patch>-->
-
-            <Patch>suse/mozilla-clipboard.patch</Patch>
-            <Patch>suse/mozilla-gtkfilepicker-buttonorder.patch</Patch>
-            <Patch>suse/mozilla-helper-app.patch</Patch>
-            <Patch>suse/mozilla-path_len.patch</Patch>
-            <Patch>suse/mozilla-startup-notification.patch</Patch>
+            <!-- SuSE patches -->
             <Patch>suse/thunderbird-appname.patch</Patch>
-            <Patch>suse/locale.patch</Patch>
 
-            <!--
-            <Patch level="1">zemberek-thunderbird2.patch</Patch>
-            <Patch>secureconnection-translation.diff</Patch>
-            <Patch>turkish.patch</Patch>
-            -->
+            <!-- Fix broken startup notification -->
+            <Patch>suse/mozilla-startup-notification.patch</Patch>
+
+            <!-- Support alternative KDE button order -->
+            <Patch>suse/mozilla-gtkfilepicker-buttonorder.patch</Patch>
+
+            <!--<Patch>suse/tb-develdirs.patch</Patch>-->
+            <Patch>suse/mozilla-path_len.patch</Patch>
+            <Patch>suse/mozilla-helper-app.patch</Patch>
+            <Patch compressionType="bz2">suse/mozilla-system-hunspell.patch.bz2</Patch>
+
+            <!-- Not useful if we don't package mozilla-nss-helper
+            <Patch>suse/mozilla-shared-nss-db.patch</Patch>
+            <Patch>suse/thunderbird-shared-nss-db.patch</Patch>-->
+
+            <!-- X session management doesn't work correctly with Thunderbird -->
+            <Patch>suse/mozilla-xsmp.patch</Patch>
+
+            <!--<Patch>suse/locale.patch</Patch>-->
+
+            <!-- Pardus patches -->
+
+            <!-- What is this about?!
+            <Patch level="1">embed-typeaheadfind.patch</Patch>-->
+
+            <!-- Translation fixes -->
+            <!--<Patch>pardus/secureconnection-translation.diff</Patch>-->
+            <Patch level="1">pardus/fix-fixed-width-tr-translation.patch</Patch>
+
+            <!-- Zemberek integration -->
+            <Patch>pardus/zemberek-firefox3.patch</Patch>
+
+            <!-- autoconf hack -->
+            <Patch level="1">pardus/autoconf-213-hack.diff</Patch>
 
             <!-- Add default sound in Thunderbird -->
             <!--<Patch level="1">replace-beep-with-wav.patch</Patch>-->
@@ -56,45 +90,69 @@
     <Package>
         <Name>thunderbird</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.12.3.0">nss</Dependency>
-            <Dependency versionFrom="2.18.5">gtk2</Dependency>
+            <Dependency versionFrom="3.6.22">sqlite</Dependency>
             <Dependency versionFrom="1.8.8">cairo</Dependency>
+            <Dependency versionFrom="2.18.5">gtk2</Dependency>
             <Dependency versionFrom="4.8.0">nspr</Dependency>
-            <Dependency>fontconfig</Dependency>
+            <Dependency releaseFrom="31">nss</Dependency>
+            <Dependency>atk</Dependency>
+            <Dependency>libXt</Dependency>
+            <Dependency>gconf</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>libIDL</Dependency>
-            <Dependency>esound</Dependency>
+            <Dependency>hunspell</Dependency>
+            <Dependency>alsa-lib</Dependency>
+            <Dependency>libgnome</Dependency>
             <Dependency>gnome-vfs</Dependency>
             <Dependency>libgnomeui</Dependency>
+            <Dependency>fontconfig</Dependency>
+            <Dependency>libXrender</Dependency>
+            <Dependency>openldap-client</Dependency>
+            <Dependency>startup-notification</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
-            <Path fileType="data">/usr/lib/MozillaThunderbird</Path>
+            <Path fileType="executable">/usr/lib/MozillaThunderbird/open-browser.sh</Path>
+            <Path fileType="executable">/usr/lib/MozillaThunderbird/thunderbird-bin</Path>
             <Path fileType="library">/usr/lib/MozillaThunderbird/*.so</Path>
             <Path fileType="library">/usr/lib/MozillaThunderbird/components/*.so</Path>
-            <Path fileType="executable">/usr/lib/MozillaThunderbird/thunderbird-bin</Path>
+            <Path fileType="data">/usr/lib/MozillaThunderbird</Path>
             <Path fileType="data">/usr/share/applications</Path>
             <Path fileType="data">/usr/share/pixmaps</Path>
             <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="data">/usr/share/icons/hicolor</Path>
             <Path fileType="config">/etc</Path>
         </Files>
         <AdditionalFiles>
             <!-- wrapper -->
-            <AdditionalFile target="/usr/bin/thunderbird" permission="0755" owner="root">thunderbird</AdditionalFile>
+            <AdditionalFile owner="root" permission="0755" target="/usr/bin/thunderbird">thunderbird</AdditionalFile>
 
-            <!-- Default options -->
-            <AdditionalFile target="/usr/lib/MozillaThunderbird/greprefs/all-pardus.js" permission="0644" owner="root">default-prefs.js</AdditionalFile>
-            <AdditionalFile target="/usr/lib/MozillaThunderbird/defaults/pref/all-pardus.js" permission="0644" owner="root">default-prefs.js</AdditionalFile>
+            <!-- Script to open web links with the default browser -->
+            <AdditionalFile owner="root" permission="0755" target="/usr/lib/MozillaThunderbird/open-browser.sh">pardus/thunderbird-open-browser</AdditionalFile>
 
             <!-- Desktop file -->
-            <AdditionalFile target="/usr/share/applications/mozillathunderbird.desktop" permission="0755" owner="root">mozillathunderbird.desktop</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/applications/mozillathunderbird.desktop">mozillathunderbird.desktop</AdditionalFile>
 
             <!-- Notification sound file -->
-            <AdditionalFile target="/usr/lib/MozillaThunderbird/sound.wav" permission="0644" owner="root">sound.wav</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/lib/MozillaThunderbird/sound.wav">pardus/sound.wav</AdditionalFile>
         </AdditionalFiles>
     </Package>
 
     <History>
+        <Update release="52" type="security">
+            <Date>2010-04-12</Date>
+            <Version>3.0.4</Version>
+            <Comment>
+                - Bump to 3.0.4 (#12646),
+                - Fix multiple vulnerabilities (CVE-2010-{0173,0174,0175,0176}) (#12600),
+                - Strictly depend on the new nss which has fixed nss.pc and nss-config,
+                - Enable Zemberek integration,
+                - Use xdg-open for browser links,
+                - Sync SuSE patches,
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="51" type="security">
             <Date>2010-02-03</Date>
             <Version>3.0.1</Version>
