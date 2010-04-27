@@ -72,70 +72,6 @@ Index: linux-2.6.32/include/linux/fb.h
  
  struct fb_event {
  	struct fb_info *info;
-Index: linux-2.6.32/arch/x86/include/asm/smp.h
-===================================================================
---- linux-2.6.32.orig/arch/x86/include/asm/smp.h
-+++ linux-2.6.32/arch/x86/include/asm/smp.h
-@@ -135,6 +135,8 @@ int native_cpu_disable(void);
- void native_cpu_die(unsigned int cpu);
- void native_play_dead(void);
- void play_dead_common(void);
-+void wbinvd_on_cpu(int cpu);
-+int wbinvd_on_all_cpus(void);
- 
- void native_send_call_func_ipi(const struct cpumask *mask);
- void native_send_call_func_single_ipi(int cpu);
-@@ -147,6 +149,13 @@ static inline int num_booting_cpus(void)
- {
- 	return cpumask_weight(cpu_callout_mask);
- }
-+#else /* !CONFIG_SMP */
-+#define wbinvd_on_cpu(cpu)     wbinvd()
-+static inline int wbinvd_on_all_cpus(void)
-+{
-+	wbinvd();
-+	return 0;
-+}
- #endif /* CONFIG_SMP */
- 
- extern unsigned disabled_cpus __cpuinitdata;
-Index: linux-2.6.32/arch/x86/lib/Makefile
-===================================================================
---- linux-2.6.32.orig/arch/x86/lib/Makefile
-+++ linux-2.6.32/arch/x86/lib/Makefile
-@@ -2,7 +2,7 @@
- # Makefile for x86 specific library files.
- #
- 
--obj-$(CONFIG_SMP) += msr-smp.o
-+obj-$(CONFIG_SMP) += msr-smp.o cache-smp.o
- 
- lib-y := delay.o
- lib-y += thunk_$(BITS).o
-Index: linux-2.6.32/arch/x86/lib/cache-smp.c
-===================================================================
---- /dev/null
-+++ linux-2.6.32/arch/x86/lib/cache-smp.c
-@@ -0,0 +1,19 @@
-+#include <linux/smp.h>
-+#include <linux/module.h>
-+
-+static void __wbinvd(void *dummy)
-+{
-+	wbinvd();
-+}
-+
-+void wbinvd_on_cpu(int cpu)
-+{
-+	smp_call_function_single(cpu, __wbinvd, NULL, 1);
-+}
-+EXPORT_SYMBOL(wbinvd_on_cpu);
-+
-+int wbinvd_on_all_cpus(void)
-+{
-+	return on_each_cpu(__wbinvd, NULL, 1);
-+}
-+EXPORT_SYMBOL(wbinvd_on_all_cpus);
 Index: linux-2.6.32/arch/x86/Kconfig
 ===================================================================
 --- linux-2.6.32.orig/arch/x86/Kconfig
@@ -184,7 +120,7 @@ Index: linux-2.6.32/arch/x86/kernel/pci-gart_64.c
 ===================================================================
 --- linux-2.6.32.orig/arch/x86/kernel/pci-gart_64.c
 +++ linux-2.6.32/arch/x86/kernel/pci-gart_64.c
-@@ -717,7 +717,7 @@ void __init gart_iommu_init(void)
+@@ -720,7 +720,7 @@ void __init gart_iommu_init(void)
  	unsigned long scratch;
  	long i;
  
