@@ -1,0 +1,420 @@
+---
+ Makefile.am              |    6 +--
+ ac_find_xft.m4           |    2 +
+ clients/uil/Makefile.am  |    4 +-
+ config/cf/Imake.cf       |   33 +++++++++++++++++++
+ config/cf/Imake.tmpl     |    8 +++-
+ config/cf/linux.cf       |   80 +++++++++++++++++++++++++++++++++++++++++++++--
+ config/imake/imakemdep.h |   24 ++++++++++++++
+ configure.ac             |    4 +-
+ lib/Mrm/Makefile.am      |    2 -
+ lib/Xm/EditresCom.c      |   14 ++++----
+ lib/Xm/Makefile.am       |    2 -
+ 11 files changed, 158 insertions(+), 21 deletions(-)
+
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -29,7 +29,7 @@ SUBDIRS	= bindings bitmaps \
+              include \
+              tools \
+              clients \
+-             doc \
+-             demos
+-AUTOMAKE_OPTIONS = 1.4
++             doc
++AUTOMAKE_OPTIONS = 1.4 foreign
++ACLOCAL_AMFLAGS = -I .
+ ACLOCAL_AMFLAGS = -I .
+--- a/ac_find_xft.m4
++++ b/ac_find_xft.m4
+@@ -77,6 +77,7 @@ saved_CPPFLAGS="$CPPFLAGS"
+ CPPFLAGS="$CPPFLAGS $FREETYPE_CFLAGS"
+ AC_CHECK_HEADERS(freetype/freetype.h)
+ 
++m4_pattern_allow([^FINDXFT_HAVE_FREETYPE$])dnl
+ FINDXFT_HAVE_FREETYPE="no"
+ case "$ac_cv_header_freetype_freetype_h" in
+ no)
+@@ -131,6 +132,7 @@ AC_SUBST(CONFDIR)
+ #
+ # Check X configuration
+ #
++m4_pattern_allow([^FINDXFT_HAVE_XRENDER$])dnl
+ FINDXFT_HAVE_XRENDER="no"
+ case "$have_x" in
+ yes)
+--- a/clients/uil/Makefile.am
++++ b/clients/uil/Makefile.am
+@@ -13,7 +13,7 @@ UilParser.lo: UilParser.c
+ 
+ libUil_la_LIBADD = UilParser.lo ../../lib/Mrm/libMrm.la ../../lib/Xm/libXm.la 
+ 
+-uil_LDADD = ../../lib/Mrm/libMrm.la ../../lib/Xm/libXm.la 
++uil_LDADD = ../../lib/Mrm/libMrm.la ../../lib/Xm/libXm.la libUil.la
+ 
+ INCLUDES = -DINCDIR=\"@INCDIR@\" \
+            -DLIBDIR=\"@LIBDIR@\" \
+@@ -42,7 +42,7 @@ COMMON_SRC =	UilCmd.c	UilDiags.c	UilKeyT
+ 		UilLstMac.c	UilSemVal.c	UilSemCSet.c	UilDB.c
+ 
+ SRCS =		$(COMMON_SRC)
+-SRCS2 =		$(COMMON_SRC)	UilMain.c
++SRCS2 =		UilMain.c
+ 
+ HEADERS_1 = 	Uil.h		UilSymGl.h	UilSymDef.h \
+ 		UilDef.h	XmAppl.uil
+--- a/config/cf/Imake.cf
++++ b/config/cf/Imake.cf
+@@ -570,6 +570,9 @@ XCOMM $XFree86: xc/config/cf/Imake.cf,v
+ # ifdef i386
+ #  define i386Architecture
+ #  undef i386
++#  undef i486
++#  undef i586
++#  undef i686
+ # endif /* i386 */
+ # ifdef __i386__
+ #  ifndef i386Architecture
+@@ -593,6 +596,32 @@ XCOMM $XFree86: xc/config/cf/Imake.cf,v
+ #  define PowerPCArchitecture
+ #  undef powerpc
+ # endif
++# ifdef __s390__
++#  define s390Architecture
++#  undef __s390__
++# endif
++# ifdef __s390x__
++#  define s390xArchitecture
++#  undef __s390x__
++# endif
++# ifdef __x86_64__
++#  define x86_64Architecture
++#  undef __x86_64__
++# endif
++# ifdef mips
++#  define MipsArchitecture
++#  undef mips
++# endif
++# ifdef sparc
++#  define SparcArchitecture
++#  undef sparc
++# endif
++# ifdef __sparc__
++#  ifndef SparcArchitecture
++#   define SparcArchitecture
++#  endif
++#  undef __sparc__
++# endif
+ # if defined(arm) || defined(__arm__)
+ #   define ArmArchitecture
+ #   undef arm
+@@ -607,6 +636,10 @@ XCOMM $XFree86: xc/config/cf/Imake.cf,v
+ #     undef __ARM_ARCH_3__
+ #   endif
+ # endif
++# ifdef __ia64__
++#  define ia64Architecture
++#  undef __ia64__
++# endif /* __ia64__ */
+ #endif /* linux */
+ 
+ #if (defined(__Lynx__) || defined(Lynx)) && (defined(i386) || defined(__i386__) || defined(__x86__) || defined(__powerpc__) || defined(__sparc__) || defined(sparc))
+--- a/config/cf/Imake.tmpl
++++ b/config/cf/Imake.tmpl
+@@ -502,14 +502,18 @@ JPTCLIBDIR = JpTclLibDir
+ #define	DefaultUsrBin /usr/bin
+ #endif
+ 
++#ifndef LibDirName
++# define LibDirName lib
++#endif
++
+ #ifndef UsrLibDir
+ #ifdef ProjectRoot
+-#define UsrLibDir Concat(ProjectRoot,/lib)
++#define UsrLibDir Concat3(ProjectRoot,/,LibDirName)
+ #ifndef AlternateUsrLibDir
+ #define AlternateUsrLibDir YES
+ #endif
+ #else
+-#define UsrLibDir /usr/lib
++#define UsrLibDir Concat(/usr/,LibDirName)
+ #ifndef AlternateUsrLibDir
+ #define AlternateUsrLibDir NO
+ #endif
+--- a/config/cf/linux.cf
++++ b/config/cf/linux.cf
+@@ -41,8 +41,9 @@ XCOMM platform:  $XFree86: xc/config/cf/
+ /* Set some defaults for the Default* values in case imake doesn't find them */
+ #ifndef DefaultLinuxCLibMajorVersion
+ #if defined(AlphaArchitecture) || defined(PowerPCArchitecture) || \
+-    defined(SparcArchitecture) || defined(ArmArchitecure) || \
+-    defined(i386Architecture)
++    defined(SparcArchitecture) || defined(ArmArchitecure) || defined(MipsArchitecure) || \
++    defined(i386Architecture)  || defined(ia64Architecture) || defined(s390Architecture) || \
++    defined(s390xArchitecture) || defined(x86_64Architecture)
+ #define DefaultLinuxCLibMajorVersion	6
+ #else
+ #define DefaultLinuxCLibMajorVersion	5
+@@ -159,7 +160,24 @@ XCOMM binutils:	(LinuxBinUtilsMajorVersi
+ #define UseStaticTermcapLib	NO
+ #endif
+ 
++#ifndef HaveLib64
++# if defined (x86_64Architecture) || defined (s390xArchitecture)
++#  define HaveLib64 YES
++# else
++#  define HaveLib64 NO
++# endif
++#endif
++
+ #define MkdirHierCmd		mkdir -p
++
++#ifndef HaveLib64
++# if defined (x86_64Architecture) || defined (s390xArchitecture)
++#  define HaveLib64 YES
++# else
++#  define HaveLib64 NO
++# endif
++#endif
++
+ #if LinuxElfDefault
+ #if UseElfFormat
+ #define CcCmd			gcc
+@@ -234,7 +252,7 @@ XCOMM binutils:	(LinuxBinUtilsMajorVersi
+ #endif
+ #define CppCmd			/lib/cpp
+ #ifdef USE_BYACC
+-#define YaccCmd			byacc
++#define YaccCmd			yacc
+ #else
+ #define YaccCmd			bison -y
+ #endif
+@@ -261,6 +279,35 @@ XCOMM binutils:	(LinuxBinUtilsMajorVersi
+ #define ServerExtraDefines	-DGCCUSESGAS XFree86ServerDefines -D_XSERVER64
+ #endif /* AlphaArchitecture */
+ 
++#ifdef s390xArchitecture
++#define DefaultCCOptions	-fsigned-char
++#define OptimizedCDebugFlags	-O2
++#define LinuxMachineDefines	-D__s390x__
++#define ServerOSDefines		XFree86ServerOSDefines -DDDXTIME -DPART_NET
++#define ServerExtraDefines	-DGCCUSESGAS XFree86ServerDefines -D_XSERVER64
++#else
++#ifdef s390Architecture
++#define OptimizedCDebugFlags	-O2
++#define LinuxMachineDefines	-D__s390__
++#define ServerOSDefines		XFree86ServerOSDefines -DDDXTIME -DPART_NET
++#define ServerExtraDefines	-DGCCUSESGAS XFree86ServerDefines
++#endif /* s390Architecture */
++#endif /* s390xArchitecture */
++
++#ifdef ia64Architecture
++#define OptimizedCDebugFlags  -O2
++#define LinuxMachineDefines   -D__ia64__
++#define ServerOSDefines       XFree86ServerOSDefines -DDDXTIME -DPART_NET
++#define ServerExtraDefines    -DGCCUSESGAS XFree86ServerDefines -D_XSERVER64
++#endif /* ia64Architecture */
++
++#ifdef x86_64Architecture
++#define OptimizedCDebugFlags  -O2
++#define LinuxMachineDefines   -D__x86_64__
++#define ServerOSDefines       XFree86ServerOSDefines -DDDXTIME -DPART_NET
++#define ServerExtraDefines    -DGCCUSESGAS XFree86ServerDefines -D_XSERVER64
++#endif /* ia64Architecture */
++
+ #ifdef Mc68020Architecture
+ #define OptimizedCDebugFlags	-O2
+ #define LinuxMachineDefines 	-D__mc68000__
+@@ -276,6 +323,14 @@ XCOMM binutils:	(LinuxBinUtilsMajorVersi
+ #define ServerExtraDefines	-DGCCUSESGAS XFree86ServerDefines
+ #endif /* PowerPCArchitecture */
+ 
++#ifdef MipsArchitecture
++#define DefaultCCOptions        -fsigned-char
++#define OptimizedCDebugFlags	-O2 -mips2
++#define LinuxMachineDefines 	-D__mips__
++#define ServerOSDefines		XFree86ServerOSDefines -DDDXTIME -DPART_NET
++#define ServerExtraDefines	-DGCCUSESGAS XFree86ServerDefines
++#endif /* MipsArchitecture */
++
+ #ifdef ArmArchitecture
+ #define DefaultCCOptions        -fsigned-char
+ #define OptimizedCDebugFlags   -O2
+@@ -284,6 +339,19 @@ XCOMM binutils:	(LinuxBinUtilsMajorVersi
+ #define ServerExtraDefines     -DGCCUSESGAS XFree86ServerDefines
+ #endif /* Arm */
+ 
++#ifdef SparcArchitecture
++#define OptimizedCDebugFlags    -O2
++#define LinuxMachineDefines     -D__sparc__
++#define ServerOSDefines         XFree86ServerOSDefines -DDDXTIME -DPART_NET
++#define ServerExtraDefines      -DGCCUSESGAS XFree86ServerDefines
++#define AsVISOption -Av9a
++#ifdef Sparc64Architecture
++#define AsOutputArchSize 64
++#else
++#define AsOutputArchSize 32
++#endif
++#endif
++
+ #define StandardDefines		-Dlinux LinuxMachineDefines LinuxSourceDefines
+ 
+ #ifndef TermcapLibrary
+@@ -348,5 +416,11 @@ XCOMM binutils:	(LinuxBinUtilsMajorVersi
+ #define MakeNamedTargetSubdir(dir,flags,subname)\
+ 	$(MAKE) -C dir $(MFLAGS) $(PARALLELMFLAGS) flags subname
+ 
++#if HaveLib64
++# ifndef LibDirName
++#  define LibDirName lib64
++# endif
++#endif
++
+ #include <lnxLib.rules>
+ #include <xfree86.cf>
+--- a/config/imake/imakemdep.h
++++ b/config/imake/imakemdep.h
+@@ -333,6 +333,18 @@ char *cpp_argv[ARGUMENTS] = {
+ # ifdef __i386__
+ 	"-D__i386__",
+ # endif
++# ifdef __ia64__
++	"-D__ia64__",
++# endif
++# ifdef __s390__
++	"-D__s390__",
++# endif
++# ifdef __s390x__
++	"-D__s390x__",
++# endif
++# ifdef __x86_64__
++	"-D__x86_64__",
++# endif
+ # ifdef __sparc__
+ 	"-D__sparc__",
+ # endif
+@@ -936,6 +948,18 @@ struct symtab	predefs[] = {
+ #ifdef __alpha__
+ 	{"__alpha__", "1"},
+ #endif
++#ifdef __ia64__
++	{"__ia64__", "1"},
++#endif
++#ifdef __x86_64__
++	{"__x86_64__", "1"},
++#endif
++#ifdef __s390__
++	{"__s390__", "1"},
++#endif
++#ifdef __s390x__
++	{"__s390x__", "1"},
++#endif
+ #ifdef __DECC
+ 	{"__DECC",  "1"},
+ #endif
+--- a/configure.ac
++++ b/configure.ac
+@@ -167,13 +167,13 @@ AC_SUBST(CDE_INSTALLATION_TOP)
+ CDE_CONFIGURATION_TOP="\${prefix}/etc/dt"
+ AC_SUBST(CDE_CONFIGURATION_TOP)
+ 
+-LIBDIR="${libdir}/X11"
++LIBDIR="${datadir}/X11"
+ AC_SUBST(LIBDIR)
+ 
+ INCDIR="${includedir}/X11"
+ AC_SUBST(INCDIR)
+ 
+-XMBINDDIR_FALLBACK="${libdir}/X11/bindings"
++XMBINDDIR_FALLBACK="${datadir}/X11/bindings"
+ AC_SUBST(XMBINDDIR_FALLBACK)
+ 
+ AC_ARG_ENABLE(motif22-compatibility, [  --disable-motif22-compatibility
+--- a/lib/Mrm/Makefile.am
++++ b/lib/Mrm/Makefile.am
+@@ -8,7 +8,7 @@ mrmdir = $(includedir)/Mrm
+ 
+ libMrm_la_LIBADD = ../Xm/libXm.la ${X_LIBS} -lXt ${X_PRE_LIBS} -lX11 ${X_EXTRA_LIBS}
+ 
+-LDFLAGS = -version-info @CURRENT@:@REVISION@:@AGE@
++libMrm_la_LDFLAGS = -version-info @CURRENT@:@REVISION@:@AGE@
+ 
+ lib_LTLIBRARIES = libMrm.la
+ 
+--- a/lib/Xm/EditresCom.c
++++ b/lib/Xm/EditresCom.c
+@@ -1771,7 +1771,7 @@ Widget w;
+     XtFree((char *)widget_list);
+ }
+ 
+-#if 0
++#if 1
+ /************************************************************
+  *
+  * All of the following routines are public.
+@@ -1922,7 +1922,7 @@ ProtocolStream * stream;
+  *	Returns: TRUE if sucessful.
+  */
+ 
+-Boolean
++Bool
+ _XEditResGet8(stream, val)
+ ProtocolStream * stream;
+ unsigned char * val;
+@@ -1942,7 +1942,7 @@ unsigned char * val;
+  *	Returns: TRUE if sucessful.
+  */
+ 
+-Boolean
++Bool
+ _XEditResGet16(stream, val)
+ ProtocolStream * stream;
+ unsigned short * val;
+@@ -1963,7 +1963,7 @@ unsigned short * val;
+  *	Returns: TRUE if sucessful.
+  */
+ 
+-Boolean
++Bool
+ _XEditResGetSigned16(stream, val)
+ ProtocolStream * stream;
+ short * val;
+@@ -1992,7 +1992,7 @@ short * val;
+  *	Returns: TRUE if sucessful.
+  */
+ 
+-Boolean
++Bool
+ _XEditResGet32(stream, val)
+ ProtocolStream * stream;
+ unsigned long * val;
+@@ -2014,7 +2014,7 @@ unsigned long * val;
+  *	Returns: True if retrieval was successful.
+  */
+ 
+-Boolean
++Bool
+ _XEditResGetString8(stream, str)
+ ProtocolStream * stream;
+ char ** str;
+@@ -2047,7 +2047,7 @@ char ** str;
+  *	Returns: True if retrieval was successful.
+  */
+ 
+-Boolean
++Bool
+ _XEditResGetWidgetInfo(stream, info)
+ ProtocolStream * stream;
+ WidgetInfo * info;
+--- a/lib/Xm/Makefile.am
++++ b/lib/Xm/Makefile.am
+@@ -11,7 +11,7 @@ INCLUDES = -I.. -I$(srcdir)/.. -DXMBINDD
+            ${X_CFLAGS}
+ xmdir = $(includedir)/Xm
+ 
+-LDFLAGS = -version-info @CURRENT@:@REVISION@:@AGE@
++libXm_la_LDFLAGS = -version-info @CURRENT@:@REVISION@:@AGE@
+ 
+ lib_LTLIBRARIES = libXm.la
+ 
