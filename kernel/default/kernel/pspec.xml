@@ -32,13 +32,12 @@
             <!-- Bluetooth: Fix potential bad memory access with sysfs files (CVE-2010-1084) (#12627) -->
             <!-- NFS: Fix an Oops when truncating a file (CVE-2010-1087) (#12635) -->
             <!-- dvb-core: Fix DoS bug in ULE decapsulation code (CVE-2010-1086) (#12631) -->
-            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.11.bz2</Patch>
+            <!-- tty: release_one_tty() forgets to put pids (CVE-2010-1162) (#12774) -->
+            <!-- oom: fix the unsafe usage of badness() in proc_oom_score() (CVE-2010-1488) (#12778) -->
+            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.12.bz2</Patch>
 
             <!-- reiserfs: Fix permissions on .reiserfs_priv (CVE-2010-1146) (#12641) -->
             <Patch level="1">suse/reiserfs-fix-permissions-on-reiserfs_priv.patch</Patch>
-
-            <!-- iwlagn: Fix spurious warnings caused by a regression in .10 -->
-            <Patch level="1">kernel/2.6.32-iwlwifi-fix-nfreed.patch</Patch>
 
             <!-- FIXME: Squashfs-lzma support (There's a cleaner patch for this in LKML) -->
             <Patch level="1">squashfs/squashfs-devel-add-lzma-support.patch</Patch>
@@ -62,11 +61,14 @@
 
             <!-- Subset of Fedora Kernel Patches -->
 
-            <!-- tcp: fix ICMP-RTO war -->
-            <Patch level="1">fedora/tcp-fix-icmp-rto-war.patch</Patch>
+            <!-- Add EC path for Thinkpad X100 -->
+            <Patch level="1">fedora/thinkpad-acpi-add-x100e.patch</Patch>
 
-            <!-- r8169: imporved rx length check errors -->
-            <Patch level="1">fedora/linux-2.6-net-r8169-improved-rx-length-check-errors.patch</Patch>
+            <!-- libata: Fix accesses at LBA28 boundary -->
+            <Patch level="1">fedora/libata-fix-accesses-at-LBA28-boundary.patch</Patch>
+
+            <!-- acpi: ACPI embedded controller fixes from Fedora 13 -->
+            <Patch level="1">fedora/acpi-ec-add-delay-before-write.patch</Patch>
 
             <!-- b43: Rewrite DMA Tx status handling sanity checks -->
             <Patch level="1">fedora/linux-2.6-b43_-Rewrite-DMA-Tx-status-handling-sanity-checks.patch</Patch>
@@ -119,6 +121,7 @@
 
 
             <!-- DRM patches -->
+            <!--
             <Patch level="1">drm/add-list_sort.patch</Patch>
             <Patch level="1">drm/i2c-algo-bit-Add-pre-and-post-xfer-hooks.patch</Patch>
             <Patch level="1">drm/2.6.34-base.patch</Patch>
@@ -127,14 +130,18 @@
             <Patch level="1">drm/fedora/drm_nouveau_ucode.patch</Patch>
 
             <Patch level="1">drm/fedora/linux-2.6-acpi-video-export-edid.patch</Patch>
+            -->
             <!--
             <Patch level="1">drm/fedora/drm-nouveau-acpi-edid-fallback.patch</Patch>
             -->
+            <!--
 
             <Patch level="1">drm/fedora/drm-intel-big-hammer.patch</Patch>
             <Patch level="1">drm/fedora/drm-intel-make-lvds-work.patch</Patch>
             <Patch level="1">drm/fedora/linux-2.6-intel-iommu-igfx.patch</Patch>
             <Patch level="1">drm/fedora/drm-intel-gen5-dither.patch</Patch>
+
+            -->
 
             <!-- Use the same resolution when switching from vesafb to KMS -->
             <Patch level="1">drm/pardus/kms-use-vesafb-mode.patch</Patch>
@@ -247,9 +254,6 @@
 
             <!-- Add new serial Wacom device IDs -->
             <Patch level="1">suse/serial-8250-add-new-wacom-devices.patch</Patch>
-
-            <!-- igb: Add support for Intel 82576NS ethernet adapter -->
-            <Patch level="1">suse/igb-add-support-for-82576NS-SerDes-adapter.patch</Patch>
 
 
             <!-- Pardus patches & specific changes -->
@@ -393,6 +397,20 @@
     </Package>
 
     <History>
+        <Update release="137" type="security">
+            <Date>2010-04-27</Date>
+            <Version>2.6.32.12</Version>
+            <Comment>
+                - Bump to 2.6.32.12,
+                - libata: Fix accesses at LBA28 boundary,
+                - acpi: ACPI embedded controller fixes from Fedora 13,
+                - Add EC path for Thinkpad X100.
+                - tty: release_one_tty() forgets to put pids (CVE-2010-1162) (#12774),
+                - oom: fix the unsafe usage of badness() in proc_oom_score() (CVE-2010-1488) (#12778).
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="136" type="security">
             <Date>2010-04-12</Date>
             <Version>2.6.32.11</Version>
