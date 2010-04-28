@@ -11,6 +11,8 @@ from pisi.actionsapi import libtools
 from pisi.actionsapi import kde
 from pisi.actionsapi import get
 
+KeepSpecial = ["libtool"]
+
 def setup():
     autotools.autoconf("-f")
     kde.configure("--enable-libsuffix= \
