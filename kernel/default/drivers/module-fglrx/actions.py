@@ -15,6 +15,7 @@ WorkDir = "."
 
 BuildDir = "common/lib/modules/fglrx/build_mod"
 Target = get.ARCH().replace("i686", "x86")
+XDir = "x750" + ("_64a" if Target == "x86_64" else "")
 
 
 def setup():
@@ -52,8 +53,7 @@ def install():
         pisitools.insinto(target, source)
 
     pisitools.domove("/usr/lib/modules", "/usr/lib/xorg")
-    arch_suffix = "_64a" if Target == "x86_64" else ""
-    pisitools.insinto("/usr/lib/xorg/modules", "x740%s/usr/X11R6/lib*/modules/*" % arch_suffix)
+    pisitools.insinto("/usr/lib/xorg/modules", "%s/usr/X11R6/lib*/modules/*" % XDir)
 
     pisitools.domove("/usr/lib/libGL.so.1.2", "/usr/lib/xorg/fglrx/lib")
     pisitools.domove("/usr/lib/xorg/modules/extensions", "/usr/lib/xorg/fglrx")
@@ -67,16 +67,13 @@ def install():
     pisitools.dosym("libfglrx_gamma.so.1.0", "/usr/lib/libfglrx_gamma.so.1")
     pisitools.dosym("libfglrx_gamma.so.1", "/usr/lib/libfglrx_gamma.so")
 
-    pisitools.dosym("libfglrx_tvout.so.1.0", "/usr/lib/libfglrx_tvout.so.1")
-    pisitools.dosym("libfglrx_tvout.so.1", "/usr/lib/libfglrx_tvout.so")
-
     pisitools.dosym("libAMDXvBA.so.1.0", "/usr/lib/libAMDXvBA.so.1")
     pisitools.dosym("libAMDXvBA.so.1", "/usr/lib/libAMDXvBA.so")
 
     pisitools.dosym("libXvBAW.so.1.0", "/usr/lib/libXvBAW.so.1")
     pisitools.dosym("libXvBAW.so.1", "/usr/lib/libXvBAW.so")
 
-    # compability links
+    # compatibility links
     pisitools.dosym("/usr", "/usr/X11R6")
     pisitools.dosym("xorg/modules", "/usr/lib/modules")
 
@@ -85,7 +82,8 @@ def install():
 
     # remove static libs
     pisitools.remove("/usr/lib/*.a")
-    pisitools.remove("/usr/lib/xorg/modules/*.a")
+    if shelltools.isFile("/usr/lib/xorg/modules/esut.a"):
+        pisitools.remove("/usr/lib/xorg/modules/esut.a")
 
     # not needed as xdg-utils package provides xdg-su
     pisitools.remove("/usr/bin/amdxdg-su")
