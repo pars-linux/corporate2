@@ -1,7 +1,8 @@
-diff -Naur ppp-2.4.4/chat/Makefile.linux ppp-2.4.4-patched/chat/Makefile.linux
---- ppp-2.4.4/chat/Makefile.linux	2009-08-28 11:30:26.000000000 +0300
-+++ ppp-2.4.4-patched/chat/Makefile.linux	2009-08-28 11:30:41.000000000 +0300
-@@ -25,7 +25,7 @@
+Index: ppp-2.4.5/chat/Makefile.linux
+===================================================================
+--- ppp-2.4.5.orig/chat/Makefile.linux
++++ ppp-2.4.5/chat/Makefile.linux
+@@ -25,7 +25,7 @@ chat.o:	chat.c
  
  install: chat
  	mkdir -p $(BINDIR) $(MANDIR)
@@ -10,10 +11,11 @@ diff -Naur ppp-2.4.4/chat/Makefile.linux ppp-2.4.4-patched/chat/Makefile.linux
  	$(INSTALL) -c -m 644 chat.8 $(MANDIR)
  
  clean:
-diff -Naur ppp-2.4.4/pppd/Makefile.linux ppp-2.4.4-patched/pppd/Makefile.linux
---- ppp-2.4.4/pppd/Makefile.linux	2009-08-28 11:30:26.000000000 +0300
-+++ ppp-2.4.4-patched/pppd/Makefile.linux	2009-08-28 11:30:41.000000000 +0300
-@@ -99,7 +99,7 @@
+Index: ppp-2.4.5/pppd/Makefile.linux
+===================================================================
+--- ppp-2.4.5.orig/pppd/Makefile.linux
++++ ppp-2.4.5/pppd/Makefile.linux
+@@ -99,7 +99,7 @@ ifdef USE_SRP
  CFLAGS	+= -DUSE_SRP -DOPENSSL -I/usr/include/openssl
  LIBS	+= -lsrp -L/usr/lib -lcrypto
  TARGETS	+= srp-entry
@@ -22,7 +24,7 @@ diff -Naur ppp-2.4.4/pppd/Makefile.linux ppp-2.4.4-patched/pppd/Makefile.linux
  MANPAGES += srp-entry.8
  EXTRACLEAN += srp-entry.o
  NEEDDES=y
-@@ -200,7 +200,7 @@
+@@ -200,7 +200,7 @@ all: $(TARGETS)
  install: pppd
  	mkdir -p $(BINDIR) $(MANDIR)
  	$(EXTRAINSTALL)
@@ -31,10 +33,11 @@ diff -Naur ppp-2.4.4/pppd/Makefile.linux ppp-2.4.4-patched/pppd/Makefile.linux
  	if chgrp pppusers $(BINDIR)/pppd 2>/dev/null; then \
  	  chmod o-rx,u+s $(BINDIR)/pppd; fi
  	$(INSTALL) -c -m 444 pppd.8 $(MANDIR)
-diff -Naur ppp-2.4.4/pppd/plugins/radius/Makefile.linux ppp-2.4.4-patched/pppd/plugins/radius/Makefile.linux
---- ppp-2.4.4/pppd/plugins/radius/Makefile.linux	2009-08-28 11:30:26.000000000 +0300
-+++ ppp-2.4.4-patched/pppd/plugins/radius/Makefile.linux	2009-08-28 11:30:41.000000000 +0300
-@@ -36,9 +36,9 @@
+Index: ppp-2.4.5/pppd/plugins/radius/Makefile.linux
+===================================================================
+--- ppp-2.4.5.orig/pppd/plugins/radius/Makefile.linux
++++ ppp-2.4.5/pppd/plugins/radius/Makefile.linux
+@@ -36,9 +36,9 @@ all: $(PLUGIN)
  
  install: all
  	$(INSTALL) -d -m 755 $(LIBDIR)
@@ -47,10 +50,11 @@ diff -Naur ppp-2.4.4/pppd/plugins/radius/Makefile.linux ppp-2.4.4-patched/pppd/p
  	$(INSTALL) -c -m 444 pppd-radius.8 $(MANDIR)
  	$(INSTALL) -c -m 444 pppd-radattr.8 $(MANDIR)
  
-diff -Naur ppp-2.4.4/pppd/plugins/rp-pppoe/Makefile.linux ppp-2.4.4-patched/pppd/plugins/rp-pppoe/Makefile.linux
---- ppp-2.4.4/pppd/plugins/rp-pppoe/Makefile.linux	2009-08-28 11:30:26.000000000 +0300
-+++ ppp-2.4.4-patched/pppd/plugins/rp-pppoe/Makefile.linux	2009-08-28 11:30:41.000000000 +0300
-@@ -39,9 +39,9 @@
+Index: ppp-2.4.5/pppd/plugins/rp-pppoe/Makefile.linux
+===================================================================
+--- ppp-2.4.5.orig/pppd/plugins/rp-pppoe/Makefile.linux
++++ ppp-2.4.5/pppd/plugins/rp-pppoe/Makefile.linux
+@@ -44,9 +44,9 @@ rp-pppoe.so: plugin.o discovery.o if.o c
  
  install: all
  	$(INSTALL) -d -m 755 $(LIBDIR)
@@ -59,23 +63,25 @@ diff -Naur ppp-2.4.4/pppd/plugins/rp-pppoe/Makefile.linux ppp-2.4.4-patched/pppd
  	$(INSTALL) -d -m 755 $(BINDIR)
 -	$(INSTALL) -s -c -m 555 pppoe-discovery $(BINDIR)
 +	$(INSTALL) -c -m 555 pppoe-discovery $(BINDIR)
+ 	$(INSTALL) -c -m 444 pppoe-discovery.8 $(MANDIR)
  
  clean:
- 	rm -f *.o *.so
-diff -Naur ppp-2.4.4/pppdump/Makefile.linux ppp-2.4.4-patched/pppdump/Makefile.linux
---- ppp-2.4.4/pppdump/Makefile.linux	2009-08-28 11:30:26.000000000 +0300
-+++ ppp-2.4.4-patched/pppdump/Makefile.linux	2009-08-28 11:30:41.000000000 +0300
-@@ -17,5 +17,5 @@
+Index: ppp-2.4.5/pppdump/Makefile.linux
+===================================================================
+--- ppp-2.4.5.orig/pppdump/Makefile.linux
++++ ppp-2.4.5/pppdump/Makefile.linux
+@@ -17,5 +17,5 @@ clean:
  
  install:
  	mkdir -p $(BINDIR) $(MANDIR)
 -	$(INSTALL) -s -c pppdump $(BINDIR)
 +	$(INSTALL) -c pppdump $(BINDIR)
  	$(INSTALL) -c -m 444 pppdump.8 $(MANDIR)
-diff -Naur ppp-2.4.4/pppstats/Makefile.linux ppp-2.4.4-patched/pppstats/Makefile.linux
---- ppp-2.4.4/pppstats/Makefile.linux	2009-08-28 11:30:26.000000000 +0300
-+++ ppp-2.4.4-patched/pppstats/Makefile.linux	2009-08-28 11:30:41.000000000 +0300
-@@ -22,7 +22,7 @@
+Index: ppp-2.4.5/pppstats/Makefile.linux
+===================================================================
+--- ppp-2.4.5.orig/pppstats/Makefile.linux
++++ ppp-2.4.5/pppstats/Makefile.linux
+@@ -22,7 +22,7 @@ all: pppstats
  
  install: pppstats
  	-mkdir -p $(MANDIR)
