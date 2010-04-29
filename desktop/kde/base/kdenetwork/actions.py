@@ -37,3 +37,5 @@ def install():
 
     # We replace this file
     pisitools.remove("/usr/kde/3.5/share/apps/konqueror/servicemenus/kget_download.desktop")
+
+    pisitools.insinto("/etc/ppp/peers", "kppp_peers", "kppp")
