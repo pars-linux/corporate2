@@ -15,11 +15,10 @@ def setup():
     shelltools.export("LDFLAGS","%s -pie" % get.LDFLAGS())
 
     autotools.configure("--with-statedir=/var/lib/nfs \
-                         --disable-rquotad \
                          --disable-gss \
                          --enable-nfsv4 \
                          --enable-nfsv3 \
-                         --enable-secure-statd")
+                         --disable-static")
 
 def build():
     autotools.make()
