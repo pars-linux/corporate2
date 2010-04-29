@@ -29,4 +29,7 @@ def install():
     # Remove unused directory, the log file is at /var/log/ppp.log
     pisitools.removeDir("/var/log")
 
+    # Create peers directory
+    pisitools.dodir("/etc/ppp/peers")
+
     pisitools.dodoc("Changes*", "README*", "FAQ")
