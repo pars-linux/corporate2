@@ -10,12 +10,13 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import get
 
-WorkDir = "%s-0.3" % get.srcNAME()
+#WorkDir = "%s-0.3" % get.srcNAME()
 
 def setup():
-    autotools.autoreconf("-vif")
+    shelltools.system("./autogen.sh")
     autotools.configure("--disable-static \
-                         --enable-more-warnings")
+                         --enable-more-warnings \
+                         --with-polkit=no")
 
 def build():
     autotools.make()
