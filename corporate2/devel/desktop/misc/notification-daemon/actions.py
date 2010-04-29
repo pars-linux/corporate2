@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -15,15 +15,15 @@ def setup():
     autotools.configure("--disable-schemas-install \
                          --disable-static")
 
-    shelltools.cd("slider")
+    shelltools.cd("notification-daemon-engine-nodoka-0.1.0")
     autotools.configure()
 
 def build():
     autotools.make()
-    autotools.make("-C slider")
+    autotools.make("-C notification-daemon-engine-nodoka-0.1.0")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
-    autotools.rawInstall("-C slider DESTDIR=%s" % get.installDIR())
+    autotools.rawInstall("-C notification-daemon-engine-nodoka-0.1.0 DESTDIR=%s" % get.installDIR())
 
     pisitools.dodoc("AUTHORS", "ChangeLog", "COPYING", "NEWS", "README")
