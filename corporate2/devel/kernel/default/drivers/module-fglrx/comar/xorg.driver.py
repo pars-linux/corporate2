@@ -50,6 +50,10 @@ def disable():
     symlink("mesa/libGL.so.1.2", "/usr/lib/libGL.so.1.2")
     symlink("../../std/extensions/libglx.so", "/usr/lib/xorg/modules/extensions/libglx.so")
 
+    unlink(BLACKLIST_CONF)
+    for kernel in os.listdir("/etc/kernel"):
+        subprocess.call(["/sbin/mkinitramfs", "-t", kernel])
+
     unlink(ZORG_ENABLED_PACKAGE)
     unlink(ZORG_KERNEL_MODULE)
 
