@@ -1,0 +1,224 @@
+diff -Nuar qwt-5.2.0.orig/examples/examples.pri qwt-5.2.0/examples/examples.pri
+--- qwt-5.2.0.orig/examples/examples.pri	2010-03-24 08:54:36.707849051 +0200
++++ qwt-5.2.0/examples/examples.pri	2010-03-24 08:57:06.587847376 +0200
+@@ -1,61 +1,7 @@
+-# -*- mode: sh -*- ################################################
+-# Qwt Widget Library
+-# Copyright (C) 1997   Josef Wilgen
+-# Copyright (C) 2002   Uwe Rathmann
+-#
+-# This library is free software; you can redistribute it and/or
+-# modify it under the terms of the Qwt License, Version 1.0
+-###################################################################
+-
+-QWT_ROOT = ../..
+-
+-include( $${QWT_ROOT}/qwtconfig.pri )
+-
+-SUFFIX_STR =
+-VVERSION = $$[QT_VERSION]
+-isEmpty(VVERSION) {
+-
+-    # Qt 3
+-    debug {
+-        SUFFIX_STR = $${DEBUG_SUFFIX}
+-    }
+-    else {
+-        SUFFIX_STR = $${RELEASE_SUFFIX}
+-    }
+-}
+-else {
+-    CONFIG(debug, debug|release) {
+-        SUFFIX_STR = $${DEBUG_SUFFIX}
+-    }
+-    else {
+-        SUFFIX_STR = $${RELEASE_SUFFIX}
+-    }
+-}
+-
++include( qwtconfig.pri )
+ TEMPLATE     = app
+-
+ MOC_DIR      = moc
+-INCLUDEPATH += $${QWT_ROOT}/src
+-DEPENDPATH  += $${QWT_ROOT}/src
+-OBJECTS_DIR  = obj$${SUFFIX_STR}
+-DESTDIR      = $${QWT_ROOT}/examples/bin$${SUFFIX_STR}
+-
+-QWTLIB       = qwt$${SUFFIX_STR}
+-
+-win32 {
+-    contains(CONFIG, QwtDll) {
+-        DEFINES    += QT_DLL QWT_DLL
+-        QWTLIB = $${QWTLIB}$${VER_MAJ}
+-    }
++INCLUDEPATH += /usr/qt/4/include/qwt
++DEPENDPATH  += /usr/qt/4/include/qwt
++LIBS        += -lqwt
+ 
+-    win32-msvc:LIBS  += $${QWT_ROOT}/lib/$${QWTLIB}.lib
+-    win32-msvc.net:LIBS  += $${QWT_ROOT}/lib/$${QWTLIB}.lib
+-    win32-msvc2002:LIBS += $${QWT_ROOT}/lib/$${QWTLIB}.lib
+-    win32-msvc2003:LIBS += $${QWT_ROOT}/lib/$${QWTLIB}.lib
+-    win32-msvc2005:LIBS += $${QWT_ROOT}/lib/$${QWTLIB}.lib
+-    win32-msvc2008:LIBS += $${QWT_ROOT}/lib/$${QWTLIB}.lib
+-    win32-g++:LIBS   += -L$${QWT_ROOT}/lib -l$${QWTLIB}
+-}
+-else {
+-    LIBS        += -L$${QWT_ROOT}/lib -l$${QWTLIB}
+-}
+diff -Nuar qwt-5.2.0.orig/examples/examples.pro qwt-5.2.0/examples/examples.pro
+--- qwt-5.2.0.orig/examples/examples.pro	2010-03-24 08:54:36.708850925 +0200
++++ qwt-5.2.0/examples/examples.pro	2010-03-24 08:57:37.906857368 +0200
+@@ -7,7 +7,7 @@
+ # modify it under the terms of the Qwt License, Version 1.0
+ ###################################################################
+ 
+-include( ../qwtconfig.pri )
++include( qwtconfig.pri )
+ 
+ TEMPLATE = subdirs
+ 
+diff -Nuar qwt-5.2.0.orig/qwtconfig.pri qwt-5.2.0/qwtconfig.pri
+--- qwt-5.2.0.orig/qwtconfig.pri	2010-03-24 08:54:36.722853617 +0200
++++ qwt-5.2.0/qwtconfig.pri	2010-03-24 08:56:14.650090877 +0200
+@@ -1,124 +1,7 @@
+-######################################################################
+-# Install paths
+-######################################################################
++target.path = /usr/qt/4/lib
++headers.path = /usr/qt/4/include/qwt
++doc.path = /usr/share/doc/qwt
++CONFIG += qt warn_on thread release
++CONFIG += QwtDll QwtPlot QwtWidgets QwtDesigner
++VERSION = 0.5.2
+ 
+-VER_MAJ      = 5
+-VER_MIN      = 2
+-VER_PAT      = 0
+-VERSION      = $${VER_MAJ}.$${VER_MIN}.$${VER_PAT}
+-
+-unix {
+-    INSTALLBASE    = /usr/local/qwt-5.2.0
+-}
+-
+-win32 {
+-    INSTALLBASE    = C:/Qwt-5.2.0
+-}
+-
+-target.path    = $$INSTALLBASE/lib
+-headers.path   = $$INSTALLBASE/include
+-doc.path       = $$INSTALLBASE/doc
+-
+-######################################################################
+-# qmake internal options
+-######################################################################
+-
+-CONFIG           += qt     # Also for Qtopia Core!
+-CONFIG           += warn_on
+-CONFIG           += thread
+-
+-######################################################################
+-# release/debug mode
+-# If you want to build both DEBUG_SUFFIX and RELEASE_SUFFIX
+-# have to differ to avoid, that they overwrite each other.
+-######################################################################
+-
+-VVERSION = $$[QT_VERSION]
+-isEmpty(VVERSION) {
+-
+-    # Qt 3
+-    CONFIG           += release     # release/debug
+-}
+-else {
+-    # Qt 4
+-    win32 {
+-        # On Windows you can't mix release and debug libraries.
+-        # The designer is built in release mode. If you like to use it
+-        # you need a release version. For your own application development you
+-        # might need a debug version. 
+-        # Enable debug_and_release + build_all if you want to build both.
+-
+-        CONFIG           += release     # release/debug/debug_and_release
+-        #CONFIG           += release_and_release
+-        #CONFIG           += build_all
+-    }
+-    else {
+-        CONFIG           += release     # release/debug
+-    }
+-}
+-
+-######################################################################
+-# If you want to have different names for the debug and release 
+-# versions you can add a suffix rule below.
+-######################################################################
+-
+-DEBUG_SUFFIX        = 
+-RELEASE_SUFFIX      = 
+-
+-win32 {
+-    DEBUG_SUFFIX      = d
+-}
+-
+-######################################################################
+-# Build the static/shared libraries.
+-# If QwtDll is enabled, a shared library is built, otherwise
+-# it will be a static library.
+-######################################################################
+-
+-CONFIG           += QwtDll
+-
+-######################################################################
+-# QwtPlot enables all classes, that are needed to use the QwtPlot 
+-# widget. 
+-######################################################################
+-
+-CONFIG       += QwtPlot
+-
+-######################################################################
+-# QwtWidgets enables all classes, that are needed to use the all other
+-# widgets (sliders, dials, ...), beside QwtPlot. 
+-######################################################################
+-
+-CONFIG     += QwtWidgets
+-
+-######################################################################
+-# If you want to display svg imageson the plot canvas, enable the 
+-# line below. Note that Qwt needs the svg+xml, when enabling 
+-# QwtSVGItem.
+-######################################################################
+-
+-#CONFIG     += QwtSVGItem
+-
+-######################################################################
+-# If you have a commercial license you can use the MathML renderer
+-# of the Qt solutions package to enable MathML support in Qwt.
+-# So if you want this, copy qtmmlwidget.h + qtmmlwidget.cpp to
+-# textengines/mathml and enable the line below.
+-######################################################################
+-
+-#CONFIG     += QwtMathML
+-
+-######################################################################
+-# If you want to build the Qwt designer plugin, 
+-# enable the line below.
+-# Otherwise you have to build it from the designer directory.
+-######################################################################
+-
+-CONFIG     += QwtDesigner
+-
+-######################################################################
+-# If you want to auto build the examples, enable the line below
+-# Otherwise you have to build them from the examples directory.
+-######################################################################
+-
+-#CONFIG     += QwtExamples
+diff -Nuar qwt-5.2.0.orig/src/src.pro qwt-5.2.0/src/src.pro
+--- qwt-5.2.0.orig/src/src.pro	2010-03-24 08:54:36.715849373 +0200
++++ qwt-5.2.0/src/src.pro	2010-03-24 08:58:04.491094902 +0200
+@@ -221,4 +221,4 @@
+     doc.files      += $${QWT_ROOT}/doc/man
+ }
+ 
+-INSTALLS       = target headers doc
++INSTALLS       = target headers
