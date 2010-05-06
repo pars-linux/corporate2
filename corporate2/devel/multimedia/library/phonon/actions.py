@@ -4,6 +4,8 @@
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+import os
+
 from pisi.actionsapi import cmaketools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
@@ -11,7 +13,7 @@ from pisi.actionsapi import get
 qtPrefix = "/usr/qt/4"
 kdePrefix = "/usr/kde/4"
 
-WorkDir = get.srcNAME()
+WorkDir = "%s-%s" % (get.srcNAME(), get.srcVERSION().partition("_")[0])
 
 def setup():
     cmaketools.configure(installPrefix=qtPrefix)
@@ -42,3 +44,6 @@ def install():
 
     #some applications like mediaplayer example of Qt needs this #11648
     pisitools.dosym("%s/include/KDE/Phonon" % qtPrefix, "%s/include/Phonon" % qtPrefix)
+
+    # remove empty /usr/qt/4/share directory
+    os.removedirs("%s/usr/qt/4/share" % get.installDIR())
