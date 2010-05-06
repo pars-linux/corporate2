@@ -12,10 +12,11 @@
         <IsA>library</IsA>
         <Summary>Cross platform multimedia API for KDE4</Summary>
         <Description>Phonon was created as a solution to several problems with multimedia commonly faced by Unix desktops, especially KDE 3's outdated multimedia framework aRts. Phonon itself is not a multimedia framework, but interfaces with existing frameworks such as GStreamer or Xine via backends.</Description>
-        <Archive sha1sum="cd061a5b445c3a7380f39bcd8d4394c21c99efb3" type="tarbz2">http://cekirdek.pardus.org.tr/~gokcen/files/phonon-20091109svn.tar.bz2</Archive>
+        <Archive sha1sum="e87474e144c2d03944161aeb1b18a0569642a556" type="tarbz2">http://cekirdek.pardus.org.tr/~gokcen/files/phonon-4.4.1.tar.bz2</Archive>
         <BuildDependencies>
-            <Dependency>qt</Dependency>
+            <Dependency versionFrom="4.6.2">qt</Dependency>
             <Dependency>gstreamer</Dependency>
+            <Dependency>pulseaudio</Dependency>
             <Dependency>gst-plugins-base</Dependency>
             <Dependency>alsa-lib</Dependency>
             <Dependency>automoc4</Dependency>
@@ -23,20 +24,18 @@
         </BuildDependencies>
         <Patches>
             <!-- Use Mandriva patches and backports -->
-            <Patch>mandriva/phonon-4.2.0-ogg-mime-type.patch</Patch>
-            <Patch>mandriva/phonon-4.3.50-fix-decodebin-usage.patch</Patch>
-            <Patch level="1">mandriva/phonon-4.3.50-gstreamer-fix-seekable-query-failed.patch</Patch>
             <Patch level="1">mandriva/phonon-4.3.50-phonon-allow-stop-empty-source.patch</Patch>
+            <Patch level="1">mandriva/phonon-4.3.50-gstreamer-fix-seekable-query-failed.patch</Patch>
 
-            <!-- Forwardport old pulse patch of Mandriva, new Pulseaudio patch of Mandriva requires Pulseaudio > 0.9.16 -->
-            <Patch level="1">mandriva/phonon-4.3-mandriva-pulseaudio.patch</Patch>
+            <Patch level="1">phonon-4.4.1-kde235193.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>phonon</Name>
         <RuntimeDependencies>
-            <Dependency>qt</Dependency>
+            <Dependency versionFrom="4.6.2">qt</Dependency>
+            <Dependency>pulseaudio</Dependency>
             <Dependency>alsa-lib</Dependency>
         </RuntimeDependencies>
         <!-- oxygen icons conflict -->
@@ -89,6 +88,20 @@
     </Package>
 
     <History>
+        <Update release="21">
+            <Date>2010-05-05</Date>
+            <Version>4.4.1</Version>
+            <Comment>Version bump to latest stable phonon</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="20">
+            <Date>2010-04-06</Date>
+            <Version>4.3.80_20100330</Version>
+            <Comment>Version bump to latest phonon from gitorious</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
         <Update release="19">
             <Date>2009-12-08</Date>
             <Version>4.3.50_20091109</Version>
