@@ -27,5 +27,5 @@ def install():
     shelltools.copy("doc/html/*","%s/usr/qt/4/doc/PyQt4" % get.installDIR())
     pisitools.dosym("/usr/qt/4/doc/PyQt4/classes.html","/usr/qt/4/doc/PyQt4/index.html")
 
-    pisitools.dodoc("ChangeLog", "NEWS", "README", "THANKS", "LICENSE.GPL2", "LICENSE.GPL3")
+    pisitools.dodoc("NEWS", "README", "THANKS", "LICENSE*", "GPL*", "OPENSOURCE*")
 
