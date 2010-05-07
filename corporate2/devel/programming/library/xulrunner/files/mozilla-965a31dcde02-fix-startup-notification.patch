@@ -1,0 +1,41 @@
+
+# HG changeset patch
+# User Wolfgang Rosenauer <wr@rosenauer.org>
+# Date 1270537108 -7200
+# Node ID 965a31dcde028a8bf0f8838bbf2e13ba6ef0627b
+# Parent 5006b6278acfa84305dc61997be6af37458529c2
+Bug 416053  - KDE/Gnome startup notification not disappearing when app window is up. r=bsmedberg, a1924=beltzner
+
+H
+
+--- a/toolkit/xre/nsAppRunner.cpp
++++ b/toolkit/xre/nsAppRunner.cpp
+@@ -3372,13 +3372,6 @@ XRE_main(int argc, char* argv[], const n
+ 
+         nsCOMPtr<nsICommandLineRunner> cmdLine;
+ 
+-#if defined(HAVE_DESKTOP_STARTUP_ID) && defined(MOZ_WIDGET_GTK2)
+-        nsRefPtr<nsGTKToolkit> toolkit = GetGTKToolkit();
+-        if (toolkit && !desktopStartupID.IsEmpty()) {
+-          toolkit->SetDesktopStartupID(desktopStartupID);
+-        }
+-#endif
+-
+         nsCOMPtr<nsIFile> workingDir;
+         rv = NS_GetSpecialDirectory(NS_OS_CURRENT_WORKING_DIR, getter_AddRefs(workingDir));
+         NS_ENSURE_SUCCESS(rv, 1);
+@@ -3406,6 +3399,13 @@ XRE_main(int argc, char* argv[], const n
+ 
+           MOZ_SPLASHSCREEN_UPDATE(50);
+ 
++#if defined(HAVE_DESKTOP_STARTUP_ID) && defined(MOZ_WIDGET_GTK2)
++          nsRefPtr<nsGTKToolkit> toolkit = GetGTKToolkit();
++          if (toolkit && !desktopStartupID.IsEmpty()) {
++            toolkit->SetDesktopStartupID(desktopStartupID);
++          }
++#endif
++
+           // Extension Compatibility Checking and Startup
+           if (gAppData->flags & NS_XRE_ENABLE_EXTENSION_MANAGER) {
+             nsCOMPtr<nsIExtensionManager> em(do_GetService("@mozilla.org/extensions/manager;1"));
+

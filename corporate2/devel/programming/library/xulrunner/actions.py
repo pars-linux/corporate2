@@ -13,8 +13,14 @@ import os
 
 WorkDir = "mozilla"
 NoStrip = ["/usr/include", "/usr/share/idl"]
+XulVersion = "1.9.2"
+XulDir = "/usr/lib/%s-%s" % (get.srcNAME(), XulVersion)
 
 def setup():
+    # Write xulrunner version correctly including the minor part
+    for f in ("xulrunner/installer/Makefile.in", ".mozconfig", "20xulrunner"):
+        pisitools.dosed(f, "PSPEC_VERSION", XulVersion)
+
     #Use autoconf-213 which we provide via a hacky pathc to produce configure
     shelltools.system("/bin/bash ./autoconf-213/autoconf-2.13 --macro-dir=autoconf-213/m4")
     shelltools.cd("js/src")
@@ -34,14 +40,16 @@ def install():
                   "xulrunner-stub", "mozilla-xremote-client"]
 
     for exe in executable:
-        pisitools.dosym("/usr/lib/xulrunner-1.9/%s" % exe, "/usr/bin/%s" % exe)
+        pisitools.dosym("%s/%s" % (XulDir, exe), "/usr/bin/%s" % exe)
 
-    pisitools.dodir("/usr/lib/xulrunner-1.9/dictionaries")
-    shelltools.touch("%s/usr/lib/xulrunner-1.9/dictionaries/tr-TR.aff" % get.installDIR())
-    shelltools.touch("%s/usr/lib/xulrunner-1.9/dictionaries/tr-TR.dic" % get.installDIR())
+    pisitools.dodir("%s/dictionaries" % XulDir)
+    shelltools.touch("%s%s/dictionaries/tr-TR.aff" % (get.installDIR(), XulDir))
+    shelltools.touch("%s%s/dictionaries/tr-TR.dic" % (get.installDIR(), XulDir))
 
     # Remove unnecessary executable bits
     for d in ("%s/usr/share" % get.installDIR(), "%s/usr/include" % get.installDIR()):
         for root, dirs, files in os.walk(d):
             for file in files:
                 shelltools.chmod(os.path.join(root, file), 0644)
+
+    pisitools.insinto("/etc/env.d", "20xulrunner")
