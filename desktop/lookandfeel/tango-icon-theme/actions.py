@@ -8,7 +8,6 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 
 def setup():
-    pisitools.dosed("index.theme.in", "crystalsvg", "BCTango")
     autotools.configure("--enable-png-creation")
 
 def build():
