@@ -26,7 +26,7 @@ def setup():
 
     #now we have Makefiles needed to build locales (like toolkit/Makefile)
     #since we need debug symbols in dbginfo packages, we shouldn't strip binaries
-    shelltools.system("../configure --prefix=/usr --libdir=/usr/lib --with-libxul-sdk=/usr/lib/xulrunner-devel-1.9 --disable-strip --disable-install-strip")
+    shelltools.system("../configure --prefix=/usr --libdir=/usr/lib --with-libxul-sdk=/usr/lib/xulrunner-devel-1.9.2 --disable-strip --disable-install-strip")
 
 def build():
     shelltools.cd("objdir")
@@ -48,8 +48,6 @@ def install():
     pisitools.domove(olddir, "/usr/lib", "MozillaFirefox")
 
     pisitools.remove("/usr/bin/firefox")
-
-    pisitools.dosed("%s/usr/lib/MozillaFirefox/application.ini" % get.installDIR(), "^MaxVersion=1\\.9\\.2$", "MaxVersion=1.9.2.2")
 
     #install locales
     locales = ["be", "ca", "de", "es-AR", "es-ES", "fr", "it", "nl", "pl", "pt-BR", "sv-SE", "tr"]
