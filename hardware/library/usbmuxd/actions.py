@@ -9,11 +9,7 @@ from pisi.actionsapi import cmaketools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-#WorkDir = "%s" % get.srcNAME()
-
 def setup():
-    pisitools.dosed("udev/85-usbmuxd.rules.in", "-u -U", "-u")
-
     cmaketools.configure("-DCMAKE_SKIP_RPATH=ON")
 
 def build():
