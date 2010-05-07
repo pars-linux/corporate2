@@ -1,0 +1,20 @@
+diff -Nuar libindi.orig/CMakeLists.txt libindi/CMakeLists.txt
+--- libindi.orig/CMakeLists.txt	2010-04-01 17:49:32.000000000 +0300
++++ libindi/CMakeLists.txt	2010-05-07 11:14:47.738663785 +0300
+@@ -114,10 +114,13 @@
+ install(TARGETS indiserver RUNTIME DESTINATION bin )
+ 
+ ######################################
+-######## INDI Static Library #########
++######## INDI Shared Driver Library #########
+ ######################################
+-add_library(indidriver STATIC ${indimain_SRCS})
+-install(TARGETS indidriver ARCHIVE DESTINATION lib${LIB_POSTFIX})
++add_library(indidriver SHARED ${indimain_SRCS})
++target_link_libraries(indidriver m)
++install(TARGETS indidriver LIBRARY DESTINATION lib${LIB_POSTFIX})
++set_target_properties(indidriver PROPERTIES VERSION ${INDI_VERSION} SOVERSION
++    ${INDI_SOVERSION})
+ 
+ ######################################
+ ######## INDI Shared Library #########
