@@ -1,15 +1,11 @@
 From: various contributors
 Subject: Firefox chrome lockdown hooks
 
-diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
---- a/browser/base/content/browser.js
-+++ b/browser/base/content/browser.js
-@@ -1174,32 +1174,186 @@ function prepareForStartup() {
-   // setup our MozApplicationManifest listener
-   gBrowser.addEventListener("MozApplicationManifest",
-                             OfflineApps, false);
- 
-   // setup simple gestures support
+Index: mozilla/browser/base/content/browser.js
+===================================================================
+--- mozilla.orig/browser/base/content/browser.js
++++ mozilla/browser/base/content/browser.js
+@@ -1185,11 +1185,165 @@ function prepareForStartup() {
    gGestureSupport.init(true);
  }
  
@@ -175,48 +171,26 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
    BrowserOffline.init();
    OfflineApps.init();
  
-   gBrowser.addEventListener("pageshow", function(evt) { setTimeout(pageShowEventHandlers, 0, evt); }, true);
- 
-   // Ensure login manager is up and running.
+@@ -1199,8 +1353,8 @@ function delayedStartup(isLoadingBlank, 
    Cc["@mozilla.org/login-manager;1"].getService(Ci.nsILoginManager);
  
    if (mustLoadSidebar) {
-+    let sidebarBox = document.getElementById("sidebar-box");
-     let sidebar = document.getElementById("sidebar");
--    let sidebarBox = document.getElementById("sidebar-box");
+-    let sidebar = document.getElementById("sidebar");
+     let sidebarBox = document.getElementById("sidebar-box");
++    let sidebar = document.getElementById("sidebar");
      sidebar.setAttribute("src", sidebarBox.getAttribute("src"));
    }
  
-   UpdateUrlbarSearchSplitterState();
-   
-   PlacesStarButton.init();
- 
-   // called when we go into full screen, even if it is
-@@ -1399,16 +1553,18 @@ function BrowserShutdown()
-     Components.utils.reportError(ex);
-   }
- 
-   var os = Components.classes["@mozilla.org/observer-service;1"]
-     .getService(Components.interfaces.nsIObserverService);
-   os.removeObserver(gSessionHistoryObserver, "browser:purge-session-history");
+@@ -1411,6 +1565,8 @@ function BrowserShutdown()
    os.removeObserver(gXPInstallObserver, "xpinstall-install-blocked");
+   os.removeObserver(gMissingPluginInstaller, "plugin-crashed");
  
 +  gPrefService.removeObserver("config.lockdown.", lockdownObserver);
 +
    try {
      gBrowser.removeProgressListener(window.XULBrowserWindow);
      gBrowser.removeTabsProgressListener(window.TabsProgressListener);
-   } catch (ex) {
-   }
- 
-   PlacesStarButton.uninit();
- 
-@@ -3208,16 +3364,23 @@ function FillHistoryMenu(aParent) {
- 
-   // Remove old entries if any
-   var children = aParent.childNodes;
-   for (var i = children.length - 1; i >= 0; --i) {
-     if (children[i].hasAttribute("index"))
+@@ -3221,6 +3377,13 @@ function FillHistoryMenu(aParent) {
        aParent.removeChild(children[i]);
    }
  
@@ -230,17 +204,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
    var webNav = getWebNavigation();
    var sessionHistory = webNav.sessionHistory;
  
-   var count = sessionHistory.count;
-   if (count <= 1) // don't display the popup for a single item
-     return false;
- 
-   const MAX_HISTORY_MENU_ITEMS = 15;
-@@ -3357,16 +3520,17 @@ function BrowserCustomizeToolbar()
- {
-   // Disable the toolbar context menu items
-   var menubar = document.getElementById("main-menubar");
-   for (var i = 0; i < menubar.childNodes.length; ++i)
-     menubar.childNodes[i].setAttribute("disabled", true);
+@@ -3370,6 +3533,7 @@ function BrowserCustomizeToolbar()
  
    var cmd = document.getElementById("cmd_CustomizeToolbars");
    cmd.setAttribute("disabled", "true");
@@ -248,17 +212,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
  
    var splitter = document.getElementById("urlbar-search-splitter");
    if (splitter)
-     splitter.parentNode.removeChild(splitter);
- 
-   var customizeURL = "chrome://global/content/customizeToolbar.xul";
-   gCustomizeSheet = getBoolPref("toolbar.customization.usesheet", false);
- 
-@@ -3394,16 +3558,31 @@ function BrowserCustomizeToolbar()
-   } else {
-     return window.openDialog(customizeURL,
-                              "CustomizeToolbar",
-                              "chrome,titlebar,toolbar,location,resizable,dependent",
-                              gNavToolbox);
+@@ -3407,6 +3571,21 @@ function BrowserCustomizeToolbar()
    }
  }
  
@@ -280,17 +234,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
  function BrowserToolboxCustomizeDone(aToolboxChanged) {
    if (gCustomizeSheet) {
      document.getElementById("customizeToolbarSheetIFrame").hidden = true;
-     document.getElementById("customizeToolbarSheetPopup").hidePopup();
-   }
- 
-   // Update global UI elements that may have been added or removed
-   if (aToolboxChanged) {
-@@ -3411,16 +3590,27 @@ function BrowserToolboxCustomizeDone(aTo
-     if (gURLBar)
-       gURLBar.emptyText = gURLBarEmptyText.value;
- 
-     gProxyFavIcon = document.getElementById("page-proxy-favicon");
-     gHomeButton.updateTooltip();
+@@ -3424,6 +3603,17 @@ function BrowserToolboxCustomizeDone(aTo
      gIdentityHandler._cacheElements();
      window.XULBrowserWindow.init();
  
@@ -308,17 +252,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
      var backForwardDropmarker = document.getElementById("back-forward-dropmarker");
      if (backForwardDropmarker)
        backForwardDropmarker.disabled =
-         document.getElementById('Browser:Back').hasAttribute('disabled') &&
-         document.getElementById('Browser:Forward').hasAttribute('disabled');
- 
-     // support downgrading to Firefox 2.0
-     var navBar = document.getElementById("nav-bar");
-@@ -3445,18 +3635,17 @@ function BrowserToolboxCustomizeDone(aTo
-     XULBrowserWindow.asyncUpdateUI();
-     PlacesStarButton.updateState();
-   }
- 
-   // Re-enable parts of the UI we disabled during the dialog
+@@ -3458,8 +3648,7 @@ function BrowserToolboxCustomizeDone(aTo
    var menubar = document.getElementById("main-menubar");
    for (var i = 0; i < menubar.childNodes.length; ++i)
      menubar.childNodes[i].setAttribute("disabled", false);
@@ -328,17 +262,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
  
  #ifdef XP_MACOSX
    // make sure to re-enable click-and-hold
-   if (!getBoolPref("ui.click_hold_context_menus", false))
-     SetClickAndHoldHandlers();
- #endif
- 
-   // XXX Shouldn't have to do this, but I do
-@@ -4544,16 +4733,19 @@ function onViewToolbarsPopupShowing(aEve
-     var toolbarName = toolbar.getAttribute("toolbarname");
-     if (toolbarName) {
-       let menuItem = document.createElement("menuitem");
-       let hidingAttribute = toolbar.getAttribute("type") == "menubar" ?
-                             "autohide" : "collapsed";
+@@ -4558,6 +4747,9 @@ function onViewToolbarsPopupShowing(aEve
        menuItem.setAttribute("toolbarindex", i);
        menuItem.setAttribute("type", "checkbox");
        menuItem.setAttribute("label", toolbarName);
@@ -348,17 +272,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
        menuItem.setAttribute("accesskey", toolbar.getAttribute("accesskey"));
        menuItem.setAttribute("checked", toolbar.getAttribute(hidingAttribute) != "true");
        popup.insertBefore(menuItem, firstMenuItem);
- 
-       menuItem.addEventListener("command", onViewToolbarCommand, false);
-     }
-     toolbar = toolbar.nextSibling;
-   }
-@@ -6421,17 +6613,23 @@ BookmarkAllTabsHandler.prototype = {
- 
-   _updateCommandState: function BATH__updateCommandState(aTabClose) {
-     var numTabs = gBrowser.tabContainer.childNodes.length;
- 
-     // The TabClose event is fired before the tab is removed from the DOM
+@@ -6743,7 +6935,13 @@ BookmarkAllTabsHandler.prototype = {
      if (aTabClose)
        numTabs--;
  
@@ -373,8 +287,3 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
        this._command.removeAttribute("disabled");
      else
        this._command.setAttribute("disabled", "true");
-   },
- 
-   doCommand: function BATH_doCommand() {
-     PlacesCommandHook.bookmarkCurrentPages();
-   },
