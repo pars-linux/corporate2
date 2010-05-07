@@ -12,11 +12,14 @@
         <IsA>library</IsA>
         <Summary>XUL Runtime for Gecko Applications</Summary>
         <Description>xulrunner provides the XUL Runtime environment for Gecko applications.</Description>
-        <Archive sha1sum="5a01e82fc46c926e237044dddddce30db5b89429" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/mozilla-1.9.2.tar.lzma</Archive>
+        <Archive sha1sum="d7bdfb9f70f9fc4e030f9955e420a42a3b4529a4" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/mozilla-1.9.2.3.tar.lzma</Archive>
+        <AdditionalFiles>
+            <AdditionalFile target="20xulrunner" permission="0644">20xulrunner</AdditionalFile>
+        </AdditionalFiles>
         <BuildDependencies>
-            <Dependency releaseFrom="26">nss</Dependency>
+            <Dependency versionFrom="3.12.6.0">nss</Dependency>
             <Dependency releaseFrom="24">nspr</Dependency>
-            <Dependency versionFrom="3.6.17">sqlite</Dependency>
+            <Dependency versionFrom="3.6.22">sqlite</Dependency>
             <Dependency versionFrom="1.8.8">cairo</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>libIDL</Dependency>
@@ -29,20 +32,15 @@
             <Dependency versionFrom="0.4.0">libproxy</Dependency>
         </BuildDependencies>
         <Patches>
-            <!-- Bump to 1.9.2.2 -->
-            <Patch level="1">192-to-1922.diff</Patch>
-
             <Patch level="1">xulrunner-version.patch</Patch>
-            <Patch level="1">mozilla-ps-pdf-simplify-operators.patch</Patch>
+
+            <Patch level="1">mozilla-965a31dcde02-fix-startup-notification.patch</Patch>
 
             <!-- SuSe patches -->
-
-            <!-- libproxy integration -->
+            <Patch level="1">mozilla-ps-pdf-simplify-operators.patch</Patch>
             <Patch level="1">suse/mozilla-libproxy.patch</Patch>
-
             <Patch level="1">suse/mozilla-pkgconfig.patch</Patch>
             <Patch level="1">suse/mozilla-helper-app.patch</Patch>
-            <Patch level="1">suse/mozilla-startup-notification.patch</Patch>
             <Patch level="1">suse/mozilla-kde.patch</Patch>
             <Patch level="1">suse/mozilla-gconf-backend.patch</Patch>
             <Patch level="1">suse/gecko-lockdown.patch</Patch>
@@ -52,9 +50,10 @@
             <!-- Pardus -->
             <Patch>pardus/zemberek-firefox3.patch</Patch>
             <Patch level="1">pardus/autoconf-213-hack.diff</Patch>
-            <Patch>pardus/pardus-nsplugin-path.patch</Patch>
-            <Patch>pardus/xulrunner-mozconfig.patch</Patch>
             <Patch>pardus/as-needed.diff</Patch>
+            <Patch>pardus/xulrunner-mozconfig.patch</Patch>
+            <Patch>pardus/pardus-nsplugin-path.patch</Patch>
+            <Patch level="1">pardus/change-kmozillahelper-directory.diff</Patch>
 
             <Patch level="1">fedora/mozilla-jemalloc-526152.patch</Patch>
         </Patches>
@@ -63,9 +62,9 @@
     <Package>
         <Name>xulrunner</Name>
         <RuntimeDependencies>
-            <Dependency releaseFrom="26">nss</Dependency>
+            <Dependency versionFrom="3.12.6.0">nss</Dependency>
             <Dependency releaseFrom="24">nspr</Dependency>
-            <Dependency versionFrom="3.6.17">sqlite</Dependency>
+            <Dependency versionFrom="3.6.22">sqlite</Dependency>
             <Dependency versionFrom="1.8.8">cairo</Dependency>
             <Dependency>pango</Dependency>
             <Dependency versionFrom="2.18.5">gtk2</Dependency>
@@ -82,14 +81,13 @@
         </Conflicts>
         <Files>
             <Path fileType="config">/etc/gre.d</Path>
-            <Path fileType="config">/etc/env.d</Path>
+            <Path fileType="data">/etc/env.d</Path>
             <Path fileType="executable">/usr/bin</Path>
-            <Path fileType="library">/usr/lib/xulrunner-1.9</Path>
+            <Path fileType="library">/usr/lib/xulrunner-1.9.2*</Path>
         </Files>
         <AdditionalFiles>
-            <AdditionalFile target="/usr/lib/xulrunner-1.9/greprefs/all-pardus.js" permission="0644" owner="root">all-pardus.js</AdditionalFile>
-            <AdditionalFile target="/usr/lib/xulrunner-1.9/greprefs/lockdown.js" permission="0644" owner="root">toolkit-lockdown.js</AdditionalFile>
-            <AdditionalFile target="/etc/env.d/20xulrunner" permission="0644" owner="root">20xulrunner</AdditionalFile>
+            <AdditionalFile target="/usr/lib/xulrunner-1.9.2/greprefs/all-pardus.js" permission="0644" owner="root">all-pardus.js</AdditionalFile>
+            <AdditionalFile target="/usr/lib/xulrunner-1.9.2/greprefs/lockdown.js" permission="0644" owner="root">toolkit-lockdown.js</AdditionalFile>
         </AdditionalFiles>
     </Package>
 
@@ -109,8 +107,15 @@
     </Package>
 
     <History>
-        <Update release="29" type="security">
-            <Date>2010-03-30</Date>
+        <Update release="31">
+            <Date>2010-04-21</Date>
+            <Version>1.9.2.3</Version>
+            <Comment>Version bump to new release. Also change Xulrunner path as xulrunner-1.9.x instead of xulrunner-1.9.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="30" type="security">
+            <Date>2010-04-01</Date>
             <Version>1.9.2.2</Version>
             <Comment>Version bump to new security release. reverseDependencyUpdate is added since 1.9.2 series breaks API/ABI.</Comment>
             <Requires>
@@ -119,10 +124,17 @@
             <Name>Gökçen Eraslan</Name>
             <Email>gokcen@pardus.org.tr</Email>
         </Update>
-        <Update release="28">
-            <Date>2010-03-19</Date>
+        <Update release="29">
+            <Date>2010-04-01</Date>
             <Version>1.9.2</Version>
             <Comment>Version bump to new release.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="28" type="security">
+            <Date>2010-03-30</Date>
+            <Version>1.9.1.9</Version>
+            <Comment>Bump to new security release.</Comment>
             <Name>Gökçen Eraslan</Name>
             <Email>gokcen@pardus.org.tr</Email>
         </Update>
