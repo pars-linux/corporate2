@@ -12,7 +12,8 @@ def setup():
     autotools.autoreconf("-fiv")
     autotools.configure("--disable-schemas-install \
                          --with-pam-dir=/lib/security \
-                         --with-root-certs=/etc/ssl/certs")
+                         --with-root-certs=/etc/ssl/certs\
+                         --enable-silent-rules")
 
 def build():
     autotools.make()
@@ -20,4 +21,4 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    pisitools.dodoc("TODO", "README", "NEWS", "AUTHORS", "ChangeLog")
+    pisitools.dodoc("COPYING*", "README", "NEWS", "AUTHORS", "ChangeLog*")
