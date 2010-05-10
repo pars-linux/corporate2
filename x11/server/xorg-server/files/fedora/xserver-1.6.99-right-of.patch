@@ -1,20 +1,22 @@
-From ba73535b8af8e3540d7fddc0a4b8a85ad2ffa891 Mon Sep 17 00:00:00 2001
+From 1766ae8a69daa06730e41d094fdddf53db3a1a9e Mon Sep 17 00:00:00 2001
 From: Adam Jackson <ajax@redhat.com>
 Date: Tue, 28 Jul 2009 11:07:13 -0400
 Subject: [PATCH] RANDR: right-of placement by default
 
 [Enhanced to add a new prefer clone option for drivers. This
 allows for servers like RN50 where two heads are disjoint. - airlied]
+
+[Enhanced to ignore rightof on single crtc cards - airlied]
 ---
  hw/xfree86/common/xf86str.h |    9 ++++-
- hw/xfree86/modes/xf86Crtc.c |   74 ++++++++++++++++++++++++++++++++++++++----
- 2 files changed, 74 insertions(+), 9 deletions(-)
+ hw/xfree86/modes/xf86Crtc.c |   77 +++++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 77 insertions(+), 9 deletions(-)
 
 diff --git a/hw/xfree86/common/xf86str.h b/hw/xfree86/common/xf86str.h
-index 2b8f998..acc7d07 100644
+index 5c3aa00..8224668 100644
 --- a/hw/xfree86/common/xf86str.h
 +++ b/hw/xfree86/common/xf86str.h
-@@ -516,10 +516,13 @@ typedef struct _confdrirec {
+@@ -503,10 +503,13 @@ typedef struct _confdrirec {
  } confDRIRec, *confDRIPtr;
  
  /* These values should be adjusted when new fields are added to ScrnInfoRec */
@@ -29,7 +31,7 @@ index 2b8f998..acc7d07 100644
  typedef pointer (*funcPointer)(void);
  
  /* flags for depth 24 pixmap options */
-@@ -685,7 +688,6 @@ typedef void xf86SetOverscanProc          (ScrnInfoPtr, int);
+@@ -672,7 +675,6 @@ typedef void xf86SetOverscanProc          (ScrnInfoPtr, int);
   * are to be dependent on compile-time defines.
   */
  
@@ -37,21 +39,21 @@ index 2b8f998..acc7d07 100644
  typedef struct _ScrnInfoRec {
      int			driverVersion;
      char *		driverName;		/* canonical name used in */
-@@ -790,6 +792,9 @@ typedef struct _ScrnInfoRec {
- 
+@@ -778,6 +780,9 @@ typedef struct _ScrnInfoRec {
      /* -nr support */
      int                 canDoBGNoneRoot;
-+
+ 
 +    /* initial rightof support disable */
 +    int                 preferClone;
- 
++
      /*
       * These can be used when the minor ABI version is incremented.
+      * The NUM_* parameters must be reduced appropriately to keep the
 diff --git a/hw/xfree86/modes/xf86Crtc.c b/hw/xfree86/modes/xf86Crtc.c
-index 9370640..a710b23 100644
+index a66c979..4d14f57 100644
 --- a/hw/xfree86/modes/xf86Crtc.c
 +++ b/hw/xfree86/modes/xf86Crtc.c
-@@ -1137,6 +1137,15 @@ xf86InitialOutputPositions (ScrnInfoPtr scrn, DisplayModePtr *modes)
+@@ -1146,6 +1146,15 @@ xf86InitialOutputPositions (ScrnInfoPtr scrn, DisplayModePtr *modes)
      int			o;
      int			min_x, min_y;
      
@@ -67,7 +69,7 @@ index 9370640..a710b23 100644
      for (o = 0; o < config->num_output; o++)
      {
  	xf86OutputPtr	output = config->output[o];
-@@ -1995,6 +2004,57 @@ bestModeForAspect(xf86CrtcConfigPtr config, Bool *enabled, float aspect)
+@@ -2028,6 +2037,60 @@ bestModeForAspect(xf86CrtcConfigPtr config, Bool *enabled, float aspect)
      return match;
  }
  
@@ -88,6 +90,9 @@ index 9370640..a710b23 100644
 +{
 +    int o;
 +    int w = 0;
++
++    if (config->num_crtc == 1)
++	return FALSE;
 +
 +    if (scrn->preferClone)
 +	return FALSE;
@@ -125,7 +130,7 @@ index 9370640..a710b23 100644
  static Bool
  xf86TargetPreferred(ScrnInfoPtr scrn, xf86CrtcConfigPtr config,
  		    DisplayModePtr *modes, Bool *enabled,
-@@ -2052,13 +2112,9 @@ xf86TargetPreferred(ScrnInfoPtr scrn, xf86CrtcConfigPtr config,
+@@ -2085,13 +2148,9 @@ xf86TargetPreferred(ScrnInfoPtr scrn, xf86CrtcConfigPtr config,
       * biggest mode for its aspect ratio, assuming one exists.
       */
      if (!ret) do {
@@ -140,7 +145,7 @@ index 9370640..a710b23 100644
  	    break;
  
  	p = -1;
-@@ -2346,6 +2402,8 @@ xf86InitialConfiguration (ScrnInfoPtr scrn, Bool canGrow)
+@@ -2378,6 +2437,8 @@ xf86InitialConfiguration (ScrnInfoPtr scrn, Bool canGrow)
  
      if (xf86TargetUserpref(scrn, config, modes, enabled, width, height))
  	xf86DrvMsg(i, X_INFO, "Using user preference for initial modes\n");
@@ -149,7 +154,7 @@ index 9370640..a710b23 100644
      else if (xf86TargetPreferred(scrn, config, modes, enabled, width, height))
  	xf86DrvMsg(i, X_INFO, "Using exact sizes for initial modes\n");
      else if (xf86TargetAspect(scrn, config, modes, enabled, width, height))
-@@ -2362,8 +2420,10 @@ xf86InitialConfiguration (ScrnInfoPtr scrn, Bool canGrow)
+@@ -2394,8 +2455,10 @@ xf86InitialConfiguration (ScrnInfoPtr scrn, Bool canGrow)
  			config->output[o]->name);
  	else
  	    xf86DrvMsg (scrn->scrnIndex, X_INFO,
@@ -163,5 +168,5 @@ index 9370640..a710b23 100644
  
      /*
 -- 
-1.6.5.2
+1.7.0.1
 
