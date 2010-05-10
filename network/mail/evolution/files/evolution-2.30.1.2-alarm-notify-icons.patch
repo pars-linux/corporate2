@@ -1,0 +1,43 @@
+diff -up evolution-2.30.1.2/calendar/gui/alarm-notify/Makefile.am.alarm-notify-icons evolution-2.30.1.2/calendar/gui/alarm-notify/Makefile.am
+--- evolution-2.30.1.2/calendar/gui/alarm-notify/Makefile.am.alarm-notify-icons	2010-04-22 17:39:58.000000000 -0500
++++ evolution-2.30.1.2/calendar/gui/alarm-notify/Makefile.am	2010-05-08 09:48:00.889170350 -0500
+@@ -11,6 +11,7 @@ evolution_alarm_notify_CPPFLAGS = 			\
+ 	-I$(top_srcdir)/widgets				\
+ 	-I$(top_srcdir)/calendar			\
+ 	-DEVOLUTION_UIDIR=\""$(uidir)"\"		\
++	-DEVOLUTION_ICONDIR=\""$(icondir)"\"		\
+ 	-DEVOLUTION_LOCALEDIR=\""$(localedir)"\"	\
+ 	-DEVOLUTION_LIBEXECDIR=\""$(privlibexecdir)"\"	\
+ 	$(GNOME_PLATFORM_CFLAGS)			\
+diff -up evolution-2.30.1.2/calendar/gui/alarm-notify/Makefile.in.alarm-notify-icons evolution-2.30.1.2/calendar/gui/alarm-notify/Makefile.in
+--- evolution-2.30.1.2/calendar/gui/alarm-notify/Makefile.in.alarm-notify-icons	2010-05-08 09:48:54.431525421 -0500
++++ evolution-2.30.1.2/calendar/gui/alarm-notify/Makefile.in	2010-05-08 09:52:30.640143364 -0500
+@@ -427,6 +427,7 @@ evolution_alarm_notify_CPPFLAGS = \
+ 	-I$(top_srcdir)/widgets				\
+ 	-I$(top_srcdir)/calendar			\
+ 	-DEVOLUTION_UIDIR=\""$(uidir)"\"		\
++	-DEVOLUTION_ICONDIR=\""$(icondir)"\"		\
+ 	-DEVOLUTION_LOCALEDIR=\""$(localedir)"\"	\
+ 	-DEVOLUTION_LIBEXECDIR=\""$(privlibexecdir)"\"	\
+ 	$(GNOME_PLATFORM_CFLAGS)			\
+diff -up evolution-2.30.1.2/calendar/gui/alarm-notify/notify-main.c.alarm-notify-icons evolution-2.30.1.2/calendar/gui/alarm-notify/notify-main.c
+--- evolution-2.30.1.2/calendar/gui/alarm-notify/notify-main.c.alarm-notify-icons	2010-04-26 08:13:16.000000000 -0500
++++ evolution-2.30.1.2/calendar/gui/alarm-notify/notify-main.c	2010-05-08 09:48:00.895746969 -0500
+@@ -45,6 +45,7 @@
+ gint
+ main (gint argc, gchar **argv)
+ {
++	GtkIconTheme *icon_theme;
+ 	AlarmNotify *alarm_notify_service;
+ 	UniqueApp *app;
+ 
+@@ -71,6 +72,9 @@ main (gint argc, gchar **argv)
+ 	/* Initialize Camel's type system. */
+ 	camel_object_get_type();
+ 
++	icon_theme = gtk_icon_theme_get_default ();
++	gtk_icon_theme_append_search_path (icon_theme, EVOLUTION_ICONDIR);
++
+ 	gtk_main ();
+ 
+ 	if (alarm_notify_service != NULL)
