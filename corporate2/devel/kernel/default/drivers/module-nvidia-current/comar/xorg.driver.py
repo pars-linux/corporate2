@@ -5,7 +5,7 @@ import subprocess
 
 from zorg.config import getDeviceInfo
 
-version = "195.36.15"
+version = "195.36.24"
 driver = "nvidia-current"
 base = "/usr/lib/xorg/%s" % driver
 
@@ -20,6 +20,12 @@ def unlink(name):
 def symlink(src, dst):
     unlink(dst)
     os.symlink(src, dst)
+
+def echo(path, content):
+    with open(path, "w") as f:
+        f.write(content)
+        f.flush()
+        os.fsync(f.fileno())
 
 links = (
     # X driver
@@ -70,12 +76,12 @@ def enable():
     # Create other links
     subprocess.call(["/sbin/ldconfig"])
 
-    open(BLACKLIST_CONF, "w").write("blacklist nouveau")
+    echo(BLACKLIST_CONF, "blacklist nouveau")
     for kernel in os.listdir("/etc/kernel"):
         subprocess.call(["/sbin/mkinitramfs", "-t", kernel])
 
-    open(ZORG_ENABLED_PACKAGE, "w").write("xorg_video_%s" % driver.replace("-", "_"))
-    open(ZORG_KERNEL_MODULE, "w").write(driver)
+    echo(ZORG_ENABLED_PACKAGE, "xorg_video_%s" % driver.replace("-", "_"))
+    echo(ZORG_KERNEL_MODULE, driver)
 
     subprocess.call(["/sbin/rmmod", "-s", "nvidia"])
     subprocess.call(["/sbin/modprobe", "-s", "nvidia"])
