@@ -8,43 +8,71 @@
             <Name>Taner Taş</Name>
             <Email>taner@pardus.org.tr</Email>
         </Packager>
-        <License>as-is</License>
+        <License>MIT</License>
+        <License>BSD</License>
+        <License>GPLv2+</License>
         <IsA>service</IsA>
         <Summary>NTP daemon and client</Summary>
-        <Description>Network Time Protocol utilities and daemons that will synchronize your computer's time to Coordinated Universal Time (UTC) via the NTP protocol and NTP servers</Description>
-        <Archive sha1sum="8476f75daffe9851cc6f33d170902bce77637499" type="targz">http://www.eecis.udel.edu/~ntp/ntp_spool/ntp4/ntp-4.2.4p7.tar.gz</Archive>
+        <Description>Network Time Protocol utilities and daemons that will synchronize your computer's time to Coordinated Universal Time (UTC) via the NTP protocol and NTP servers.</Description>
+        <Archive sha1sum="c4fa55afb8f2104146d25b75a09437ebffb4d657" type="targz">http://www.eecis.udel.edu/~ntp/ntp_spool/ntp4/ntp-4.2.6p1.tar.gz</Archive>
+        <AdditionalFiles>
+            <AdditionalFile permission="0755" target="fix-man-pages">fix-man-pages.sh</AdditionalFile>
+        </AdditionalFiles>
         <BuildDependencies>
+            <Dependency>avahi</Dependency>
             <Dependency>libcap</Dependency>
-            <Dependency>libwww</Dependency>
-            <Dependency versionFrom="5b">portmap</Dependency>
-            <Dependency releaseFrom="6">avahi</Dependency>
+            <Dependency>net-snmp</Dependency>
+            <Dependency>perl-HTML-Parser</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch>CVE-2009-3563-mode7-packet-dos.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p1-sleep.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p1-droproot.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p1-bcast.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p1-cmsgalign.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p1-tentative.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p1-retcode.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p1-rtnetlink.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p1-html2man.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p1-htmldoc.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p1-nano.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.4p7-getprecision.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p1-logdefault.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p1-mlock.patch</Patch>
+
+            <!-- ntpstat patches -->
+            <!--
+            <Patch level="1">fedora/ntpstat-0.2-clksrc.patch</Patch>
+            <Patch level="1">fedora/ntpstat-0.2-multipacket.patch</Patch>
+            -->
         </Patches>
     </Source>
 
     <Package>
         <Name>ntp-server</Name>
+        <Summary>NTP server</Summary>
         <RuntimeDependencies>
-            <Dependency>libwww</Dependency>
-            <Dependency versionFrom="5b">portmap</Dependency>
-            <Dependency versionFrom="4.2.4">ntp-client</Dependency>
-            <Dependency releaseFrom="6">avahi</Dependency>
+            <Dependency>avahi</Dependency>
+            <Dependency>libcap</Dependency>
+            <Dependency>net-snmp</Dependency>
+            <Dependency>ntp-client</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/sbin</Path>
-            <Path fileType="config">/etc</Path>
+            <Path fileType="config">/etc/ntp.conf</Path>
+            <Path fileType="config">/etc/conf.d</Path>
+            <Path fileType="config">/etc/ntp/crypto</Path>
             <Path fileType="doc">/usr/share/doc</Path>
             <Path fileType="man">/usr/share/man</Path>
-            <Path fileType="data">/var</Path>
+            <Path fileType="data">/var/lib/ntp</Path>
         </Files>
         <AdditionalFiles>
-            <AdditionalFile owner="root" permission="0644" target="/etc/ntp.conf">ntp.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/ntp.conf">fedora/ntp.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/ntpd">fedora/ntpd.sysconfig</AdditionalFile>
+            <AdditionalFile owner="root" permission="0600" target="/etc/ntp/crypto/pw">fedora/ntp.cryptopw</AdditionalFile>
         </AdditionalFiles>
         <Provides>
-            <COMAR script="package.py">System.Package</COMAR>
-            <COMAR script="service.py">System.Service</COMAR>
+            <COMAR script="ntp-server-package.py">System.Package</COMAR>
+            <COMAR script="ntpd-service.py" name="ntpd">System.Service</COMAR>
         </Provides>
     </Package>
 
@@ -55,18 +83,45 @@
         <Summary>NTP client</Summary>
         <Description>Network Time Protocol utility synchronize computers time to Coordinated Universal Time (UTC) via the NTP protocol and NTP servers</Description>
         <RuntimeDependencies>
-            <Dependency>libwww</Dependency>
-            <Dependency releaseFrom="6">avahi</Dependency>
+            <Dependency>libcap</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="config">/etc/conf.d/ntpdate</Path>
+            <Path fileType="config">/etc/ntp/step-tickers</Path>
+            <Path fileType="config">/etc/ntp/keys</Path>
+            <Path fileType="executable">/usr/sbin/ntpdate</Path>
+            <Path fileType="man">/usr/share/man/man8/ntpdate.8*</Path>
         </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/ntpdate">fedora/ntpdate.sysconfig</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/ntp/step-tickers">fedora/ntp.step-tickers</AdditionalFile>
+            <AdditionalFile owner="root" permission="0600" target="/etc/ntp/keys">fedora/ntp.keys</AdditionalFile>
+        </AdditionalFiles>
         <Provides>
-            <COMAR script="client.py">System.Package</COMAR>
+            <COMAR script="ntpdate-service.py" name="ntpdate">System.Service</COMAR>
         </Provides>
     </Package>
 
+    <Package>
+        <Name>ntp-docs</Name>
+        <IsA>data:doc</IsA>
+        <Summary>NTP documentation</Summary>
+        <Conflicts>
+            <Package releaseTo="13">ntp-server</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="doc">/usr/share/doc/ntp/html</Path>
+        </Files>
+    </Package>
+
     <History>
+        <Update release="14">
+            <Date>2010-05-06</Date>
+            <Version>4.2.6_p1</Version>
+            <Comment>Version bump</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="13" type="security">
             <Date>2009-12-17</Date>
             <Version>4.2.4_p7</Version>
