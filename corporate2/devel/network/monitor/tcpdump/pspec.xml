@@ -12,24 +12,18 @@
         <IsA>app:console</IsA>
         <Summary>A Tool for network monitoring and data acquisition</Summary>
         <Description>Tcpdump is a tool to print out (or save to file) the contents of packets on a network interface. It also allows limiting the number of packets collected using expressions.</Description>
-        <Archive sha1sum="618ac122d1a9d80f64865f0a4e4c4391baa54132" type="targz">http://www.tcpdump.org/release/tcpdump-4.0.0.tar.gz</Archive>
+        <Archive sha1sum="8f356cbc781192ecb527623d68db90e06aa9d4b9" type="targz">http://www.tcpdump.org/release/tcpdump-4.1.1.tar.gz</Archive>
         <BuildDependencies>
-            <Dependency>libpcap</Dependency>
+            <Dependency versionFrom="1.1.1">libpcap</Dependency>
+            <Dependency>libsmi</Dependency>
         </BuildDependencies>
-        <Patches>
-            <Patch>tcpdump-4.0.0-ipv6-build.patch</Patch>
-            <Patch>tcpdump-4.0.0-libsmi-autodep.patch</Patch>
-            <Patch>tcpdump-4.0.0-aliasing.patch</Patch>
-            <Patch>tcpdump-4.0.0-autoconf.patch</Patch>
-            <Patch>tcpdump-4.0.0-prototypes.patch</Patch>
-            <Patch>tcpdump-4.0.0-uninitialized.patch</Patch>
-        </Patches>
     </Source>
 
     <Package>
         <Name>tcpdump</Name>
         <RuntimeDependencies>
-            <Dependency>libpcap</Dependency>
+            <Dependency versionFrom="1.1.1">libpcap</Dependency>
+            <Dependency>libsmi</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/sbin</Path>
@@ -39,6 +33,41 @@
     </Package>
 
     <History>
+        <Update release="10">
+            <Date>2010-06-07</Date>
+            <Version>4.1.1</Version>
+            <Comment>
+                New upstream release
+                Enable smi
+                Don't blow up if a zero-length link-layer address is passed to linkaddr_string()
+                Fix printing of MAC addresses for VLAN frames with a length field
+                Add some additional bounds checks and use the EXTRACT_ macros more
+                Add a -b flag to print the AS number in BGP packets in ASDOT notation rather than ASPLAIN notation
+                Add ICMPv6 RFC 5006 support
+                Decode the access flags in NFS access requests
+                Handle the new DLT_ for memory-mapped USB captures on Linux
+                Make the default snapshot (-s) the maximum
+                Print name of device (when -L is used)
+                Print new TCP flags
+                Add support for RPL DIO
+                Add support for TCP User Timeout (UTO)
+                Add support for non-standard Ethertypes used by 3com PPPoE gear
+                Add support for 802.11n and 802.11s
+                Add support for Transparent Ethernet Bridge ethertype in GRE
+                Add 4 byte AS support for BGP printer
+                Add support for the MDT SAFI 66 BG printer
+                Add basic IPv6 support to print-olsr
+                Add USB printer
+                Add printer for ForCES
+                Handle frames with an FCS
+                Handle 802.11n Control Wrapper, Block Acq Req and Block Ack frames
+                Fix TCP sequence number printing
+                Report 802.2 packets as 802.2 instead of 802.3
+                Lots of code clean up
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
         <Update release="9">
             <Date>2009-05-04</Date>
             <Version>4.0.0</Version>
