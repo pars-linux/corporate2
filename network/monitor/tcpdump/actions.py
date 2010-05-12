@@ -1,25 +1,28 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 def setup():
-    autotools.autoreconf("-fi")
+    shelltools.export("CFLAGS", "%s -O2 -DIP_MAX_MEMBERSHIPS=20" % get.CFLAGS())
+
+    autotools.autoreconf("-vfi")
     autotools.configure("--enable-ipv6 \
                          --with-ssl \
-                         --without-smi \
+                         --with-smi \
                          --enable-ipv6 \
                          --disable-smb \
                          --mandir=/usr/share/man")
 
 def build():
-    autotools.make('CCOPT="%s"' % get.CFLAGS())
+    autotools.make()
 
 def install():
     pisitools.dosbin("tcpdump")
