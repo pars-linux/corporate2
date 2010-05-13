@@ -1,0 +1,12 @@
+--- trunk~/scheduler/printers.c	2008-09-06 11:47:42.000000000 +0200
++++ trunk/scheduler/printers.c	2008-09-06 11:52:39.000000000 +0200
+@@ -2353,6 +2353,9 @@
+ 	}
+ 
+ #ifdef HAVE_DNSSD
++	/* silence Avahi Bonjour compat warning, since this can cause SIGPIPE
++	 * crashes if stderr is not available */
++	setenv("AVAHI_COMPAT_NOWARN", "1", 0);
+ 	cupsdSetString(&p->product, ppd->product);
+ #endif /* HAVE_DNSSD */
+ 

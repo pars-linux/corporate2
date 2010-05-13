@@ -1,0 +1,57 @@
+Index: hal-cups-utils-0.6.19_20090713/systemv/hal_lpadmin
+===================================================================
+--- hal-cups-utils-0.6.19_20090713.orig/systemv/hal_lpadmin
++++ hal-cups-utils-0.6.19_20090713/systemv/hal_lpadmin
+@@ -271,7 +271,7 @@ class HalPrinter:
+                 env = dict()
+                 env.update (os.environ)
+                 env["LC_ALL"] = "C"
+-                    
++
+                 for key in ("printer.vendor", "printer.product",
+                             "printer.description", "printer.serial"):
+                     if p.get (key) == None:
+@@ -440,7 +440,7 @@ class HalPrinter:
+                                 faxuris.append (faxuri)
+                 except:
+                     pass
+-        
++
+         if faxurisfound == 1:
+             self.hp_fax_uris = faxuris
+             return faxuris
+@@ -683,7 +683,7 @@ class HalPrinter:
+                                         pass
+                                 else:
+                                     plugin_needed = 0
+-                if uri and plugin_needed <= 0:
++                if uri:# and plugin_needed <= 0:
+                     # No HPLIP supported printer or no plugin needed, try to
+                     # find a driver and set up the print queue
+                     if ppds == None:
+@@ -699,6 +699,8 @@ class HalPrinter:
+                                                      self.commandsets,
+                                                      uri)
+                     syslog (LOG_DEBUG, "PPD: %s; Status: %d" % (ppdname, status))
++                    if plugin_needed > 0:
++                        syslog (LOG_INFO, "Printer %s requires HPLIP plugin, adding it anyway" % self.name)
+ 
+                     info = "%s %s" % (self.make, self.model)
+                     self.device = uri
+@@ -721,7 +723,6 @@ class HalPrinter:
+                         syslog (LOG_INFO, "Did not add printer with URI %s, no exact model fit found" % self.name)
+                 else:
+                     self.name = uri
+-                    syslog (LOG_INFO, "Did not add printer with URI %s, requires HPLIP plugin" % self.name)
+ 
+             if faxuri:
+                 faxname = self.faxname
+@@ -851,7 +852,7 @@ class HalLpAdmin:
+         printer = HalPrinter()
+         if printer.make:
+             printer.add()
+-        
++
+     def removePrinter(self):
+         printer = HalPrinter()
+         if printer.make:

@@ -1,0 +1,118 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+CFLAGS = -Wall -g
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -O0
+else
+	CFLAGS += -O2
+endif
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+	INSTALL_PROGRAM += -s
+endif
+
+configure: configure-stamp
+configure-stamp:
+	dh_testdir
+	dpatch apply-all
+	touch configure-stamp
+
+build: build-stamp
+
+build-stamp: configure-stamp 
+	dh_testdir
+	$(MAKE) CFLAGS="$(CFLAGS)"
+	touch build-stamp
+
+unpatch:
+	dh_testdir
+	dpatch deapply-all
+	rm -rf debian/patched
+
+clean: unpatch
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp configure-stamp
+	dpatch deapply-all
+	rm -rf debian/patched
+	cp printer-profile printer-profile.bak
+	-$(MAKE) clean
+	-mv -f printer-profile.bak printer-profile
+	-rm -f *.o
+	-rm -f *.1
+	-rm -f *-wrapper
+	-rm -f *decode
+	-rm -f foo2hiperc
+	-rm -f foo2hp
+	-rm -f foo2lava
+	-rm -f foo2oak
+	-rm -f foo2qpdl
+	-rm -f foo2slx
+	-rm -f foo2xqx
+	-rm -f foo2zjs
+	-rm -f arm2hpdl
+	-rm -f usb_printerid
+	-mv -f Makefile.bak Makefile
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+	cp Makefile Makefile.bak
+	mkdir -p $(CURDIR)/debian/foo2zjs/usr/share/ppd
+	$(MAKE) install PREFIX=$(CURDIR)/debian/foo2zjs/usr PPD=$(CURDIR)/debian/foo2zjs/usr/share/ppd VARPPD=$(CURDIR)/XXX MODEL=$(CURDIR)/XXX LOCALMODEL=$(CURDIR)/XXX FOODB=$(CURDIR)/debian/foo2zjs/usr/share/foomatic/db/source UDEVBIN=$(CURDIR)/debian/foo2zjs/usr/bin APPL=$(CURDIR)/debian/foo2zjs/usr/share/applications OLDAPPL=$(CURDIR)/debian/foo2zjs/usr/share/gnome/apps/System PIXMAPS=$(CURDIR)/debian/foo2zjs/usr/share/pixmaps 
+	rm -f $(CURDIR)/debian/foo2zjs/usr/share/doc/foo2zjs/COPYING
+	rm -f $(CURDIR)/debian/foo2zjs/usr/share/doc/foo2zjs/INSTALL
+	rm -f $(CURDIR)/debian/foo2zjs/usr/share/doc/foo2zjs/INSTALL.osx
+	# Add support for /etc/papersize to all wrapper scripts. In contrary
+	# to a patch this will automatically apply to every new wrapper script
+	# which gets added to this package in the future.
+	perl -p -i -e 's/^PAPER=(\d+)\s*$$/test -r \/etc\/papersize && PAPER=\x24\(cat \/etc\/papersize\)\ntest "\x24PAPER" || PAPER=\1\n/' $(CURDIR)/debian/foo2zjs/usr/bin/*-wrapper
+	# Make custom page sizes also be handled correctly if they are only
+	# supplied by the command line and not by embedded PostScript code,
+	# also here we do not apply a patch
+	perl -p -i -e 's/^(Custom\*\)\s*$$)/\1\t\tcase "\$$PAPER" in\n\t\tCustom\\.[0-9]*\\x[0-9]*)\n\t\t    XDIM=\`echo "\$$PAPER" | sed -e \x27s\/Custom\\.\/\/\x27 -e \x27s\/x.*\/\/\x27\`\n\t\t    YDIM=\`echo "\$$PAPER" | sed -e \x27s\/Custom\\.\/\/\x27 -e \x27s\/.*x\/\/\x27\`\n\t\t    \;\;\n\t\t*\)\n/' $(CURDIR)/debian/foo2zjs/usr/bin/*-wrapper
+	perl -p -i -e 's/^(\s*xmm=\`dc)/\t\t\;\;\n\t\tesac\n\1/' $(CURDIR)/debian/foo2zjs/usr/bin/foo2lava-wrapper
+	perl -p -i -e 's/^(\s*XDIM=\`dc)/\t\t\;\;\n\t\tesac\n\1/' $(CURDIR)/debian/foo2zjs/usr/bin/foo2[ho-z]*-wrapper
+	install -D -m 644 debian/85-hplj10xx.rules $(CURDIR)/debian/foo2zjs/lib/udev/rules.d/85-hplj10xx.rules
+	install -m 755 hplj1000 $(CURDIR)/debian/foo2zjs/usr/sbin/hplj1000
+	install -m 755 getweb $(CURDIR)/debian/foo2zjs/usr/bin/getweb
+	install -m 755 arm2hpdl $(CURDIR)/debian/foo2zjs/usr/bin/arm2hpdl
+	# Add "*cupsFilter" line to accept PDF input data to the PPDs
+	( cd $(CURDIR)/debian/foo2zjs/usr/share/ppd/foo2zjs; \
+	  find -name '*.ppd.gz' | xargs gunzip; \
+	  find -name '*.ppd' | xargs perl -p -i -e 's,^\*cupsFilter:\s*\"application/vnd.cups-postscript\s+0\s+foomatic-rip\",*cupsFilter: "application/vnd.cups-postscript 100 foomatic-rip"\n*cupsFilter: "application/vnd.cups-pdf 0 foomatic-rip",'; \
+	  find -name '*.ppd' | xargs gzip -9 \
+	)
+	# Install Apport hook
+	install -D -m 644 debian/local/apport-hook.py $(CURDIR)/debian/foo2zjs/usr/share/apport/package-hooks/source_foo2zjs.py
+
+# Build architecture-independent files here.
+binary-indep: build install
+# We have nothing to do by default.
+
+# Build architecture-dependent files here.
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs ChangeLog
+	dh_installdocs
+	dh_installexamples
+	dh_installman
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure
