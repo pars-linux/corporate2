@@ -1,0 +1,75 @@
+=== modified file 'ChangeLog'
+--- old/ChangeLog	2009-01-16 17:13:40 +0000
++++ new/ChangeLog	2009-08-21 11:40:42 +0000
+@@ -1,3 +1,17 @@
++2009-08-18  Till Kamppeter <till.kamppeter@gmail.com>
++
++	* data-generators/hpijs/hpijs-printermap: Put Xerox WorkCentre 7345
++	  to the right place.
++
++	* data-generators/hpijs/hpijs-generator.in: Do not generate entries
++	  for choices in the option XML files if there is no printer for which
++	  the choice is valid.
++
++2009-07-23  Till Kamppeter <till.kamppeter@gmail.com>
++
++	* data-generators/hpijs/hpijs-printermap: Added the Brother HL-2140
++	  (Ubuntu bug #287889).
++
+ 2009-01-16  Till Kamppeter <till.kamppeter@gmail.com>
+ 
+ 	* data-generators/hpijs/hpijs-printermap: Added the Lexmark
+
+=== modified file 'data-generators/hpijs/hpijs-generator.in'
+--- old/data-generators/hpijs/hpijs-generator.in	2009-01-08 22:13:10 +0000
++++ new/data-generators/hpijs/hpijs-generator.in	2009-08-21 11:40:42 +0000
+@@ -3223,6 +3223,7 @@
+ for my $value (@pagesize_order) {
+     my $pagesize_val_constraints =
+ 	$pagesize_vals->{$value}{'constraints'};
++    next if !$pagesize_val_constraints;
+     my $pagesize_enum_val = $hpijs_enum_val_xml;
+     $pagesize_enum_val =~ s/\@\@ENUMVALID\@\@/hpijs-PageSize-$value/;
+     $pagesize_enum_val =~
+@@ -3250,6 +3251,7 @@
+ for my $value (@quality_order) {
+     my $quality_val_constraints =
+ 	$quality_vals->{$value}{'constraints'};
++    next if !$quality_val_constraints;
+     my $quality_enum_val = $hpijs_enum_val_xml;
+     $quality_enum_val =~ s/\@\@ENUMVALID\@\@/hpijs-Quality-$value/;
+     $quality_enum_val =~
+@@ -3278,6 +3280,7 @@
+     for my $value (keys %{$printer_groups->{$group}{'PrintoutModeVals'}}) {
+ 	my $printoutmode_val_constraints =
+ 	    $printer_groups->{$group}{'PrintoutModeVals'}{$value}{'constraints'};
++	next if !$printoutmode_val_constraints;
+ 	my $printoutmode_enum_val = $hpijs_enum_val_xml;
+ 	$printoutmode_enum_val =~ 
+ 	    s/\@\@ENUMVALID\@\@/hpijs-PrintoutMode-$value-$group/;
+
+=== modified file 'data-generators/hpijs/hpijs-printermap'
+--- old/data-generators/hpijs/hpijs-printermap	2009-01-16 17:13:40 +0000
++++ new/data-generators/hpijs/hpijs-printermap	2009-08-21 11:40:42 +0000
+@@ -466,6 +466,7 @@
+ Brother-HL-1850|HEWLETT-PACKARD|HP LaserJet|LJMono|Legal|Brother HL-1850
+ Brother-HL-1870N|HEWLETT-PACKARD|HP LaserJet|LJMono|Legal|Brother HL-1870N
+ Brother-HL-2060|HEWLETT-PACKARD|HP LaserJet|LJMono|Legal|Brother HL-2060
++Brother-HL-2140|HEWLETT-PACKARD|HP LaserJet|LJMono|Legal|Brother HL-2140
+ Brother-HL-5030|HEWLETT-PACKARD|HP LaserJet|LJMono|Legal|Brother HL-5030
+ Brother-HL-5040|HEWLETT-PACKARD|HP LaserJet|LJMono|Legal|Brother HL-5040
+ Brother-HL-5050|HEWLETT-PACKARD|HP LaserJet|LJMono|Legal|Brother HL-5050
+@@ -720,6 +721,7 @@
+ Oki-C9200|HEWLETT-PACKARD|hp color LaserJet|LJColor|A3|
+ Oki-C9400|HEWLETT-PACKARD|hp color LaserJet|LJColor|A3|
+ Xerox-DocuPrint_C20|HEWLETT-PACKARD|hp color LaserJet|LJColor|A3|Xerox DocuPrint C20
++Xerox-WorkCentre_7345|HEWLETT-PACKARD|hp color LaserJet|LJColor|A3|
+ Generic-PCL_5c_Printer|HEWLETT-PACKARD|hp color LaserJet|LJColor|SuperB|
+ # LJColor300 (LJColor but 300 dpi max. only)
+ HP-Color_LaserJet_5|HEWLETT-PACKARD|hp color LaserJet|LJColor300|A3|HP Color LaserJet 5
+@@ -734,4 +736,3 @@
+ HP-Color_LaserJet_3500|HEWLETT-PACKARD|hp color LaserJet 3500|LJJetReady|Legal
+ HP-Color_LaserJet_3550|HEWLETT-PACKARD|hp color LaserJet 3550|LJJetReady|Legal
+ HP-Color_LaserJet_3600|HEWLETT-PACKARD|hp color LaserJet 3550|LJJetReady|Legal
+-Xerox-WorkCentre_7345|HEWLETT-PACKARD|hp color LaserJet|LJColor|A3|
+

@@ -1,0 +1,248 @@
+Index: foo2zjs-0.0_20090623/icc2ps/Makefile
+===================================================================
+--- foo2zjs-0.0_20090623.orig/icc2ps/Makefile
++++ foo2zjs-0.0_20090623/icc2ps/Makefile
+@@ -1,11 +1,11 @@
+ UNAME := $(shell uname)
+-PREFIX=	/usr
++PREFIX=	$(DESTDIR)/usr
+ BIN=	$(PREFIX)/bin
+ SRC=	icc2ps.c xgetopt.c
+ LIB=	cmscam97.c cmscnvrt.c cmserr.c cmsgamma.c cmsgmt.c cmsintrp.c cmsio1.c \
+ 	cmslut.c cmsmatsh.c cmsmtrx.c cmsnamed.c cmspack.c cmspcs.c cmsps2.c \
+ 	cmssamp.c cmswtpnt.c cmsxform.c cmsio0.c cmsvirt.c
+-CFLAGS=	-O3
++CFLAGS?=	-O3
+ INSTALL=install
+ ifeq ($(UNAME),SunOS)
+     INSTALL=/usr/ucb/install
+Index: foo2zjs-0.0_20090623/Makefile
+===================================================================
+--- foo2zjs-0.0_20090623.orig/Makefile
++++ foo2zjs-0.0_20090623/Makefile
+@@ -16,9 +16,9 @@ SYSNAME := $(shell uname -n)
+ VERSION=0.0
+ 
+ # Installation prefix...
+-PREFIX=/usr/local
+-PREFIX=/usr
+ PREFIX=$(DESTDIR)/usr
++FWLOADERDIR=$(DESTDIR)/sbin
++FIRMWAREDIR=$(DESTDIR)/lib/firmware
+ 
+ # Pathnames for this package...
+ BIN=$(PREFIX)/bin
+@@ -39,7 +39,7 @@ FOODB=$(DESTDIR)/usr/share/foomatic/db/s
+ 
+ # User ID's
+ LPuid=-oroot
+-LPgid=-glp
++LPgid=-gpnp
+ ifeq ($(UNAME),Darwin)
+     LPuid=-oroot
+     LPgid=-gwheel
+@@ -110,7 +110,7 @@ WEBFILES=	\
+ 		archhiperc.fig \
+ 		c3400n.png \
+ 		$(NULL)
+-	
++
+ FILES	=	\
+ 		README \
+ 		README.in \
+@@ -255,7 +255,7 @@ ifeq ($(UNAME),Linux)
+ endif
+ 
+ # Compiler flags
+-CFLAGS +=	-O2 -Wall
++CFLAGS ?=	-O2 -Wall
+ #CFLAGS +=	-g
+ 
+ #
+@@ -588,6 +588,7 @@ install-foo:
+ 	#
+ 	@if [ -d $(FOODB) ]; then \
+ 	    for dir in driver printer opt; do \
++		[ -d $(FOODB)/$$dir/ ] || install -d -m 755 $(FOODB)/$$dir/; \
+ 		echo install -m 644 foomatic-db/$$dir/*.xml $(FOODB)/$$dir/; \
+ 		$(INSTALL) -c -m 644 foomatic-db/$$dir/*.xml $(FOODB)/$$dir/; \
+ 	    done \
+@@ -605,10 +606,10 @@ install-foo:
+ 	#
+ 	# Clear foomatic cache and rebuild database if needed
+ 	#
+-	rm -rf /var/cache/foomatic/*/*
+-	rm -f /var/cache/foomatic/printconf.pickle
+-	if [ -d /var/cache/foomatic/compiled ]; then \
+-	    cd /var/cache/foomatic/compiled; \
++	rm -rf $(DESTDIR)/var/cache/foomatic/*/*
++	rm -f $(DESTDIR)/var/cache/foomatic/printconf.pickle
++	if [ -d $(DESTDIR)/var/cache/foomatic/compiled ]; then \
++	    cd $(DESTDIR)/var/cache/foomatic/compiled; \
+ 	    foomatic-combo-xml -O >overview.xml; \
+ 	fi
+ 
+@@ -662,21 +663,21 @@ install-extra:
+ 	    fi; \
+ 	done
+ 	# foo2zjs Firmware files (if any)
+-	$(INSTALL) $(LPuid) $(LPgid) -m 775 -d $(SHAREZJS)/firmware/
++	$(INSTALL) $(LPuid) $(LPgid) -m 775 -d $(FIRMWAREDIR)/
+ 	for i in sihp1*.img; do \
+ 	    if [ -f $$i ]; then \
+ 		base=`basename $$i .img`; \
+ 		./arm2hpdl $$i >$$base.dl; \
+-		$(INSTALL) -c -m 644 $$base.dl $(SHAREZJS)/firmware/; \
++		$(INSTALL) -c -m 644 $$base.dl $(FIRMWAREDIR)/; \
+ 	    fi; \
+ 	done
+ 	# foo2xqx Firmware files (if any)
+-	$(INSTALL) $(LPuid) $(LPgid) -m 775 -d $(SHAREXQX)/firmware/
++	$(INSTALL) $(LPuid) $(LPgid) -m 775 -d $(FIRMWAREDIR)/
+ 	for i in sihpP*.img; do \
+ 	    if [ -f $$i ]; then \
+ 		base=`basename $$i .img`; \
+ 		./arm2hpdl $$i >$$base.dl; \
+-		$(INSTALL) -c -m 644 $$base.dl $(SHAREXQX)/firmware/; \
++		$(INSTALL) -c -m 644 $$base.dl $(FIRMWAREDIR)/; \
+ 	    fi; \
+ 	done
+ 	# foo2oak ICM files (if any)
+@@ -730,40 +731,11 @@ install-ppd:
+ 	#
+ 	# Install PPD files for CUPS
+ 	#
+-	if [ -x /usr/sbin/ppdmgr -a -s $(VARPPD)/ppdcache ]; then \
+-	    $(INSTALL) $(LPgid) -d $(VARPPD)/user; \
+-	    cd PPD; \
+-	    for ppd in *.ppd; do \
+-		manuf=`echo "$$ppd" | sed 's/-.*//'`; \
+-		$(INSTALL) $(LPgid) -d $(VARPPD)/user/$$manuf; \
+-		gzip < $$ppd > $(VARPPD)/user/$$manuf/$$ppd.gz; \
+-	    done; \
+-	    ppdmgr -u; \
+-	elif [ -d $(PPD) ]; then \
+-	    find $(PPD) -name '*foo2zjs*' | xargs rm -rf; \
+-	    find $(PPD) -name '*foo2hp*' | xargs rm -rf; \
+-	    find $(PPD) -name '*foo2xqx*' | xargs rm -rf; \
+-	    find $(PPD) -name '*foo2lava*' | xargs rm -rf; \
+-	    find $(PPD) -name '*foo2qpdl*' | xargs rm -rf; \
+-	    find $(PPD) -name '*foo2slx*' | xargs rm -rf; \
+-	    find $(PPD) -name '*foo2hiperc*' | xargs rm -rf; \
+-            [ -d $(PPD)/foo2zjs ] || mkdir $(PPD)/foo2zjs; \
+-	    cd PPD; \
+-	    for ppd in *.ppd; do \
+-		gzip < $$ppd > $(PPD)/foo2zjs/$$ppd.gz; \
+-	    done; \
+-	fi
+ 	if [ -d $(MODEL) ]; then \
+ 	    rm -f $(MODEL)/KonicaMinolta*; \
+ 	    cd PPD; \
+ 	    for ppd in *.ppd; do \
+-		gzip < $$ppd > $(MODEL)/$$ppd.gz; \
+-	    done; \
+-	elif [ -d $(LOCALMODEL) ]; then \
+-	    rm -f $(LOCALMODEL)/KonicaMinolta*; \
+-	    cd PPD; \
+-	    for ppd in *.ppd; do \
+-		gzip < $$ppd > $(LOCALMODEL)/$$ppd.gz; \
++		$(INSTALL) -c -m 644 $$ppd $(MODEL)/; \
+ 	    done; \
+ 	fi
+ 
+@@ -776,13 +748,13 @@ install-desktop:
+ 	# Install GNOME desktop
+ 	#
+ 	if [ -d $(APPL) ]; then \
+-	    $(INSTALL) -c -m 644 hplj1020.desktop $(APPL); \
++	    $(INSTALL) -c -m 644 hplj1020.desktop $(DESTDIR)$(APPL); \
+ 	fi
+ 	if [ -d $(OLDAPPL) ]; then \
+-	    $(INSTALL) -c -m 644 hplj1020.desktop $(OLDAPPL); \
++	    $(INSTALL) -c -m 644 hplj1020.desktop $(DESTDIR)$(OLDAPPL); \
+ 	fi
+ 	if [ -d $(PIXMAPS) ]; then \
+-	    $(INSTALL) -c -m 644 hplj1020_icon.png $(PIXMAPS); \
++	    $(INSTALL) -c -m 644 hplj1020_icon.png $(DESTDIR)$(PIXMAPS); \
+ 	fi
+ 
+ install-gui:
+@@ -793,10 +765,10 @@ install-gui:
+ 	$(INSTALL) -c -m 755 hplj10xx_gui.tcl $(SHAREZJS)
+ 	
+ 
+-USBDIR=/etc/hotplug/usb
+-UDEVDIR=/etc/udev/rules.d
+-RULES=hplj10xx.rules
+-install-hotplug: install-hotplug-test install-hotplug-prog
++UDEVDIR=$(DESTDIR)/lib/udev
++RULESDIR=$(UDEVDIR)/rules.d
++
++install-hotplug: install-hotplug-test install-udev
+ 
+ install-hotplug-test:
+ 	#
+@@ -813,29 +785,23 @@ install-hotplug-test:
+ 	# ... OK!
+ 	#
+ 
+-install-hotplug-prog:
+-	if [ -d $(UDEVDIR) ]; then \
+-	    $(INSTALL) -c -m 644 $(RULES) $(UDEVDIR)/11-$(RULES); \
+-	fi
+-	[ -d $(USBDIR) ] || $(INSTALL) -d -m 755 $(USBDIR)/
+-	$(INSTALL) -c -m 755 hplj1000 $(USBDIR)/
+-	ln -sf $(USBDIR)/hplj1000 $(USBDIR)/hplj1005
+-	ln -sf $(USBDIR)/hplj1000 $(USBDIR)/hplj1018
+-	ln -sf $(USBDIR)/hplj1000 $(USBDIR)/hplj1020
+-	ln -sf $(USBDIR)/hplj1000 $(USBDIR)/hpljP1005
+-	ln -sf $(USBDIR)/hplj1000 $(USBDIR)/hpljP1006
+-	ln -sf $(USBDIR)/hplj1000 $(USBDIR)/hpljP1007
+-	ln -sf $(USBDIR)/hplj1000 $(USBDIR)/hpljP1008
+-	ln -sf $(USBDIR)/hplj1000 $(USBDIR)/hpljP1505
+-	$(USBDIR)/hplj1000 install-usermap
+-	$(USBDIR)/hplj1005 install-usermap
+-	$(USBDIR)/hplj1018 install-usermap
+-	$(USBDIR)/hplj1020 install-usermap
+-	$(USBDIR)/hpljP1005 install-usermap
+-	$(USBDIR)/hpljP1006 install-usermap
+-	$(USBDIR)/hpljP1007 install-usermap
+-	$(USBDIR)/hpljP1008 install-usermap
+-	$(USBDIR)/hpljP1505 install-usermap
++install-udev-helper:
++	[ -d $(UDEVDIR) ] || $(INSTALL) -d -m 755 $(UDEVDIR)/
++	$(INSTALL) -c -m 755 hplj1000 $(UDEVDIR)/
++	ln -sf hplj1000 $(UDEVDIR)/hplj1005
++	ln -sf hplj1000 $(UDEVDIR)/hplj1018
++	ln -sf hplj1000 $(UDEVDIR)/hplj1020
++	ln -sf hplj1000 $(UDEVDIR)/hpljP1005
++	ln -sf hplj1000 $(UDEVDIR)/hpljP1006
++	ln -sf hplj1000 $(UDEVDIR)/hpljP1007
++	ln -sf hplj1000 $(UDEVDIR)/hpljP1008
++	ln -sf hplj1000 $(UDEVDIR)/hpljP1505
++	ln -sf hplj1000 $(UDEVDIR)/hpljP1505n
++
++RULES=hplj10xx.rules
++install-udev: install-udev-helper
++	[ -d $(RULESDIR) ] || install -d -m 755 $(RULESDIR)/
++	install -c -m 644 $(RULES) $(RULESDIR)/85-foo2zjs.rules
+ 
+ cups:	FRC
+ 	if [ -x /etc/init.d/cups ]; then \
+@@ -1231,7 +1197,6 @@ install-doc: doc
+ 	$(INSTALL) -c -m 644 README $(DOCDIR)
+ 	$(INSTALL) -c -m 644 ChangeLog $(DOCDIR)
+ 
+-GROFF=/usr/local/test/bin/groff
+ GROFF=groff
+ manual.pdf: $(MANPAGES)
+ 	-$(GROFF) -t -man $(MANPAGES) | ps2pdf - $@
+@@ -1286,7 +1251,7 @@ maildb:
+ #
+ # Create tarball
+ #
+-tar:	
++tar:
+ 	HERE=`basename $$PWD`; \
+ 	/bin/ls $(FILES) | \
+ 	sed -e "s?^?$$HERE/?" | \

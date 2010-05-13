@@ -1,0 +1,45 @@
+Index: systemv/hal_lpadmin
+===================================================================
+--- systemv/hal_lpadmin.orig
++++ systemv/hal_lpadmin
+@@ -59,6 +60,40 @@ class HalPrinter:
+         self.get_properties()
+         self.uris = None
+         self.hp_fax_uris = None
++
++        # Check for CUPS status
++        # If set to 'on' just wait a little while,
++        # if not, start it manually
++
++        bus = dbus.SystemBus()
++
++        try:
++            obj = bus.get_object("tr.org.pardus.comar", "/package/cups", introspect=False)
++            state = obj.info(dbus_interface="tr.org.pardus.comar.System.Service")
++            state = str(state[2])
++            syslog (LOG_INFO, "Checking CUPS state: %s" % state)
++
++        except dbus.DBusException, e:
++            syslog (LOG_DEBUG, "D-Bus method call failed: %s" % e)
++
++        # will autostart
++        if state == 'stopped':
++            syslog (LOG_INFO, "Waiting for CUPS to start...")
++            comar.service.waitBus("/var/run/cups/cups.sock")
++        elif state == 'off':
++            # start it manually
++            syslog (LOG_INFO, "Starting CUPS manually using comar..")
++            try:
++                obj = bus.get_object("tr.org.pardus.comar", "/package/cups", introspect=False)
++                obj.start(dbus_interface="tr.org.pardus.comar.System.Service")
++
++            except dbus.DBusException, e:
++                syslog (LOG_DEBUG, "D-Bus method call failed: %s" % e)
++        else:
++            pass
++
++        bus.close()
++
+         try:
+             self.cups_connection = cups.Connection()
+         except RuntimeError, e:

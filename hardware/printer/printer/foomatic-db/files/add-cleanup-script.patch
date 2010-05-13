@@ -1,0 +1,35 @@
+--- /dev/null	2009-06-29 22:51:59.897774410 +0300
++++ cleanup-conflicts.sh	2009-06-29 23:43:55.037193781 +0300
+@@ -0,0 +1,32 @@
++#!/bin/bash
++
++# Running this script cleanups XML's which conflicts with other
++# packages like foo2zjs, lexmark X125, etc.
++
++# Remove references to foo2zjs, foo2oak, foo2hp and foo2qpdl (bug #208851).
++# Also foo2lava, foo2kyo, foo2xqx (bug #438319).
++
++for x in zjs oak hp qpdl lava kyo xqx hiperc slx oak-z1
++do
++    find printer -name '*.xml' | xargs grep -l "<driver>foo2${x}"| xargs rm -vf
++    rm -f driver/foo2${x}.xml opt/foo2${x}-*
++done
++
++# Same for m2300w/m2400w
++find printer -name '*.xml' |xargs grep -l '<driver>m2[34]00w<'|xargs rm -vf
++rm -f driver/m2300w.xml driver/m2400w.xml opt/m2300w-*
++
++# Same for all these.
++for x in drv_x125 ml85p pbm2lwxl pbmtozjs bjc800j splix
++do
++    find printer -name '*.xml' |xargs grep -l "<driver>${x}</driver>"|xargs rm -vf
++    rm -vf driver/${x}.xml opt/${x}-*
++done
++
++
++# We also have those one in foo2zjs
++#source/driver/foo2oak-z1.xml
++#source/driver/foo2slx.xml
++
++
++
