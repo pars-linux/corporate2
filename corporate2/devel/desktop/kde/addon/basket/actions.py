@@ -11,6 +11,8 @@ from pisi.actionsapi import get
 
 shelltools.export("HOME", get.workDIR())
 
+KeepSpecial=["libtool"]
+
 def setup():
     kde.configure()
 
