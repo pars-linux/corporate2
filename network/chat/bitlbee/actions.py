@@ -28,7 +28,7 @@ def install():
     pisitools.insinto("%s/%s/examples/" % (get.docDIR(), get.srcNAME()), "utils/*")
 
     pisitools.dodir("/var/lib/bitlbee")
-    shelltools.chmod("%s/var/lib/bitlbee" % get.installDIR(), 0700)
+    shelltools.chmod("%s/var/lib/bitlbee" % get.installDIR(), 0755)
 
     pisitools.dohtml("doc/user-guide/user-guide.html")
 
