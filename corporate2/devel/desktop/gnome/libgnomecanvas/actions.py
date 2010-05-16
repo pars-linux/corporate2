@@ -8,10 +8,11 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 
 def setup():
-    autotools.autoreconf("-fi")
-    autotools.configure("--enable-static=no")
+    autotools.autoreconf("-fiv")
+    autotools.configure("--disable-static\
+                         --enable-glade")
 
-    pisitools.dosed("libgnomecanvas/Makefile", "^LIBS = (.*)$", "LIBS = \\1 -lm")
+#    pisitools.dosed("libgnomecanvas/Makefile", "^LIBS = (.*)$", "LIBS = \\1 -lm")
 
 def build():
     autotools.make()
