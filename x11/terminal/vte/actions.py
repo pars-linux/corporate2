@@ -12,10 +12,7 @@ from pisi.actionsapi import get
 def setup():
     autotools.autoreconf("-vif")
     autotools.configure("--disable-static \
-                         --enable-python \
-                         --with-xft2 \
-                         --with-pangox")
-    pisitools.dosed("libtool", " -shared ", " -Wl,--as-needed -shared ")
+                         --enable-python")
 
 def build():
     autotools.make()
