@@ -5,29 +5,25 @@
         <Name>subversion</Name>
         <Homepage>http://subversion.tigris.org/</Homepage>
         <Packager>
-            <Name>Faik Uygur</Name>
-            <Email>faik@pardus.org.tr</Email>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
         </Packager>
         <License>Subversion</License>
         <IsA>app:console</IsA>
         <IsA>service</IsA>
         <Summary>A compelling replacement for CVS</Summary>
         <Description>SVN is a version controlling system to store files and control their change history in a repository.</Description>
-        <Archive sha1sum="477aa89e60de7974ac0aa921cc369b4c2907693c" type="tarbz2">http://subversion.tigris.org/downloads/subversion-1.6.9.tar.bz2</Archive>
+        <Archive sha1sum="36cf9d39c14e5bd8d713302ac770c3964fe196b3" type="tarbz2">http://subversion.tigris.org/downloads/subversion-1.6.11.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency versionFrom="5.10.1">perl</Dependency>
-            <Dependency>apr</Dependency>
+            <Dependency versionFrom="0.28.4">neon</Dependency>
+            <Dependency releaseFrom="14">apr</Dependency>
             <Dependency>apache</Dependency>
             <Dependency>sun-jdk</Dependency>
             <Dependency>apr-util</Dependency>
             <Dependency>cyrus-sasl</Dependency>
-            <Dependency versionFrom="0.28.4">neon</Dependency>
         </BuildDependencies>
         <Patches>
-            <!--
-            <Patch level="1">subversion-1.5.x-no-neon-la.patch</Patch>
-            <Patch level="1">subversion.libtool-pie-flags.patch</Patch>
-            -->
             <Patch level="1">subversion.header_wrappers.patch</Patch>
             <Patch level="1">subversion.java14.patch</Patch>
             <Patch level="1">subversion.libtool-verbose.patch</Patch>
@@ -37,10 +33,6 @@
 
             <Patch level="1">subversion-1.6.0-rpath.patch</Patch>
             <Patch level="1">subversion-1.6.0-disable_linking_against_unneeded_libraries.patch</Patch>
-
-            <!-- FIXME: ask cartman for upstream status of this
-            <Patch>ascii-casecompare.patch</Patch>
-            -->
         </Patches>
     </Source>
 
@@ -48,17 +40,18 @@
         <Name>subversion</Name>
         <RuntimeDependencies>
             <Dependency versionFrom="5.10.1">perl</Dependency>
-            <Dependency>apr</Dependency>
+            <Dependency versionFrom="0.28.4">neon</Dependency>
+            <Dependency releaseFrom="14">apr</Dependency>
             <Dependency>apr-util</Dependency>
             <Dependency>cyrus-sasl</Dependency>
-            <Dependency versionFrom="0.28.4">neon</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="config">/etc/conf.d</Path>
+            <Path fileType="data">/etc/subversion</Path>
+            <Path fileType="data">/usr/share/build</Path>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="header">/usr/include</Path>
             <Path fileType="library">/usr/lib</Path>
-            <Path fileType="data">/usr/share/build</Path>
             <Path fileType="doc">/usr/share/doc</Path>
             <Path fileType="info">/usr/share/info</Path>
             <Path fileType="localedata">/usr/share/locale</Path>
@@ -72,6 +65,9 @@
             <AdditionalFile owner="root" permission="0755" target="/usr/bin/svnrevertlast">svnrevertlast</AdditionalFile>
             <AdditionalFile owner="root" permission="0755" target="/usr/bin/svnlastlog">svnlastlog</AdditionalFile>
             <AdditionalFile owner="root" permission="0755" target="/usr/bin/svnclean">svn-clean</AdditionalFile>
+
+            <!-- system-wide configuration file for auto mimetype setting -->
+            <AdditionalFile owner="root" permission="0644" target="/etc/subversion/config">subversion.config</AdditionalFile>
         </AdditionalFiles>
         <Provides>
             <COMAR script="service.py">System.Service</COMAR>
@@ -102,6 +98,16 @@
     </Package>
 
     <History>
+        <Update release="56">
+            <Date>2010-05-14</Date>
+            <Version>1.6.11</Version>
+            <Comment>
+                - Version bump to 1.6.11,
+                - Add system-wide configuration file for svn:mime-type auto-setting.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="55">
             <Date>2010-02-19</Date>
             <Version>1.6.9</Version>
