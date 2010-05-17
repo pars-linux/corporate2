@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2008 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -11,9 +11,10 @@ from pisi.actionsapi import get
 
 def setup():
     autotools.configure("--disable-static \
-                         --enable-ipv6 \
                          --disable-ldap \
+                         --enable-ipv6 \
                          --with-ssl \
+                         --with-libssh2 \
                          --enable-http \
                          --enable-ftp \
                          --enable-gopher \
