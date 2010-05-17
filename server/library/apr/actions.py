@@ -13,9 +13,9 @@ from pisi.actionsapi import get
 def setup():
     # Forcibly prevent detection of shm_open (which then picks up but
     # does not use -lrt).
+    shelltools.system("./buildconf")
     shelltools.export("ac_cv_search_shm_open", "no")
 
-    autotools.autoreconf("-fi")
 
     autotools.configure("--enable-ipv6 \
                          --enable-threads \
@@ -31,8 +31,8 @@ def setup():
 def build():
     autotools.make()
 
-#def check():
-#    autotools.make("check")
+def check():
+    autotools.make("check")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
