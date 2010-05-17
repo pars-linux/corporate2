@@ -12,4 +12,7 @@ svn add "files/kernel/patch-$1.bz2"
 
 sed -i "s:$OLD_PATCH:kernel/`basename $PATCH_URL`:" pspec.xml
 
+# Change quilt series file
+sed -i "s:^kernel/patch-2.6.*$:kernel/patch-$1 -p1:" files/series
+
 bump $1 "$2"
