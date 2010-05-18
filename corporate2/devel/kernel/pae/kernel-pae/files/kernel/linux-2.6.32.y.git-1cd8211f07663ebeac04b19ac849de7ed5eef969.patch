@@ -1,0 +1,32 @@
+From 1cd8211f07663ebeac04b19ac849de7ed5eef969 Mon Sep 17 00:00:00 2001
+From: Greg Kroah-Hartman <gregkh@suse.de>
+Date: Wed, 12 May 2010 15:11:42 -0700
+Subject: [PATCH] Revert "module: fix __module_ref_addr()"
+
+This reverts commit d150a2b96558a7349cbf3a72a279c37bc67d50fb.
+
+Thanks to Jiri Benc for finding the problem that this patch is
+not correct for the 2.6.32-stable series.
+
+Cc: Jiri Kosina <jkosina@suse.cz>
+Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+---
+ include/linux/module.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/include/linux/module.h b/include/linux/module.h
+index 460df15..482efc8 100644
+--- a/include/linux/module.h
++++ b/include/linux/module.h
+@@ -455,7 +455,7 @@ void symbol_put_addr(void *addr);
+ static inline local_t *__module_ref_addr(struct module *mod, int cpu)
+ {
+ #ifdef CONFIG_SMP
+-	return (local_t *) per_cpu_ptr(mod->refptr, cpu);
++	return (local_t *) (mod->refptr + per_cpu_offset(cpu));
+ #else
+ 	return &mod->ref;
+ #endif
+-- 
+1.7.1
+
