@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -19,19 +19,19 @@ def setup():
     # Use secure path
     autotools.configure("--libexecdir=/usr/libexec/sudo \
                          --with-noexec=/usr/libexec/sudo/sudo_noexec.so \
-                         --with-secure-path=\"/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin:/usr/local/sbin\" \
-                         --with-logfac=auth \
-                         --with-insults \
-                         --with-all-insults \
+                         --with-logging=syslog \
+                         --with-logfac=authpriv \
+                         --with-pam \
+                         --with-env-editor \
                          --with-ignore-dot \
                          --with-tty-tickets \
+                         --with-ldap \
+                         --with-audit \
                          --enable-shell-sets-home \
                          --with-sudoers-mode=0440 \
-                         --without-rpath \
-                         --with-pam \
-                         --with-ldap \
-                         --with-env-editor \
-                         --without-secure-path")
+                         --without-selinux \
+                         --without-secure-path \
+                         --without-rpath")
 
 def build():
     autotools.make()
