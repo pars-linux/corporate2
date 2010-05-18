@@ -18,13 +18,10 @@ def setup():
 
     pisitools.echo("stlport/stl/config/user_config.h", "#define _STLP_NATIVE_INCLUDE_PATH ..")
 
-    pisitools.dosed("build/Makefiles/gmake/gcc.mak", "^CFLAGS =.*", "CFLAGS = %s" % get.CFLAGS())
-    pisitools.dosed("build/Makefiles/gmake/gcc.mak", "^CCFLAGS =.*", "CCFLAGS = %s" % get.CFLAGS())
-
     autotools.rawConfigure("--prefix=/usr \
                             --with-system-boost \
-                            --with-extra-cxxflags=\"%s\" \
-                            --with-extra-cflags=\"%s\" \
+                            --with-extra-cxxflags=\"%s -fPIC\" \
+                            --with-extra-cflags=\"%s -fPIC\" \
                             --with-extra-ldflags=\"%s\"" % (get.CXXFLAGS(), get.CFLAGS(), get.LDFLAGS()))
 
     pisitools.echo("build/Makefiles/config.mak","CFLAGS := %s" % get.CFLAGS())
