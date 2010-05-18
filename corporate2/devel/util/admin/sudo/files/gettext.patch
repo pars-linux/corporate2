@@ -1,23 +1,25 @@
---- check.c	2007-07-06 22:52:13.000000000 +0300
-+++ check.c	2007-07-29 14:10:15.000000000 +0300
-@@ -62,6 +62,11 @@
+Index: sudo-1.7.2p6/check.c
+===================================================================
+--- sudo-1.7.2p6.orig/check.c
++++ sudo-1.7.2p6/check.c
+@@ -58,6 +58,11 @@
  
  #include "sudo.h"
  
-+/* gettext support */
+++/* gettext support */
 +#include <locale.h>
 +#include <libintl.h>
 +#define _(STRING) gettext(STRING)
 +
- #ifndef lint
- __unused static const char rcsid[] = "$Sudo: check.c,v 1.223.2.9 2007/07/06 19:52:13 millert Exp $";
- #endif /* lint */
-@@ -139,13 +144,13 @@
+ /* Status codes for timestamp_status() */
+ #define TS_CURRENT		0
+ #define TS_OLD			1
+@@ -158,13 +163,13 @@ lecture(status)
  	    fwrite(buf, nread, 1, stderr);
  	fclose(fp);
      } else {
 -	(void) fputs("\n\
-+      (void) fputs(_("\n\
++	(void) fputs(_("\n\
  We trust you have received the usual lecture from the local System\n\
  Administrator. It usually boils down to these three things:\n\
  \n\
@@ -28,9 +30,11 @@
      stderr);
      }
  }
---- sudo.c	2007-07-22 22:21:01.000000000 +0300
-+++ sudo.c	2007-07-29 14:34:12.000000000 +0300
-@@ -178,6 +178,11 @@
+Index: sudo-1.7.2p6/sudo.c
+===================================================================
+--- sudo-1.7.2p6.orig/sudo.c
++++ sudo-1.7.2p6/sudo.c
+@@ -184,6 +184,11 @@ main(argc, argv, envp)
      if ((Argc = argc) < 1)
  	usage(1);
  
