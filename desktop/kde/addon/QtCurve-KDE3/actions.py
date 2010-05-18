@@ -10,6 +10,7 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 shelltools.export('HOME', get.workDIR())
+WorkDir="%s-1.4.0" % get.srcNAME()
 
 def setup():
     cmaketools.configure("-DQTC_BUILD_CONFIG_MODULE=true -DQTC_DEFAULT_TO_KDE3=true", installPrefix="/usr/kde/3.5")
