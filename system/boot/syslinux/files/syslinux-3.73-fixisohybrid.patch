@@ -30,8 +30,8 @@
  
  # Print partition table
  $offset  = $opt{'offset'};
--$psize   = $c*$h*$s;
-+$psize   = $c*$h*$s - 1;
+-$psize   = $c*$h*$s - $offset;
++$psize   = $c*$h*$s - $offset - 1;
  $bhead   = int($offset/$s) % $h;
 -$bsect   = ($offset % $s) + 1;
 +$bsect   = ($offset % $s) + 1 + 1;
@@ -65,8 +65,8 @@
 +		     $ehead1, $esect1, $ecyl1, $offset+1, $psize1);
 +    } elsif ( $i == $pentry ) {
  	$mbr .= pack("CCCCCCCCVV", 0x80, $bhead, $bsect, $bcyl, $fstype,
--		     $ehead, $esect, $ecyl, 0, $psize);
-+		     $ehead, $esect, $ecyl, 1, $psize);
+-		     $ehead, $esect, $ecyl, $offset, $psize);
++		     $ehead, $esect, $ecyl, $offset + 1, $psize);
      } else {
  	$mbr .= "\0" x 16;
      }
@@ -121,8 +121,8 @@
  
  # Print partition table
  $offset  = $opt{'offset'};
--$psize   = $c*$h*$s;
-+$psize   = $c*$h*$s - 1;
+-$psize   = $c*$h*$s - $offset;
++$psize   = $c*$h*$s - $offset - 1;
  $bhead   = int($offset/$s) % $h;
 -$bsect   = ($offset % $s) + 1;
 +$bsect   = ($offset % $s) + 1 + 1;
@@ -156,8 +156,8 @@
 +		     $ehead1, $esect1, $ecyl1, $offset+1, $psize1);
 +    } elsif ( $i == $pentry ) {
  	$mbr .= pack("CCCCCCCCVV", 0x80, $bhead, $bsect, $bcyl, $fstype,
--		     $ehead, $esect, $ecyl, 0, $psize);
-+		     $ehead, $esect, $ecyl, 1, $psize);
+-		     $ehead, $esect, $ecyl, $offset, $psize);
++		     $ehead, $esect, $ecyl, $offset + 1, $psize);
      } else {
  	$mbr .= "\0" x 16;
      }
