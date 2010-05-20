@@ -165,7 +165,11 @@ def updateRepository(repository=None):
 @privileged
 def updateAllRepositories():
     repos = pisi.db.repodb.RepoDB().list_repos()
-    pisi.api.update_repos(repos)
+    for repo in repos:
+        try:
+            pisi.api.update_repo(repo)
+        except pisi.db.repodb.RepoError, e:
+            notify("System.Manager", "error", str(e))
 
 @privileged
 def addRepository(name=None,uri=None):
