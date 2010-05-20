@@ -11,7 +11,7 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import get
 
 def setup():
-    shelltools.system("./autogen.sh")
+    #shelltools.system("./autogen.sh")
     autotools.configure("--disable-dependency-tracking \
                          --disable-static")
 
