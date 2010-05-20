@@ -1,6 +1,7 @@
 
 DEFAULT_DESKTOP=/etc/default/desktop
 USER_XSESSION=$HOME/.xsession
+SESSION=$DESKTOP_SESSION
 STARTUP=
 
 case $1 in
