@@ -1,0 +1,72 @@
+From 77dfd48f77ad9370fed26e1cf846e53dcf421cd9 Mon Sep 17 00:00:00 2001
+From: Kay Sievers <kay.sievers@vrfy.org>
+Date: Tue, 18 May 2010 07:23:17 +0200
+Subject: [PATCH] libcg trivial compile errors/warnings
+
+libcgroup: Fix a few cosmetic issues and missing include
+
+Signed-off-by: Kay Sievers <kay.sievers@vrfy.org>
+Signed-off-by: Dhaval Giani <dhaval.giani@gmail.com>
+---
+ src/tools/lscgroup.c         |    1 -
+ src/wrapper.c                |    2 --
+ tests/setuid.c               |    6 ------
+ tests/test_named_hierarchy.c |    1 +
+ 4 files changed, 1 insertions(+), 9 deletions(-)
+
+diff --git a/src/tools/lscgroup.c b/src/tools/lscgroup.c
+index a99d26f..330a0e2 100644
+--- a/src/tools/lscgroup.c
++++ b/src/tools/lscgroup.c
+@@ -85,7 +85,6 @@ static int display_controller_data(char *input_path, char *controller, char *nam
+ 	struct cgroup_file_info info;
+ 	char cgroup_dir_path[FILENAME_MAX];
+ 	char input_dir_path[FILENAME_MAX];
+-	char *end;
+ 	int lvl;
+ 	int len;
+ 
+diff --git a/src/wrapper.c b/src/wrapper.c
+index 7d2f2bb..00a74be 100644
+--- a/src/wrapper.c
++++ b/src/wrapper.c
+@@ -617,8 +617,6 @@ scgroup_err:
+ 
+ int cgroup_get_value_name_count(struct cgroup_controller *controller)
+ {
+-	int ret;
+-
+ 	if (!controller)
+ 		return -1;
+ 
+diff --git a/tests/setuid.c b/tests/setuid.c
+index 772de94..4c8b80e 100644
+--- a/tests/setuid.c
++++ b/tests/setuid.c
+@@ -34,12 +34,6 @@ int main(int argc, char *argv[])
+ 	/* UID of user */
+ 	uid_t uid;
+ 
+-	/* Group data */
+-	struct group *grp;
+-
+-	/* GID of group */
+-	gid_t gid;
+-
+ 	/* Return codes */
+ 	int ret;
+ 
+diff --git a/tests/test_named_hierarchy.c b/tests/test_named_hierarchy.c
+index 56e9a1c..934c875 100644
+--- a/tests/test_named_hierarchy.c
++++ b/tests/test_named_hierarchy.c
+@@ -1,5 +1,6 @@
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <unistd.h>
+ #include <libcgroup.h>
+ 
+ /*
+-- 
+1.6.3
+
