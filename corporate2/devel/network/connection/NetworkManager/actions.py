@@ -9,7 +9,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import get
 
-WorkDir = "%s-0.8" % get.srcNAME()
+#WorkDir = "%s-0.8" % get.srcNAME()
 
 def setup():
     autotools.autoreconf("-fi")
