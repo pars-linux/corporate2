@@ -12,7 +12,6 @@ from pisi.actionsapi import get
 
 def setup():
     shelltools.echo("po/LINGUAS", "tr")
-    shelltools.system("./autogen.sh")
     autotools.configure("--disable-static")
 
 def build():
