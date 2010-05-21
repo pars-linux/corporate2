@@ -1,0 +1,15 @@
+--- server/dhcpd.c	2010-04-22 23:27:51.974528230 +0300
++++ server/dhcpd.c	2010-04-22 23:29:36.027779211 +0300
+@@ -681,6 +681,12 @@
+ 	if (lftest)
+ 		exit (0);
+ 
++#if defined (PARANOIA)
++   /* Set proper permissions... */
++   if (lchown (path_dhcpd_db, set_uid, set_gid))
++       log_fatal ("lchown(%s, %d, %d): %m", path_dhcpd_db, (int) set_uid, (int) set_gid);
++#endif /* PARANOIA */
++
+ 	/* Discover all the network interfaces and initialize them. */
+ 	discover_interfaces(DISCOVER_SERVER);
+ 
