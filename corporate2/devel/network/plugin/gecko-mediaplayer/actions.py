@@ -17,9 +17,9 @@ def setup():
     autotools.autoreconf("-vfi")
 
     autotools.configure("--disable-schemas-install \
-                         --with-xulrunner-sdk \
-                         --enable-new-libxul \
                          --with-plugin-dir=/usr/lib/nsbrowser/plugins")
+                         #--with-xulrunner-sdk \
+                         #--enable-new-libxul \
 
 def build():
     autotools.make()
