@@ -1,0 +1,92 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>openafs</Name>
+        <Homepage>http://www.openafs.org</Homepage>
+        <Packager>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Packager>
+        <License>IBM</License>
+        <License>BSD</License>
+        <License>APSL-2</License>
+        <License>sun-rpc</License>
+        <License>openafs-krb5-a</License>
+        <IsA>app:console</IsA>
+        <IsA>library</IsA>
+        <IsA>service</IsA>
+        <Summary>The OpenAFS distributed file system</Summary>
+        <Description>openafs contains the userspace utilities to manage distributed AFS file systems.</Description>
+        <Archive sha1sum="1bacf0d3ed6d3e48ffab3cf37115bd16c6dbbdda" type="tarbz2">http://dl.openafs.org/dl/1.5.72/openafs-1.5.72-src.tar.bz2</Archive>
+        <Archive sha1sum="6d679515cffee8179bba64928188d92cbc5152e8" type="tarbz2">http://dl.openafs.org/dl/1.5.72/openafs-1.5.72-doc.tar.bz2</Archive>
+        <BuildDependencies>
+            <Dependency>mit-kerberos</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">gentoo/001_all_compiler-settings.patch</Patch>
+            <Patch level="1">gentoo/002_all_pam-paths.patch</Patch>
+            <Patch level="1">gentoo/004_all_use-local-paths.patch</Patch>
+            <Patch level="1">fix-overlinking.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>openafs</Name>
+        <RuntimeDependencies>
+            <AnyDependency>
+                <Dependency>module-openafs</Dependency>
+                <Dependency>module-pae-openafs</Dependency>
+            </AnyDependency>
+            <Dependency>mit-kerberos</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/openafs</Path>
+            <Path fileType="config">/etc/conf.d</Path>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="library">/lib/security</Path>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="executable">/usr/sbin</Path>
+            <Path fileType="executable">/usr/libexec</Path>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="data">/usr/share/openafs/C</Path>
+            <Path fileType="data">/var/lib/openafs</Path>
+            <Path fileType="data">/var/cache/openafs</Path>
+            <Path fileType="data">/var/log/openafs</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="man">/usr/share/man</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/openafs/CellServDB">gentoo/configs/CellServDB</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/openafs/cacheinfo">gentoo/configs/cacheinfo</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/openafs/ThisCell">gentoo/configs/ThisCell</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/openafs-client">gentoo/configs/openafs-client</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/openafs-server">gentoo/configs/openafs-server</AdditionalFile>
+        </AdditionalFiles>
+        <Provides>
+            <COMAR script="openafs-server.py" name="openafs_server">System.Service</COMAR>
+            <COMAR script="openafs-client.py" name="openafs_client">System.Service</COMAR>
+        </Provides>
+    </Package>
+
+    <!--
+    <Package>
+        <Name>openafs-static-libs</Name>
+        <Summary>Statically linked OpenAFS libraries</Summary>
+        <Files>
+            <Path fileType="library">/usr/lib/*.a</Path>
+            <Path fileType="library">/usr/lib/afs</Path>
+        </Files>
+    </Package>
+    -->
+
+    <History>
+        <Update release="1">
+            <Date>2010-03-24</Date>
+            <Version>1.5.72</Version>
+            <Comment>First release.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
