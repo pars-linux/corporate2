@@ -10,12 +10,13 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 from pisi.actionsapi import libtools
 
+import os
+
 def setup():
-    libtools.libtoolize()
-    autotools.aclocal()
+    autotools.autoreconf("-fi")
     autotools.configure("--disable-static \
                          --disable-bsdtar \
-                         --bindir=/bin ")
+                         --disable-bsdcpio")
 def build():
     autotools.make()
 
@@ -27,5 +28,7 @@ def install():
 
     pisitools.remove("/usr/share/man/man5/tar.5")
     pisitools.remove("/usr/share/man/man5/cpio.5")
+
+    os.removedirs("%s/usr/bin" % get.installDIR())
 
     pisitools.dodoc("COPYING","NEWS","README")
