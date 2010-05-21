@@ -52,6 +52,9 @@ def install():
     # Copy symvers file for external module building like saa7134-alsa, cx2388-alsa, etc.
     pisitools.insinto("/lib/modules/%s/kernel/sound" % KDIR, "Module.symvers", "Module.symvers.alsa")
 
+    # Install headers
+    pisitools.insinto("/usr/include/sound/", "alsa-kernel/include/*.h")
+
     # Install alsa-info
     pisitools.insinto("/usr/bin", "utils/alsa-info.sh", "alsa-info")
 
