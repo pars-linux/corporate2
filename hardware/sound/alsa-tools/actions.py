@@ -17,7 +17,7 @@ console_tools = ["ac3dec", "hdsploader",
                  "us428control", "seq/sbiload"]
 
 gui_tools = ["envy24control", "rmedigicontrol", "hdspconf",
-             "hdspmixer", "echomixer"]
+             "hdspmixer", "echomixer", "hwmixvolume"]
 
 gui_qt3_tools = ["qlo10k1"]
 
