@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -35,6 +35,10 @@ def setup():
     # --enable-pp-build (default=no)
     # --enable-foomatic-drv-install (default=no) (respected by Fedora, enabled by Ubuntu)
     autotools.autoreconf("-if")
+
+    # Strip duplex constraints from hpcups
+    pisitools.dosed("prnt/drv/hpcups.drv.in", "(UIConstraints.* \*Duplex)", "//\\1")
+
     autotools.configure("--with-cupsbackenddir=/usr/lib/cups/backend \
                          --with-drvdir=/usr/share/cups/drv \
                          --with-hpppddir=/usr/share/cups/model/hplip \
@@ -52,6 +56,7 @@ def setup():
                          --enable-scan-build \
                          --enable-network-build \
                          --enable-hpcups-install \
+                         --enable-new-hpcups \
                          --enable-cups-drv-install \
                          --enable-foomatic-drv-install \
                          --disable-doc-build \
@@ -74,6 +79,18 @@ def install():
         if ppd.endswith(".gz"):
             mygunzip("%s/usr/share/cups/model/hplip/%s" % (get.installDIR(), ppd))
 
+    # Add Device ID for
+    # HP LaserJet 1200
+    # HP LaserJet 1320 series
+    # HP LaserJet 2300
+    # HP LaserJet P2015 Series
+    # HP LaserJet 4250
+    # HP Color LaserJet 2605dn
+    # HP Color LaserJet 3800
+    # HP Color LaserJet 2840
+
+    shelltools.system("patch -d %s/usr/share/cups/model/hplip -p3 < %s/%s/deviceids.patch" % (get.installDIR(), get.workDIR(), get.srcDIR()))
+
     # Create a compatibility symlink for foomatic-rip-hplip
     pisitools.dosym("/usr/lib/cups/filter/foomatic-rip", "/usr/lib/cups/filter/foomatic-rip-hplip")
 
@@ -83,6 +100,9 @@ def install():
 
     # Do not mess with sane, init, foomatic etc.
     pisitools.removeDir("/etc/sane.d")
+
+    # Create empty plugins directory
+    pisitools.dodir("/usr/share/hplip/prnt/plugins")
 
     # This notifies user through libnotify when the printer requires a firmware
     # Should port it to KNotify if possible, argh.
