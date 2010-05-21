@@ -1,0 +1,336 @@
+Index: openafs-1.5.72/src/afsmonitor/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/afsmonitor/Makefile.in
++++ openafs-1.5.72/src/afsmonitor/Makefile.in
+@@ -47,12 +47,12 @@ afsmon-win.o: afsmon-win.c ${INCLS}
+ afsmonitor.o: afsmonitor.c ${INCLS} AFS_component_version_number.c
+ 
+ afsmonitor: afsmonitor.o afsmon-win.o afsmon-output.o ${LIBS}
+-	${CC} ${LDFLAGS} -o afsmonitor afsmonitor.o afsmon-win.o \
+-		afsmon-output.o ${LIBS} ${EXTRA_LIBS}
++	${CC} ${LDFLAGS} afsmonitor.o afsmon-win.o \
++		afsmon-output.o ${LIBS} ${EXTRA_LIBS} -o afsmonitor
+ 
+ afsmon-parselog:  afsmon-parselog.o ${LIBS}
+-	${CC} ${CFLAGS} -o afsmon-parselog afsmon-parselog.c \
+-		${LIBS} ${EXTRA_LIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} afsmon-parselog.c \
++		${LIBS} ${EXTRA_LIBS} -o afsmon-parselog
+ 
+ install: afsmonitor
+ 	${INSTALL} -d ${DESTDIR}${bindir}
+Index: openafs-1.5.72/src/venus/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/venus/Makefile.in
++++ openafs-1.5.72/src/venus/Makefile.in
+@@ -59,28 +59,28 @@ cacheout.o: cacheout.c
+ up.o: up.c AFS_component_version_number.c
+ 
+ up: up.o
+-	${CC} ${CFLAGS} -o up up.o ${LIBS} ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} up.o ${LIBS} ${XLIBS} -o up
+ 
+ fs.o: fs.c ${INCLS} AFS_component_version_number.c
+ 
+ fs: fs.o $(LIBS)
+-	${CC} ${CFLAGS} -o fs fs.o ${TOP_LIBDIR}/libprot.a $(LIBS) ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} fs.o ${TOP_LIBDIR}/libprot.a $(LIBS) ${XLIBS} -o fs
+ 
+ afsio.o: afsio.c ${INCLS} AFS_component_version_number.c
+ 
+ afsio: afsio.o $(LIBS)
+-	${CC} ${CFLAGS} -o afsio afsio.o ${TOP_LIBDIR}/libprot.a ${TOP_LIBDIR}/libafsint.a $(LIBS) ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} afsio.o ${TOP_LIBDIR}/libprot.a ${TOP_LIBDIR}/libafsint.a $(LIBS) ${XLIBS} -o afsio
+ 
+ livesys.o: livesys.c ${INCLS} AFS_component_version_number.c
+ 
+ livesys: livesys.c $(LIBS)
+-	${CC} ${CFLAGS} -o livesys ${srcdir}/livesys.c $(LIBS) ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} ${srcdir}/livesys.c $(LIBS) ${XLIBS} -o livesys
+ 
+ twiddle: twiddle.c $(LIBS)
+-	${CC} ${CFLAGS} -o twiddle ${srcdir}/twiddle.c $(LIBS) ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} ${srcdir}/twiddle.c $(LIBS) ${XLIBS} -o twiddle
+ 
+ gcpags: gcpags.c $(LIBS)
+-	${CC} ${CFLAGS} -o gcpags ${srcdir}/gcpags.c $(LIBS) ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} ${srcdir}/gcpags.c $(LIBS) ${XLIBS} -o gcpags
+ 
+ whatfid.o: whatfid.c ${INCLS} AFS_component_version_number.c
+ 
+@@ -106,18 +106,18 @@ fstrace: fstrace.o
+ 		hp700_ux100 | hp800_ux100 | hp?00_ux10? | hp_ux10? | hp_ux11?) \
+ 			${CC} -I${TOP_OBJDIR}/src/config  -o fstrace fstrace.o ${TOP_LIBDIR}/libsys.a ${TOP_LIBDIR}/libcmd.a ${TOP_LIBDIR}/util.a ;; \
+ 		* ) \
+-			${CC} ${CFLAGS} -o fstrace fstrace.o ${TOP_LIBDIR}/libsys.a ${TOP_LIBDIR}/libcmd.a ${TOP_LIBDIR}/util.a ${XLIBS} ;; \
++			${CC} ${CFLAGS} ${LDFLAGS} fstrace.o ${TOP_LIBDIR}/libsys.a ${TOP_LIBDIR}/libcmd.a ${TOP_LIBDIR}/util.a ${XLIBS} -o fstrace ;; \
+ 	esac
+ 
+ cmdebug.o: cmdebug.c ${INCLS} AFS_component_version_number.c
+ 
+ cmdebug: cmdebug.o ${CMLIBS}
+-	$(CC) -o cmdebug cmdebug.o ${CFLAGS} ${CMLIBS} ${XLIBS}
++	$(CC) ${CFLAGS} ${LDFLAGS} cmdebug.o ${CMLIBS} ${XLIBS} -o cmdebug
+ 
+ dedebug.o: dedebug.c ${INCLS} AFS_component_version_number.c
+ 
+ dedebug: dedebug.o ${CMLIBS}
+-	$(CC) -o dedebug dedebug.o ${CFLAGS} ${CMLIBS} ${XLIBS}
++	$(CC) ${CFLAGS} ${LDFLAGS} dedebug.o ${CMLIBS} ${XLIBS} -o dedebug
+ 
+ 
+ 
+@@ -172,7 +172,7 @@ kdump: kdump.o
+ 		${CC} -o kdump kdump.o ${TOP_LIBDIR}/libcmd.a  ${TOP_LIBDIR}/util.a ${XLIBS} -ll -lmld;; \
+ 	ncrx86_* ) ${CC} -o kdump kdump.o ${TOP_LIBDIR}/libcmd.a  ${TOP_LIBDIR}/util.a -lelf ${XLIBS} ;; \
+ 	*bsd*) touch kdump ;; \
+-	* )     ${CC} -o kdump kdump.o ${TOP_LIBDIR}/libcmd.a  ${TOP_LIBDIR}/util.a ${XLIBS} ;; \
++	* )     ${CC} ${LDFLAGS} kdump.o ${TOP_LIBDIR}/libcmd.a  ${TOP_LIBDIR}/util.a ${XLIBS} -o kdump ;; \
+ 	esac
+ 
+ kdump64: 
+Index: openafs-1.5.72/src/vol/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/vol/Makefile.in
++++ openafs-1.5.72/src/vol/Makefile.in
+@@ -190,7 +190,7 @@ vlib.a:	${VLIBOBJS} AFS_component_versio
+ 
+ # new salvager:  remove references to /vice by linking with novice.o
+ salvager: vol-salvage.o physio.o vlib.a salvager.o ${LIBS}
+-	${CC} ${LDFLAGS} -o salvager vol-salvage.o physio.o salvager.o ${LIBS} ${XLIBS}
++	${CC} ${LDFLAGS} vol-salvage.o physio.o salvager.o ${LIBS} ${XLIBS} -o salvager
+ 
+ salvager.o: AFS_component_version_number.c
+ 
+@@ -219,20 +219,20 @@ gi: ${TOP_LIBDIR}/libsys.a 
+         esac
+ 
+ namei_map: ${TOP_LIBDIR}/libsys.a namei_map.o
+-	${CC} ${CFLAGS} -o namei_map namei_map.o ${TOP_LIBDIR}/libafsutil.a ${LIBS} ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} namei_map.o ${TOP_LIBDIR}/libafsutil.a ${LIBS} ${XLIBS} -o namei_map
+ 
+ volinfo: vol-info.o physio.o ihandle.o ${LIBS}
+-	${CC} ${CFLAGS} -o volinfo vol-info.o physio.o \
+-		ihandle.o ${LIBS} ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} vol-info.o physio.o \
++		ihandle.o ${LIBS} ${XLIBS} -o volinfo
+ 
+ fssync-debug: fssync-debug.o physio.o AFS_component_version_number.c ${LIBS}
+-	${CC} ${LDFLAGS} -o fssync-debug fssync-debug.o physio.o ${LIBS} ${XLIBS}
++	${CC} ${LDFLAGS} fssync-debug.o physio.o ${LIBS} ${XLIBS} -o fssync-debug
+ 
+ vol-bless: vol-bless.o physio.o ihandle.o ${LIBS}
+-	${CC} ${CFLAGS} -o vol-bless vol-bless.o physio.o ${LIBS} ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} vol-bless.o physio.o ${LIBS} ${XLIBS} -o vol-bless
+ 
+ xfs_size_check: xfs_size_check.c
+-	${CC} ${CFLAGS} -o xfs_size_check ${srcdir}/xfs_size_check.c
++	${CC} ${CFLAGS} ${LDFLAGS} ${srcdir}/xfs_size_check.c -o xfs_size_check
+ 
+ #
+ # Misc. targets
+Index: openafs-1.5.72/src/xstat/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/xstat/Makefile.in
++++ openafs-1.5.72/src/xstat/Makefile.in
+@@ -61,7 +61,7 @@ xstat_fs_callback.o: xstat_fs_callback.c
+ xstat_fs_test.o: xstat_fs_test.c ${FSINCLS} AFS_component_version_number.c
+ 
+ xstat_fs_test: xstat_fs_test.o libxstat_fs.a ${LIBS}
+-	${CC} ${CFLAGS} -o xstat_fs_test xstat_fs_test.o libxstat_fs.a ${LIBS} ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} xstat_fs_test.o libxstat_fs.a ${LIBS} ${XLIBS} -o xstat_fs_test
+ 
+ #
+ # Cache Manager data collection
+@@ -78,7 +78,7 @@ xstat_cm.o: xstat_cm.c ${CMINCLS}
+ xstat_cm_test.o: xstat_cm_test.c ${CMINCLS} AFS_component_version_number.c
+ 
+ xstat_cm_test: xstat_cm_test.o libxstat_cm.a ${LIBS}
+-	${CC} ${CFLAGS} -o xstat_cm_test xstat_cm_test.o libxstat_cm.a ${LIBS} ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} xstat_cm_test.o libxstat_cm.a ${LIBS} ${XLIBS} -o xstat_cm_test
+ 
+ #
+ # Installation targets
+Index: openafs-1.5.72/src/kauth/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/kauth/Makefile.in
++++ openafs-1.5.72/src/kauth/Makefile.in
+@@ -228,7 +228,7 @@ krb_udp: krb_udp.o libkauth.a $(KLIBS)
+ ka-forwarder.o: ka-forwarder.c
+ 
+ ka-forwarder: ka-forwarder.o
+-	${CC} -o $@ ${CFLAGS} ka-forwarder.o ${LIBS} ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} ka-forwarder.o ${LIBS} ${XLIBS} -o $@
+ 
+ rebuild.o: rebuild.c $(INCLS) AFS_component_version_number.o
+ 
+Index: openafs-1.5.72/src/volser/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/volser/Makefile.in
++++ openafs-1.5.72/src/volser/Makefile.in
+@@ -83,18 +83,18 @@ ${TOP_LIBDIR}/libvolser.a: libvolser.a
+ 	${INSTALL_DATA} $? $@
+ 
+ restorevol: restorevol.c
+-	${CC} ${CFLAGS} -o restorevol ${srcdir}/restorevol.c \
+-		${TOP_LIBDIR}/libcmd.a ${TOP_LIBDIR}/util.a ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} ${srcdir}/restorevol.c \
++		${TOP_LIBDIR}/libcmd.a ${TOP_LIBDIR}/util.a ${XLIBS} -o restorevol
+ 
+ vos: vos.o ${VSOBJS} libvolser.a ${LIBS}
+-	${CC} ${LDFLAGS} -o vos vos.o $(VSOBJS) libvolser.a ${LIBS} ${XLIBS}
++	${CC} ${LDFLAGS} vos.o $(VSOBJS) libvolser.a ${LIBS} ${XLIBS} -o vos
+ 
+ volserver: $(SOBJS) $(LIBS) ${TOP_LIBDIR}/libdir.a
+ 	${CC} ${DBUG} -o volserver $(SOBJS) ${TOP_LIBDIR}/libdir.a \
+ 		${LDFLAGS} $(LIBS) ${XLIBS}
+ 
+ voldump: vol-dump.o ${VOLDUMP_LIBS}
+-	${CC} ${CFLAGS} -o voldump vol-dump.o ${VOLDUMP_LIBS} ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} vol-dump.o ${VOLDUMP_LIBS} ${XLIBS} -o voldump
+ 
+ libvolser.a: volint.cs.o  $(VSOBJS) volint.ss.o AFS_component_version_number.o
+ 	-$(RM) -f $@
+Index: openafs-1.5.72/src/rxgen/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/rxgen/Makefile.in
++++ openafs-1.5.72/src/rxgen/Makefile.in
+@@ -23,7 +23,7 @@ ${TOP_INCDIR}/afs/rxgen_consts.h: rxgen_
+ 	${INSTALL_DATA} $? $@
+ 
+ rxgen: $(OBJS) AFS_component_version_number.c $(HDRS)
+-	$(CC) $(CFLAGS) $(OBJS) $(XLIBS) -o $@
++	$(CC) $(CFLAGS) ${LDFLAGS} $(OBJS) $(XLIBS) -o $@
+ 
+ rpc_main.o: rpc_main.c
+ 	$(CCOBJ) $(CFLAGS) -c $< -DPATH_CPP="\"$(PATH_CPP)\""
+Index: openafs-1.5.72/src/sys/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/sys/Makefile.in
++++ openafs-1.5.72/src/sys/Makefile.in
+@@ -150,15 +150,15 @@ Krmtsys.h: rmtsys.xg
+ 	${RXGEN} -A -k -h -o Krmtsys.h ${srcdir}/rmtsys.xg
+ 
+ rmtsysd: rmtsysd.o libsys.a
+-	${CC} ${CFLAGS} -o rmtsysd rmtsysd.o ${LIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} rmtsysd.o ${LIBS} -o rmtsysd
+ 
+ pagsh:	libsys.a AFS_component_version_number.o pagsh.c
+ 	${CC} ${CFLAGS} -c ${srcdir}/pagsh.c
+-	${CC} ${CFLAGS} -o pagsh pagsh.o ${LIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} pagsh.o ${LIBS} -o pagsh
+ 
+ pagsh.krb: libsys.a pagsh.c ${TOP_LIBDIR}/libauth.krb.a ${TOP_LIBDIR}/librxkad.a ${TOP_LIBDIR}/libdes.a
+-	${CC} ${CFLAGS} -o pagsh.krb.o -c ${srcdir}/pagsh.c -DAFS_KERBEROS_ENV
+-	${CC} ${CFLAGS} -o pagsh.krb pagsh.krb.o ${TOP_LIBDIR}/libauth.krb.a ${TOP_LIBDIR}/librxkad.a ${TOP_LIBDIR}/libdes.a ${LIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} -c ${srcdir}/pagsh.c -DAFS_KERBEROS_ENV -o pagsh.krb.o
++	${CC} ${CFLAGS} ${LDFLAGS} pagsh.krb.o ${TOP_LIBDIR}/libauth.krb.a ${TOP_LIBDIR}/librxkad.a ${TOP_LIBDIR}/libdes.a ${LIBS} -o pagsh.krb
+ 
+ #
+ # Test programs.
+Index: openafs-1.5.72/src/ubik/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/ubik/Makefile.in
++++ openafs-1.5.72/src/ubik/Makefile.in
+@@ -47,7 +47,7 @@ utst_client: utst_client.o utst_int.cs.o
+ 	${CC} ${CFLAGS} -o utst_client utst_client.o utst_int.cs.o utst_int.xdr.o libubik.a $(LIBS)
+ 
+ udebug: udebug.o libubik.a 
+-	${CC} ${CFLAGS} -o udebug udebug.o libubik.a $(LIBS)
++	${CC} ${CFLAGS} ${LDFLAGS} udebug.o libubik.a $(LIBS) -o udebug
+ 
+ ubik_int.cs.c: ubik_int.xg
+ 	${RXGEN} -A -x -C -o $@ ${srcdir}/ubik_int.xg
+Index: openafs-1.5.72/src/log/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/log/Makefile.in
++++ openafs-1.5.72/src/log/Makefile.in
+@@ -48,7 +48,7 @@ unlog: unlog.o ${LIBRARIES}
+ 	${CC} -o unlog unlog.o ${LIBRARIES} ${XLIBS} ${CFLAGS}
+ 
+ tokens: tokens.o ${LIBRARIES}
+-	${CC} -o tokens tokens.o ${LIBRARIES} ${XLIBS} ${CFLAGS}
++	${CC} ${CFLAGS} ${LDFLAGS} tokens.o ${LIBRARIES} ${XLIBS} -o tokens
+ 
+ tokens.krb: tokens.o ${KLIBRARIES}
+ 	${CC} -o tokens.krb tokens.o ${KLIBRARIES} ${XLIBS} ${CFLAGS}
+Index: openafs-1.5.72/src/ptserver/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/ptserver/Makefile.in
++++ openafs-1.5.72/src/ptserver/Makefile.in
+@@ -137,7 +137,7 @@ display.o: display.c ${INCLS}
+ db_verify.o: db_verify.c ${INCLS} AFS_component_version_number.c
+ 
+ db_verify: db_verify.o pterror.o display.o $(LIBS)
+-	$(CC) ${CFLAGS} -o db_verify db_verify.o display.o pterror.o $(LIBS) ${XLIBS}
++	$(CC) ${CFLAGS} ${LDFLAGS} db_verify.o display.o pterror.o $(LIBS) ${XLIBS} -o db_verify
+ 
+ ptclient: ptclient.o display.o libprot.a $(LIBS)
+ 	$(CC) ${CFLAGS} -o ptclient ptclient.o display.o libprot.a $(LIBS) ${XLIBS}
+@@ -181,7 +181,7 @@ testpt: testpt.o libprot.a ${TOP_LIBDIR}
+ testpt.o: testpt.c ${INCLS} ${TOP_INCDIR}/afs/cmd.h AFS_component_version_number.c
+ 
+ pt_util: pt_util.o ptutils.o ubik.o utils.o map.o libprot.a $(LIBS)
+-	$(CC) ${CFLAGS} -o pt_util pt_util.o ptutils.o ubik.o utils.o map.o libprot.a ${TOP_LIBDIR}/libcmd.a $(LIBS) ${XLIBS}
++	$(CC) ${CFLAGS} ${LDFLAGS} pt_util.o ptutils.o ubik.o utils.o map.o libprot.a ${TOP_LIBDIR}/libcmd.a $(LIBS) ${XLIBS} -o pt_util
+ 
+ ubik.o: ubik.c ${INCLS}
+ 
+Index: openafs-1.5.72/src/vlserver/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/vlserver/Makefile.in
++++ openafs-1.5.72/src/vlserver/Makefile.in
+@@ -65,12 +65,12 @@ ${TOP_INCDIR}/afs/cnvldb.h: cnvldb.h
+ 	${INSTALL_DATA} $? $@
+ 
+ vldb_check: vldb_check.o ${LIBS}
+-	$(CC) ${CFLAGS} -o vldb_check vldb_check.o ${LIBS} ${XLIBS} 
++	$(CC) ${CFLAGS} ${LDFLAGS} vldb_check.o ${LIBS} ${XLIBS} -o vldb_check
+ 
+ vldb_check.o: vldb_check.c AFS_component_version_number.o
+ 
+ cnvldb: cnvldb.o ${LIBS}
+-	$(CC) ${CFLAGS} -o cnvldb cnvldb.o ${LIBS} ${XLIBS}
++	$(CC) ${CFLAGS} ${LDFLAGS} cnvldb.o ${LIBS} ${XLIBS} -o cnvldb
+ 
+ cnvldb.o: cnvldb.c cnvldb.h AFS_component_version_number.o
+ 
+Index: openafs-1.5.72/src/rxdebug/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/rxdebug/Makefile.in
++++ openafs-1.5.72/src/rxdebug/Makefile.in
+@@ -29,7 +29,7 @@ rxdumptrace: rxdumptrace.o ${LIBS}
+ 	$(CC) $(CFLAGS) -o rxdumptrace rxdumptrace.o  ${LIBS} ${XLIBS}
+ 
+ rxdebug: rxdebug.o ${LIBS}
+-	${CC} ${CFLAGS} -o $@ $@.o ${LIBS} ${XLIBS}
++	${CC} ${CFLAGS} ${LDFLAGS} $@.o ${LIBS} ${XLIBS} -o $@
+ 
+ #
+ # Install targets
+Index: openafs-1.5.72/src/tptserver/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/tptserver/Makefile.in
++++ openafs-1.5.72/src/tptserver/Makefile.in
+@@ -177,7 +177,7 @@ db_verify.o: ${PTSERVER}/db_verify.c
+ 	${CCRULE}
+ 
+ db_verify: db_verify.o pterror.o display.o $(LIBS)
+-	$(CC) ${LDFLAGS} -o db_verify db_verify.o display.o pterror.o $(LIBS) ${MT_LIBS} ${XLIBS}
++	$(CC) ${LDFLAGS} db_verify.o display.o pterror.o $(LIBS) ${MT_LIBS} ${XLIBS} -o db_verify
+ 
+ ptclient: ptclient.o display.o ptuser.o pterror.o ptint.cs.o ptint.xdr.o AFS_component_version_number.o $(LIBS)
+ 	$(CC) ${LDFLAGS} -o ptclient ptclient.o display.o $(PTOBJS) $(LIBS) ${MT_LIBS} ${XLIBS}
+Index: openafs-1.5.72/src/tvlserver/Makefile.in
+===================================================================
+--- openafs-1.5.72.orig/src/tvlserver/Makefile.in
++++ openafs-1.5.72/src/tvlserver/Makefile.in
+@@ -114,7 +114,7 @@ vldb_check.o: ${VLSERVER}/vldb_check.c 
+ 	${CCRULE}
+ 
+ cnvldb: cnvldb.o ${LIBS} 
+-	$(CC) ${LDFLAGS} -o cnvldb cnvldb.o ${LIBS} ${MT_LIBS} ${XLIBS}
++	$(CC) ${CFLAGS} ${LDFLAGS} cnvldb.o ${LIBS} ${MT_LIBS} ${XLIBS} -o cnvldb
+ 
+ cnvldb.o: ${VLSERVER}/cnvldb.c
+ 	${CCRULE}

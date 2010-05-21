@@ -1,0 +1,26 @@
+--- a/src/pam/Makefile.in.old	2006-09-09 14:42:28.000000000 +0200
++++ b/src/pam/Makefile.in	2006-09-09 14:42:31.000000000 +0200
+@@ -25,7 +25,7 @@
+ 	  afs_pam_msg.o afs_message.o AFS_component_version_number.o
+    OBJS = $(SHOBJS) test_pam.o
+ INCLUDES=-I${TOP_OBJDIR}/src/config -I${TOP_INCDIR} 
+-CFLAGS =  ${PAM_DBG} ${PAM_OPTMZ} ${INCLUDES} ${PAM_CFLAGS}
++CFLAGS =  ${PAM_DBG} ${PAM_OPTMZ} ${INCLUDES} ${PAM_CFLAGS} -DBINDIR='"${bindir}"'
+ 
+ all: test_pam ${TOP_LIBDIR}/pam_afs.so.1 ${TOP_LIBDIR}/pam_afs.krb.so.1
+ 
+--- a/src/pam/afs_util.h.old	2006-09-09 14:42:46.000000000 +0200
++++ b/src/pam/afs_util.h	2006-09-09 14:43:18.000000000 +0200
+@@ -24,9 +24,9 @@
+ 		   const char *lifetime, const char *cell_name);
+ extern afs_int32 getPAG(void);
+ 
+-#define KLOG "/usr/afsws/bin/klog"
+-#define KLOGKRB "/usr/afsws/bin/klog.krb"
+-#define UNLOG "/usr/afsws/bin/unlog"
++#define KLOG BINDIR "/klog"
++#define KLOGKRB BINDIR "/klog.krb"
++#define UNLOG BINDIR "/unlog"
+ #define IGNORE_MAX 1000
+ 
+ #if	defined(AFS_HPUX_ENV)
