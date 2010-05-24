@@ -160,6 +160,9 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     # OpenVPN
     hav("addGroup", (161, "openvpn"))
 
+    # privoxy
+    hav("addGroup", (162, "privoxy"))
+
     # Comar' profile groups
     hav("addGroup", (200, "pnp"))
     hav("addGroup", (201, "removable"))
@@ -209,6 +212,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     hav("addUser", (155, "qemu", "QEMU", "/", "/sbin/nologin", "", ["qemu", "kvm"], [], []))
     hav("addUser", (160, "usbmuxd", "usbmuxd daemon", "/dev/null", "/bin/false", "", ["usbmuxd"], [], []))
     hav("addUser", (161, "openvpn", "OpenVPN", "/etc/openvpn", "/sbin/nologin", "", ["openvpn"], [], []))
+    hav("addUser", (162, "privoxy", "Privoxy", "/etc/privoxy", "/sbin/nologin", "", ["privoxy"], [], []))
 
     # Comar' profile users
     hav("addUser", (200, "pnp", "PnP", "/dev/null", "/bin/false", "", ["pnp"], [], []))

@@ -295,6 +295,8 @@ class Database:
                     user.password,
                     ":".join(user.pwrest)
                 ))
+            else:
+                lines.append("%s::13094:0:99999:7:::\n" % user.name)
         f = file(self.shadow_path, "w")
         f.writelines(lines)
         f.close()
