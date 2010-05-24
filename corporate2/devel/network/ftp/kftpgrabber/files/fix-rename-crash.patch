@@ -1,0 +1,50 @@
+diff -Naur kftpgrabber-0.8.1/kftpgrabber/src/widgets/browser/actions.cpp kftpgrabber-0.8.1-patched/kftpgrabber/src/widgets/browser/actions.cpp
+--- kftpgrabber-0.8.1/kftpgrabber/src/widgets/browser/actions.cpp	2007-04-28 14:35:23.000000000 +0300
++++ kftpgrabber-0.8.1-patched/kftpgrabber/src/widgets/browser/actions.cpp	2009-02-04 11:08:16.000000000 +0200
+@@ -332,26 +332,30 @@
+ void Actions::slotRename()
+ {
+   KFTPWidgets::Browser::DetailsView *view = m_view->getDetailsView();
+-  
++
+   // Rename the first file in the current selection
+-  view->rename(view->KListView::selectedItems().at(0), 0);
+-  
++  QListViewItem *selectedItem = view->KListView::selectedItems().at(0);
++  if (selectedItem == NULL)
++      return;
++
++  view->rename(selectedItem, 0);
++
+   // Enhanced rename: Don't highlight the file extension. (from Konqueror)
+   KLineEdit *le = view->renameLineEdit();
+-  
++
+   if (le) {
+-    const QString txt = le->text();
+-    QString pattern;
+-    KMimeType::diagnoseFileName(txt, pattern);
+-    
+-    if (!pattern.isEmpty() && pattern.at(0) == '*' && pattern.find('*',1) == -1)
+-      le->setSelection(0, txt.length()-pattern.stripWhiteSpace().length()+1);
+-    else {
+-      int lastDot = txt.findRev('.');
+-      
+-      if (lastDot > 0)
+-        le->setSelection(0, lastDot);
+-    }
++      const QString txt = le->text();
++      QString pattern;
++      KMimeType::diagnoseFileName(txt, pattern);
++
++      if (!pattern.isEmpty() && pattern.at(0) == '*' && pattern.find('*',1) == -1)
++          le->setSelection(0, txt.length()-pattern.stripWhiteSpace().length()+1);
++      else {
++          int lastDot = txt.findRev('.');
++
++          if (lastDot > 0)
++              le->setSelection(0, lastDot);
++      }
+   }
+ }
+ 

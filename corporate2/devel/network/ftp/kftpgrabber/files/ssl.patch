@@ -1,0 +1,14 @@
+--- kftpgrabber/src/engine/ssl.cpp	2007-04-28 14:35:22.000000000 +0300
++++ kftpgrabber/src/engine/ssl.cpp	2007-06-14 19:38:58.000000000 +0300
+@@ -143,11 +143,7 @@
+   
+   QByteArray qba, qbb = cert.copy();
+   KCodecs::base64Decode(qbb, qba);
+-#if OPENSSL_VERSION_NUMBER > 0x009070afL
+   const unsigned char *qbap = reinterpret_cast<unsigned char *>(qba.data());
+-#else
+-  unsigned char *qbap = reinterpret_cast<unsigned char *>(qba.data());
+-#endif
+   x = d2i_X509(NULL, &qbap, qba.size());
+   
+   if (!x || !k)
