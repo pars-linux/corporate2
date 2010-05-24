@@ -13,7 +13,7 @@ from pisi.actionsapi import get
 #WorkDir = "%s-0.3" % get.srcNAME()
 
 def setup():
-    shelltools.system("./autogen.sh")
+    #shelltools.system("./autogen.sh")
     autotools.configure("--disable-static \
                          --enable-more-warnings \
                          --with-polkit=no")
