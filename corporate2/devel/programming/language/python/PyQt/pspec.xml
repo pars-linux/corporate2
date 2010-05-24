@@ -5,8 +5,8 @@
         <Name>PyQt</Name>
         <Homepage>http://www.riverbankcomputing.co.uk/software/pyqt</Homepage>
         <Packager>
-            <Name>Gökmen Göksel</Name>
-            <Email>gokmen@pardus.org.tr</Email>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
         </Packager>
         <License>GPLv2</License>
         <License>GPLv3</License>
@@ -18,7 +18,6 @@
             <Dependency versionFrom="4.6.2">qt</Dependency>
             <Dependency versionFrom="4.10.2">sip</Dependency>
             <Dependency versionFrom="4.6.2">qt-webkit</Dependency>
-            <Dependency versionFrom="4.3.80_20100330">phonon</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch>add_gettext_support.patch</Patch>
@@ -30,10 +29,6 @@
         <RuntimeDependencies>
             <Dependency versionFrom="4.6.2">qt</Dependency>
             <Dependency versionFrom="4.10.2">sip</Dependency>
-
-            <!-- we also have phonon binding here -->
-            <Dependency versionFrom="4.6.2">qt-webkit</Dependency>
-            <Dependency versionFrom="4.3.80_20100330">phonon</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
@@ -42,6 +37,40 @@
             <Path fileType="data">/usr/share/sip</Path>
             <Path fileType="data">/usr/qt/4/qsci</Path>
             <Path fileType="library">/usr/qt/4/plugins/designer</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>PyQt-webkit</Name>
+        <RuntimeDependencies>
+            <Dependency>PyQt</Dependency>
+            <Dependency versionFrom="4.6.2">qt-webkit</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <!-- PyQt-webkit is a seperate package -->
+            <Package releaseTo="42">PyQt</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="library">/usr/lib/python*/site-packages/PyQt4/*WebKit*</Path>
+            <Path fileType="library">/usr/lib/python*/site-packages/PyQt4/uic/widget-plugins/*webkit*</Path>
+            <Path fileType="data">/usr/share/sip/PyQt4/*WebKit*</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>PyQt-phonon</Name>
+        <RuntimeDependencies>
+            <Dependency>PyQt</Dependency>
+            <Dependency>phonon</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <!-- PyQt-webkit is a seperate package -->
+            <Package releaseTo="42">PyQt</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="library">/usr/lib/python*/site-packages/PyQt4/*phonon*</Path>
+            <Path fileType="library">/usr/lib/python*/site-packages/PyQt4/uic/widget-plugins/*phonon*</Path>
+            <Path fileType="data">/usr/share/sip/PyQt4/*phonon*</Path>
         </Files>
     </Package>
 
@@ -57,6 +86,13 @@
     </Package>
 
     <History>
+        <Update release="43">
+            <Date>2010-05-24</Date>
+            <Version>4.7.3</Version>
+            <Comment>Make QtWebKit and phonon python bindings seperate packages.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
         <Update release="42">
             <Date>2010-05-24</Date>
             <Version>4.7.3</Version>
