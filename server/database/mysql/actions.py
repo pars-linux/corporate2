@@ -37,10 +37,10 @@ def setup():
                          --with-unix-socket-path=/var/run/mysqld/mysqld.sock \
                          --without-docs \
                          --enable-shared \
-                         --enable-readline \
+                         --without-readline \
                          --disable-static \
                          --without-libwrap \
-                         --with-ssl \
+                         --with-ssl=/usr \
                          --without-debug \
                          --with-charset=utf8 \
                          --with-collation=utf8_general_ci \
