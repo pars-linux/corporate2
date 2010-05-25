@@ -1,0 +1,133 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>ejabberd</Name>
+        <Homepage>http://ejabberd.jabber.ru</Homepage>
+        <Packager>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <IsA>service</IsA>
+        <Summary>Erlang Jabber Daemon</Summary>
+        <Description>ejabberd is a Free and Open Source distributed fault-tolerant Jabber/XMPP server. It is mostly written in Erlang, and runs on many platforms (tested on Linux, FreeBSD, NetBSD, Solaris, Mac OS X and Windows NT/2000/XP).</Description>
+        <Archive sha1sum="e5b8c4b742fdcc439da9458f94f530604abdfdd5" type="targz">http://www.process-one.net/downloads/ejabberd/2.0.5/ejabberd-2.0.5.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>erlang</Dependency>
+            <Dependency>hevea</Dependency>
+        </BuildDependencies>
+    </Source>
+
+    <Package>
+        <Name>ejabberd</Name>
+        <RuntimeDependencies>
+            <Dependency>erlang</Dependency>
+            <Dependency releaseFrom="17">comar-api</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/ejabberd</Path>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="executable">/usr/sbin</Path>
+            <Path fileType="data">/var</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile target="/etc/ejabberd/inetrc">inetrc</AdditionalFile>
+            <AdditionalFile permission="0644" target="/etc/ejabberd/ssl.cnf">ssl.cnf</AdditionalFile>
+            <AdditionalFile permission="0744" target="/etc/ejabberd/self-cert.sh">self-cert.sh</AdditionalFile>
+            <AdditionalFile permission="0755" target="/usr/sbin/ejabberdctl">ejabberdctl</AdditionalFile>
+        </AdditionalFiles>
+        <Provides>
+            <COMAR script="service.py">System.Service</COMAR>
+            <COMAR script="package.py">System.Package</COMAR>
+        </Provides>
+    </Package>
+
+    <History>
+        <Update release="12">
+            <Date>2009-08-10</Date>
+            <Version>2.0.5</Version>
+            <Comment>Add support to pam authentication method</Comment>
+            <Name>Taner Taş</Name>
+            <Email>taner@pardus.org.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2009-06-02</Date>
+            <Version>2.0.5</Version>
+            <Comment>Clean-up service script, dns resolv fix in ejabberdctl script</Comment>
+            <Name>Taner Taş</Name>
+            <Email>taner@pardus.org.tr</Email>
+        </Update>
+        <Update release="10">
+            <Date>2009-05-26</Date>
+            <Version>2.0.5</Version>
+            <Comment>Many fixes in service script, daemonization and control mechanism</Comment>
+            <Name>Taner Taş</Name>
+            <Email>taner@pardus.org.tr</Email>
+        </Update>
+        <Update release="9" type="security">
+            <Date>2009-04-16</Date>
+            <Version>2.0.5</Version>
+            <Comment>Bugfix release</Comment>
+            <Name>Taner Taş</Name>
+            <Email>taner@pardus.org.tr</Email>
+        </Update>
+        <Update release="8" type="security">
+            <Date>2009-03-18</Date>
+            <Version>2.0.4</Version>
+            <Comment>Bugfix release (fix CVE-2009-0934)</Comment>
+            <Name>Taner Taş</Name>
+            <Email>taner@pardus.org.tr</Email>
+        </Update>
+        <Update release="7">
+            <Date>2008-09-15</Date>
+            <Version>2.0.2</Version>
+            <Comment>Bug fix release</Comment>
+            <Name>Faik Uygur</Name>
+            <Email>faik@pardus.org.tr</Email>
+        </Update>
+        <Update release="6">
+            <Date>2008-07-12</Date>
+            <Version>2.0.1</Version>
+            <Comment>Stable update, fix service script.</Comment>
+            <Name>Ekin Meroğlu</Name>
+            <Email>ekin@pardus.org.tr</Email>
+        </Update>
+        <Update release="5">
+            <Date>2008-02-27</Date>
+            <Version>2.0.0</Version>
+            <Comment>Stable update</Comment>
+            <Name>Alper Somuncu</Name>
+            <Email>alpersomuncu@gmail.com</Email>
+        </Update>
+        <Update release="4">
+            <Date>2008-01-22</Date>
+            <Version>1.1.4</Version>
+            <Comment>Version bump.</Comment>
+            <Name>Alper Somuncu</Name>
+            <Email>alpersomuncu@gmail.com</Email>
+        </Update>
+        <Update release="3">
+            <Date>2007-05-23</Date>
+            <Version>1.1.3</Version>
+            <Comment>Updated Service script.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2007-05-10</Date>
+            <Version>1.1.3</Version>
+            <Comment>use hostname with -sname.</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2007-05-08</Date>
+            <Version>1.1.3</Version>
+            <Comment>First release.</Comment>
+            <Name>Barış Metin</Name>
+            <Email>baris@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
