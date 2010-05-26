@@ -12,31 +12,17 @@
         <IsA>app:gui</IsA>
         <Summary>A processor emulator</Summary>
         <Description>QEMU emulates a full system (for example a PC), including a processor and various peripherials. It can be used to launch different operating systems without rebooting the PC or to debug system code. In user-mode emulation mode, QEMU can launch Linux processes compiled for one CPU on another CPU.</Description>
-        <Archive sha1sum="236de8714554d98beb97f3fb34985f709bf7d3be" type="targz">http://download.savannah.gnu.org/releases/qemu/qemu-0.10.5.tar.gz</Archive>
+        <Archive sha1sum="1cc3200bf496c836f7c4256c1d12143dab9b82dc" type="targz">http://download.savannah.gnu.org/releases/qemu/qemu-0.12.4.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>alsa-lib</Dependency>
             <Dependency>libsdl</Dependency>
             <Dependency>gnutls</Dependency>
             <Dependency>pulseaudio</Dependency>
             <Dependency>bluez</Dependency>
-            <Dependency>kernel-headers</Dependency>
         </BuildDependencies>
         <Patches>
             <!-- sed -i '/$(DESTDIR)$(docdir)/d' Makefile -->
             <Patch level="1">nodocinstall.patch</Patch>
-            <!-- sed -i 's/^\(C\|OP_C\|HELPER_C\)FLAGS=/\1FLAGS+=/' Makefile Makefile.target -->
-            <Patch level="1">flags.patch</Patch>
-            <!-- sed -i 's/$(INSTALL) -m 755 -s/$(INSTALL) -m 755/' Makefile Makefile.target */Makefile -->
-            <Patch level="1">nostrip.patch</Patch>
-
-            <Patch>nopl-fix.patch</Patch>
-            <Patch level="1">qemu-kernel-option-vga.patch</Patch>
-            <!-- security issue: #12222 -->
-            <Patch level="1">CVE-2009-3616-vnc-segfault.patch</Patch>
-            <!-- security issue: #12221 -->
-            <Patch level="1">CVE-2010-0297-usb-linux-overflow.patch</Patch>
-            <!-- CVE-2010-0741 -->
-            <Patch level="1">qemu-kvm.git-184bd0484533b725194fa517ddc271ffd74da7c9.patch</Patch>
         </Patches>
     </Source>
 
@@ -62,6 +48,18 @@
    </Package>
 
    <History>
+       <Update release="19">
+            <Date>2010-05-26</Date>
+            <Version>0.12.4</Version>
+            <Comment>
+                Version bump to catch new kvm environment
+                Qcow2 error handling and optimization fixes
+                Fix network stall under heavy load
+                Lots of bugfix
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+       </Update>
        <Update release="18" type="security">
             <Date>2010-04-13</Date>
             <Version>0.10.5</Version>
