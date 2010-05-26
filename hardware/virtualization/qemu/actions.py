@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2006-2009 TUBITAK/UEKAE
+# Copyright 2006-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -26,35 +26,60 @@ NoStrip=["/usr/share/qemu"]
 # for target in soft_targets:
 #     target_list.append("%s-softmmu" % target)
 
-soundDrivers = "alsa pa sdl oss"
+
 cflags = get.CFLAGS().replace("-fpie", "").replace("-fstack-protector", "")
+#extraldflags="-Wl,--build-id"
+#buildldflags="VL_LDFLAGS=-Wl,--build-id"
+extraldflags=""
+buildldflags=""
+
+soundDrivers = "pa sdl alsa oss"
+
+targetlist="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu m68k-softmmu \
+            mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu ppc-softmmu \
+            ppcemb-softmmu ppc64-softmmu sh4-softmmu sh4eb-softmmu sparc-softmmu \
+            i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
+            armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
+            mipsel-linux-user ppc-linux-user ppc64-linux-user ppc64abi32-linux-user \
+            sh4-linux-user sh4eb-linux-user sparc-linux-user sparc64-linux-user \
+            sparc32plus-linux-user"
+
 
 def setup():
     # disable fdt until dtc is in repo
     # pisitools.dosed("configure", 'fdt="yes"', 'fdt="no"')
 
     shelltools.export("CFLAGS", cflags)
+    shelltools.export("LC_ALL", "en_US.UTF-8")
     autotools.rawConfigure('--prefix=/usr \
                             --disable-werror \
+                            --disable-strip \
+                            --disable-kvm \
+                            --disable-bsd-user \
+                            --disable-darwin-user \
+                            --target-list="%s" \
                             --audio-drv-list="%s" \
                             --cc="%s" \
                             --host-cc="%s" \
-                            --enable-system \
-                            --enable-linux-user \
-                            --disable-bsd-user \
-                            --disable-darwin-user' % (soundDrivers, get.CC(), get.CC()))
+                            --extra-ldflags="%s" \
+                            --extra-cflags="%s" '% (targetlist, soundDrivers, get.CC(), get.CC(), extraldflags, cflags))
+
+
+                            #--enable-system \
+                            #--enable-linux-user \
+
                             # --audio-card-list="ac97 es1370 sb16 cs4231a adlib gus" \
                             # --target-list="%s"' % " ".join(target_list))
                             # --disable-bluez \
                             # --kerneldir="/lib/modules/%s/build" \
 
 def build():
-    autotools.make()
+    shelltools.export("LC_ALL", "en_US.UTF-8")
+    autotools.make("V=1 %s" % buildldflags)
 
 def install():
     autotools.rawInstall('DESTDIR="%s"' % get.installDIR())
 
-    # for i in ["pc-bios/README", "qemu-doc.html", "qemu-tech.html"]:
-    for i in ["pc-bios/README", "LICENSE", "TODO", "README"]:
+    for i in ["pc-bios/README", "LICENSE", "TODO", "README", "qemu-doc.html", "qemu-tech.html"]:
         pisitools.dodoc(i)
 
