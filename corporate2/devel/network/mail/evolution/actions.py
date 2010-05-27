@@ -14,7 +14,7 @@ def setup():
     pisitools.dosed("mail/default/*/Inbox", "^.*$", "")
     autotools.autoreconf("-fi")
     autotools.configure("--enable-plugins=all \
-                         --enable-nm=no \
+                         --enable-nm=yes \
                          --enable-mono=no \
                          --enable-python=no \
                          --enable-nss=yes \
