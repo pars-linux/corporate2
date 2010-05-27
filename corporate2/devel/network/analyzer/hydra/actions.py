@@ -12,7 +12,7 @@ from pisi.actionsapi import get
 WorkDir = "hydra-%s-src" % get.srcVERSION()
 
 moduleconfig = {"XDEFINES": "-DLIBOPENSSL -DLIBSSH",
-                "XLIBS": "-lcrypto -lssl -lssh",
+                "XLIBS": "-lcrypto -lssl -lssh -lm",
                 "XLIBPATHS": "",
                 "XIPATHS": "",
                 "CC": get.CC(),
