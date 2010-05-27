@@ -6,8 +6,9 @@
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from pisi.actionsapi import pythonmodules
+from pisi.actionsapi import get
 
-WorkDir = 'pds-1.0'
+WorkDir = 'pds-%s' % get.srcVERSION()
 
 def build():
     pythonmodules.compile()
