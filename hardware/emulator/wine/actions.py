@@ -7,6 +7,8 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
+WorkDir = "wine-%s" % get.srcVERSION().replace("_", "-")
+
 def setup():
     autotools.autoreconf("-vif")
     autotools.configure("--without-capi \
