@@ -1,0 +1,31 @@
+diff -up numactl-2.0.3-rc3/libnuma.c.orig numactl-2.0.3-rc3/libnuma.c
+--- numactl-2.0.3-rc3/libnuma.c.orig	2009-06-17 13:13:28.000000000 -0400
++++ numactl-2.0.3-rc3/libnuma.c	2009-06-17 13:14:10.000000000 -0400
+@@ -1209,9 +1209,10 @@ numa_node_to_cpus_v1(int node, unsigned 
+ 	sprintf(fn, "/sys/devices/system/node/node%d/cpumap", node);
+ 	f = fopen(fn, "r");
+ 	if (!f || getdelim(&line, &len, '\n', f) < 1) {
+-		numa_warn(W_nosysfs2,
+-		   "/sys not mounted or invalid. Assuming one node: %s",
+-			  strerror(errno));
++		if (f)
++			numa_warn(W_nosysfs2,
++			   "/sys not mounted or invalid. Assuming one node: %s",
++				  strerror(errno));
+ 		bitmask.maskp = (unsigned long *)mask;
+ 		bitmask.size  = buflen_needed * 8;
+ 		numa_bitmask_setall(&bitmask);
+@@ -1287,9 +1288,10 @@ numa_node_to_cpus_v2(int node, struct bi
+ 	sprintf(fn, "/sys/devices/system/node/node%d/cpumap", node); 
+ 	f = fopen(fn, "r"); 
+ 	if (!f || getdelim(&line, &len, '\n', f) < 1) { 
+-		numa_warn(W_nosysfs2,
+-		   "/sys not mounted or invalid. Assuming one node: %s",
+-			  strerror(errno)); 
++		if (f)
++			numa_warn(W_nosysfs2,
++			   "/sys not mounted or invalid. Assuming one node: %s",
++				  strerror(errno)); 
+ 		numa_bitmask_setall(mask);
+ 		err = -1;
+ 	} 

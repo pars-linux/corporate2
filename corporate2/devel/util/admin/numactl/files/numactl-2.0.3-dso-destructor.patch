@@ -1,0 +1,35 @@
+diff -up numactl-2.0.3/libnuma.c.orig numactl-2.0.3/libnuma.c
+--- numactl-2.0.3/libnuma.c.orig	2009-08-10 09:59:24.000000000 -0400
++++ numactl-2.0.3/libnuma.c	2009-08-10 10:00:40.000000000 -0400
+@@ -95,6 +95,19 @@ numa_init(void)
+ 	memset(&numa_no_nodes, 0, sizeof(numa_no_nodes));
+ }
+ 
++void
++numa_fini(void)
++{
++	if (numa_all_cpus_ptr)
++		numa_bitmask_free(numa_all_cpus_ptr);
++	if (numa_all_nodes_ptr)
++		numa_bitmask_free(numa_all_nodes_ptr);
++	if (numa_no_nodes_ptr)
++		numa_bitmask_free(numa_no_nodes_ptr);
++	if (nodes_allowed_list)
++		free(nodes_allowed_list);
++}
++
+ /*
+  * The following bitmask declarations, bitmask_*() routines, and associated
+  * _setbit() and _getbit() routines are:
+diff -up numactl-2.0.3/Makefile.orig numactl-2.0.3/Makefile
+--- numactl-2.0.3/Makefile.orig	2009-06-10 08:30:03.000000000 -0400
++++ numactl-2.0.3/Makefile	2009-08-10 10:00:00.000000000 -0400
+@@ -81,7 +81,7 @@ stream_main.o: stream_main.c
+ libnuma.so.1: versions.ldscript
+ 
+ libnuma.so.1: libnuma.o syscall.o distance.o
+-	${CC} ${LDFLAGS} -shared -Wl,-soname=libnuma.so.1 -Wl,--version-script,versions.ldscript -Wl,-init,numa_init -o libnuma.so.1 $(filter-out versions.ldscript,$^)
++	${CC} ${LDFLAGS} -shared -Wl,-soname=libnuma.so.1 -Wl,--version-script,versions.ldscript -Wl,-init,numa_init -Wl,-fini,numa_fini -o libnuma.so.1 $(filter-out versions.ldscript,$^)
+ 
+ libnuma.so: libnuma.so.1
+ 	ln -sf libnuma.so.1 libnuma.so
