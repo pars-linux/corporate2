@@ -7,18 +7,30 @@
 
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 WorkDir="x264-snapshot-%s-2245" % get.srcVERSION().split("_")[1]
-MAJOR = "0"
-MINOR = "84"
+verMAJOR = "0"
+verMINOR = "0"
+
+
+def getMinorVersion():
+    f = file("x264.h").read()
+    for i in f.split("\n"):
+        if i.startswith("#define X264_BUILD"):
+            return i.split()[-1]
+
+    return "0"
 
 def setup():
+    shelltools.export("CFLAGS", "%s -O3" % get.CFLAGS())
     autotools.rawConfigure("--prefix=/usr \
-                            --enable-pthread \
-                            --enable-shared \
                             --enable-pic \
-                            --enable-mp4-output")
+                            --disable-avs-input \
+                            --disable-ffms-input \
+                            --disable-lavf-input \
+                            --enable-shared")
 
 def build():
     autotools.make()
@@ -26,7 +38,8 @@ def build():
 def install():
     autotools.install()
 
-    pisitools.dosym("libx264.so.%s.%s" % (MAJOR, MINOR), "/usr/lib/libx264.so.%s" % MAJOR)
+    verMINOR = getMinorVersion()
+    pisitools.dosym("libx264.so.%s.%s" % (verMAJOR, verMINOR), "/usr/lib/libx264.so.%s" % verMAJOR)
 
     # No static libs
     pisitools.remove("/usr/lib/libx264.a")
