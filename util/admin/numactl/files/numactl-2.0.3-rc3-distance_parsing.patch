@@ -1,0 +1,38 @@
+diff -up numactl-2.0.3-rc3/distance.c.orig numactl-2.0.3-rc3/distance.c
+--- numactl-2.0.3-rc3/distance.c.orig	2009-05-08 10:10:06.000000000 -0400
++++ numactl-2.0.3-rc3/distance.c	2009-05-08 10:13:01.000000000 -0400
+@@ -50,6 +50,7 @@ static int read_distance_table(void) 
+ 	int numnodes = 0; 
+ 	int *table = NULL; 
+ 	int err = -1;
++	int found_nodes = 0;
+ 	
+ 	for (nd = 0;; nd++) { 
+ 		char fn[100]; 
+@@ -57,7 +58,7 @@ static int read_distance_table(void) 
+ 		sprintf(fn, "/sys/devices/system/node/node%d/distance", nd);
+ 		dfh = fopen(fn, "r"); 
+ 		if (!dfh) { 
+-			if (errno == ENOENT && nd > 0)
++			if (errno == ENOENT)
+ 				err = 0;
+ 			if (!err && nd<numa_num_configured_nodes())
+ 				continue;
+@@ -79,14 +80,15 @@ static int read_distance_table(void) 
+ 		} 
+ 
+ 		parse_numbers(line, table + nd * numnodes, numnodes);
++		found_nodes++;
+ 	}
+ 	free(line); 
+-	if (err)  { 
++	if (!found_nodes)  { 
+ 		numa_warn(W_distance,
+ 			  "Cannot parse distance information in sysfs: %s",
+ 			  strerror(errno));
+ 		free(table); 
+-		return err;
++		return -1;
+ 	}
+ 	/* Update the global table pointer.  Race window here with
+ 	   other threads, but in the worst case we leak one distance
