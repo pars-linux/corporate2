@@ -1,38 +1,23 @@
-commit 8e76000abce070da5f1c902a6290f4ccaa3eccc8
+commit 80ae27a4546b90faaa29bd3e77f5fa91a89b1b16
 Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Fri Sep 18 15:51:08 2009 +0000
+Date:   Tue Apr 13 04:54:11 2010 +0200
 
-    Add C++ guards.
+    Add OpenGL extensions (v3) and generic implementation with TFP and FBO.
 
-commit bf1ae22ef324fbb347f5369e1ba307e847553fe8
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Fri Sep 18 15:49:55 2009 +0000
-
-    Fix check for GL extensions.
-
-commit df0953a951d8a2e5e4b0a28a95ae0f1ac735726e
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Tue Sep 8 12:25:14 2009 +0000
-
-    Add generic VA/GLX implementation with TFP and FBO.
-
-commit f640b1cf9eab4e5d478239b608ed0d8b68f6c5f6
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Tue Sep 8 12:15:35 2009 +0000
-
-    Move GLX VTable to a new file.
-
-commit 70d9cb6d1aa2fc2dde6646f3b692433e0d93d431
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Fri Aug 28 11:15:51 2009 +0000
-
-    Add OpenGL extensions (v3).
-
-diff --git a/src/glx/Makefile.am b/src/glx/Makefile.am
+diff --git a/Makefile.am b/Makefile.am
+index 459660b..e75a2db 100644
+diff --git a/configure.ac b/configure.ac
+index 95cf992..86366e9 100644
+diff --git a/libva-glx.pc.in b/libva-glx.pc.in
 new file mode 100644
-index 0000000..7783d8c
+index 0000000..2019915
+diff --git a/va/Makefile.am b/va/Makefile.am
+index 99f6bbf..ebff3d5 100644
+diff --git a/va/glx/Makefile.am b/va/glx/Makefile.am
+new file mode 100644
+index 0000000..337f34e
 --- /dev/null
-+++ b/src/glx/Makefile.am
++++ b/va/glx/Makefile.am
 @@ -0,0 +1,41 @@
 +# Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
 +#
@@ -56,7 +41,7 @@ index 0000000..7783d8c
 +# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 +# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 +
-+AM_CFLAGS = -DLINUX -DIN_LIBVA -I$(top_srcdir)/src -I$(top_srcdir)/src/x11
++AM_CFLAGS = -DLINUX -I$(top_srcdir)/va -I$(top_srcdir)/va/x11
 +
 +source_c = \
 +	va_glx.c		\
@@ -75,12 +60,12 @@ index 0000000..7783d8c
 +libva_glxinclude_HEADERS = $(source_h)
 +libva_glx_la_SOURCES	 = $(source_c)
 +noinst_HEADERS		 = $(source_h_priv)
-diff --git a/src/glx/va_backend_glx.h b/src/glx/va_backend_glx.h
+diff --git a/va/glx/va_backend_glx.h b/va/glx/va_backend_glx.h
 new file mode 100644
-index 0000000..3885d30
+index 0000000..d110485
 --- /dev/null
-+++ b/src/glx/va_backend_glx.h
-@@ -0,0 +1,87 @@
++++ b/va/glx/va_backend_glx.h
+@@ -0,0 +1,54 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
 + *
@@ -125,39 +110,6 @@ index 0000000..3885d30
 +        void                   *gl_surface
 +    );
 +
-+    /* Optional: associate a VA surface to a VA/GLX surface */
-+    VAStatus (*vaAssociateSurfaceGLX)(
-+        struct VADriverContext *ctx,
-+        void                   *gl_surface,
-+        VASurfaceID             surface,
-+        unsigned int            flags
-+    );
-+
-+    /* Optional: deassociate a VA surface from a VA/GLX surface */
-+    VAStatus (*vaDeassociateSurfaceGLX)(
-+        struct VADriverContext *ctx,
-+        void                   *gl_surface
-+    );
-+
-+    /* Optional: synchronize a VA/GLX surface */
-+    VAStatus (*vaSyncSurfaceGLX)(
-+        struct VADriverContext *ctx,
-+        void                   *gl_surface
-+    );
-+
-+    /* Optional: prepare VA/GLX surface for rendering */
-+    VAStatus (*vaBeginRenderSurfaceGLX)(
-+        struct VADriverContext *ctx,
-+        void                   *gl_surface
-+    );
-+
-+    /* Optional: notify the server that the VA/GLX surface is no
-+       longer used for rendering */
-+    VAStatus (*vaEndRenderSurfaceGLX)(
-+        struct VADriverContext *ctx,
-+        void                   *gl_surface
-+    );
-+
 +    /* Optional: copy a VA surface to a VA/GLX surface */
 +    VAStatus (*vaCopySurfaceGLX)(
 +        struct VADriverContext *ctx,
@@ -168,12 +120,12 @@ index 0000000..3885d30
 +};
 +
 +#endif /* VA_BACKEND_GLX_H */
-diff --git a/src/glx/va_glx.c b/src/glx/va_glx.c
+diff --git a/va/glx/va_glx.c b/va/glx/va_glx.c
 new file mode 100644
-index 0000000..f6ec2c3
+index 0000000..27145ce
 --- /dev/null
-+++ b/src/glx/va_glx.c
-@@ -0,0 +1,295 @@
++++ b/va/glx/va_glx.c
+@@ -0,0 +1,174 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
 + *
@@ -198,6 +150,7 @@ index 0000000..f6ec2c3
 + * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 + */
 +
++#include <stdlib.h>
 +#include "va_glx_private.h"
 +#include "va_glx_impl.h"
 +
@@ -212,12 +165,6 @@ index 0000000..f6ec2c3
 +        VAStatus status = va_glx_init_context(ctx);             \
 +        if (status != VA_STATUS_SUCCESS)                        \
 +            return status;                                      \
-+    } while (0)
-+
-+#define INIT_SURFACE(surface, surface_arg) do {                 \
-+        surface = (VASurfaceGLXP)(surface_arg);                 \
-+        if (!vaSurfaceIsValid(surface))                         \
-+            return VA_STATUS_ERROR_INVALID_SURFACE;             \
 +    } while (0)
 +
 +#define INVOKE(ctx, func, args) do {                            \
@@ -236,12 +183,6 @@ index 0000000..f6ec2c3
 +    return (pDisplayContext &&
 +            pDisplayContext->vaIsValid &&
 +            pDisplayContext->vaIsValid(pDisplayContext));
-+}
-+
-+// Check VASurfaceGLX is valid
-+static inline int vaSurfaceIsValid(VASurfaceGLXP pSurfaceGLX)
-+{
-+    return pSurfaceGLX && pSurfaceGLX->magic == VA_SURFACE_GLX_MAGIC;
 +}
 +
 +// Destroy VA/GLX display context
@@ -263,10 +204,11 @@ index 0000000..f6ec2c3
 +
 +    pDisplayContextGLX = pDisplayContext->opaque;
 +    if (pDisplayContextGLX) {
-+        if (pDisplayContextGLX->vaDestroy)
-+            pDisplayContextGLX->vaDestroy(pDisplayContext);
++        vaDestroyFunc vaDestroy = pDisplayContextGLX->vaDestroy;
 +        free(pDisplayContextGLX);
 +        pDisplayContext->opaque = NULL;
++        if (vaDestroy)
++            vaDestroy(pDisplayContext);
 +    }
 +}
 +
@@ -315,7 +257,6 @@ index 0000000..f6ec2c3
 +)
 +{
 +    VADriverContextP ctx;
-+    VASurfaceGLXP pSurfaceGLX;
 +    VAStatus status;
 +
 +    /* Make sure it is a valid GL texture object */
@@ -324,16 +265,7 @@ index 0000000..f6ec2c3
 +
 +    INIT_CONTEXT(ctx, dpy);
 +
-+    pSurfaceGLX = va_glx_create_surface(ctx, target, texture);
-+    if (!pSurfaceGLX)
-+        return VA_STATUS_ERROR_ALLOCATION_FAILED;
-+
-+    INVOKE(ctx, CreateSurface, (ctx, target, texture, &pSurfaceGLX->priv));
-+
-+    if (status != VA_STATUS_SUCCESS)
-+        va_glx_destroy_surface(ctx, &pSurfaceGLX);
-+
-+    *gl_surface = pSurfaceGLX;
++    INVOKE(ctx, CreateSurface, (ctx, target, texture, gl_surface));
 +    return status;
 +}
 +
@@ -344,110 +276,11 @@ index 0000000..f6ec2c3
 +)
 +{
 +    VADriverContextP ctx;
-+    VASurfaceGLXP pSurfaceGLX;
 +    VAStatus status;
 +
 +    INIT_CONTEXT(ctx, dpy);
-+    INIT_SURFACE(pSurfaceGLX, gl_surface);
 +
-+    INVOKE(ctx, DestroySurface, (ctx, pSurfaceGLX));
-+
-+    free(pSurfaceGLX);
-+    return status;
-+}
-+
-+// Associate a VA surface to a VA/GLX surface
-+VAStatus vaAssociateSurfaceGLX(
-+    VADisplay    dpy,
-+    void        *gl_surface,
-+    VASurfaceID  surface,
-+    unsigned int flags
-+)
-+{
-+    VADriverContextP ctx;
-+    VASurfaceGLXP pSurfaceGLX;
-+    VAStatus status;
-+
-+    INIT_CONTEXT(ctx, dpy);
-+    INIT_SURFACE(pSurfaceGLX, gl_surface);
-+
-+    INVOKE(ctx, AssociateSurface, (ctx, pSurfaceGLX, surface, flags));
-+
-+    if (status == VA_STATUS_SUCCESS)
-+        pSurfaceGLX->surface = surface;
-+
-+    return status;
-+}
-+
-+// Deassociate a VA surface from a VA/GLX surface
-+VAStatus vaDeassociateSurfaceGLX(
-+    VADisplay dpy,
-+    void     *gl_surface
-+)
-+{
-+    VADriverContextP ctx;
-+    VASurfaceGLXP pSurfaceGLX;
-+    VAStatus status;
-+
-+    INIT_CONTEXT(ctx, dpy);
-+    INIT_SURFACE(pSurfaceGLX, gl_surface);
-+
-+    INVOKE(ctx, DeassociateSurface, (ctx, pSurfaceGLX));
-+
-+    if (status == VA_STATUS_SUCCESS)
-+        pSurfaceGLX->surface = VA_INVALID_SURFACE;
-+
-+    return status;
-+}
-+
-+// Synchronize a VA/GLX surface
-+VAStatus vaSyncSurfaceGLX(
-+    VADisplay dpy,
-+    void     *gl_surface
-+)
-+{
-+    VADriverContextP ctx;
-+    VASurfaceGLXP pSurfaceGLX;
-+    VAStatus status;
-+
-+    INIT_CONTEXT(ctx, dpy);
-+    INIT_SURFACE(pSurfaceGLX, gl_surface);
-+
-+    INVOKE(ctx, SyncSurface, (ctx, pSurfaceGLX));
-+    return status;
-+}
-+
-+// Prepare VA/GLX surface for rendering
-+VAStatus vaBeginRenderSurfaceGLX(
-+    VADisplay dpy,
-+    void     *gl_surface
-+)
-+{
-+    VADriverContextP ctx;
-+    VASurfaceGLXP pSurfaceGLX;
-+    VAStatus status;
-+
-+    INIT_CONTEXT(ctx, dpy);
-+    INIT_SURFACE(pSurfaceGLX, gl_surface);
-+
-+    INVOKE(ctx, BeginRenderSurface, (ctx, pSurfaceGLX));
-+    return status;
-+}
-+
-+// Notify the server that the VA/GLX surface is no longer used for rendering
-+VAStatus vaEndRenderSurfaceGLX(
-+    VADisplay dpy,
-+    void     *gl_surface
-+)
-+{
-+    VADriverContextP ctx;
-+    VASurfaceGLXP pSurfaceGLX;
-+    VAStatus status;
-+
-+    INIT_CONTEXT(ctx, dpy);
-+    INIT_SURFACE(pSurfaceGLX, gl_surface);
-+
-+    INVOKE(ctx, EndRenderSurface, (ctx, pSurfaceGLX));
++    INVOKE(ctx, DestroySurface, (ctx, gl_surface));
 +    return status;
 +}
 +
@@ -460,21 +293,19 @@ index 0000000..f6ec2c3
 +)
 +{
 +    VADriverContextP ctx;
-+    VASurfaceGLXP pSurfaceGLX;
 +    VAStatus status;
 +
 +    INIT_CONTEXT(ctx, dpy);
-+    INIT_SURFACE(pSurfaceGLX, gl_surface);
 +
-+    INVOKE(ctx, CopySurface, (ctx, pSurfaceGLX, surface, flags));
++    INVOKE(ctx, CopySurface, (ctx, gl_surface, surface, flags));
 +    return status;
 +}
-diff --git a/src/glx/va_glx.h b/src/glx/va_glx.h
+diff --git a/va/glx/va_glx.h b/va/glx/va_glx.h
 new file mode 100644
-index 0000000..183ef3a
+index 0000000..1a0624d
 --- /dev/null
-+++ b/src/glx/va_glx.h
-@@ -0,0 +1,217 @@
++++ b/va/glx/va_glx.h
+@@ -0,0 +1,109 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
 + *
@@ -502,11 +333,7 @@ index 0000000..183ef3a
 +#ifndef VA_GLX_H
 +#define VA_GLX_H
 +
-+#ifdef IN_LIBVA
-+#include "va.h"
-+#else
 +#include <va/va.h>
-+#endif
 +#include <GL/glx.h>
 +
 +#ifdef __cplusplus
@@ -560,115 +387,11 @@ index 0000000..183ef3a
 +);
 +
 +/**
-+ * Associate a VA surface to a VA/GLX surface
-+ *
-+ * The association is live until vaDeassociateSurfaceGLX(),
-+ * vaCopySurfaceGLX() or the next call to vaBeginPicture() with the
-+ * specificed VA surface.
-+ * 
-+ * The application shall maintain the live GLX context itself.
-+ * Implementations are free to use glXGetCurrentContext() and
-+ * glXGetCurrentDrawable() functions for internal purposes.
-+ *
-+ * @param[in]  dpy        the VA display
-+ * @param[in]  gl_surface the VA/GLX surface
-+ * @param[in]  surface    the VA surface
-+ * @param[in]  flags      the PutSurface flags
-+ * @return VA_STATUS_SUCCESS if successful
-+ */
-+VAStatus vaAssociateSurfaceGLX(
-+    VADisplay    dpy,
-+    void        *gl_surface,
-+    VASurfaceID  surface,
-+    unsigned int flags
-+);
-+
-+/**
-+ * Deassociate a VA surface from a VA/GLX surface
-+ *
-+ * The application shall maintain the live GLX context itself.
-+ * Implementations are free to use glXGetCurrentContext() and
-+ * glXGetCurrentDrawable() functions for internal purposes.
-+ *
-+ * @param[in]  dpy        the VA display
-+ * @param[in]  gl_surface the VA surface
-+ * @return VA_STATUS_SUCCESS if successful
-+ */
-+VAStatus vaDeassociateSurfaceGLX(
-+    VADisplay dpy,
-+    void     *gl_surface
-+);
-+
-+/**
-+ * Synchronize a VA/GLX surface
-+ *
-+ * This function blocks until all pending operations on the VA/GLX
-+ * surface have been completed.
-+ *
-+ * The application shall maintain the live GLX context itself.
-+ * Implementations are free to use glXGetCurrentContext() and
-+ * glXGetCurrentDrawable() functions for internal purposes.
-+ *
-+ * @param[in]  dpy        the VA display
-+ * @param[in]  gl_surface the VA surface
-+ * @return VA_STATUS_SUCCESS if successful
-+ */
-+VAStatus vaSyncSurfaceGLX(
-+    VADisplay dpy,
-+    void     *gl_surface
-+);
-+
-+/**
-+ * Prepare VA/GLX surface for rendering
-+ *
-+ * This function performs an implicit vaSyncSurfaceGLX().
-+ *
-+ * Implementations using the GLX texture-from-pixmap extension will
-+ * generally call glXBindTexImage() here.
-+ *
-+ * The application shall maintain the live GLX context itself.
-+ * Implementations are free to use glXGetCurrentContext() and
-+ * glXGetCurrentDrawable() functions for internal purposes.
-+ *
-+ * @param[in]  dpy        the VA display
-+ * @param[in]  gl_surface the VA surface
-+ * @return VA_STATUS_SUCCESS if successful
-+ */
-+VAStatus vaBeginRenderSurfaceGLX(
-+    VADisplay dpy,
-+    void     *gl_surface
-+);
-+
-+/**
-+ * Notify the server that the VA/GLX surface is no longer used for
-+ * rendering
-+ *
-+ * Implementations using the GLX texture-from-pixmap extension will
-+ * generally call glXReleaseTexImage() here.
-+ *
-+ * The application shall maintain the live GLX context itself.
-+ * Implementations are free to use glXGetCurrentContext() and
-+ * glXGetCurrentDrawable() functions for internal purposes.
-+ *
-+ * @param[in]  dpy        the VA display
-+ * @param[in]  gl_surface the VA surface
-+ * @return VA_STATUS_SUCCESS if successful
-+ */
-+VAStatus vaEndRenderSurfaceGLX(
-+    VADisplay dpy,
-+    void     *gl_surface
-+);
-+
-+/**
 + * Copy a VA surface to a VA/GLX surface
 + *
-+ * This function kills any association that was previously made with
-+ * vaAssociateSurfaceGLX() and will not return until the copy is
-+ * completed.
-+ *
-+ * Upon successful return, the underlying GL texture will contain the
-+ * complete pixels and no call to vaBeginRenderSurfaceGLX() or
-+ * vaEndRenderSurfaceGLX() is required.
++ * This function will not return until the copy is completed. At this
++ * point, the underlying GL texture will contain the surface pixels
++ * in an RGB format defined by the user.
 + *
 + * The application shall maintain the live GLX context itself.
 + * Implementations are free to use glXGetCurrentContext() and
@@ -692,12 +415,12 @@ index 0000000..183ef3a
 +#endif
 +
 +#endif /* VA_GLX_H */
-diff --git a/src/glx/va_glx_impl.c b/src/glx/va_glx_impl.c
+diff --git a/va/glx/va_glx_impl.c b/va/glx/va_glx_impl.c
 new file mode 100644
-index 0000000..d4f9c1d
+index 0000000..adc4560
 --- /dev/null
-+++ b/src/glx/va_glx_impl.c
-@@ -0,0 +1,1168 @@
++++ b/va/glx/va_glx_impl.c
+@@ -0,0 +1,1078 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
 + *
@@ -726,6 +449,7 @@ index 0000000..d4f9c1d
 +#include "va_glx_private.h"
 +#include "va_glx_impl.h"
 +#include <stdio.h>
++#include <stdlib.h>
 +#include <stdarg.h>
 +#include <string.h>
 +#include <assert.h>
@@ -814,30 +538,6 @@ index 0000000..d4f9c1d
 +    return gl_do_check_error(1);
 +}
 +
-+// glGetFloatv() wrapper
-+static int gl_get_current_color(float color[4])
-+{
-+    gl_purge_errors();
-+    glGetFloatv(GL_CURRENT_COLOR, color);
-+    if (gl_check_error())
-+        return -1;
-+    return 0;
-+}
-+
-+// glGetIntegerv() wrapper
-+static int gl_get_param(GLenum param, unsigned int *pval)
-+{
-+    GLint val;
-+
-+    gl_purge_errors();
-+    glGetIntegerv(param, &val);
-+    if (gl_check_error())
-+        return -1;
-+    if (pval)
-+        *pval = val;
-+    return 0;
-+}
-+
 +// glGetTexLevelParameteriv() wrapper
 +static int gl_get_texture_param(GLenum param, unsigned int *pval)
 +{
@@ -846,10 +546,10 @@ index 0000000..d4f9c1d
 +    gl_purge_errors();
 +    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, param, &val);
 +    if (gl_check_error())
-+        return -1;
++        return 0;
 +    if (pval)
 +        *pval = val;
-+    return 0;
++    return 1;
 +}
 +
 +// Returns the OpenGL VTable
@@ -874,12 +574,12 @@ index 0000000..d4f9c1d
 +    dlerror();
 +    get_proc_func = (GLXGetProcAddressProc)
 +        dlsym(RTLD_DEFAULT, "glXGetProcAddress");
-+    if (dlerror() == NULL)
++    if (!dlerror())
 +        return get_proc_func;
 +
 +    get_proc_func = (GLXGetProcAddressProc)
 +        dlsym(RTLD_DEFAULT, "glXGetProcAddressARB");
-+    if (dlerror() == NULL)
++    if (!dlerror())
 +        return get_proc_func;
 +
 +    return get_proc_address_default;
@@ -888,7 +588,7 @@ index 0000000..d4f9c1d
 +static inline GLFuncPtr get_proc_address(const char *name)
 +{
 +    static GLXGetProcAddressProc get_proc_func = NULL;
-+    if (get_proc_func == NULL)
++    if (!get_proc_func)
 +        get_proc_func = get_proc_address_func();
 +    return get_proc_func(name);
 +}
@@ -899,7 +599,7 @@ index 0000000..d4f9c1d
 +    const char *end;
 +    int name_len, n;
 +
-+    if (name == NULL || ext == NULL)
++    if (!name || !ext)
 +        return 0;
 +
 +    end = ext + strlen(ext);
@@ -933,11 +633,11 @@ index 0000000..d4f9c1d
 +    const char *gl_extensions;
 +
 +    gl_extensions = (const char *)glGetString(GL_EXTENSIONS);
-+    if (!check_extension("GL_ARB_framebuffer_object", gl_extensions))
-+        return 0;
-+    if (!check_extension("GL_EXT_framebuffer_object", gl_extensions))
-+        return 0;
-+    return 1;
++    if (check_extension("GL_ARB_framebuffer_object", gl_extensions))
++        return 1;
++    if (check_extension("GL_EXT_framebuffer_object", gl_extensions))
++        return 1;
++    return 0;
 +}
 +
 +// Load GLX extensions
@@ -947,11 +647,11 @@ index 0000000..d4f9c1d
 +
 +    pOpenGLVTable->glx_bind_tex_image = (PFNGLXBINDTEXIMAGEEXTPROC)
 +        get_proc_address("glXBindTexImageEXT");
-+    if (pOpenGLVTable->glx_bind_tex_image == NULL)
++    if (!pOpenGLVTable->glx_bind_tex_image)
 +        return 0;
 +    pOpenGLVTable->glx_release_tex_image = (PFNGLXRELEASETEXIMAGEEXTPROC)
 +        get_proc_address("glXReleaseTexImageEXT");
-+    if (pOpenGLVTable->glx_release_tex_image == NULL)
++    if (!pOpenGLVTable->glx_release_tex_image)
 +        return 0;
 +    return 1;
 +}
@@ -962,43 +662,43 @@ index 0000000..d4f9c1d
 +
 +    pOpenGLVTable->gl_gen_framebuffers = (PFNGLGENFRAMEBUFFERSEXTPROC)
 +        get_proc_address("glGenFramebuffersEXT");
-+    if (pOpenGLVTable->gl_gen_framebuffers == NULL)
++    if (!pOpenGLVTable->gl_gen_framebuffers)
 +        return 0;
 +    pOpenGLVTable->gl_delete_framebuffers = (PFNGLDELETEFRAMEBUFFERSEXTPROC)
 +        get_proc_address("glDeleteFramebuffersEXT");
-+    if (pOpenGLVTable->gl_delete_framebuffers == NULL)
++    if (!pOpenGLVTable->gl_delete_framebuffers)
 +        return 0;
 +    pOpenGLVTable->gl_bind_framebuffer = (PFNGLBINDFRAMEBUFFEREXTPROC)
 +        get_proc_address("glBindFramebufferEXT");
-+    if (pOpenGLVTable->gl_bind_framebuffer == NULL)
++    if (!pOpenGLVTable->gl_bind_framebuffer)
 +        return 0;
 +    pOpenGLVTable->gl_gen_renderbuffers = (PFNGLGENRENDERBUFFERSEXTPROC)
 +        get_proc_address("glGenRenderbuffersEXT");
-+    if (pOpenGLVTable->gl_gen_renderbuffers == NULL)
++    if (!pOpenGLVTable->gl_gen_renderbuffers)
 +        return 0;
 +    pOpenGLVTable->gl_delete_renderbuffers = (PFNGLDELETERENDERBUFFERSEXTPROC)
 +        get_proc_address("glDeleteRenderbuffersEXT");
-+    if (pOpenGLVTable->gl_delete_renderbuffers == NULL)
++    if (!pOpenGLVTable->gl_delete_renderbuffers)
 +        return 0;
 +    pOpenGLVTable->gl_bind_renderbuffer = (PFNGLBINDRENDERBUFFEREXTPROC)
 +        get_proc_address("glBindRenderbufferEXT");
-+    if (pOpenGLVTable->gl_bind_renderbuffer == NULL)
++    if (!pOpenGLVTable->gl_bind_renderbuffer)
 +        return 0;
 +    pOpenGLVTable->gl_renderbuffer_storage = (PFNGLRENDERBUFFERSTORAGEEXTPROC)
 +        get_proc_address("glRenderbufferStorageEXT");
-+    if (pOpenGLVTable->gl_renderbuffer_storage == NULL)
++    if (!pOpenGLVTable->gl_renderbuffer_storage)
 +        return 0;
 +    pOpenGLVTable->gl_framebuffer_renderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC)
 +        get_proc_address("glFramebufferRenderbufferEXT");
-+    if (pOpenGLVTable->gl_framebuffer_renderbuffer == NULL)
++    if (!pOpenGLVTable->gl_framebuffer_renderbuffer)
 +        return 0;
 +    pOpenGLVTable->gl_framebuffer_texture_2d = (PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)
 +        get_proc_address("glFramebufferTexture2DEXT");
-+    if (pOpenGLVTable->gl_framebuffer_texture_2d == NULL)
++    if (!pOpenGLVTable->gl_framebuffer_texture_2d)
 +        return 0;
 +    pOpenGLVTable->gl_check_framebuffer_status = (PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC)
 +        get_proc_address("glCheckFramebufferStatusEXT");
-+    if (pOpenGLVTable->gl_check_framebuffer_status == NULL)
++    if (!pOpenGLVTable->gl_check_framebuffer_status)
 +        return 0;
 +    return 1;
 +}
@@ -1008,105 +708,198 @@ index 0000000..d4f9c1d
 +/* === VA/GLX helpers                                                    === */
 +/* ========================================================================= */
 +
-+// OpenGL texture state
-+typedef struct OpenGLTextureState *OpenGLTextureStateP;
++// OpenGL context state
++typedef struct OpenGLContextState *OpenGLContextStateP;
 +
-+struct OpenGLTextureState {
-+    int    was_enabled;
-+    int    was_bound;
-+    GLenum target;
-+    GLuint old_texture;
++struct OpenGLContextState {
++    Display     *display;
++    Window       window;
++    GLXContext   context;
 +};
 +
-+// Bind texture, preserve previous texture state
-+static int bind_texture(OpenGLTextureStateP ts, GLenum target, GLuint texture)
++static void
++gl_destroy_context(OpenGLContextStateP cs)
 +{
-+    ts->target      = target;
-+    ts->old_texture = 0;
-+    ts->was_bound   = 0;
-+    ts->was_enabled = glIsEnabled(target);
-+    if (!ts->was_enabled)
-+        glEnable(target);
++    if (!cs)
++        return;
 +
-+    GLenum texture_binding;
-+    switch (target) {
-+    case GL_TEXTURE_1D:
-+        texture_binding = GL_TEXTURE_BINDING_1D;
-+        break;
-+    case GL_TEXTURE_2D:
-+        texture_binding = GL_TEXTURE_BINDING_2D;
-+        break;
-+    case GL_TEXTURE_3D:
-+        texture_binding = GL_TEXTURE_BINDING_3D;
-+        break;
-+    case GL_TEXTURE_RECTANGLE_ARB:
-+        texture_binding = GL_TEXTURE_BINDING_RECTANGLE_ARB;
-+        break;
-+    default:
-+        assert(!target);
-+        return -1;
++    if (cs->display && cs->context) {
++        if (glXGetCurrentContext() == cs->context)
++            glXMakeCurrent(cs->display, None, NULL);
++        glXDestroyContext(cs->display, cs->context);
++        cs->display = NULL;
++        cs->context = NULL;
 +    }
-+
-+    if (ts->was_enabled && gl_get_param(texture_binding, &ts->old_texture) < 0)
-+        return -1;
-+
-+    ts->was_bound = texture == ts->old_texture;
-+    if (!ts->was_bound) {
-+        gl_purge_errors();
-+        glBindTexture(target, texture);
-+        if (gl_check_error())
-+            return -1;
-+    }
-+    return 0;
++    free(cs);
 +}
 +
-+// Unbind texture, restore previous texture state
-+static void unbind_texture(OpenGLTextureStateP ts)
++static OpenGLContextStateP
++gl_create_context(VADriverContextP ctx, OpenGLContextStateP parent)
 +{
-+    if (!ts->was_bound && ts->old_texture)
-+        glBindTexture(ts->target, ts->old_texture);
-+    if (!ts->was_enabled)
-+        glDisable(ts->target);
++    OpenGLContextStateP cs;
++    GLXFBConfig *fbconfigs = NULL;
++    int fbconfig_id, val, n, n_fbconfigs;
++    Status status;
++
++    static GLint fbconfig_attrs[] = {
++        GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
++        GLX_RENDER_TYPE,   GLX_RGBA_BIT,
++        GLX_DOUBLEBUFFER,  True,
++        GLX_RED_SIZE,      8,
++        GLX_GREEN_SIZE,    8, 
++        GLX_BLUE_SIZE,     8,
++        None
++    };
++
++    cs = malloc(sizeof(*cs));
++    if (!cs)
++        goto error;
++
++    cs->display = ctx->x11_dpy;
++    cs->window  = parent ? parent->window : None;
++    cs->context = NULL;
++
++    if (parent && parent->context) {
++        status = glXQueryContext(
++            parent->display,
++            parent->context,
++            GLX_FBCONFIG_ID, &fbconfig_id
++        );
++        if (status != Success)
++            goto error;
++
++        if (fbconfig_id == GLX_DONT_CARE)
++            goto choose_fbconfig;
++
++        fbconfigs = glXGetFBConfigs(
++            ctx->x11_dpy,
++            ctx->x11_screen,
++            &n_fbconfigs
++        );
++        if (!fbconfigs)
++            goto error;
++
++        /* Find out a GLXFBConfig compatible with the parent context */
++        for (n = 0; n < n_fbconfigs; n++) {
++            status = glXGetFBConfigAttrib(
++                ctx->x11_dpy,
++                fbconfigs[n],
++                GLX_FBCONFIG_ID, &val
++            );
++            if (status == Success && val == fbconfig_id)
++                break;
++        }
++        if (n == n_fbconfigs)
++            goto error;
++    }
++    else {
++    choose_fbconfig:
++        fbconfigs = glXChooseFBConfig(
++            ctx->x11_dpy,
++            ctx->x11_screen,
++            fbconfig_attrs, &n_fbconfigs
++        );
++        if (!fbconfigs)
++            goto error;
++
++        /* Select the first one */
++        n = 0;
++    }
++
++    cs->context = glXCreateNewContext(
++        ctx->x11_dpy,
++        fbconfigs[n],
++        GLX_RGBA_TYPE,
++        parent ? parent->context : NULL,
++        True
++    );
++    if (cs->context)
++        goto end;
++
++error:
++    gl_destroy_context(cs);
++    cs = NULL;
++end:
++    if (fbconfigs)
++        XFree(fbconfigs);
++    return cs;
 +}
++
++static void gl_get_current_context(OpenGLContextStateP cs)
++{
++    cs->display = glXGetCurrentDisplay();
++    cs->window  = glXGetCurrentDrawable();
++    cs->context = glXGetCurrentContext();
++}
++
++static int
++gl_set_current_context(OpenGLContextStateP new_cs, OpenGLContextStateP old_cs)
++{
++    /* If display is NULL, this could be that new_cs was retrieved from
++       gl_get_current_context() with none set previously. If that case,
++       the other fields are also NULL and we don't return an error */
++    if (!new_cs->display)
++        return !new_cs->window && !new_cs->context;
++
++    if (old_cs) {
++        if (old_cs == new_cs)
++            return 1;
++        gl_get_current_context(old_cs);
++        if (old_cs->display == new_cs->display &&
++            old_cs->window  == new_cs->window  &&
++            old_cs->context == new_cs->context)
++            return 1;
++    }
++    return glXMakeCurrent(new_cs->display, new_cs->window, new_cs->context);
++}
++
++/** Unique VASurfaceGLX identifier */
++#define VA_SURFACE_GLX_MAGIC VA_FOURCC('V','A','G','L')
++
++struct VASurfaceGLX {
++    uint32_t            magic;      ///< Magic number identifying a VASurfaceGLX
++    GLenum              target;     ///< GL target to which the texture is bound
++    GLuint              texture;    ///< GL texture
++    VASurfaceID         surface;    ///< Associated VA surface
++    unsigned int        width;
++    unsigned int        height;
++    OpenGLContextStateP gl_context;
++    int                 is_bound;
++    Pixmap              pixmap;
++    GLuint              pix_texture;
++    GLXPixmap           glx_pixmap;
++    GLuint              fbo;
++};
 +
 +// Create Pixmaps for GLX texture-from-pixmap extension
 +static int create_tfp_surface(VADriverContextP ctx, VASurfaceGLXP pSurfaceGLX)
 +{
-+    const unsigned int     width      = pSurfaceGLX->width;
-+    const unsigned int     height     = pSurfaceGLX->height;
-+    Pixmap                 pixmap     = None;
-+    GLXFBConfig           *fbconfig   = NULL;
-+    GLXPixmap              glx_pixmap = None;
-+    Window                 root_window;
-+    XWindowAttributes      wattr;
-+    int                   *attrib;
-+    int                    n_fbconfig_attribs, x, y, status;
-+    unsigned int           border_width, depth, dummy;
++    const unsigned int  width      = pSurfaceGLX->width;
++    const unsigned int  height     = pSurfaceGLX->height;
++    Pixmap              pixmap     = None;
++    GLXFBConfig        *fbconfig   = NULL;
++    GLXPixmap           glx_pixmap = None;
++    Window              root_window;
++    XWindowAttributes   wattr;
++    int                *attrib;
++    int                 n_fbconfig_attrs;
 +
 +    root_window = RootWindow(ctx->x11_dpy, ctx->x11_screen);
 +    XGetWindowAttributes(ctx->x11_dpy, root_window, &wattr);
-+    pixmap = XCreatePixmap(ctx->x11_dpy, root_window,
-+                           width, height, wattr.depth);
++    if (wattr.depth != 24 && wattr.depth != 32)
++        return 0;
++    pixmap = XCreatePixmap(
++        ctx->x11_dpy,
++        root_window,
++        width,
++        height,
++        wattr.depth
++    );
 +    if (!pixmap)
-+        return -1;
++        return 0;
 +    pSurfaceGLX->pixmap = pixmap;
 +
-+    x11_trap_errors();
-+    status = XGetGeometry(ctx->x11_dpy,
-+                          (Drawable)pixmap,
-+                          &root_window,
-+                          &x,
-+                          &y,
-+                          &dummy,
-+                          &dummy,
-+                          &border_width,
-+                          &depth);
-+    if (x11_untrap_errors() != 0 || status == 0)
-+        return -1;
-+    if (depth != 24 && depth != 32)
-+        return -1;
-+
-+    int fbconfig_attribs[32] = {
++    int fbconfig_attrs[32] = {
 +        GLX_DRAWABLE_TYPE,      GLX_PIXMAP_BIT,
 +        GLX_DOUBLEBUFFER,       GL_TRUE,
 +        GLX_RENDER_TYPE,        GLX_RGBA_BIT,
@@ -1117,51 +910,68 @@ index 0000000..d4f9c1d
 +        GLX_BLUE_SIZE,          8,
 +        GL_NONE,
 +    };
-+    for (attrib = fbconfig_attribs; *attrib != GL_NONE; attrib += 2)
++    for (attrib = fbconfig_attrs; *attrib != GL_NONE; attrib += 2)
 +        ;
-+    *attrib++ = GLX_DEPTH_SIZE;                         *attrib++ = depth;
-+    if (depth == 32) {
-+        *attrib++ = GLX_ALPHA_SIZE;                     *attrib++ = 8;
-+        *attrib++ = GLX_BIND_TO_TEXTURE_RGBA_EXT;       *attrib++ = GL_TRUE;
++    *attrib++ = GLX_DEPTH_SIZE;                 *attrib++ = wattr.depth;
++    if (wattr.depth == 32) {
++    *attrib++ = GLX_ALPHA_SIZE;                 *attrib++ = 8;
++    *attrib++ = GLX_BIND_TO_TEXTURE_RGBA_EXT;   *attrib++ = GL_TRUE;
 +    }
 +    else {
-+        *attrib++ = GLX_BIND_TO_TEXTURE_RGB_EXT;        *attrib++ = GL_TRUE;
++    *attrib++ = GLX_BIND_TO_TEXTURE_RGB_EXT;    *attrib++ = GL_TRUE;
 +    }
 +    *attrib++ = GL_NONE;
 +
-+    fbconfig = glXChooseFBConfig(ctx->x11_dpy, ctx->x11_screen, fbconfig_attribs, &n_fbconfig_attribs);
-+    if (fbconfig == NULL)
-+        return -1;
++    fbconfig = glXChooseFBConfig(
++        ctx->x11_dpy,
++        ctx->x11_screen,
++        fbconfig_attrs,
++        &n_fbconfig_attrs
++    );
++    if (!fbconfig)
++        return 0;
 +
-+    int pixmap_attribs[10] = {
++    int pixmap_attrs[10] = {
 +        GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
 +        GLX_MIPMAP_TEXTURE_EXT, GL_FALSE,
 +        GL_NONE,
 +    };
-+    for (attrib = pixmap_attribs; *attrib != GL_NONE; attrib += 2)
++    for (attrib = pixmap_attrs; *attrib != GL_NONE; attrib += 2)
 +        ;
 +    *attrib++ = GLX_TEXTURE_FORMAT_EXT;
-+    if (depth == 32)
-+        *attrib++ = GLX_TEXTURE_FORMAT_RGBA_EXT;
++    if (wattr.depth == 32)
++    *attrib++ = GLX_TEXTURE_FORMAT_RGBA_EXT;
 +    else
-+        *attrib++ = GLX_TEXTURE_FORMAT_RGB_EXT;
++    *attrib++ = GLX_TEXTURE_FORMAT_RGB_EXT;
 +    *attrib++ = GL_NONE;
 +
 +    x11_trap_errors();
-+    glx_pixmap = glXCreatePixmap(ctx->x11_dpy,
-+                                 fbconfig[0],
-+                                 pixmap,
-+                                 pixmap_attribs);
++    glx_pixmap = glXCreatePixmap(
++        ctx->x11_dpy,
++        fbconfig[0],
++        pixmap,
++        pixmap_attrs
++    );
 +    free(fbconfig);
 +    if (x11_untrap_errors() != 0)
-+        return -1;
++        return 0;
 +    pSurfaceGLX->glx_pixmap = glx_pixmap;
-+    return 0;
++
++    glGenTextures(1, &pSurfaceGLX->pix_texture);
++    glBindTexture(GL_TEXTURE_2D, pSurfaceGLX->pix_texture);
++    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
++    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
++    return 1;
 +}
 +
 +// Destroy Pixmaps used for TFP
 +static void destroy_tfp_surface(VADriverContextP ctx, VASurfaceGLXP pSurfaceGLX)
 +{
++    if (pSurfaceGLX->pix_texture) {
++        glDeleteTextures(1, &pSurfaceGLX->pix_texture);
++        pSurfaceGLX->pix_texture = 0;
++    }
++
 +    if (pSurfaceGLX->glx_pixmap) {
 +        glXDestroyPixmap(ctx->x11_dpy, pSurfaceGLX->glx_pixmap);
 +        pSurfaceGLX->glx_pixmap = None;
@@ -1179,19 +989,25 @@ index 0000000..d4f9c1d
 +    VAOpenGLVTableP pOpenGLVTable = gl_get_vtable(ctx);
 +
 +    if (pSurfaceGLX->is_bound)
-+        return 0;
++        return 1;
++
++    glBindTexture(GL_TEXTURE_2D, pSurfaceGLX->pix_texture);
 +
 +    x11_trap_errors();
-+    pOpenGLVTable->glx_bind_tex_image(ctx->x11_dpy, pSurfaceGLX->glx_pixmap,
-+                                      GLX_FRONT_LEFT_EXT, NULL);
++    pOpenGLVTable->glx_bind_tex_image(
++        ctx->x11_dpy,
++        pSurfaceGLX->glx_pixmap,
++        GLX_FRONT_LEFT_EXT,
++        NULL
++    );
 +    XSync(ctx->x11_dpy, False);
 +    if (x11_untrap_errors() != 0) {
 +        va_glx_error_message("failed to bind pixmap\n");
-+        return -1;
++        return 0;
 +    }
 +
 +    pSurfaceGLX->is_bound = 1;
-+    return 0;
++    return 1;
 +}
 +
 +// Release GLX Pixmap from texture
@@ -1200,19 +1016,24 @@ index 0000000..d4f9c1d
 +    VAOpenGLVTableP pOpenGLVTable = gl_get_vtable(ctx);
 +
 +    if (!pSurfaceGLX->is_bound)
-+        return 0;
++        return 1;
 +
 +    x11_trap_errors();
-+    pOpenGLVTable->glx_release_tex_image(ctx->x11_dpy, pSurfaceGLX->glx_pixmap,
-+                                         GLX_FRONT_LEFT_EXT);
++    pOpenGLVTable->glx_release_tex_image(
++        ctx->x11_dpy,
++        pSurfaceGLX->glx_pixmap,
++        GLX_FRONT_LEFT_EXT
++    );
 +    XSync(ctx->x11_dpy, False);
 +    if (x11_untrap_errors() != 0) {
 +        va_glx_error_message("failed to release pixmap\n");
-+        return -1;
++        return 0;
 +    }
 +
++    glBindTexture(GL_TEXTURE_2D, 0);
++
 +    pSurfaceGLX->is_bound = 0;
-+    return 0;
++    return 1;
 +}
 +
 +// Render GLX Pixmap to texture
@@ -1220,9 +1041,7 @@ index 0000000..d4f9c1d
 +{
 +    const unsigned int w = pSurfaceGLX->width;
 +    const unsigned int h = pSurfaceGLX->height;
-+    float old_color[4];
 +
-+    gl_get_current_color(old_color);
 +    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 +    glBegin(GL_QUADS);
 +    {
@@ -1232,64 +1051,38 @@ index 0000000..d4f9c1d
 +        glTexCoord2f(1.0f, 0.0f); glVertex2i(w, 0);
 +    }
 +    glEnd();
-+    glColor4fv(old_color);
 +}
 +
 +// Create offscreen surface
 +static int create_fbo_surface(VADriverContextP ctx, VASurfaceGLXP pSurfaceGLX)
 +{
-+    VAOpenGLVTableP       pOpenGLVTable  = gl_get_vtable(ctx);
-+    const GLenum          texture        = pSurfaceGLX->texture;
-+    const unsigned int    texture_width  = pSurfaceGLX->width;
-+    const unsigned int    texture_height = pSurfaceGLX->height;
-+    GLuint fbo, fbo_buffer, fbo_texture;
++    VAOpenGLVTableP pOpenGLVTable = gl_get_vtable(ctx);
++    GLuint fbo;
 +    GLenum status;
-+
-+    glGenTextures(1, &fbo_texture);
-+    glBindTexture(GL_TEXTURE_2D, fbo_texture);
-+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture_width, texture_height, 0,
-+                 GL_BGRA, GL_UNSIGNED_BYTE, NULL);
 +
 +    pOpenGLVTable->gl_gen_framebuffers(1, &fbo);
 +    pOpenGLVTable->gl_bind_framebuffer(GL_FRAMEBUFFER_EXT, fbo);
-+    pOpenGLVTable->gl_gen_renderbuffers(1, &fbo_buffer);
-+    pOpenGLVTable->gl_bind_renderbuffer(GL_RENDERBUFFER_EXT, fbo_buffer);
-+
-+    glBindTexture(GL_TEXTURE_2D, texture);
-+    pOpenGLVTable->gl_framebuffer_texture_2d(GL_FRAMEBUFFER_EXT,
-+                                             GL_COLOR_ATTACHMENT0_EXT,
-+                                             GL_TEXTURE_2D, texture, 0);
++    pOpenGLVTable->gl_framebuffer_texture_2d(
++        GL_FRAMEBUFFER_EXT,
++        GL_COLOR_ATTACHMENT0_EXT,
++        GL_TEXTURE_2D,
++        pSurfaceGLX->texture,
++        0
++    );
 +
 +    status = pOpenGLVTable->gl_check_framebuffer_status(GL_DRAW_FRAMEBUFFER_EXT);
 +    pOpenGLVTable->gl_bind_framebuffer(GL_FRAMEBUFFER_EXT, 0);
 +    if (status != GL_FRAMEBUFFER_COMPLETE_EXT)
-+        return -1;
++        return 0;
 +
-+    pSurfaceGLX->fbo         = fbo;
-+    pSurfaceGLX->fbo_buffer  = fbo_buffer;
-+    pSurfaceGLX->fbo_texture = fbo_texture;
-+    return 0;
++    pSurfaceGLX->fbo = fbo;
++    return 1;
 +}
 +
 +// Destroy offscreen surface
 +static void destroy_fbo_surface(VADriverContextP ctx, VASurfaceGLXP pSurfaceGLX)
 +{
 +    VAOpenGLVTableP pOpenGLVTable = gl_get_vtable(ctx);
-+
-+    if (pSurfaceGLX->fbo_texture) {
-+        glDeleteTextures(1, &pSurfaceGLX->fbo_texture);
-+        pSurfaceGLX->fbo_texture = 0;
-+    }
-+
-+    if (pSurfaceGLX->fbo_buffer) {
-+        pOpenGLVTable->gl_delete_renderbuffers(1, &pSurfaceGLX->fbo_buffer);
-+        pSurfaceGLX->fbo_buffer = 0;
-+    }
 +
 +    if (pSurfaceGLX->fbo) {
 +        pOpenGLVTable->gl_delete_framebuffers(1, &pSurfaceGLX->fbo);
@@ -1315,8 +1108,6 @@ index 0000000..d4f9c1d
 +    glViewport(0, 0, width, height);
 +    glTranslatef(-1.0f, -1.0f, 0.0f);
 +    glScalef(2.0f / width, 2.0f / height, 1.0f);
-+
-+    glBindTexture(GL_TEXTURE_2D, pSurfaceGLX->fbo_texture);
 +}
 +
 +// Restore original OpenGL matrices
@@ -1332,19 +1123,36 @@ index 0000000..d4f9c1d
 +    pOpenGLVTable->gl_bind_framebuffer(GL_FRAMEBUFFER_EXT, 0);
 +}
 +
-+// Create VA/GLX surface
-+VASurfaceGLXP
-+va_glx_create_surface(VADriverContextP ctx, GLenum target, GLuint texture)
++// Check internal texture format is supported
++static int is_supported_internal_format(GLenum format)
 +{
-+    VADriverContextGLXP pDriverContextGLX = VA_DRIVER_CONTEXT_GLX(ctx);
-+    VASurfaceGLXP pSurfaceGLX;
++    /* XXX: we don't support other textures than RGBA */
++    switch (format) {
++    case 4:
++    case GL_RGBA:
++    case GL_RGBA8:
++        return 1;
++    }
++    return 0;
++}
++
++// Destroy VA/GLX surface
++static void
++destroy_surface(VADriverContextP ctx, VASurfaceGLXP pSurfaceGLX)
++{
++    unbind_pixmap(ctx, pSurfaceGLX);
++    destroy_fbo_surface(ctx, pSurfaceGLX);
++    destroy_tfp_surface(ctx, pSurfaceGLX);
++    free(pSurfaceGLX);
++}
++
++// Create VA/GLX surface
++static VASurfaceGLXP
++create_surface(VADriverContextP ctx, GLenum target, GLuint texture)
++{
++    VASurfaceGLXP pSurfaceGLX = NULL;
 +    unsigned int internal_format, border_width, width, height;
 +    int is_error = 1;
-+
-+    /* Make sure binding succeeds, if texture was not already bound */
-+    struct OpenGLTextureState ts;
-+    if (bind_texture(&ts, target, texture) < 0)
-+        goto end;
 +
 +    pSurfaceGLX = malloc(sizeof(*pSurfaceGLX));
 +    if (!pSurfaceGLX)
@@ -1354,26 +1162,26 @@ index 0000000..d4f9c1d
 +    pSurfaceGLX->target         = target;
 +    pSurfaceGLX->texture        = texture;
 +    pSurfaceGLX->surface        = VA_INVALID_SURFACE;
++    pSurfaceGLX->gl_context     = NULL;
 +    pSurfaceGLX->is_bound       = 0;
 +    pSurfaceGLX->pixmap         = None;
++    pSurfaceGLX->pix_texture    = 0;
 +    pSurfaceGLX->glx_pixmap     = None;
 +    pSurfaceGLX->fbo            = 0;
-+    pSurfaceGLX->fbo_buffer     = 0;
-+    pSurfaceGLX->fbo_texture    = 0;
-+    pSurfaceGLX->priv           = NULL;
 +
-+    /* XXX: we don't support other textures than RGBA */
-+    if (gl_get_texture_param(GL_TEXTURE_INTERNAL_FORMAT, &internal_format) < 0)
++    glEnable(target);
++    glBindTexture(target, texture);
++    if (!gl_get_texture_param(GL_TEXTURE_INTERNAL_FORMAT, &internal_format))
 +        goto end;
-+    if (internal_format != GL_RGBA)
++    if (!is_supported_internal_format(internal_format))
 +        goto end;
 +
 +    /* Check texture dimensions */
-+    if (gl_get_texture_param(GL_TEXTURE_BORDER, &border_width) < 0)
++    if (!gl_get_texture_param(GL_TEXTURE_BORDER, &border_width))
 +        goto end;
-+    if (gl_get_texture_param(GL_TEXTURE_WIDTH, &width) < 0)
++    if (!gl_get_texture_param(GL_TEXTURE_WIDTH, &width))
 +        goto end;
-+    if (gl_get_texture_param(GL_TEXTURE_HEIGHT, &height) < 0)
++    if (!gl_get_texture_param(GL_TEXTURE_HEIGHT, &height))
 +        goto end;
 +
 +    width  -= 2 * border_width;
@@ -1384,38 +1192,21 @@ index 0000000..d4f9c1d
 +    pSurfaceGLX->width  = width;
 +    pSurfaceGLX->height = height;
 +
-+    /* Create Pixmaps for TFP */
-+    if (pDriverContextGLX->use_tfp) {
-+        if (create_tfp_surface(ctx, pSurfaceGLX) < 0)
-+            goto end;
-+    }
++    /* Create TFP objects */
++    if (!create_tfp_surface(ctx, pSurfaceGLX))
++        goto end;
 +
-+    /* Create Pixmaps for FBO */
-+    if (pDriverContextGLX->use_fbo) {
-+        if (create_fbo_surface(ctx, pSurfaceGLX) < 0)
-+            goto end;
-+    }
++    /* Create FBO objects */
++    if (!create_fbo_surface(ctx, pSurfaceGLX))
++        goto end;
 +
 +    is_error = 0;
 +end:
-+    if (is_error && pSurfaceGLX)
-+        va_glx_destroy_surface(ctx, &pSurfaceGLX);
-+
-+    unbind_texture(&ts);
++    if (is_error && pSurfaceGLX) {
++        destroy_surface(ctx, pSurfaceGLX);
++        pSurfaceGLX = NULL;
++    }
 +    return pSurfaceGLX;
-+}
-+
-+// Destroy VA/GLX surface
-+void va_glx_destroy_surface(VADriverContextP ctx, VASurfaceGLXP *ppSurfaceGLX)
-+{
-+    VASurfaceGLXP pSurfaceGLX = *ppSurfaceGLX;
-+
-+    unbind_pixmap(ctx, pSurfaceGLX);
-+    destroy_fbo_surface(ctx, pSurfaceGLX);
-+    destroy_tfp_surface(ctx, pSurfaceGLX);
-+
-+    free(pSurfaceGLX);
-+    *ppSurfaceGLX = NULL;
 +}
 +
 +
@@ -1424,7 +1215,7 @@ index 0000000..d4f9c1d
 +/* ========================================================================= */
 +
 +#define INVOKE(ctx, func, args) do {                    \
-+        VADriverVTableGLXP vtable = &(ctx)->vtable.glx; \
++        VADriverVTableGLXP vtable = (ctx)->vtable.glx;  \
 +        if (!vtable->va##func##GLX)                     \
 +            return VA_STATUS_ERROR_UNIMPLEMENTED;       \
 +                                                        \
@@ -1448,59 +1239,7 @@ index 0000000..d4f9c1d
 +static VAStatus
 +vaDestroySurfaceGLX_impl_driver(VADriverContextP ctx, void *gl_surface)
 +{
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
-+
-+    INVOKE(ctx, DestroySurface, (ctx, pSurfaceGLX->priv));
-+    return VA_STATUS_SUCCESS;
-+}
-+
-+static VAStatus
-+vaAssociateSurfaceGLX_impl_driver(
-+    VADriverContextP    ctx,
-+    void               *gl_surface,
-+    VASurfaceID         surface,
-+    unsigned int        flags
-+)
-+{
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
-+
-+    INVOKE(ctx, AssociateSurface, (ctx, pSurfaceGLX->priv, surface, flags));
-+    return VA_STATUS_SUCCESS;
-+}
-+
-+static VAStatus
-+vaDeassociateSurfaceGLX_impl_driver(VADriverContextP ctx, void *gl_surface)
-+{
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
-+
-+    INVOKE(ctx, DeassociateSurface, (ctx, pSurfaceGLX->priv));
-+    return VA_STATUS_SUCCESS;
-+}
-+
-+static VAStatus
-+vaSyncSurfaceGLX_impl_driver(VADriverContextP ctx, void *gl_surface)
-+{
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
-+
-+    INVOKE(ctx, SyncSurface, (ctx, pSurfaceGLX->priv));
-+    return VA_STATUS_SUCCESS;
-+}
-+
-+static VAStatus
-+vaBeginRenderSurfaceGLX_impl_driver(VADriverContextP ctx, void *gl_surface)
-+{
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
-+
-+    INVOKE(ctx, BeginRenderSurface, (ctx, pSurfaceGLX->priv));
-+    return VA_STATUS_SUCCESS;
-+}
-+
-+static VAStatus
-+vaEndRenderSurfaceGLX_impl_driver(VADriverContextP ctx, void *gl_surface)
-+{
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
-+
-+    INVOKE(ctx, EndRenderSurface, (ctx, pSurfaceGLX->priv));
++    INVOKE(ctx, DestroySurface, (ctx, gl_surface));
 +    return VA_STATUS_SUCCESS;
 +}
 +
@@ -1512,9 +1251,7 @@ index 0000000..d4f9c1d
 +    unsigned int        flags
 +)
 +{
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
-+
-+    INVOKE(ctx, CopySurface, (ctx, pSurfaceGLX->priv, surface, flags));
++    INVOKE(ctx, CopySurface, (ctx, gl_surface, surface, flags));
 +    return VA_STATUS_SUCCESS;
 +}
 +
@@ -1525,6 +1262,18 @@ index 0000000..d4f9c1d
 +/* === VA/GLX implementation from libVA (generic and suboptimal path)    === */
 +/* ========================================================================= */
 +
++#define INIT_SURFACE(surface, surface_arg) do {         \
++        surface = (VASurfaceGLXP)(surface_arg);         \
++        if (!check_surface(surface))                    \
++            return VA_STATUS_ERROR_INVALID_SURFACE;     \
++    } while (0)
++
++// Check VASurfaceGLX is valid
++static inline int check_surface(VASurfaceGLXP pSurfaceGLX)
++{
++    return pSurfaceGLX && pSurfaceGLX->magic == VA_SURFACE_GLX_MAGIC;
++}
++
 +static VAStatus
 +vaCreateSurfaceGLX_impl_libva(
 +    VADriverContextP    ctx,
@@ -1533,64 +1282,82 @@ index 0000000..d4f9c1d
 +    void              **gl_surface
 +)
 +{
-+    VADriverContextGLXP pDriverContextGLX = VA_DRIVER_CONTEXT_GLX(ctx);
++    VASurfaceGLXP pSurfaceGLX;
++    struct OpenGLContextState old_cs, *new_cs;
 +
-+    if (!pDriverContextGLX->use_tfp)
-+        return VA_STATUS_ERROR_UNIMPLEMENTED;
++    gl_get_current_context(&old_cs);
++    new_cs = gl_create_context(ctx, &old_cs);
++    if (!new_cs)
++        return VA_STATUS_ERROR_ALLOCATION_FAILED;
++    if (!gl_set_current_context(new_cs, NULL))
++        return VA_STATUS_ERROR_OPERATION_FAILED;
 +
-+    *gl_surface = NULL;
++    pSurfaceGLX = create_surface(ctx, target, texture);
++    if (!pSurfaceGLX)
++        return VA_STATUS_ERROR_ALLOCATION_FAILED;
++
++    pSurfaceGLX->gl_context = new_cs;
++    *gl_surface = pSurfaceGLX;
++
++    gl_set_current_context(&old_cs, NULL);
 +    return VA_STATUS_SUCCESS;
 +}
 +
 +static VAStatus
 +vaDestroySurfaceGLX_impl_libva(VADriverContextP ctx, void *gl_surface)
 +{
-+    VADriverContextGLXP pDriverContextGLX = VA_DRIVER_CONTEXT_GLX(ctx);
++    VASurfaceGLXP pSurfaceGLX;
++    struct OpenGLContextState old_cs, *new_cs;
 +
-+    if (!pDriverContextGLX->use_tfp)
-+        return VA_STATUS_ERROR_UNIMPLEMENTED;
++    INIT_SURFACE(pSurfaceGLX, gl_surface);
 +
++    new_cs = pSurfaceGLX->gl_context;
++    if (!gl_set_current_context(new_cs, &old_cs))
++        return VA_STATUS_ERROR_OPERATION_FAILED;
++
++    destroy_surface(ctx, pSurfaceGLX);
++
++    gl_destroy_context(new_cs);
++    gl_set_current_context(&old_cs, NULL);
++    return VA_STATUS_SUCCESS;
++}
++
++static inline VAStatus
++deassociate_surface(VADriverContextP ctx, VASurfaceGLXP pSurfaceGLX)
++{
++    if (!unbind_pixmap(ctx, pSurfaceGLX))
++        return VA_STATUS_ERROR_OPERATION_FAILED;
++
++    pSurfaceGLX->surface = VA_INVALID_SURFACE;
 +    return VA_STATUS_SUCCESS;
 +}
 +
 +static VAStatus
-+vaAssociateSurfaceGLX_impl_libva(
++associate_surface(
 +    VADriverContextP    ctx,
-+    void               *gl_surface,
++    VASurfaceGLXP       pSurfaceGLX,
 +    VASurfaceID         surface,
 +    unsigned int        flags
 +)
 +{
-+    VADriverContextGLXP pDriverContextGLX = VA_DRIVER_CONTEXT_GLX(ctx);
-+    VADriverVTableGLXP vtable = &pDriverContextGLX->vtable;
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
 +    VAStatus status;
-+
-+    if (!pDriverContextGLX->use_tfp)
-+        return VA_STATUS_ERROR_UNIMPLEMENTED;
-+
-+    /* XXX: only support VA_FRAME_PICTURE */
-+    if (flags != VA_FRAME_PICTURE)
-+        return VA_STATUS_ERROR_FLAG_NOT_SUPPORTED;
 +
 +    /* XXX: optimise case where we are associating the same VA surface
 +       as before an no changed occurred to it */
-+    status = vtable->vaDeassociateSurfaceGLX(ctx, gl_surface);
++    status = deassociate_surface(ctx, pSurfaceGLX);
 +    if (status != VA_STATUS_SUCCESS)
 +        return status;
 +
 +    x11_trap_errors();
-+    status = ctx->vtable.vaPutSurface(ctx,
-+                                      surface,
-+                                      pSurfaceGLX->pixmap,
-+                                      0, 0,
-+                                      pSurfaceGLX->width,
-+                                      pSurfaceGLX->height,
-+                                      0, 0,
-+                                      pSurfaceGLX->width,
-+                                      pSurfaceGLX->height,
-+                                      NULL, 0,
-+                                      flags);
++    status = ctx->vtable.vaPutSurface(
++        ctx,
++        surface,
++        pSurfaceGLX->pixmap,
++        0, 0, pSurfaceGLX->width, pSurfaceGLX->height,
++        0, 0, pSurfaceGLX->width, pSurfaceGLX->height,
++        NULL, 0,
++        flags
++    );
 +    XSync(ctx->x11_dpy, False);
 +    if (x11_untrap_errors() != 0)
 +        return VA_STATUS_ERROR_OPERATION_FAILED;
@@ -1601,71 +1368,66 @@ index 0000000..d4f9c1d
 +    return VA_STATUS_SUCCESS;
 +}
 +
-+static VAStatus
-+vaDeassociateSurfaceGLX_impl_libva(VADriverContextP ctx, void *gl_surface)
++static inline VAStatus
++sync_surface(VADriverContextP ctx, VASurfaceGLXP pSurfaceGLX)
 +{
-+    VADriverContextGLXP pDriverContextGLX = VA_DRIVER_CONTEXT_GLX(ctx);
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
-+
-+    if (!pDriverContextGLX->use_tfp)
-+        return VA_STATUS_ERROR_UNIMPLEMENTED;
-+
-+    if (unbind_pixmap(ctx, pSurfaceGLX) < 0)
-+        return VA_STATUS_ERROR_OPERATION_FAILED;
-+
-+    pSurfaceGLX->surface = VA_INVALID_SURFACE;
-+    return VA_STATUS_SUCCESS;
-+}
-+
-+static VAStatus
-+vaSyncSurfaceGLX_impl_libva(VADriverContextP ctx, void *gl_surface)
-+{
-+    VADriverContextGLXP pDriverContextGLX = VA_DRIVER_CONTEXT_GLX(ctx);
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
-+
-+    if (!pDriverContextGLX->use_tfp)
-+        return VA_STATUS_ERROR_UNIMPLEMENTED;
-+
 +    if (pSurfaceGLX->surface == VA_INVALID_SURFACE)
 +        return VA_STATUS_ERROR_INVALID_SURFACE;
 +
 +    return ctx->vtable.vaSyncSurface(ctx, pSurfaceGLX->surface);
 +}
 +
-+static VAStatus
-+vaBeginRenderSurfaceGLX_impl_libva(VADriverContextP ctx, void *gl_surface)
++static inline VAStatus
++begin_render_surface(VADriverContextP ctx, VASurfaceGLXP pSurfaceGLX)
 +{
-+    VADriverContextGLXP pDriverContextGLX = VA_DRIVER_CONTEXT_GLX(ctx);
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
 +    VAStatus status;
 +
-+    if (!pDriverContextGLX->use_tfp)
-+        return VA_STATUS_ERROR_UNIMPLEMENTED;
-+
-+    status = vaSyncSurfaceGLX_impl_libva(ctx, gl_surface);
++    status = sync_surface(ctx, pSurfaceGLX);
 +    if (status != VA_STATUS_SUCCESS)
 +        return status;
 +
-+    if (bind_pixmap(ctx, pSurfaceGLX) < 0)
++    if (!bind_pixmap(ctx, pSurfaceGLX))
++        return VA_STATUS_ERROR_OPERATION_FAILED;
++
++    return VA_STATUS_SUCCESS;
++}
++
++static inline VAStatus
++end_render_surface(VADriverContextP ctx, VASurfaceGLXP pSurfaceGLX)
++{
++    if (!unbind_pixmap(ctx, pSurfaceGLX))
 +        return VA_STATUS_ERROR_OPERATION_FAILED;
 +
 +    return VA_STATUS_SUCCESS;
 +}
 +
 +static VAStatus
-+vaEndRenderSurfaceGLX_impl_libva(VADriverContextP ctx, void *gl_surface)
++copy_surface(
++    VADriverContextP    ctx,
++    VASurfaceGLXP       pSurfaceGLX,
++    VASurfaceID         surface,
++    unsigned int        flags
++)
 +{
-+    VADriverContextGLXP pDriverContextGLX = VA_DRIVER_CONTEXT_GLX(ctx);
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
 +    VAStatus status;
 +
-+    if (!pDriverContextGLX->use_tfp)
-+        return VA_STATUS_ERROR_UNIMPLEMENTED;
++    /* Associate VA surface */
++    status = associate_surface(ctx, pSurfaceGLX, surface, flags);
++    if (status != VA_STATUS_SUCCESS)
++        return status;
 +
-+    if (unbind_pixmap(ctx, pSurfaceGLX) < 0)
-+        return VA_STATUS_ERROR_OPERATION_FAILED;
++    /* Render to FBO */
++    fbo_enter(ctx, pSurfaceGLX);
++    status = begin_render_surface(ctx, pSurfaceGLX);
++    if (status == VA_STATUS_SUCCESS) {
++        render_pixmap(ctx, pSurfaceGLX);
++        status = end_render_surface(ctx, pSurfaceGLX);
++    }
++    fbo_leave(ctx);
++    if (status != VA_STATUS_SUCCESS)
++        return status;
 +
-+    return VA_STATUS_SUCCESS;
++    return deassociate_surface(ctx, pSurfaceGLX);
 +}
 +
 +static VAStatus
@@ -1676,97 +1438,22 @@ index 0000000..d4f9c1d
 +    unsigned int        flags
 +)
 +{
-+    VADriverContextGLXP pDriverContextGLX = VA_DRIVER_CONTEXT_GLX(ctx);
-+    VADriverVTableGLXP vtable = &pDriverContextGLX->vtable;
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
++    VASurfaceGLXP pSurfaceGLX;
 +    VAStatus status;
++    struct OpenGLContextState old_cs;
 +
-+    if (!pDriverContextGLX->use_fbo)
-+        return VA_STATUS_ERROR_UNIMPLEMENTED;
++    INIT_SURFACE(pSurfaceGLX, gl_surface);
 +
-+    /* XXX: only support VA_FRAME_PICTURE */
-+    if (flags != VA_FRAME_PICTURE)
-+        return VA_STATUS_ERROR_FLAG_NOT_SUPPORTED;
-+
-+    /* Associate VA surface */
-+    status = vtable->vaAssociateSurfaceGLX(ctx, gl_surface, surface, flags);
-+    if (status != VA_STATUS_SUCCESS)
-+        return status;
-+
-+    /* Make sure binding succeeds, if texture was not already bound */
-+    struct OpenGLTextureState ts;
-+    if (bind_texture(&ts, pSurfaceGLX->target, pSurfaceGLX->texture) < 0)
++    if (!gl_set_current_context(pSurfaceGLX->gl_context, &old_cs))
 +        return VA_STATUS_ERROR_OPERATION_FAILED;
 +
-+    /* Render to FBO */
-+    fbo_enter(ctx, pSurfaceGLX);
-+    status = vtable->vaBeginRenderSurfaceGLX(ctx, gl_surface);
-+    if (status == VA_STATUS_SUCCESS) {
-+        render_pixmap(ctx, pSurfaceGLX);
-+        status = vtable->vaEndRenderSurfaceGLX(ctx, gl_surface);
-+    }
-+    fbo_leave(ctx);
-+    unbind_texture(&ts);
-+    if (status != VA_STATUS_SUCCESS)
-+        return status;
++    status = copy_surface(ctx, pSurfaceGLX, surface, flags);
 +
-+    return vtable->vaDeassociateSurfaceGLX(ctx, gl_surface);
++    gl_set_current_context(&old_cs, NULL);
++    return status;
 +}
 +
-+
-+/* ========================================================================= */
-+/* === VA/GLX bind functions implementation with vaCopySurfaceGLX()      === */
-+/* ========================================================================= */
-+
-+static VAStatus
-+vaAssociateSurfaceGLX_impl_bind(
-+    VADriverContextP    ctx,
-+    void               *gl_surface,
-+    VASurfaceID         surface,
-+    unsigned int        flags
-+)
-+{
-+    VADriverContextGLXP pDriverContextGLX = VA_DRIVER_CONTEXT_GLX(ctx);
-+    VADriverVTableGLXP vtable = &pDriverContextGLX->vtable;
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
-+    VAStatus status;
-+
-+    if (!pDriverContextGLX->has_copy)
-+        return VA_STATUS_ERROR_UNIMPLEMENTED;
-+
-+    status = vtable->vaCopySurfaceGLX(ctx, gl_surface, surface, flags);
-+    if (status != VA_STATUS_SUCCESS)
-+        return status;
-+
-+    pSurfaceGLX->surface = surface;
-+    return VA_STATUS_SUCCESS;
-+}
-+
-+static VAStatus
-+vaDeassociateSurfaceGLX_impl_bind(VADriverContextP ctx, void *gl_surface)
-+{
-+    VADriverContextGLXP pDriverContextGLX = VA_DRIVER_CONTEXT_GLX(ctx);
-+    VASurfaceGLXP pSurfaceGLX = gl_surface;
-+
-+    if (!pDriverContextGLX->has_copy)
-+        return VA_STATUS_ERROR_UNIMPLEMENTED;
-+
-+    pSurfaceGLX->surface = VA_INVALID_SURFACE;
-+    return VA_STATUS_SUCCESS;
-+}
-+
-+static VAStatus
-+vaBeginRenderSurfaceGLX_impl_bind(VADriverContextP ctx, void *gl_surface)
-+{
-+    /* Surface is already copied into the texture, in vaAssociateSurfaceGLX() */
-+    return VA_STATUS_SUCCESS;
-+}
-+
-+static VAStatus
-+vaEndRenderSurfaceGLX_impl_bind(VADriverContextP ctx, void *gl_surface)
-+{
-+    return VA_STATUS_SUCCESS;
-+}
++#undef INIT_SURFACE
 +
 +
 +/* ========================================================================= */
@@ -1778,100 +1465,46 @@ index 0000000..d4f9c1d
 +{
 +    VADriverContextGLXP glx_ctx = VA_DRIVER_CONTEXT_GLX(ctx);
 +    VADriverVTableGLXP  vtable  = &glx_ctx->vtable;
-+    int needs_tfp = 0, needs_fbo = 0;
++    int glx_major, glx_minor;
 +
 +    if (glx_ctx->is_initialized)
 +        return VA_STATUS_SUCCESS;
 +
-+    glx_ctx->has_copy = ctx->vtable.glx.vaCopySurfaceGLX != NULL;
-+    glx_ctx->has_bind = (ctx->vtable.glx.vaAssociateSurfaceGLX   != NULL &&
-+                         ctx->vtable.glx.vaBeginRenderSurfaceGLX != NULL &&
-+                         ctx->vtable.glx.vaEndRenderSurfaceGLX   != NULL &&
-+                         ctx->vtable.glx.vaDeassociateSurfaceGLX != NULL);
-+
-+    switch ((((unsigned int)glx_ctx->has_bind) << 1) | glx_ctx->has_copy) {
-+    case 0:
-+        /* Full implementation in libVA */
-+        needs_tfp = 1;
-+        needs_fbo = 1;
++    if (ctx->vtable.glx && ctx->vtable.glx->vaCopySurfaceGLX) {
++        vtable->vaCreateSurfaceGLX      = vaCreateSurfaceGLX_impl_driver;
++        vtable->vaDestroySurfaceGLX     = vaDestroySurfaceGLX_impl_driver;
++        vtable->vaCopySurfaceGLX        = vaCopySurfaceGLX_impl_driver;
++    }
++    else {
 +        vtable->vaCreateSurfaceGLX      = vaCreateSurfaceGLX_impl_libva;
 +        vtable->vaDestroySurfaceGLX     = vaDestroySurfaceGLX_impl_libva;
-+        vtable->vaAssociateSurfaceGLX   = vaAssociateSurfaceGLX_impl_libva;
-+        vtable->vaDeassociateSurfaceGLX = vaDeassociateSurfaceGLX_impl_libva;
-+        vtable->vaBeginRenderSurfaceGLX = vaBeginRenderSurfaceGLX_impl_libva;
-+        vtable->vaEndRenderSurfaceGLX   = vaEndRenderSurfaceGLX_impl_libva;
-+        vtable->vaSyncSurfaceGLX        = vaSyncSurfaceGLX_impl_libva;
 +        vtable->vaCopySurfaceGLX        = vaCopySurfaceGLX_impl_libva;
-+        break;
-+    case 1:
-+        /* Add bind functions based on vaCopySurfaceGLX() */
-+        /* XXX: override vaSyncSurfaceGLX()? */
-+        vtable->vaCreateSurfaceGLX      = vaCreateSurfaceGLX_impl_driver;
-+        vtable->vaDestroySurfaceGLX     = vaDestroySurfaceGLX_impl_driver;
-+        vtable->vaAssociateSurfaceGLX   = vaAssociateSurfaceGLX_impl_bind;
-+        vtable->vaDeassociateSurfaceGLX = vaDeassociateSurfaceGLX_impl_bind;
-+        vtable->vaBeginRenderSurfaceGLX = vaBeginRenderSurfaceGLX_impl_bind;
-+        vtable->vaEndRenderSurfaceGLX   = vaEndRenderSurfaceGLX_impl_bind;
-+        vtable->vaSyncSurfaceGLX        = vaSyncSurfaceGLX_impl_driver;
-+        vtable->vaCopySurfaceGLX        = vaCopySurfaceGLX_impl_driver;
-+        break;
-+    case 2:
-+        /* Add copy function based on vaBeginRenderSurfaceGLX() et al. */
-+        needs_fbo = 1;
-+        vtable->vaCreateSurfaceGLX      = vaCreateSurfaceGLX_impl_driver;
-+        vtable->vaDestroySurfaceGLX     = vaDestroySurfaceGLX_impl_driver;
-+        vtable->vaAssociateSurfaceGLX   = vaAssociateSurfaceGLX_impl_driver;
-+        vtable->vaDeassociateSurfaceGLX = vaDeassociateSurfaceGLX_impl_driver;
-+        vtable->vaBeginRenderSurfaceGLX = vaBeginRenderSurfaceGLX_impl_driver;
-+        vtable->vaEndRenderSurfaceGLX   = vaEndRenderSurfaceGLX_impl_driver;
-+        vtable->vaSyncSurfaceGLX        = vaSyncSurfaceGLX_impl_driver;
-+        vtable->vaCopySurfaceGLX        = vaCopySurfaceGLX_impl_libva;
-+        break;
-+    case 3:
-+        /* Keep driver bind & copy functions */
-+        vtable->vaCreateSurfaceGLX      = vaCreateSurfaceGLX_impl_driver;
-+        vtable->vaDestroySurfaceGLX     = vaDestroySurfaceGLX_impl_driver;
-+        vtable->vaAssociateSurfaceGLX   = vaAssociateSurfaceGLX_impl_driver;
-+        vtable->vaDeassociateSurfaceGLX = vaDeassociateSurfaceGLX_impl_driver;
-+        vtable->vaBeginRenderSurfaceGLX = vaBeginRenderSurfaceGLX_impl_driver;
-+        vtable->vaEndRenderSurfaceGLX   = vaEndRenderSurfaceGLX_impl_driver;
-+        vtable->vaSyncSurfaceGLX        = vaSyncSurfaceGLX_impl_driver;
-+        vtable->vaCopySurfaceGLX        = vaCopySurfaceGLX_impl_driver;
-+        break;
-+    default:
-+        /* Fatal error: this cannot happen */
-+        assert(0);
-+        return VA_STATUS_ERROR_UNKNOWN;
-+    }
 +
-+    glx_ctx->has_tfp = 0;
-+    glx_ctx->use_tfp = 0;
-+    glx_ctx->has_fbo = 0;
-+    glx_ctx->use_fbo = 0;
-+
-+    if (needs_tfp) {
-+        glx_ctx->has_tfp = check_tfp_extensions(ctx);
-+        if (!glx_ctx->has_tfp || !load_tfp_extensions(ctx))
++        if (!glXQueryVersion(ctx->x11_dpy, &glx_major, &glx_minor))
 +            return VA_STATUS_ERROR_UNIMPLEMENTED;
-+        glx_ctx->use_tfp = 1;
-+    }
-+
-+    if (needs_fbo) {
-+        glx_ctx->has_fbo = check_fbo_extensions(ctx);
-+        if (!glx_ctx->has_fbo || !load_fbo_extensions(ctx))
++        if (glx_major < 1 || (glx_major == 1 && glx_minor < 3)) { /* GLX 1.3 */
++            va_glx_error_message("GLX version 1.3 expected but only "
++                                 "version %d.%d is available\n",
++                                 glx_major, glx_minor);
 +            return VA_STATUS_ERROR_UNIMPLEMENTED;
-+        glx_ctx->use_fbo = 1;
++        }
++
++        if (!check_tfp_extensions(ctx) || !load_tfp_extensions(ctx))
++            return VA_STATUS_ERROR_UNIMPLEMENTED;
++
++        if (!check_fbo_extensions(ctx) || !load_fbo_extensions(ctx))
++            return VA_STATUS_ERROR_UNIMPLEMENTED;
 +    }
 +
 +    glx_ctx->is_initialized = 1;
 +    return VA_STATUS_SUCCESS;
 +}
-diff --git a/src/glx/va_glx_impl.h b/src/glx/va_glx_impl.h
+diff --git a/va/glx/va_glx_impl.h b/va/glx/va_glx_impl.h
 new file mode 100644
-index 0000000..977bfcc
+index 0000000..ca1095e
 --- /dev/null
-+++ b/src/glx/va_glx_impl.h
-@@ -0,0 +1,46 @@
++++ b/va/glx/va_glx_impl.h
+@@ -0,0 +1,37 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
 + *
@@ -1908,22 +1541,13 @@ index 0000000..977bfcc
 +VAStatus va_glx_init_context(VADriverContextP ctx)
 +    ATTRIBUTE_HIDDEN;
 +
-+/** Create VA/GLX surface */
-+VASurfaceGLXP
-+va_glx_create_surface(VADriverContextP ctx, GLenum target, GLuint texture)
-+    ATTRIBUTE_HIDDEN;
-+
-+/** Destroy VA/GLX surface */
-+void va_glx_destroy_surface(VADriverContextP ctx, VASurfaceGLXP *pSurfaceGLX)
-+    ATTRIBUTE_HIDDEN;
-+
 +#endif /* VA_GLX_IMPL_H */
-diff --git a/src/glx/va_glx_private.h b/src/glx/va_glx_private.h
+diff --git a/va/glx/va_glx_private.h b/va/glx/va_glx_private.h
 new file mode 100644
-index 0000000..8658ad3
+index 0000000..6667de9
 --- /dev/null
-+++ b/src/glx/va_glx_private.h
-@@ -0,0 +1,98 @@
++++ b/va/glx/va_glx_private.h
+@@ -0,0 +1,76 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
 + *
@@ -1956,6 +1580,7 @@ index 0000000..8658ad3
 +#include "va_backend.h"
 +#include "va_x11.h"
 +#include "va_glx.h"
++#include "va_backend_glx.h"
 +
 +#if GLX_GLXEXT_VERSION < 18
 +typedef void (*PFNGLXBINDTEXIMAGEEXTPROC)(Display *, GLXDrawable, int, const int *);
@@ -1984,8 +1609,10 @@ index 0000000..8658ad3
 +typedef struct VASurfaceGLX        *VASurfaceGLXP;
 +typedef struct VADriverVTableGLX   *VADriverVTableGLXP;
 +
++typedef void (*vaDestroyFunc)(VADisplayContextP);
++
 +struct VADisplayContextGLX {
-+    void (*vaDestroy)(VADisplayContextP ctx);
++    vaDestroyFunc vaDestroy;
 +};
 +
 +#define VA_DRIVER_CONTEXT_GLX(ctx) ((VADriverContextGLXP)((ctx)->glx))
@@ -1994,31 +1621,10 @@ index 0000000..8658ad3
 +    struct VADriverVTableGLX    vtable;
 +    struct VAOpenGLVTable       gl_vtable;
 +    unsigned int                is_initialized  : 1;
-+    unsigned int                has_copy        : 1;
-+    unsigned int                has_bind        : 1;
-+    unsigned int                has_tfp         : 1;
-+    unsigned int                has_fbo         : 1;
-+    unsigned int                use_tfp         : 1;
-+    unsigned int                use_fbo         : 1;
-+};
-+
-+/** Unique VASurfaceGLX identifier */
-+#define VA_SURFACE_GLX_MAGIC VA_FOURCC('V','A','G','L')
-+
-+struct VASurfaceGLX {
-+    uint32_t     magic;         ///< Magic number identifying a VASurfaceGLX
-+    GLenum       target;        ///< GL target to which the texture is bound
-+    GLuint       texture;       ///< GL texture
-+    VASurfaceID  surface;       ///< Associated VA surface
-+    unsigned int width;
-+    unsigned int height;
-+    int          is_bound;
-+    Pixmap       pixmap;
-+    GLXPixmap    glx_pixmap;
-+    GLuint       fbo;
-+    GLuint       fbo_buffer;
-+    GLuint       fbo_texture;
-+    void        *priv;          ///< Private VA/GLX surface data from driver
 +};
 +
 +#endif /* VA_GLX_PRIVATE_H */
+diff --git a/va/va_backend.h b/va/va_backend.h
+index ff86744..06fef7f 100644
+diff --git a/va/x11/va_x11.c b/va/x11/va_x11.c
+index 71cc36f..6826b31 100644

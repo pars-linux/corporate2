@@ -1,16 +1,11 @@
-From 6622e8eba85cea476f8ef5b8c3620c4a0f024dcd Mon Sep 17 00:00:00 2001
-From: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date: Wed, 4 Nov 2009 10:56:54 +0000
-Subject: [PATCH] [G45] Add RGBA subpictures.
+commit 98edda85a2d734763a5f40478a063d3e289e1389
+Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
+Date:   Wed Nov 4 10:56:54 2009 +0000
 
----
- i965_drv_video/i965_drv_video.c |   18 ++++++++++++++++++
- i965_drv_video/i965_drv_video.h |    3 ++-
- i965_drv_video/i965_render.c    |    8 ++++----
- 3 files changed, 24 insertions(+), 5 deletions(-)
+    [G45] Add RGBA subpictures.
 
 diff --git a/i965_drv_video/i965_drv_video.c b/i965_drv_video/i965_drv_video.c
-index 8f4bfc1..92c4785 100644
+index e476ca2..637e304 100644
 --- a/i965_drv_video/i965_drv_video.c
 +++ b/i965_drv_video/i965_drv_video.c
 @@ -70,6 +70,14 @@ i965_subpic_formats_map[I965_MAX_SUBPIC_FORMATS + 1] = {
@@ -53,10 +48,10 @@ index 8f4bfc1..92c4785 100644
          goto error;
      }
 diff --git a/i965_drv_video/i965_drv_video.h b/i965_drv_video/i965_drv_video.h
-index c95c799..4d775da 100644
+index fa09869..2f538c2 100644
 --- a/i965_drv_video/i965_drv_video.h
 +++ b/i965_drv_video/i965_drv_video.h
-@@ -42,7 +42,7 @@
+@@ -44,7 +44,7 @@
  #define I965_MAX_ENTRYPOINTS                    5
  #define I965_MAX_CONFIG_ATTRIBUTES              10
  #define I965_MAX_IMAGE_FORMATS                  10
@@ -65,7 +60,7 @@ index c95c799..4d775da 100644
  #define I965_MAX_DISPLAY_ATTRIBUTES             4
  #define I965_STR_VENDOR                         "i965 Driver 0.1"
  
-@@ -124,6 +124,7 @@ struct object_subpic
+@@ -126,6 +126,7 @@ struct object_subpic
      unsigned int format;
      int width;
      int height;
@@ -74,10 +69,10 @@ index c95c799..4d775da 100644
  };
  
 diff --git a/i965_drv_video/i965_render.c b/i965_drv_video/i965_render.c
-index f105e90..0476087 100644
+index 4a4f041..c738d22 100644
 --- a/i965_drv_video/i965_render.c
 +++ b/i965_drv_video/i965_render.c
-@@ -586,7 +586,7 @@ i965_subpic_render_src_surface_state(VADriverContextP ctx,
+@@ -587,7 +587,7 @@ i965_subpic_render_src_surface_state(VADriverContextP ctx,
                                int index,
                                dri_bo *region,
                                unsigned long offset,
@@ -86,7 +81,7 @@ index f105e90..0476087 100644
  {
      struct i965_driver_data *i965 = i965_driver_data(ctx);  
      struct i965_render_state *render_state = &i965->render_state;
-@@ -620,7 +620,7 @@ i965_subpic_render_src_surface_state(VADriverContextP ctx,
+@@ -621,7 +621,7 @@ i965_subpic_render_src_surface_state(VADriverContextP ctx,
      ss->ss2.mip_count = 0;
      ss->ss2.render_target_rotation = 0;
  
@@ -95,7 +90,7 @@ index f105e90..0476087 100644
  
      dri_bo_emit_reloc(ss_bo,
                        I915_GEM_DOMAIN_SAMPLER, 0,
-@@ -678,8 +678,8 @@ i965_subpic_render_src_surfaces_state(VADriverContextP ctx,
+@@ -679,8 +679,8 @@ i965_subpic_render_src_surfaces_state(VADriverContextP ctx,
      region = obj_surface->bo;
      subpic_region = obj_image->bo;
      /*subpicture surface*/
@@ -106,6 +101,3 @@ index f105e90..0476087 100644
  }
  
  static void
--- 
-1.5.4.3
-

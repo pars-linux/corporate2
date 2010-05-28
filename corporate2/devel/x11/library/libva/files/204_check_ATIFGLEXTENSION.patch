@@ -1,16 +1,29 @@
-commit d91645f8b37aa43bafa76da3146dcdc9c17963ff
+commit 595a044901ee32acc3212100966f5a1a9e181515
 Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
 Date:   Fri Nov 20 15:51:22 2009 +0000
 
     Fix detection of fglrx.
 
-diff --git a/src/x11/Makefile.am b/src/x11/Makefile.am
-index b6916f2..0b61c33 100644
---- a/src/x11/Makefile.am
-+++ b/src/x11/Makefile.am
+diff --git a/va/Makefile.am b/va/Makefile.am
+index 3b9ccfc..99f6bbf 100644
+--- a/va/Makefile.am
++++ b/va/Makefile.am
+@@ -36,7 +36,7 @@ libva_la_LDFLAGS = $(LDADD) -no-undefined
+ libva_la_LIBADD = $(LIBVA_LIBS) -ldl
+ 
+ libva_x11_la_SOURCES = 
+-libva_x11_la_LIBADD  = $(libvacorelib) x11/libva_x11.la $(LIBVA_LIBS) $(X11_LIBS) $(XEXT_LIBS) $(XFIXES_LIBS)
++libva_x11_la_LIBADD  = $(libvacorelib) x11/libva_x11.la $(LIBVA_LIBS) $(X11_LIBS) $(XEXT_LIBS) $(XFIXES_LIBS) -ldl
+ libva_x11_la_LDFLAGS = $(LDADD)
+ libva_x11_la_DEPENDENCIES = $(libvacorelib) x11/libva_x11.la
+ 
+diff --git a/va/x11/Makefile.am b/va/x11/Makefile.am
+index 7466fda..a6d9323 100644
+--- a/va/x11/Makefile.am
++++ b/va/x11/Makefile.am
 @@ -25,6 +25,23 @@ noinst_LTLIBRARIES = libva_x11.la
  libva_x11includedir = ${includedir}/va
- libva_x11include_HEADERS = va_x11.h va_dri.h va_dri2.h va_dricommon.h
+ libva_x11include_HEADERS = va_dri.h va_dri2.h va_dricommon.h
  
 -libva_x11_la_SOURCES = va_x11.c va_dri.c va_dri2.c va_dricommon.c dri2_util.c dri1_util.c va_nvctrl.c libdrm_glue.c
 +libva_x11_la_SOURCES =	\
@@ -34,11 +47,11 @@ index b6916f2..0b61c33 100644
 +	va_fglext.h	\
 +	va_nvctrl.h	\
 +	$(NULL)
-diff --git a/src/x11/va_fglext.c b/src/x11/va_fglext.c
+diff --git a/va/x11/va_fglext.c b/va/x11/va_fglext.c
 new file mode 100644
-index 0000000..bc58e8b
+index 0000000..add1f28
 --- /dev/null
-+++ b/src/x11/va_fglext.c
++++ b/va/x11/va_fglext.c
 @@ -0,0 +1,175 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
@@ -215,11 +228,11 @@ index 0000000..bc58e8b
 +
 +    return True;
 +}
-diff --git a/src/x11/va_fglext.h b/src/x11/va_fglext.h
+diff --git a/va/x11/va_fglext.h b/va/x11/va_fglext.h
 new file mode 100644
 index 0000000..f2d87c3
 --- /dev/null
-+++ b/src/x11/va_fglext.h
++++ b/va/x11/va_fglext.h
 @@ -0,0 +1,37 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
@@ -258,10 +271,10 @@ index 0000000..f2d87c3
 +    int *ddxDriverPatchVersion, char **clientDriverName );
 +
 +#endif /* VA_FGLEXTLIB_H */
-diff --git a/src/x11/va_x11.c b/src/x11/va_x11.c
-index 414c261..0510e00 100644
---- a/src/x11/va_x11.c
-+++ b/src/x11/va_x11.c
+diff --git a/va/x11/va_x11.c b/va/x11/va_x11.c
+index 1216093..71cc36f 100644
+--- a/va/x11/va_x11.c
++++ b/va/x11/va_x11.c
 @@ -31,6 +31,7 @@
  #include "va_dri2.h"
  #include "va_dricommon.h"
@@ -269,8 +282,8 @@ index 414c261..0510e00 100644
 +#include "va_fglext.h"
  #include "libdrm_glue.h"
  #include <stdio.h>
- #include <stdarg.h>
-@@ -132,6 +133,29 @@ static VAStatus va_NVCTRL_GetDriverName (
+ #include <stdlib.h>
+@@ -133,6 +134,29 @@ static VAStatus va_NVCTRL_GetDriverName (
      return VA_STATUS_SUCCESS;
  }
  
@@ -300,7 +313,7 @@ index 414c261..0510e00 100644
  static VAStatus va_DisplayContextGetDriverName (
      VADisplayContextP pDisplayContext,
      char **driver_name
-@@ -156,7 +180,8 @@ static VAStatus va_DisplayContextGetDriverName (
+@@ -148,7 +172,8 @@ static VAStatus va_DisplayContextGetDriverName (
          vaStatus = va_DRIGetDriverName(pDisplayContext, driver_name);
      if (vaStatus != VA_STATUS_SUCCESS)
          vaStatus = va_NVCTRL_GetDriverName(pDisplayContext, driver_name);

@@ -1,11 +1,11 @@
-commit 890acc1975ed9f6b7173ff6fbf9d689943590913
+commit 1821919f68487c5e4fec33bd242208f49cb58c1e
 Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
 Date:   Wed Jun 24 11:32:40 2009 +0000
 
     Explicit API extensions from SDS.
 
 diff --git a/configure.ac b/configure.ac
-index 3999dc4..17b0403 100644
+index ebe5df6..95cf992 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -28,6 +28,9 @@ m4_define([libva_micro_version], [0])
@@ -13,10 +13,10 @@ index 3999dc4..17b0403 100644
            [libva_major_version.libva_minor_version.libva_micro_version])
  
 +# increase this number for each API change
-+m4_define([libva_sds_version], [4])
++m4_define([libva_sds_version], [6])
 +
  # if the library source code has changed, increment revision
- m4_define([libva_lt_revision], [0])
+ m4_define([libva_lt_revision], [1])
  # if any interface was added/removed/changed, then inc current, reset revision
 @@ -52,11 +55,14 @@ AC_SUBST(LIBVA_MINOR_VERSION)
  AC_SUBST(LIBVA_MICRO_VERSION)
@@ -34,34 +34,43 @@ index 3999dc4..17b0403 100644
  AC_SUBST(LIBVA_LT_VERSION)
  AC_SUBST(LIBVA_LT_LDFLAGS)
  
-diff --git a/src/va.c b/src/va.c
-index f9791f8..b60ac12 100644
---- a/src/va.c
-+++ b/src/va.c
-@@ -35,6 +35,7 @@
- #include <linux/videodev2.h>
+diff --git a/libva.pc.in b/libva.pc.in
+index 60f1483..0b37945 100644
+--- a/libva.pc.in
++++ b/libva.pc.in
+@@ -3,6 +3,7 @@ exec_prefix=@exec_prefix@
+ libdir=@libdir@
+ includedir=@includedir@
+ driverdir=@LIBVA_DRIVERS_PATH@
++sdsversion=@LIBVA_SDS_VERSION@
  
- #define DRIVER_INIT_FUNC	"__vaDriverInit_0_31"
-+#define DRIVER_INIT_FUNC_SDS	"__vaDriverInit_0_31_sds"
- 
- #define DRIVER_EXTENSION	"_drv_video.so"
- 
-@@ -160,6 +161,11 @@ static VAStatus va_openDriver(VADisplay dpy, char *driver_name)
-             init_func = (VADriverInit) dlsym(handle, DRIVER_INIT_FUNC);
-             if (!init_func)
-             {
-+                /* Then try SDS extensions (VDPAU and XvBA backends) */
-+                init_func = (VADriverInit) dlsym(handle, DRIVER_INIT_FUNC_SDS);
-+            }
+ Name: libva
+ Description: Userspace Video Acceleration (VA) core interface
+diff --git a/va/va.c b/va/va.c
+index fd68481..0d208d8 100644
+--- a/va/va.c
++++ b/va/va.c
+@@ -162,7 +162,15 @@ static VAStatus va_openDriver(VADisplay dpy, char *driver_name)
+         else
+         {
+             VADriverInit init_func;
+-            init_func = (VADriverInit) dlsym(handle, DRIVER_INIT_FUNC);
++            char driver_init_func_sds[32];
++            /* First, try SDS extensions (VDPAU and XvBA backends) */
++            sprintf(driver_init_func_sds, "%s_%d_sds%d",
++                    DRIVER_INIT_FUNC, VA_MICRO_VERSION, VA_SDS_VERSION);
++            init_func = (VADriverInit) dlsym(handle, driver_init_func_sds);
 +            if (!init_func)
 +            {
++                init_func = (VADriverInit) dlsym(handle, DRIVER_INIT_FUNC);
++            }
+             if (!init_func)
+             {
                  va_errorMessage("%s has no function %s\n", driver_path, DRIVER_INIT_FUNC);
-                 dlclose(handle);
-             }
-diff --git a/src/va_version.h.in b/src/va_version.h.in
+diff --git a/va/va_version.h.in b/va/va_version.h.in
 index c9ea97a..197c482 100644
---- a/src/va_version.h.in
-+++ b/src/va_version.h.in
+--- a/va/va_version.h.in
++++ b/va/va_version.h.in
 @@ -47,6 +47,13 @@
  #define VA_MICRO_VERSION   (@LIBVA_MICRO_VERSION@)
  

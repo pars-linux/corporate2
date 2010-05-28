@@ -1,15 +1,11 @@
-From 23b23e8d65551779f10aedddee7882c2e71ac162 Mon Sep 17 00:00:00 2001
-From: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date: Wed, 4 Nov 2009 13:01:44 +0000
-Subject: [PATCH] [G45] Add YV12 image format.
+commit c5cb995d6cd49f5f2988b1721cb6b5da8a9b2c09
+Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
+Date:   Wed Nov 4 13:01:44 2009 +0000
 
----
- i965_drv_video/i965_drv_video.c |   50 ++++++++++++++++++++++++++++++++++++++-
- i965_drv_video/i965_drv_video.h |    2 +-
- 2 files changed, 50 insertions(+), 2 deletions(-)
+    [G45] Add YV12 image format.
 
 diff --git a/i965_drv_video/i965_drv_video.c b/i965_drv_video/i965_drv_video.c
-index 1f026bc..8558d0e 100644
+index 9e8502a..6488570 100644
 --- a/i965_drv_video/i965_drv_video.c
 +++ b/i965_drv_video/i965_drv_video.c
 @@ -54,6 +54,36 @@ enum {
@@ -67,7 +63,7 @@ index 1f026bc..8558d0e 100644
  
      return VA_STATUS_SUCCESS;
  }
-@@ -1236,6 +1274,16 @@ i965_CreateImage(VADriverContextP ctx,
+@@ -1239,6 +1277,16 @@ i965_CreateImage(VADriverContextP ctx,
          image->offsets[0] = 0;
          image->data_size  = image->offsets[0] + image->pitches[0] * height;
          break;
@@ -76,19 +72,19 @@ index 1f026bc..8558d0e 100644
 +        image->pitches[0] = width;
 +        image->offsets[0] = 0;
 +        image->pitches[1] = width2;
-+        image->offsets[1] = size;
++        image->offsets[1] = size + size2;
 +        image->pitches[2] = width2;
-+        image->offsets[2] = size + size2;
++        image->offsets[2] = size;
 +        image->data_size  = size + 2 * size2;
 +        break;
      default:
          goto error;
      }
 diff --git a/i965_drv_video/i965_drv_video.h b/i965_drv_video/i965_drv_video.h
-index 4d775da..f512793 100644
+index 2f538c2..be253ed 100644
 --- a/i965_drv_video/i965_drv_video.h
 +++ b/i965_drv_video/i965_drv_video.h
-@@ -41,7 +41,7 @@
+@@ -43,7 +43,7 @@
  #define I965_MAX_PROFILES                       11
  #define I965_MAX_ENTRYPOINTS                    5
  #define I965_MAX_CONFIG_ATTRIBUTES              10
@@ -97,6 +93,3 @@ index 4d775da..f512793 100644
  #define I965_MAX_SUBPIC_FORMATS                 4
  #define I965_MAX_DISPLAY_ATTRIBUTES             4
  #define I965_STR_VENDOR                         "i965 Driver 0.1"
--- 
-1.5.4.3
-

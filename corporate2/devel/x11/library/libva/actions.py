@@ -7,8 +7,11 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 
 def setup():
+    pisitools.dosed("test/Makefile.am", "^SUBDIRS = .*$", "")
+
     autotools.autoreconf("-vif")
-    autotools.configure("--enable-dummy-driver \
+    autotools.configure("--enable-glx \
+                         --enable-dummy-driver \
                          --enable-i965-driver")
 
 def build():

@@ -1,87 +1,21 @@
-commit 2e7aa803a8547dfcde6e97ae2bb4a8bbdbb2634e
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Mon Nov 23 12:22:09 2009 +0000
-
-    Update compat code for VDPAU/MPEG-4 additions.
-
-commit 30808b39d82cbf0c185052a2d2d5ed8a5fc065d1
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Thu Sep 10 14:01:57 2009 +0000
-
-    Update compatibility glue for VASliceParameterBufferMPEG2.slice_horizontal_position addition.
-
-commit 27faf49366602637da223f3dc5f30ce4d6d72070
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Wed Sep 2 15:06:20 2009 +0000
-
-    Fix vaSyncSurface() compat code for VA API < 0.31 drivers.
-
-commit dc33a3e28b38b7d579ab768899963cf9b0d38677
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Wed Sep 2 12:28:43 2009 +0000
-
-    Fix check for 0.30 modules.
-
-commit bd913971bd9e7460b454513b006e16c18136625e
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Wed Sep 2 11:58:08 2009 +0000
-
-    Update for VA API 0.31.
-
-commit 9cc7f89d3cc0238ab5b3a47c316e261e06a16634
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Thu Jul 2 15:55:48 2009 +0000
-
-    Fix VAEncSliceParameterBuffer thunk.
-
-commit 483bc9e67afa9bcd8f99f08a74a78e7dfad4651f
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Thu Jul 2 09:24:04 2009 +0000
-
-    Fix make dist (va_compat_template.h).
-
-commit 7f41b22366142c4e476fbae929ad343dc33af3a4
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Thu Jun 25 14:05:57 2009 +0000
-
-    Drop superfluous semi-colon.
-
-commit dcc75aae23fc8f653179b6a331f4021acd6775fd
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Thu Jun 25 13:53:26 2009 +0000
-
-    Fix check for 0.30 modules.
-
-commit b34512e74ac4150a3f8ee4abe4fa5b17907f8869
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Thu Jun 25 13:17:48 2009 +0000
-
-    Fix vaTerminate() thunk.
-
-commit 3b006d1ac66429f6b8ffff00ce60e1e47a32c02c
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Thu Jun 25 12:48:22 2009 +0000
-
-    Cosmetics.
-
-commit 452295d5ac34643f8a316491888c3900f12c5bff
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Thu Jun 25 12:18:48 2009 +0000
-
-    Fix compatibility with 0.29 modules.
-
-commit 0e0da9ea861f14e8129767dbf6f11be5c051d85f
+commit 66831a1b979798ee34bb379d2d2a5163dc65c62e
 Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
 Date:   Wed Jun 24 11:40:56 2009 +0000
 
-    Add compatibility layer with original libva 0.29.
+    Add compatibility layer with original VA-API 0.29 to 0.31.
 
-diff --git a/src/va_compat.c b/src/va_compat.c
+diff --git a/va/Makefile.am b/va/Makefile.am
+index ebff3d5..1752526 100644
+diff --git a/va/va.c b/va/va.c
+index 0d208d8..ad201fa 100644
+diff --git a/va/va_backend.h b/va/va_backend.h
+index 06fef7f..9cf8911 100644
+diff --git a/va/va_compat.c b/va/va_compat.c
 new file mode 100644
-index 0000000..0bd7385
+index 0000000..c47428c
 --- /dev/null
-+++ b/src/va_compat.c
-@@ -0,0 +1,1171 @@
++++ b/va/va_compat.c
+@@ -0,0 +1,1184 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
 + *
@@ -110,6 +44,7 @@ index 0000000..0bd7385
 +#include "va.h"
 +#include "va_compat.h"
 +#include "va_backend.h"
++#include <stdlib.h>
 +#include <string.h>
 +#include <alloca.h>
 +#include <assert.h>
@@ -431,12 +366,18 @@ index 0000000..0bd7385
 +    /* XXX: this allocation strategy is not really space efficient... */
 +    if (index >= compat->buffers_count_max)
 +    {
-+        compat->buffers_count_max = index + 1;
-+        compat->buffers = realloc(compat->buffers,
-+                                  (compat->buffers_count_max *
-+                                   sizeof(VABufferCompat)));
++        compat->buffers = realloc(
++            compat->buffers,
++            ((index + 1) * sizeof(VABufferCompat))
++        );
 +        if (compat->buffers == NULL)
 +            return VA_STATUS_ERROR_ALLOCATION_FAILED;
++        memset(
++            &compat->buffers[compat->buffers_count_max],
++            0,
++            (index + 1 - compat->buffers_count_max) * sizeof(compat->buffers[0])
++        );
++        compat->buffers_count_max = index + 1;
 +    }
 +
 +    compat_buffer = &compat->buffers[index];
@@ -863,14 +804,20 @@ index 0000000..0bd7385
 +    (VADriverContextP ctx, VASurfaceID render_target, VASurfaceStatus *status),
 +    (ctx, render_target, status))
 +
-+DEFINE_VTABLE_ENTRY(
++DEFINE_VTABLE_ENTRY_(
 +    VAStatus, PutSurface,
 +    (VADriverContextP ctx, VASurfaceID surface, Drawable draw,
 +     short srcx, short srcy, unsigned short srcw, unsigned short srch,
 +     short destx, short desty, unsigned short destw, unsigned short desth,
 +     VARectangle *cliprects, unsigned int number_cliprects, unsigned int flags),
++    PutSurface,
 +    (ctx, surface, draw, srcx, srcy, srcw, srch, destx, desty, destw, desth,
-+     cliprects, number_cliprects, flags))
++     cliprects, number_cliprects, flags),
++    {
++        if (COMPAT_CTX(ctx)->compat_version < 30) /* 0.30 */
++            flags &= (VA_TOP_FIELD|VA_BOTTOM_FIELD|VA_CLEAR_DRAWABLE);
++    },
++    {})
 +
 +DEFINE_VTABLE_ENTRY(
 +    VAStatus, QueryImageFormats,
@@ -1225,7 +1172,7 @@ index 0000000..0bd7385
 +    {
 +        for (i = 0; i < compat->buffers_count_max; i++)
 +        {
-+            if (compat->buffers[i].id)
++            if (compat->buffers[i].id && compat->buffers[i].size > 0)
 +                va_DestroyBufferCompat(ctx, compat->buffers[i].id);
 +        }
 +        free(compat->buffers);
@@ -1253,11 +1200,11 @@ index 0000000..0bd7385
 +    ctx->compat = NULL;
 +    return VA_STATUS_SUCCESS;
 +}
-diff --git a/src/va_compat.h b/src/va_compat.h
+diff --git a/va/va_compat.h b/va/va_compat.h
 new file mode 100644
 index 0000000..2c9d801
 --- /dev/null
-+++ b/src/va_compat.h
++++ b/va/va_compat.h
 @@ -0,0 +1,1467 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
@@ -2726,11 +2673,11 @@ index 0000000..2c9d801
 +#define VADriverContext_0_31    VADriverContext
 +
 +#endif /* VA_COMPAT_H */
-diff --git a/src/va_compat_template.h b/src/va_compat_template.h
+diff --git a/va/va_compat_template.h b/va/va_compat_template.h
 new file mode 100644
 index 0000000..18349de
 --- /dev/null
-+++ b/src/va_compat_template.h
++++ b/va/va_compat_template.h
 @@ -0,0 +1,539 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
