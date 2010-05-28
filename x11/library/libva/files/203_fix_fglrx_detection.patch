@@ -1,36 +1,44 @@
-commit fb6ccda5984eda96bcb394b23255143dcbc21f18
+commit 02c2bb46ae11a1674927e6e65f990df1dc9ed1ce
 Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Thu Sep 10 12:22:17 2009 +0000
+Date:   Mon Mar 8 09:17:09 2010 +0100
 
     Don't link against libdrm to workaround XvBA / fglrx >= 8.66-RC1 bugs.
 
-commit ab3c0f65182462b54729d2d82d4d645c8be5b2d1
-Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Wed Sep 9 13:24:46 2009 +0000
-
-    Fix DRM device opening with fglrx >= 8.66-RC1.
-
-diff --git a/src/x11/Makefile.am b/src/x11/Makefile.am
-index c70380d..b6916f2 100644
---- a/src/x11/Makefile.am
-+++ b/src/x11/Makefile.am
+diff --git a/va/Makefile.am b/va/Makefile.am
+index f382c0e..3b9ccfc 100644
+--- a/va/Makefile.am
++++ b/va/Makefile.am
+@@ -36,7 +36,7 @@ libva_la_LDFLAGS = $(LDADD) -no-undefined
+ libva_la_LIBADD = $(LIBVA_LIBS) -ldl
+ 
+ libva_x11_la_SOURCES = 
+-libva_x11_la_LIBADD  = $(libvacorelib) x11/libva_x11.la $(LIBVA_LIBS) $(X11_LIBS) $(XEXT_LIBS) $(DRM_LIBS) $(XFIXES_LIBS)
++libva_x11_la_LIBADD  = $(libvacorelib) x11/libva_x11.la $(LIBVA_LIBS) $(X11_LIBS) $(XEXT_LIBS) $(XFIXES_LIBS)
+ libva_x11_la_LDFLAGS = $(LDADD)
+ libva_x11_la_DEPENDENCIES = $(libvacorelib) x11/libva_x11.la
+ 
+diff --git a/va/x11/Makefile.am b/va/x11/Makefile.am
+index 40346f1..7466fda 100644
+--- a/va/x11/Makefile.am
++++ b/va/x11/Makefile.am
 @@ -25,6 +25,6 @@ noinst_LTLIBRARIES = libva_x11.la
  libva_x11includedir = ${includedir}/va
- libva_x11include_HEADERS = va_x11.h va_dri.h va_dri2.h va_dricommon.h
+ libva_x11include_HEADERS = va_dri.h va_dri2.h va_dricommon.h
  
 -libva_x11_la_SOURCES = va_x11.c va_dri.c va_dri2.c va_dricommon.c dri2_util.c dri1_util.c va_nvctrl.c
 +libva_x11_la_SOURCES = va_x11.c va_dri.c va_dri2.c va_dricommon.c dri2_util.c dri1_util.c va_nvctrl.c libdrm_glue.c
  
 -EXTRA_DIST = va_dristr.h va_dri2str.h va_dri2tokens.h va_nvctrl.h
 +EXTRA_DIST = va_dristr.h va_dri2str.h va_dri2tokens.h va_nvctrl.h libdrm_glue.h
-diff --git a/src/x11/dri1_util.c b/src/x11/dri1_util.c
-index b3db5b4..3bd490f 100644
---- a/src/x11/dri1_util.c
-+++ b/src/x11/dri1_util.c
-@@ -1,10 +1,12 @@
+diff --git a/va/x11/dri1_util.c b/va/x11/dri1_util.c
+index 3e67e2a..f6ce1ba 100644
+--- a/va/x11/dri1_util.c
++++ b/va/x11/dri1_util.c
+@@ -1,10 +1,13 @@
 +#include "config.h"
 +#include <stdio.h>
  #include <stdlib.h>
++#include <strings.h> /* strcasecmp() */
  #include <fcntl.h>
  #include <unistd.h>
  #include <sys/mman.h>
@@ -41,7 +49,7 @@ index b3db5b4..3bd490f 100644
  
  #include "X11/Xlib.h"
  #include "va.h"
-@@ -21,6 +23,75 @@ struct dri1_drawable
+@@ -21,6 +24,75 @@ struct dri1_drawable
      int height;
  };
  
@@ -117,7 +125,7 @@ index b3db5b4..3bd490f 100644
  static struct dri_drawable * 
  dri1CreateDrawable(VADriverContextP ctx, XID x_drawable)
  {
-@@ -64,9 +135,9 @@ dri1Close(VADriverContextP ctx)
+@@ -64,9 +136,9 @@ dri1Close(VADriverContextP ctx)
      free_drawable_hashtable(ctx);
      VA_DRIDestroyContext(ctx->x11_dpy, ctx->x11_screen, dri_state->hwContextID);
      assert(dri_state->pSAREA != MAP_FAILED);
@@ -129,7 +137,7 @@ index b3db5b4..3bd490f 100644
      VA_DRICloseConnection(ctx->x11_dpy, ctx->x11_screen);
  }
  
-@@ -104,21 +175,20 @@ isDRI1Connected(VADriverContextP ctx, char **driver_name)
+@@ -104,21 +176,20 @@ isDRI1Connected(VADriverContextP ctx, char **driver_name)
                                &dri_state->hSAREA, &BusID))
          goto err_out0;
  
@@ -154,7 +162,7 @@ index b3db5b4..3bd490f 100644
          goto err_out1;
  
      if (!VA_DRICreateContext(ctx->x11_dpy, ctx->x11_screen,
-@@ -127,7 +196,8 @@ isDRI1Connected(VADriverContextP ctx, char **driver_name)
+@@ -126,7 +197,8 @@ isDRI1Connected(VADriverContextP ctx, char **driver_name)
                               &dri_state->hwContextID, &dri_state->hwContext))
          goto err_out1;
  
@@ -164,7 +172,7 @@ index b3db5b4..3bd490f 100644
      dri_state->createDrawable = dri1CreateDrawable;
      dri_state->destroyDrawable = dri1DestroyDrawable;
      dri_state->swapBuffer = dri1SwapBuffer;
-@@ -138,10 +208,10 @@ isDRI1Connected(VADriverContextP ctx, char **driver_name)
+@@ -137,10 +209,10 @@ isDRI1Connected(VADriverContextP ctx, char **driver_name)
  
  err_out1:
      if (dri_state->pSAREA != MAP_FAILED)
@@ -177,10 +185,10 @@ index b3db5b4..3bd490f 100644
  
      VA_DRICloseConnection(ctx->x11_dpy, ctx->x11_screen);
  
-diff --git a/src/x11/dri2_util.c b/src/x11/dri2_util.c
+diff --git a/va/x11/dri2_util.c b/va/x11/dri2_util.c
 index ebe7a2c..b727e97 100644
---- a/src/x11/dri2_util.c
-+++ b/src/x11/dri2_util.c
+--- a/va/x11/dri2_util.c
++++ b/va/x11/dri2_util.c
 @@ -3,7 +3,7 @@
  #include <unistd.h>
  #include <assert.h>
@@ -199,12 +207,12 @@ index ebe7a2c..b727e97 100644
          goto err_out;
  
      if (!VA_DRI2Authenticate(ctx->x11_dpy, RootWindow(ctx->x11_dpy, ctx->x11_screen),
-diff --git a/src/x11/libdrm_glue.c b/src/x11/libdrm_glue.c
+diff --git a/va/x11/libdrm_glue.c b/va/x11/libdrm_glue.c
 new file mode 100644
-index 0000000..b72a2d1
+index 0000000..92c7d60
 --- /dev/null
-+++ b/src/x11/libdrm_glue.c
-@@ -0,0 +1,208 @@
++++ b/va/x11/libdrm_glue.c
+@@ -0,0 +1,209 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
 + *
@@ -232,6 +240,7 @@ index 0000000..b72a2d1
 +#define _GNU_SOURCE 1
 +#include "libdrm_glue.h"
 +#include <stdio.h>
++#include <stdlib.h>
 +#include <string.h>
 +#include <dlfcn.h>
 +#include <assert.h>
@@ -413,11 +422,11 @@ index 0000000..b72a2d1
 +    LOAD_FUNC(drmUnmap, int, (drmAddress, drmSize));
 +    return lib_drmUnmap(address, size);
 +}
-diff --git a/src/x11/libdrm_glue.h b/src/x11/libdrm_glue.h
+diff --git a/va/x11/libdrm_glue.h b/va/x11/libdrm_glue.h
 new file mode 100644
 index 0000000..878470b
 --- /dev/null
-+++ b/src/x11/libdrm_glue.h
++++ b/va/x11/libdrm_glue.h
 @@ -0,0 +1,73 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
@@ -492,10 +501,10 @@ index 0000000..878470b
 +    ATTRIBUTE_HIDDEN;
 +
 +#endif /* LIBDRM_GLUE_H */
-diff --git a/src/x11/va_dricommon.h b/src/x11/va_dricommon.h
-index a2a51a6..0da35fe 100644
---- a/src/x11/va_dricommon.h
-+++ b/src/x11/va_dricommon.h
+diff --git a/va/x11/va_dricommon.h b/va/x11/va_dricommon.h
+index b762bd0..5ed7a6a 100644
+--- a/va/x11/va_dricommon.h
++++ b/va/x11/va_dricommon.h
 @@ -13,7 +13,8 @@ enum
  {
      VA_NONE = 0,
@@ -506,19 +515,19 @@ index a2a51a6..0da35fe 100644
  };
  
  union dri_buffer 
-diff --git a/src/x11/va_x11.c b/src/x11/va_x11.c
-index b8c60fa..414c261 100644
---- a/src/x11/va_x11.c
-+++ b/src/x11/va_x11.c
+diff --git a/va/x11/va_x11.c b/va/x11/va_x11.c
+index 78e38de..1216093 100644
+--- a/va/x11/va_x11.c
++++ b/va/x11/va_x11.c
 @@ -31,6 +31,7 @@
  #include "va_dri2.h"
  #include "va_dricommon.h"
  #include "va_nvctrl.h"
 +#include "libdrm_glue.h"
  #include <stdio.h>
+ #include <stdlib.h>
  #include <stdarg.h>
- #include <string.h>
-@@ -94,6 +75,8 @@ static void va_DisplayContextDestroy (
+@@ -75,6 +76,8 @@ static void va_DisplayContextDestroy (
  	}
  	ctx = &((*ctx)->pNext);
      }
@@ -527,16 +536,3 @@ index b8c60fa..414c261 100644
      free(pDisplayContext->pDriverContext->dri_state);
      free(pDisplayContext->pDriverContext);
      free(pDisplayContext);
-diff --git a/src/Makefile.am b/src/Makefile.am
-index e50a15f..d1f8f70 100644
---- a/src/Makefile.am
-+++ b/src/Makefile.am
-@@ -45,7 +45,7 @@ libva_la_LDFLAGS = $(LDADD) -no-undefined
- libva_la_LIBADD = $(LIBVA_LIBS) -ldl
- 
- libva_x11_la_SOURCES = 
--libva_x11_la_LIBADD  = $(libvacorelib) x11/libva_x11.la $(LIBVA_LIBS) $(X11_LIBS) $(XEXT_LIBS) $(DRM_LIBS) $(XFIXES_LIBS)
-+libva_x11_la_LIBADD  = $(libvacorelib) x11/libva_x11.la $(LIBVA_LIBS) $(X11_LIBS) $(XEXT_LIBS) $(XFIXES_LIBS) -ldl
- libva_x11_la_LDFLAGS = $(LDADD)
- libva_x11_la_DEPENDENCIES = $(libvacorelib) x11/libva_x11.la
- 
