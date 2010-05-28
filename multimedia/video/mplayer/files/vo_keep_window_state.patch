@@ -1,23 +1,23 @@
-diff -Nur mplayer-20070916-old/command.c mplayer-20070916/command.c
---- mplayer-20070916-old/command.c	2007-09-17 00:05:36.000000000 +0300
-+++ mplayer-20070916/command.c	2007-09-17 00:13:50.000000000 +0300
-@@ -831,8 +831,11 @@
- 	    guiGetEvent(guiIEvent, (char *) MP_CMD_GUI_FULLSCREEN);
- 	else
+diff -Nur mplayer-old/command.c mplayer/command.c
+--- mplayer-old/command.c	2010-05-25 14:02:29.244292985 +0300
++++ mplayer/command.c	2010-05-25 14:04:31.311543833 +0300
+@@ -998,8 +998,11 @@
+             guiGetEvent(guiIEvent, (char *) MP_CMD_GUI_FULLSCREEN);
+         else
  #endif
--	if (vo_config_count)
-+	if (vo_config_count) {
- 	    mpctx->video_out->control(VOCTRL_FULLSCREEN, 0);
-+	    vo_user_override |= VO_USER_OVERRIDE_FS;
-+	    vo_user_fs = vo_fs;
-+	}
- 	return M_PROPERTY_OK;
+-        if (vo_config_count)
++        if (vo_config_count) {
+             mpctx->video_out->control(VOCTRL_FULLSCREEN, 0);
++            vo_user_override |= VO_USER_OVERRIDE_FS;
++            vo_user_fs = vo_fs;
++        }
+         return M_PROPERTY_OK;
      default:
- 	return m_property_flag(prop, action, arg, &vo_fs);
-diff -Nur mplayer-20070916-old/libvo/video_out.c mplayer-20070916/libvo/video_out.c
---- mplayer-20070916-old/libvo/video_out.c	2007-09-17 00:05:36.000000000 +0300
-+++ mplayer-20070916/libvo/video_out.c	2007-09-17 00:13:50.000000000 +0300
-@@ -32,6 +32,10 @@
+         return m_property_flag(prop, action, arg, &vo_fs);
+diff -Nur mplayer-old/libvo/video_out.c mplayer/libvo/video_out.c
+--- mplayer-old/libvo/video_out.c	2010-05-25 14:02:29.135293119 +0300
++++ mplayer/libvo/video_out.c	2010-05-25 14:02:46.149668112 +0300
+@@ -48,6 +48,10 @@
  
  int vo_config_count=0;
  
@@ -28,7 +28,7 @@ diff -Nur mplayer-20070916-old/libvo/video_out.c mplayer-20070916/libvo/video_ou
  // requested resolution/bpp:  (-x -y -bpp options)
  int vo_dx=0;
  int vo_dy=0;
-@@ -349,6 +353,14 @@
+@@ -362,6 +366,14 @@
    vo_dheight = d_height;
    }
  
@@ -43,12 +43,12 @@ diff -Nur mplayer-20070916-old/libvo/video_out.c mplayer-20070916/libvo/video_ou
    return vo->config(width, height, d_width, d_height, flags, title, format);
  }
  
-diff -Nur mplayer-20070916-old/libvo/video_out.h mplayer-20070916/libvo/video_out.h
---- mplayer-20070916-old/libvo/video_out.h	2007-09-17 00:05:36.000000000 +0300
-+++ mplayer-20070916/libvo/video_out.h	2007-09-17 00:13:50.000000000 +0300
-@@ -21,6 +21,13 @@
- #define VO_EVENT_RESIZE 2
+diff -Nur mplayer-old/libvo/video_out.h mplayer/libvo/video_out.h
+--- mplayer-old/libvo/video_out.h	2010-05-25 14:02:29.132293150 +0300
++++ mplayer/libvo/video_out.h	2010-05-25 14:02:46.150668143 +0300
+@@ -35,6 +35,13 @@
  #define VO_EVENT_KEYPRESS 4
+ #define VO_EVENT_REINIT 8
  
 +#define VO_USER_OVERRIDE_FS  1
 +#define VO_USER_OVERRIDE_POS 2

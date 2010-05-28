@@ -13,15 +13,12 @@ from pisi.actionsapi import get
 
 import os
 
-WorkDir = "mplayer-%s" % get.srcVERSION().split("_", 1)[1]
-mp_version = "30815"
-ff_version = "22144"
+WorkDir = "mplayer"
+mp_version = "31210"
+ff_version = "23351"
 
 dllloader = "" if get.ARCH() == "x86_64" else "--enable-win32dll \
-                                               --codecsdir=/usr/lib/%(esdir)s \
-                                               --win32codecsdir=/usr/lib/%(esdir)s \
-                                               --xanimcodecsdir=/usr/lib/%(esdir)s \
-                                               --realcodecsdir=/usr/lib/%(esdir)s " % {"esdir": "essential"}
+                                               --codecsdir=/usr/lib/%(esdir)s" % {"esdir": "essential"}
 
 def fixPermissions(dest):
     for root, dirs, files in os.walk(dest):
@@ -118,7 +115,7 @@ def setup():
                             --enable-v4l2 \
                             --enable-v4lw \
                             --enable-vaapi \
-                            --enable-vdpau \
+                            --disable-vdpau \
                             --enable-x11 \
                             --enable-xf86keysym \
                             --enable-xinerama \
