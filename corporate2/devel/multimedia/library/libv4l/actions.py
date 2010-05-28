@@ -10,9 +10,10 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
+WorkDir = "v4l-utils-%s" % get.srcVERSION()
 
 def build():
-    shelltools.export("CC", get.CC())
+    # shelltools.export("CC", get.CC())
     autotools.make('-j1 \
                     PREFIX=/usr \
                     LIBDIR=/usr/lib \
@@ -23,4 +24,4 @@ def install():
                           LIBDIR=/usr/lib \
                           DESTDIR=%s" % get.installDIR())
 
-    pisitools.dodoc("ChangeLog", "COPYING.LIB", "README*", "TODO")
+    pisitools.dodoc("ChangeLog", "COPYING*", "README*", "TODO")
