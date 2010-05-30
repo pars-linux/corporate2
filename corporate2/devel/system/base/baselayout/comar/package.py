@@ -73,20 +73,101 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     hav("addUser", (103, "polkit", "PolicyKit", "/dev/null", "/bin/false", "", ["polkit"], [], []))
 
     # Remove old groups/users
-    groups = ["squid", "named", "mysql", "postgres", "apache", "dovecot", "users", "hal", "postfix", \
-              "postdrop", "smmsp", "locate", "utmp", "firebird", "dhcp", "ldap", "clamav", "ntlmaps", \
-              "avahi", "ntp", "tss", "ejabberd", "tomcat", "ups", "partimag", "radiusd", "oprofile", \
-              "mediatomb", "pulse", "pulse-access", "pulse-rt", "italc", "quassel", "bitlbee", "icecast", \
-              "vboxusers", "virt", "svn", "pnp", "removable", "netuser", "netadmin", "power", "pnpadmin", \
-              "gnokii", "memcached", "rtkit", "nm-openconnect", "qemu", "kvm", "usbmuxd", "openvpn"]
+    groups = ["apache",
+              "avahi",
+              "bitlbee",
+              "clamav",
+              "dhcp",
+              "dovecot",
+              "ejabberd",
+              "firebird",
+              "gnokii",
+              "hal",
+              "icecast",
+              "italc",
+              "kvm",
+              "ldap",
+              "locate",
+              "mediatomb",
+              "memcached",
+              "mysql",
+              "named",
+              "netadmin",
+              "netuser",
+              "nm-openconnect",
+              "ntlmaps",
+              "ntp",
+              "openvpn",
+              "oprofile",
+              "partimag",
+              "pnp",
+              "pnpadmin",
+              "postdrop",
+              "postfix",
+              "postgres",
+              "power",
+              "pulse",
+              "pulse-access",
+              "pulse-rt",
+              "qemu",
+              "quassel",
+              "radiusd",
+              "removable",
+              "rtkit",
+              "smmsp",
+              "squid",
+              "svn",
+              "tomcat",
+              "tss",
+              "ups",
+              "usbmuxd",
+              "users",
+              "utmp",
+              "virt"]
 
     for group in groups:
         deleteGroup(group)
 
-    users = ["dialout", "squid", "named", "mysql", "postgres", "apache", "dovecot", "hal", "postfix", "smmsp", \
-             "firebird", "dhcp", "ldap", "clamav", "ntlmaps", "avahi", "ntp", "tss", "ejabberd", "tomcat", "ups", \
-             "partimag", "radiusd", "oprofile", "mediatomb", "pulse", "quasselcore", "bitlbee", "vboxadd", \
-             "svn", "icecast", "pnp", "gnokii", "memcached", "spamd", "rtkit", "nm-openconnect", "qemu", "usbmuxd", "openvpn"]
+    users = ["apache",
+             "avahi",
+             "bitlbee",
+             "clamav",
+             "dhcp",
+             "dialout",
+             "dovecot",
+             "ejabberd",
+             "firebird",
+             "gnokii",
+             "hal",
+             "icecast",
+             "ldap",
+             "mediatomb",
+             "memcached",
+             "mysql",
+             "named",
+             "nm-openconnect",
+             "ntlmaps",
+             "ntp",
+             "openvpn",
+             "oprofile",
+             "partimag",
+             "pnp",
+             "postfix",
+             "postgres",
+             "pulse",
+             "qemu",
+             "quasselcore",
+             "radiusd",
+             "rtkit",
+             "smmsp",
+             "spamd",
+             "squid",
+             "svn",
+             "tomcat",
+             "tss",
+             "ups",
+             "usbmuxd",
+             "vboxadd"]
 
     for user in users:
         deleteUser(user)
