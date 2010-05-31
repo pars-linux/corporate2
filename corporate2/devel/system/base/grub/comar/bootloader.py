@@ -656,6 +656,9 @@ def setOption(option, value):
                 entry.setCommand("savedefault", "")
             else:
                 entry.unsetCommand("savedefault")
+        default_entry = os.path.join(GRUB_DIR, "default")
+        if not os.path.exists(default):
+            file(default_entry, "w").write("\x00\x30\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a")
     elif option in 'timeout':
         grub.setOption("timeout", value)
     elif option == 'password':
