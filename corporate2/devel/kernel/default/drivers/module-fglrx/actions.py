@@ -82,7 +82,7 @@ def install():
 
     # remove static libs
     pisitools.remove("/usr/lib/*.a")
-    if shelltools.isFile("/usr/lib/xorg/modules/esut.a"):
+    if shelltools.isFile("%s/usr/lib/xorg/modules/esut.a" % get.installDIR()):
         pisitools.remove("/usr/lib/xorg/modules/esut.a")
 
     # not needed as xdg-utils package provides xdg-su
