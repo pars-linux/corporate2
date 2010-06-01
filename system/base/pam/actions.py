@@ -27,6 +27,9 @@ def setup():
                             --enable-isadir=/lib/security")
 
 def build():
+    # Update .po files
+    autotools.make("-C po update-gmo")
+
     autotools.make()
 
 def check():
@@ -37,6 +40,9 @@ def check():
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+
+    # FIXME: Check whether /var is empty!
+    pisitools.removeDir("/var")
 
     pisitools.removeDir("/usr/share/doc/Linux-PAM/")
     pisitools.removeDir("/var")
