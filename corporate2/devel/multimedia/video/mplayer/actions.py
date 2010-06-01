@@ -14,8 +14,8 @@ from pisi.actionsapi import get
 import os
 
 WorkDir = "mplayer"
-mp_version = "31210"
-ff_version = "23351"
+mp_version = "31299"
+ff_version = "23406"
 
 dllloader = "" if get.ARCH() == "x86_64" else "--enable-win32dll \
                                                --codecsdir=/usr/lib/%(esdir)s" % {"esdir": "essential"}
@@ -45,7 +45,7 @@ def setup():
                             --disable-3dfx \
                             --disable-altivec \
                             --disable-arts \
-                            --disable-ass-internal \
+                            --enable-ass-internal \
                             --disable-bitmap-font \
                             --disable-debug \
                             --disable-dvdread-internal \
