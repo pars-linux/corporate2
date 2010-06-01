@@ -20,9 +20,8 @@ def setup():
                          --with-drivers=NOOBSOLETES,NOEMPTYCMDLINE")
 
     # Cleanup conflicts
-    shelltools.chmod("cleanup-conflicts.sh", 0755)
     shelltools.cd("db/source")
-    shelltools.system("../../cleanup-conflicts.sh")
+    shelltools.system("../../cleanup-conflicts")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
