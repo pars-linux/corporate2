@@ -1,22 +1,22 @@
 Index: bin/mudur.py
 ===================================================================
---- bin/mudur.py	(revision 29777)
-+++ bin/mudur.py	(working copy)
-@@ -584,7 +584,7 @@
+--- bin/mudur.py.orig
++++ bin/mudur.py
+@@ -590,7 +590,7 @@ def start_network():
          try:
-             linkInfo = link.Network.Link[package].linkInfo()
+             link_info = link.Network.Link[package].linkInfo()
          except dbus.DBusException:
 -            break
 +            continue
-         if linkInfo["type"] == "net":
-             for name, info in getConnections(package).iteritems():
+         if link_info["type"] == "net":
+             for name, info in get_connections(package).iteritems():
                  if info.get("state", "down").startswith("up"):
-@@ -600,7 +600,7 @@
-                     for point in link.Network.Link[package].scanRemote(deviceId):
-                         devices[deviceId].append(unicode(point["remote"]))
+@@ -606,7 +606,7 @@ def start_network():
+                     for point in link.Network.Link[package].scanRemote(device_id):
+                         devices[device_id].append(unicode(point["remote"]))
              except dbus.DBusException:
 -                break
 +                continue
              # Try to connect last connected profile
              skip = False
-             for name, info in getConnections(package).iteritems():
+             for name, info in get_connections(package).iteritems():
