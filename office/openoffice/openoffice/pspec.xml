@@ -13,7 +13,11 @@
         <IsA>app:gui</IsA>
         <Summary>OpenOffice.org office suite</Summary>
         <Description>OpenOffice.org is an open source, multi-platform office productivity suite. It includes key desktop applications such as a word processor, a spreadsheet application, a presentation creator-viewer, a formula editor and a drawing program, with a user interface and feature set similar to other office suites. Sophisticated and flexible, OpenOffice.org also works transparently with a variety of file formats, including those of Microsoft Office.</Description>
-        <Archive sha1sum="5cc8af9cd86addefee0ddadadab271553342f248" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/ooo-build-3.1.1.4.tar.lzma</Archive>
+        <Archive sha1sum="31c05cbfb0acad509a80a7f31ddbe1d5563bfa75" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/ooo-build-3.2.1.3.tar.lzma</Archive>
+        <AdditionalFiles>
+            <AdditionalFile target="src/openabout_pardus.bmp" permission="0644">splashes/openabout_pardus.bmp</AdditionalFile>
+            <AdditionalFile target="src/openintro_pardus.bmp" permission="0644">splashes/openintro_pardus.bmp</AdditionalFile>
+        </AdditionalFiles>
         <BuildDependencies>
             <Dependency>kdelibs</Dependency>
             <Dependency>perl-Archive-Zip</Dependency>
@@ -55,14 +59,9 @@
             <Dependency>openclipart</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">3.1.1.4-to-3.1.1.5.diff</Patch>
-
             <Patch>disable-clipart.patch</Patch>
             <Patch>pardus-xdg-email-mailer.diff</Patch>
             <Patch level="1">corporate2-conf.diff</Patch>
-
-            <!-- Our own splash and about images -->
-            <Patch>pardus-splash.patch</Patch>
 
             <!-- Update wrong auto corrections for Turkish bug#5812 -->
             <Patch>updated-turkish-autocorrections.diff</Patch>
@@ -113,8 +112,9 @@
         <Files>
             <Path fileType="config">/etc</Path>
             <Path fileType="executable">/opt/OpenOffice.org/bin</Path>
-            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.1</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/gallery</Path>
+            <Path fileType="data">/opt/OpenOffice.org/share</Path>
+            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.2</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/gallery</Path>
             <Path fileType="man">/opt/OpenOffice.org/man</Path>
             <Path fileType="man">/opt/OpenOffice.org/share/man</Path>
             <Path fileType="executable">/opt/OpenOffice.org/sbin</Path>
@@ -144,7 +144,7 @@
             -->
 
             <!-- Our own configuration file for splash screen with white progress bar -->
-            <AdditionalFile target="/opt/OpenOffice.org/lib/ooo-3.1/program/sofficerc" permission="0644" owner="root">sofficerc</AdditionalFile>
+            <AdditionalFile target="/opt/OpenOffice.org/lib/ooo-3.2/program/sofficerc" permission="0644" owner="root">sofficerc</AdditionalFile>
 
             <!-- mimetype for openxml formats -->
             <AdditionalFile target="/usr/share/mime/packages/ooo-2.0-openxml.xml" permission="0644" owner="root">mimetypes/ooo-2.0-openxml.xml</AdditionalFile>
@@ -154,12 +154,12 @@
     <Package>
         <Name>openoffice-clipart</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
             <Dependency releaseFrom="2">openclipart</Dependency>
         </RuntimeDependencies>
         <Files>
             <!-- Galleries with number >= 70 are generated from openclipart images -->
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/gallery/sg[7-9][0-9].???</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/gallery/sg[7-9][0-9].???</Path>
         </Files>
     </Package>
 
@@ -168,7 +168,7 @@
         <Summary>KDE support for OpenOffice.org</Summary>
         <Description>openoffice-kde provides context menu options for "Create New" entry of Konqueror.</Description>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="data">/usr/kde</Path>
@@ -203,19 +203,19 @@
         <Summary>Python support for OpenOffice.org</Summary>
         <Description>openoffice-python is Python binding for the OpenOffice.org UNO component model. Allows scripts both external to OpenOffice and within the internal OpenOffice scripting module to be written in python.</Description>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="library">/usr/lib/python2.6/site-packages</Path>
-            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/libpyuno.so</Path>
-            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/officehelper.py</Path>
-            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/pythonloader.py</Path>
-            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/pythonloader.unorc</Path>
-            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/pythonloader.uno.so</Path>
-            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/pyuno.so</Path>
-            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/pythonscript.py</Path>
-            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/Scripts/python</Path>
-            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/modules/org/openoffice/Office/Scripting/Scripting-python.xcu</Path>
+            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/libpyuno.so</Path>
+            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/officehelper.py</Path>
+            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/pythonloader.py</Path>
+            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/pythonloader.unorc</Path>
+            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/pythonloader.uno.so</Path>
+            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/pyuno.so</Path>
+            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/pythonscript.py</Path>
+            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/Scripts/python</Path>
+            <Path fileType="library">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/modules/org/openoffice/Office/Scripting/Scripting-python.xcu</Path>
         </Files>
     </Package>
 
@@ -224,10 +224,10 @@
         <IsA>locale:en</IsA>
         <Summary>English OpenOffice.org help files</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/help/en</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/help/en</Path>
         </Files>
     </Package>
 
@@ -236,10 +236,10 @@
         <IsA>locale:de</IsA>
         <Summary>German OpenOffice.org help files</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/help/de</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/help/de</Path>
         </Files>
     </Package>
 
@@ -248,10 +248,10 @@
         <IsA>locale:es</IsA>
         <Summary>Spanish OpenOffice.org help files</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/help/es</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/help/es</Path>
         </Files>
     </Package>
 
@@ -260,10 +260,10 @@
         <IsA>locale:fr</IsA>
         <Summary>French OpenOffice.org help files</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/help/fr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/help/fr</Path>
         </Files>
     </Package>
 
@@ -272,10 +272,22 @@
         <IsA>locale:it</IsA>
         <Summary>Italian OpenOffice.org help files</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/help/it</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/help/it</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>openoffice-help-hu</Name>
+        <IsA>locale:hu</IsA>
+        <Summary>Hungarian OpenOffice.org help files</Summary>
+        <RuntimeDependencies>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/help/hu</Path>
         </Files>
     </Package>
 
@@ -284,10 +296,10 @@
         <IsA>locale:nl</IsA>
         <Summary>Dutch OpenOffice.org help files</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/help/nl</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/help/nl</Path>
         </Files>
     </Package>
 
@@ -296,10 +308,10 @@
         <IsA>locale:pt_BR</IsA>
         <Summary>Brazilian Portuguese OpenOffice.org help files</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/help/pt-BR</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/help/pt-BR</Path>
         </Files>
     </Package>
 
@@ -308,10 +320,10 @@
         <IsA>locale:sv</IsA>
         <Summary>Swedish OpenOffice.org help files</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/help/sv</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/help/sv</Path>
         </Files>
     </Package>
 
@@ -320,10 +332,10 @@
         <IsA>locale:tr</IsA>
         <Summary>Turkish OpenOffice.org help files</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/help/tr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/help/tr</Path>
         </Files>
     </Package>
 
@@ -332,10 +344,10 @@
         <Summary>PDF Importer for OpenOffice.org Draw</Summary>
         <Description>openoffice-extension-pdfimpor imports PDF into drawing documents to preserve layout and enable basic editing of PDF documents.</Description>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/extension/install/pdfimport.oxt</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/extension/install/pdfimport.oxt</Path>
         </Files>
         <Provides>
             <COMAR script="package-pdfimport.py">System.Package</COMAR>
@@ -347,10 +359,10 @@
         <Summary>Presenter Screen for OpenOffice.org Impress</Summary>
         <Description>openoffice-extension-presenter-screen provides information on a second screen, that typically is not visible to the audience when delivering a presentation. e.g. slide notes.</Description>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/extension/install/presenter-screen.oxt</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/extension/install/presenter-screen.oxt</Path>
         </Files>
         <Provides>
             <COMAR script="package-presenter.py">System.Package</COMAR>
@@ -362,10 +374,10 @@
         <Summary>Shrink the file size of OpenOffice.org presentations</Summary>
         <Description>openoffice-extension-presentation-minimizer is used to reduce the file size of the current presentation. Images will be compressed, and data that is no longer needed will be removed.</Description>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/extension/install/sun-presentation-minimizer.oxt</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/extension/install/presentation-minimizer.oxt</Path>
         </Files>
         <Provides>
             <COMAR script="package-minimizer.py">System.Package</COMAR>
@@ -377,10 +389,10 @@
         <Summary>Create database reports</Summary>
         <Description>openoffice-extension-report-builder creates database reports from OpenOffice.org Base. The report builder can define group and page headers as well as group, page footers and calculation fields to accomplish complex database reports.</Description>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/extension/install/sun-report-builder.oxt</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/extension/install/report-builder.oxt</Path>
         </Files>
         <Provides>
             <COMAR script="package-report.py">System.Package</COMAR>
@@ -392,10 +404,10 @@
         <Summary>Create Wiki articles on MediaWiki servers</Summary>
         <Description>openoffice-extension-wiki-publisher enables you to create Wiki articles on MediaWiki servers without having to know the syntax of the MediaWiki markup language. Publish your new and existing documents transparently with OpenOffice.org Writer to a wiki page.</Description>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/extension/install/wiki-publisher.oxt</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/extension/install/wiki-publisher.oxt</Path>
         </Files>
         <Provides>
             <COMAR script="package-wiki.py">System.Package</COMAR>
@@ -407,29 +419,29 @@
         <IsA>locale:de</IsA>
         <Summary>German language files for OpenOffice.org</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
             <Dependency>hunspell-dict-de</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/presets/config/*_de.*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/resource/*de.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autocorr/acor_de-*.dat</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autotext/de</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/basic/Depot/*_de.xba</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/config/soffice.cfg/modules/*/accelerator/de</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/layout/de</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/modules/org/openoffice/Setup/Langpack-de.xcu</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/res/de</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/samples/de</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/de/lyt-aqua.otp</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/de/lyt-brown.otp</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/wizard/letter/de</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/wordbook/de</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/program/resource/ooode.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/licenses/LICENSE_de*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/readmes/README_de*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/LICENSE_de*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/README_de*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/presets/config/*_de.*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/resource/*de.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autocorr/acor_de-*.dat</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autotext/de</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/basic/Depot/*_de.xba</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/config/soffice.cfg/modules/*/accelerator/de</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/layout/de</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/modules/org/openoffice/Setup/Langpack-de.xcu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/res/de</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/samples/de</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/de/lyt-aqua.otp</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/de/lyt-brown.otp</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/wizard/letter/de</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/wordbook/de</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/program/resource/ooode.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/licenses/LICENSE_de*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/readmes/README_de*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/LICENSE_de*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/README_de*</Path>
         </Files>
     </Package>
 
@@ -438,7 +450,7 @@
         <IsA>locale:de</IsA>
         <Summary>Extra German presentation backgrounds for OpenOffice.org</Summary>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/de</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/de</Path>
         </Files>
     </Package>
 
@@ -447,28 +459,28 @@
         <IsA>locale:es</IsA>
         <Summary>Spanish language files for OpenOffice.org</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
             <Dependency>hunspell-dict-es</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/presets/config/*_es.*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/resource/*es.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autocorr/acor_es-*.dat</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autotext/es</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/basic/Depot/*_es.xba</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/config/soffice.cfg/modules/*/accelerator/es</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/layout/es</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/modules/org/openoffice/Setup/Langpack-es.xcu</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/res/es</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/samples/es</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/es</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/wizard/letter/es</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/wordbook/es</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/program/resource/*es.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/licenses/LICENSE_es*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/readmes/README_es*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/LICENSE_es*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/README_es*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/presets/config/*_es.*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/resource/*es.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autocorr/acor_es-*.dat</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autotext/es</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/basic/Depot/*_es.xba</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/config/soffice.cfg/modules/*/accelerator/es</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/layout/es</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/modules/org/openoffice/Setup/Langpack-es.xcu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/res/es</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/samples/es</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/es</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/wizard/letter/es</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/wordbook/es</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/program/resource/*es.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/licenses/LICENSE_es*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/readmes/README_es*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/LICENSE_es*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/README_es*</Path>
         </Files>
     </Package>
 
@@ -477,28 +489,56 @@
         <IsA>locale:fr</IsA>
         <Summary>French language files for OpenOffice.org</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
             <Dependency>hunspell-dict-fr</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/presets/config/*_fr.*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/resource/*fr.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autocorr/acor_fr-*.dat</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autotext/fr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/basic/Depot/*_fr.xba</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/config/soffice.cfg/modules/*/accelerator/fr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/layout/fr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/modules/org/openoffice/Setup/Langpack-fr.xcu</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/res/fr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/samples/fr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/fr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/wizard/letter/fr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/wordbook/fr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/program/resource/*fr.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/licenses/LICENSE_fr*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/readmes/README_fr*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/LICENSE_fr*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/README_fr*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/presets/config/*_fr.*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/resource/*fr.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autocorr/acor_fr-*.dat</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autotext/fr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/basic/Depot/*_fr.xba</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/config/soffice.cfg/modules/*/accelerator/fr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/layout/fr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/modules/org/openoffice/Setup/Langpack-fr.xcu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/res/fr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/samples/fr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/fr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/wizard/letter/fr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/wordbook/fr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/program/resource/*fr.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/licenses/LICENSE_fr*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/readmes/README_fr*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/LICENSE_fr*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/README_fr*</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>openoffice-langpack-hu</Name>
+        <IsA>locale:hu</IsA>
+        <Summary>Hungarian language files for OpenOffice.org</Summary>
+        <RuntimeDependencies>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
+            <!--<Dependency>hunspell-dict-hu</Dependency>-->
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/presets/config/*_hu.*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/resource/*hu.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autocorr/acor_hu-*.dat</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autotext/hu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/layout/hu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/modules/org/openoffice/Setup/Langpack-hu.xcu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/res/hu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/samples/hu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/hu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/wizard/letter/hu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/wordbook/hu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/licenses/LICENSE_hu*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/program/resource/*hu.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/readmes/README_hu*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/LICENSE_hu*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/README_hu*</Path>
         </Files>
     </Package>
 
@@ -507,28 +547,28 @@
         <IsA>locale:it</IsA>
         <Summary>Italian language files for OpenOffice.org</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
             <Dependency>hunspell-dict-it</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/presets/config/*_it.*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/resource/*it.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autocorr/acor_it-*.dat</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autotext/it</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/basic/Depot/*_it.xba</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/config/soffice.cfg/modules/*/accelerator/it</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/layout/it</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/modules/org/openoffice/Setup/Langpack-it.xcu</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/res/it</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/samples/it</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/it</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/wizard/letter/it</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/wordbook/it</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/program/resource/*it.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/licenses/LICENSE_it*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/readmes/README_it*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/LICENSE_it*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/README_it*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/presets/config/*_it.*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/resource/*it.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autocorr/acor_it-*.dat</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autotext/it</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/basic/Depot/*_it.xba</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/config/soffice.cfg/modules/*/accelerator/it</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/layout/it</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/modules/org/openoffice/Setup/Langpack-it.xcu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/res/it</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/samples/it</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/it</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/wizard/letter/it</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/wordbook/it</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/program/resource/*it.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/licenses/LICENSE_it*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/readmes/README_it*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/LICENSE_it*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/README_it*</Path>
         </Files>
     </Package>
 
@@ -537,28 +577,28 @@
         <IsA>locale:nl</IsA>
         <Summary>Dutch language files for OpenOffice.org</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
             <Dependency>hunspell-dict-nl</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/presets/config/*_nl.*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/resource/*nl.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autocorr/acor_nl-*.dat</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autotext/nl</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/basic/Depot/*_nl.xba</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/config/soffice.cfg/modules/*/accelerator/nl</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/layout/nl</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/modules/org/openoffice/Setup/Langpack-nl.xcu</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/res/nl</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/samples/nl</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/nl</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/wizard/letter/nl</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/wordbook/nl</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/program/resource/*nl.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/licenses/LICENSE_nl*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/readmes/README_nl*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/LICENSE_nl*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/README_nl*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/presets/config/*_nl.*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/resource/*nl.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autocorr/acor_nl-*.dat</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autotext/nl</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/basic/Depot/*_nl.xba</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/config/soffice.cfg/modules/*/accelerator/nl</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/layout/nl</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/modules/org/openoffice/Setup/Langpack-nl.xcu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/res/nl</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/samples/nl</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/nl</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/wizard/letter/nl</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/wordbook/nl</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/program/resource/*nl.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/licenses/LICENSE_nl*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/readmes/README_nl*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/LICENSE_nl*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/README_nl*</Path>
         </Files>
     </Package>
 
@@ -567,28 +607,28 @@
         <IsA>locale:pt_BR</IsA>
         <Summary>Brazilian Portuguese language files for OpenOffice.org</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
             <Dependency>hunspell-dict-pt</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/presets/config/*_pt-BR.*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/resource/*pt-BR.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autocorr/acor_pt-*.dat</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autotext/pt-BR</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/basic/Depot/*_pt.xba</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/config/soffice.cfg/modules/*/accelerator/pt*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/layout/pt-BR</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/modules/org/openoffice/Setup/Langpack-pt-BR.xcu</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/res/pt-BR</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/samples/pt-BR</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/pt-BR</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/wizard/letter/pt-BR</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/wordbook/pt-BR</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/program/resource/*pt-BR.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/licenses/LICENSE_pt-BR*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/readmes/README_pt-BR*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/LICENSE_pt-BR*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/README_pt-BR*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/presets/config/*_pt-BR.*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/resource/*pt-BR.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autocorr/acor_pt-*.dat</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autotext/pt-BR</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/basic/Depot/*_pt.xba</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/config/soffice.cfg/modules/*/accelerator/pt*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/layout/pt-BR</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/modules/org/openoffice/Setup/Langpack-pt-BR.xcu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/res/pt-BR</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/samples/pt-BR</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/pt-BR</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/wizard/letter/pt-BR</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/wordbook/pt-BR</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/program/resource/*pt-BR.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/licenses/LICENSE_pt-BR*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/readmes/README_pt-BR*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/LICENSE_pt-BR*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/README_pt-BR*</Path>
         </Files>
     </Package>
 
@@ -597,28 +637,28 @@
         <IsA>locale:sv</IsA>
         <Summary>Swedish language files for OpenOffice.org</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
             <Dependency>hunspell-dict-sv</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/presets/config/*_sv.*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/resource/*sv.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autocorr/acor_sv-*.dat</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autotext/sv</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/basic/Depot/*_sv.xba</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/config/soffice.cfg/modules/*/accelerator/sv</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/layout/sv</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/modules/org/openoffice/Setup/Langpack-sv.xcu</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/res/sv</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/samples/sv</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/sv</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/wizard/letter/sv</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/wordbook/sv</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/program/resource/*sv.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/licenses/LICENSE_sv*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/readmes/README_sv*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/LICENSE_sv*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/README_sv*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/presets/config/*_sv.*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/resource/*sv.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autocorr/acor_sv-*.dat</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autotext/sv</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/basic/Depot/*_sv.xba</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/config/soffice.cfg/modules/*/accelerator/sv</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/layout/sv</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/modules/org/openoffice/Setup/Langpack-sv.xcu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/res/sv</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/samples/sv</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/sv</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/wizard/letter/sv</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/wordbook/sv</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/program/resource/*sv.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/licenses/LICENSE_sv*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/readmes/README_sv*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/LICENSE_sv*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/README_sv*</Path>
         </Files>
     </Package>
 
@@ -627,31 +667,66 @@
         <IsA>locale:tr</IsA>
         <Summary>Turkish language files for OpenOffice.org</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.1.1.5">openoffice</Dependency>
+            <Dependency versionFrom="3.2.1.3">openoffice</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/presets/config/*_tr.*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/program/resource/*tr.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autocorr/acor_tr-*.dat</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/autotext/tr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/basic/Depot/*_tr.xba</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/config/soffice.cfg/modules/*/accelerator/tr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/layout/tr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/modules/org/openoffice/Setup/Langpack-tr.xcu</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/registry/res/tr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/samples/tr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/tr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/template/wizard/letter/tr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/basis3.1/share/wordbook/tr</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/program/resource/*tr.res</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/licenses/LICENSE_tr*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/readmes/README_tr*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/LICENSE_tr*</Path>
-            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.1/share/readme/README_tr*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/presets/config/*_tr.*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/program/resource/*tr.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autocorr/acor_tr-*.dat</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/autotext/tr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/basic/Depot/*_tr.xba</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/config/soffice.cfg/modules/*/accelerator/tr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/layout/tr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/modules/org/openoffice/Setup/Langpack-tr.xcu</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/registry/res/tr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/samples/tr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/tr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/template/wizard/letter/tr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/basis3.2/share/wordbook/tr</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/program/resource/*tr.res</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/licenses/LICENSE_tr*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/readmes/README_tr*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/LICENSE_tr*</Path>
+            <Path fileType="data">/opt/OpenOffice.org/lib/ooo-3.2/share/readme/README_tr*</Path>
         </Files>
     </Package>
 
     <History>
+        <Update release="83">
+            <Date>2010-05-31</Date>
+            <Version>3.2.1.3</Version>
+            <Comment>Version bump to OpenOffice 3.2.1 RC3. Also Hungarian locale added due to the request of Daniel Kovács.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="82">
+            <Date>2010-05-24</Date>
+            <Version>3.2.1.1</Version>
+            <Comment>KDE4 integration seems stable now, enable it.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="81">
+            <Date>2010-05-14</Date>
+            <Version>3.2.1.1</Version>
+            <Comment>Version bump to latest bug fix release.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="80">
+            <Date>2010-03-08</Date>
+            <Version>3.2.0.7</Version>
+            <Comment>Fix installation of OO.org extensions. Raise exception if extension could not be installed/removed.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="79" type="security">
+            <Date>2010-03-05</Date>
+            <Version>3.2.0.7</Version>
+            <Comment>Version bump to 3.2 series. Check http://www.openoffice.org/dev_docs/features/3.2/ for release notes.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
         <Update release="78">
             <Date>2010-01-08</Date>
             <Version>3.1.1.5</Version>

@@ -3,14 +3,20 @@
 import os
 
 unopkg = "/opt/OpenOffice.org/bin/unopkg"
-extPath = "/opt/OpenOffice.org/lib/ooo-3.1/share/extension/install"
+extPath = "/opt/OpenOffice.org/lib/ooo-3.2/share/extension/install"
 extName = "pdfimport"
 extID = "com.sun.star.PDFImport-linux_x86"
 
 def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     os.environ["JAVA_HOME"] = "/opt/sun-jre"
-    os.system("%s add --shared --force %s/%s.oxt" % (unopkg, extPath, extName))
+    ret = os.system("%s add --shared --force %s/%s.oxt" % (unopkg, extPath, extName))
+
+    if ret != 0:
+        raise Exception("Could not install OO.org extension: %s" % extName)
 
 def preRemove():
     os.environ["JAVA_HOME"] = "/opt/sun-jre"
-    os.system("%s remove --shared %s" % (unopkg, extID))
+    ret = os.system("%s remove --shared %s" % (unopkg, extID))
+
+    if ret != 0:
+        raise Exception("Could not remove OO.org extension: %s" % extName)
