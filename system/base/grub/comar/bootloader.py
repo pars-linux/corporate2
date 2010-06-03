@@ -493,7 +493,7 @@ def makeGrubEntry(title, os_type, root=None, kernel=None, initrd=None, options=N
             fail(FAIL_NOROOT)
 
         uuid = None
-        if not root.startswith("/dev/"):
+        if not root.startswith("/dev/") and os_type not in ["windows", "memtest"]:
             uuid = root
         else:
             try:
