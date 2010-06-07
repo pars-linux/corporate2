@@ -10,7 +10,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     stage2src = "/lib/grub/i386-pc/stage2"
     stage2target = "/boot/grub/stage2"
 
-    egrepregexp = "'^[[:space:]]*(#|$|default|fallback|initrd|password|splashimage|timeout|title|gfxmenu|background)'"
+    egrepregexp = "'^[[:space:]]*(#|$|default|fallback|initrd|password|splashimage|timeout|title|gfxmenu|background|configfile)'"
 
     if not exists("/boot/grub"):
         os.makedirs("/boot/grub")
