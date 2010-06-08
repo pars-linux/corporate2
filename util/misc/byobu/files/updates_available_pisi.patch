@@ -1,0 +1,38 @@
+--- usr/lib/byobu/updates_available.orig	2010-03-10 01:03:35.765687518 +0200
++++ usr/lib/byobu/updates_available	2010-03-21 13:31:33.264526920 +0200
+@@ -21,12 +21,12 @@
+ color 2>/dev/null || color() { true; }
+ 
+ if [ "$1" = "--detail" -o "$1" = "--short" ]; then
+-	if which apt-get >/dev/null; then
+-		detail=`apt-get -s -o Debug::NoLocking=true upgrade`
++	if which pisi >/dev/null; then
++		detail=`pisi lu | awk '{print $1}'`
+ 		if [ "$1" = "--detail" ]; then
+ 			printf "$detail"
+ 		else
+-			short=`printf "$detail" | grep ^Inst | wc -l`
++			short=`printf "$detail" | wc -l`
+ 			printf "$short"
+ 		fi
+ 	fi
+@@ -71,7 +71,9 @@
+ 		# If yum exists, use it
+ 		# TODO: We need a better way of counting updates available from a RH expert
+ 		yum list updates -q | egrep -v "Updated Packages" | wc -l > $mycache &
+-	fi
++	elif which pisi >/dev/null; then
++                pisi list-upgrades | wc -l > $mycache &
++        fi
+ }
+ 
+ PKG="byobu"
+@@ -87,7 +89,7 @@
+ [ -r $mycache ] && print_updates `grep "^[0-9]" $mycache | sed "s/ .*$//"`
+ 
+ # Update the cache if necessary
+-if [ ! -e "$mycache" ] || [ "/var/lib/apt" -nt "$mycache" ] || [ "/var/lib/apt/lists" -nt "$mycache" ]; then
++if [ ! -e "$mycache" ] || [ "/var/lib/pisi" -nt "$mycache" ] || [ "/var/cache/pisi/packagedb.cache" -nt "$mycache" ]; then
+ 	# If apt is newer than mycache, background an update now
+ 	update_cache "$mycache"
+ fi
