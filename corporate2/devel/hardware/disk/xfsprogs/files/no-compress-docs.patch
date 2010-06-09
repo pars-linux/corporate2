@@ -1,9 +1,11 @@
 let portage compress CHANGES
 
---- doc/Makefile
+Index: doc/Makefile
+===================================================================
+--- doc/Makefile.orig
 +++ doc/Makefile
-@@ -8,16 +8,13 @@
- LSRCFILES = INSTALL PORTING CHANGES COPYING CREDITS
+@@ -8,7 +8,7 @@ include $(TOPDIR)/include/builddefs
+ LSRCFILES = INSTALL CHANGES COPYING CREDITS sparse.txt
  LDIRT = *.gz
  
 -default: CHANGES.gz
@@ -11,13 +13,12 @@ let portage compress CHANGES
  
  include $(BUILDRULES)
  
--CHANGES.gz:
--	$(ZIP) --best -c < CHANGES > $@
--
+@@ -18,7 +18,7 @@ CHANGES.gz:
+ 
  install: default
  	$(INSTALL) -m 755 -d $(PKG_DOC_DIR)
--	$(INSTALL) -m 644 PORTING CHANGES.gz CREDITS $(PKG_DOC_DIR)
-+	$(INSTALL) -m 644 PORTING CHANGES CREDITS $(PKG_DOC_DIR)
+-	$(INSTALL) -m 644 CHANGES.gz CREDITS $(PKG_DOC_DIR)
++	$(INSTALL) -m 644 CREDITS $(PKG_DOC_DIR)
  ifeq ($(PKG_DISTRIBUTION), debian)
  	$(INSTALL) -S CHANGES.gz $(PKG_DOC_DIR)/changelog.gz
  else

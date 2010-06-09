@@ -1,14 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import libtools
-from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 
@@ -16,23 +15,26 @@ def setup():
     shelltools.export("OPTIMIZER", "%s" % get.CFLAGS())
     shelltools.export("DEBUG", "-DNDEBUG")
 
-    autotools.configure("--bindir=/usr/bin \
-                         --sbindir=/sbin \
-                         --libexecdir=/usr/lib \
+    autotools.configure("--enable-readline=yes \
+                         --enable-blkid=yes \
                          --enable-gettext")
 
 def build():
-    autotools.make("-j1 DEBUG=-DNDEBUG OPTIMIZER=\"%s\"" % get.CFLAGS())
+    autotools.make("-j1 V=1")
 
 def install():
     autotools.rawInstall("DIST_ROOT=%s" % get.installDIR())
     autotools.rawInstall("DIST_ROOT=%s" % get.installDIR(), "install-dev")
+    autotools.rawInstall("DIST_ROOT=%s" % get.installDIR(), "install-qa")
 
-    # remove duplicated so files
-    #for lib in shelltools.ls("%s/lib/lib*.so.*" % get.installDIR()):
-    #    shelltools.unlink(lib)
+    # Nuke static libraries
+    pisitools.remove("/lib/libhandle.a")
+    pisitools.remove("/lib/libhandle.la")
+    pisitools.remove("/usr/lib/*.a")
 
-    # shared in /lib, static in /usr/lib, ldscript fun too
-    pisitools.domove("/usr/lib/lib*.so*", "/lib")
+    # Fix the symlink
+    pisitools.remove("/usr/lib/libhandle.so")
+    pisitools.dosym("/lib/libhandle.so.1", "/usr/lib/libhandle.so")
 
-    libtools.gen_usr_ldscript("libhandle.so")
+    # Set +x bit for the library
+    shelltools.chmod("%s/lib/libhandle.so.*.*.*" % get.installDIR(), 0755)
