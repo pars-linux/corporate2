@@ -17,8 +17,11 @@ WorkDir = "Genshi-%s" % get.srcVERSION()
 def setup():
     shelltools.chmod("examples/*", 0644)
 
+def build():
+    pythonmodules.compile()
+
 def install():
-    pythonmodules.install() 
+    pythonmodules.install()
 
     pisitools.dohtml("doc/")
     pisitools.insinto(examples, "examples/*")
