@@ -5,18 +5,37 @@
         <Name>erlang</Name>
         <Homepage>http://www.erlang.org</Homepage>
         <Packager>
-            <Name>Pardus</Name>
-            <Email>admin@pardus.org.tr</Email>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
         </Packager>
         <License>EPL</License>
         <IsA>app:console</IsA>
-        <Summary>Erlang programming language</Summary>
-        <Description>Erlang is a programming language designed at the Ericsson Computer Science Laboratory.</Description>
-        <Archive sha1sum="c03569f0387b04b0afcc5f59983792676fd4382b" type="targz">http://www.erlang.org/download/otp_src_R11B-5.tar.gz</Archive>
+        <Summary>General purpose programming language and runtime environment</Summary>
+        <Description>Erlang is a general-purpose programming language and runtime environment. Erlang has built-in support for concurrency, distribution and fault tolerance. Erlang is used in several large telecommunication systems from Ericsson.</Description>
+        <Archive sha1sum="fe785833a8029cbb3aee188bdb417f4da33fbd06" type="targz">http://www.erlang.org/download/otp_src_R13B04.tar.gz</Archive>
+        <!--<Archive sha1sum="dc0e68cb1dd6f45cbd5ea792260b16f91eaa0e2f" target="otp_src_R13B04/html" type="targz">http://www.erlang.org/download/otp_doc_html_R13B04.tar.gz</Archive>
+        <Archive sha1sum="660e52302d270138f8e9f2f2b6a562026998012c" target="otp_src_R13B04" type="targz">http://www.erlang.org/download/otp_doc_man_R13B04.tar.gz</Archive>
+        -->
         <BuildDependencies>
+            <!-- Low level interface to Java support (erlang-jinterface) -->
             <Dependency>sun-jdk</Dependency>
+
+            <!-- wxWidgets support (erlang-wx) -->
+            <Dependency>wxGTK-devel</Dependency>
+
+            <Dependency>unixODBC</Dependency>
+
+            <!-- TCL/TK support (erlang-gs) -->
+            <Dependency>tcl</Dependency>
+            <Dependency>tcltk</Dependency>
         </BuildDependencies>
         <Patches>
+            <Patch level="1">otp-0001-Do-not-format-man-pages.patch</Patch>
+            <Patch level="1">otp-0002-Remove-rpath.patch</Patch>
+            <Patch level="1">otp-0004-Fix-shared-libraries-installation.patch</Patch>
+            <Patch level="1">otp-0005-Fix-for-dlopening-libGL-and-libGLU.patch</Patch>
+            <Patch level="1">otp-0006-Fix-check-for-compile-workspace-overflow.patch</Patch>
+            <Patch level="1">otp-0007-Install-missing-emacs-files.patch</Patch>
             <Patch>erlang-glibc.patch</Patch>
         </Patches>
     </Source>
@@ -24,13 +43,36 @@
     <Package>
         <Name>erlang</Name>
         <RuntimeDependencies>
+            <Dependency>tcltk</Dependency>
             <Dependency>sun-jdk</Dependency>
+            <Dependency>unixODBC</Dependency>
+            <Dependency>wxGTK-devel</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="library">/usr/lib</Path>
         </Files>
     </Package>
+
+    <!--
+    <Package>
+        <Name>erlang-manpages</Name>
+        <Summary>UNIX man pages for erlang</Summary>
+        <Files>
+            <Path fileType="man">/usr/share/man</Path>
+        </Files>
+    </Package>
+    -->
+
+    <Package>
+        <Name>erlang-devel</Name>
+        <Summary>Development headers and libraries for erlang</Summary>
+        <Files>
+            <Path fileType="header">/usr/lib/erlang/usr/include</Path>
+            <Path fileType="library">/usr/lib/erlang/usr/lib</Path>
+        </Files>
+    </Package>
+
 
     <Package>
         <Name>erlang-emacs</Name>
@@ -49,6 +91,18 @@
     </Package>
 
     <History>
+        <Update release="9">
+            <Date>2009-06-11</Date>
+            <Version>13.4</Version>
+            <Comment>
+                - Bump to 13B04,
+                - Fix JAVAC detection,
+                - Enable wxGTK support,
+                - Assign the package to ejabberd maintainer as discussed in gelistirici mailing list.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="8">
             <Date>2009-05-19</Date>
             <Version>11.2.5</Version>
