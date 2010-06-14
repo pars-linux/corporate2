@@ -1,27 +1,26 @@
-Index: LVM2.2.02.56/daemons/dmeventd/Makefile.in
+Index: LVM2.2.02.67/daemons/dmeventd/Makefile.in
 ===================================================================
---- LVM2.2.02.56.orig/daemons/dmeventd/Makefile.in
-+++ LVM2.2.02.56/daemons/dmeventd/Makefile.in
-@@ -53,7 +53,7 @@ include ../../make.tmpl
+--- LVM2.2.02.67.orig/daemons/dmeventd/Makefile.in
++++ LVM2.2.02.67/daemons/dmeventd/Makefile.in
+@@ -53,7 +53,7 @@ include $(top_builddir)/make.tmpl
  all: device-mapper
  device-mapper: $(TARGETS)
  
--LIBS += -ldl
-+LIBS += -ldl -ldevmapper
- LVMLIBS += -ldevmapper-event -lpthread -ldevmapper
+-LIBS += -ldevmapper
++LIBS += -ldevmapper -ldl
+ LVMLIBS += -ldevmapper-event $(PTHREAD_LIBS)
  
- $(VERSIONED_SHLIB): $(LIB_SHARED)
-Index: LVM2.2.02.56/tools/Makefile.in
+ dmeventd: $(LIB_SHARED) dmeventd.o
+Index: LVM2.2.02.67/tools/Makefile.in
 ===================================================================
---- LVM2.2.02.56.orig/tools/Makefile.in
-+++ LVM2.2.02.56/tools/Makefile.in
-@@ -139,6 +139,9 @@ liblvm2cmd-static.a: $(top_builddir)/lib
- 	$(AR) rs $@ $(OBJECTS) lvmcmdlib.o lvm2cmd-static.o
+--- LVM2.2.02.67.orig/tools/Makefile.in
++++ LVM2.2.02.67/tools/Makefile.in
+@@ -146,7 +146,7 @@ liblvm2cmd-static.a: $(top_builddir)/lib
  
  liblvm2cmd.$(LIB_SUFFIX): liblvm2cmd.a $(LDDEPS)
-+	$(CC) -shared -Wl,-soname,$(notdir $@).$(LIB_VERSION) \
-+	$(CFLAGS) $(CLDFLAGS) $(LIBS) -o $@ \
-+	@CLDWHOLEARCHIVE@ $< @CLDNOWHOLEARCHIVE@ $(LVMLIBS)
+ 	$(CC) -shared -Wl,-soname,$@.$(LIB_VERSION) \
+-	$(CFLAGS) $(CLDFLAGS) -o $@ $(LVMLIBS) $(LIBS) \
++	$(CFLAGS) $(CLDFLAGS) $(LVMLIBS) $(LIBS) -o $@ \
+ 		@CLDWHOLEARCHIVE@ liblvm2cmd.a @CLDNOWHOLEARCHIVE@
  
- .commands: commands.h cmdnames.h Makefile
- 	$(CC) -E -P $(srcdir)/cmdnames.h 2> /dev/null | \
+ liblvm2cmd.$(LIB_SUFFIX).$(LIB_VERSION): liblvm2cmd.$(LIB_SUFFIX)
