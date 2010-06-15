@@ -23,7 +23,7 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    pisitools.insinto("/etc/bitlbee", "bitlbee.conf")
+    #pisitools.insinto("/etc/bitlbee", "bitlbee.conf")
     pisitools.insinto("/etc/xinetd.d", "doc/bitlbee.xinetd", "bitlbee")
     pisitools.insinto("%s/%s/examples/" % (get.docDIR(), get.srcNAME()), "utils/*")
 
