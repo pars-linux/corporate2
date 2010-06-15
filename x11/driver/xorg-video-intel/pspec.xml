@@ -12,12 +12,12 @@
         <IsA>driver</IsA>
         <Summary>X.Org intel video driver</Summary>
         <Description>xorg-video-intel contains the X.Org driver for Intel video chipsets.</Description>
-        <Archive sha1sum="f25eb8619ac7c107fdcee525388a8a03dd62719b" type="tarbz2">mirrors://xorg/individual/driver/xf86-video-intel-2.11.0.tar.bz2</Archive>
+        <Archive sha1sum="51f657f8fc0e2a9d9ebd7355044c25c45c3714e6" type="tarbz2">mirrors://xorg/individual/driver/xf86-video-intel-2.11.901.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>libXv</Dependency>
             <Dependency>libXvMC</Dependency>
-            <Dependency>libdrm</Dependency>
-            <Dependency>libdrm-intel</Dependency>
+            <Dependency versionFrom="2.4.21">libdrm</Dependency>
+            <Dependency versionFrom="2.4.21">libdrm-intel</Dependency>
             <Dependency>libpciaccess</Dependency>
             <Dependency>mesa</Dependency>
             <Dependency>xcb-util</Dependency>
@@ -27,7 +27,10 @@
             <Patch level="1">kill-svideo.patch</Patch>
             <Patch level="1">intel-2.8.0-kms-get-crtc.patch</Patch>
             <Patch level="1">intel-2.11-lvds-first.patch</Patch>
+            <Patch level="1">intel-2.11.0-vga-clock-max.patch</Patch>
             <Patch level="1">uevent.patch</Patch>
+            <Patch level="1">intel-2.10.0-add-mbp-backlight.patch</Patch>
+            <Patch level="1">intel-2.11-no-pageflipping.patch</Patch>
         </Patches>
     </Source>
 
@@ -36,15 +39,12 @@
         <RuntimeDependencies>
             <Dependency>libXv</Dependency>
             <Dependency>libXvMC</Dependency>
-            <Dependency>libdrm</Dependency>
-            <Dependency>libdrm-intel</Dependency>
+            <Dependency versionFrom="2.4.21">libdrm</Dependency>
+            <Dependency versionFrom="2.4.21">libdrm-intel</Dependency>
             <Dependency>libpciaccess</Dependency>
             <Dependency>xcb-util</Dependency>
             <Dependency versionFrom="1.7">xorg-server</Dependency>
         </RuntimeDependencies>
-        <Replaces>
-            <Package>xorg-video</Package>
-        </Replaces>
         <Files>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="man">/usr/share/man</Path>
@@ -52,6 +52,13 @@
     </Package>
 
     <History>
+        <Update release="17">
+            <Date>2010-06-15</Date>
+            <Version>2.11.901</Version>
+            <Comment>New development release</Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
         <Update release="16">
             <Date>2010-04-17</Date>
             <Version>2.11.0</Version>
