@@ -1,0 +1,919 @@
+From 1efb2693b15f23f269be1db393a83af132924e06 Mon Sep 17 00:00:00 2001
+From: Denis Dzyubenko <denis.dzyubenko@nokia.com>
+Date: Fri, 5 Feb 2010 15:25:23 +0100
+Subject: [PATCH] Added new mouse cursor types.
+
+Added Qt::DragCopyCursor, DragMoveCursor and DragLinkCursor that are already
+used internally for drag-n-drop, but were not exposed before.  On X11 made them
+use themed cursors through the Xcursor library.
+
+Drag-n-drop now use these new cursors.
+
+Inspired-by: David Benjamin MR#2215
+Reviewed-by: Bradley T. Hughes
+---
+ src/corelib/global/qnamespace.h    |    5 +-
+ src/corelib/global/qnamespace.qdoc |    9 ++
+ src/gui/image/qpixmap_x11.cpp      |   26 +++--
+ src/gui/image/qpixmap_x11_p.h      |    2 +
+ src/gui/kernel/qapplication.cpp    |  242 ++++++++++++++++++++++++++++++++++++
+ src/gui/kernel/qapplication_p.h    |   11 ++
+ src/gui/kernel/qcursor.cpp         |    6 +
+ src/gui/kernel/qcursor_mac.mm      |   24 ++++
+ src/gui/kernel/qcursor_win.cpp     |    7 +
+ src/gui/kernel/qcursor_x11.cpp     |   50 +++++++-
+ src/gui/kernel/qdnd.cpp            |  220 ++-------------------------------
+ src/gui/kernel/qdnd_p.h            |    4 +-
+ src/gui/kernel/qdnd_x11.cpp        |    6 +-
+ 13 files changed, 381 insertions(+), 231 deletions(-)
+
+diff --git a/src/corelib/global/qnamespace.h b/src/corelib/global/qnamespace.h
+index 177bee4..35ff8e7 100644
+--- a/src/corelib/global/qnamespace.h
++++ b/src/corelib/global/qnamespace.h
+@@ -1235,7 +1235,10 @@ public:
+         BusyCursor,
+         OpenHandCursor,
+         ClosedHandCursor,
+-        LastCursor = ClosedHandCursor,
++        DragCopyCursor,
++        DragMoveCursor,
++        DragLinkCursor,
++        LastCursor = DragLinkCursor,
+         BitmapCursor = 24,
+         CustomCursor = 25
+ 
+diff --git a/src/corelib/global/qnamespace.qdoc b/src/corelib/global/qnamespace.qdoc
+index 6627c76..3d49d60 100644
+--- a/src/corelib/global/qnamespace.qdoc
++++ b/src/corelib/global/qnamespace.qdoc
+@@ -2508,6 +2508,15 @@
+                           operations that allow the user to interact with
+                           the application while they are performed in the
+                           background.
++    \value DragMoveCursor
++                          A cursor that is usually used when dragging an item.
++    \value DragCopyCursor
++                          A cursor that is usually used when dragging an item
++                          to copy it.
++    \value DragLinkCursor
++                          A cursor that is usually used when dragging an item
++                          to make a link to it.
++
+     \value BitmapCursor
+     \omitvalue LastCursor
+     \omitvalue CustomCursor
+diff --git a/src/gui/image/qpixmap_x11.cpp b/src/gui/image/qpixmap_x11.cpp
+index 0e66e09..4de5bc4 100644
+--- a/src/gui/image/qpixmap_x11.cpp
++++ b/src/gui/image/qpixmap_x11.cpp
+@@ -1141,7 +1141,7 @@ void QX11PixmapData::fromImage(const QImage &img,
+     }
+ }
+ 
+-void QX11PixmapData::bitmapFromImage(const QImage &image)
++Qt::HANDLE QX11PixmapData::createBitmapFromImage(const QImage &image)
+ {
+     QImage img = image.convertToFormat(QImage::Format_MonoLSB);
+     const QRgb c0 = QColor(Qt::black).rgb();
+@@ -1154,10 +1154,8 @@ void QX11PixmapData::bitmapFromImage(const QImage &image)
+ 
+     char  *bits;
+     uchar *tmp_bits;
+-    w = img.width();
+-    h = img.height();
+-    d = 1;
+-    is_null = (w <= 0 || h <= 0);
++    int w = img.width();
++    int h = img.height();
+     int bpl = (w + 7) / 8;
+     int ibpl = img.bytesPerLine();
+     if (bpl != ibpl) {
+@@ -1176,18 +1174,26 @@ void QX11PixmapData::bitmapFromImage(const QImage &image)
+         bits = (char *)img.bits();
+         tmp_bits = 0;
+     }
+-    hd = (Qt::HANDLE)XCreateBitmapFromData(xinfo.display(),
+-                                           RootWindow(xinfo.display(), xinfo.screen()),
++    Qt::HANDLE hd = (Qt::HANDLE)XCreateBitmapFromData(X11->display,
++                                           QX11Info::appRootWindow(),
+                                            bits, w, h);
++    if (tmp_bits)                                // Avoid purify complaint
++        delete [] tmp_bits;
++    return hd;
++}
+ 
++void QX11PixmapData::bitmapFromImage(const QImage &image)
++{
++    w = image.width();
++    h = image.height();
++    d = 1;
++    is_null = (w <= 0 || h <= 0);
++    hd = createBitmapFromImage(image);
+ #ifndef QT_NO_XRENDER
+     if (X11->use_xrender)
+         picture = XRenderCreatePicture(X11->display, hd,
+                                        XRenderFindStandardFormat(X11->display, PictStandardA1), 0, 0);
+ #endif // QT_NO_XRENDER
+-
+-    if (tmp_bits)                                // Avoid purify complaint
+-        delete [] tmp_bits;
+ }
+ 
+ void QX11PixmapData::fill(const QColor &fillColor)
+diff --git a/src/gui/image/qpixmap_x11_p.h b/src/gui/image/qpixmap_x11_p.h
+index 20fb654..0c0a9bd 100644
+--- a/src/gui/image/qpixmap_x11_p.h
++++ b/src/gui/image/qpixmap_x11_p.h
+@@ -92,6 +92,8 @@ public:
+     Qt::HANDLE handle() const { return hd; }
+     Qt::HANDLE x11ConvertToDefaultDepth();
+ 
++    static Qt::HANDLE createBitmapFromImage(const QImage &image);
++
+ protected:
+     int metric(QPaintDevice::PaintDeviceMetric metric) const;
+ 
+diff --git a/src/gui/kernel/qapplication.cpp b/src/gui/kernel/qapplication.cpp
+index b9ea540..1fc1b45 100644
+--- a/src/gui/kernel/qapplication.cpp
++++ b/src/gui/kernel/qapplication.cpp
+@@ -182,6 +182,15 @@ QApplicationPrivate::QApplicationPrivate(int &argc, char **argv, QApplication::T
+     gestureManager = 0;
+     gestureWidget = 0;
+ 
++#if defined(Q_WS_X11) || defined(Q_WS_WIN)
++    move_cursor = 0;
++    copy_cursor = 0;
++    link_cursor = 0;
++#endif
++#if defined(Q_WS_WIN)
++    ignore_cursor = 0;
++#endif
++
+     if (!self)
+         self = this;
+ }
+@@ -1032,6 +1041,15 @@ QApplication::~QApplication()
+     qt_clipboard = 0;
+ #endif
+ 
++#if defined(Q_WS_X11) || defined(Q_WS_WIN)
++    delete d->move_cursor; d->move_cursor = 0;
++    delete d->copy_cursor; d->copy_cursor = 0;
++    delete d->link_cursor; d->link_cursor = 0;
++#endif
++#if defined(Q_WS_WIN)
++    delete d->ignore_cursor; d->ignore_cursor = 0;
++#endif
++
+     delete QWidgetPrivate::mapper;
+     QWidgetPrivate::mapper = 0;
+ 
+@@ -5689,6 +5707,230 @@ QGestureManager* QGestureManager::instance()
+     return qAppPriv->gestureManager;
+ }
+ 
++#if defined(Q_WS_X11) || defined(Q_WS_WIN)
++// These pixmaps approximate the images in the Windows User Interface Guidelines.
++
++// XPM
++
++static const char * const move_xpm[] = {
++"11 20 3 1",
++".        c None",
++#if defined(Q_WS_WIN)
++"a        c #000000",
++"X        c #FFFFFF", // Windows cursor is traditionally white
++#else
++"a        c #FFFFFF",
++"X        c #000000", // X11 cursor is traditionally black
++#endif
++"aa.........",
++"aXa........",
++"aXXa.......",
++"aXXXa......",
++"aXXXXa.....",
++"aXXXXXa....",
++"aXXXXXXa...",
++"aXXXXXXXa..",
++"aXXXXXXXXa.",
++"aXXXXXXXXXa",
++"aXXXXXXaaaa",
++"aXXXaXXa...",
++"aXXaaXXa...",
++"aXa..aXXa..",
++"aa...aXXa..",
++"a.....aXXa.",
++"......aXXa.",
++".......aXXa",
++".......aXXa",
++"........aa."};
++
++#ifdef Q_WS_WIN
++/* XPM */
++static const char * const ignore_xpm[] = {
++"24 30 3 1",
++".        c None",
++"a        c #000000",
++"X        c #FFFFFF",
++"aa......................",
++"aXa.....................",
++"aXXa....................",
++"aXXXa...................",
++"aXXXXa..................",
++"aXXXXXa.................",
++"aXXXXXXa................",
++"aXXXXXXXa...............",
++"aXXXXXXXXa..............",
++"aXXXXXXXXXa.............",
++"aXXXXXXaaaa.............",
++"aXXXaXXa................",
++"aXXaaXXa................",
++"aXa..aXXa...............",
++"aa...aXXa...............",
++"a.....aXXa..............",
++"......aXXa.....XXXX.....",
++".......aXXa..XXaaaaXX...",
++".......aXXa.XaaaaaaaaX..",
++"........aa.XaaaXXXXaaaX.",
++"...........XaaaaX..XaaX.",
++"..........XaaXaaaX..XaaX",
++"..........XaaXXaaaX.XaaX",
++"..........XaaX.XaaaXXaaX",
++"..........XaaX..XaaaXaaX",
++"...........XaaX..XaaaaX.",
++"...........XaaaXXXXaaaX.",
++"............XaaaaaaaaX..",
++".............XXaaaaXX...",
++"...............XXXX....."};
++#endif
++
++/* XPM */
++static const char * const copy_xpm[] = {
++"24 30 3 1",
++".        c None",
++"a        c #000000",
++"X        c #FFFFFF",
++#if defined(Q_WS_WIN) // Windows cursor is traditionally white
++"aa......................",
++"aXa.....................",
++"aXXa....................",
++"aXXXa...................",
++"aXXXXa..................",
++"aXXXXXa.................",
++"aXXXXXXa................",
++"aXXXXXXXa...............",
++"aXXXXXXXXa..............",
++"aXXXXXXXXXa.............",
++"aXXXXXXaaaa.............",
++"aXXXaXXa................",
++"aXXaaXXa................",
++"aXa..aXXa...............",
++"aa...aXXa...............",
++"a.....aXXa..............",
++"......aXXa..............",
++".......aXXa.............",
++".......aXXa.............",
++"........aa...aaaaaaaaaaa",
++#else
++"XX......................",
++"XaX.....................",
++"XaaX....................",
++"XaaaX...................",
++"XaaaaX..................",
++"XaaaaaX.................",
++"XaaaaaaX................",
++"XaaaaaaaX...............",
++"XaaaaaaaaX..............",
++"XaaaaaaaaaX.............",
++"XaaaaaaXXXX.............",
++"XaaaXaaX................",
++"XaaXXaaX................",
++"XaX..XaaX...............",
++"XX...XaaX...............",
++"X.....XaaX..............",
++"......XaaX..............",
++".......XaaX.............",
++".......XaaX.............",
++"........XX...aaaaaaaaaaa",
++#endif
++".............aXXXXXXXXXa",
++".............aXXXXXXXXXa",
++".............aXXXXaXXXXa",
++".............aXXXXaXXXXa",
++".............aXXaaaaaXXa",
++".............aXXXXaXXXXa",
++".............aXXXXaXXXXa",
++".............aXXXXXXXXXa",
++".............aXXXXXXXXXa",
++".............aaaaaaaaaaa"};
++
++/* XPM */
++static const char * const link_xpm[] = {
++"24 30 3 1",
++".        c None",
++"a        c #000000",
++"X        c #FFFFFF",
++#if defined(Q_WS_WIN) // Windows cursor is traditionally white
++"aa......................",
++"aXa.....................",
++"aXXa....................",
++"aXXXa...................",
++"aXXXXa..................",
++"aXXXXXa.................",
++"aXXXXXXa................",
++"aXXXXXXXa...............",
++"aXXXXXXXXa..............",
++"aXXXXXXXXXa.............",
++"aXXXXXXaaaa.............",
++"aXXXaXXa................",
++"aXXaaXXa................",
++"aXa..aXXa...............",
++"aa...aXXa...............",
++"a.....aXXa..............",
++"......aXXa..............",
++".......aXXa.............",
++".......aXXa.............",
++"........aa...aaaaaaaaaaa",
++#else
++"XX......................",
++"XaX.....................",
++"XaaX....................",
++"XaaaX...................",
++"XaaaaX..................",
++"XaaaaaX.................",
++"XaaaaaaX................",
++"XaaaaaaaX...............",
++"XaaaaaaaaX..............",
++"XaaaaaaaaaX.............",
++"XaaaaaaXXXX.............",
++"XaaaXaaX................",
++"XaaXXaaX................",
++"XaX..XaaX...............",
++"XX...XaaX...............",
++"X.....XaaX..............",
++"......XaaX..............",
++".......XaaX.............",
++".......XaaX.............",
++"........XX...aaaaaaaaaaa",
++#endif
++".............aXXXXXXXXXa",
++".............aXXXaaaaXXa",
++".............aXXXXaaaXXa",
++".............aXXXaaaaXXa",
++".............aXXaaaXaXXa",
++".............aXXaaXXXXXa",
++".............aXXaXXXXXXa",
++".............aXXXaXXXXXa",
++".............aXXXXXXXXXa",
++".............aaaaaaaaaaa"};
++
++QPixmap QApplicationPrivate::getPixmapCursor(Qt::CursorShape cshape)
++{
++    if (!move_cursor) {
++        move_cursor = new QPixmap((const char **)move_xpm);
++        copy_cursor = new QPixmap((const char **)copy_xpm);
++        link_cursor = new QPixmap((const char **)link_xpm);
++#ifdef Q_WS_WIN
++        ignore_cursor = new QPixmap((const char **)ignore_xpm);
++#endif
++    }
++
++    switch (cshape) {
++    case Qt::DragMoveCursor:
++        return *move_cursor;
++    case Qt::DragCopyCursor:
++        return *copy_cursor;
++    case Qt::DragLinkCursor:
++        return *link_cursor;
++#ifdef Q_WS_WIN
++    case Qt::ForbiddenCursor:
++        return *ignore_cursor;
++#endif
++    default:
++        break;
++    }
++    return QPixmap();
++}
++#endif
++
+ QT_END_NAMESPACE
+ 
+ #include "moc_qapplication.cpp"
+diff --git a/src/gui/kernel/qapplication_p.h b/src/gui/kernel/qapplication_p.h
+index 59565d4..0764553 100644
+--- a/src/gui/kernel/qapplication_p.h
++++ b/src/gui/kernel/qapplication_p.h
+@@ -518,6 +518,17 @@ public:
+ 
+     QGestureManager *gestureManager;
+     QWidget *gestureWidget;
++#if defined(Q_WS_X11) || defined(Q_WS_WIN)
++    QPixmap *move_cursor;
++    QPixmap *copy_cursor;
++    QPixmap *link_cursor;
++#endif
++#if defined(Q_WS_WIN)
++    QPixmap *ignore_cursor;
++#endif
++#if defined(Q_WS_X11) || defined(Q_WS_WIN)
++    QPixmap getPixmapCursor(Qt::CursorShape cshape);
++#endif
+ 
+     QMap<int, QWeakPointer<QWidget> > widgetForTouchPointId;
+     QMap<int, QTouchEvent::TouchPoint> appCurrentTouchPoints;
+diff --git a/src/gui/kernel/qcursor.cpp b/src/gui/kernel/qcursor.cpp
+index 0f0470c..f38e4f5 100644
+--- a/src/gui/kernel/qcursor.cpp
++++ b/src/gui/kernel/qcursor.cpp
+@@ -141,6 +141,12 @@ QT_BEGIN_NAMESPACE
+          \o Qt::WhatsThisCursor \o \c whats_this
+          \o \inlineimage      cursor-closedhand.png
+          \o Qt::ClosedHandCursor \o \c closedhand
++    \row \o
++         \o Qt::DragMoveCursor      \o \c dnd-move or \c move
++         \o
++         \o Qt::DragCopyCursor      \o \c dnd-copy or \c copy
++    \row \o
++         \o Qt::DragLinkCursor      \o \c dnd-link or \c link
+     \endtable
+ 
+     \sa QWidget, {fowler}{GUI Design Handbook: Cursors}
+diff --git a/src/gui/kernel/qcursor_mac.mm b/src/gui/kernel/qcursor_mac.mm
+index 48bb9cc..cfebf60 100644
+--- a/src/gui/kernel/qcursor_mac.mm
++++ b/src/gui/kernel/qcursor_mac.mm
+@@ -424,6 +424,18 @@ void QCursorData::update()
+         type = QCursorData::TYPE_ThemeCursor;
+         curs.cp.nscursor = [NSCursor closedHandCursor];
+         break;
++    case Qt::DragCopyCursor:
++        type = QCursorData::TYPE_ThemeCursor;
++        curs.cp.nscursor = [NSCursor dragCopyCursor];
++        break;
++    case Qt::DragMoveCursor:
++        type = QCursorData::TYPE_ThemeCursor;
++        curs.cp.nscursor = [NSCursor arrowCursor];
++        break;
++    case Qt::DragLinkCursor:
++        type = QCursorData::TYPE_ThemeCursor;
++        curs.cp.nscursor = [NSCursor dragLinkCursor];
++        break;
+ #define QT_USE_APPROXIMATE_CURSORS
+ #ifdef QT_USE_APPROXIMATE_CURSORS
+     case Qt::SizeVerCursor:
+@@ -519,6 +531,18 @@ void QCursorData::update()
+         type = QCursorData::TYPE_ThemeCursor;
+         curs.tc.curs = kThemeClosedHandCursor;
+         break;
++    case Qt::DragMoveCursor:
++        type = QCursorData::TYPE_ThemeCursor;
++        curs.tc.curs = kThemeArrowCursor;
++        break;
++    case Qt::DragCopyCursor:
++        type = QCursorData::TYPE_ThemeCursor;
++        curs.tc.curs = kThemeCopyArrowCursor;
++        break;
++    case Qt::DragLinkCursor:
++        type = QCursorData::TYPE_ThemeCursor;
++        curs.tc.curs = kThemeAliasArrowCursor;
++        break;
+ #define QT_USE_APPROXIMATE_CURSORS
+ #ifdef QT_USE_APPROXIMATE_CURSORS
+     case Qt::SizeVerCursor:
+diff --git a/src/gui/kernel/qcursor_win.cpp b/src/gui/kernel/qcursor_win.cpp
+index 6f651d4..ae1c004 100644
+--- a/src/gui/kernel/qcursor_win.cpp
++++ b/src/gui/kernel/qcursor_win.cpp
+@@ -47,6 +47,7 @@
+ 
+ #include <qimage.h>
+ #include <qt_windows.h>
++#include <private/qapplication_p.h>
+ 
+ QT_BEGIN_NAMESPACE
+ 
+@@ -470,6 +471,12 @@ void QCursorData::update()
+ #endif
+         return;
+     }
++    case Qt::DragCopyCursor:
++    case Qt::DragMoveCursor:
++    case Qt::DragLinkCursor: {
++        QPixmap pixmap = QApplicationPrivate::instance()->getPixmapCursor(cshape);
++        hcurs = create32BitCursor(pixmap, hx, hy);
++    }
+     default:
+         qWarning("QCursor::update: Invalid cursor shape %d", cshape);
+         return;
+diff --git a/src/gui/kernel/qcursor_x11.cpp b/src/gui/kernel/qcursor_x11.cpp
+index 3e83363..4e871a6 100644
+--- a/src/gui/kernel/qcursor_x11.cpp
++++ b/src/gui/kernel/qcursor_x11.cpp
+@@ -39,9 +39,11 @@
+ **
+ ****************************************************************************/
+ 
++#include <qdebug.h>
+ #include <qdatastream.h>
+ #include <private/qcursor_p.h>
+ #include <private/qt_x11_p.h>
++#include <private/qapplication_p.h>
+ #include <qbitmap.h>
+ #include <qcursor.h>
+ #include <X11/cursorfont.h>
+@@ -57,6 +59,7 @@
+ #endif // QT_NO_XFIXES
+ 
+ #include "qx11info_x11.h"
++#include <private/qpixmap_x11_p.h>
+ 
+ QT_BEGIN_NAMESPACE
+ 
+@@ -262,12 +265,31 @@ void QCursorData::update()
+         "whats_this",
+         "left_ptr_watch",
+         "openhand",
+-        "closedhand"
++        "closedhand",
++        "copy",
++        "move",
++        "link"
+     };
+ 
+ #ifndef QT_NO_XCURSOR
+-    if (X11->ptrXcursorLibraryLoadCursor)
+-        hcurs = X11->ptrXcursorLibraryLoadCursor(dpy, cursorNames[cshape]);
++    if (X11->ptrXcursorLibraryLoadCursor) {
++        // special case for non-standard dnd-* cursors
++        switch (cshape) {
++        case Qt::DragCopyCursor:
++            hcurs = X11->ptrXcursorLibraryLoadCursor(dpy, "dnd-copy");
++            break;
++        case Qt::DragMoveCursor:
++            hcurs = X11->ptrXcursorLibraryLoadCursor(dpy, "dnd-move");
++            break;
++        case Qt::DragLinkCursor:
++            hcurs = X11->ptrXcursorLibraryLoadCursor(dpy, "dnd-link");
++            break;
++        default:
++            break;
++        }
++        if (!hcurs)
++            hcurs = X11->ptrXcursorLibraryLoadCursor(dpy, cursorNames[cshape]);
++    }
+     if (hcurs)
+         return;
+ #endif // QT_NO_XCURSOR
+@@ -504,6 +526,19 @@ void QCursorData::update()
+         pm  = XCreateBitmapFromData(dpy, rootwin, open ? openhand_bits : closedhand_bits, 16, 16);
+         pmm = XCreateBitmapFromData(dpy, rootwin, open ? openhandm_bits : closedhandm_bits, 16, 16);
+         hcurs = XCreatePixmapCursor(dpy, pm, pmm, &fg, &bg, 8, 8);
++    } else if (cshape == Qt::DragCopyCursor || cshape == Qt::DragMoveCursor
++               || cshape == Qt::DragLinkCursor) {
++        XColor bg, fg;
++        bg.red   = 255 << 8;
++        bg.green = 255 << 8;
++        bg.blue  = 255 << 8;
++        fg.red   = 0;
++        fg.green = 0;
++        fg.blue  = 0;
++        QImage image = QApplicationPrivate::instance()->getPixmapCursor(cshape).toImage();
++        pm = QX11PixmapData::createBitmapFromImage(image);
++        pmm = QX11PixmapData::createBitmapFromImage(image.createAlphaMask().convertToFormat(QImage::Format_MonoLSB));
++        hcurs = XCreatePixmapCursor(dpy, pm, pmm, &fg, &bg, 8, 8);
+     }
+ 
+     if (hcurs)
+@@ -577,6 +612,15 @@ void QCursorData::update()
+     case Qt::BusyCursor:
+         sh = XC_watch;
+         break;
++    case Qt::DragCopyCursor:
++        sh = XC_tcross;
++        break;
++    case Qt::DragLinkCursor:
++        sh = XC_center_ptr;
++        break;
++    case Qt::DragMoveCursor:
++        sh = XC_top_left_arrow;
++        break;
+ #endif /* QT_USE_APPROXIMATE_CURSORS */
+     default:
+         qWarning("QCursor::update: Invalid cursor shape %d", cshape);
+diff --git a/src/gui/kernel/qdnd.cpp b/src/gui/kernel/qdnd.cpp
+index 21438a8..82708ef 100644
+--- a/src/gui/kernel/qdnd.cpp
++++ b/src/gui/kernel/qdnd.cpp
+@@ -60,204 +60,12 @@
+ #include "qdebug.h"
+ #include <ctype.h>
+ 
++#include <private/qapplication_p.h>
++
+ #ifndef QT_NO_DRAGANDDROP
+ 
+ QT_BEGIN_NAMESPACE
+ 
+-// These pixmaps approximate the images in the Windows User Interface Guidelines.
+-
+-// XPM
+-
+-static const char * const move_xpm[] = {
+-"11 20 3 1",
+-".        c None",
+-#if defined(Q_WS_WIN)
+-"a        c #000000",
+-"X        c #FFFFFF", // Windows cursor is traditionally white
+-#else
+-"a        c #FFFFFF",
+-"X        c #000000", // X11 cursor is traditionally black
+-#endif
+-"aa.........",
+-"aXa........",
+-"aXXa.......",
+-"aXXXa......",
+-"aXXXXa.....",
+-"aXXXXXa....",
+-"aXXXXXXa...",
+-"aXXXXXXXa..",
+-"aXXXXXXXXa.",
+-"aXXXXXXXXXa",
+-"aXXXXXXaaaa",
+-"aXXXaXXa...",
+-"aXXaaXXa...",
+-"aXa..aXXa..",
+-"aa...aXXa..",
+-"a.....aXXa.",
+-"......aXXa.",
+-".......aXXa",
+-".......aXXa",
+-"........aa."};
+-
+-#ifdef Q_WS_WIN
+-/* XPM */
+-static const char * const ignore_xpm[] = {
+-"24 30 3 1",
+-".        c None",
+-"a        c #000000",
+-"X        c #FFFFFF",
+-"aa......................",
+-"aXa.....................",
+-"aXXa....................",
+-"aXXXa...................",
+-"aXXXXa..................",
+-"aXXXXXa.................",
+-"aXXXXXXa................",
+-"aXXXXXXXa...............",
+-"aXXXXXXXXa..............",
+-"aXXXXXXXXXa.............",
+-"aXXXXXXaaaa.............",
+-"aXXXaXXa................",
+-"aXXaaXXa................",
+-"aXa..aXXa...............",
+-"aa...aXXa...............",
+-"a.....aXXa..............",
+-"......aXXa.....XXXX.....",
+-".......aXXa..XXaaaaXX...",
+-".......aXXa.XaaaaaaaaX..",
+-"........aa.XaaaXXXXaaaX.",
+-"...........XaaaaX..XaaX.",
+-"..........XaaXaaaX..XaaX",
+-"..........XaaXXaaaX.XaaX",
+-"..........XaaX.XaaaXXaaX",
+-"..........XaaX..XaaaXaaX",
+-"...........XaaX..XaaaaX.",
+-"...........XaaaXXXXaaaX.",
+-"............XaaaaaaaaX..",
+-".............XXaaaaXX...",
+-"...............XXXX....."};
+-#endif
+-
+-/* XPM */
+-static const char * const copy_xpm[] = {
+-"24 30 3 1",
+-".        c None",
+-"a        c #000000",
+-"X        c #FFFFFF",
+-#if defined(Q_WS_WIN) // Windows cursor is traditionally white
+-"aa......................",
+-"aXa.....................",
+-"aXXa....................",
+-"aXXXa...................",
+-"aXXXXa..................",
+-"aXXXXXa.................",
+-"aXXXXXXa................",
+-"aXXXXXXXa...............",
+-"aXXXXXXXXa..............",
+-"aXXXXXXXXXa.............",
+-"aXXXXXXaaaa.............",
+-"aXXXaXXa................",
+-"aXXaaXXa................",
+-"aXa..aXXa...............",
+-"aa...aXXa...............",
+-"a.....aXXa..............",
+-"......aXXa..............",
+-".......aXXa.............",
+-".......aXXa.............",
+-"........aa...aaaaaaaaaaa",
+-#else
+-"XX......................",
+-"XaX.....................",
+-"XaaX....................",
+-"XaaaX...................",
+-"XaaaaX..................",
+-"XaaaaaX.................",
+-"XaaaaaaX................",
+-"XaaaaaaaX...............",
+-"XaaaaaaaaX..............",
+-"XaaaaaaaaaX.............",
+-"XaaaaaaXXXX.............",
+-"XaaaXaaX................",
+-"XaaXXaaX................",
+-"XaX..XaaX...............",
+-"XX...XaaX...............",
+-"X.....XaaX..............",
+-"......XaaX..............",
+-".......XaaX.............",
+-".......XaaX.............",
+-"........XX...aaaaaaaaaaa",
+-#endif
+-".............aXXXXXXXXXa",
+-".............aXXXXXXXXXa",
+-".............aXXXXaXXXXa",
+-".............aXXXXaXXXXa",
+-".............aXXaaaaaXXa",
+-".............aXXXXaXXXXa",
+-".............aXXXXaXXXXa",
+-".............aXXXXXXXXXa",
+-".............aXXXXXXXXXa",
+-".............aaaaaaaaaaa"};
+-
+-/* XPM */
+-static const char * const link_xpm[] = {
+-"24 30 3 1",
+-".        c None",
+-"a        c #000000",
+-"X        c #FFFFFF",
+-#if defined(Q_WS_WIN) // Windows cursor is traditionally white
+-"aa......................",
+-"aXa.....................",
+-"aXXa....................",
+-"aXXXa...................",
+-"aXXXXa..................",
+-"aXXXXXa.................",
+-"aXXXXXXa................",
+-"aXXXXXXXa...............",
+-"aXXXXXXXXa..............",
+-"aXXXXXXXXXa.............",
+-"aXXXXXXaaaa.............",
+-"aXXXaXXa................",
+-"aXXaaXXa................",
+-"aXa..aXXa...............",
+-"aa...aXXa...............",
+-"a.....aXXa..............",
+-"......aXXa..............",
+-".......aXXa.............",
+-".......aXXa.............",
+-"........aa...aaaaaaaaaaa",
+-#else
+-"XX......................",
+-"XaX.....................",
+-"XaaX....................",
+-"XaaaX...................",
+-"XaaaaX..................",
+-"XaaaaaX.................",
+-"XaaaaaaX................",
+-"XaaaaaaaX...............",
+-"XaaaaaaaaX..............",
+-"XaaaaaaaaaX.............",
+-"XaaaaaaXXXX.............",
+-"XaaaXaaX................",
+-"XaaXXaaX................",
+-"XaX..XaaX...............",
+-"XX...XaaX...............",
+-"X.....XaaX..............",
+-"......XaaX..............",
+-".......XaaX.............",
+-".......XaaX.............",
+-"........XX...aaaaaaaaaaa",
+-#endif
+-".............aXXXXXXXXXa",
+-".............aXXXaaaaXXa",
+-".............aXXXXaaaXXa",
+-".............aXXXaaaaXXa",
+-".............aXXaaaXaXXa",
+-".............aXXaaXXXXXa",
+-".............aXXaXXXXXXa",
+-".............aXXXaXXXXXa",
+-".............aXXXXXXXXXa",
+-".............aaaaaaaaaaa"};
+-
+ #ifndef QT_NO_DRAGANDDROP
+ 
+ //#define QDND_DEBUG
+@@ -326,22 +134,9 @@ QDragManager::QDragManager()
+ {
+     Q_ASSERT(!instance);
+ 
+-#ifdef Q_WS_WIN
+-    n_cursor = 4;
+-#else
+-    n_cursor = 3;
+-#endif
+-
+ #ifdef Q_WS_QWS
+     currentActionForOverrideCursor = Qt::IgnoreAction;
+ #endif
+-    pm_cursor = new QPixmap[n_cursor];
+-    pm_cursor[0] = QPixmap((const char **)move_xpm);
+-    pm_cursor[1] = QPixmap((const char **)copy_xpm);
+-    pm_cursor[2] = QPixmap((const char **)link_xpm);
+-#ifdef Q_WS_WIN
+-    pm_cursor[3] = QPixmap((const char **)ignore_xpm);
+-#endif
+     object = 0;
+     beingCancelled = false;
+     restoreCursor = false;
+@@ -362,7 +157,6 @@ QDragManager::~QDragManager()
+         QApplication::restoreOverrideCursor();
+ #endif
+     instance = 0;
+-    delete [] pm_cursor;
+     delete dropData;
+ }
+ 
+@@ -373,23 +167,25 @@ QDragManager *QDragManager::self()
+     return instance;
+ }
+ 
++#if defined(Q_WS_X11) || defined(Q_WS_WIN)
+ QPixmap QDragManager::dragCursor(Qt::DropAction action) const
+ {
+     QDragPrivate * d = dragPrivate();
+     if (d && d->customCursors.contains(action))
+         return d->customCursors[action];
+     else if (action == Qt::MoveAction)
+-        return pm_cursor[0];
++        return QApplicationPrivate::instance()->getPixmapCursor(Qt::DragMoveCursor);
+     else if (action == Qt::CopyAction)
+-        return pm_cursor[1];
++        return QApplicationPrivate::instance()->getPixmapCursor(Qt::DragCopyCursor);
+     else if (action == Qt::LinkAction)
+-        return pm_cursor[2];
++        return QApplicationPrivate::instance()->getPixmapCursor(Qt::DragLinkCursor);
+ #ifdef Q_WS_WIN
+     else if (action == Qt::IgnoreAction)
+-        return pm_cursor[3];
++        return QApplicationPrivate::instance()->getPixmapCursor(Qt::ForbiddenCursor);
+ #endif
+     return QPixmap();
+ }
++#endif
+ 
+ bool QDragManager::hasCustomDragCursors() const
+ {
+diff --git a/src/gui/kernel/qdnd_p.h b/src/gui/kernel/qdnd_p.h
+index d70b983..1eb85ed 100644
+--- a/src/gui/kernel/qdnd_p.h
++++ b/src/gui/kernel/qdnd_p.h
+@@ -244,7 +244,9 @@ public:
+     bool willDrop;
+     QEventLoop *eventLoop;
+ 
++#if defined(Q_WS_X11) || defined(Q_WS_WIN)
+     QPixmap dragCursor(Qt::DropAction action) const;
++#endif
+ 
+     bool hasCustomDragCursors() const;
+ 
+@@ -261,8 +263,6 @@ public:
+ #endif
+ 
+ private:
+-    QPixmap *pm_cursor;
+-    int n_cursor;
+ #ifdef Q_WS_QWS
+     Qt::DropAction currentActionForOverrideCursor;
+ #endif
+diff --git a/src/gui/kernel/qdnd_x11.cpp b/src/gui/kernel/qdnd_x11.cpp
+index 33968bd..9591b9a 100644
+--- a/src/gui/kernel/qdnd_x11.cpp
++++ b/src/gui/kernel/qdnd_x11.cpp
+@@ -1340,9 +1340,9 @@ void QDragManager::updateCursor()
+     if (!noDropCursor) {
+ #ifndef QT_NO_CURSOR
+         noDropCursor = new QCursor(Qt::ForbiddenCursor);
+-        moveCursor = new QCursor(dragCursor(Qt::MoveAction), 0,0);
+-        copyCursor = new QCursor(dragCursor(Qt::CopyAction), 0,0);
+-        linkCursor = new QCursor(dragCursor(Qt::LinkAction), 0,0);
++        moveCursor = new QCursor(Qt::DragMoveCursor);
++        copyCursor = new QCursor(Qt::DragCopyCursor);
++        linkCursor = new QCursor(Qt::DragLinkCursor);
+ #endif
+     }
+ 
+-- 
+1.6.1
+

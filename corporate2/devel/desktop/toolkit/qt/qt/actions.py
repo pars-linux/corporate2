@@ -13,7 +13,7 @@ from pisi.actionsapi import get
 import os
 
 WorkDir = "qt-everywhere-opensource-src-%s" % get.srcVERSION().replace('_','-')
-qtbase = "/usr/qt/4"
+qtbase = get.qtDIR()
 
 def setup():
     #make sure we don't use them
@@ -74,32 +74,29 @@ def install():
     pisitools.dodir("/usr/bin")
 
     #Remove phonon, we use KDE's phonon but we have to build Qt with Phonon support for webkit and some other stuff
-    pisitools.remove("/usr/qt/4/lib/libphonon*")
-    pisitools.removeDir("/usr/qt/4/include/phonon")
-    pisitools.remove("/usr/qt/4/lib/pkgconfig/phonon*")
+    pisitools.remove("%s/lib/libphonon*" % qtbase)
+    pisitools.removeDir("%s/include/phonon" % qtbase)
+    pisitools.remove("%s/lib/pkgconfig/phonon*" % qtbase)
     pisitools.remove("/usr/share/dbus-1/interfaces/org.kde.Phonon.AudioOutput.xml")
     os.removedirs("%s/usr/share/dbus-1/interfaces" % get.installDIR())
 
     for app in ["qmake", "designer", "assistant", "linguist", "qtconfig", "uic", "rcc", "moc", "lrelease", "lupdate", "lconvert"]:
-        pisitools.dosym("/usr/qt/4/bin/%s" % app, "/usr/bin/%s-qt4" % app)
+        pisitools.dosym("%s/bin/%s" % (qtbase, app), "/usr/bin/%s-qt4" % app)
 
     for app in ["qdbus", "qdbuscpp2xml", "qdbusxml2cpp", "qt3to4", "qtdemo", "uic3", "pixeltool", "qdoc3", "qhelpgenerator", "qhelpconverter", "qdbusviewer", "qttracereplay", "xmlpatterns", "xmlpatternsvalidator"]:
-        pisitools.dosym("/usr/qt/4/bin/%s" % app, "/usr/bin/%s" % app)
+        pisitools.dosym("%s/bin/%s" % (qtbase, app), "/usr/bin/%s" % app)
 
     # Turkish translations
-    shelltools.export("LD_LIBRARY_PATH", "%s/usr/qt/4/lib" % get.installDIR())
+    shelltools.export("LD_LIBRARY_PATH", "%s%s/lib" % (qtbase, get.installDIR()))
     shelltools.system("%s/usr/qt/4/bin/lrelease l10n-tr/*.ts" % get.installDIR())
     pisitools.insinto("/usr/qt/4/translations", "l10n-tr/*.qm")
 
-    pisitools.insinto("/usr/lib/pkgconfig", "%s/usr/qt/4/lib/pkgconfig/*.pc" % get.installDIR())
-    pisitools.remove("/usr/qt/4/lib/pkgconfig")
-
     # Fix all occurances of WorkDir in pc files
-    pisitools.dosed("%s/usr/lib/pkgconfig/*.pc" % get.installDIR(), "%s/qt-x11-opensource-src-%s" % (get.workDIR(),get.srcVERSION()),"/usr/qt/4")
+    pisitools.dosed("%s%s/lib/pkgconfig/*.pc" % (get.installDIR(), qtbase), "%s/qt-x11-opensource-src-%s" % (get.workDIR(), get.srcVERSION()), qtbase)
 
-    mkspecPath = "/usr/qt/4/mkspecs"
+    mkspecPath = "%s/mkspecs" % qtbase
 
-    for root, dirs, files in os.walk("%s/usr/qt/4" % get.installDIR()):
+    for root, dirs, files in os.walk("%s%s" % (get.installDIR(), qtbase)):
         # Remove unnecessary spec files..
         if root.endswith(mkspecPath):
             for dir in dirs:
@@ -110,4 +107,4 @@ def install():
                 pisitools.dosed(os.path.join(root, name), "^QMAKE_PRL_BUILD_DIR.*", "")
 
     # Remove useless image directory, images of HTML docs are in doc/html/images
-    pisitools.removeDir("/usr/qt/4/doc/src")
+    pisitools.removeDir("%s/doc/src" % qtbase)
