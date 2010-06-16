@@ -10,7 +10,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-WorkDir="dhcp-%s" % get.srcVERSION()
+WorkDir="dhcp-4.1.1-P1"
 
 def setup():
     shelltools.export("CFLAGS", "%s -D_GNU_SOURCE" % get.CFLAGS())
