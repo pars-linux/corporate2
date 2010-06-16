@@ -1,0 +1,28 @@
+From c62c06cf0deba9661f39c0d5aa79181274298496 Mon Sep 17 00:00:00 2001
+From: Andreas Hartmetz <ahartmetz@gmail.com>
+Date: Thu, 18 Mar 2010 03:28:06 +0100
+Subject: [PATCH 13/13] Add environment variable switch for graphicssystem so a default can be set
+ at runtime without passing a command-line parameter.
+
+---
+ src/gui/kernel/qapplication.cpp |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/src/gui/kernel/qapplication.cpp b/src/gui/kernel/qapplication.cpp
+index 49713cf..af83047 100644
+--- a/src/gui/kernel/qapplication.cpp
++++ b/src/gui/kernel/qapplication.cpp
+@@ -763,6 +763,10 @@ void QApplicationPrivate::construct(
+ 
+     qt_is_gui_used = (qt_appType != QApplication::Tty);
+     process_cmdline();
++    // the environment variable has the lowest precedence of runtime graphicssystem switches
++    if (graphics_system_name.isEmpty()) {
++        graphics_system_name = QString::fromLocal8Bit(qgetenv("QT_GRAPHICSSYSTEM"));
++    }
+     // Must be called before initialize()
+     qt_init(this, qt_appType
+ #ifdef Q_WS_X11
+-- 
+1.7.0.4
+

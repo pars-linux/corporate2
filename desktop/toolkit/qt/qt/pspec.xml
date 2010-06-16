@@ -37,7 +37,7 @@
             -->
         </BuildDependencies>
         <Patches>
-            <!-- kde-qt git patches: git format-patch \-\-output-directory kde-qt-patches -M -C v4.6.0..origin/4.6.0-patched -->
+            <!-- kde-qt git patches: git format-patch \-\-output-directory kde-qt-patches -M -C v4.6.2..origin/4.6.2-patched -->
             <Patch level="1">git-patches/0001-Import-README.qt-copy-from-the-original-qt-copy.patch</Patch>
             <Patch level="1">git-patches/0002-Update-this-file-to-reflect-the-workflow-with-Git-as.patch</Patch>
             <Patch level="1">git-patches/0003-This-patch-makes-override-redirect-windows-popup-men.patch</Patch>
@@ -50,6 +50,7 @@
             <Patch level="1">git-patches/0010-Update-README-file.patch</Patch>
             <Patch level="1">git-patches/0011-Update-README-with-instructions-for-patching-after-n.patch</Patch>
             <Patch level="1">git-patches/0012-Update-README-with-info-on-how-to-update-kde-qt-with.patch</Patch>
+            <Patch level="1">git-patches/0013-Add-environment-variable-switch-for-graphicssystem-s.patch</Patch>
 
             <Patch level="1">uitools-sharedlib.patch</Patch>
             <Patch level="1">no-hardcoded-font-aliases.patch</Patch>
@@ -67,7 +68,6 @@
 
             <!-- Add PostgreSQL 8.3 support -->
             <Patch level="1">kubuntu/17_add_postgresql_8.3_support.diff</Patch>
-
 
             <!-- Fedora Patches -->
             <Patch level="1">fedora/qt-x11-opensource-src-4.5.1-enable_ft_lcdfilter.patch</Patch>
@@ -111,6 +111,9 @@
             <Patch>mandriva/qt-everywhere-opensource-src-gitc0887695-fix-QGraphicsView-crash.patch</Patch>
             <Patch>mandriva/qt-everywhere-opensource-src-4.6.1-qdoc3.patch</Patch>
 
+            <!-- Fix ugly cursors during drag'n'drop http://bugreports.qt.nokia.com/browse/QTBUG-6669 and https://bugs.kde.org/show_bug.cgi?id=173718 -->
+            <Patch level="1">fix-dnd-cursor-icons-1efb2693b15f23f269be1db393a83af132924e06.patch</Patch>
+
             <Patch level="1">mkspecs.patch</Patch>
         </Patches>
     </Source>
@@ -130,16 +133,13 @@
         </Replaces>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
-            <Path fileType="data">/usr/lib/pkgconfig</Path>
             <Path fileType="config">/usr/qt/4/etc</Path>
             <Path fileType="executable">/usr/qt/4/bin</Path>
-            <Path fileType="header">/usr/qt/4/include</Path>
             <Path fileType="library">/usr/qt/4/lib</Path>
-            <Path fileType="data">/usr/qt/4/mkspecs</Path>
             <Path fileType="data">/usr/qt/4/plugins</Path>
             <Path fileType="data">/usr/qt/4/templates</Path>
             <Path fileType="data">/usr/qt/4/q3porting.xml</Path>
-            <Path fileType="localedata">/usr/qt/4/translations</Path>
+            <Path fileType="localedata">/usr/qt/4/translations/*_tr.*</Path>
             <Path fileType="config">/etc</Path>
         </Files>
         <AdditionalFiles>
@@ -168,9 +168,38 @@
     </Package>
 
     <Package>
+        <Name>qt-devel</Name>
+        <Summary>Development files for Qt</Summary>
+        <RuntimeDependencies>
+            <Dependency versionFrom="4.6.2">qt</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="76">qt</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="data">/usr/qt/4/mkspecs</Path>
+            <Path fileType="data">/usr/qt/4/lib/pkgconfig</Path>
+            <Path fileType="header">/usr/qt/4/include</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>qt-l10n</Name>
+        <IsA>locale</IsA>
+        <Summary>Translation files for Qt library and tools. Supported languages are: da, de, fr, ja, pl, ru, zh_CN, zh_TW</Summary>
+        <Conflicts>
+            <Package releaseTo="76">qt</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="localedata">/usr/qt/4/translations</Path>
+        </Files>
+    </Package>
+
+    <Package>
         <Name>qt-designer</Name>
         <RuntimeDependencies>
             <Dependency>qt-webkit</Dependency>
+            <Dependency versionFrom="4.6.2">qt</Dependency>
         </RuntimeDependencies>
         <Replaces>
             <Package>qt4-designer</Package>
@@ -214,8 +243,8 @@
         <RuntimeDependencies>
             <Dependency versionFrom="4.6.2">qt</Dependency>
             <!-- assistant uses QtWebKit -->
-            <Dependency>qt-webkit</Dependency>
-            <Dependency>qt-sql-sqlite</Dependency>
+            <Dependency versionFrom="4.6.2">qt-webkit</Dependency>
+            <Dependency versionFrom="4.6.2">qt-sql-sqlite</Dependency>
         </RuntimeDependencies>
         <Replaces>
             <Package>qt4-doc</Package>
@@ -223,14 +252,9 @@
         <Files>
             <Path fileType="executable">/usr/bin/assistant-qt4</Path>
             <Path fileType="executable">/usr/qt/4/bin/assistant</Path>
-            <Path fileType="doc">/usr/qt/4/doc</Path>
+            <Path fileType="doc">/usr/qt/4/doc/qch</Path>
             <Path fileType="doc">/usr/qt/4/tutorial</Path>
-            <Path fileType="executable">/usr/qt/4/examples</Path>
-            <Path fileType="executable">/usr/qt/4/demos</Path>
-            <Path fileType="executable">/usr/bin/qtdemo</Path>
-            <Path fileType="executable">/usr/qt/4/bin/qtdemo</Path>
             <Path fileType="data">/usr/share/applications/assistant-qt4.desktop</Path>
-            <Path fileType="data">/usr/share/applications/qtdemo.desktop</Path>
             <Path fileType="data">/usr/share/pixmaps/assistant-qt4.png</Path>
             <Path fileType="data">/usr/share/icons</Path>
         </Files>
@@ -239,6 +263,36 @@
             <AdditionalFile owner="root" permission="0644" target="/usr/share/pixmaps/assistant-qt4.png">data/assistant.png</AdditionalFile>
             <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/128x128/apps/qt4-logo.png">data/hi128-app-qt4-logo.png</AdditionalFile>
             <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/48x48/apps/qt4-logo.png">data/hi48-app-qt4-logo.png</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <Package>
+        <Name>qt-doc-html</Name>
+        <Conflicts>
+            <Package versionTo="4.5.3">qt-doc</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="doc">/usr/qt/4/doc</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>qt-demos</Name>
+        <RuntimeDependencies>
+            <Dependency versionFrom="4.6.2">qt</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <Package versionTo="4.5.3">qt-doc</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="executable">/usr/qt/4/bin/qtdemo</Path>
+            <Path fileType="executable">/usr/bin/qtdemo</Path>
+            <Path fileType="library">/usr/qt/4/demos</Path>
+            <Path fileType="library">/usr/qt/4/examples</Path>
+            <Path fileType="library">/usr/qt/4/plugins/designer/libarthurplugin.so</Path>
+            <Path fileType="data">/usr/share/applications/qtdemo.desktop</Path>
+        </Files>
+        <AdditionalFiles>
             <AdditionalFile owner="root" permission="0644" target="/usr/share/applications/qtdemo.desktop">data/qtdemo.desktop</AdditionalFile>
         </AdditionalFiles>
     </Package>
@@ -352,6 +406,20 @@
     -->
 
     <History>
+        <Update release="79">
+            <Date>2010-05-24</Date>
+            <Version>4.6.2</Version>
+            <Comment>Split translation and headers into different packages.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="78">
+            <Date>2010-05-18</Date>
+            <Version>4.6.2</Version>
+            <Comment>Fix ugly cursors during drag'n'drop mentioned in http://bugreports.qt.nokia.com/browse/QTBUG-6669 and https://bugs.kde.org/show_bug.cgi?id=173718</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
         <Update release="77">
             <Date>2010-04-05</Date>
             <Version>4.6.2</Version>
