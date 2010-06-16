@@ -13,7 +13,8 @@ from pisi.actionsapi import get
 import os
 
 WorkDir = "qt-everywhere-opensource-src-%s" % get.srcVERSION().replace('_','-')
-qtbase = get.qtDIR()
+qtbase = "/usr/qt/4"
+shelltools.export("QTDIR", qtbase)
 
 def setup():
     #make sure we don't use them
@@ -88,8 +89,8 @@ def install():
 
     # Turkish translations
     shelltools.export("LD_LIBRARY_PATH", "%s%s/lib" % (qtbase, get.installDIR()))
-    shelltools.system("%s/usr/qt/4/bin/lrelease l10n-tr/*.ts" % get.installDIR())
-    pisitools.insinto("/usr/qt/4/translations", "l10n-tr/*.qm")
+    shelltools.system("%s%s/bin/lrelease l10n-tr/*.ts" % (get.installDIR(), qtbase))
+    pisitools.insinto("%s/translations" % qtbase, "l10n-tr/*.qm")
 
     # Fix all occurances of WorkDir in pc files
     pisitools.dosed("%s%s/lib/pkgconfig/*.pc" % (get.installDIR(), qtbase), "%s/qt-x11-opensource-src-%s" % (get.workDIR(), get.srcVERSION()), qtbase)
