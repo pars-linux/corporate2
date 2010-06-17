@@ -18,6 +18,8 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
+    pisitools.insinto("/lib/firmware", "bfusb/*.frm")
+
     pisitools.remove("/lib/firmware/BCM-LEGAL.txt")
 
     pisitools.dodoc("AUTHORS", "ChangeLog", "README", "COPYING", "NEWS", "broadcom/BCM-LEGAL.txt")
