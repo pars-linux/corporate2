@@ -38,4 +38,5 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    pisitools.removeDir("/usr/share/gtk-doc")
+    # FIXME: Split poppler packages and put docs in poppler-docs
+    pisitools.removeDir("/usr/share")
