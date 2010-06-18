@@ -64,4 +64,4 @@ def install():
 
     pisitools.removeDir("/usr/lib/python2.6/site-packages/avahi_discover")
 
-    pisitools.remove("/usr/share/applications/avahi-discover.desktop")
+    pisitools.removeDir("/usr/share/applications")
