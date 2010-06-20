@@ -20,7 +20,7 @@
 #---- Constants -------------------------------------------------
 
 # Name of this version of winetricks (YYYYMMDD)
-VERSION=20100526
+VERSION=20100618
 
 early_wine()
 {
@@ -205,6 +205,7 @@ usage() {
     echo " dotnet20sp2   MS .NET 2.0 sp2 (requires Windows license, but does not check for one)"
     echo " dotnet30      MS .NET 3.0 (requires Windows license, but does not check for one, might not work yet)"
     echo " droid         Droid fonts (on LCD, looks better with fontsmooth-rgb)"
+    echo " dxsdk_nov2006 DirectX Software Development Kit, November 2006 version"
     echo " ffdshow       ffdshow video codecs"
     echo " firefox       Firefox web browser"
     echo " flash         Adobe Flash Player ActiveX and firefox plugins"
@@ -284,6 +285,7 @@ usage() {
     echo " vjrun20       MS Visual J# 2.0 SE libraries (requires dotnet20)"
     echo " vlc           VLC media player"
     echo " wenquanyi     WenQuanYi CJK font (on LCD looks better with fontsmooth-rgb)"
+    echo " windowscodecs MS Windows Imaging Component"
     echo " wininet       MS wininet.dll (requires Windows license, but does not check for one)"
     echo " wme9          MS Windows Media Encoder 9 (requires Windows license, but does not check for one)"
     echo " wmp10         MS Windows Media Player 10 (requires Windows license, but does not check for one)"
@@ -1324,6 +1326,7 @@ load_directx9() {
     override_dlls native dciman32 ddrawex devenum dmband dmcompos dmime dmloader dmscript dmstyle
     override_dlls native dmsynth dmusic dmusic32 dnsapi dplay dplayx dpnaddr dpnet dpnhpast dpnlobby
     override_dlls native dswave dxdiagn mscoree msdmo qcap quartz streamci
+    override_dlls native dxdiag.exe
     override_dlls builtin d3d8 d3d9 dinput dinput8 dsound
 
     # Should be below, but fails on Wine when used silently.
@@ -1353,8 +1356,9 @@ load_divx() {
     # 7.0.? 786aef0f421df5e7358d2d740d9911f9afd055de as of 24 June 2009 as http://download.divx.com/divx/DivXInstaller.exe
     # 7.0.? ad420bf8bf72e924e658c9c6ad6bba76b848fb79 as of 23 Sep 2009 as http://download.divx.com/divx/DivXInstaller.exe
     # 7.0.? 3385aa8f6ba64ae32e06f651bbbea247bcc1a44d as of 12 Dec 2009 as http://download.divx.com/divx/DivXInstaller.exe
+    # d59422969a72790e92b6795e24e332f91ffacf94 as of 26 May 2010 as http://download.divx.com/divx/DivXInstaller.exe
     
-    download divx-7 http://download.divx.com/divx/DivXInstaller.exe 3385aa8f6ba64ae32e06f651bbbea247bcc1a44d
+    download divx-7 http://download.divx.com/divx/DivXInstaller.exe d59422969a72790e92b6795e24e332f91ffacf94
 
     try $WINE "$WINETRICKS_CACHE"/divx-7/DivXInstaller
 }
@@ -1570,6 +1574,15 @@ load_droid() {
     do_droid DroidSerif-Bold.ttf       "Droid Serif Bold"        d7896b9c0723299553e95a00d27cbe52f7515c8c
     do_droid DroidSerif-Italic.ttf     "Droid Serif Italic"      117941be102c8f38a86a70ebccaecb8078f7027e
     do_droid DroidSerif-Regular.ttf    "Droid Serif"             7f243858e496ed1bb1faca9f3a7bbe52defcbb5d
+}
+
+#----------------------------------------------------------------
+
+load_dxsdk_nov2006() {
+    download . http://download.microsoft.com/download/9/e/5/9e5bfc66-a621-4e0d-8bfe-6688058c3f00/dxsdk_aug2006.exe
+    load_vcrun6   # for mfc42u
+    echo "Be patient, the 'installing new services' step at the end takes about five minutes"
+    try $WINE "$WINETRICKS_CACHE"/dxsdk_aug2006.exe
 }
 
 #----------------------------------------------------------------
@@ -2602,21 +2615,21 @@ load_ole2() {
 
 load_openwatcom() {
     # http://www.openwatcom.org
-    download . "http://ftp.openwatcom.org/ftp/open-watcom-c-win32-1.8.exe" 44afd1fabfdf0374f614f054824e60ac560f9dc0
+    download . "http://ftp.openwatcom.org/ftp/open-watcom-c-win32-1.9.exe" 236ac33ebd463006be4ecd83d7ebea1c026eb55a
     if [ $WINETRICKS_QUIET ]
     then
         # Options documented at http://bugzilla.openwatcom.org/show_bug.cgi?id=898
         # But they don't seem to work on wine, so jam them into setup.inf
         # Pick smallest installation that supports 16 bit C and C++
         cd "$WINETRICKS_TMP"
-        cp "$WINETRICKS_CACHE"/open-watcom-c-win32-1.8.exe .
-        try_unzip open-watcom-c-win32-1.8.exe setup.inf
+        cp "$WINETRICKS_CACHE"/open-watcom-c-win32-1.9.exe .
+        try_unzip open-watcom-c-win32-1.9.exe setup.inf
         sed -i 's/tools16=.*/tools16=true/' setup.inf
-        try zip -f open-watcom-c-win32-1.8.exe
-        try $WINE open-watcom-c-win32-1.8.exe -s
+        try zip -f open-watcom-c-win32-1.9.exe
+        try $WINE open-watcom-c-win32-1.9.exe -s
         cd "$olddir"
     else
-        try $WINE "$WINETRICKS_CACHE"/open-watcom-c-win32-1.8.exe
+        try $WINE "$WINETRICKS_CACHE"/open-watcom-c-win32-1.9.exe
     fi
     if test ! -f "$DRIVE_C"/WATCOM/binnt/wcc.exe
     then
@@ -3151,7 +3164,7 @@ load_vjrun20() {
     then
         try $WINE "$WINETRICKS_CACHE"/vjrun20/vjredist.exe /q /C:"install /QNT"
     else
-        try $WINE vjrun20/vjredist.exe
+        try $WINE "$WINETRICKS_CACHE"/vjrun20/vjredist.exe
     fi
 }
 
@@ -3574,6 +3587,21 @@ load_vlc() {
 
 #----------------------------------------------------------------
 
+load_windowscodecs() {
+    download . http://download.microsoft.com/download/f/f/1/ff178bb1-da91-48ed-89e5-478a99387d4f/wic_x86_enu.exe 53c18652ac2f8a51303deb48a1b7abbdb1db427f
+
+    # Avoid a file existence check.
+    rm -f "$WINDIR"/system32/windowscodecs.dll
+    override_dlls native,builtin windowscodecs
+
+    # Always run the WIC installer in passive mode.
+    # See http://bugs.winehq.org/show_bug.cgi?id=16876 and
+    # http://bugs.winehq.org/show_bug.cgi?id=23232
+    try $WINE "$WINETRICKS_CACHE"/wic_x86_enu.exe /passive
+}
+
+#----------------------------------------------------------------
+
 load_wininet() {
     # This is an updated wininet from IE 5.0.1.
     # (Good enough for Active Worlds browser.  Also helps "Avatar - Legends of the Arena" get to login screen.)
@@ -3826,6 +3854,7 @@ then
 else
     winefontsdir="$WINDIR"/Fonts
 fi
+mkdir -p "${winefontsdir}"
 
 # Mac folks tend to not have sha1sum, but we can make do with openssl
 if [ -x "`which sha1sum 2>/dev/null`" ]
@@ -3885,6 +3914,7 @@ do
     dotnet3|dotnet30) load_dotnet30; load_fontfix;;
     dotnet35) load_dotnet35; load_fontfix;;
     droid) load_droid;;
+    dxsdk_nov2006) load_dxsdk_nov2006;;
     ffdshow) load_ffdshow;;
     firefox|firefox3) load_firefox;;
     flash) load_flash;;
@@ -3969,6 +3999,7 @@ do
     vjrun20) load_vjrun20;;
     vlc) load_vlc;;
     wenquanyi) load_wenquanyi;;
+    windowscodecs|wic) load_windowscodecs;;
     wininet) load_wininet;;
     wme9) load_wme9;;
     wmp9) load_wmp9;;
