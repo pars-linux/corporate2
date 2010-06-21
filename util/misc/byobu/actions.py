@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009 TUBITAK/UEKAE
+# Copyright 2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -14,7 +14,7 @@ def install():
     pisitools.insinto("/", "usr")
 
     for pofile in shelltools.ls("po/*.po"):
-        lang = shelltools.baseName(pofile)[:3]
+        lang = shelltools.baseName(pofile)[:-3]
         pisitools.domo(pofile, lang, "byobu.mo")
 
     pisitools.dodoc("AUTHORS", "README", "COPYING")
