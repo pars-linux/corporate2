@@ -2593,7 +2593,7 @@ diff --git a/toolkit/xre/Makefile.in b/toolkit/xre/Makefile.in
  	content \
  	docshell \
  	dom \
-@@ -132,17 +134,17 @@ CMMSRCS = nsNativeAppSupportCocoa.mm
+@@ -133,17 +135,17 @@ CMMSRCS = nsNativeAppSupportCocoa.mm
  else
  ifeq ($(MOZ_WIDGET_TOOLKIT),os2)
  CPPSRCS += nsNativeAppSupportOS2.cpp
@@ -3460,40 +3460,32 @@ diff --git a/uriloader/exthandler/unix/nsMIMEInfoUnix.cpp b/uriloader/exthandler
    if (*_retval)
      return NS_OK;
  
-@@ -101,31 +104,50 @@ nsMIMEInfoUnix::GetHasDefaultHandler(PRB
-   return nsMIMEInfoImpl::GetHasDefaultHandler(_retval);
- }
- 
- nsresult
- nsMIMEInfoUnix::LaunchDefaultWithFile(nsIFile *aFile)
- {
+@@ -107,25 +110,42 @@ nsMIMEInfoUnix::LaunchDefaultWithFile(ns
    nsCAutoString nativePath;
    aFile->GetNativePath(nativePath);
-+  
-+  if( nsKDEUtils::kdeSupport())
-+      {
-+      PRBool supports;
-+      if( NS_SUCCEEDED( GetHasDefaultHandler( &supports )) && supports )
-+          {
-+          nsCStringArray command;
-+          command.AppendCString( NS_LITERAL_CSTRING( "OPEN" ));
-+          command.AppendCString( nativePath );
-+          command.AppendCString( NS_LITERAL_CSTRING( "MIMETYPE" ));
-+          command.AppendCString( mType );
-+          if( nsKDEUtils::command( command ))
-+              return NS_OK;
-+          }
-+      if (!mDefaultApplication)
-+        return NS_ERROR_FILE_NOT_FOUND;
-+
-+      return LaunchWithIProcess(mDefaultApplication, nativePath);
-+      }
  
- #ifdef MOZ_PLATFORM_HILDON
+ #if (MOZ_PLATFORM_MAEMO == 5) && defined (MOZ_ENABLE_GNOMEVFS)
    if(NS_SUCCEEDED(LaunchDefaultWithDBus(PromiseFlatCString(nativePath).get())))
      return NS_OK;
  #endif
  
++  if( nsKDEUtils::kdeSupport()) {
++    PRBool supports;
++    if( NS_SUCCEEDED( GetHasDefaultHandler( &supports )) && supports ) {
++      nsCStringArray command;
++      command.AppendCString( NS_LITERAL_CSTRING( "OPEN" ));
++      command.AppendCString( nativePath );
++      command.AppendCString( NS_LITERAL_CSTRING( "MIMETYPE" ));
++      command.AppendCString( mType );
++      if( nsKDEUtils::command( command ))
++        return NS_OK;
++    }
++    if (!mDefaultApplication)
++      return NS_ERROR_FILE_NOT_FOUND;
++
++    return LaunchWithIProcess(mDefaultApplication, nativePath);
++  }
++
    nsCOMPtr<nsIGnomeVFSService> vfs = do_GetService(NS_GNOMEVFSSERVICE_CONTRACTID);
    if (vfs) {
      nsCOMPtr<nsIGnomeVFSMimeApp> app;
@@ -3607,7 +3599,7 @@ diff --git a/uriloader/exthandler/unix/nsOSHelperAppService.cpp b/uriloader/exth
 diff --git a/widget/src/gtk2/Makefile.in b/widget/src/gtk2/Makefile.in
 --- a/widget/src/gtk2/Makefile.in
 +++ b/widget/src/gtk2/Makefile.in
-@@ -184,8 +184,11 @@ EXTRA_DSO_LDOPTS += -lgfxpsshar
+@@ -185,8 +185,11 @@ EXTRA_DSO_LDOPTS += -lgfxpsshar
  endif
  
  
