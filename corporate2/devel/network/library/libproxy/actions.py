@@ -9,7 +9,9 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
-    cmaketools.configure()
+    cmaketools.configure("-Dlibdir=/%s/%s \
+                          -Dlibexecdir=/%s \
+                          -Dmoduledir=/%s/%s/%s/%s/modules" % (get.defaultprefixDIR(), "lib", get.libexecDIR(), get.defaultprefixDIR(), "lib", get.srcNAME(), get.srcVERSION()))
 
 def build():
     cmaketools.make()
