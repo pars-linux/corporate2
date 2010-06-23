@@ -13,6 +13,7 @@ def install():
         pisitools.insinto("/usr/share/skype",data)
 
     pisitools.dobin("skype")
+    pisitools.rename("/usr/bin/skype", "skype.bin")
 
     # Dbus config
     pisitools.insinto("/etc/dbus-1/system.d", "skype.conf")
