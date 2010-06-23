@@ -16,6 +16,7 @@ def setup():
                          --disable-static")
 
     shelltools.cd("notification-daemon-engine-nodoka-0.1.0")
+    autotools.autoreconf("-vfi")
     autotools.configure()
 
 def build():
