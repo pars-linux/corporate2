@@ -48,7 +48,6 @@ def setup():
                          --enable-dnssd \
                          --enable-browsing \
                          --enable-ldap \
-                         --disable-openssl \
                          --disable-launchd \
                          --without-rcdir' % get.CFLAGS())
 

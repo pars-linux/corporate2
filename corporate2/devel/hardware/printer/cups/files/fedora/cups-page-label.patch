@@ -1,6 +1,6 @@
-diff -up cups-1.4.1/filter/pstops.c.page-label cups-1.4.1/filter/pstops.c
---- cups-1.4.1/filter/pstops.c.page-label	2009-10-02 12:33:33.410719651 +0100
-+++ cups-1.4.1/filter/pstops.c	2009-10-02 12:34:11.399594180 +0100
+diff -up cups-1.4.4/filter/pstops.c.page-label cups-1.4.4/filter/pstops.c
+--- cups-1.4.4/filter/pstops.c.page-label	2010-03-30 23:07:33.000000000 +0100
++++ cups-1.4.4/filter/pstops.c	2010-06-18 09:36:18.239126341 +0100
 @@ -108,6 +108,7 @@ typedef struct				/**** Document informa
    int		num_options;		/* Number of document-wide options */
    cups_option_t	*options;		/* Document-wide options */
@@ -9,7 +9,7 @@ diff -up cups-1.4.1/filter/pstops.c.page-label cups-1.4.1/filter/pstops.c
  		saw_eof,		/* Saw the %%EOF comment? */
  		slow_collate,		/* Collate copies by hand? */
  		slow_duplex,		/* Duplex pages slowly? */
-@@ -2048,7 +2049,7 @@ do_setup(pstops_doc_t *doc,		/* I - Docu
+@@ -2083,7 +2084,7 @@ do_setup(pstops_doc_t *doc,		/* I - Docu
      * of the pages...
      */
  
@@ -18,7 +18,7 @@ diff -up cups-1.4.1/filter/pstops.c.page-label cups-1.4.1/filter/pstops.c
        write_label_prolog(doc, doc->page_label, PageBottom,
                           PageWidth - PageLength + PageTop, PageLength);
      else
-@@ -2056,7 +2057,30 @@ do_setup(pstops_doc_t *doc,		/* I - Docu
+@@ -2091,7 +2092,30 @@ do_setup(pstops_doc_t *doc,		/* I - Docu
                           PageLength);
    }
    else
@@ -50,7 +50,7 @@ diff -up cups-1.4.1/filter/pstops.c.page-label cups-1.4.1/filter/pstops.c
  }
  
  
-@@ -2141,7 +2165,7 @@ end_nup(pstops_doc_t *doc,		/* I - Docum
+@@ -2176,7 +2200,7 @@ end_nup(pstops_doc_t *doc,		/* I - Docum
      case 1 :
  	if (doc->use_ESPshowpage)
  	{
@@ -59,7 +59,7 @@ diff -up cups-1.4.1/filter/pstops.c.page-label cups-1.4.1/filter/pstops.c
            doc_puts(doc, "ESPshowpage\n");
  	}
  	break;
-@@ -2156,7 +2180,7 @@ end_nup(pstops_doc_t *doc,		/* I - Docum
+@@ -2191,7 +2215,7 @@ end_nup(pstops_doc_t *doc,		/* I - Docum
  	    * Rotate the labels back to portrait...
  	    */
  
@@ -68,7 +68,7 @@ diff -up cups-1.4.1/filter/pstops.c.page-label cups-1.4.1/filter/pstops.c
  	  }
  	  else if (Orientation == 0)
  	  {
-@@ -2182,7 +2206,7 @@ end_nup(pstops_doc_t *doc,		/* I - Docum
+@@ -2217,7 +2241,7 @@ end_nup(pstops_doc_t *doc,		/* I - Docum
      default :
  	if (is_last_page(number) && doc->use_ESPshowpage)
  	{
@@ -77,7 +77,7 @@ diff -up cups-1.4.1/filter/pstops.c.page-label cups-1.4.1/filter/pstops.c
            doc_puts(doc, "ESPshowpage\n");
  	}
          break;
-@@ -2385,6 +2409,12 @@ set_pstops_options(
+@@ -2420,6 +2444,12 @@ set_pstops_options(
    doc->new_bounding_box[3] = INT_MIN;
  
   /*
@@ -87,6 +87,6 @@ diff -up cups-1.4.1/filter/pstops.c.page-label cups-1.4.1/filter/pstops.c
 +  doc->orientation = Orientation;
 +
 + /*
-   * AP_FIRSTPAGE_InputSlot
+   * AP_FIRSTPAGE_* and the corresponding non-first-page options.
    */
  

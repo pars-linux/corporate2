@@ -1,7 +1,8 @@
-diff -urNad cups-1.4.1~/scheduler/client.c cups-1.4.1/scheduler/client.c
---- cups-1.4.1~/scheduler/client.c	2009-07-15 01:02:05.000000000 +0200
-+++ cups-1.4.1/scheduler/client.c	2009-10-12 22:47:06.000000000 +0200
-@@ -422,7 +422,7 @@
+Index: cups-1.4.4/scheduler/client.c
+===================================================================
+--- cups-1.4.4.orig/scheduler/client.c
++++ cups-1.4.4/scheduler/client.c
+@@ -422,7 +422,7 @@ cupsdAcceptClient(cupsd_listener_t *lis)
      {
        if (httpAddrLocalhost(&temp))
          strlcpy(con->servername, "localhost", sizeof(con->servername));
@@ -10,7 +11,7 @@ diff -urNad cups-1.4.1~/scheduler/client.c cups-1.4.1/scheduler/client.c
          httpAddrLookup(&temp, con->servername, sizeof(con->servername));
        else
          httpAddrString(&temp, con->servername, sizeof(con->servername));
-@@ -435,7 +435,7 @@
+@@ -435,7 +435,7 @@ cupsdAcceptClient(cupsd_listener_t *lis)
      {
        if (httpAddrLocalhost(&temp))
          strlcpy(con->servername, "localhost", sizeof(con->servername));
@@ -19,10 +20,11 @@ diff -urNad cups-1.4.1~/scheduler/client.c cups-1.4.1/scheduler/client.c
          httpAddrLookup(&temp, con->servername, sizeof(con->servername));
        else
          httpAddrString(&temp, con->servername, sizeof(con->servername));
-diff -urNad cups-1.4.1~/scheduler/conf.c cups-1.4.1/scheduler/conf.c
---- cups-1.4.1~/scheduler/conf.c	2009-05-26 17:41:04.000000000 +0200
-+++ cups-1.4.1/scheduler/conf.c	2009-10-12 22:47:06.000000000 +0200
-@@ -746,7 +746,7 @@
+Index: cups-1.4.4/scheduler/conf.c
+===================================================================
+--- cups-1.4.4.orig/scheduler/conf.c
++++ cups-1.4.4/scheduler/conf.c
+@@ -744,7 +744,7 @@ cupsdReadConfiguration(void)
      cupsdAddAlias(ServerAlias, temp);
      cupsdLogMessage(CUPSD_LOG_DEBUG, "Added auto ServerAlias %s", temp);
  
@@ -31,15 +33,16 @@ diff -urNad cups-1.4.1~/scheduler/conf.c cups-1.4.1/scheduler/conf.c
      {
        struct hostent	*host;		/* Host entry to get FQDN */
  
-diff -urNad cups-1.4.1~/scheduler/network.c cups-1.4.1/scheduler/network.c
---- cups-1.4.1~/scheduler/network.c	2009-04-28 02:23:38.000000000 +0200
-+++ cups-1.4.1/scheduler/network.c	2009-10-12 22:47:06.000000000 +0200
-@@ -155,7 +155,7 @@
-     * Try looking up the hostname for the address as needed...
-     */
- 
+Index: cups-1.4.4/scheduler/network.c
+===================================================================
+--- cups-1.4.4.orig/scheduler/network.c
++++ cups-1.4.4/scheduler/network.c
+@@ -157,7 +157,7 @@ cupsdNetIFUpdate(void)
+ #ifdef __APPLE__
+     if (HostNameLookups)
+ #else
 -    if (HostNameLookups || RemotePort)
-+    if (HostNameLookups)
++    if (HostNameLookups)/* || RemotePort)*/
+ #endif /* __APPLE__ */
        httpAddrLookup((http_addr_t *)(addr->ifa_addr), hostname,
                       sizeof(hostname));
-     else
