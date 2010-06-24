@@ -11,7 +11,7 @@ from pisi.actionsapi import get
 
 WorkDir = "."
 NoStrip = "/"
-Name = "6u18"
+Name = "6u19"
 Arch = "amd64" if get.ARCH() == "x86_64" else "i586"
 
 def setup():
