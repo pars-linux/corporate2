@@ -1,3 +1,28 @@
+Index: omnibook-20090720/init.c
+===================================================================
+--- omnibook-20090720.orig/init.c
++++ omnibook-20090720/init.c
+@@ -532,4 +532,20 @@ module_param_named(userset, omnibook_use
+ MODULE_PARM_DESC(ectype, "Type of embedded controller firmware");
+ MODULE_PARM_DESC(userset, "Use 0 to disable, 1 to enable users to set parameters");
+ 
++/* Toshiba Satellite A2x0 */
++MODULE_ALIAS("dmi:*:svnTOSHIBA:pnSatelliteA200:pvrPSAECE-01U00XTE:*");
++MODULE_ALIAS("dmi:*:svnTOSHIBA:pnSatelliteA200:pvrPSAECE-02S00XTE:*");
++MODULE_ALIAS("dmi:*:svnTOSHIBA:pnSatelliteA200:pvrPSAE3E-02R01UTE:*");
++MODULE_ALIAS("dmi:*:svnTOSHIBA:pnSatelliteA200:pvrPSAE0E-02G01STE:*");
++MODULE_ALIAS("dmi:*:svnTOSHIBA:pnSatelliteA210:pvrPSAEGE-01M00KTE:*");
++
++/* Toshiba Satellite A300 */
++MODULE_ALIAS("dmi:*:svnTOSHIBA:pnSatelliteA300:pvrPSAJ0E-01300QTE:*");
++
++/* Toshiba Satellite Pro U400 */
++MODULE_ALIAS("dmi:*:svnTOSHIBA:pnSatelliteProU400:pvrPSU45E-00700GTE:*");
++
++/* Toshiba Satellite L500 */
++MODULE_ALIAS("dmi:*:svnTOSHIBA:pnSatelliteL500:pvrPSLJ3E-01801ETE:*");
++
+ /* End of file */
 Index: omnibook-20090720/laptop.h
 ===================================================================
 --- omnibook-20090720.orig/laptop.h
@@ -77,7 +102,7 @@ Index: omnibook-20090720/laptop.h
  	{
  		.callback = dmi_matched,
  		.ident = "Toshiba Satellite A100",
-@@ -637,6 +637,15 @@ static struct  dmi_system_id omnibook_id
+@@ -637,6 +637,51 @@ static struct  dmi_system_id omnibook_id
  	},
  	{
  		.callback = dmi_matched,
@@ -90,17 +115,42 @@ Index: omnibook-20090720/laptop.h
 +	},
 +	{
 +		.callback = dmi_matched,
++		.ident = "Toshiba Satellite A210",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "TOSHIBA"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "Satellite A210"),
++		},
++		.driver_data = (void*) TSM70
++	},
++	{ /* Toshiba Satellite A300 (#11300) */
++		.callback = dmi_matched,
++		.ident = "Toshiba Satellite A300",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "TOSHIBA"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "Satellite A300"),
++		},
++		.driver_data = (void*) TSM70
++	},
++	{ /* Toshiba Satellite L500 (#13575) */
++		.callback = dmi_matched,
++		.ident = "Toshiba Satellite L500",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "TOSHIBA"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "Satellite L500"),
++		},
++		.driver_data = (void*) TSM70
++	},
++	{
++		.callback = dmi_matched,
++		.ident = "Toshiba Satellite U400",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "TOSHIBA"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "Satellite Pro U400"),
++		},
++		.driver_data = (void*) TSM70
++	},
++	{
++		.callback = dmi_matched,
  		.ident = "Toshiba Satellite P100",
  		.matches = {
  			DMI_MATCH(DMI_SYS_VENDOR, "TOSHIBA"),
-Index: omnibook-20090720/init.c
-===================================================================
---- omnibook-20090720.orig/init.c
-+++ omnibook-20090720/init.c
-@@ -532,4 +532,6 @@ module_param_named(userset, omnibook_use
- MODULE_PARM_DESC(ectype, "Type of embedded controller firmware");
- MODULE_PARM_DESC(userset, "Use 0 to disable, 1 to enable users to set parameters");
- 
-+MODULE_ALIAS("dmi:*:svnTOSHIBA:pnSatelliteA200:pvrPSAECE-01U00XTE:*");
-+MODULE_ALIAS("dmi:*:svnTOSHIBA:pnSatelliteA200:pvrPSAE0E-02G01STE:*");
- /* End of file */
