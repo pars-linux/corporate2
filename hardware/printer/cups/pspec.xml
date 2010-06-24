@@ -12,7 +12,7 @@
         <IsA>service</IsA>
         <Summary>Common Unix Printing System</Summary>
         <Description>cups provides a portable printing layer for *nix-based operating systems.</Description>
-        <Archive sha1sum="0dd9e3d709614d26cce77728b9263556c94c9559" type="tarbz2">ftp://ftp.easysw.com/pub/cups/1.4.3/cups-1.4.3-source.tar.bz2</Archive>
+        <Archive sha1sum="3e179c007fa6cd6874b60ff18a6f48070547a00a" type="tarbz2">ftp://ftp.easysw.com/pub/cups/1.4.4/cups-1.4.4-source.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>openldap-client</Dependency>
             <Dependency>mit-kerberos</Dependency>
@@ -21,7 +21,6 @@
             <Dependency>libpaper</Dependency>
             <Dependency>php-cli</Dependency>
             <Dependency>openslp</Dependency>
-            <Dependency>gnutls</Dependency>
             <Dependency>avahi</Dependency>
         </BuildDependencies>
         <Patches>
@@ -93,28 +92,26 @@
             <!-- Fix temporary filename creation. -->
             <Patch level="1">fedora/cups-str3382.patch</Patch>
 
-            <!-- Fix cupsGetNamedDest() when a name is specified. -->
-            <Patch level="1">fedora/cups-str3503.patch</Patch>
-
-            <!-- Don't treat SIGPIPE as an error. -->
-            <Patch level="1">fedora/cups-str3399.patch</Patch>
-
-            <!-- <Patch level="1">fedora/cups-gnutls-gcrypt-threads.patch</Patch> -->
-
             <!-- Use mode 0755 for binaries and libraries where appropriate. -->
             <Patch level="1">fedora/cups-0755.patch</Patch>
 
             <!-- Re-initialise the resolver on failure in httpAddrLookup(). -->
             <Patch level="1">fedora/cups-EAI_AGAIN.patch</Patch>
 
-            <!-- Update classes.conf when a class member printer is deleted -->
-            <Patch level="1">fedora/cups-str3505.patch</Patch>
+            <!-- Handle SNMP supply level quirks -->
+            <Patch level="1">fedora/cups-snmp-quirks.patch</Patch>
 
-            <!-- Fix lpstat to adhere to -o option. -->
-            <Patch level="1">fedora/cups-str3541.patch</Patch>
+            <!-- Add an SNMP query for HP's device ID OID -->
+            <Patch level="1">fedora/cups-hp-deviceid-oid.patch</Patch>
 
-            <!-- Security fix for CVE-2010-0302 -->
-            <Patch level="1">fedora/cups-CVE-2010-0302.patch</Patch>
+            <!-- Mark DNS-SD Device IDs that have been guessed at with "FZY:1;" -->
+            <Patch level="1">fedora/cups-dnssd-deviceid.patch</Patch>
+
+            <!-- Add an SNMP query for Ricoh's device ID OID -->
+            <Patch level="1">fedora/cups-ricoh-deviceid-oid.patch</Patch>
+
+            <!-- Adjust texttops output to be in natural orientation -->
+            <Patch level="1">fedora/cups-texttops-rotate-page.patch</Patch>
 
             <!-- Accept "Host: ::1" (bzrh: #497393) -->
             <Patch level="1">fedora/cups-localhost-ipv6.patch</Patch>
@@ -163,6 +160,9 @@
 
             <!-- Don't install desktop file -->
             <Patch level="1">pardus/remove-desktop-file-install.patch</Patch>
+
+            <!-- Don't strip debugging symbols -->
+            <Patch level="1">pardus/nostrip.patch</Patch>
         </Patches>
     </Source>
 
@@ -176,7 +176,6 @@
             <Dependency>libpaper</Dependency>
             <Dependency>openslp</Dependency>
             <Dependency>poppler</Dependency>
-            <Dependency>gnutls</Dependency>
             <Dependency>avahi</Dependency>
         </RuntimeDependencies>
         <Replaces>
@@ -249,6 +248,23 @@
     </Package>
 
     <History>
+        <Update release="73" type="security">
+            <Date>2010-06-24</Date>
+            <Version>1.4.4</Version>
+            <Comment>
+                - Version bump to 1.4.4,
+                - Grab new Fedora patches,
+                - Use openSSL instead of gnutls which doesn't correctly support thread-safe,
+                - Let pisi strip the binaries instead of autotools,
+                - Fix Cross-site Request Forgery Vulnerability in Web Interface (CVE-2010-0540) (#13585),
+                - Fix Null Pointer Dereference in _WriteProlog Function (CVE-2010-0542) (#13588),
+                - Fix Information Disclosure via Web Interface (CVE-2010-1748) (#13591).
+                - Fix Overwrite Arbitrary Files via Symlink Attack (CVE-2010-2431) (#13594),
+                - Fix Denial of Service in cupsDoAuthentication Function (CVE-2010-2432) (#13597).
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="72">
             <Date>2010-05-25</Date>
             <Version>1.4.3</Version>
