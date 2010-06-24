@@ -22,9 +22,8 @@ def setup():
 
     pisitools.dosed(".pardus-default-prefs.js", "LAUNCHER", "%s/open-browser.sh" % MOZAPPDIR)
 
-    # FIXME: Use get.lsbINFO()
-    pisitools.dosed(".pardus-default-prefs.js", "DISTRIB_ID", "Pardus")
-    pisitools.dosed(".pardus-default-prefs.js", "DISTRIB_RELEASE", "Corporate2")
+    pisitools.dosed(".pardus-default-prefs.js", "DISTRIB_ID", get.lsbINFO()["DISTRIB_ID"])
+    pisitools.dosed(".pardus-default-prefs.js", "DISTRIB_RELEASE", get.lsbINFO()["DISTRIB_RELEASE"])
 
 def build():
     autotools.make("-f client.mk build")
