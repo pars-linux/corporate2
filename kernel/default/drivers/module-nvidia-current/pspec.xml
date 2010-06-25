@@ -11,8 +11,8 @@
         <License>NVIDIA</License>
         <Summary>NVIDIA drivers for GeForce 6xxx and newer GPUs</Summary>
         <Description>NVIDIA graphics drivers provide optimized 2D/3D performance.</Description>
-        <Archive sha1sum="279709d2bdf958fd5935af3ba461e4eb585cb880" type="binary">ftp://download.nvidia.com/XFree86/Linux-x86/195.36.24/NVIDIA-Linux-x86-195.36.24-pkg0.run</Archive>
-        <Archive sha1sum="e379dcbb56107f5efb9d2bba2b067226e4d2f68e" type="binary">ftp://download.nvidia.com/XFree86/Linux-x86_64/195.36.24/NVIDIA-Linux-x86_64-195.36.24-pkg0.run</Archive>
+        <Archive sha1sum="7a72704c0fd70bf75126aa962b560bae893b5538" type="binary">ftp://download.nvidia.com/XFree86/Linux-x86/256.35/NVIDIA-Linux-x86-256.35.run</Archive>
+        <Archive sha1sum="6ab9eeed3f56daadcc59df88e0549cdc3911191a" type="binary">ftp://download.nvidia.com/XFree86/Linux-x86_64/256.35/NVIDIA-Linux-x86_64-256.35.run</Archive>
         <BuildDependencies>
             <Dependency release="139">kernel-module-headers</Dependency>
             <Dependency releaseFrom="142">pisi</Dependency>
@@ -26,7 +26,7 @@
         <RuntimeDependencies>
             <Dependency release="139">kernel</Dependency>
             <Dependency versionFrom="1.84">zorg</Dependency>
-            <Dependency version="195.36.24">module-nvidia-current-userspace</Dependency>
+            <Dependency version="256.35">module-nvidia-current-userspace</Dependency>
         </RuntimeDependencies>
         <Replaces>
             <Package>nvidia-drivers177</Package>
@@ -60,11 +60,14 @@
         <PartOf>x11.driver</PartOf>
         <RuntimeDependencies>
             <AnyDependency>
-                <Dependency version="195.36.24">module-nvidia-current</Dependency>
-                <Dependency version="195.36.24">module-pae-nvidia-current</Dependency>
+                <Dependency version="256.35">module-nvidia-current</Dependency>
+                <Dependency version="256.35">module-pae-nvidia-current</Dependency>
             </AnyDependency>
             <Dependency>libXext</Dependency>
+            <Dependency>libXv</Dependency>
+            <Dependency>libXvMC</Dependency>
             <Dependency versionFrom="0.3">libvdpau</Dependency>
+            <Dependency>vdpau-video</Dependency>
             <Dependency>xorg-server</Dependency>
         </RuntimeDependencies>
         <Replaces>
@@ -89,6 +92,17 @@
     </Package>
 
     <History>
+        <Update release="26">
+            <Date>2010-06-24</Date>
+            <Version>256.35</Version>
+            <Comment>New stable release</Comment>
+            <Requires>
+                <Action package="module-nvidia-current-userspace">reverseDependencyUpdate</Action>
+                <Action package="module-nvidia-current">systemRestart</Action>
+            </Requires>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
         <Update release="25">
             <Date>2010-05-10</Date>
             <Version>195.36.24</Version>

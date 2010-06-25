@@ -5,7 +5,7 @@ import subprocess
 
 from zorg.config import getDeviceInfo
 
-version = "195.36.24"
+version = "256.35"
 driver = "nvidia-current"
 base = "/usr/lib/xorg/%s" % driver
 
@@ -35,16 +35,18 @@ links = (
     ("%s/extensions/libglx.so.%s" % (base, version), "/usr/lib/xorg/modules/extensions/libglx.so"),
 
     # nvidia-tls library
-    ("libnvidia-tls.so.1", "/usr/lib/libnvidia-tls.so"),
-    ("libnvidia-tls.so.%s" % version, "/usr/lib/libnvidia-tls.so.1"),
-    ("%s/lib/tls/libnvidia-tls.so.%s" % (base, version), "/usr/lib/libnvidia-tls.so.%s" % version),
+    ("%s/lib/libnvidia-tls.so.%s" % (base, version), "/usr/lib/libnvidia-tls.so.%s" % version),
 
     # GL library
     ("%s/lib/libGL.so.%s" % (base, version), "/usr/lib/libGL.so.1.2"),
 
-    ("libGLcore.so.1", "/usr/lib/libGLcore.so"),
-    ("libGLcore.so.%s" % version, "/usr/lib/libGLcore.so.1"),
-    ("%s/lib/libGLcore.so.%s" % (base, version), "/usr/lib/libGLcore.so.%s" % version),
+    # nvidia-glcore library
+    ("%s/lib/libnvidia-glcore.so.%s" % (base, version), "/usr/lib/libnvidia-glcore.so.%s" % version),
+
+    # OpenCL library
+    ("libOpenCL.so.1", "/usr/lib/libOpenCL.so"),
+    ("libOpenCL.so.1.0.0", "/usr/lib/libOpenCL.so.1"),
+    ("%s/lib/libOpenCL.so.1.0.0" % base, "/usr/lib/libOpenCL.so.1.0.0"),
 
     # XvMC library
     ("%s/lib/libXvMCNVIDIA.so.%s" % (base, version), "/usr/lib/libXvMCNVIDIA.so.%s" % version),
@@ -57,6 +59,9 @@ links = (
     ("libnvidia-cfg.so.1", "/usr/lib/libnvidia-cfg.so"),
     ("libnvidia-cfg.so.%s" % version, "/usr/lib/libnvidia-cfg.so.1"),
     ("%s/lib/libnvidia-cfg.so.%s" % (base, version), "/usr/lib/libnvidia-cfg.so.%s" % version),
+
+    # nvidia-compiler library
+    ("%s/lib/libnvidia-compiler.so.%s" % (base, version), "/usr/lib/libnvidia-compiler.so.%s" % version),
 
     # Cuda library
     ("libcuda.so.1", "/usr/lib/libcuda.so"),
