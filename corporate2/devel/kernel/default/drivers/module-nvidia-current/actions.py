@@ -18,48 +18,51 @@ driver = "nvidia-current"
 base = "/usr/lib/xorg/%s" % driver
 
 def setup():
-    shelltools.system("sh NVIDIA-Linux-%s-%s-pkg0.run -x --target tmp" % (arch, get.srcVERSION()))
+    shelltools.system("sh NVIDIA-Linux-%s-%s.run -x --target tmp"
+                      % (arch, get.srcVERSION()))
     shelltools.move("tmp/*", ".")
 
+    # Our libc is TLS enabled so use TLS library
+    shelltools.unlink("*-tls.so*")
+    shelltools.move("tls/*", ".")
+
+    # xorg-server provides libwfb.so
+    shelltools.unlink("libnvidia-wfb.so.*")
+
     # Remove VDPAU headers and wrapper library
-    shelltools.unlinkDir("usr/include/vdpau")
-    shelltools.unlink("usr/lib/libvdpau.so.%s" % get.srcVERSION())
-    shelltools.unlink("usr/lib/vdpau/libvdpau_trace.so.%s" % get.srcVERSION())
+    shelltools.unlink("vdpau*.h")
+    shelltools.unlink("libvdpau.so.%s" % get.srcVERSION())
+    shelltools.unlink("libvdpau_trace.so.%s" % get.srcVERSION())
 
 def build():
     shelltools.export("SYSSRC", "/lib/modules/%s/build" % KDIR)
-    shelltools.cd("usr/src/nv")
+    shelltools.cd("kernel")
 
     autotools.make("module")
 
 def install():
     # Kernel driver
-    pisitools.insinto("/lib/modules/%s/extra/nvidia" % KDIR, "usr/src/nv/nvidia.ko", "%s.ko" % driver)
+    pisitools.insinto("/lib/modules/%s/extra/nvidia" % KDIR,
+                      "kernel/nvidia.ko", "%s.ko" % driver)
 
     # Command line tools and their man pages
-    pisitools.dobin("usr/bin/nvidia-smi")
-    pisitools.doman("usr/share/man/*/nvidia-smi*")
+    pisitools.dobin("nvidia-smi")
+    pisitools.doman("nvidia-smi.1.gz")
 
     # Libraries and X modules
-    pisitools.insinto("%s/lib" % base, "usr/X11R6/lib/*")
-    pisitools.insinto("%s/lib" % base, "usr/lib/*")
-    pisitools.domove("%s/lib/modules/*" % base, base)
-    pisitools.removeDir("%s/lib/modules" % base)
+    for lib in ("GL", "OpenCL", "XvMCNVIDIA", "cuda", "nvidia"):
+        pisitools.dolib("lib%s*.so*" % lib, "%s/lib" % base)
+
+    pisitools.dolib("nvidia_drv.so", "%s/drivers" % base)
+    pisitools.dolib("libglx.so*", "%s/extensions" % base)
+    pisitools.dolib("libvdpau_nvidia.so*", "%s/lib/vdpau" % base)
 
     # Headers
-    pisitools.insinto(base, "usr/include")
-
-    # Our libc is TLS enabled so use TLS library
-    pisitools.remove("%s/lib/libnvidia-tls.so.*" % base)
-
-    # Remove static libraries
-    pisitools.remove("%s/lib/*.a" % base)
-
-    # xorg-server provides libwfb.so
-    pisitools.remove("%s/libnvidia-wfb.so.*" % base)
+    pisitools.insinto("%s/include/CL" % base, "cl*.h")
+    pisitools.insinto("%s/include/GL" % base, "gl*.h")
+    pisitools.insinto("%s/include/cuda" % base, "cuda*.h")
 
     # Documentation
     docdir = "xorg-video-%s" % driver
-    pisitools.dodoc("LICENSE", destDir=docdir)
-    pisitools.dodoc("usr/share/doc/[!h]*", destDir=docdir)
-    pisitools.dohtml("usr/share/doc/html/*", destDir=docdir)
+    pisitools.dodoc("LICENSE", "NVIDIA_Changelog", "README.txt", destDir=docdir)
+    pisitools.dohtml("html/*", destDir=docdir)
