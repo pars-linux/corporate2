@@ -35,9 +35,6 @@ def setup():
                          --enable-libpaper \
                          --enable-debug \
                          --enable-avahi \
-                         --enable-ssl \
-                         --enable-gnutls \
-                         --enable-threads \
                          --enable-gssapi \
                          --enable-dbus \
                          --enable-pam \
@@ -48,7 +45,9 @@ def setup():
                          --enable-dnssd \
                          --enable-browsing \
                          --enable-ldap \
+                         --enable-gnutls \
                          --disable-launchd \
+                         --disable-threads \
                          --without-rcdir' % get.CFLAGS())
 
 
