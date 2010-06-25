@@ -17,15 +17,17 @@ arch = get.ARCH().replace("i686", "x86")
 driver = "nvidia-current"
 
 def setup():
-    shelltools.system("sh NVIDIA-Linux-%s-%s-pkg0.run -x --target tmp" % (arch, get.srcVERSION()))
+    shelltools.system("sh NVIDIA-Linux-%s-%s.run -x --target tmp"
+                      % (arch, get.srcVERSION()))
     shelltools.move("tmp/*", ".")
 
 def build():
     shelltools.export("SYSSRC", "/lib/modules/%s/build" % KDIR)
-    shelltools.cd("usr/src/nv")
+    shelltools.cd("kernel")
 
     autotools.make("module")
 
 def install():
     # Kernel driver
-    pisitools.insinto("/lib/modules/%s/extra/nvidia" % KDIR, "usr/src/nv/nvidia.ko", "%s.ko" % driver)
+    pisitools.insinto("/lib/modules/%s/extra/nvidia" % KDIR,
+                      "kernel/nvidia.ko", "%s.ko" % driver)
