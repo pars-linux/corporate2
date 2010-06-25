@@ -1,0 +1,33 @@
+commit b30c6a25480896100c8399f7de4988ad64f9a474
+Author: Ozan Çağlayan <ozan@pardus.org.tr>
+Date:   Mon May 31 19:50:56 2010 +0300
+
+    ACPI: video: DMI workaround broken Acer 5710 BIOS enabling display
+    brightness
+    
+    Acer Aspire 5710 suffers from a similar ACPI problem reported at:
+     http://bugzilla.kernel.org/show_bug.cgi?id=13121
+    
+    like the 5710Z and 7720.
+    
+    Signed-off-by: Ozan Çağlayan <ozan@pardus.org.tr>
+
+diff --git a/drivers/acpi/video.c b/drivers/acpi/video.c
+index 9865d46..e2436d1 100644
+--- a/drivers/acpi/video.c
++++ b/drivers/acpi/video.c
+@@ -571,6 +571,14 @@ static struct dmi_system_id video_dmi_table[] __initdata = {
+ 	},
+ 	{
+ 	 .callback = video_set_bqc_offset,
++	 .ident = "Acer Aspire 5710",
++	 .matches = {
++		DMI_MATCH(DMI_BOARD_VENDOR, "Acer"),
++		DMI_MATCH(DMI_PRODUCT_NAME, "Aspire 5710"),
++		},
++	},
++	{
++	 .callback = video_set_bqc_offset,
+ 	 .ident = "Acer Aspire 5710Z",
+ 	 .matches = {
+ 		DMI_MATCH(DMI_BOARD_VENDOR, "Acer"),
