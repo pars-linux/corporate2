@@ -1,5 +1,5 @@
---- usr/lib/byobu/updates_available.orig	2010-03-10 01:03:35.765687518 +0200
-+++ usr/lib/byobu/updates_available	2010-03-21 13:31:33.264526920 +0200
+--- usr/lib/byobu/updates_available.orig	2010-05-15 23:47:59.000000000 +0300
++++ usr/lib/byobu/updates_available	2010-06-23 11:18:16.409376043 +0300
 @@ -21,12 +21,12 @@
  color 2>/dev/null || color() { true; }
  
@@ -7,27 +7,26 @@
 -	if which apt-get >/dev/null; then
 -		detail=`apt-get -s -o Debug::NoLocking=true upgrade`
 +	if which pisi >/dev/null; then
-+		detail=`pisi lu | awk '{print $1}'`
++		detail=`python -c "import pisi; print pisi.api.list_upgradable()"`
  		if [ "$1" = "--detail" ]; then
  			printf "$detail"
  		else
 -			short=`printf "$detail" | grep ^Inst | wc -l`
-+			short=`printf "$detail" | wc -l`
++			short=`python -c "import pisi; print len(pisi.api.list_upgradable())"`
  			printf "$short"
  		fi
  	fi
-@@ -71,7 +71,9 @@
+@@ -71,6 +71,9 @@
  		# If yum exists, use it
  		# TODO: We need a better way of counting updates available from a RH expert
  		yum list updates -q | egrep -v "Updated Packages" | wc -l > $mycache &
--	fi
 +	elif which pisi >/dev/null; then
-+                pisi list-upgrades | wc -l > $mycache &
-+        fi
++		# If pisi exists, use it
++		python -c "import pisi; print len(pisi.api.list_upgradable())" > $mycache &
+ 	fi
  }
  
- PKG="byobu"
-@@ -87,7 +89,7 @@
+@@ -87,7 +90,7 @@
  [ -r $mycache ] && print_updates `grep "^[0-9]" $mycache | sed "s/ .*$//"`
  
  # Update the cache if necessary
