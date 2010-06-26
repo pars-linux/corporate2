@@ -14,15 +14,21 @@
         <IsA>app:gui</IsA>
         <Summary>A powerful virtualization program</Summary>
         <Description>VirtualBox is a family of powerful x86 virtualization products for enterprise as well as home use. This is the Open Source Edition which lacks USB support and some other things.</Description>
-        <Archive sha1sum="521dd1ecbbede996681a62ac767da2a60e851a95" type="tarbz2">http://download.virtualbox.org/virtualbox/3.1.6/VirtualBox-3.1.6-OSE.tar.bz2</Archive>
+        <Archive sha1sum="f7d4d89f494cd1f614d9e195a2fcac485ac02fbb" type="tarbz2">http://download.virtualbox.org/virtualbox/3.2.6/VirtualBox-3.2.6-OSE.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>libIDL</Dependency>
+            <Dependency>libXcomposite</Dependency>
             <Dependency>libXcursor</Dependency>
-            <Dependency versionFrom="1.1.1">libXext</Dependency>
+            <Dependency>libXdamage</Dependency>
+            <Dependency>libXext</Dependency>
+            <Dependency>libXfixes</Dependency>
+            <Dependency>libXinerama</Dependency>
             <Dependency>libXmu</Dependency>
+            <Dependency>libXrandr</Dependency>
             <Dependency>libXt</Dependency>
             <Dependency>libsdl</Dependency>
             <Dependency>libxslt</Dependency>
+            <Dependency>mesa</Dependency>
             <Dependency versionFrom="4.6.2">qt-devel</Dependency>
             <Dependency>acpica</Dependency>
             <Dependency>dev86</Dependency>
@@ -32,11 +38,8 @@
         </BuildDependencies>
         <Patches>
             <Patch level="1">mandriva/VirtualBox-1.6.0_OSE-futex.patch</Patch>
-            <Patch level="1">mandriva/VirtualBox-disableversioncheck.patch</Patch>
             <Patch level="1">mandriva/VirtualBox-kernel-headers-2.6.29.patch</Patch>
 
-            <Patch level="1">export-vboxnetadp.patch</Patch>
-            <Patch level="1">export-vboxvideo.patch</Patch>
             <Patch level="1">wrapper.patch</Patch>
             <Patch level="1">desktop-file.patch</Patch>
             <Patch level="1">fix-tr-keyboard.patch</Patch>
@@ -45,7 +48,6 @@
             <Patch level="1">disable-registration-and-update-requests.patch</Patch>
             <Patch level="1">module-mismatch.patch</Patch>
             <Patch level="1">vboxdrv-references.patch</Patch>
-            <Patch level="1">vboxclient-check-device.patch</Patch>
 
             <Patch level="1">config.patch</Patch>
         </Patches>
@@ -55,15 +57,17 @@
         <Name>virtualbox</Name>
         <RuntimeDependencies>
             <AnyDependency>
-                <Dependency version="3.1.6">module-virtualbox</Dependency>
-                <Dependency version="3.1.6">module-pae-virtualbox</Dependency>
+                <Dependency version="3.2.6">module-virtualbox</Dependency>
+                <Dependency version="3.2.6">module-pae-virtualbox</Dependency>
             </AnyDependency>
             <Dependency>libXcursor</Dependency>
-            <Dependency versionFrom="1.1.1">libXext</Dependency>
+            <Dependency>libXext</Dependency>
+            <Dependency>libXinerama</Dependency>
             <Dependency>libXmu</Dependency>
             <Dependency>libXt</Dependency>
             <Dependency>libsdl</Dependency>
-            <Dependency>qt</Dependency>
+            <Dependency>mesa</Dependency>
+            <Dependency versionFrom="4.6.2">qt</Dependency>
             <Dependency releaseFrom="2">virt-wrapper</Dependency>
         </RuntimeDependencies>
         <Files>
@@ -86,21 +90,25 @@
         <Summary>VirtualBox guest utilities and drivers</Summary>
         <RuntimeDependencies>
             <AnyDependency>
-                <Dependency version="3.1.6">module-virtualbox-guest</Dependency>
-                <Dependency version="3.1.6">module-pae-virtualbox-guest</Dependency>
+                <Dependency version="3.2.6">module-virtualbox-guest</Dependency>
+                <Dependency version="3.2.6">module-pae-virtualbox-guest</Dependency>
             </AnyDependency>
             <Dependency releaseFrom="57">zorg</Dependency>
-            <Dependency versionFrom="1.1.1">libXext</Dependency>
+            <Dependency>libXcomposite</Dependency>
+            <Dependency>libXdamage</Dependency>
+            <Dependency>libXext</Dependency>
+            <Dependency>libXfixes</Dependency>
             <Dependency>libXmu</Dependency>
+            <Dependency>libXrandr</Dependency>
             <Dependency>libXt</Dependency>
             <Dependency versionFrom="1.7">xorg-server</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="data">/etc/X11/Xsession.d</Path>
+            <Path fileType="library">/lib/security</Path>
             <Path fileType="executable">/sbin</Path>
             <Path fileType="executable">/usr/bin/VBoxClient</Path>
             <Path fileType="executable">/usr/bin/VBoxControl</Path>
-            <Path fileType="executable">/usr/bin/VBoxRandR</Path>
             <Path fileType="executable">/usr/sbin</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="data">/usr/kde/*/share/autostart</Path>
@@ -111,6 +119,23 @@
     </Package>
 
     <History>
+        <Update release="49">
+            <Date>2010-06-26</Date>
+            <Version>3.2.6</Version>
+            <Comment>
+                - Bump to the latest stable release
+                - Add missing dependencies
+            </Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
+        <Update release="48">
+            <Date>2010-05-13</Date>
+            <Version>3.1.6</Version>
+            <Comment>Write strict dependency to new version of kdepimlibs,qt,kdebase,kdebase-runtime,kdebase-workspace,kdelibs,kdelibs-devel,kdepimlibs-devel</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
         <Update release="47">
             <Date>2010-04-12</Date>
             <Version>3.1.6</Version>
