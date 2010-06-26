@@ -34,13 +34,12 @@ def build():
 def install():
     pisitools.insinto("/etc/vbox", "vbox.cfg")
     pisitools.insinto("/etc/X11/Xsession.d", "src/VBox/Additions/x11/Installer/98vboxadd-xclient", "98-vboxclient.sh")
-    pisitools.insinto("/usr/bin", "src/VBox/Additions/x11/Installer/VBoxRandR.sh", "VBoxRandR")
     pisitools.insinto("/usr/share/X11/pci", "src/VBox/Additions/x11/Installer/vboxvideo.ids")
     pisitools.insinto("/usr/share/hal/fdi/policy/20thirdparty", "src/VBox/Additions/linux/installer/90-vboxguest.fdi")
 
     shelltools.cd("out/linux.x86/release/bin")
 
-    exclude = ("additions", "nls", "sdk", "src", "SUP", "vboxkeyboard",
+    exclude = ("additions", "nls", "scm", "sdk", "src", "SUP", "vboxkeyboard",
                "VBox.sh", "VBoxSysInfo.sh", "VBoxTunctl", "testcase", "tst", "xpidl")
 
     for _file in shelltools.ls("."):
@@ -71,6 +70,8 @@ def install():
 
     pisitools.dosbin("additions/VBoxService")
     pisitools.dosbin("additions/mount.vboxsf", "/sbin")
+
+    pisitools.insinto("/lib/security", "additions/pam_vbox.so")
 
     pisitools.dolib("additions/VBoxOGL*")
     pisitools.dosym("../../../VBoxOGL.so", "/usr/lib/xorg/modules/dri/vboxvideo_dri.so")
