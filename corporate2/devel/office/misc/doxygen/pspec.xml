@@ -11,9 +11,21 @@
         <License>GPLv2</License>
         <Summary>Documentation and analysis tool for C++, C, Java, IDL, PHP and C#</Summary>
         <Description>Doxygen is a documentation system for C++, C, Java, Objective-C, Python, IDL (Corba and Microsoft flavors) and to some extent PHP, C#, and D.</Description>
-        <Archive sha1sum="36e4f479a136a439307456e539a4bd6c2fefa8b7" type="targz">ftp://ftp.stack.nl/pub/users/dimitri/doxygen-1.6.3.src.tar.gz</Archive>
+        <Archive sha1sum="fca75d70f48ef0def276fd8db495772f6c43f862" type="targz">ftp://ftp.stack.nl/pub/users/dimitri/doxygen-1.7.1.src.tar.gz</Archive>
         <BuildDependencies>
+            <!-- Needed for /usr/bin/dot -->
+            <Dependency>graphviz</Dependency>
+
+            <!-- Needed for /usr/bin/gs -->
             <Dependency>ghostscript</Dependency>
+
+            <!-- Needed for /usr/bin/dvips -->
+            <Dependency>texlive-core</Dependency>
+
+            <!-- Needed for /usr/bin/latex -->
+            <Dependency>texlive-latex</Dependency>
+
+            <Dependency versionFrom="4.6.2">qt-devel</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">doxygen-1.5.8-config.patch</Patch>
@@ -30,7 +42,31 @@
         </Files>
    </Package>
 
+    <Package>
+        <Name>doxygen-gui</Name>
+        <IsA>app:gui</IsA>
+        <Summary>A GUI for creating and editing doxygen configuration files</Summary>
+        <RuntimeDependencies>
+            <Dependency version="1.7.1">doxygen</Dependency>
+            <Dependency versionFrom="4.6.2">qt</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/usr/bin/doxywizard</Path>
+            <Path fileType="man">/usr/share/man/*/doxywizard*</Path>
+        </Files>
+   </Package>
+
    <History>
+        <Update release="14">
+            <Date>2010-06-27</Date>
+            <Version>1.7.1</Version>
+            <Comment>
+                - Bump to new stable release
+                - Add missing build dependencies
+            </Comment>
+            <Name>Fatih Aşıcı</Name>
+            <Email>fatih@pardus.org.tr</Email>
+        </Update>
         <Update release="13">
             <Date>2010-03-22</Date>
             <Version>1.6.3</Version>
