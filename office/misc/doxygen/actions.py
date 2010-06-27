@@ -15,7 +15,8 @@ def setup():
 
     autotools.rawConfigure("--shared \
                             --release \
-                            --prefix /usr")
+                            --prefix /usr \
+                            --with-doxywizard")
 
 def build():
     autotools.make("QMAKE=%s/bin/qmake" % get.qtDIR())
