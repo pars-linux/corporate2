@@ -13,15 +13,48 @@
         <Summary>An enhanced interactive Python shell</Summary>
         <Description>ipython provides a replacement for the interactive Python interpreter with extra functionality.</Description>
         <Archive sha1sum="175bbacf74d94336e3fe06e390e04ad2bfff6fd4" type="targz">http://ipython.scipy.org/dist/ipython-0.10.tar.gz</Archive>
+        <BuildDependencies>
+            <!-- For syntax highlighting -->
+            <Dependency>Pygments</Dependency>
+
+            <!-- Test suite -->
+            <Dependency>python-nose</Dependency>
+
+            <Dependency>ZopeInterface</Dependency>
+
+            <!-- Parallel computing -->
+            <Dependency>Twisted</Dependency>
+            <Dependency>python-foolscap</Dependency>
+        </BuildDependencies>
         <Patches>
             <Patch level="1">clearscreen.patch</Patch>
+
             <!-- see https://bugs.launchpad.net/ipython/+bug/339642 -->
             <Patch>ipython_source_encode_fix.diff</Patch>
+
+            <!-- Let CTRL+L clear the screen once again yay :) -->
+            <Patch level="1">fix-control-l.patch</Patch>
+
+            <!-- Warn human friendly when wxPython is not available -->
+            <Patch level="1">debian/06_ipythonwx_importerror.patch</Patch>
+
+            <!-- Fix the longstanding IndentationError when print is used -->
+            <Patch level="1">debian/07_print_indentationerror.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>ipython</Name>
+        <RuntimeDependencies>
+            <!-- For syntax highlighting -->
+            <Dependency>Pygments</Dependency>
+
+            <Dependency>ZopeInterface</Dependency>
+
+            <!-- Parallel computing -->
+            <Dependency>Twisted</Dependency>
+            <Dependency>python-foolscap</Dependency>
+        </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="library">/usr/lib</Path>
@@ -64,6 +97,17 @@
     </Package>
 
     <History>
+        <Update release="15">
+            <Date>2010-06-26</Date>
+            <Version>0.10</Version>
+            <Comment>
+                - Bind Control-L to clear-screen,
+                - Fix the annoying IndentationError when print is used,
+                - Add missing dependencies.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="14">
             <Date>2009-09-23</Date>
             <Version>0.10</Version>
