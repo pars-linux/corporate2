@@ -19,7 +19,7 @@ def build():
 
 def install():
     # Remove source build directory variable
-    pisitools.dosed("lib/libqca.prl", "QMAKE_PRL_BUILD_DIR = %s/qca-%s/src" % (get.workDIR(), get.srcVERSION()), "")
+    pisitools.dosed("lib/libqca.prl", "^QMAKE_PRL_BUILD_DIR.*$")
 
     autotools.rawInstall("INSTALL_ROOT=%s" % get.installDIR())
 
