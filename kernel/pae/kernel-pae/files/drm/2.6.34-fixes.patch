@@ -1,0 +1,425 @@
+commit 544c8facd3ab6df5f278e6bcd20e67cfac408f05
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Thu May 13 14:55:28 2010 -0400
+
+    drm/edid: Fix 1024x768@85Hz
+    
+    commit 61dd98fad58f945ed720ba132681acb58fcee015 upstream.
+    
+    Having hsync both start and end on pixel 1072 ain't gonna work very
+    well.  Matches the X server's list.
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+    Tested-By: Michael Tokarev <mjt@tls.msk.ru>
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+
+diff --git a/drivers/gpu/drm/drm_edid.c b/drivers/gpu/drm/drm_edid.c
+index 18f41d7..10348d3 100644
+--- a/drivers/gpu/drm/drm_edid.c
++++ b/drivers/gpu/drm/drm_edid.c
+@@ -335,7 +335,7 @@ static struct drm_display_mode drm_dmt_modes[] = {
+ 		   DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC) },
+ 	/* 1024x768@85Hz */
+ 	{ DRM_MODE("1024x768", DRM_MODE_TYPE_DRIVER, 94500, 1024, 1072,
+-		   1072, 1376, 0, 768, 769, 772, 808, 0,
++		   1168, 1376, 0, 768, 769, 772, 808, 0,
+ 		   DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC) },
+ 	/* 1152x864@75Hz */
+ 	{ DRM_MODE("1152x864", DRM_MODE_TYPE_DRIVER, 108000, 1152, 1216,
+
+commit 9138068d34ca7ce4679e8539f2864ec2d5158534
+Author: Karsten Wiese <fzuuzf@googlemail.com>
+Date:   Sat Mar 27 22:48:33 2010 +0100
+
+    drm/i915: Don't touch PORT_HOTPLUG_EN in intel_dp_detect()
+    
+    commit 6e0032f0ae4440e75256bee11b163552cae21962 upstream.
+    
+    PORT_HOTPLUG_EN has allready been setup in i915_driver_irq_postinstall(),
+    when intel_dp_detect() runs.
+    
+    Delete the DP[BCD]_HOTPLUG_INT_EN defines, they are not referenced anymore.
+    
+    I found this while searching for a fix for
+            https://bugzilla.redhat.com/show_bug.cgi?id=528312
+    
+    Signed-off-by: Karsten Wiese <fzu@wemgehoertderstaat.de>
+    Signed-off-by: Eric Anholt <eric@anholt.net>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+
+diff --git a/drivers/gpu/drm/i915/intel_dp.c b/drivers/gpu/drm/i915/intel_dp.c
+index 77e40cf..7c28ff1 100644
+--- a/drivers/gpu/drm/i915/intel_dp.c
++++ b/drivers/gpu/drm/i915/intel_dp.c
+@@ -1180,16 +1180,6 @@ intel_dp_detect(struct drm_connector *connector)
+ 	if (HAS_PCH_SPLIT(dev))
+ 		return ironlake_dp_detect(connector);
+ 
+-	temp = I915_READ(PORT_HOTPLUG_EN);
+-
+-	I915_WRITE(PORT_HOTPLUG_EN,
+-	       temp |
+-	       DPB_HOTPLUG_INT_EN |
+-	       DPC_HOTPLUG_INT_EN |
+-	       DPD_HOTPLUG_INT_EN);
+-
+-	POSTING_READ(PORT_HOTPLUG_EN);
+-
+ 	switch (dp_priv->output_reg) {
+ 	case DP_B:
+ 		bit = DPB_HOTPLUG_INT_STATUS;
+
+commit f497dfe4b3c1159b3e05e3ccabd4585768b62cff
+Author: Chris Wilson <chris@chris-wilson.co.uk>
+Date:   Sat May 15 09:57:03 2010 +0100
+
+    drm/i915: Kill dangerous pending-flip debugging
+    
+    commit 9908ff736adf261e749b4887486a32ffa209304c upstream.
+    
+    We can, by virtue of a vblank interrupt firing in the middle of setting
+    up the unpin work (i.e. after we set the unpin_work field and before we
+    write to the ringbuffer) enter intel_finish_page_flip() prior to
+    receiving the pending flip notification. Therefore we can expect to hit
+    intel_finish_page_flip() under normal circumstances without a pending flip
+    and even without installing the pending_flip_obj. This is exacerbated by
+    aperture thrashing whilst binding the framebuffer
+    
+    References:
+    
+      Bug 28079 - "glresize" causes kernel panic in intel_finish_page_flip.
+      https://bugs.freedesktop.org/show_bug.cgi?id=28079
+    
+    Reported-by: Nick Bowler <nbowler@draconx.ca>
+    Signed-off-by: Chris Wilson <chris@chris-wilson.co.uk>
+    Cc: Jesse Barnes <jbarnes@virtuousgeek.org>
+    Reviewed-by: Jesse Barnes <jbarnes@virtuousgeek.org>
+    Signed-off-by: Eric Anholt <eric@anholt.net>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+
+diff --git a/drivers/gpu/drm/i915/intel_display.c b/drivers/gpu/drm/i915/intel_display.c
+index c7502b6..70765cf 100644
+--- a/drivers/gpu/drm/i915/intel_display.c
++++ b/drivers/gpu/drm/i915/intel_display.c
+@@ -4155,12 +4155,6 @@ void intel_finish_page_flip(struct drm_device *dev, int pipe)
+ 	spin_lock_irqsave(&dev->event_lock, flags);
+ 	work = intel_crtc->unpin_work;
+ 	if (work == NULL || !work->pending) {
+-		if (work && !work->pending) {
+-			obj_priv = to_intel_bo(work->pending_flip_obj);
+-			DRM_DEBUG_DRIVER("flip finish: %p (%d) not pending?\n",
+-					 obj_priv,
+-					 atomic_read(&obj_priv->pending_flip));
+-		}
+ 		spin_unlock_irqrestore(&dev->event_lock, flags);
+ 		return;
+ 	}
+
+commit f98a6842c400218a2033889ac1821b2ca9dc6baf
+Author: Chris Wilson <chris@chris-wilson.co.uk>
+Date:   Thu May 27 13:18:18 2010 +0100
+
+    drm/i915: Rebind bo if currently bound with incorrect alignment.
+    
+    commit ac0c6b5ad3b3b513e1057806d4b7627fcc0ecc27 upstream.
+    
+    Whilst pinning the buffer, check that that its current alignment
+    matches the requested alignment. If it does not, rebind.
+    
+    This should clear up any final render errors whilst resuming,
+    for reference:
+    
+      Bug 27070 - [i915] Page table errors with empty ringbuffer
+      https://bugs.freedesktop.org/show_bug.cgi?id=27070
+    
+      Bug 15502 -  render error detected, EIR: 0x00000010
+      https://bugzilla.kernel.org/show_bug.cgi?id=15502
+    
+      Bug 13844 -  i915 error: "render error detected"
+      https://bugzilla.kernel.org/show_bug.cgi?id=13844
+    
+    Signed-off-by: Chris Wilson <chris@chris-wilson.co.uk>
+    Signed-off-by: Eric Anholt <eric@anholt.net>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+
+diff --git a/drivers/gpu/drm/i915/i915_gem.c b/drivers/gpu/drm/i915/i915_gem.c
+index ef3d91d..bb33447 100644
+--- a/drivers/gpu/drm/i915/i915_gem.c
++++ b/drivers/gpu/drm/i915/i915_gem.c
+@@ -4231,6 +4231,17 @@ i915_gem_object_pin(struct drm_gem_object *obj, uint32_t alignment)
+ 	int ret;
+ 
+ 	i915_verify_inactive(dev, __FILE__, __LINE__);
++
++	if (obj_priv->gtt_space != NULL) {
++		if (alignment == 0)
++			alignment = i915_gem_get_gtt_alignment(obj);
++		if (obj_priv->gtt_offset & (alignment - 1)) {
++			ret = i915_gem_object_unbind(obj);
++			if (ret)
++				return ret;
++		}
++	}
++
+ 	if (obj_priv->gtt_space == NULL) {
+ 		ret = i915_gem_object_bind_to_gtt(obj, alignment);
+ 		if (ret)
+
+commit 78e18899e6ce8e5b9c4e2a7a99dc08e55f01c408
+Author: Chris Wilson <chris@chris-wilson.co.uk>
+Date:   Thu May 27 13:18:21 2010 +0100
+
+    drm/i915: Reject bind_to_gtt() early if object > aperture
+    
+    commit 654fc6073f68efa3b6c466825749e73e7fbb92cd upstream.
+    
+    If the object is bigger than the entire aperture, reject it early
+    before evicting everything in a vain attempt to find space.
+    
+    v2: Use E2BIG as suggested by Owain G. Ainsworth.
+    
+    Signed-off-by: Chris Wilson <chris@chris-wilson.co.uk>
+    Signed-off-by: Eric Anholt <eric@anholt.net>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+
+diff --git a/drivers/gpu/drm/i915/i915_gem.c b/drivers/gpu/drm/i915/i915_gem.c
+index bb33447..691701a 100644
+--- a/drivers/gpu/drm/i915/i915_gem.c
++++ b/drivers/gpu/drm/i915/i915_gem.c
+@@ -2688,6 +2688,14 @@ i915_gem_object_bind_to_gtt(struct drm_gem_object *obj, unsigned alignment)
+ 		return -EINVAL;
+ 	}
+ 
++	/* If the object is bigger than the entire aperture, reject it early
++	 * before evicting everything in a vain attempt to find space.
++	 */
++	if (obj->size > dev->gtt_total) {
++		DRM_ERROR("Attempting to bind an object larger than the aperture\n");
++		return -E2BIG;
++	}
++
+  search_free:
+ 	free_space = drm_mm_search_free(&dev_priv->mm.gtt_space,
+ 					obj->size, alignment, 0);
+
+commit e843ae9637207eb221de394acd66e51709a2d8ba
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Sat May 29 06:50:37 2010 +1000
+
+    drm/radeon: fix the r100/r200 ums block 0 page fix
+    
+    commit cf22f20ade30f8c03955324aaf27b1049e182600 upstream.
+    
+    airlied -> brown paper bag.
+    
+    I blame Hi-5 or the Wiggles for lowering my IQ, move the fix inside some
+    brackets instead of breaking everything in site.
+    
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+
+diff --git a/drivers/gpu/drm/radeon/radeon_state.c b/drivers/gpu/drm/radeon/radeon_state.c
+index cc5316d..b3ba44c 100644
+--- a/drivers/gpu/drm/radeon/radeon_state.c
++++ b/drivers/gpu/drm/radeon/radeon_state.c
+@@ -900,9 +900,10 @@ static void radeon_cp_dispatch_clear(struct drm_device * dev,
+ 			flags |= RADEON_FRONT;
+ 	}
+ 	if (flags & (RADEON_DEPTH|RADEON_STENCIL)) {
+-		if (!dev_priv->have_z_offset)
++		if (!dev_priv->have_z_offset) {
+ 			printk_once(KERN_ERR "radeon: illegal depth clear request. Buggy mesa detected - please update.\n");
+-		flags &= ~(RADEON_DEPTH | RADEON_STENCIL);
++			flags &= ~(RADEON_DEPTH | RADEON_STENCIL);
++		}
+ 	}
+ 
+ 	if (flags & (RADEON_FRONT | RADEON_BACK)) {
+
+commit ee0eddc4c7bbb36e6f0639df314e5375bdb81341
+Author: Alex Deucher <alexdeucher@gmail.com>
+Date:   Tue May 18 00:23:15 2010 -0400
+
+    drm/radeon/kms/atom: fix typo in LVDS panel info parsing
+    
+    commit 1ff26a3604d0292988d4cade0e49ba9918dbfd46 upstream.
+    
+    Fixes LVDS issues on some laptops; notably laptops with
+    2048x1536 panels.
+    
+    Signed-off-by: Alex Deucher <alexdeucher@gmail.com>
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+
+diff --git a/drivers/gpu/drm/radeon/radeon_atombios.c b/drivers/gpu/drm/radeon/radeon_atombios.c
+index 9916d82..70c8966 100644
+--- a/drivers/gpu/drm/radeon/radeon_atombios.c
++++ b/drivers/gpu/drm/radeon/radeon_atombios.c
+@@ -1174,7 +1174,7 @@ struct radeon_encoder_atom_dig *radeon_atombios_get_lvds_info(struct
+ 		lvds->native_mode.vtotal = lvds->native_mode.vdisplay +
+ 			le16_to_cpu(lvds_info->info.sLCDTiming.usVBlanking_Time);
+ 		lvds->native_mode.vsync_start = lvds->native_mode.vdisplay +
+-			le16_to_cpu(lvds_info->info.sLCDTiming.usVSyncWidth);
++			le16_to_cpu(lvds_info->info.sLCDTiming.usVSyncOffset);
+ 		lvds->native_mode.vsync_end = lvds->native_mode.vsync_start +
+ 			le16_to_cpu(lvds_info->info.sLCDTiming.usVSyncWidth);
+ 		lvds->panel_pwr_delay =
+
+commit c6fa3a52aca6165ea9db3ab3ceb1cdac07011f6c
+Author: Alex Deucher <alexdeucher@gmail.com>
+Date:   Thu May 20 11:26:11 2010 -0400
+
+    drm/radeon/kms: don't default display priority to high on rs4xx
+    
+    commit 45737447ed160faaba036c0709226bf9057f7b72 upstream.
+    
+    Seems to cause issues with the sound hardware.  Fixes kernel
+    bug 15982:
+    https://bugzilla.kernel.org/show_bug.cgi?id=15982
+    
+    Signed-off-by: Alex Deucher <alexdeucher@gmail.com>
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+
+diff --git a/drivers/gpu/drm/radeon/radeon_display.c b/drivers/gpu/drm/radeon/radeon_display.c
+index bb1c122..c2848e0 100644
+--- a/drivers/gpu/drm/radeon/radeon_display.c
++++ b/drivers/gpu/drm/radeon/radeon_display.c
+@@ -978,8 +978,11 @@ void radeon_update_display_priority(struct radeon_device *rdev)
+ 		/* set display priority to high for r3xx, rv515 chips
+ 		 * this avoids flickering due to underflow to the
+ 		 * display controllers during heavy acceleration.
++		 * Don't force high on rs4xx igp chips as it seems to
++		 * affect the sound card.  See kernel bug 15982.
+ 		 */
+-		if (ASIC_IS_R300(rdev) || (rdev->family == CHIP_RV515))
++		if ((ASIC_IS_R300(rdev) || (rdev->family == CHIP_RV515)) &&
++		    !(rdev->flags & RADEON_IS_IGP))
+ 			rdev->disp_priority = 2;
+ 		else
+ 			rdev->disp_priority = 0;
+
+commit 34ecb78972fa40a6a745bea624696c6ad0062f08
+Author: Jerome Glisse <jglisse@redhat.com>
+Date:   Fri May 21 18:48:54 2010 +0200
+
+    drm/radeon/kms: release AGP bridge at suspend
+    
+    commit 10b06122afcc78468bd1d009633cb71e528acdc5 upstream.
+    
+    I think it's good to release the AGP bridge at suspend
+    and reacquire it at resume. Also fix :
+    https://bugzilla.kernel.org/show_bug.cgi?id=15969
+    
+    Signed-off-by: Jerome Glisse <jglisse@redhat.com>
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+
+diff --git a/drivers/gpu/drm/radeon/radeon.h b/drivers/gpu/drm/radeon/radeon.h
+index 034218c..4c7204a 100644
+--- a/drivers/gpu/drm/radeon/radeon.h
++++ b/drivers/gpu/drm/radeon/radeon.h
+@@ -566,6 +566,7 @@ typedef int (*radeon_packet3_check_t)(struct radeon_cs_parser *p,
+  */
+ int radeon_agp_init(struct radeon_device *rdev);
+ void radeon_agp_resume(struct radeon_device *rdev);
++void radeon_agp_suspend(struct radeon_device *rdev);
+ void radeon_agp_fini(struct radeon_device *rdev);
+ 
+ 
+diff --git a/drivers/gpu/drm/radeon/radeon_agp.c b/drivers/gpu/drm/radeon/radeon_agp.c
+index 28e473f..f40dfb7 100644
+--- a/drivers/gpu/drm/radeon/radeon_agp.c
++++ b/drivers/gpu/drm/radeon/radeon_agp.c
+@@ -270,3 +270,8 @@ void radeon_agp_fini(struct radeon_device *rdev)
+ 	}
+ #endif
+ }
++
++void radeon_agp_suspend(struct radeon_device *rdev)
++{
++	radeon_agp_fini(rdev);
++}
+diff --git a/drivers/gpu/drm/radeon/radeon_device.c b/drivers/gpu/drm/radeon/radeon_device.c
+index 7b629e3..ed6a724 100644
+--- a/drivers/gpu/drm/radeon/radeon_device.c
++++ b/drivers/gpu/drm/radeon/radeon_device.c
+@@ -748,6 +748,8 @@ int radeon_suspend_kms(struct drm_device *dev, pm_message_t state)
+ 	/* evict remaining vram memory */
+ 	radeon_bo_evict_vram(rdev);
+ 
++	radeon_agp_suspend(rdev);
++
+ 	pci_save_state(dev->pdev);
+ 	if (state.event == PM_EVENT_SUSPEND) {
+ 		/* Shut down the device */
+
+commit 300aa4bb6956eb5b831cc7ced769b28185b4cedc
+Author: Alex Deucher <alexdeucher@gmail.com>
+Date:   Tue May 18 19:26:46 2010 -0400
+
+    drm/radeon/kms: reset ddc_bus in object header parsing
+    
+    commit 2bfcc0fc698d550689ef020c73b2d977b73e728c upstream.
+    
+    Some LVDS connectors don't have a ddc bus, so reset the
+    ddc bus to invalid before parsing the next connector
+    to avoid using stale ddc bus data.  Should fix
+    fdo bug 28164.
+    
+    Signed-off-by: Alex Deucher <alexdeucher@gmail.com>
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+
+diff --git a/drivers/gpu/drm/radeon/radeon_atombios.c b/drivers/gpu/drm/radeon/radeon_atombios.c
+index 70c8966..1a4fa9b 100644
+--- a/drivers/gpu/drm/radeon/radeon_atombios.c
++++ b/drivers/gpu/drm/radeon/radeon_atombios.c
+@@ -530,6 +530,8 @@ bool radeon_get_atom_connector_info_from_object_table(struct drm_device *dev)
+ 			}
+ 
+ 			/* look up gpio for ddc, hpd */
++			ddc_bus.valid = false;
++			hpd.hpd = RADEON_HPD_NONE;
+ 			if ((le16_to_cpu(path->usDeviceTag) &
+ 			     (ATOM_DEVICE_TV_SUPPORT | ATOM_DEVICE_CV_SUPPORT)) == 0) {
+ 				for (j = 0; j < con_obj->ucNumberOfObjects; j++) {
+@@ -585,9 +587,6 @@ bool radeon_get_atom_connector_info_from_object_table(struct drm_device *dev)
+ 						break;
+ 					}
+ 				}
+-			} else {
+-				hpd.hpd = RADEON_HPD_NONE;
+-				ddc_bus.valid = false;
+ 			}
+ 
+ 			/* needed for aux chan transactions */
+
+commit 67d4415572e3e68aaec3076617450293c2b31a91
+Author: Alex Deucher <alexdeucher@gmail.com>
+Date:   Tue May 18 10:42:53 2010 -0400
+
+    PCI quirks: disable msi on AMD rs4xx internal gfx bridges
+    
+    commit 9313ff450400e6a2ab10fe6b9bdb12a828329410 upstream.
+    
+    Doesn't work reliably for internal gfx.  Fixes kernel bug
+    https://bugzilla.kernel.org/show_bug.cgi?id=15626.
+    
+    Signed-off-by: Alex Deucher <alexdeucher@gmail.com>
+    Signed-off-by: Jesse Barnes <jbarnes@virtuousgeek.org>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+
+diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
+index 27c0e6e..f13fc5a 100644
+--- a/drivers/pci/quirks.c
++++ b/drivers/pci/quirks.c
+@@ -2127,6 +2127,7 @@ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_AMD, 0x9602, quirk_disable_msi);
+ 	}
+ }
+ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_AMD, PCI_DEVICE_ID_AMD_8131_BRIDGE, quirk_disable_msi);
++DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_ATI, 0x5a3f, quirk_disable_msi);
+ 
+ /* Go through the list of Hypertransport capabilities and
+  * return 1 if a HT MSI capability is found and enabled */
