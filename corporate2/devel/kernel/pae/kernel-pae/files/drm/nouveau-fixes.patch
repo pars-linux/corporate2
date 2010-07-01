@@ -1,0 +1,1449 @@
+commit b19bc039c0da80067e9215728dc17bf8ec0af1c5
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Mon Jun 7 13:59:40 2010 +1000
+
+    drm/nv50: fix iommu errors caused by device reading from address 0
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nv50_fb.c b/drivers/gpu/drm/nouveau/nv50_fb.c
+index a95e694..32611bd 100644
+--- a/drivers/gpu/drm/nouveau/nv50_fb.c
++++ b/drivers/gpu/drm/nouveau/nv50_fb.c
+@@ -6,10 +6,16 @@
+ int
+ nv50_fb_init(struct drm_device *dev)
+ {
+-	/* This is needed to get meaningful information from 100c90
+-	 * on traps. No idea what these values mean exactly. */
+ 	struct drm_nouveau_private *dev_priv = dev->dev_private;
+ 
++	/* Not a clue what this is exactly.  Without pointing it at a
++	 * scratch page, VRAM->GART blits with M2MF (as in DDX DFS)
++	 * cause IOMMU "read from address 0" errors (rh#561267)
++	 */
++	nv_wr32(dev, 0x100c08, dev_priv->gart_info.sg_dummy_bus >> 8);
++
++	/* This is needed to get meaningful information from 100c90
++	 * on traps. No idea what these values mean exactly. */
+ 	switch (dev_priv->chipset) {
+ 	case 0x50:
+ 		nv_wr32(dev, 0x100c90, 0x0707ff);
+
+commit 1ba8c5cd4acf94faa03b52928603bd80e21f7628
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Tue May 25 13:47:16 2010 +1000
+
+    drm/nouveau: fix POST detection for certain chipsets
+    
+    We totally fail at detecting un-POSTed chipsets prior to G80.  This commit
+    changes the pre-G80 POST detection to read the programmed horizontal total
+    from CRTC 0, and assume the card isn't POSTed if it's 0.
+    
+    NVIDIA use some other heuristics more similar to what we do on G80, but I
+    wasted quite a long time trying to figure out the exact specifics of what
+    they do so we can try this for a bit instead.
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index abc382a..dd0193c 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -6051,6 +6051,30 @@ nouveau_bios_i2c_devices_takedown(struct drm_device *dev)
+ 		nouveau_i2c_fini(dev, entry);
+ }
+ 
++static bool
++nouveau_bios_posted(struct drm_device *dev)
++{
++	struct drm_nouveau_private *dev_priv = dev->dev_private;
++	bool was_locked;
++	unsigned htotal;
++
++	if (dev_priv->chipset >= NV_50) {
++		if (NVReadVgaCrtc(dev, 0, 0x00) == 0 &&
++		    NVReadVgaCrtc(dev, 0, 0x1a) == 0)
++			return false;
++		return true;
++	}
++
++	was_locked = NVLockVgaCrtcs(dev, false);
++	htotal  = NVReadVgaCrtc(dev, 0, 0x06);
++	htotal |= (NVReadVgaCrtc(dev, 0, 0x07) & 0x01) << 8;
++	htotal |= (NVReadVgaCrtc(dev, 0, 0x07) & 0x20) << 4;
++	htotal |= (NVReadVgaCrtc(dev, 0, 0x25) & 0x01) << 10;
++	htotal |= (NVReadVgaCrtc(dev, 0, 0x41) & 0x01) << 11;
++	NVLockVgaCrtcs(dev, was_locked);
++	return (htotal != 0);
++}
++
+ int
+ nouveau_bios_init(struct drm_device *dev)
+ {
+@@ -6085,9 +6109,7 @@ nouveau_bios_init(struct drm_device *dev)
+ 	bios->execute = false;
+ 
+ 	/* ... unless card isn't POSTed already */
+-	if (dev_priv->card_type >= NV_10 &&
+-	    NVReadVgaCrtc(dev, 0, 0x00) == 0 &&
+-	    NVReadVgaCrtc(dev, 0, 0x1a) == 0) {
++	if (!nouveau_bios_posted(dev)) {
+ 		NV_INFO(dev, "Adaptor not initialised\n");
+ 		if (dev_priv->card_type < NV_50) {
+ 			NV_ERROR(dev, "Unable to POST this chipset\n");
+
+commit 7ade4b295327c0bb7e1b9d0b53116c87ac2ab158
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Tue May 25 13:48:07 2010 +1000
+
+    drm/nv40: allow cold-booting of nv4x chipsets
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index dd0193c..b4d9c7a 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -6111,7 +6111,7 @@ nouveau_bios_init(struct drm_device *dev)
+ 	/* ... unless card isn't POSTed already */
+ 	if (!nouveau_bios_posted(dev)) {
+ 		NV_INFO(dev, "Adaptor not initialised\n");
+-		if (dev_priv->card_type < NV_50) {
++		if (dev_priv->card_type < NV_40) {
+ 			NV_ERROR(dev, "Unable to POST this chipset\n");
+ 			return -ENODEV;
+ 		}
+
+commit 5ec5453865f576c63a944a29750510c7f279641e
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Mon May 10 16:54:23 2010 +1000
+
+    drm/nouveau: fix init table handlers to return proper error codes
+    
+    We really want to be able to distinguish between INIT_DONE and an actual
+    error sometimes.  This commit fixes up several lazy "return 0;" to be
+    actual error codes, and explicitly reserves "0" as "success, but stop
+    parsing this table".
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index b4d9c7a..48c6196 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -256,6 +256,11 @@ static bool NVShadowVBIOS(struct drm_device *dev, uint8_t *data)
+ struct init_tbl_entry {
+ 	char *name;
+ 	uint8_t id;
++	/* Return:
++	 *  > 0: success, length of opcode
++	 *    0: success, but abort further parsing of table (INIT_DONE etc)
++	 *  < 0: failure, table parsing will be aborted
++	 */
+ 	int (*handler)(struct nvbios *, uint16_t, struct init_exec *);
+ };
+ 
+@@ -818,7 +823,7 @@ init_io_restrict_prog(struct nvbios *bios, uint16_t offset,
+ 		NV_ERROR(bios->dev,
+ 			 "0x%04X: Config 0x%02X exceeds maximal bound 0x%02X\n",
+ 			 offset, config, count);
+-		return 0;
++		return -EINVAL;
+ 	}
+ 
+ 	configval = ROM32(bios->data[offset + 11 + config * 4]);
+@@ -920,7 +925,7 @@ init_io_restrict_pll(struct nvbios *bios, uint16_t offset,
+ 		NV_ERROR(bios->dev,
+ 			 "0x%04X: Config 0x%02X exceeds maximal bound 0x%02X\n",
+ 			 offset, config, count);
+-		return 0;
++		return -EINVAL;
+ 	}
+ 
+ 	freq = ROM16(bios->data[offset + 12 + config * 2]);
+@@ -1170,7 +1175,7 @@ init_io_restrict_pll2(struct nvbios *bios, uint16_t offset,
+ 		NV_ERROR(bios->dev,
+ 			 "0x%04X: Config 0x%02X exceeds maximal bound 0x%02X\n",
+ 			 offset, config, count);
+-		return 0;
++		return -EINVAL;
+ 	}
+ 
+ 	freq = ROM32(bios->data[offset + 11 + config * 4]);
+@@ -1247,7 +1252,7 @@ init_i2c_byte(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 
+ 	chan = init_i2c_device_find(bios->dev, i2c_index);
+ 	if (!chan)
+-		return 0;
++		return -ENODEV;
+ 
+ 	for (i = 0; i < count; i++) {
+ 		uint8_t i2c_reg = bios->data[offset + 4 + i * 3];
+@@ -1260,7 +1265,7 @@ init_i2c_byte(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 		msg.len = 1;
+ 		msg.buf = &value;
+ 		if (i2c_transfer(&chan->adapter, &msg, 1) != 1)
+-			return 0;
++			return -EIO;
+ 
+ 		BIOSLOG(bios, "0x%04X: I2CReg: 0x%02X, Value: 0x%02X, "
+ 			      "Mask: 0x%02X, Data: 0x%02X\n",
+@@ -1274,7 +1279,7 @@ init_i2c_byte(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 			msg.len = 1;
+ 			msg.buf = &value;
+ 			if (i2c_transfer(&chan->adapter, &msg, 1) != 1)
+-				return 0;
++				return -EIO;
+ 		}
+ 	}
+ 
+@@ -1317,7 +1322,7 @@ init_zm_i2c_byte(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 
+ 	chan = init_i2c_device_find(bios->dev, i2c_index);
+ 	if (!chan)
+-		return 0;
++		return -ENODEV;
+ 
+ 	for (i = 0; i < count; i++) {
+ 		uint8_t i2c_reg = bios->data[offset + 4 + i * 2];
+@@ -1332,7 +1337,7 @@ init_zm_i2c_byte(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 			msg.len = 1;
+ 			msg.buf = &data;
+ 			if (i2c_transfer(&chan->adapter, &msg, 1) != 1)
+-				return 0;
++				return -EIO;
+ 		}
+ 	}
+ 
+@@ -1374,7 +1379,7 @@ init_zm_i2c(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 
+ 	chan = init_i2c_device_find(bios->dev, i2c_index);
+ 	if (!chan)
+-		return 0;
++		return -ENODEV;
+ 
+ 	for (i = 0; i < count; i++) {
+ 		data[i] = bios->data[offset + 4 + i];
+@@ -1388,7 +1393,7 @@ init_zm_i2c(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 		msg.len = count;
+ 		msg.buf = data;
+ 		if (i2c_transfer(&chan->adapter, &msg, 1) != 1)
+-			return 0;
++			return -EIO;
+ 	}
+ 
+ 	return len;
+@@ -1427,7 +1432,7 @@ init_tmds(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 
+ 	reg = get_tmds_index_reg(bios->dev, mlv);
+ 	if (!reg)
+-		return 0;
++		return -EINVAL;
+ 
+ 	bios_wr32(bios, reg,
+ 		  tmdsaddr | NV_PRAMDAC_FP_TMDS_CONTROL_WRITE_DISABLE);
+@@ -1471,7 +1476,7 @@ init_zm_tmds_group(struct nvbios *bios, uint16_t offset,
+ 
+ 	reg = get_tmds_index_reg(bios->dev, mlv);
+ 	if (!reg)
+-		return 0;
++		return -EINVAL;
+ 
+ 	for (i = 0; i < count; i++) {
+ 		uint8_t tmdsaddr = bios->data[offset + 3 + i * 2];
+@@ -1946,7 +1951,7 @@ init_configure_mem(struct nvbios *bios, uint16_t offset,
+ 	uint32_t reg, data;
+ 
+ 	if (bios->major_version > 2)
+-		return 0;
++		return -ENODEV;
+ 
+ 	bios_idxprt_wr(bios, NV_VIO_SRX, NV_VIO_SR_CLOCK_INDEX, bios_idxprt_rd(
+ 		       bios, NV_VIO_SRX, NV_VIO_SR_CLOCK_INDEX) | 0x20);
+@@ -2001,7 +2006,7 @@ init_configure_clk(struct nvbios *bios, uint16_t offset,
+ 	int clock;
+ 
+ 	if (bios->major_version > 2)
+-		return 0;
++		return -ENODEV;
+ 
+ 	clock = ROM16(bios->data[meminitoffs + 4]) * 10;
+ 	setPLL(bios, NV_PRAMDAC_NVPLL_COEFF, clock);
+@@ -2034,7 +2039,7 @@ init_configure_preinit(struct nvbios *bios, uint16_t offset,
+ 	uint8_t cr3c = ((straps << 2) & 0xf0) | (straps & (1 << 6));
+ 
+ 	if (bios->major_version > 2)
+-		return 0;
++		return -ENODEV;
+ 
+ 	bios_idxprt_wr(bios, NV_CIO_CRX__COLOR,
+ 			     NV_CIO_CRE_SCRATCH4__INDEX, cr3c);
+@@ -2656,7 +2661,7 @@ init_ram_restrict_zm_reg_group(struct nvbios *bios, uint16_t offset,
+ 		NV_ERROR(bios->dev,
+ 			 "0x%04X: Zero block length - has the M table "
+ 			 "been parsed?\n", offset);
+-		return 0;
++		return -EINVAL;
+ 	}
+ 
+ 	strap_ramcfg = (bios_rd32(bios, NV_PEXTDEV_BOOT_0) >> 2) & 0xf;
+@@ -2840,14 +2845,14 @@ init_auxch(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 
+ 	if (!bios->display.output) {
+ 		NV_ERROR(dev, "INIT_AUXCH: no active output\n");
+-		return 0;
++		return -EINVAL;
+ 	}
+ 
+ 	auxch = init_i2c_device_find(dev, bios->display.output->i2c_index);
+ 	if (!auxch) {
+ 		NV_ERROR(dev, "INIT_AUXCH: couldn't get auxch %d\n",
+ 			 bios->display.output->i2c_index);
+-		return 0;
++		return -ENODEV;
+ 	}
+ 
+ 	if (!iexec->execute)
+@@ -2860,7 +2865,7 @@ init_auxch(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 		ret = nouveau_dp_auxch(auxch, 9, addr, &data, 1);
+ 		if (ret) {
+ 			NV_ERROR(dev, "INIT_AUXCH: rd auxch fail %d\n", ret);
+-			return 0;
++			return ret;
+ 		}
+ 
+ 		data &= bios->data[offset + 0];
+@@ -2869,7 +2874,7 @@ init_auxch(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 		ret = nouveau_dp_auxch(auxch, 8, addr, &data, 1);
+ 		if (ret) {
+ 			NV_ERROR(dev, "INIT_AUXCH: wr auxch fail %d\n", ret);
+-			return 0;
++			return ret;
+ 		}
+ 	}
+ 
+@@ -2899,14 +2904,14 @@ init_zm_auxch(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 
+ 	if (!bios->display.output) {
+ 		NV_ERROR(dev, "INIT_ZM_AUXCH: no active output\n");
+-		return 0;
++		return -EINVAL;
+ 	}
+ 
+ 	auxch = init_i2c_device_find(dev, bios->display.output->i2c_index);
+ 	if (!auxch) {
+ 		NV_ERROR(dev, "INIT_ZM_AUXCH: couldn't get auxch %d\n",
+ 			 bios->display.output->i2c_index);
+-		return 0;
++		return -ENODEV;
+ 	}
+ 
+ 	if (!iexec->execute)
+@@ -2917,7 +2922,7 @@ init_zm_auxch(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 		ret = nouveau_dp_auxch(auxch, 8, addr, &bios->data[offset], 1);
+ 		if (ret) {
+ 			NV_ERROR(dev, "INIT_ZM_AUXCH: wr auxch fail %d\n", ret);
+-			return 0;
++			return ret;
+ 		}
+ 	}
+ 
+
+commit 0ba12ca0bce04055da9b59e5be7ac14fcefecf26
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Sat Apr 24 03:05:56 2010 +1000
+
+    drm/nv50: store full dcb i2c entry from vbios
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index 48c6196..f454d54 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -5021,8 +5021,12 @@ read_dcb_i2c_entry(struct drm_device *dev, int dcb_version, uint8_t *i2ctable, i
+ 			rdofs = wrofs = 0;
+ 	}
+ 
+-	if (dcb_i2c_ver >= 0x40 && port_type != 5 && port_type != 6)
+-		NV_WARN(dev, "DCB I2C table has port type %d\n", port_type);
++	if (dcb_i2c_ver >= 0x40) {
++		if (port_type != 5 && port_type != 6)
++			NV_WARN(dev, "DCB I2C table has port type %d\n", port_type);
++
++		i2c->entry = ROM32(i2ctable[headerlen + recordoffset + entry_len * index]);
++	}
+ 
+ 	i2c->port_type = port_type;
+ 	i2c->read = i2ctable[headerlen + recordoffset + rdofs + entry_len * index];
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.h b/drivers/gpu/drm/nouveau/nouveau_bios.h
+index c0d7b0a..adf4ec2 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.h
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.h
+@@ -35,6 +35,7 @@
+ #define DCB_LOC_ON_CHIP 0
+ 
+ struct dcb_i2c_entry {
++	uint32_t entry;
+ 	uint8_t port_type;
+ 	uint8_t read, write;
+ 	struct nouveau_i2c_chan *chan;
+
+commit c4bc0ee6304a589e3701e50c75c6992b472ab498
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Mon May 10 16:59:42 2010 +1000
+
+    drm/nouveau: display error message for any failed init table opcode
+    
+    Some handlers don't report specific errors, but we still *really* want to
+    know if we failed to parse a complete init table.
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index f454d54..a7f5485 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -3006,7 +3006,7 @@ parse_init_table(struct nvbios *bios, unsigned int offset,
+ 	 * is changed back to EXECUTE.
+ 	 */
+ 
+-	int count = 0, i, res;
++	int count = 0, i, ret;
+ 	uint8_t id;
+ 
+ 	/*
+@@ -3021,26 +3021,33 @@ parse_init_table(struct nvbios *bios, unsigned int offset,
+ 		for (i = 0; itbl_entry[i].name && (itbl_entry[i].id != id); i++)
+ 			;
+ 
+-		if (itbl_entry[i].name) {
+-			BIOSLOG(bios, "0x%04X: [ (0x%02X) - %s ]\n",
+-				offset, itbl_entry[i].id, itbl_entry[i].name);
+-
+-			/* execute eventual command handler */
+-			res = (*itbl_entry[i].handler)(bios, offset, iexec);
+-			if (!res)
+-				break;
+-			/*
+-			 * Add the offset of the current command including all data
+-			 * of that command. The offset will then be pointing on the
+-			 * next op code.
+-			 */
+-			offset += res;
+-		} else {
++		if (!itbl_entry[i].name) {
+ 			NV_ERROR(bios->dev,
+ 				 "0x%04X: Init table command not found: "
+ 				 "0x%02X\n", offset, id);
+ 			return -ENOENT;
+ 		}
++
++		BIOSLOG(bios, "0x%04X: [ (0x%02X) - %s ]\n", offset,
++			itbl_entry[i].id, itbl_entry[i].name);
++
++		/* execute eventual command handler */
++		ret = (*itbl_entry[i].handler)(bios, offset, iexec);
++		if (ret < 0) {
++			NV_ERROR(bios->dev, "0x%04X: Failed parsing init "
++				 "table opcode: %s %d\n", offset,
++				 itbl_entry[i].name, ret);
++		}
++
++		if (ret <= 0)
++			break;
++
++		/*
++		 * Add the offset of the current command including all data
++		 * of that command. The offset will then be pointing on the
++		 * next op code.
++		 */
++		offset += ret;
+ 	}
+ 
+ 	if (offset >= bios->length)
+
+commit 0bbba0b1adebfe17d2dd373c294f279f82d80497
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Wed May 12 14:38:25 2010 +1000
+
+    drm/nouveau: ensure we've parsed i2c table entry for INIT_*I2C* handlers
+    
+    We may not have parsed the entry yet if the i2c_index is for an i2c bus
+    that's not referenced by a DCB encoder.
+    
+    This could be done oh so much more nicely, except we have to care about
+    prehistoric DCB tables too, and they make life painful.
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index a7f5485..4ac0221 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -714,6 +714,83 @@ static int dcb_entry_idx_from_crtchead(struct drm_device *dev)
+ 	return dcb_entry;
+ }
+ 
++static int
++read_dcb_i2c_entry(struct drm_device *dev, int dcb_version, uint8_t *i2ctable, int index, struct dcb_i2c_entry *i2c)
++{
++	uint8_t dcb_i2c_ver = dcb_version, headerlen = 0, entry_len = 4;
++	int i2c_entries = DCB_MAX_NUM_I2C_ENTRIES;
++	int recordoffset = 0, rdofs = 1, wrofs = 0;
++	uint8_t port_type = 0;
++
++	if (!i2ctable)
++		return -EINVAL;
++
++	if (dcb_version >= 0x30) {
++		if (i2ctable[0] != dcb_version) /* necessary? */
++			NV_WARN(dev,
++				"DCB I2C table version mismatch (%02X vs %02X)\n",
++				i2ctable[0], dcb_version);
++		dcb_i2c_ver = i2ctable[0];
++		headerlen = i2ctable[1];
++		if (i2ctable[2] <= DCB_MAX_NUM_I2C_ENTRIES)
++			i2c_entries = i2ctable[2];
++		else
++			NV_WARN(dev,
++				"DCB I2C table has more entries than indexable "
++				"(%d entries, max %d)\n", i2ctable[2],
++				DCB_MAX_NUM_I2C_ENTRIES);
++		entry_len = i2ctable[3];
++		/* [4] is i2c_default_indices, read in parse_dcb_table() */
++	}
++	/*
++	 * It's your own fault if you call this function on a DCB 1.1 BIOS --
++	 * the test below is for DCB 1.2
++	 */
++	if (dcb_version < 0x14) {
++		recordoffset = 2;
++		rdofs = 0;
++		wrofs = 1;
++	}
++
++	if (index == 0xf)
++		return 0;
++	if (index >= i2c_entries) {
++		NV_ERROR(dev, "DCB I2C index too big (%d >= %d)\n",
++			 index, i2ctable[2]);
++		return -ENOENT;
++	}
++	if (i2ctable[headerlen + entry_len * index + 3] == 0xff) {
++		NV_ERROR(dev, "DCB I2C entry invalid\n");
++		return -EINVAL;
++	}
++
++	if (dcb_i2c_ver >= 0x30) {
++		port_type = i2ctable[headerlen + recordoffset + 3 + entry_len * index];
++
++		/*
++		 * Fixup for chips using same address offset for read and
++		 * write.
++		 */
++		if (port_type == 4)	/* seen on C51 */
++			rdofs = wrofs = 1;
++		if (port_type >= 5)	/* G80+ */
++			rdofs = wrofs = 0;
++	}
++
++	if (dcb_i2c_ver >= 0x40) {
++		if (port_type != 5 && port_type != 6)
++			NV_WARN(dev, "DCB I2C table has port type %d\n", port_type);
++
++		i2c->entry = ROM32(i2ctable[headerlen + recordoffset + entry_len * index]);
++	}
++
++	i2c->port_type = port_type;
++	i2c->read = i2ctable[headerlen + recordoffset + rdofs + entry_len * index];
++	i2c->write = i2ctable[headerlen + recordoffset + wrofs + entry_len * index];
++
++	return 0;
++}
++
+ static struct nouveau_i2c_chan *
+ init_i2c_device_find(struct drm_device *dev, int i2c_index)
+ {
+@@ -733,6 +810,17 @@ init_i2c_device_find(struct drm_device *dev, int i2c_index)
+ 	if (i2c_index == 0x80)	/* g80+ */
+ 		i2c_index = dcb->i2c_default_indices & 0xf;
+ 
++	if (i2c_index > DCB_MAX_NUM_I2C_ENTRIES) {
++		NV_ERROR(dev, "invalid i2c_index 0x%x\n", i2c_index);
++		return NULL;
++	}
++
++	/* Make sure i2c table entry has been parsed, it may not
++	 * have been if this is a bus not referenced by a DCB encoder
++	 */
++	read_dcb_i2c_entry(dev, dcb->version, dcb->i2c_table,
++			   i2c_index, &dcb->i2c[i2c_index]);
++
+ 	return nouveau_i2c_find(dev, i2c_index);
+ }
+ 
+@@ -4965,83 +5053,6 @@ static uint16_t findstr(uint8_t *data, int n, const uint8_t *str, int len)
+ 	return 0;
+ }
+ 
+-static int
+-read_dcb_i2c_entry(struct drm_device *dev, int dcb_version, uint8_t *i2ctable, int index, struct dcb_i2c_entry *i2c)
+-{
+-	uint8_t dcb_i2c_ver = dcb_version, headerlen = 0, entry_len = 4;
+-	int i2c_entries = DCB_MAX_NUM_I2C_ENTRIES;
+-	int recordoffset = 0, rdofs = 1, wrofs = 0;
+-	uint8_t port_type = 0;
+-
+-	if (!i2ctable)
+-		return -EINVAL;
+-
+-	if (dcb_version >= 0x30) {
+-		if (i2ctable[0] != dcb_version) /* necessary? */
+-			NV_WARN(dev,
+-				"DCB I2C table version mismatch (%02X vs %02X)\n",
+-				i2ctable[0], dcb_version);
+-		dcb_i2c_ver = i2ctable[0];
+-		headerlen = i2ctable[1];
+-		if (i2ctable[2] <= DCB_MAX_NUM_I2C_ENTRIES)
+-			i2c_entries = i2ctable[2];
+-		else
+-			NV_WARN(dev,
+-				"DCB I2C table has more entries than indexable "
+-				"(%d entries, max %d)\n", i2ctable[2],
+-				DCB_MAX_NUM_I2C_ENTRIES);
+-		entry_len = i2ctable[3];
+-		/* [4] is i2c_default_indices, read in parse_dcb_table() */
+-	}
+-	/*
+-	 * It's your own fault if you call this function on a DCB 1.1 BIOS --
+-	 * the test below is for DCB 1.2
+-	 */
+-	if (dcb_version < 0x14) {
+-		recordoffset = 2;
+-		rdofs = 0;
+-		wrofs = 1;
+-	}
+-
+-	if (index == 0xf)
+-		return 0;
+-	if (index >= i2c_entries) {
+-		NV_ERROR(dev, "DCB I2C index too big (%d >= %d)\n",
+-			 index, i2ctable[2]);
+-		return -ENOENT;
+-	}
+-	if (i2ctable[headerlen + entry_len * index + 3] == 0xff) {
+-		NV_ERROR(dev, "DCB I2C entry invalid\n");
+-		return -EINVAL;
+-	}
+-
+-	if (dcb_i2c_ver >= 0x30) {
+-		port_type = i2ctable[headerlen + recordoffset + 3 + entry_len * index];
+-
+-		/*
+-		 * Fixup for chips using same address offset for read and
+-		 * write.
+-		 */
+-		if (port_type == 4)	/* seen on C51 */
+-			rdofs = wrofs = 1;
+-		if (port_type >= 5)	/* G80+ */
+-			rdofs = wrofs = 0;
+-	}
+-
+-	if (dcb_i2c_ver >= 0x40) {
+-		if (port_type != 5 && port_type != 6)
+-			NV_WARN(dev, "DCB I2C table has port type %d\n", port_type);
+-
+-		i2c->entry = ROM32(i2ctable[headerlen + recordoffset + entry_len * index]);
+-	}
+-
+-	i2c->port_type = port_type;
+-	i2c->read = i2ctable[headerlen + recordoffset + rdofs + entry_len * index];
+-	i2c->write = i2ctable[headerlen + recordoffset + wrofs + entry_len * index];
+-
+-	return 0;
+-}
+-
+ static struct dcb_gpio_entry *
+ new_gpio_entry(struct nvbios *bios)
+ {
+
+commit b8f6e9aeb04a50fa0639eb4e67271475d8afc99e
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Wed May 12 14:45:04 2010 +1000
+
+    drm/nouveau: support init table i2c device identifier 0x81
+    
+    It appears to be meant to reference the second "default index".
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index 4ac0221..d69a599 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -809,6 +809,9 @@ init_i2c_device_find(struct drm_device *dev, int i2c_index)
+ 	}
+ 	if (i2c_index == 0x80)	/* g80+ */
+ 		i2c_index = dcb->i2c_default_indices & 0xf;
++	else
++	if (i2c_index == 0x81)
++		i2c_index = (dcb->i2c_default_indices & 0xf0) >> 4;
+ 
+ 	if (i2c_index > DCB_MAX_NUM_I2C_ENTRIES) {
+ 		NV_ERROR(dev, "invalid i2c_index 0x%x\n", i2c_index);
+
+commit cb1f4fdd108698a5dadc853ee97c977da8cc4a81
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Wed May 12 16:30:50 2010 +1000
+
+    drm/nouveau: fix i2c-related init table handlers
+    
+    Mutliple issues.  INIT_ZM_I2C_BYTE/INIT_I2C_BYTE didn't even try and
+    use the register value, and all the handlers were using the wrong
+    slave address.
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index d69a599..8b223ac 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -1327,12 +1327,11 @@ init_i2c_byte(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 	 */
+ 
+ 	uint8_t i2c_index = bios->data[offset + 1];
+-	uint8_t i2c_address = bios->data[offset + 2];
++	uint8_t i2c_address = bios->data[offset + 2] >> 1;
+ 	uint8_t count = bios->data[offset + 3];
+-	int len = 4 + count * 3;
+ 	struct nouveau_i2c_chan *chan;
+-	struct i2c_msg msg;
+-	int i;
++	int len = 4 + count * 3;
++	int ret, i;
+ 
+ 	if (!iexec->execute)
+ 		return len;
+@@ -1346,32 +1345,31 @@ init_i2c_byte(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 		return -ENODEV;
+ 
+ 	for (i = 0; i < count; i++) {
+-		uint8_t i2c_reg = bios->data[offset + 4 + i * 3];
++		uint8_t reg = bios->data[offset + 4 + i * 3];
+ 		uint8_t mask = bios->data[offset + 5 + i * 3];
+ 		uint8_t data = bios->data[offset + 6 + i * 3];
+-		uint8_t value;
++		union i2c_smbus_data val;
+ 
+-		msg.addr = i2c_address;
+-		msg.flags = I2C_M_RD;
+-		msg.len = 1;
+-		msg.buf = &value;
+-		if (i2c_transfer(&chan->adapter, &msg, 1) != 1)
+-			return -EIO;
++		ret = i2c_smbus_xfer(&chan->adapter, i2c_address, 0,
++				     I2C_SMBUS_READ, reg,
++				     I2C_SMBUS_BYTE_DATA, &val);
++		if (ret < 0)
++			return ret;
+ 
+ 		BIOSLOG(bios, "0x%04X: I2CReg: 0x%02X, Value: 0x%02X, "
+ 			      "Mask: 0x%02X, Data: 0x%02X\n",
+-			offset, i2c_reg, value, mask, data);
++			offset, reg, val.byte, mask, data);
+ 
+-		value = (value & mask) | data;
++		if (!bios->execute)
++			continue;
+ 
+-		if (bios->execute) {
+-			msg.addr = i2c_address;
+-			msg.flags = 0;
+-			msg.len = 1;
+-			msg.buf = &value;
+-			if (i2c_transfer(&chan->adapter, &msg, 1) != 1)
+-				return -EIO;
+-		}
++		val.byte &= mask;
++		val.byte |= data;
++		ret = i2c_smbus_xfer(&chan->adapter, i2c_address, 0,
++				     I2C_SMBUS_WRITE, reg,
++				     I2C_SMBUS_BYTE_DATA, &val);
++		if (ret < 0)
++			return ret;
+ 	}
+ 
+ 	return len;
+@@ -1397,12 +1395,11 @@ init_zm_i2c_byte(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 	 */
+ 
+ 	uint8_t i2c_index = bios->data[offset + 1];
+-	uint8_t i2c_address = bios->data[offset + 2];
++	uint8_t i2c_address = bios->data[offset + 2] >> 1;
+ 	uint8_t count = bios->data[offset + 3];
+-	int len = 4 + count * 2;
+ 	struct nouveau_i2c_chan *chan;
+-	struct i2c_msg msg;
+-	int i;
++	int len = 4 + count * 2;
++	int ret, i;
+ 
+ 	if (!iexec->execute)
+ 		return len;
+@@ -1416,20 +1413,22 @@ init_zm_i2c_byte(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 		return -ENODEV;
+ 
+ 	for (i = 0; i < count; i++) {
+-		uint8_t i2c_reg = bios->data[offset + 4 + i * 2];
+-		uint8_t data = bios->data[offset + 5 + i * 2];
++		uint8_t reg = bios->data[offset + 4 + i * 2];
++		union i2c_smbus_data val;
++
++		val.byte = bios->data[offset + 5 + i * 2];
+ 
+ 		BIOSLOG(bios, "0x%04X: I2CReg: 0x%02X, Data: 0x%02X\n",
+-			offset, i2c_reg, data);
+-
+-		if (bios->execute) {
+-			msg.addr = i2c_address;
+-			msg.flags = 0;
+-			msg.len = 1;
+-			msg.buf = &data;
+-			if (i2c_transfer(&chan->adapter, &msg, 1) != 1)
+-				return -EIO;
+-		}
++			offset, reg, val.byte);
++
++		if (!bios->execute)
++			continue;
++
++		ret = i2c_smbus_xfer(&chan->adapter, i2c_address, 0,
++				     I2C_SMBUS_WRITE, reg,
++				     I2C_SMBUS_BYTE_DATA, &val);
++		if (ret < 0)
++			return ret;
+ 	}
+ 
+ 	return len;
+@@ -1453,7 +1452,7 @@ init_zm_i2c(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 	 */
+ 
+ 	uint8_t i2c_index = bios->data[offset + 1];
+-	uint8_t i2c_address = bios->data[offset + 2];
++	uint8_t i2c_address = bios->data[offset + 2] >> 1;
+ 	uint8_t count = bios->data[offset + 3];
+ 	int len = 4 + count;
+ 	struct nouveau_i2c_chan *chan;
+
+commit 03263d4fb9bd500287e5c904ea16227def5a72ee
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Mon May 31 09:04:03 2010 +1000
+
+    drm/nv50: cast IGP memory location to u64 before shifting
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_mem.c b/drivers/gpu/drm/nouveau/nouveau_mem.c
+index 775a701..c1fd42b 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_mem.c
++++ b/drivers/gpu/drm/nouveau/nouveau_mem.c
+@@ -540,7 +540,8 @@ nouveau_mem_detect(struct drm_device *dev)
+ 		dev_priv->vram_size  = nv_rd32(dev, NV04_FIFO_DATA);
+ 		dev_priv->vram_size &= NV10_FIFO_DATA_RAM_AMOUNT_MB_MASK;
+ 		if (dev_priv->chipset == 0xaa || dev_priv->chipset == 0xac)
+-			dev_priv->vram_sys_base = nv_rd32(dev, 0x100e10) << 12;
++			dev_priv->vram_sys_base = nv_rd32(dev, 0x100e10);
++			dev_priv->vram_sys_base <<= 12;
+ 	}
+ 
+ 	NV_INFO(dev, "Detected %dMiB VRAM\n", (int)(dev_priv->vram_size >> 20));
+
+commit e602c3c7e7b3287c400246a69e8c3c080eae623b
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Tue Jun 1 13:40:41 2010 +1000
+
+    drm/nouveau: match U/DP script against SOR link
+    
+    It appears version 0x21 'U' and 'd' tables require us to take the SOR link
+    into account when selecting the appropriate table for a particular output.
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index 8b223ac..c81e14e 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -3773,7 +3773,8 @@ int nouveau_bios_parse_lvds_table(struct drm_device *dev, int pxclk, bool *dl, b
+ 
+ static uint8_t *
+ bios_output_config_match(struct drm_device *dev, struct dcb_entry *dcbent,
+-			 uint16_t record, int record_len, int record_nr)
++			 uint16_t record, int record_len, int record_nr,
++			 bool match_link)
+ {
+ 	struct drm_nouveau_private *dev_priv = dev->dev_private;
+ 	struct nvbios *bios = &dev_priv->vbios;
+@@ -3781,12 +3782,28 @@ bios_output_config_match(struct drm_device *dev, struct dcb_entry *dcbent,
+ 	uint16_t table;
+ 	int i, v;
+ 
++	switch (dcbent->type) {
++	case OUTPUT_TMDS:
++	case OUTPUT_LVDS:
++	case OUTPUT_DP:
++		break;
++	default:
++		match_link = false;
++		break;
++	}
++
+ 	for (i = 0; i < record_nr; i++, record += record_len) {
+ 		table = ROM16(bios->data[record]);
+ 		if (!table)
+ 			continue;
+ 		entry = ROM32(bios->data[table]);
+ 
++		if (match_link) {
++			v = (entry & 0x00c00000) >> 22;
++			if (!(v & dcbent->sorconf.link))
++				continue;
++		}
++
+ 		v = (entry & 0x000f0000) >> 16;
+ 		if (!(v & dcbent->or))
+ 			continue;
+@@ -3828,7 +3845,7 @@ nouveau_bios_dp_table(struct drm_device *dev, struct dcb_entry *dcbent,
+ 	*length = table[4];
+ 	return bios_output_config_match(dev, dcbent,
+ 					bios->display.dp_table_ptr + table[1],
+-					table[2], table[3]);
++					table[2], table[3], table[0] >= 0x21);
+ }
+ 
+ int
+@@ -3917,7 +3934,7 @@ nouveau_bios_run_display_table(struct drm_device *dev, struct dcb_entry *dcbent,
+ 			dcbent->type, dcbent->location, dcbent->or);
+ 	otable = bios_output_config_match(dev, dcbent, table[1] +
+ 					  bios->display.script_table_ptr,
+-					  table[2], table[3]);
++					  table[2], table[3], table[0] >= 0x21);
+ 	if (!otable) {
+ 		NV_ERROR(dev, "Couldn't find matching output script table\n");
+ 		return 1;
+
+commit ef5fb10c26c5447d0d31fc07b6fecee58b20bb81
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Wed Jun 2 10:12:00 2010 +1000
+
+    drm/nv50: fix memory detection for cards with >=4GiB VRAM
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_mem.c b/drivers/gpu/drm/nouveau/nouveau_mem.c
+index c1fd42b..816948b 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_mem.c
++++ b/drivers/gpu/drm/nouveau/nouveau_mem.c
+@@ -536,12 +536,18 @@ nouveau_mem_detect(struct drm_device *dev)
+ 	} else
+ 	if (dev_priv->flags & (NV_NFORCE | NV_NFORCE2)) {
+ 		dev_priv->vram_size = nouveau_mem_detect_nforce(dev);
+-	} else {
++	} else
++	if (dev_priv->card_type < NV_50) {
+ 		dev_priv->vram_size  = nv_rd32(dev, NV04_FIFO_DATA);
+ 		dev_priv->vram_size &= NV10_FIFO_DATA_RAM_AMOUNT_MB_MASK;
+-		if (dev_priv->chipset == 0xaa || dev_priv->chipset == 0xac)
++	} else {
++		dev_priv->vram_size = nv_rd32(dev, NV04_FIFO_DATA);
++		dev_priv->vram_size |= (dev_priv->vram_size & 0xff) << 32;
++		dev_priv->vram_size &= 0xffffffff00;
++		if (dev_priv->chipset == 0xaa || dev_priv->chipset == 0xac) {
+ 			dev_priv->vram_sys_base = nv_rd32(dev, 0x100e10);
+ 			dev_priv->vram_sys_base <<= 12;
++		}
+ 	}
+ 
+ 	NV_INFO(dev, "Detected %dMiB VRAM\n", (int)(dev_priv->vram_size >> 20));
+
+commit 05cf965bf41aa0b1370a78f0b17af8d0939788ca
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Wed Jun 2 10:16:24 2010 +1000
+
+    drm/nouveau: completely fail init if we fail to map the PRAMIN BAR
+    
+    On cards where there's a specific BAR for PRAMIN, we used to try and fall
+    back to the "legacy" aperture within the mmio BAR.
+    
+    This is doomed to cause problems, so lets just fail completely as there's
+    obviously something else very wrong anyway.
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_state.c b/drivers/gpu/drm/nouveau/nouveau_state.c
+index e171064..52fdf0e 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_state.c
++++ b/drivers/gpu/drm/nouveau/nouveau_state.c
+@@ -724,29 +724,24 @@ int nouveau_load(struct drm_device *dev, unsigned long flags)
+ 	NV_INFO(dev, "Detected an NV%2x generation card (0x%08x)\n",
+ 		dev_priv->card_type, reg0);
+ 
+-	/* map larger RAMIN aperture on NV40 cards */
+-	dev_priv->ramin  = NULL;
++	/* Map PRAMIN BAR, or on older cards, the aperture withing BAR0 */
+ 	if (dev_priv->card_type >= NV_40) {
+ 		int ramin_bar = 2;
+ 		if (pci_resource_len(dev->pdev, ramin_bar) == 0)
+ 			ramin_bar = 3;
+ 
+ 		dev_priv->ramin_size = pci_resource_len(dev->pdev, ramin_bar);
+-		dev_priv->ramin = ioremap(
+-				pci_resource_start(dev->pdev, ramin_bar),
++		dev_priv->ramin =
++			ioremap(pci_resource_start(dev->pdev, ramin_bar),
+ 				dev_priv->ramin_size);
+ 		if (!dev_priv->ramin) {
+-			NV_ERROR(dev, "Failed to init RAMIN mapping, "
+-				      "limited instance memory available\n");
++			NV_ERROR(dev, "Failed to PRAMIN BAR");
++			return -ENOMEM;
+ 		}
+-	}
+-
+-	/* On older cards (or if the above failed), create a map covering
+-	 * the BAR0 PRAMIN aperture */
+-	if (!dev_priv->ramin) {
++	} else {
+ 		dev_priv->ramin_size = 1 * 1024 * 1024;
+ 		dev_priv->ramin = ioremap(mmio_start_offs + NV_RAMIN,
+-							dev_priv->ramin_size);
++					  dev_priv->ramin_size);
+ 		if (!dev_priv->ramin) {
+ 			NV_ERROR(dev, "Failed to map BAR0 PRAMIN.\n");
+ 			return -ENOMEM;
+
+commit bbe2be6a60e315586a01de16ff2cfa6c28d2d56e
+Author: Francisco Jerez <currojerez@riseup.net>
+Date:   Thu Jun 17 12:42:14 2010 +0200
+
+    drm/nouveau: Don't clear AGPCMD completely on INIT_RESET.
+    
+    We just need to clear the SBA and ENABLE bits to reset the AGP
+    controller: If the AGP bridge was configured to use "fast writes",
+    clearing the FW bit would break the subsequent MMIO writes and
+    eventually end with a lockup.
+    
+    Note that all the BIOSes I've seen do the same as we did (it works for
+    them because they don't use MMIO), OTOH the blob leaves FW untouched.
+    
+    Signed-off-by: Francisco Jerez <currojerez@riseup.net>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index c81e14e..e64a268 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -2005,7 +2005,8 @@ init_reset(struct nvbios *bios, uint16_t offset, struct init_exec *iexec)
+ 	/* no iexec->execute check by design */
+ 
+ 	pci_nv_19 = bios_rd32(bios, NV_PBUS_PCI_NV_19);
+-	bios_wr32(bios, NV_PBUS_PCI_NV_19, 0);
++	bios_wr32(bios, NV_PBUS_PCI_NV_19, pci_nv_19 & ~0xf00);
++
+ 	bios_wr32(bios, reg, value1);
+ 
+ 	udelay(10);
+
+commit 8b41ef5d549b0f54cc88d8222713c8abeb0b3daf
+Author: Francisco Jerez <currojerez@riseup.net>
+Date:   Sat Jun 19 13:54:48 2010 +0200
+
+    drm/nouveau: Ignore broken legacy I2C entries.
+    
+    The nv05 card in the bug report [1] doesn't have usable I2C port
+    register offsets (they're all filled with zeros). Ignore them and use
+    the defaults.
+    
+    [1] http://bugs.launchpad.net/bugs/569505
+    
+    Signed-off-by: Francisco Jerez <currojerez@riseup.net>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index e64a268..0e2e799 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -5019,10 +5019,14 @@ static int parse_bmp_structure(struct drm_device *dev, struct nvbios *bios, unsi
+ 	bios->legacy.i2c_indices.crt = bios->data[legacy_i2c_offset];
+ 	bios->legacy.i2c_indices.tv = bios->data[legacy_i2c_offset + 1];
+ 	bios->legacy.i2c_indices.panel = bios->data[legacy_i2c_offset + 2];
+-	bios->dcb.i2c[0].write = bios->data[legacy_i2c_offset + 4];
+-	bios->dcb.i2c[0].read = bios->data[legacy_i2c_offset + 5];
+-	bios->dcb.i2c[1].write = bios->data[legacy_i2c_offset + 6];
+-	bios->dcb.i2c[1].read = bios->data[legacy_i2c_offset + 7];
++	if (bios->data[legacy_i2c_offset + 4])
++		bios->dcb.i2c[0].write = bios->data[legacy_i2c_offset + 4];
++	if (bios->data[legacy_i2c_offset + 5])
++		bios->dcb.i2c[0].read = bios->data[legacy_i2c_offset + 5];
++	if (bios->data[legacy_i2c_offset + 6])
++		bios->dcb.i2c[1].write = bios->data[legacy_i2c_offset + 6];
++	if (bios->data[legacy_i2c_offset + 7])
++		bios->dcb.i2c[1].read = bios->data[legacy_i2c_offset + 7];
+ 
+ 	if (bmplength > 74) {
+ 		bios->fmaxvco = ROM32(bmp[67]);
+
+commit 880a9c9abf0a8632ea6fb3dfda4b123945adf7f7
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Sat May 29 03:06:14 2010 +1000
+
+    drm/nv50: use alternate source of SOR_MODE_CTRL for DP hack
+    
+    Fixes module unload+reload on Dell M4500, where the "normal" registers
+    get reset to 0.
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nv50_sor.c b/drivers/gpu/drm/nouveau/nv50_sor.c
+index 0c68698..496a15c 100644
+--- a/drivers/gpu/drm/nouveau/nv50_sor.c
++++ b/drivers/gpu/drm/nouveau/nv50_sor.c
+@@ -274,7 +274,6 @@ static const struct drm_encoder_funcs nv50_sor_encoder_funcs = {
+ int
+ nv50_sor_create(struct drm_device *dev, struct dcb_entry *entry)
+ {
+-	struct drm_nouveau_private *dev_priv = dev->dev_private;
+ 	struct nouveau_encoder *nv_encoder = NULL;
+ 	struct drm_encoder *encoder;
+ 	bool dum;
+@@ -323,11 +322,7 @@ nv50_sor_create(struct drm_device *dev, struct dcb_entry *entry)
+ 	if (nv_encoder->dcb->type == OUTPUT_DP) {
+ 		uint32_t mc, or = nv_encoder->or;
+ 
+-		if (dev_priv->chipset < 0x90 ||
+-		    dev_priv->chipset == 0x92 || dev_priv->chipset == 0xa0)
+-			mc = nv_rd32(dev, NV50_PDISPLAY_SOR_MODE_CTRL_C(or));
+-		else
+-			mc = nv_rd32(dev, NV90_PDISPLAY_SOR_MODE_CTRL_C(or));
++		mc = nv_rd32(dev, 0x61c700 + (or * 0x800));
+ 
+ 		switch ((mc & 0x00000f00) >> 8) {
+ 		case 8:
+
+commit 694ef20c5de0189b771ac8706f07eb2c32960f3f
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Fri May 28 09:39:11 2010 +1000
+
+    drm/nv50: fix duallink_possible calculation for DCB 4.0 cards
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index 0e2e799..755027c 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -5430,12 +5430,6 @@ parse_dcb20_entry(struct drm_device *dev, struct dcb_table *dcb,
+ 	entry->bus = (conn >> 16) & 0xf;
+ 	entry->location = (conn >> 20) & 0x3;
+ 	entry->or = (conn >> 24) & 0xf;
+-	/*
+-	 * Normal entries consist of a single bit, but dual link has the
+-	 * next most significant bit set too
+-	 */
+-	entry->duallink_possible =
+-			((1 << (ffs(entry->or) - 1)) * 3 == entry->or);
+ 
+ 	switch (entry->type) {
+ 	case OUTPUT_ANALOG:
+@@ -5519,6 +5513,16 @@ parse_dcb20_entry(struct drm_device *dev, struct dcb_table *dcb,
+ 		break;
+ 	}
+ 
++	if (dcb->version < 0x40) {
++		/* Normal entries consist of a single bit, but dual link has
++		 * the next most significant bit set too
++		 */
++		entry->duallink_possible =
++			((1 << (ffs(entry->or) - 1)) * 3 == entry->or);
++	} else {
++		entry->duallink_possible = (entry->sorconf.link == 3);
++	}
++
+ 	/* unsure what DCB version introduces this, 3.0? */
+ 	if (conf & 0x100000)
+ 		entry->i2c_upper_default = true;
+
+commit f46b144883bef50163dc808946e22ca896d07211
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Fri May 28 10:04:05 2010 +1000
+
+    drm/nv50: obey dcb->duallink_possible
+    
+    It was once assumed that all G8x had dual-link TMDS everywhere, this isn't
+    actually the case - especially considering passive DP->DVI converters and
+    some HDMI connectors only support single-link.
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_connector.c b/drivers/gpu/drm/nouveau/nouveau_connector.c
+index 14afe1e..966cf44 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_connector.c
++++ b/drivers/gpu/drm/nouveau/nouveau_connector.c
+@@ -593,8 +593,7 @@ nouveau_connector_mode_valid(struct drm_connector *connector,
+ 		break;
+ 	case OUTPUT_TMDS:
+ 		if ((dev_priv->card_type >= NV_50 && !nouveau_duallink) ||
+-		    (dev_priv->card_type < NV_50 &&
+-		     !nv_encoder->dcb->duallink_possible))
++		    !nv_encoder->dcb->duallink_possible)
+ 			max_clock = 165000;
+ 		else
+ 			max_clock = 330000;
+
+commit 4afde239c11329d07e5c9e54551cc1b0caf173b9
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Fri May 28 10:13:16 2010 +1000
+
+    drm/nouveau: fix dual-link displays when plugged into single-link outputs
+    
+    When selecting the native mode for a display we weren't taking into account
+    whether or not it was actually supported on that particular output.
+    
+    This patch modifies our native mode selection to run all modes through
+    mode_valid() first.
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_connector.c b/drivers/gpu/drm/nouveau/nouveau_connector.c
+index 966cf44..abb7b32 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_connector.c
++++ b/drivers/gpu/drm/nouveau/nouveau_connector.c
+@@ -431,24 +431,27 @@ nouveau_connector_set_property(struct drm_connector *connector,
+ }
+ 
+ static struct drm_display_mode *
+-nouveau_connector_native_mode(struct nouveau_connector *connector)
++nouveau_connector_native_mode(struct drm_connector *connector)
+ {
+-	struct drm_device *dev = connector->base.dev;
++	struct drm_connector_helper_funcs *helper = connector->helper_private;
++	struct nouveau_connector *nv_connector = nouveau_connector(connector);
++	struct drm_device *dev = connector->dev;
+ 	struct drm_display_mode *mode, *largest = NULL;
+ 	int high_w = 0, high_h = 0, high_v = 0;
+ 
+-	/* Use preferred mode if there is one.. */
+-	list_for_each_entry(mode, &connector->base.probed_modes, head) {
++	list_for_each_entry(mode, &nv_connector->base.probed_modes, head) {
++		if (helper->mode_valid(connector, mode) != MODE_OK)
++			continue;
++
++		/* Use preferred mode if there is one.. */
+ 		if (mode->type & DRM_MODE_TYPE_PREFERRED) {
+ 			NV_DEBUG_KMS(dev, "native mode from preferred\n");
+ 			return drm_mode_duplicate(dev, mode);
+ 		}
+-	}
+ 
+-	/* Otherwise, take the resolution with the largest width, then height,
+-	 * then vertical refresh
+-	 */
+-	list_for_each_entry(mode, &connector->base.probed_modes, head) {
++		/* Otherwise, take the resolution with the largest width, then
++		 * height, then vertical refresh
++		 */
+ 		if (mode->hdisplay < high_w)
+ 			continue;
+ 
+@@ -552,7 +555,7 @@ nouveau_connector_get_modes(struct drm_connector *connector)
+ 	 */
+ 	if (!nv_connector->native_mode)
+ 		nv_connector->native_mode =
+-			nouveau_connector_native_mode(nv_connector);
++			nouveau_connector_native_mode(connector);
+ 	if (ret == 0 && nv_connector->native_mode) {
+ 		struct drm_display_mode *mode;
+ 
+@@ -583,9 +586,9 @@ nouveau_connector_mode_valid(struct drm_connector *connector,
+ 
+ 	switch (nv_encoder->dcb->type) {
+ 	case OUTPUT_LVDS:
+-		BUG_ON(!nv_connector->native_mode);
+-		if (mode->hdisplay > nv_connector->native_mode->hdisplay ||
+-		    mode->vdisplay > nv_connector->native_mode->vdisplay)
++		if (nv_connector->native_mode &&
++		    (mode->hdisplay > nv_connector->native_mode->hdisplay ||
++		     mode->vdisplay > nv_connector->native_mode->vdisplay))
+ 			return MODE_PANEL;
+ 
+ 		min_clock = 0;
+@@ -727,7 +730,7 @@ nouveau_connector_create_lvds(struct drm_device *dev,
+ 	if (ret == 0)
+ 		goto out;
+ 	nv_connector->detected_encoder = nv_encoder;
+-	nv_connector->native_mode = nouveau_connector_native_mode(nv_connector);
++	nv_connector->native_mode = nouveau_connector_native_mode(connector);
+ 	list_for_each_entry_safe(mode, temp, &connector->probed_modes, head)
+ 		drm_mode_remove(connector, mode);
+ 
+
+commit 7b6800eb2a1965cdc4019df6478273ddb7c1e37b
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Mon May 31 12:00:43 2010 +1000
+
+    drm/nouveau: reduce usage of fence spinlock to when absolutely necessary
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_channel.c b/drivers/gpu/drm/nouveau/nouveau_channel.c
+index 1fc57ef..f9b2acf 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_channel.c
++++ b/drivers/gpu/drm/nouveau/nouveau_channel.c
+@@ -257,9 +257,7 @@ nouveau_channel_free(struct nouveau_channel *chan)
+ 	nouveau_debugfs_channel_fini(chan);
+ 
+ 	/* Give outstanding push buffers a chance to complete */
+-	spin_lock_irqsave(&chan->fence.lock, flags);
+ 	nouveau_fence_update(chan);
+-	spin_unlock_irqrestore(&chan->fence.lock, flags);
+ 	if (chan->fence.sequence != chan->fence.sequence_ack) {
+ 		struct nouveau_fence *fence = NULL;
+ 
+diff --git a/drivers/gpu/drm/nouveau/nouveau_drv.h b/drivers/gpu/drm/nouveau/nouveau_drv.h
+index ace630a..6815b68 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_drv.h
++++ b/drivers/gpu/drm/nouveau/nouveau_drv.h
+@@ -196,7 +196,7 @@ struct nouveau_channel {
+ 		struct list_head pending;
+ 		uint32_t sequence;
+ 		uint32_t sequence_ack;
+-		uint32_t last_sequence_irq;
++		atomic_t last_sequence_irq;
+ 	} fence;
+ 
+ 	/* DMA push buffer */
+@@ -1138,7 +1138,6 @@ extern int nouveau_fence_wait(void *obj, void *arg, bool lazy, bool intr);
+ extern int nouveau_fence_flush(void *obj, void *arg);
+ extern void nouveau_fence_unref(void **obj);
+ extern void *nouveau_fence_ref(void *obj);
+-extern void nouveau_fence_handler(struct drm_device *dev, int channel);
+ 
+ /* nouveau_gem.c */
+ extern int nouveau_gem_new(struct drm_device *, struct nouveau_channel *,
+diff --git a/drivers/gpu/drm/nouveau/nouveau_fence.c b/drivers/gpu/drm/nouveau/nouveau_fence.c
+index faddf53..813d853 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_fence.c
++++ b/drivers/gpu/drm/nouveau/nouveau_fence.c
+@@ -67,12 +67,13 @@ nouveau_fence_update(struct nouveau_channel *chan)
+ 	if (USE_REFCNT)
+ 		sequence = nvchan_rd32(chan, 0x48);
+ 	else
+-		sequence = chan->fence.last_sequence_irq;
++		sequence = atomic_read(&chan->fence.last_sequence_irq);
+ 
+ 	if (chan->fence.sequence_ack == sequence)
+ 		return;
+ 	chan->fence.sequence_ack = sequence;
+ 
++	spin_lock(&chan->fence.lock);
+ 	list_for_each_safe(entry, tmp, &chan->fence.pending) {
+ 		fence = list_entry(entry, struct nouveau_fence, entry);
+ 
+@@ -84,6 +85,7 @@ nouveau_fence_update(struct nouveau_channel *chan)
+ 		if (sequence == chan->fence.sequence_ack)
+ 			break;
+ 	}
++	spin_unlock(&chan->fence.lock);
+ }
+ 
+ int
+@@ -119,7 +121,6 @@ nouveau_fence_emit(struct nouveau_fence *fence)
+ {
+ 	struct drm_nouveau_private *dev_priv = fence->channel->dev->dev_private;
+ 	struct nouveau_channel *chan = fence->channel;
+-	unsigned long flags;
+ 	int ret;
+ 
+ 	ret = RING_SPACE(chan, 2);
+@@ -127,9 +128,7 @@ nouveau_fence_emit(struct nouveau_fence *fence)
+ 		return ret;
+ 
+ 	if (unlikely(chan->fence.sequence == chan->fence.sequence_ack - 1)) {
+-		spin_lock_irqsave(&chan->fence.lock, flags);
+ 		nouveau_fence_update(chan);
+-		spin_unlock_irqrestore(&chan->fence.lock, flags);
+ 
+ 		BUG_ON(chan->fence.sequence ==
+ 		       chan->fence.sequence_ack - 1);
+@@ -138,9 +137,9 @@ nouveau_fence_emit(struct nouveau_fence *fence)
+ 	fence->sequence = ++chan->fence.sequence;
+ 
+ 	kref_get(&fence->refcount);
+-	spin_lock_irqsave(&chan->fence.lock, flags);
++	spin_lock(&chan->fence.lock);
+ 	list_add_tail(&fence->entry, &chan->fence.pending);
+-	spin_unlock_irqrestore(&chan->fence.lock, flags);
++	spin_unlock(&chan->fence.lock);
+ 
+ 	BEGIN_RING(chan, NvSubSw, USE_REFCNT ? 0x0050 : 0x0150, 1);
+ 	OUT_RING(chan, fence->sequence);
+@@ -173,14 +172,11 @@ nouveau_fence_signalled(void *sync_obj, void *sync_arg)
+ {
+ 	struct nouveau_fence *fence = nouveau_fence(sync_obj);
+ 	struct nouveau_channel *chan = fence->channel;
+-	unsigned long flags;
+ 
+ 	if (fence->signalled)
+ 		return true;
+ 
+-	spin_lock_irqsave(&chan->fence.lock, flags);
+ 	nouveau_fence_update(chan);
+-	spin_unlock_irqrestore(&chan->fence.lock, flags);
+ 	return fence->signalled;
+ }
+ 
+@@ -221,27 +217,12 @@ nouveau_fence_flush(void *sync_obj, void *sync_arg)
+ 	return 0;
+ }
+ 
+-void
+-nouveau_fence_handler(struct drm_device *dev, int channel)
+-{
+-	struct drm_nouveau_private *dev_priv = dev->dev_private;
+-	struct nouveau_channel *chan = NULL;
+-
+-	if (channel >= 0 && channel < dev_priv->engine.fifo.channels)
+-		chan = dev_priv->fifos[channel];
+-
+-	if (chan) {
+-		spin_lock_irq(&chan->fence.lock);
+-		nouveau_fence_update(chan);
+-		spin_unlock_irq(&chan->fence.lock);
+-	}
+-}
+-
+ int
+ nouveau_fence_init(struct nouveau_channel *chan)
+ {
+ 	INIT_LIST_HEAD(&chan->fence.pending);
+ 	spin_lock_init(&chan->fence.lock);
++	atomic_set(&chan->fence.last_sequence_irq, 0);
+ 	return 0;
+ }
+ 
+diff --git a/drivers/gpu/drm/nouveau/nv04_graph.c b/drivers/gpu/drm/nouveau/nv04_graph.c
+index e260986..f0cbbc0 100644
+--- a/drivers/gpu/drm/nouveau/nv04_graph.c
++++ b/drivers/gpu/drm/nouveau/nv04_graph.c
+@@ -527,8 +527,7 @@ static int
+ nv04_graph_mthd_set_ref(struct nouveau_channel *chan, int grclass,
+ 			int mthd, uint32_t data)
+ {
+-	chan->fence.last_sequence_irq = data;
+-	nouveau_fence_handler(chan->dev, chan->id);
++	atomic_set(&chan->fence.last_sequence_irq, data);
+ 	return 0;
+ }
+ 
