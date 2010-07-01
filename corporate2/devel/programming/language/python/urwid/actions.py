@@ -12,7 +12,7 @@ from pisi.actionsapi import get
 
 
 exampledir = "%s/%s/examples" % (get.docDIR(), get.srcNAME())
-examples = ["bigtext.py", "browse.py", "calc.py", "dialog.py", "edit.py", "fib.py", "graph.py", "input_test.py", "tour.py"]
+
 
 def build():
     pythonmodules.compile()
@@ -22,7 +22,9 @@ def install():
     pisitools.dohtml("*.html")
     pisitools.dodoc("CHANGELOG")
 
+    examples = filter(lambda x: not (x.startswith("docgen") or x == "setup.py"), shelltools.ls("*.py"))
     for f in examples:
         pisitools.insinto(exampledir, f)
+
     shelltools.chmod("%s/%s/*" % (get.installDIR(), exampledir), 0644)
 
