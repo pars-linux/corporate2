@@ -15,7 +15,7 @@ ldflags = get.LDFLAGS().replace("-Wl,-O1", "")
 
 def setup():
     shelltools.export("LDFLAGS", ldflags)
-    autotools.autoreconf("-fi")
+    autotools.autoreconf("-vfi")
     pisitools.dosed("configure*", "portaudio.h", "PORTAUDIO_DISABLED")
 
     autotools.configure("--localstatedir=/var \
@@ -35,6 +35,9 @@ def build():
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+
+    # needed for lircd pid
+    pisitools.dodir("/var/run/lirc")
 
     # example configs
     pisitools.insinto("/etc", "contrib/lircd.conf", "lircd.conf")
