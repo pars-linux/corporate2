@@ -1,0 +1,78 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>libdbusmenu</Name>
+        <Homepage>https://launchpad.net/dbusmenu</Homepage>
+        <Packager>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Packager>
+        <License>LGPLv3</License>
+        <IsA>library</IsA>
+        <Summary>Library for applications to pass a menu scructure accross DBus</Summary>
+        <Description>libdbusmenu is a small little library that was created by pulling out some common code out of indicator-applet. It passes a menu structure across DBus so that a program can create a menu simply without worrying about how it is displayed on the other side of the bus.</Description>
+        <Archive sha1sum="1e207457159a58534269a84f0ff95872680b50bc" type="targz">http://launchpad.net/dbusmenu/0.3/0.3.3/+download/libdbusmenu-0.3.3.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>gtk2</Dependency>
+            <Dependency>gtk-doc</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch>libdbusmenu-0.2.8-2-optional-tests.patch</Patch>
+            <Patch>libdbusmenu-0.2.8-no-gobject-introspection.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>libdbusmenu-glib</Name>
+        <Files>
+            <Path fileType="header">/usr/include/libdbusmenu-*/libdbusmenu-glib/</Path>
+            <Path fileType="library">/usr/lib/libdbusmenu-glib*</Path>
+            <Path fileType="data">/usr/lib/pkgconfig/dbusmenu-glib.pc</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>libdbusmenu-gtk</Name>
+        <Summary>GTK libraries for libdbusmenu</Summary>
+        <RuntimeDependencies>
+            <Dependency>libdbusmenu-glib</Dependency>
+            <Dependency>gtk2</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="header">/usr/include/libdbusmenu-*/libdbusmenu-gtk/</Path>
+            <Path fileType="library">/usr/lib/libdbusmenu-gtk*</Path>
+            <Path fileType="data">/usr/lib/pkgconfig/dbusmenu-gtk.pc</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>libdbusmenu-tools</Name>
+        <Summary>Some examples for testing libdbusmenu</Summary>
+        <RuntimeDependencies>
+            <Dependency>libdbusmenu-glib</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/usr/libexec</Path>
+            <Path fileType="doc">/usr/share/doc/libdbusmenu/*dbusmenu-bench*</Path>
+        </Files>
+    </Package>
+
+    <History>
+        <Update release="2">
+            <Date>2010-06-29</Date>
+            <Version>0.3.3</Version>
+            <Comment>Version bump to 0.3.3</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2010-04-30</Date>
+            <Version>0.2.9</Version>
+            <Comment>First release.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
