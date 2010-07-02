@@ -831,10 +831,10 @@ index 0000000..9dd1f80
 +}
 diff --git a/dlls/winepulse.drv/wavein.c b/dlls/winepulse.drv/wavein.c
 new file mode 100644
-index 0000000..8aea538
+index 0000000..af721b9
 --- /dev/null
 +++ b/dlls/winepulse.drv/wavein.c
-@@ -0,0 +1,588 @@
+@@ -0,0 +1,589 @@
 +/*
 + * Wine Driver for PulseAudio - WaveIn Functionality
 + * http://pulseaudio.org/
@@ -1157,7 +1157,8 @@ index 0000000..8aea538
 +    TRACE("Asking to open %s for recording.\n", wdi->device_name);
 +    pa_stream_connect_record(wwi->stream, wdi->device_name, &wwi->buffer_attr,
 +                             PA_STREAM_START_CORKED |
-+                             PA_STREAM_AUTO_TIMING_UPDATE);
++                             PA_STREAM_AUTO_TIMING_UPDATE |
++                             PA_STREAM_ADJUST_LATENCY);
 +
 +    for (;;) {
 +        pa_context_state_t cstate = pa_context_get_state(PULSE_context);
@@ -1425,10 +1426,10 @@ index 0000000..8aea538
 +#endif /* HAVE_PULSEAUDIO */
 diff --git a/dlls/winepulse.drv/waveout.c b/dlls/winepulse.drv/waveout.c
 new file mode 100644
-index 0000000..989dff5
+index 0000000..99b7c18
 --- /dev/null
 +++ b/dlls/winepulse.drv/waveout.c
-@@ -0,0 +1,1024 @@
+@@ -0,0 +1,1029 @@
 +/*
 + * Wine Driver for PulseAudio - WaveOut Functionality
 + * http://pulseaudio.org/
@@ -1471,6 +1472,9 @@ index 0000000..989dff5
 +WINE_DEFAULT_DEBUG_CHANNEL(wave);
 +
 +#if HAVE_PULSEAUDIO
++
++/* Use this to make the infinite wait not so infinite */
++#define PULSE_INFINITE 10000
 +
 +/* state diagram for waveOut writing:
 + *
@@ -1628,6 +1632,8 @@ index 0000000..989dff5
 +             * Because of bugs pa_stream_set_buffer_attr() does not work on started
 +             * streams for server version 0.9.11 to 0.9.14 */
 +            PULSE_WaitForOperation(pa_stream_set_buffer_attr(wwo->stream, &wwo->buffer_attr, PULSE_StreamSuccessCallback, wwo));
++	    TRACE("Triggering stream and hoping for the best\n");
++	    PULSE_WaitForOperation(pa_stream_trigger(wwo->stream, PULSE_StreamSuccessCallback, wwo));
 +        }
 +        pa_threaded_mainloop_unlock(PULSE_ml);
 +    }
@@ -1651,8 +1657,8 @@ index 0000000..989dff5
 +             * - we hit the beginning of a running loop
 +             * - we hit a wavehdr which hasn't finished playing
 +             */
-+            if (lpWaveHdr == wwo->lpLoopPtr) { TRACE("loop %p\n", lpWaveHdr); return INFINITE; }
-+            if (lpWaveHdr == wwo->lpPlayPtr) { TRACE("play %p\n", lpWaveHdr); return INFINITE; }
++            if (lpWaveHdr == wwo->lpLoopPtr) { TRACE("loop %p\n", lpWaveHdr); return PULSE_INFINITE; }
++            if (lpWaveHdr == wwo->lpPlayPtr) { TRACE("play %p\n", lpWaveHdr); return PULSE_INFINITE; }
 +
 +            /* See if this data has been played, and if not, return when it will have been */
 +            wait = pa_bytes_to_usec(lpWaveHdr->reserved + lpWaveHdr->dwBufferLength, &wwo->sample_spec);
@@ -1673,7 +1679,7 @@ index 0000000..989dff5
 +    }
 +    /* No more wavehdrs */
 +    TRACE("Empty queue\n");
-+    return INFINITE;
++    return PULSE_INFINITE;
 +}
 +
 +/**************************************************************************
@@ -2041,7 +2047,7 @@ index 0000000..989dff5
 +    /* Try and connect */
 +    TRACE("Connecting stream for playback on %s.\n", wdo->device_name);
 +    pa_threaded_mainloop_lock(PULSE_ml);
-+    pa_stream_connect_playback(wwo->stream, wdo->device_name, NULL, PA_STREAM_AUTO_TIMING_UPDATE | PA_STREAM_ADJUST_LATENCY, NULL, NULL);
++    pa_stream_connect_playback(wwo->stream, wdo->device_name, &wwo->buffer_attr, PA_STREAM_AUTO_TIMING_UPDATE | PA_STREAM_ADJUST_LATENCY, NULL, NULL);
 +
 +    /* Wait for connection */
 +    for (;;) {
