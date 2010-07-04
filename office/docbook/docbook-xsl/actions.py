@@ -12,4 +12,7 @@ def install():
     autotools.rawInstall("DESTDIR=%s/usr/share/sgml/docbook/xsl-stylesheets"
                          % get.installDIR())
 
+    # Don't ship the extensions
+    pisitools.remove("/usr/share/sgml/docbook/xsl-stylesheets/extensions/*")
+
     pisitools.dodoc("AUTHORS", "BUGS", "COPYING", "NEWS", "README", "RELEASE-NOTES.txt", "TODO", "VERSION")

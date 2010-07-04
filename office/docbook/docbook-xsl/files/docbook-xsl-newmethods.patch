@@ -1,15 +1,15 @@
-diff -urNp docbook-xsl-1.72.0/html/docbook.xsl devel/html/docbook.xsl
---- docbook-xsl-1.72.0/html/docbook.xsl	2007-01-21 18:39:03.000000000 +0100
-+++ devel/html/docbook.xsl	2007-06-18 13:19:45.000000000 +0200
-@@ -25,6 +25,7 @@
+diff -ruNp docbook-xsl-1.74.0.orig/html/docbook.xsl docbook-xsl-1.74.0/html/docbook.xsl
+--- docbook-xsl-1.74.0.orig/html/docbook.xsl	2008-06-01 23:36:39.000000000 +0200
++++ docbook-xsl-1.74.0/html/docbook.xsl	2008-08-06 13:37:35.000000000 +0200
+@@ -26,6 +26,7 @@
  <xsl:include href="../VERSION"/>
  <xsl:include href="param.xsl"/>
  <xsl:include href="../lib/lib.xsl"/>
 +<xsl:include href="../lib/dumpfragment.xsl"/>
  <xsl:include href="../common/l10n.xsl"/>
  <xsl:include href="../common/common.xsl"/>
- <xsl:include href="../common/labels.xsl"/>
-@@ -42,6 +43,7 @@
+ <xsl:include href="../common/utility.xsl"/>
+@@ -44,6 +45,7 @@
  <xsl:include href="graphics.xsl"/>
  <xsl:include href="xref.xsl"/>
  <xsl:include href="formal.xsl"/>
@@ -17,10 +17,10 @@ diff -urNp docbook-xsl-1.72.0/html/docbook.xsl devel/html/docbook.xsl
  <xsl:include href="table.xsl"/>
  <xsl:include href="htmltbl.xsl"/>
  <xsl:include href="sections.xsl"/>
-diff -urNp docbook-xsl-1.72.0/html/dtbl.xsl devel/html/dtbl.xsl
---- docbook-xsl-1.72.0/html/dtbl.xsl	1970-01-01 01:00:00.000000000 +0100
-+++ devel/html/dtbl.xsl	2007-06-18 14:00:05.000000000 +0200
-@@ -0,0 +1,292 @@
+diff -ruNp docbook-xsl-1.74.0.orig/html/dtbl.xsl docbook-xsl-1.74.0/html/dtbl.xsl
+--- docbook-xsl-1.74.0.orig/html/dtbl.xsl	1970-01-01 01:00:00.000000000 +0100
++++ docbook-xsl-1.74.0/html/dtbl.xsl	2008-08-06 13:37:35.000000000 +0200
+@@ -0,0 +1,293 @@
 +<?xml version="1.0" encoding="US-ASCII"?>
 +<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 +                xmlns:exsl="http://exslt.org/common"
@@ -201,11 +201,12 @@ diff -urNp docbook-xsl-1.72.0/html/dtbl.xsl devel/html/dtbl.xsl
 +</xsl:template>
 +
 +<xsl:template match="col" mode="dtbl-correct-rounding-error">
++  <xsl:param name="relative.widths.total"/>
 +  <xsl:param name="error"/>
 +
 +  <xsl:element name="col">
 +    <xsl:attribute name="width">
-+      <xsl:value-of select="concat(round((@relwidth div $relative.widths.total) * 100))"/>
++      <xsl:value-of select="concat('', round((@relwidth div $relative.widths.total) * 100))"/>
 +    </xsl:attribute>
 +    <xsl:apply-templates mode="dtbl-use-absolute-widths"/>
 +  </xsl:element>
@@ -313,23 +314,20 @@ diff -urNp docbook-xsl-1.72.0/html/dtbl.xsl devel/html/dtbl.xsl
 +</xsl:template>
 +
 +</xsl:stylesheet>
-diff -urNp docbook-xsl-1.72.0/html/param.xsl devel/html/param.xsl
---- docbook-xsl-1.72.0/html/param.xsl	2007-01-23 13:33:37.000000000 +0100
-+++ devel/html/param.xsl	2007-06-18 13:26:41.000000000 +0200
+diff -ruNp docbook-xsl-1.74.0.orig/html/param.xsl docbook-xsl-1.74.0/html/param.xsl
+--- docbook-xsl-1.74.0.orig/html/param.xsl	2008-06-02 01:06:16.000000000 +0200
++++ docbook-xsl-1.74.0/html/param.xsl	2008-08-06 13:37:35.000000000 +0200
 @@ -64,6 +64,7 @@ div.annotation-close { position: absolut
-                       right: 2px;
-                     }
+                      }
  </xsl:param>
-
+ 
 +<xsl:param name="adjustColumnWidths.debug" select="false()"/>
  <xsl:param name="annotation.js">
  <xsl:text>http://docbook.sourceforge.net/release/script/AnchorPosition.js http://docbook.sourceforge.net/release/script/PopupWindow.js</xsl:text></xsl:param>
  
- <xsl:param name="annotation.graphic.open">http://docbook.sourceforge.net/release/images/annot-open.png</xsl:param>
- <xsl:param name="annotation.graphic.close">
-diff -urNp docbook-xsl-1.72.0/html/table.xsl devel/html/table.xsl
---- docbook-xsl-1.72.0/html/table.xsl	2006-12-06 10:28:33.000000000 +0100
-+++ devel/html/table.xsl	2007-06-18 13:30:00.000000000 +0200
+diff -ruNp docbook-xsl-1.74.0.orig/html/table.xsl docbook-xsl-1.74.0/html/table.xsl
+--- docbook-xsl-1.74.0.orig/html/table.xsl	2008-06-01 23:36:39.000000000 +0200
++++ docbook-xsl-1.74.0/html/table.xsl	2008-08-06 13:37:35.000000000 +0200
 @@ -5,7 +5,8 @@
                  xmlns:xtbl="xalan://com.nwalsh.xalan.Table"
                  xmlns:lxslt="http://xml.apache.org/xslt"
@@ -340,7 +338,7 @@ diff -urNp docbook-xsl-1.72.0/html/table.xsl devel/html/table.xsl
                  version='1.0'>
  
  <xsl:include href="../common/table.xsl"/>
-@@ -373,6 +374,9 @@
+@@ -365,6 +366,9 @@
            <xsl:when test="$use.extensions != 0
                            and $tablecolumns.extension != 0">
              <xsl:choose>
@@ -350,7 +348,7 @@ diff -urNp docbook-xsl-1.72.0/html/table.xsl devel/html/table.xsl
                <xsl:when test="function-available('stbl:convertLength')">
                  <xsl:value-of select="stbl:convertLength($table.width)"/>
                </xsl:when>
-@@ -397,6 +401,9 @@
+@@ -389,6 +393,9 @@
        <xsl:when test="$use.extensions != 0
                        and $tablecolumns.extension != 0">
          <xsl:choose>
@@ -360,9 +358,9 @@ diff -urNp docbook-xsl-1.72.0/html/table.xsl devel/html/table.xsl
            <xsl:when test="function-available('stbl:adjustColumnWidths')">
              <xsl:copy-of select="stbl:adjustColumnWidths($colgroup)"/>
            </xsl:when>
-diff -urNp docbook-xsl-1.72.0/lib/dumpfragment.xsl devel/lib/dumpfragment.xsl
---- docbook-xsl-1.72.0/lib/dumpfragment.xsl	1970-01-01 01:00:00.000000000 +0100
-+++ devel/lib/dumpfragment.xsl	2007-06-18 14:00:52.000000000 +0200
+diff -ruNp docbook-xsl-1.74.0.orig/lib/dumpfragment.xsl docbook-xsl-1.74.0/lib/dumpfragment.xsl
+--- docbook-xsl-1.74.0.orig/lib/dumpfragment.xsl	1970-01-01 01:00:00.000000000 +0100
++++ docbook-xsl-1.74.0/lib/dumpfragment.xsl	2008-08-06 13:37:35.000000000 +0200
 @@ -0,0 +1,30 @@
 +<?xml version="1.0" encoding="US-ASCII"?>
 +<xsl:stylesheet version="1.0"

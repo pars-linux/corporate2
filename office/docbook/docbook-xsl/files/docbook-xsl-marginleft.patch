@@ -1,40 +1,7 @@
---- docbook-xsl-1.68.0/fo/pagesetup.xsl.marginleft	2005-02-09 12:09:37.000000000 +0000
-+++ docbook-xsl-1.68.0/fo/pagesetup.xsl	2005-02-09 14:53:59.088068221 +0000
-@@ -34,29 +34,11 @@
-      margin-left="{$page.margin.outer} - {$title.margin.left}"
- -->
- <xsl:param name="margin.left.outer">
--  <xsl:choose>
--    <xsl:when test="$passivetex.extensions != 0">
--      <xsl:value-of select="$page.margin.outer"/>
--    </xsl:when>
--    <xsl:otherwise>
--      <xsl:value-of select="$page.margin.outer"/>
--      <xsl:text> - </xsl:text>
--      <xsl:value-of select="$title.margin.left"/>
--    </xsl:otherwise>
--  </xsl:choose>
-+  <xsl:value-of select="$page.margin.outer"/>
- </xsl:param>
- 
- <xsl:param name="margin.left.inner">
--  <xsl:choose>
--    <xsl:when test="$passivetex.extensions != 0">
--      <xsl:value-of select="$page.margin.inner"/>
--    </xsl:when>
--    <xsl:otherwise>
--      <xsl:value-of select="$page.margin.inner"/>
--      <xsl:text> - </xsl:text>
--      <xsl:value-of select="$title.margin.left"/>
--    </xsl:otherwise>
--  </xsl:choose>
-+  <xsl:value-of select="$page.margin.inner"/>
- </xsl:param>
- 
- <xsl:template name="setup.pagemasters">
---- docbook-xsl-1.68.0/fo/lists.xsl.marginleft	2005-02-09 12:09:37.000000000 +0000
-+++ docbook-xsl-1.68.0/fo/lists.xsl	2005-02-09 14:55:06.682138599 +0000
-@@ -371,7 +371,7 @@
+diff -ruNp docbook-xsl-1.74.0.orig/fo/lists.xsl docbook-xsl-1.74.0/fo/lists.xsl
+--- docbook-xsl-1.74.0.orig/fo/lists.xsl	2008-06-01 23:36:39.000000000 +0200
++++ docbook-xsl-1.74.0/fo/lists.xsl	2008-08-06 13:32:46.000000000 +0200
+@@ -324,7 +324,7 @@
        </xsl:when>
        <xsl:when test="@termlength">
          <xsl:variable name="termlength.is.number">
@@ -42,8 +9,8 @@
 +          <xsl:value-of select="@termlength"/>
          </xsl:variable>
          <xsl:choose>
-           <xsl:when test="$termlength.is.number = 'NaN'">
-@@ -380,15 +380,7 @@
+           <xsl:when test="string($termlength.is.number) = 'NaN'">
+@@ -333,15 +333,7 @@
            </xsl:when>
            <xsl:otherwise>
              <xsl:value-of select="@termlength"/>
@@ -60,7 +27,7 @@
            </xsl:otherwise>
          </xsl:choose>
        </xsl:when>
-@@ -397,15 +389,7 @@
+@@ -350,15 +342,7 @@
            <xsl:with-param name="terms" select="varlistentry/term"/>
            <xsl:with-param name="maxlength" select="$variablelist.max.termlength"/>
          </xsl:call-template>
@@ -77,7 +44,7 @@
        </xsl:otherwise>
      </xsl:choose>
    </xsl:variable>
-@@ -419,17 +403,7 @@
+@@ -372,17 +356,7 @@
  
    <xsl:variable name="label-separation">1em</xsl:variable>
    <xsl:variable name="distance-between-starts">
@@ -96,16 +63,38 @@
    </xsl:variable>
  
    <xsl:if test="title">
---- docbook-xsl-1.68.0/fo/param.xsl.marginleft	2005-02-09 12:20:55.000000000 +0000
-+++ docbook-xsl-1.68.0/fo/param.xsl	2005-02-09 14:53:59.115063057 +0000
-@@ -95,8 +95,8 @@
+diff -ruNp docbook-xsl-1.74.0.orig/fo/param.xsl docbook-xsl-1.74.0/fo/param.xsl
+--- docbook-xsl-1.74.0.orig/fo/param.xsl	2008-06-02 01:06:18.000000000 +0200
++++ docbook-xsl-1.74.0/fo/param.xsl	2008-08-06 13:32:46.000000000 +0200
+@@ -133,8 +133,8 @@
  <xsl:attribute-set name="component.title.properties">
    <xsl:attribute name="keep-with-next.within-column">always</xsl:attribute>
    <xsl:attribute name="space-before.optimum"><xsl:value-of select="concat($body.font.master, 'pt')"/></xsl:attribute>
 -  <xsl:attribute name="space-before.minimum"><xsl:value-of select="concat($body.font.master, 'pt * 0.8')"/></xsl:attribute>
 -  <xsl:attribute name="space-before.maximum"><xsl:value-of select="concat($body.font.master, 'pt * 1.2')"/></xsl:attribute>
-+  <xsl:attribute name="space-before.minimum"><xsl:value-of select="concat($body.font.master, 'pt')"/></xsl:attribute>
-+  <xsl:attribute name="space-before.maximum"><xsl:value-of select="concat($body.font.master, 'pt')"/></xsl:attribute>
++  <xsl:attribute name="space-before.minimum"><xsl:value-of select="concat($body.font.master*0.8, 'pt')"/></xsl:attribute>
++  <xsl:attribute name="space-before.maximum"><xsl:value-of select="concat($body.font.master*1.2, 'pt')"/></xsl:attribute>
    <xsl:attribute name="hyphenate">false</xsl:attribute>
-   <xsl:attribute name="start-indent">0pt</xsl:attribute>
- </xsl:attribute-set>
+   <xsl:attribute name="text-align">
+     <xsl:choose>
+diff -urNp docbook-xsl-1.75.0-orig/fo/pagesetup.xsl docbook-xsl-1.75.0/fo/pagesetup.xsl
+--- docbook-xsl-1.75.0-orig/fo/pagesetup.xsl	2009-05-11 11:40:49.000000000 +0200
++++ docbook-xsl-1.75.0/fo/pagesetup.xsl	2009-05-11 11:42:29.000000000 +0200
+@@ -30,16 +30,7 @@
+ </xsl:param>
+ 
+ <xsl:param name="margin.left.inner">
+-  <xsl:choose>
+-    <xsl:when test="$passivetex.extensions != 0">
+-      <xsl:value-of select="$page.margin.inner"/>
+-    </xsl:when>
+-    <xsl:otherwise>
+-      <xsl:value-of select="$page.margin.inner"/>
+-      <xsl:text> - </xsl:text>
+-      <xsl:value-of select="$title.margin.left"/>
+-    </xsl:otherwise>
+-  </xsl:choose>
++  <xsl:value-of select="$page.margin.inner"/>
+ </xsl:param>
+ 
+ <xsl:template name="setup.pagemasters">
