@@ -16,16 +16,16 @@ def setup():
     shelltools.export("DEBUG", "-DNDEBUG")
 
     autotools.configure("--enable-readline=yes \
-                         --enable-blkid=yes \
-                         --enable-gettext")
+                         --enable-blkid=yes")
 
 def build():
-    autotools.make("-j1 V=1")
+    autotools.make()
 
 def install():
     autotools.rawInstall("DIST_ROOT=%s" % get.installDIR())
     autotools.rawInstall("DIST_ROOT=%s" % get.installDIR(), "install-dev")
-    autotools.rawInstall("DIST_ROOT=%s" % get.installDIR(), "install-qa")
+    # Needed for building the QA testsuite
+    #autotools.rawInstall("DIST_ROOT=%s" % get.installDIR(), "install-qa")
 
     # Nuke static libraries
     pisitools.remove("/lib/libhandle.a")
