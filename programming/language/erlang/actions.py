@@ -31,7 +31,7 @@ def setup():
                          --with-ssl")
 
 def build():
-    #autotools.make("-j1")
+    autotools.make()
 
     # Building documentation needs escript from erlang package
     shelltools.export("PATH", "%s:%s/bin" % (os.environ.get("PATH"), get.curDIR()))
@@ -58,8 +58,3 @@ def install():
               "erts-5.7.5/man",
               "misc"):
         pisitools.remove("/usr/lib/erlang/%s" % d)
-
-
-    # Install man pages
-    #pisitools.doman("man/man1/*")
-    #pisitools.doman("man/man3/*")
