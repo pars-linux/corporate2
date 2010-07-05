@@ -24,7 +24,7 @@ def extensions():
     configure_with = [
         'bz2', 'curl', 'iconv', 'mysql', 'mysqli', 'kerberos', 'sqlite', 'mime-magic',
         'xsl', 'curlwrappers', 'gdbm', 'db4', 'ldap', 'gd', 'ttf', 'gettext',
-        'ncurses', 'regex=php', 'pic', 'pcre-regex', 'pgsql'
+        'ncurses', 'regex=php', 'pic', 'pcre-regex', 'pgsql', 'pdo-mysql', 'pdo-pgsql'
     ]
     configure_without = []
 
