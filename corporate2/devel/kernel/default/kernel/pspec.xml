@@ -34,22 +34,16 @@
             <!-- dvb-core: Fix DoS bug in ULE decapsulation code (CVE-2010-1086) (#12631) -->
             <!-- tty: release_one_tty() forgets to put pids (CVE-2010-1162) (#12774) -->
             <!-- oom: fix the unsafe usage of badness() in proc_oom_score() (CVE-2010-1488) (#12778) -->
-            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.14.bz2</Patch>
+            <!-- gfs2: Fix permissions checking for setflags ioctl() (CVE-2010-1641) (#13291) -->
+            <!-- btrfs: prevent users from setting ACLs on files they do not own (CVE-2010-2071) (#13492) -->
+            <!-- sctp: crash due to malformed SCTPChunkInit packet (CVE-2010-1173) (#12914) -->
+            <!-- KEYS: find_keyring_by_name() can gain access to a freed keyring (#12915)  -->
+            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.16.bz2</Patch>
 
             <!-- Security patches -->
 
-            <!-- gfs2: Fix permissions checking for setflags ioctl() (CVE-2010-1641) (#13291) -->
-            <Patch level="1">kernel/linux-2.6.git-7df0e0397b9-gfs2-fix-permission-checking-setflags-ioctl.patch</Patch>
-
-            <!-- btrfs: prevent users from setting ACLs on files they do not own (CVE-2010-2071) (#13492) -->
-            <Patch level="1">kernel/linux-2.6.git-2f26afba-btrfs-check-setfacl.patch</Patch>
-
             <!-- ext4: Make sure the MOVE_EXT ioctl can't overwrite append-only files (CVE-2010-2066) (#13452) -->
             <Patch level="1">kernel/linux-2.6.git-1f5a81e41-ext4-MOVE_EXT-ioctl.patch</Patch>
-
-            <!-- KEYS: find_keyring_by_name() can gain access to a freed keyring (#12915)  -->
-            <Patch level="1">kernel/linux-2.6.git-cea7daa3589d6b550546a8c8963599f7c1a3ae5c.patch</Patch>
-
 
             <!-- FIXME: Squashfs-lzma support (There's a cleaner patch for this in LKML) -->
             <Patch level="1">squashfs/squashfs-devel-add-lzma-support.patch</Patch>
@@ -101,9 +95,6 @@
             <!-- btrfs: Fix ACL -->
             <Patch level="1">fedora/linux-2.6-btrfs-fix-acl.patch</Patch>
 
-            <!-- wireless: report reasonable bitrate for MCS rates through wext -->
-            <Patch level="1">fedora/linux-2.6-wireless_-report-reasonable-bitrate-for-MCS-rates-through-wext.patch</Patch>
-
             <!-- Add LIRC support -->
             <Patch level="1">fedora/lirc-2.6.32.patch</Patch>
 
@@ -146,6 +137,7 @@
 
 
             <!-- DRM patches -->
+            <!--
             <Patch level="1">drm/add-list_sort.patch</Patch>
             <Patch level="1">drm/i2c-algo-bit-Add-pre-and-post-xfer-hooks.patch</Patch>
             <Patch level="1">drm/2.6.34-base.patch</Patch>
@@ -160,14 +152,16 @@
             <Patch level="1">drm/fedora/drm_nouveau_ucode.patch</Patch>
 
             <Patch level="1">drm/fedora/linux-2.6-acpi-video-export-edid.patch</Patch>
-            <!--
-            <Patch level="1">drm/fedora/drm-nouveau-acpi-edid-fallback.patch</Patch>
             -->
 
+            <!--<Patch level="1">drm/fedora/drm-nouveau-acpi-edid-fallback.patch</Patch>-->
+
+            <!--
             <Patch level="1">drm/fedora/drm-intel-big-hammer.patch</Patch>
             <Patch level="1">drm/fedora/drm-intel-make-lvds-work.patch</Patch>
             <Patch level="1">drm/fedora/linux-2.6-intel-iommu-igfx.patch</Patch>
             <Patch level="1">drm/fedora/drm-intel-gen5-dither.patch</Patch>
+            -->
 
             <!-- Use the same resolution when switching from vesafb to KMS -->
             <Patch level="1">drm/pardus/kms-use-vesafb-mode.patch</Patch>
@@ -328,8 +322,10 @@
             <Patch level="1">pardus/logo-vga16.patch</Patch>
             <Patch level="1">pardus/logo-mono.patch</Patch>
 
-            <!-- Remove 2 PCI ID from tulip driver as they work with dmfe (Fixes #4216)-->
+            <!-- Remove 2 PCI ID from tulip driver as they work with dmfe (Fixes #4216)
+                 Seems fixed with 2.6.32.16
             <Patch level="1">pardus/tulip_patch.patch</Patch>
+            -->
 
             <!-- Fallback to vesa 640x480x16 on undefined video mode number (Fixes #7117)-->
             <Patch level="1">pardus/vesa_fallback_on_fail.patch</Patch>
@@ -436,6 +432,24 @@
     </Package>
 
     <History>
+        <Update release="140">
+            <Date>2010-07-05</Date>
+            <Version>2.6.32.16</Version>
+            <Comment>
+                - Version bump to 2.6.32.16,
+                - drm/i915: Add more edp fixes,
+                - drm: Add fixes from 2.6.34 stable queue,
+                - drm/nouveau: Add fixes from nouveau/master,
+                - drm/i915: Fix edp panels on a number of notebooks,
+                - sctp: crash due to malformed SCTPChunkInit packet (CVE-2010-1173) (#12914),
+            </Comment>
+            <Type package="kernel">security</Type>
+            <Requires>
+                <Action package="kernel">systemRestart</Action>
+            </Requires>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="139">
             <Date>2010-05-31</Date>
             <Version>2.6.32.14</Version>
