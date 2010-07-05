@@ -1,0 +1,620 @@
+diff -up efibootmgr-0.5.4/src/lib/efi.c.driver efibootmgr-0.5.4/src/lib/efi.c
+--- efibootmgr-0.5.4/src/lib/efi.c.driver	2008-03-06 15:45:17.000000000 -0500
++++ efibootmgr-0.5.4/src/lib/efi.c	2008-03-06 15:49:54.000000000 -0500
+@@ -170,6 +170,26 @@ create_or_edit_variable(efi_variable_t *
+ }
+ 
+ static int
++select_driver_var_names(const struct dirent *d)
++{
++	if (!strncmp(d->d_name, "Driver", 6) &&
++	    isxdigit(d->d_name[6]) && isxdigit(d->d_name[7]) &&
++	    isxdigit(d->d_name[8]) && isxdigit(d->d_name[9]) &&
++	    d->d_name[10] == '-')
++		return 1;
++	return 0;
++}
++
++int
++read_driver_var_names(struct dirent ***namelist)
++{
++	if (!fs_kernel_calls || !namelist) return -1;
++	return scandir(fs_kernel_calls->path,
++		       namelist, select_driver_var_names,
++		       alphasort);
++}
++
++static int
+ select_boot_var_names(const struct dirent *d)
+ {
+ 	if (!strncmp(d->d_name, "Boot", 4) &&
+@@ -189,7 +209,6 @@ read_boot_var_names(struct dirent ***nam
+ 		       alphasort);
+ }
+ 
+-
+ static int
+ get_edd_version()
+ {
+@@ -763,7 +782,7 @@ append_extra_args(void *data, unsigned l
+ 
+ int
+ make_linux_efi_variable(efi_variable_t *var,
+-			unsigned int free_number)
++			unsigned int free_number, int driver)
+ {
+ 	efi_guid_t guid = EFI_GLOBAL_VARIABLE;
+ 	char buffer[16];
+@@ -773,7 +792,7 @@ make_linux_efi_variable(efi_variable_t *
+ 	memset(buffer,    0, sizeof(buffer));
+ 
+ 	/* VariableName needs to be BootXXXX */
+-	sprintf(buffer, "Boot%04X", free_number);
++	sprintf(buffer, driver ? "Driver%04X" : "Boot%04X", free_number);
+ 
+ 	efichar_from_char(var->VariableName, buffer, 1024);
+ 
+diff -up efibootmgr-0.5.4/src/include/efi.h.driver efibootmgr-0.5.4/src/include/efi.h
+--- efibootmgr-0.5.4/src/include/efi.h.driver	2008-03-06 15:48:38.000000000 -0500
++++ efibootmgr-0.5.4/src/include/efi.h	2008-03-06 15:50:18.000000000 -0500
+@@ -352,7 +352,7 @@ struct efivar_kernel_calls {
+ /* Exported functions */
+ 
+ extern int make_linux_efi_variable(efi_variable_t *var,
+-			    unsigned int free_number);
++			    unsigned int free_number, int driver);
+ extern char * efi_guid_unparse(efi_guid_t *guid, char *out);
+ extern EFI_DEVICE_PATH *load_option_path(EFI_LOAD_OPTION *option);
+ 
+@@ -363,6 +363,7 @@ extern efi_status_t delete_variable(efi_
+ extern efi_status_t create_or_edit_variable(efi_variable_t *var);
+ 
+ extern void set_fs_kernel_calls();
++extern int read_driver_var_names(struct dirent ***namelist);
+ extern int read_boot_var_names(struct dirent ***namelist);
+ extern int variable_to_name(efi_variable_t *var, char *name);
+ extern int var_name_to_path(const char *name, char *path);
+diff -up efibootmgr-0.5.4/src/include/efibootmgr.h.driver efibootmgr-0.5.4/src/include/efibootmgr.h
+--- efibootmgr-0.5.4/src/include/efibootmgr.h.driver	2008-03-06 16:21:55.000000000 -0500
++++ efibootmgr-0.5.4/src/include/efibootmgr.h	2008-03-06 16:22:17.000000000 -0500
+@@ -52,6 +52,7 @@ typedef struct {
+ 	unsigned int forcegpt:1;
+ 	unsigned int set_timeout:1;
+ 	unsigned int delete_timeout:1;
++        unsigned int driver:1;
+ 	unsigned short int timeout;
+ } efibootmgr_opt_t;
+ 
+diff -up efibootmgr-0.5.4/src/man/man8/efibootmgr.8.driver efibootmgr-0.5.4/src/man/man8/efibootmgr.8
+--- efibootmgr-0.5.4/src/man/man8/efibootmgr.8.driver	2008-03-06 15:44:32.000000000 -0500
++++ efibootmgr-0.5.4/src/man/man8/efibootmgr.8	2008-03-06 17:03:55.000000000 -0500
+@@ -53,6 +53,9 @@ Create new variable bootnum and add to b
+ The disk containing the loader (defaults to 
+ \fI/dev/sda\fR)
+ .TP
++\fB-D | --driver\fR
++Operate on Driver#### and DriverOrder instead of Boot#### and BootOrder
++.TP
+ \fB-e | --edd \fI1|3|-1\fB\fR
+ Force EDD 1.0 or 3.0 creation variables, or guess.
+ .TP
+diff -up efibootmgr-0.5.4/src/efibootmgr/efibootmgr.c.driver efibootmgr-0.5.4/src/efibootmgr/efibootmgr.c
+--- efibootmgr-0.5.4/src/efibootmgr/efibootmgr.c.driver	2008-03-06 15:44:14.000000000 -0500
++++ efibootmgr-0.5.4/src/efibootmgr/efibootmgr.c	2008-03-06 16:59:04.000000000 -0500
+@@ -65,6 +65,7 @@ typedef struct _var_entry {
+ 
+ 
+ /* global variables */
++static  LIST_HEAD(driver_entry_list);
+ static	LIST_HEAD(boot_entry_list);
+ static	LIST_HEAD(blk_list);
+ efibootmgr_opt_t opts;
+@@ -216,7 +217,7 @@ find_free_boot_var(list_t *boot_list)
+ 
+ 
+ static void
+-warn_duplicate_name(list_t *boot_list)
++warn_duplicate_name(list_t *boot_list, int driver)
+ {
+ 	list_t *pos;
+ 	var_entry_t *boot;
+@@ -228,7 +229,9 @@ warn_duplicate_name(list_t *boot_list)
+ 			boot->var_data.Data;
+ 		if (!efichar_char_strcmp(opts.label,
+ 					 load_option->description)) {
+-			fprintf(stderr, "** Warning ** : %.8s has same label %s\n",
++			fprintf(stderr, driver
++				? "** Warning ** : %.10s has same label %s\n"
++				: "** Warning ** : %.8s has same label %s\n",
+ 			       boot->name->d_name,
+ 			       opts.label);
+ 		}
+@@ -237,7 +240,7 @@ warn_duplicate_name(list_t *boot_list)
+ 
+ 
+ static var_entry_t *
+-make_boot_var(list_t *boot_list)
++make_var(list_t *boot_list, int driver)
+ {
+ 	var_entry_t *boot;
+ 	int free_number;
+@@ -267,7 +270,7 @@ make_boot_var(list_t *boot_list)
+ 	if (!boot) return NULL;
+ 	memset(boot, 0, sizeof(*boot));
+ 	boot->num = free_number;
+-	if (!make_linux_efi_variable(&boot->var_data, free_number)) {
++	if (!make_linux_efi_variable(&boot->var_data, free_number, driver)) {
+ 		free(boot);
+ 		return NULL;
+ 	}
+@@ -289,30 +292,30 @@ read_boot(efi_variable_t *var, const cha
+ }
+ 
+ static efi_status_t
+-read_boot_order(efi_variable_t *boot_order)
++read_order(efi_variable_t *boot_order, int driver)
+ {
+ 	efi_status_t status;
+ 
+-	status = read_boot(boot_order, "BootOrder");
++	status = read_boot(boot_order, driver ? "DriverOrder" : "BootOrder");
+ 	if (status != EFI_SUCCESS && status != EFI_NOT_FOUND)
+ 		return status;
+ 
+ 	if (status == EFI_NOT_FOUND) {
+-		fill_var(boot_order, "BootOrder");
++		fill_var(boot_order, driver ? "DriverOrder" : "BootOrder");
+ 	}
+ 	return EFI_SUCCESS;
+ }
+ 
+ 
+ static efi_status_t
+-add_to_boot_order(uint16_t num)
++add_to_order(uint16_t num, int driver)
+ {
+ 	efi_status_t status;
+ 	efi_variable_t boot_order;
+ 	uint64_t new_data_size;
+ 	uint16_t *new_data, *old_data;
+ 
+-	status = read_boot_order(&boot_order);
++	status = read_order(&boot_order, driver);
+ 	if (status != EFI_SUCCESS) return status;
+ 
+ 	/* We've now got an array (in boot_order.Data) of the
+@@ -333,7 +336,7 @@ add_to_boot_order(uint16_t num)
+ 
+ 
+ static efi_status_t
+-remove_from_boot_order(uint16_t num)
++remove_from_order(uint16_t num, int driver)
+ {
+ 	efi_status_t status;
+ 	efi_variable_t boot_order;
+@@ -342,13 +345,13 @@ remove_from_boot_order(uint16_t num)
+ 	int old_i,new_i;
+ 	char boot_order_name[PATH_MAX];
+ 
+-	status = read_boot_order(&boot_order);
++	status = read_order(&boot_order, driver);
+ 	if (status != EFI_SUCCESS) return status;
+ 	/* If it's empty, yea! */
+ 	if (!boot_order.DataSize) return EFI_SUCCESS;
+ 
+ 	fill_bootvar_name(boot_order_name, sizeof(boot_order_name),
+-			  "BootOrder");
++			  driver ? "DriverOrder" : "BootOrder");
+ 
+ 	/* We've now got an array (in boot_order.Data) of the
+ 	   boot order.  Simply copy the array, skipping the
+@@ -415,7 +418,7 @@ set_boot_u16(const char *name, uint16_t 
+ }
+ 
+ static efi_status_t
+-delete_boot_var(uint16_t num)
++delete_boot_var(uint16_t num, int driver)
+ {
+ 	efi_status_t status;
+ 	efi_variable_t var;
+@@ -423,28 +426,33 @@ delete_boot_var(uint16_t num)
+ 	list_t *pos, *n;
+ 	var_entry_t *boot;
+ 
+-	snprintf(name, sizeof(name), "Boot%04X", num);
++	snprintf(name, sizeof(name), driver ? "Driver%04X" : "Boot%04X", num);
+ 	memset(&var, 0, sizeof(var));
+ 	fill_var(&var, name);
+ 	status = delete_variable(&var);
+ 
+ 	/* For backwards compatibility, try to delete abcdef entries as well */
+ 	if (status) {
+-		snprintf(name, sizeof(name), "Boot%04x", num);
++		snprintf(name, sizeof(name), driver ? "Driver%04X" : "Boot%04x",
++                                             num);
+ 		memset(&var, 0, sizeof(var));
+ 		fill_var(&var, name);
+ 		status = delete_variable(&var);
+ 	}
+ 
+ 	if (status) {
+-		fprintf (stderr,"\nboot entry: %X not found\n\n",num);
++		fprintf (stderr,"\n%s entry: %X not found\n\n",
++				driver ? "driver" : "boot", num);
+ 		return status;
+ 	}
+-	list_for_each_safe(pos, n, &boot_entry_list) {
++	list_for_each_safe(pos, n, driver ? &driver_entry_list
++                                          : &boot_entry_list) {
+ 		boot = list_entry(pos, var_entry_t, list);
+ 		if (boot->num == num) {
+-			status = remove_from_boot_order(num);
+-			if (status) return status;
++                        if (!driver) {
++			    status = remove_from_order(num, driver);
++			    if (status) return status;
++                        }
+ 			list_del(&(boot->list));
+ 			break; /* short-circuit since it was found */
+ 		}
+@@ -468,13 +476,28 @@ set_var_nums(const char *pattern, list_t
+ 		if (rc == 1) {
+ 			var->num = num;
+ 			name = var->name->d_name; /* shorter name */
+-			if ((isalpha(name[4]) && islower(name[4])) ||
+-			    (isalpha(name[5]) && islower(name[5])) ||
+-			    (isalpha(name[6]) && islower(name[6])) ||
+-			    (isalpha(name[7]) && islower(name[7]))) {
+-				fprintf(stderr, "** Warning ** : %.8s is not "
+-				        "EFI 1.10 compliant (lowercase hex in name)\n", name);
+-				warn++;
++			if (!strncmp(name, "Boot", 4)) {
++				if ((isalpha(name[4]) && islower(name[4])) ||
++				    (isalpha(name[5]) && islower(name[5])) ||
++				    (isalpha(name[6]) && islower(name[6])) ||
++				    (isalpha(name[7]) && islower(name[7]))) {
++					fprintf(stderr, "** Warning ** : %.8s "
++						"is not EFI 1.10 compliant "
++						"(lowercase hex in name)\n",
++						name);
++					warn++;
++				}
++			} else if (!strncmp(name, "Driver", 6)) {
++				if ((isalpha(name[6]) && islower(name[6])) ||
++				    (isalpha(name[7]) && islower(name[7])) ||
++				    (isalpha(name[8]) && islower(name[8])) ||
++				    (isalpha(name[9]) && islower(name[9]))) {
++					fprintf(stderr, "** Warning ** : %.10s "
++						"is not EFI 1.10 compliant "
++						"(lowercase hex in name)\n",
++						name);
++					warn++;
++				}
+ 			}
+ 		}
+ 	}
+@@ -574,10 +597,10 @@ find_disk_blk(char *disk_name, list_t *b
+ #endif
+ 
+ static void
+-unparse_boot_order(uint16_t *order, int length)
++unparse_order(uint16_t *order, int length, int driver)
+ {
+ 	int i;
+-	printf("BootOrder: ");
++	printf("%s: ", driver ? "DriverOrder" : "BootOrder");
+ 	for (i=0; i<length; i++) {
+ 		printf("%04X", order[i]);
+ 		if (i < (length-1))
+@@ -587,12 +610,12 @@ unparse_boot_order(uint16_t *order, int 
+ }
+ 
+ static int
+-is_current_boot_entry(int b)
++is_current_entry(int b, int driver)
+ {
+ 	list_t *pos;
+ 	var_entry_t *boot;
+ 
+-	list_for_each(pos, &boot_entry_list) {
++	list_for_each(pos, driver ? &driver_entry_list : &boot_entry_list) {
+ 		boot = list_entry(pos, var_entry_t, list);
+ 		if (boot->num == b)
+ 			return 1;
+@@ -602,7 +625,7 @@ is_current_boot_entry(int b)
+ 
+ 
+ static int
+-parse_boot_order(char *buffer, uint16_t *order, int length)
++parse_order(char *buffer, uint16_t *order, int length, int driver)
+ {
+ 	int i;
+ 	int num, rc;
+@@ -611,12 +634,13 @@ parse_boot_order(char *buffer, uint16_t 
+ 		rc = sscanf(buffer, "%x", &num);
+ 		if (rc == 1) order[i] = num & 0xFFFF;
+ 		else {
+-			fprintf(stderr,"\nInvalid hex characters in boot order: %s\n\n",buffer);
++			fprintf(stderr,"\nInvalid hex characters in %s order: %s\n\n",buffer, driver ? "driver" : "boot");
+ 			return -1;
+ 		}
+ 		/* make sure this is an existing boot entry */
+-		if (!is_current_boot_entry(order[i])) {
+-			fprintf (stderr,"\nboot entry %X does not exist\n\n",order[i]);
++		if (!is_current_entry(order[i], driver)) {
++			fprintf (stderr,"\n%s entry %X does not exist\n\n",
++					driver ? "driver" : "boot", order[i]);
+ 			return -1;
+ 		}
+ 
+@@ -629,7 +653,7 @@ parse_boot_order(char *buffer, uint16_t 
+ }
+ 
+ static efi_status_t
+-set_boot_order()
++set_order(int driver)
+ {
+ 	efi_variable_t boot_order;
+ 	uint16_t *n = (uint16_t *)boot_order.Data;
+@@ -637,9 +661,9 @@ set_boot_order()
+ 	if (!opts.bootorder) return EFI_SUCCESS;
+ 
+ 	memset(&boot_order, 0, sizeof(boot_order));
+-	fill_var(&boot_order, "BootOrder");
++	fill_var(&boot_order, driver ? "DriverOrder" : "BootOrder");
+ 
+-	boot_order.DataSize = parse_boot_order(opts.bootorder, n, 1024/sizeof(uint16_t)) * sizeof(uint16_t);
++	boot_order.DataSize = parse_order(opts.bootorder, n, 1024/sizeof(uint16_t), driver) * sizeof(uint16_t);
+ 	if (boot_order.DataSize < 0)
+ 		return 1;
+ 	else
+@@ -647,7 +671,7 @@ set_boot_order()
+ }
+ 
+ static void
+-show_boot_vars()
++show_vars(list_t *list)
+ {
+ 	list_t *pos;
+ 	var_entry_t *boot;
+@@ -657,7 +681,7 @@ show_boot_vars()
+ 	char text_path[1024], *p;
+ 	unsigned long optional_data_len=0;
+ 
+-	list_for_each(pos, &boot_entry_list) {
++	list_for_each(pos, list) {
+ 		boot = list_entry(pos, var_entry_t, list);
+ 		load_option = (EFI_LOAD_OPTION *)
+ 			boot->var_data.Data;
+@@ -665,10 +689,15 @@ show_boot_vars()
+ 				load_option->description, sizeof(description));
+ 		memset(text_path, 0, sizeof(text_path));
+ 		path = load_option_path(load_option);
+-		if (boot->name)
+-			printf("%.8s", boot->name->d_name);
+-		else
+-			printf("Boot%04X", boot->num);
++		if (boot->name) {
++			if (boot->name->d_name[0] == 'B')
++				printf("%.8s", boot->name->d_name);
++			else
++				printf("%.10s", boot->name->d_name);
++		} else {
++			printf(boot->name->d_name[0] == 'B' ?
++					"Driver%04X" : "Boot%04X", boot->num);
++		}
+ 
+ 		if (load_option->attributes & LOAD_OPTION_ACTIVE)
+ 			printf("* ");
+@@ -700,16 +729,16 @@ show_boot_vars()
+ 
+ 
+ static void
+-show_boot_order()
++show_order(int driver)
+ {
+ 	efi_status_t status;
+ 	efi_variable_t boot_order;
+ 	uint16_t *data;
+ 
+-	status = read_boot_order(&boot_order);
++	status = read_order(&boot_order, driver);
+ 
+ 	if (status != EFI_SUCCESS) {
+-		perror("show_boot_order()");
++		perror("show_order()");
+ 		return;
+ 	}
+ 
+@@ -718,18 +747,19 @@ show_boot_order()
+ 	*/
+ 	data = (uint16_t *)&(boot_order.Data);
+ 	if (boot_order.DataSize)
+-		unparse_boot_order(data, boot_order.DataSize / sizeof(uint16_t));
++		unparse_order(data, boot_order.DataSize / sizeof(uint16_t),
++				driver);
+ 
+ }
+ 
+ static efi_status_t
+-set_active_state()
++set_active_state(int driver)
+ {
+ 	list_t *pos;
+ 	var_entry_t *boot;
+ 	EFI_LOAD_OPTION *load_option;
+ 
+-	list_for_each(pos, &boot_entry_list) {
++	list_for_each(pos, driver ? &driver_entry_list : &boot_entry_list) {
+ 		boot = list_entry(pos, var_entry_t, list);
+ 		load_option = (EFI_LOAD_OPTION *)
+ 			boot->var_data.Data;
+@@ -756,7 +786,8 @@ set_active_state()
+ 		}
+ 	}
+ 	/* if we reach here then the bootnumber supplied was not found */
+-	fprintf(stderr,"\nboot entry %x not found\n\n",opts.bootnum);
++	fprintf(stderr,"\n%s entry %x not found\n\n", driver ?"driver" :"boot",
++			opts.bootnum);
+ 	return EFI_NOT_FOUND;
+ }
+ 
+@@ -774,6 +805,7 @@ usage()
+ 	printf("\t-B | --delete-bootnum delete bootnum (hex)\n");
+ 	printf("\t-c | --create         create new variable bootnum and add to bootorder\n");
+ 	printf("\t-d | --disk disk       (defaults to /dev/sda) containing loader\n");
++	printf("\t-D | --driver         modify driver entry instead of boot entry\n");
+ 	printf("\t-e | --edd [1|3|-1]   force EDD 1.0 or 3.0 creation variables, or guess\n");
+ 	printf("\t-E | --device num      EDD 1.0 device number (defaults to 0x80)\n");
+ 	printf("\t-g | --gpt            force disk with invalid PMBR to be treated as GPT\n");
+@@ -806,6 +838,7 @@ set_default_opts()
+ 	opts.bootnext        = -1;   /* Don't set it */
+ 	opts.active          = -1;   /* Don't set it */
+ 	opts.timeout         = -1;   /* Don't set it */
++        opts.driver	     = 0;
+ 	opts.edd10_devicenum = 0x80;
+ 	opts.loader          = "\\elilo.efi";
+ 	opts.label           = "Linux";
+@@ -833,6 +866,7 @@ parse_opts(int argc, char **argv)
+ 			{"delete-bootnum",         no_argument, 0, 'B'},
+ 			{"create",                 no_argument, 0, 'c'},
+ 			{"disk",             required_argument, 0, 'd'},
++			{"driver",		   no_argument, 0, 'D'},
+ 			{"iface",            required_argument, 0, 'i'},
+ 			{"acpi_hid",         required_argument, 0, 'H'},
+ 			{"edd-device",       required_argument, 0, 'E'},
+@@ -860,7 +894,7 @@ parse_opts(int argc, char **argv)
+ 		};
+ 
+ 		c = getopt_long (argc, argv,
+-				 "AaBb:cd:e:E:gH:i:l:L:n:No:Op:qt:TuU:v::Vw@:",
++				 "AaBb:cd:De:E:gH:i:l:L:n:No:Op:qt:TuU:v::Vw@:",
+ 				 long_options, &option_index);
+ 		if (c == -1)
+ 			break;
+@@ -893,6 +927,9 @@ parse_opts(int argc, char **argv)
+ 		case 'd':
+ 			opts.disk = optarg;
+ 			break;
++                case 'D':
++                        opts.driver = 1;
++                        break;
+ 		case 'e':
+ 			rc = sscanf(optarg, "%d", &num);
+ 			if (rc == 1) opts.edd_version = num;
+@@ -1048,6 +1085,9 @@ main(int argc, char **argv)
+ 		num_boot_names = read_boot_var_names(&boot_names);
+ 		read_vars(boot_names, num_boot_names, &boot_entry_list);
+ 		set_var_nums("Boot%04X-%*s", &boot_entry_list);
++		num_boot_names = read_driver_var_names(&boot_names);
++		read_vars(boot_names, num_boot_names, &driver_entry_list);
++		set_var_nums("Driver%04X-%*s", &driver_entry_list);
+ 
+ 		if (opts.delete_boot) {
+ 			if (opts.bootnum == -1) {
+@@ -1055,7 +1095,7 @@ main(int argc, char **argv)
+ 				return 1;
+ 			}
+ 			else
+-				ret = delete_boot_var(opts.bootnum);
++				ret = delete_boot_var(opts.bootnum, opts.driver);
+ 		}
+ 
+ 		if (opts.active >= 0) {
+@@ -1064,42 +1104,56 @@ main(int argc, char **argv)
+ 				return 1;
+ 			}
+ 			else
+-				ret=set_active_state();
++				ret=set_active_state(opts.driver);
+ 		}
+ 	}
+ 
+ 	if (opts.create) {
+-		warn_duplicate_name(&boot_entry_list);
+-		new_boot = make_boot_var(&boot_entry_list);
++		if (opts.driver) {
++			warn_duplicate_name(&driver_entry_list, opts.driver);
++			new_boot = make_var(&driver_entry_list, opts.driver);
++		} else {
++			warn_duplicate_name(&boot_entry_list, opts.driver);
++			new_boot = make_var(&boot_entry_list, opts.driver);
++		}
++
+ 		if (!new_boot)
+ 			return 1;
+ 
+ 		/* Put this boot var in the right BootOrder */
+ 		if (!opts.testfile && new_boot)
+-			ret=add_to_boot_order(new_boot->num);
++			ret=add_to_order(new_boot->num, opts.driver);
+ 	}
+ 
+ 	if (!opts.testfile) {
+ 
+ 		if (opts.delete_bootorder) {
+-			ret=delete_var("BootOrder");
++			ret=delete_var(opts.driver ?"DriverOrder" :"BootOrder");
+ 		}
+ 
+ 		if (opts.bootorder) {
+-			ret=set_boot_order();
++			ret=set_order(opts.driver);
+ 		}
+ 
++		if (opts.driver) {
++			if (opts.delete_timeout || opts.set_timeout) {
++				fprintf(stderr, "\nTimeout is not compatible with -D.\n\n");
++				return 1;
++			}
++			if (opts.bootnext >= 0 || opts.delete_bootnext) {
++				fprintf(stderr, "\nBootNext is not compatible with -D.\n\n");
++				return 1;
++			}
++		}
+ 
+-		if (opts.delete_bootnext) {
++		if (opts.delete_bootnext)
+ 			ret=delete_var("BootNext");
+-		}
+ 
+-		if (opts.delete_timeout) {
++		if (opts.delete_timeout)
+ 			ret=delete_var("Timeout");
+-		}
+ 
+ 		if (opts.bootnext >= 0) {
+-			if (!is_current_boot_entry(opts.bootnext & 0xFFFF)){
++			if (!is_current_entry(opts.bootnext & 0xFFFF, 0)){
+ 				fprintf (stderr,"\n\nboot entry %X does not exist\n\n",
+ 					opts.bootnext);
+ 				return 1;
+@@ -1107,9 +1161,8 @@ main(int argc, char **argv)
+ 			ret=set_boot_u16("BootNext", opts.bootnext & 0xFFFF);
+ 		}
+ 
+-		if (opts.set_timeout) {
++		if (opts.set_timeout)
+ 			ret=set_boot_u16("Timeout", opts.timeout);
+-		}
+ 
+ 		if (!opts.quiet && ret == 0) {
+ 			num = read_boot_u16("BootNext");
+@@ -1124,12 +1177,15 @@ main(int argc, char **argv)
+ 			if (num != -1) {
+ 				printf("Timeout: %u seconds\n", num);
+ 			}
+-			show_boot_order();
+-			show_boot_vars();
++			show_order(0);
++			show_vars(&boot_entry_list);
++			show_order(1);
++			show_vars(&driver_entry_list);
+ 		}
+ 	}
+ 	free_dirents(boot_names, num_boot_names);
+ 	free_vars(&boot_entry_list);
++	free_vars(&driver_entry_list);
+ 	if (ret)
+ 		return 1;
+ 	return 0;

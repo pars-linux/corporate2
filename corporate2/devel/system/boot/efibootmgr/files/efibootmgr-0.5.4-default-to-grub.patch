@@ -1,0 +1,44 @@
+From 836e58668167e82c5ffcb66f3f390d2c52217f6a Mon Sep 17 00:00:00 2001
+From: Peter Jones <pjones@redhat.com>
+Date: Wed, 14 Apr 2010 16:06:48 -0400
+Subject: [PATCH] Make \EFI\redhat\grub.efi the default bootloader (#579665)
+
+Make \EFI\redhat\grub.efi the default bootloader instead of \elilo.efi .
+---
+ src/efibootmgr/efibootmgr.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/efibootmgr/efibootmgr.c b/src/efibootmgr/efibootmgr.c
+index 5db0d9e..b984143 100644
+--- a/src/efibootmgr/efibootmgr.c
++++ b/src/efibootmgr/efibootmgr.c
+@@ -18,7 +18,7 @@
+     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+ 
+-  This must tie the EFI_DEVICE_PATH to /boot/efi/elilo.efi
++  This must tie the EFI_DEVICE_PATH to /boot/efi/EFI/redhat/grub.efi
+   The  EFI_DEVICE_PATH will look something like:
+     ACPI device path, length 12 bytes
+     Hardware Device Path, PCI, length 6 bytes
+@@ -779,7 +779,7 @@ usage()
+ 	printf("\t-g | --gpt            force disk with invalid PMBR to be treated as GPT\n");
+ 	printf("\t-H | --acpi_hid XXXX  set the ACPI HID (used with -i)\n");
+ 	printf("\t-i | --iface name     create a netboot entry for the named interface\n");
+-	printf("\t-l | --loader name     (defaults to \\elilo.efi)\n");
++	printf("\t-l | --loader name     (defaults to \\EFI\\pardus\\grub.efi)\n");
+ 	printf("\t-L | --label label     Boot manager display label (defaults to \"Linux\")\n");
+ 	printf("\t-n | --bootnext XXXX   set BootNext to XXXX (hex)\n");
+ 	printf("\t-N | --delete-bootnext delete BootNext\n");
+@@ -807,7 +807,7 @@ set_default_opts()
+ 	opts.active          = -1;   /* Don't set it */
+ 	opts.timeout         = -1;   /* Don't set it */
+ 	opts.edd10_devicenum = 0x80;
+-	opts.loader          = "\\elilo.efi";
++	opts.loader          = "\\EFI\\pardus\\grub.efi";
+ 	opts.label           = "Linux";
+ 	opts.disk            = "/dev/sda";
+ 	opts.iface           = NULL;
+-- 
+1.7.0.1
+
