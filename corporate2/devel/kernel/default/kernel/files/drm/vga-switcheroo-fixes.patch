@@ -1,0 +1,234 @@
+commit 36e619a83061f1c3e9507b289c02143465d52506
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Wed Apr 7 13:55:09 2010 +1000
+
+    drm/nouveau: attempt to get bios from ACPI v3
+    
+    Some of the laptops with the switchable graphics, seem to not post the secondary GPU at all, and we can't find a copy of the BIOS anywhere except in the ACPI rom retrieval.
+    
+    This adds support for ACPI ROM retrieval to nouveau.
+    
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_acpi.c b/drivers/gpu/drm/nouveau/nouveau_acpi.c
+index e13f6af..b3f146a 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_acpi.c
++++ b/drivers/gpu/drm/nouveau/nouveau_acpi.c
+@@ -35,6 +35,7 @@ static struct nouveau_dsm_priv {
+ 	bool dsm_detected;
+ 	acpi_handle dhandle;
+ 	acpi_handle dsm_handle;
++	acpi_handle rom_handle;
+ } nouveau_dsm_priv;
+ 
+ static const char nouveau_dsm_muid[] = {
+@@ -151,12 +152,13 @@ static bool nouveau_dsm_pci_probe(struct pci_dev *pdev)
+ 	dhandle = DEVICE_ACPI_HANDLE(&pdev->dev);
+ 	if (!dhandle)
+ 		return false;
++
+ 	status = acpi_get_handle(dhandle, "_DSM", &nvidia_handle);
+ 	if (ACPI_FAILURE(status)) {
+ 		return false;
+ 	}
+ 
+-	ret= nouveau_dsm(nvidia_handle, NOUVEAU_DSM_SUPPORTED,
++	ret = nouveau_dsm(nvidia_handle, NOUVEAU_DSM_SUPPORTED,
+ 			 NOUVEAU_DSM_SUPPORTED_FUNCTIONS, &result);
+ 	if (ret < 0)
+ 		return false;
+@@ -173,6 +175,7 @@ static bool nouveau_dsm_detect(void)
+ 	struct pci_dev *pdev = NULL;
+ 	int has_dsm = 0;
+ 	int vga_count = 0;
++
+ 	while ((pdev = pci_get_class(PCI_CLASS_DISPLAY_VGA << 8, pdev)) != NULL) {
+ 		vga_count++;
+ 
+@@ -204,3 +207,57 @@ void nouveau_unregister_dsm_handler(void)
+ {
+ 	vga_switcheroo_unregister_handler();
+ }
++
++/* retrieve the ROM in 4k blocks */
++static int nouveau_rom_call(acpi_handle rom_handle, uint8_t *bios,
++			    int offset, int len)
++{
++	acpi_status status;
++	union acpi_object rom_arg_elements[2], *obj;
++	struct acpi_object_list rom_arg;
++	struct acpi_buffer buffer = { ACPI_ALLOCATE_BUFFER, NULL};
++
++	rom_arg.count = 2;
++	rom_arg.pointer = &rom_arg_elements[0];
++
++	rom_arg_elements[0].type = ACPI_TYPE_INTEGER;
++	rom_arg_elements[0].integer.value = offset;
++
++	rom_arg_elements[1].type = ACPI_TYPE_INTEGER;
++	rom_arg_elements[1].integer.value = len;
++
++	status = acpi_evaluate_object(rom_handle, NULL, &rom_arg, &buffer);
++	if (ACPI_FAILURE(status)) {
++		printk(KERN_INFO "failed to evaluate ROM got %s\n", acpi_format_exception(status));
++		return -ENODEV;
++	}
++	obj = (union acpi_object *)buffer.pointer;
++	memcpy(bios+offset, obj->buffer.pointer, len);
++	kfree(buffer.pointer);
++	return len;
++}
++
++bool nouveau_acpi_rom_supported(struct pci_dev *pdev)
++{
++	acpi_status status;
++	acpi_handle dhandle, rom_handle;
++
++	if (!nouveau_dsm_priv.dsm_detected)
++		return false;
++
++	dhandle = DEVICE_ACPI_HANDLE(&pdev->dev);
++	if (!dhandle)
++		return false;
++
++	status = acpi_get_handle(dhandle, "_ROM", &rom_handle);
++	if (ACPI_FAILURE(status))
++		return false;
++
++	nouveau_dsm_priv.rom_handle = rom_handle;
++	return true;
++}
++
++int nouveau_acpi_get_bios_chunk(uint8_t *bios, int offset, int len)
++{
++	return nouveau_rom_call(nouveau_dsm_priv.rom_handle, bios, offset, len);
++}
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index 1cbdce4..4ceec16 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -177,6 +177,25 @@ out:
+ 	pci_disable_rom(dev->pdev);
+ }
+ 
++static void load_vbios_acpi(struct drm_device *dev, uint8_t *data)
++{
++	int i;
++	int ret;
++	int size = 64 * 1024;
++
++	if (!nouveau_acpi_rom_supported(dev->pdev))
++		return;
++
++	for (i = 0; i < (size / ROM_BIOS_PAGE); i++) {
++		ret = nouveau_acpi_get_bios_chunk(data,
++						  (i * ROM_BIOS_PAGE),
++						  ROM_BIOS_PAGE);
++		if (ret <= 0)
++			break;
++	}
++	return;
++}
++
+ struct methods {
+ 	const char desc[8];
+ 	void (*loadbios)(struct drm_device *, uint8_t *);
+@@ -190,6 +209,7 @@ static struct methods nv04_methods[] = {
+ };
+ 
+ static struct methods nv50_methods[] = {
++	{ "ACPI", load_vbios_acpi, true },
+ 	{ "PRAMIN", load_vbios_pramin, true },
+ 	{ "PROM", load_vbios_prom, false },
+ 	{ "PCIROM", load_vbios_pci, true },
+diff --git a/drivers/gpu/drm/nouveau/nouveau_drv.h b/drivers/gpu/drm/nouveau/nouveau_drv.h
+index 784fd14..d226213 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_drv.h
++++ b/drivers/gpu/drm/nouveau/nouveau_drv.h
+@@ -847,12 +847,17 @@ extern int  nouveau_dma_init(struct nouveau_channel *);
+ extern int  nouveau_dma_wait(struct nouveau_channel *, int slots, int size);
+ 
+ /* nouveau_acpi.c */
++#define ROM_BIOS_PAGE 4096
+ #if defined(CONFIG_ACPI)
+ void nouveau_register_dsm_handler(void);
+ void nouveau_unregister_dsm_handler(void);
++int nouveau_acpi_get_bios_chunk(uint8_t *bios, int offset, int len);
++bool nouveau_acpi_rom_supported(struct pci_dev *pdev);
+ #else
+ static inline void nouveau_register_dsm_handler(void) {}
+ static inline void nouveau_unregister_dsm_handler(void) {}
++static inline bool nouveau_acpi_rom_supported(struct pci_dev *pdev) { return false; }
++static inline int nouveau_acpi_get_bios_chunk(uint8_t *bios, int offset, int len) { return -EINVAL; }
+ #endif
+ 
+ /* nouveau_backlight.c */
+
+commit 0a8f96f1db582a70e74e9edcf9bbb77e5cc66ea7
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Mon May 31 17:10:52 2010 +1000
+
+    drm/nouveau: fixup confusion over which handle the DSM is hanging off.
+    
+    This fixes the DSM setup correctly since vga switcheroo.
+    
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_acpi.c b/drivers/gpu/drm/nouveau/nouveau_acpi.c
+index b3f146a..d4bcca8 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_acpi.c
++++ b/drivers/gpu/drm/nouveau/nouveau_acpi.c
+@@ -34,7 +34,6 @@
+ static struct nouveau_dsm_priv {
+ 	bool dsm_detected;
+ 	acpi_handle dhandle;
+-	acpi_handle dsm_handle;
+ 	acpi_handle rom_handle;
+ } nouveau_dsm_priv;
+ 
+@@ -108,9 +107,9 @@ static int nouveau_dsm_set_discrete_state(acpi_handle handle, enum vga_switchero
+ static int nouveau_dsm_switchto(enum vga_switcheroo_client_id id)
+ {
+ 	if (id == VGA_SWITCHEROO_IGD)
+-		return nouveau_dsm_switch_mux(nouveau_dsm_priv.dsm_handle, NOUVEAU_DSM_LED_STAMINA);
++		return nouveau_dsm_switch_mux(nouveau_dsm_priv.dhandle, NOUVEAU_DSM_LED_STAMINA);
+ 	else
+-		return nouveau_dsm_switch_mux(nouveau_dsm_priv.dsm_handle, NOUVEAU_DSM_LED_SPEED);
++		return nouveau_dsm_switch_mux(nouveau_dsm_priv.dhandle, NOUVEAU_DSM_LED_SPEED);
+ }
+ 
+ static int nouveau_dsm_power_state(enum vga_switcheroo_client_id id,
+@@ -119,7 +118,7 @@ static int nouveau_dsm_power_state(enum vga_switcheroo_client_id id,
+ 	if (id == VGA_SWITCHEROO_IGD)
+ 		return 0;
+ 
+-	return nouveau_dsm_set_discrete_state(nouveau_dsm_priv.dsm_handle, state);
++	return nouveau_dsm_set_discrete_state(nouveau_dsm_priv.dhandle, state);
+ }
+ 
+ static int nouveau_dsm_init(void)
+@@ -158,13 +157,12 @@ static bool nouveau_dsm_pci_probe(struct pci_dev *pdev)
+ 		return false;
+ 	}
+ 
+-	ret = nouveau_dsm(nvidia_handle, NOUVEAU_DSM_SUPPORTED,
+-			 NOUVEAU_DSM_SUPPORTED_FUNCTIONS, &result);
++	ret = nouveau_dsm(dhandle, NOUVEAU_DSM_SUPPORTED,
++			  NOUVEAU_DSM_SUPPORTED_FUNCTIONS, &result);
+ 	if (ret < 0)
+ 		return false;
+ 
+ 	nouveau_dsm_priv.dhandle = dhandle;
+-	nouveau_dsm_priv.dsm_handle = nvidia_handle;
+ 	return true;
+ }
+ 
+@@ -183,7 +181,7 @@ static bool nouveau_dsm_detect(void)
+ 	}
+ 
+ 	if (vga_count == 2 && has_dsm) {
+-		acpi_get_name(nouveau_dsm_priv.dsm_handle, ACPI_FULL_PATHNAME, &buffer);
++		acpi_get_name(nouveau_dsm_priv.dhandle, ACPI_FULL_PATHNAME, &buffer);
+ 		printk(KERN_INFO "VGA switcheroo: detected DSM switching method %s handle\n",
+ 		       acpi_method_name);
+ 		nouveau_dsm_priv.dsm_detected = true;

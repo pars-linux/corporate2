@@ -1842,7 +1842,7 @@ index a75ca63..4a66201 100644
  		if (cmd & IOC_OUT) {
  			if (copy_to_user((void __user *)arg, kdata,
 diff --git a/drivers/gpu/drm/drm_edid.c b/drivers/gpu/drm/drm_edid.c
-index 8fb1346..18f41d7 100644
+index 259ec21..10348d3 100644
 --- a/drivers/gpu/drm/drm_edid.c
 +++ b/drivers/gpu/drm/drm_edid.c
 @@ -27,6 +27,7 @@
@@ -7603,7 +7603,7 @@ index aafbef7..6e47900 100644
  #define PRIMARY_RINGBUFFER_SIZE         (128*1024)
  
 diff --git a/drivers/gpu/drm/i915/i915_gem.c b/drivers/gpu/drm/i915/i915_gem.c
-index aa8a4e9..ef3d91d 100644
+index df6f7c9..691701a 100644
 --- a/drivers/gpu/drm/i915/i915_gem.c
 +++ b/drivers/gpu/drm/i915/i915_gem.c
 @@ -31,6 +31,7 @@
@@ -8525,7 +8525,7 @@ index aa8a4e9..ef3d91d 100644
  	struct drm_mm_node *free_space;
  	gfp_t gfpmask =  __GFP_NORETRY | __GFP_NOWARN;
  	int ret;
-@@ -2705,7 +2778,7 @@ i915_gem_object_bind_to_gtt(struct drm_gem_object *obj, unsigned alignment)
+@@ -2713,7 +2786,7 @@ i915_gem_object_bind_to_gtt(struct drm_gem_object *obj, unsigned alignment)
  void
  i915_gem_clflush_object(struct drm_gem_object *obj)
  {
@@ -8534,7 +8534,7 @@ index aa8a4e9..ef3d91d 100644
  
  	/* If we don't have a page list set up, then we're not pinned
  	 * to GPU, and we can ignore the cache flush because it'll happen
-@@ -2724,7 +2797,6 @@ static void
+@@ -2732,7 +2805,6 @@ static void
  i915_gem_object_flush_gpu_write_domain(struct drm_gem_object *obj)
  {
  	struct drm_device *dev = obj->dev;
@@ -8542,7 +8542,7 @@ index aa8a4e9..ef3d91d 100644
  	uint32_t old_write_domain;
  
  	if ((obj->write_domain & I915_GEM_GPU_DOMAINS) == 0)
-@@ -2733,9 +2805,8 @@ i915_gem_object_flush_gpu_write_domain(struct drm_gem_object *obj)
+@@ -2741,9 +2813,8 @@ i915_gem_object_flush_gpu_write_domain(struct drm_gem_object *obj)
  	/* Queue the GPU write cache flushing we need. */
  	old_write_domain = obj->write_domain;
  	i915_gem_flush(dev, 0, obj->write_domain);
@@ -8553,7 +8553,7 @@ index aa8a4e9..ef3d91d 100644
  
  	trace_i915_gem_object_change_domain(obj,
  					    obj->read_domains,
-@@ -2783,6 +2854,22 @@ i915_gem_object_flush_cpu_write_domain(struct drm_gem_object *obj)
+@@ -2791,6 +2862,22 @@ i915_gem_object_flush_cpu_write_domain(struct drm_gem_object *obj)
  					    old_write_domain);
  }
  
@@ -8576,7 +8576,7 @@ index aa8a4e9..ef3d91d 100644
  /**
   * Moves a single object to the GTT read, and possibly write domain.
   *
-@@ -2792,7 +2879,7 @@ i915_gem_object_flush_cpu_write_domain(struct drm_gem_object *obj)
+@@ -2800,7 +2887,7 @@ i915_gem_object_flush_cpu_write_domain(struct drm_gem_object *obj)
  int
  i915_gem_object_set_to_gtt_domain(struct drm_gem_object *obj, int write)
  {
@@ -8585,7 +8585,7 @@ index aa8a4e9..ef3d91d 100644
  	uint32_t old_write_domain, old_read_domains;
  	int ret;
  
-@@ -2842,7 +2929,7 @@ int
+@@ -2850,7 +2937,7 @@ int
  i915_gem_object_set_to_display_plane(struct drm_gem_object *obj)
  {
  	struct drm_device *dev = obj->dev;
@@ -8594,7 +8594,7 @@ index aa8a4e9..ef3d91d 100644
  	uint32_t old_write_domain, old_read_domains;
  	int ret;
  
-@@ -3055,7 +3142,7 @@ static void
+@@ -3063,7 +3150,7 @@ static void
  i915_gem_object_set_to_gpu_domain(struct drm_gem_object *obj)
  {
  	struct drm_device		*dev = obj->dev;
@@ -8603,7 +8603,7 @@ index aa8a4e9..ef3d91d 100644
  	uint32_t			invalidate_domains = 0;
  	uint32_t			flush_domains = 0;
  	uint32_t			old_read_domains;
-@@ -3140,7 +3227,7 @@ i915_gem_object_set_to_gpu_domain(struct drm_gem_object *obj)
+@@ -3148,7 +3235,7 @@ i915_gem_object_set_to_gpu_domain(struct drm_gem_object *obj)
  static void
  i915_gem_object_set_to_full_cpu_read_domain(struct drm_gem_object *obj)
  {
@@ -8612,7 +8612,7 @@ index aa8a4e9..ef3d91d 100644
  
  	if (!obj_priv->page_cpu_valid)
  		return;
-@@ -3180,7 +3267,7 @@ static int
+@@ -3188,7 +3275,7 @@ static int
  i915_gem_object_set_cpu_read_domain_range(struct drm_gem_object *obj,
  					  uint64_t offset, uint64_t size)
  {
@@ -8621,7 +8621,7 @@ index aa8a4e9..ef3d91d 100644
  	uint32_t old_read_domains;
  	int i, ret;
  
-@@ -3244,20 +3331,44 @@ i915_gem_object_set_cpu_read_domain_range(struct drm_gem_object *obj,
+@@ -3252,20 +3339,44 @@ i915_gem_object_set_cpu_read_domain_range(struct drm_gem_object *obj,
  static int
  i915_gem_object_pin_and_relocate(struct drm_gem_object *obj,
  				 struct drm_file *file_priv,
@@ -8668,7 +8668,7 @@ index aa8a4e9..ef3d91d 100644
  	entry->offset = obj_priv->gtt_offset;
  
  	/* Apply the relocations, using the GTT aperture to avoid cache
-@@ -3276,7 +3387,7 @@ i915_gem_object_pin_and_relocate(struct drm_gem_object *obj,
+@@ -3284,7 +3395,7 @@ i915_gem_object_pin_and_relocate(struct drm_gem_object *obj,
  			i915_gem_object_unpin(obj);
  			return -EBADF;
  		}
@@ -8677,7 +8677,7 @@ index aa8a4e9..ef3d91d 100644
  
  #if WATCH_RELOC
  		DRM_INFO("%s: obj %p offset %08x target %d "
-@@ -3305,6 +3416,16 @@ i915_gem_object_pin_and_relocate(struct drm_gem_object *obj,
+@@ -3313,6 +3424,16 @@ i915_gem_object_pin_and_relocate(struct drm_gem_object *obj,
  		}
  
  		/* Validate that the target is in a valid r/w GPU domain */
@@ -8694,7 +8694,7 @@ index aa8a4e9..ef3d91d 100644
  		if (reloc->write_domain & I915_GEM_DOMAIN_CPU ||
  		    reloc->read_domains & I915_GEM_DOMAIN_CPU) {
  			DRM_ERROR("reloc with read/write CPU domains: "
-@@ -3419,7 +3540,7 @@ i915_gem_object_pin_and_relocate(struct drm_gem_object *obj,
+@@ -3427,7 +3548,7 @@ i915_gem_object_pin_and_relocate(struct drm_gem_object *obj,
   */
  static int
  i915_dispatch_gem_execbuffer(struct drm_device *dev,
@@ -8703,7 +8703,7 @@ index aa8a4e9..ef3d91d 100644
  			      struct drm_clip_rect *cliprects,
  			      uint64_t exec_offset)
  {
-@@ -3509,7 +3630,7 @@ i915_gem_ring_throttle(struct drm_device *dev, struct drm_file *file_priv)
+@@ -3517,7 +3638,7 @@ i915_gem_ring_throttle(struct drm_device *dev, struct drm_file *file_priv)
  }
  
  static int
@@ -8712,7 +8712,7 @@ index aa8a4e9..ef3d91d 100644
  			      uint32_t buffer_count,
  			      struct drm_i915_gem_relocation_entry **relocs)
  {
-@@ -3524,8 +3645,10 @@ i915_gem_get_relocs_from_user(struct drm_i915_gem_exec_object *exec_list,
+@@ -3532,8 +3653,10 @@ i915_gem_get_relocs_from_user(struct drm_i915_gem_exec_object *exec_list,
  	}
  
  	*relocs = drm_calloc_large(reloc_count, sizeof(**relocs));
@@ -8724,7 +8724,7 @@ index aa8a4e9..ef3d91d 100644
  
  	for (i = 0; i < buffer_count; i++) {
  		struct drm_i915_gem_relocation_entry __user *user_relocs;
-@@ -3549,13 +3672,16 @@ i915_gem_get_relocs_from_user(struct drm_i915_gem_exec_object *exec_list,
+@@ -3557,13 +3680,16 @@ i915_gem_get_relocs_from_user(struct drm_i915_gem_exec_object *exec_list,
  }
  
  static int
@@ -8742,7 +8742,7 @@ index aa8a4e9..ef3d91d 100644
  	for (i = 0; i < buffer_count; i++) {
  		struct drm_i915_gem_relocation_entry __user *user_relocs;
  		int unwritten;
-@@ -3582,7 +3708,7 @@ err:
+@@ -3590,7 +3716,7 @@ err:
  }
  
  static int
@@ -8751,7 +8751,7 @@ index aa8a4e9..ef3d91d 100644
  			   uint64_t exec_offset)
  {
  	uint32_t exec_start, exec_len;
-@@ -3599,22 +3725,57 @@ i915_gem_check_execbuffer (struct drm_i915_gem_execbuffer *exec,
+@@ -3607,22 +3733,57 @@ i915_gem_check_execbuffer (struct drm_i915_gem_execbuffer *exec,
  	return 0;
  }
  
@@ -8816,7 +8816,7 @@ index aa8a4e9..ef3d91d 100644
  
  #if WATCH_EXEC
  	DRM_INFO("buffers_ptr %d buffer_count %d len %08x\n",
-@@ -3625,31 +3786,21 @@ i915_gem_execbuffer(struct drm_device *dev, void *data,
+@@ -3633,31 +3794,21 @@ i915_gem_execbuffer(struct drm_device *dev, void *data,
  		DRM_ERROR("execbuf with %d buffers\n", args->buffer_count);
  		return -EINVAL;
  	}
@@ -8854,7 +8854,7 @@ index aa8a4e9..ef3d91d 100644
  
  		ret = copy_from_user(cliprects,
  				     (struct drm_clip_rect __user *)
-@@ -3672,38 +3823,49 @@ i915_gem_execbuffer(struct drm_device *dev, void *data,
+@@ -3680,38 +3831,49 @@ i915_gem_execbuffer(struct drm_device *dev, void *data,
  	i915_verify_inactive(dev, __FILE__, __LINE__);
  
  	if (atomic_read(&dev_priv->mm.wedged)) {
@@ -8907,7 +8907,7 @@ index aa8a4e9..ef3d91d 100644
  	}
  
  	/* Pin and relocate */
-@@ -3812,7 +3974,7 @@ i915_gem_execbuffer(struct drm_device *dev, void *data,
+@@ -3820,7 +3982,7 @@ i915_gem_execbuffer(struct drm_device *dev, void *data,
  
  	for (i = 0; i < args->buffer_count; i++) {
  		struct drm_gem_object *obj = object_list[i];
@@ -8916,7 +8916,7 @@ index aa8a4e9..ef3d91d 100644
  		uint32_t old_write_domain = obj->write_domain;
  
  		obj->write_domain = obj->pending_write_domain;
-@@ -3887,7 +4049,7 @@ err:
+@@ -3895,7 +4057,7 @@ err:
  
  	for (i = 0; i < args->buffer_count; i++) {
  		if (object_list[i]) {
@@ -8925,7 +8925,7 @@ index aa8a4e9..ef3d91d 100644
  			obj_priv->in_execbuffer = false;
  		}
  		drm_gem_object_unreference(object_list[i]);
-@@ -3895,8 +4057,101 @@ err:
+@@ -3903,8 +4065,101 @@ err:
  
  	mutex_unlock(&dev->struct_mutex);
  
@@ -9027,7 +9027,7 @@ index aa8a4e9..ef3d91d 100644
  		ret = copy_to_user((struct drm_i915_relocation_entry __user *)
  				   (uintptr_t) args->buffers_ptr,
  				   exec_list,
-@@ -3909,25 +4164,62 @@ err:
+@@ -3917,25 +4172,62 @@ err:
  		}
  	}
  
@@ -9105,7 +9105,7 @@ index aa8a4e9..ef3d91d 100644
  	return ret;
  }
  
-@@ -3935,7 +4227,7 @@ int
+@@ -3943,7 +4235,7 @@ int
  i915_gem_object_pin(struct drm_gem_object *obj, uint32_t alignment)
  {
  	struct drm_device *dev = obj->dev;
@@ -9114,7 +9114,7 @@ index aa8a4e9..ef3d91d 100644
  	int ret;
  
  	i915_verify_inactive(dev, __FILE__, __LINE__);
-@@ -3944,19 +4236,7 @@ i915_gem_object_pin(struct drm_gem_object *obj, uint32_t alignment)
+@@ -3963,19 +4255,7 @@ i915_gem_object_pin(struct drm_gem_object *obj, uint32_t alignment)
  		if (ret)
  			return ret;
  	}
@@ -9135,7 +9135,7 @@ index aa8a4e9..ef3d91d 100644
  	obj_priv->pin_count++;
  
  	/* If the object is not active and not pending a flush,
-@@ -3980,7 +4260,7 @@ i915_gem_object_unpin(struct drm_gem_object *obj)
+@@ -3999,7 +4279,7 @@ i915_gem_object_unpin(struct drm_gem_object *obj)
  {
  	struct drm_device *dev = obj->dev;
  	drm_i915_private_t *dev_priv = dev->dev_private;
@@ -9144,7 +9144,7 @@ index aa8a4e9..ef3d91d 100644
  
  	i915_verify_inactive(dev, __FILE__, __LINE__);
  	obj_priv->pin_count--;
-@@ -4020,7 +4300,7 @@ i915_gem_pin_ioctl(struct drm_device *dev, void *data,
+@@ -4039,7 +4319,7 @@ i915_gem_pin_ioctl(struct drm_device *dev, void *data,
  		mutex_unlock(&dev->struct_mutex);
  		return -EBADF;
  	}
@@ -9153,7 +9153,7 @@ index aa8a4e9..ef3d91d 100644
  
  	if (obj_priv->madv != I915_MADV_WILLNEED) {
  		DRM_ERROR("Attempting to pin a purgeable buffer\n");
-@@ -4077,7 +4357,7 @@ i915_gem_unpin_ioctl(struct drm_device *dev, void *data,
+@@ -4096,7 +4376,7 @@ i915_gem_unpin_ioctl(struct drm_device *dev, void *data,
  		return -EBADF;
  	}
  
@@ -9162,7 +9162,7 @@ index aa8a4e9..ef3d91d 100644
  	if (obj_priv->pin_filp != file_priv) {
  		DRM_ERROR("Not pinned by caller in i915_gem_pin_ioctl(): %d\n",
  			  args->handle);
-@@ -4119,7 +4399,7 @@ i915_gem_busy_ioctl(struct drm_device *dev, void *data,
+@@ -4138,7 +4418,7 @@ i915_gem_busy_ioctl(struct drm_device *dev, void *data,
  	 */
  	i915_gem_retire_requests(dev);
  
@@ -9171,7 +9171,7 @@ index aa8a4e9..ef3d91d 100644
  	/* Don't count being on the flushing list against the object being
  	 * done.  Otherwise, a buffer left on the flushing list but not getting
  	 * flushed (because nobody's flushing that domain) won't ever return
-@@ -4165,7 +4445,7 @@ i915_gem_madvise_ioctl(struct drm_device *dev, void *data,
+@@ -4184,7 +4464,7 @@ i915_gem_madvise_ioctl(struct drm_device *dev, void *data,
  	}
  
  	mutex_lock(&dev->struct_mutex);
@@ -9180,7 +9180,7 @@ index aa8a4e9..ef3d91d 100644
  
  	if (obj_priv->pin_count) {
  		drm_gem_object_unreference(obj);
-@@ -4226,7 +4506,7 @@ int i915_gem_init_object(struct drm_gem_object *obj)
+@@ -4245,7 +4525,7 @@ int i915_gem_init_object(struct drm_gem_object *obj)
  void i915_gem_free_object(struct drm_gem_object *obj)
  {
  	struct drm_device *dev = obj->dev;
@@ -9189,7 +9189,7 @@ index aa8a4e9..ef3d91d 100644
  
  	trace_i915_gem_object_destroy(obj);
  
-@@ -4274,8 +4554,7 @@ int
+@@ -4293,8 +4573,7 @@ int
  i915_gem_idle(struct drm_device *dev)
  {
  	drm_i915_private_t *dev_priv = dev->dev_private;
@@ -9199,7 +9199,7 @@ index aa8a4e9..ef3d91d 100644
  
  	mutex_lock(&dev->struct_mutex);
  
-@@ -4284,116 +4563,80 @@ i915_gem_idle(struct drm_device *dev)
+@@ -4303,116 +4582,80 @@ i915_gem_idle(struct drm_device *dev)
  		return 0;
  	}
  
@@ -9372,7 +9372,7 @@ index aa8a4e9..ef3d91d 100644
  }
  
  static int
-@@ -4413,15 +4656,16 @@ i915_gem_init_hws(struct drm_device *dev)
+@@ -4432,15 +4675,16 @@ i915_gem_init_hws(struct drm_device *dev)
  	obj = drm_gem_object_alloc(dev, 4096);
  	if (obj == NULL) {
  		DRM_ERROR("Failed to allocate status page\n");
@@ -9392,7 +9392,7 @@ index aa8a4e9..ef3d91d 100644
  	}
  
  	dev_priv->status_gfx_addr = obj_priv->gtt_offset;
-@@ -4430,20 +4674,55 @@ i915_gem_init_hws(struct drm_device *dev)
+@@ -4449,20 +4693,55 @@ i915_gem_init_hws(struct drm_device *dev)
  	if (dev_priv->hw_status_page == NULL) {
  		DRM_ERROR("Failed to map status page.\n");
  		memset(&dev_priv->hws_map, 0, sizeof(dev_priv->hws_map));
@@ -9454,7 +9454,7 @@ index aa8a4e9..ef3d91d 100644
  i915_gem_cleanup_hws(struct drm_device *dev)
  {
  	drm_i915_private_t *dev_priv = dev->dev_private;
-@@ -4454,7 +4733,7 @@ i915_gem_cleanup_hws(struct drm_device *dev)
+@@ -4473,7 +4752,7 @@ i915_gem_cleanup_hws(struct drm_device *dev)
  		return;
  
  	obj = dev_priv->hws_obj;
@@ -9463,7 +9463,7 @@ index aa8a4e9..ef3d91d 100644
  
  	kunmap(obj_priv->pages[0]);
  	i915_gem_object_unpin(obj);
-@@ -4464,6 +4743,9 @@ i915_gem_cleanup_hws(struct drm_device *dev)
+@@ -4483,6 +4762,9 @@ i915_gem_cleanup_hws(struct drm_device *dev)
  	memset(&dev_priv->hws_map, 0, sizeof(dev_priv->hws_map));
  	dev_priv->hw_status_page = NULL;
  
@@ -9473,7 +9473,7 @@ index aa8a4e9..ef3d91d 100644
  	/* Write high address into HWS_PGA when disabling. */
  	I915_WRITE(HWS_PGA, 0x1ffff000);
  }
-@@ -4488,7 +4770,7 @@ i915_gem_init_ringbuffer(struct drm_device *dev)
+@@ -4507,7 +4789,7 @@ i915_gem_init_ringbuffer(struct drm_device *dev)
  		i915_gem_cleanup_hws(dev);
  		return -ENOMEM;
  	}
@@ -9482,7 +9482,7 @@ index aa8a4e9..ef3d91d 100644
  
  	ret = i915_gem_object_pin(obj, 4096);
  	if (ret != 0) {
-@@ -4574,6 +4856,11 @@ i915_gem_init_ringbuffer(struct drm_device *dev)
+@@ -4593,6 +4875,11 @@ i915_gem_init_ringbuffer(struct drm_device *dev)
  			ring->space += ring->Size;
  	}
  
@@ -9494,7 +9494,7 @@ index aa8a4e9..ef3d91d 100644
  	return 0;
  }
  
-@@ -4679,7 +4966,8 @@ i915_gem_load(struct drm_device *dev)
+@@ -4698,7 +4985,8 @@ i915_gem_load(struct drm_device *dev)
  	spin_unlock(&shrink_list_lock);
  
  	/* Old X drivers will take 0-2 for front, back, depth buffers */
@@ -9504,7 +9504,7 @@ index aa8a4e9..ef3d91d 100644
  
  	if (IS_I965G(dev) || IS_I945G(dev) || IS_I945GM(dev) || IS_G33(dev))
  		dev_priv->num_fence_regs = 16;
-@@ -4697,8 +4985,8 @@ i915_gem_load(struct drm_device *dev)
+@@ -4716,8 +5004,8 @@ i915_gem_load(struct drm_device *dev)
  			for (i = 0; i < 8; i++)
  				I915_WRITE(FENCE_REG_945_8 + (i * 4), 0);
  	}
@@ -9514,7 +9514,7 @@ index aa8a4e9..ef3d91d 100644
  }
  
  /*
-@@ -4775,7 +5063,7 @@ void i915_gem_detach_phys_object(struct drm_device *dev,
+@@ -4794,7 +5082,7 @@ void i915_gem_detach_phys_object(struct drm_device *dev,
  	int ret;
  	int page_count;
  
@@ -9523,7 +9523,7 @@ index aa8a4e9..ef3d91d 100644
  	if (!obj_priv->phys_obj)
  		return;
  
-@@ -4814,7 +5102,7 @@ i915_gem_attach_phys_object(struct drm_device *dev,
+@@ -4833,7 +5121,7 @@ i915_gem_attach_phys_object(struct drm_device *dev,
  	if (id > I915_MAX_PHYS_OBJECT)
  		return -EINVAL;
  
@@ -9532,7 +9532,7 @@ index aa8a4e9..ef3d91d 100644
  
  	if (obj_priv->phys_obj) {
  		if (obj_priv->phys_obj->id == id)
-@@ -4865,7 +5153,7 @@ i915_gem_phys_pwrite(struct drm_device *dev, struct drm_gem_object *obj,
+@@ -4884,7 +5172,7 @@ i915_gem_phys_pwrite(struct drm_device *dev, struct drm_gem_object *obj,
  		     struct drm_i915_gem_pwrite *args,
  		     struct drm_file *file_priv)
  {
@@ -9541,7 +9541,7 @@ index aa8a4e9..ef3d91d 100644
  	void *obj_addr;
  	int ret;
  	char __user *user_data;
-@@ -4873,7 +5161,7 @@ i915_gem_phys_pwrite(struct drm_device *dev, struct drm_gem_object *obj,
+@@ -4892,7 +5180,7 @@ i915_gem_phys_pwrite(struct drm_device *dev, struct drm_gem_object *obj,
  	user_data = (char __user *) (uintptr_t) args->data_ptr;
  	obj_addr = obj_priv->phys_obj->handle->vaddr + args->offset;
  
@@ -12462,7 +12462,7 @@ index 166a24e..759c2ef 100644
  
  	drm_sysfs_connector_add(connector);
 diff --git a/drivers/gpu/drm/i915/intel_display.c b/drivers/gpu/drm/i915/intel_display.c
-index cce453e..c7502b6 100644
+index cce453e..70765cf 100644
 --- a/drivers/gpu/drm/i915/intel_display.c
 +++ b/drivers/gpu/drm/i915/intel_display.c
 @@ -28,11 +28,12 @@
@@ -14707,7 +14707,7 @@ index cce453e..c7502b6 100644
  				/* Non-busy -> busy, upclock */
  				intel_increase_pllclock(crtc, true);
  				intel_crtc->busy = true;
-@@ -3951,6 +4115,180 @@ static void intel_crtc_destroy(struct drm_crtc *crtc)
+@@ -3951,6 +4115,174 @@ static void intel_crtc_destroy(struct drm_crtc *crtc)
  	kfree(intel_crtc);
  }
  
@@ -14751,12 +14751,6 @@ index cce453e..c7502b6 100644
 +	spin_lock_irqsave(&dev->event_lock, flags);
 +	work = intel_crtc->unpin_work;
 +	if (work == NULL || !work->pending) {
-+		if (work && !work->pending) {
-+			obj_priv = to_intel_bo(work->pending_flip_obj);
-+			DRM_DEBUG_DRIVER("flip finish: %p (%d) not pending?\n",
-+					 obj_priv,
-+					 atomic_read(&obj_priv->pending_flip));
-+		}
 +		spin_unlock_irqrestore(&dev->event_lock, flags);
 +		return;
 +	}
@@ -14888,7 +14882,7 @@ index cce453e..c7502b6 100644
  static const struct drm_crtc_helper_funcs intel_helper_funcs = {
  	.dpms = intel_crtc_dpms,
  	.mode_fixup = intel_crtc_mode_fixup,
-@@ -3967,11 +4305,13 @@ static const struct drm_crtc_funcs intel_crtc_funcs = {
+@@ -3967,11 +4299,13 @@ static const struct drm_crtc_funcs intel_crtc_funcs = {
  	.gamma_set = intel_crtc_gamma_set,
  	.set_config = drm_crtc_helper_set_config,
  	.destroy = intel_crtc_destroy,
@@ -14902,7 +14896,7 @@ index cce453e..c7502b6 100644
  	struct intel_crtc *intel_crtc;
  	int i;
  
-@@ -3994,10 +4334,15 @@ static void intel_crtc_init(struct drm_device *dev, int pipe)
+@@ -3994,10 +4328,15 @@ static void intel_crtc_init(struct drm_device *dev, int pipe)
  	intel_crtc->pipe = pipe;
  	intel_crtc->plane = pipe;
  	if (IS_MOBILE(dev) && (IS_I9XX(dev) && !IS_I965G(dev))) {
@@ -14919,7 +14913,7 @@ index cce453e..c7502b6 100644
  	intel_crtc->cursor_addr = 0;
  	intel_crtc->dpms_mode = DRM_MODE_DPMS_OFF;
  	drm_crtc_helper_add(&intel_crtc->base, &intel_helper_funcs);
-@@ -4054,8 +4399,8 @@ static int intel_connector_clones(struct drm_device *dev, int type_mask)
+@@ -4054,8 +4393,8 @@ static int intel_connector_clones(struct drm_device *dev, int type_mask)
  	int entry = 0;
  
          list_for_each_entry(connector, &dev->mode_config.connector_list, head) {
@@ -14930,7 +14924,7 @@ index cce453e..c7502b6 100644
  			index_mask |= (1 << entry);
  		entry++;
  	}
-@@ -4074,7 +4419,7 @@ static void intel_setup_outputs(struct drm_device *dev)
+@@ -4074,7 +4413,7 @@ static void intel_setup_outputs(struct drm_device *dev)
  	if (IS_MOBILE(dev) && !IS_I830(dev))
  		intel_lvds_init(dev);
  
@@ -14939,7 +14933,7 @@ index cce453e..c7502b6 100644
  		int found;
  
  		if (IS_MOBILE(dev) && (I915_READ(DP_A) & DP_DETECTED))
-@@ -4143,19 +4488,19 @@ static void intel_setup_outputs(struct drm_device *dev)
+@@ -4143,19 +4482,19 @@ static void intel_setup_outputs(struct drm_device *dev)
  			DRM_DEBUG_KMS("probing DP_D\n");
  			intel_dp_init(dev, DP_D);
  		}
@@ -14964,7 +14958,7 @@ index cce453e..c7502b6 100644
  	}
  }
  
-@@ -4168,9 +4513,7 @@ static void intel_user_framebuffer_destroy(struct drm_framebuffer *fb)
+@@ -4168,9 +4507,7 @@ static void intel_user_framebuffer_destroy(struct drm_framebuffer *fb)
  		intelfb_remove(dev, fb);
  
  	drm_framebuffer_cleanup(fb);
@@ -14975,7 +14969,7 @@ index cce453e..c7502b6 100644
  
  	kfree(intel_fb);
  }
-@@ -4233,9 +4576,7 @@ intel_user_framebuffer_create(struct drm_device *dev,
+@@ -4233,9 +4570,7 @@ intel_user_framebuffer_create(struct drm_device *dev,
  
  	ret = intel_framebuffer_create(dev, mode_cmd, &fb, obj);
  	if (ret) {
@@ -14986,7 +14980,7 @@ index cce453e..c7502b6 100644
  		return NULL;
  	}
  
-@@ -4247,6 +4588,127 @@ static const struct drm_mode_config_funcs intel_mode_funcs = {
+@@ -4247,6 +4582,127 @@ static const struct drm_mode_config_funcs intel_mode_funcs = {
  	.fb_changed = intelfb_probe,
  };
  
@@ -15114,7 +15108,7 @@ index cce453e..c7502b6 100644
  void intel_init_clock_gating(struct drm_device *dev)
  {
  	struct drm_i915_private *dev_priv = dev->dev_private;
-@@ -4255,7 +4717,21 @@ void intel_init_clock_gating(struct drm_device *dev)
+@@ -4255,7 +4711,21 @@ void intel_init_clock_gating(struct drm_device *dev)
  	 * Disable clock gating reported to work incorrectly according to the
  	 * specs, but enable as much else as we can.
  	 */
@@ -15137,7 +15131,7 @@ index cce453e..c7502b6 100644
  		return;
  	} else if (IS_G4X(dev)) {
  		uint32_t dspclk_gate;
-@@ -4289,11 +4765,37 @@ void intel_init_clock_gating(struct drm_device *dev)
+@@ -4289,11 +4759,37 @@ void intel_init_clock_gating(struct drm_device *dev)
  		dstate |= DSTATE_PLL_D3_OFF | DSTATE_GFX_CLOCK_GATING |
  			DSTATE_DOT_CLOCK_GATING;
  		I915_WRITE(D_STATE, dstate);
@@ -15176,7 +15170,7 @@ index cce453e..c7502b6 100644
  }
  
  /* Set up chip specific display functions */
-@@ -4302,8 +4804,8 @@ static void intel_init_display(struct drm_device *dev)
+@@ -4302,8 +4798,8 @@ static void intel_init_display(struct drm_device *dev)
  	struct drm_i915_private *dev_priv = dev->dev_private;
  
  	/* We always want a DPMS function */
@@ -15187,7 +15181,7 @@ index cce453e..c7502b6 100644
  	else
  		dev_priv->display.dpms = i9xx_crtc_dpms;
  
-@@ -4313,7 +4815,7 @@ static void intel_init_display(struct drm_device *dev)
+@@ -4313,7 +4809,7 @@ static void intel_init_display(struct drm_device *dev)
  			dev_priv->display.fbc_enabled = g4x_fbc_enabled;
  			dev_priv->display.enable_fbc = g4x_enable_fbc;
  			dev_priv->display.disable_fbc = g4x_disable_fbc;
@@ -15196,7 +15190,7 @@ index cce453e..c7502b6 100644
  			dev_priv->display.fbc_enabled = i8xx_fbc_enabled;
  			dev_priv->display.enable_fbc = i8xx_enable_fbc;
  			dev_priv->display.disable_fbc = i8xx_disable_fbc;
-@@ -4322,13 +4824,13 @@ static void intel_init_display(struct drm_device *dev)
+@@ -4322,13 +4818,13 @@ static void intel_init_display(struct drm_device *dev)
  	}
  
  	/* Returns the core display clock speed */
@@ -15212,7 +15206,7 @@ index cce453e..c7502b6 100644
  		dev_priv->display.get_display_clock_speed =
  			i9xx_misc_get_display_clock_speed;
  	else if (IS_I915GM(dev))
-@@ -4337,7 +4839,7 @@ static void intel_init_display(struct drm_device *dev)
+@@ -4337,7 +4833,7 @@ static void intel_init_display(struct drm_device *dev)
  	else if (IS_I865G(dev))
  		dev_priv->display.get_display_clock_speed =
  			i865_get_display_clock_speed;
@@ -15221,7 +15215,7 @@ index cce453e..c7502b6 100644
  		dev_priv->display.get_display_clock_speed =
  			i855_get_display_clock_speed;
  	else /* 852, 830 */
-@@ -4345,23 +4847,24 @@ static void intel_init_display(struct drm_device *dev)
+@@ -4345,23 +4841,24 @@ static void intel_init_display(struct drm_device *dev)
  			i830_get_display_clock_speed;
  
  	/* For FIFO watermark updates */
@@ -15252,7 +15246,7 @@ index cce453e..c7502b6 100644
  	}
  }
  
-@@ -4401,14 +4904,9 @@ void intel_modeset_init(struct drm_device *dev)
+@@ -4401,14 +4898,9 @@ void intel_modeset_init(struct drm_device *dev)
  		num_pipe = 2;
  	else
  		num_pipe = 1;
@@ -15268,7 +15262,7 @@ index cce453e..c7502b6 100644
  	for (i = 0; i < num_pipe; i++) {
  		intel_crtc_init(dev, i);
  	}
-@@ -4417,9 +4915,21 @@ void intel_modeset_init(struct drm_device *dev)
+@@ -4417,9 +4909,21 @@ void intel_modeset_init(struct drm_device *dev)
  
  	intel_init_clock_gating(dev);
  
@@ -15290,7 +15284,7 @@ index cce453e..c7502b6 100644
  }
  
  void intel_modeset_cleanup(struct drm_device *dev)
-@@ -4442,11 +4952,24 @@ void intel_modeset_cleanup(struct drm_device *dev)
+@@ -4442,11 +4946,24 @@ void intel_modeset_cleanup(struct drm_device *dev)
  
  	del_timer_sync(&dev_priv->idle_timer);
  
@@ -15317,7 +15311,7 @@ index cce453e..c7502b6 100644
  	drm_mode_config_cleanup(dev);
  }
  
-@@ -4456,9 +4979,9 @@ void intel_modeset_cleanup(struct drm_device *dev)
+@@ -4456,9 +4973,9 @@ void intel_modeset_cleanup(struct drm_device *dev)
  */
  struct drm_encoder *intel_best_encoder(struct drm_connector *connector)
  {
@@ -15330,7 +15324,7 @@ index cce453e..c7502b6 100644
  
  /*
 diff --git a/drivers/gpu/drm/i915/intel_dp.c b/drivers/gpu/drm/i915/intel_dp.c
-index d487771..77e40cf 100644
+index d487771..7c28ff1 100644
 --- a/drivers/gpu/drm/i915/intel_dp.c
 +++ b/drivers/gpu/drm/i915/intel_dp.c
 @@ -26,6 +26,7 @@
@@ -15546,9 +15540,7 @@ index d487771..77e40cf 100644
 +	int msg_bytes;
 +	int reply_bytes;
 +	int ret;
- 
--	return intel_dp_aux_ch(intel_output,
--			       send, send_bytes, recv, recv_bytes);
++
 +	/* Set up the command byte */
 +	if (mode & MODE_I2C_READ)
 +		msg[0] = AUX_I2C_READ << 4;
@@ -15578,7 +15570,9 @@ index d487771..77e40cf 100644
 +		reply_bytes = 1;
 +		break;
 +	}
-+
+ 
+-	return intel_dp_aux_ch(intel_output,
+-			       send, send_bytes, recv, recv_bytes);
 +	for (;;) {
 +	  ret = intel_dp_aux_ch(intel_encoder,
 +				msg, msg_bytes,
@@ -16015,7 +16009,7 @@ index d487771..77e40cf 100644
  				     0x000, dp_priv->dpcd,
  				     sizeof (dp_priv->dpcd)) == sizeof (dp_priv->dpcd))
  	{
-@@ -1097,17 +1168,17 @@ igdng_dp_detect(struct drm_connector *connector)
+@@ -1097,27 +1168,17 @@ igdng_dp_detect(struct drm_connector *connector)
  static enum drm_connector_status
  intel_dp_detect(struct drm_connector *connector)
  {
@@ -16033,12 +16027,22 @@ index d487771..77e40cf 100644
  
 -	if (IS_IGDNG(dev))
 -		return igdng_dp_detect(connector);
+-
+-	temp = I915_READ(PORT_HOTPLUG_EN);
+-
+-	I915_WRITE(PORT_HOTPLUG_EN,
+-	       temp |
+-	       DPB_HOTPLUG_INT_EN |
+-	       DPC_HOTPLUG_INT_EN |
+-	       DPD_HOTPLUG_INT_EN);
+-
+-	POSTING_READ(PORT_HOTPLUG_EN);
 +	if (HAS_PCH_SPLIT(dev))
 +		return ironlake_dp_detect(connector);
  
- 	temp = I915_READ(PORT_HOTPLUG_EN);
- 
-@@ -1139,7 +1210,7 @@ intel_dp_detect(struct drm_connector *connector)
+ 	switch (dp_priv->output_reg) {
+ 	case DP_B:
+@@ -1139,7 +1200,7 @@ intel_dp_detect(struct drm_connector *connector)
  		return connector_status_disconnected;
  
  	status = connector_status_disconnected;
@@ -16047,7 +16051,7 @@ index d487771..77e40cf 100644
  				     0x000, dp_priv->dpcd,
  				     sizeof (dp_priv->dpcd)) == sizeof (dp_priv->dpcd))
  	{
-@@ -1151,20 +1222,20 @@ intel_dp_detect(struct drm_connector *connector)
+@@ -1151,20 +1212,20 @@ intel_dp_detect(struct drm_connector *connector)
  
  static int intel_dp_get_modes(struct drm_connector *connector)
  {
@@ -16072,7 +16076,7 @@ index d487771..77e40cf 100644
  		if (dev_priv->panel_fixed_mode != NULL) {
  			struct drm_display_mode *mode;
  			mode = drm_mode_duplicate(dev, dev_priv->panel_fixed_mode);
-@@ -1178,13 +1249,13 @@ static int intel_dp_get_modes(struct drm_connector *connector)
+@@ -1178,13 +1239,13 @@ static int intel_dp_get_modes(struct drm_connector *connector)
  static void
  intel_dp_destroy (struct drm_connector *connector)
  {
@@ -16090,7 +16094,7 @@ index d487771..77e40cf 100644
  }
  
  static const struct drm_encoder_helper_funcs intel_dp_helper_funcs = {
-@@ -1220,12 +1291,12 @@ static const struct drm_encoder_funcs intel_dp_enc_funcs = {
+@@ -1220,12 +1281,12 @@ static const struct drm_encoder_funcs intel_dp_enc_funcs = {
  };
  
  void
@@ -16106,7 +16110,7 @@ index d487771..77e40cf 100644
  }
  
  void
-@@ -1233,54 +1304,53 @@ intel_dp_init(struct drm_device *dev, int output_reg)
+@@ -1233,54 +1294,53 @@ intel_dp_init(struct drm_device *dev, int output_reg)
  {
  	struct drm_i915_private *dev_priv = dev->dev_private;
  	struct drm_connector *connector;
@@ -16181,7 +16185,7 @@ index d487771..77e40cf 100644
  	drm_sysfs_connector_add(connector);
  
  	/* Set up the DDC bus. */
-@@ -1308,10 +1378,10 @@ intel_dp_init(struct drm_device *dev, int output_reg)
+@@ -1308,10 +1368,10 @@ intel_dp_init(struct drm_device *dev, int output_reg)
  			break;
  	}
  
@@ -17325,7 +17329,7 @@ index b94acc4..c2649c7 100644
  	} else {
  		I915_WRITE(GMBUS0, 0);
 diff --git a/drivers/gpu/drm/i915/intel_lvds.c b/drivers/gpu/drm/i915/intel_lvds.c
-index 4a85aa3..b66806a 100644
+index bf05762..b66806a 100644
 --- a/drivers/gpu/drm/i915/intel_lvds.c
 +++ b/drivers/gpu/drm/i915/intel_lvds.c
 @@ -30,6 +30,7 @@
@@ -17512,24 +17516,24 @@ index 4a85aa3..b66806a 100644
  /**
   * Detect the LVDS connection.
   *
-@@ -648,10 +617,14 @@ static const struct dmi_system_id bad_lid_status[] = {
-  */
- static enum drm_connector_status intel_lvds_detect(struct drm_connector *connector)
- {
-+	struct drm_device *dev = connector->dev;
+@@ -651,12 +620,12 @@ static enum drm_connector_status intel_lvds_detect(struct drm_connector *connect
+ 	struct drm_device *dev = connector->dev;
  	enum drm_connector_status status = connector_status_connected;
  
--	if (!acpi_lid_open() && !dmi_check_system(bad_lid_status))
--		status = connector_status_disconnected;
+-	if (IS_I8XX(dev))
 +	/* ACPI lid methods were generally unreliable in this generation, so
 +	 * don't even bother.
 +	 */
 +	if (IS_GEN2(dev) || IS_GEN3(dev))
-+		return connector_status_connected;
+ 		return connector_status_connected;
  
+-	if (!acpi_lid_open() && !dmi_check_system(bad_lid_status))
+-		status = connector_status_disconnected;
+-
  	return status;
  }
-@@ -662,14 +635,16 @@ static enum drm_connector_status intel_lvds_detect(struct drm_connector *connect
+ 
+@@ -666,14 +635,16 @@ static enum drm_connector_status intel_lvds_detect(struct drm_connector *connect
  static int intel_lvds_get_modes(struct drm_connector *connector)
  {
  	struct drm_device *dev = connector->dev;
@@ -17550,7 +17554,7 @@ index 4a85aa3..b66806a 100644
  
  	/* Didn't get an EDID, so
  	 * Set wide sync ranges so we get all modes
-@@ -742,11 +717,11 @@ static int intel_lid_notify(struct notifier_block *nb, unsigned long val,
+@@ -746,11 +717,11 @@ static int intel_lid_notify(struct notifier_block *nb, unsigned long val,
  static void intel_lvds_destroy(struct drm_connector *connector)
  {
  	struct drm_device *dev = connector->dev;
@@ -17565,7 +17569,7 @@ index 4a85aa3..b66806a 100644
  	if (dev_priv->lid_notifier.notifier_call)
  		acpi_lid_notifier_unregister(&dev_priv->lid_notifier);
  	drm_sysfs_connector_remove(connector);
-@@ -759,13 +734,13 @@ static int intel_lvds_set_property(struct drm_connector *connector,
+@@ -763,13 +734,13 @@ static int intel_lvds_set_property(struct drm_connector *connector,
  				   uint64_t value)
  {
  	struct drm_device *dev = connector->dev;
@@ -17582,7 +17586,7 @@ index 4a85aa3..b66806a 100644
  		if (value == DRM_MODE_SCALE_NONE) {
  			DRM_DEBUG_KMS("no scaling not supported\n");
  			return 0;
-@@ -897,64 +872,101 @@ static const struct dmi_system_id intel_no_lvds[] = {
+@@ -901,64 +872,101 @@ static const struct dmi_system_id intel_no_lvds[] = {
  	{ }	/* terminating entry */
  };
  
@@ -17729,7 +17733,7 @@ index 4a85aa3..b66806a 100644
  
  /**
   * intel_lvds_init - setup LVDS connectors on this device
-@@ -966,7 +978,7 @@ static int intel_lid_present(void)
+@@ -970,7 +978,7 @@ static int intel_lid_present(void)
  void intel_lvds_init(struct drm_device *dev)
  {
  	struct drm_i915_private *dev_priv = dev->dev_private;
@@ -17738,7 +17742,7 @@ index 4a85aa3..b66806a 100644
  	struct drm_connector *connector;
  	struct drm_encoder *encoder;
  	struct drm_display_mode *scan; /* *modes, *bios_mode; */
-@@ -979,60 +991,55 @@ void intel_lvds_init(struct drm_device *dev)
+@@ -983,60 +991,55 @@ void intel_lvds_init(struct drm_device *dev)
  	if (dmi_check_system(intel_no_lvds))
  		return;
  
@@ -17817,7 +17821,7 @@ index 4a85aa3..b66806a 100644
  				      dev->mode_config.scaling_mode_property,
  				      DRM_MODE_SCALE_FULLSCREEN);
  	lvds_priv->fitting_mode = DRM_MODE_SCALE_FULLSCREEN;
-@@ -1047,8 +1054,8 @@ void intel_lvds_init(struct drm_device *dev)
+@@ -1051,8 +1054,8 @@ void intel_lvds_init(struct drm_device *dev)
  	 */
  
  	/* Set up the DDC bus. */
@@ -17828,7 +17832,7 @@ index 4a85aa3..b66806a 100644
  		dev_printk(KERN_ERR, &dev->pdev->dev, "DDC bus registration "
  			   "failed.\n");
  		goto failed;
-@@ -1058,7 +1065,10 @@ void intel_lvds_init(struct drm_device *dev)
+@@ -1062,7 +1065,10 @@ void intel_lvds_init(struct drm_device *dev)
  	 * Attempt to get the fixed panel mode from DDC.  Assume that the
  	 * preferred mode is the right one.
  	 */
@@ -17840,7 +17844,7 @@ index 4a85aa3..b66806a 100644
  
  	list_for_each_entry(scan, &connector->probed_modes, head) {
  		mutex_lock(&dev->mode_config.mutex);
-@@ -1066,6 +1076,7 @@ void intel_lvds_init(struct drm_device *dev)
+@@ -1070,6 +1076,7 @@ void intel_lvds_init(struct drm_device *dev)
  			dev_priv->panel_fixed_mode =
  				drm_mode_duplicate(dev, scan);
  			mutex_unlock(&dev->mode_config.mutex);
@@ -17848,7 +17852,7 @@ index 4a85aa3..b66806a 100644
  			goto out;
  		}
  		mutex_unlock(&dev->mode_config.mutex);
-@@ -1090,8 +1101,8 @@ void intel_lvds_init(struct drm_device *dev)
+@@ -1094,8 +1101,8 @@ void intel_lvds_init(struct drm_device *dev)
  	 * correct mode.
  	 */
  
@@ -17859,7 +17863,7 @@ index 4a85aa3..b66806a 100644
  		goto failed;
  
  	lvds = I915_READ(LVDS);
-@@ -1112,7 +1123,7 @@ void intel_lvds_init(struct drm_device *dev)
+@@ -1116,7 +1123,7 @@ void intel_lvds_init(struct drm_device *dev)
  		goto failed;
  
  out:
@@ -17868,7 +17872,7 @@ index 4a85aa3..b66806a 100644
  		u32 pwm;
  		/* make sure PWM is enabled */
  		pwm = I915_READ(BLC_PWM_CPU_CTL2);
-@@ -1125,7 +1136,7 @@ out:
+@@ -1129,7 +1136,7 @@ out:
  	}
  	dev_priv->lid_notifier.notifier_call = intel_lid_notify;
  	if (acpi_lid_notifier_register(&dev_priv->lid_notifier)) {
@@ -17877,7 +17881,7 @@ index 4a85aa3..b66806a 100644
  		dev_priv->lid_notifier.notifier_call = NULL;
  	}
  	/* keep the LVDS connector */
-@@ -1135,8 +1146,9 @@ out:
+@@ -1139,8 +1146,9 @@ out:
  
  failed:
  	DRM_DEBUG_KMS("No LVDS modes found, disabling.\n");
@@ -82860,7 +82864,7 @@ index 56fc658..59c1f87 100644
  
  #endif
 diff --git a/drivers/gpu/drm/radeon/radeon.h b/drivers/gpu/drm/radeon/radeon.h
-index 6735213..034218c 100644
+index 6735213..4c7204a 100644
 --- a/drivers/gpu/drm/radeon/radeon.h
 +++ b/drivers/gpu/drm/radeon/radeon.h
 @@ -28,8 +28,6 @@
@@ -83211,7 +83215,15 @@ index 6735213..034218c 100644
  	uint32_t			handle;
  	uint32_t			flags;
  };
-@@ -528,7 +573,7 @@ void radeon_agp_fini(struct radeon_device *rdev);
+@@ -521,6 +566,7 @@ typedef int (*radeon_packet3_check_t)(struct radeon_cs_parser *p,
+  */
+ int radeon_agp_init(struct radeon_device *rdev);
+ void radeon_agp_resume(struct radeon_device *rdev);
++void radeon_agp_suspend(struct radeon_device *rdev);
+ void radeon_agp_fini(struct radeon_device *rdev);
+ 
+ 
+@@ -528,7 +574,7 @@ void radeon_agp_fini(struct radeon_device *rdev);
   * Writeback
   */
  struct radeon_wb {
@@ -83220,7 +83232,7 @@ index 6735213..034218c 100644
  	volatile uint32_t	*wb;
  	uint64_t		gpu_addr;
  };
-@@ -552,7 +597,100 @@ struct radeon_wb {
+@@ -552,7 +598,100 @@ struct radeon_wb {
   * Equation between gpu/memory clock and available bandwidth is hw dependent
   * (type of memory, bus size, efficiency, ...)
   */
@@ -83321,7 +83333,7 @@ index 6735213..034218c 100644
  	fixed20_12		max_bandwidth;
  	fixed20_12		igp_sideport_mclk;
  	fixed20_12		igp_system_mclk;
-@@ -563,7 +701,18 @@ struct radeon_pm {
+@@ -563,7 +702,18 @@ struct radeon_pm {
  	fixed20_12		ht_bandwidth;
  	fixed20_12		core_bandwidth;
  	fixed20_12		sclk;
@@ -83340,7 +83352,7 @@ index 6735213..034218c 100644
  };
  
  
-@@ -586,8 +735,6 @@ int radeon_debugfs_add_files(struct radeon_device *rdev,
+@@ -586,8 +736,6 @@ int radeon_debugfs_add_files(struct radeon_device *rdev,
  			     struct drm_info_list *files,
  			     unsigned nfiles);
  int radeon_debugfs_fence_init(struct radeon_device *rdev);
@@ -83349,7 +83361,7 @@ index 6735213..034218c 100644
  
  
  /*
-@@ -633,13 +780,25 @@ struct radeon_asic {
+@@ -633,13 +781,25 @@ struct radeon_asic {
  	void (*set_engine_clock)(struct radeon_device *rdev, uint32_t eng_clock);
  	uint32_t (*get_memory_clock)(struct radeon_device *rdev);
  	void (*set_memory_clock)(struct radeon_device *rdev, uint32_t mem_clock);
@@ -83376,7 +83388,7 @@ index 6735213..034218c 100644
  };
  
  /*
-@@ -648,11 +807,14 @@ struct radeon_asic {
+@@ -648,11 +808,14 @@ struct radeon_asic {
  struct r100_asic {
  	const unsigned	*reg_safe_bm;
  	unsigned	reg_safe_bm_size;
@@ -83391,7 +83403,7 @@ index 6735213..034218c 100644
  };
  
  struct r600_asic {
-@@ -669,6 +831,9 @@ struct r600_asic {
+@@ -669,6 +832,9 @@ struct r600_asic {
  	unsigned sx_max_export_pos_size;
  	unsigned sx_max_export_smx_size;
  	unsigned sq_num_cf_insts;
@@ -83401,7 +83413,7 @@ index 6735213..034218c 100644
  };
  
  struct rv770_asic {
-@@ -689,6 +854,9 @@ struct rv770_asic {
+@@ -689,6 +855,9 @@ struct rv770_asic {
  	unsigned sc_prim_fifo_size;
  	unsigned sc_hiz_tile_fifo_size;
  	unsigned sc_earlyz_tile_fifo_fize;
@@ -83411,7 +83423,7 @@ index 6735213..034218c 100644
  };
  
  union radeon_asic_config {
-@@ -698,6 +866,12 @@ union radeon_asic_config {
+@@ -698,6 +867,12 @@ union radeon_asic_config {
  	struct rv770_asic	rv770;
  };
  
@@ -83424,7 +83436,7 @@ index 6735213..034218c 100644
  
  /*
   * IOCTL.
-@@ -752,9 +926,9 @@ struct radeon_device {
+@@ -752,9 +927,9 @@ struct radeon_device {
  	uint8_t				*bios;
  	bool				is_atom_bios;
  	uint16_t			bios_header_start;
@@ -83436,7 +83448,7 @@ index 6735213..034218c 100644
  	struct radeon_framebuffer	*fbdev_rfb;
  	/* Register mmio */
  	resource_size_t			rmmio_base;
-@@ -792,8 +966,24 @@ struct radeon_device {
+@@ -792,8 +967,24 @@ struct radeon_device {
  	struct radeon_surface_reg surface_regs[RADEON_GEM_MAX_SURFACES];
  	const struct firmware *me_fw;	/* all family ME firmware */
  	const struct firmware *pfp_fw;	/* r6/700 PFP firmware */
@@ -83461,7 +83473,7 @@ index 6735213..034218c 100644
  };
  
  int radeon_device_init(struct radeon_device *rdev,
-@@ -812,7 +1002,7 @@ void r600_kms_blit_copy(struct radeon_device *rdev,
+@@ -812,7 +1003,7 @@ void r600_kms_blit_copy(struct radeon_device *rdev,
  
  static inline uint32_t r100_mm_rreg(struct radeon_device *rdev, uint32_t reg)
  {
@@ -83470,7 +83482,7 @@ index 6735213..034218c 100644
  		return readl(((void __iomem *)rdev->rmmio) + reg);
  	else {
  		writel(reg, ((void __iomem *)rdev->rmmio) + RADEON_MM_INDEX);
-@@ -822,7 +1012,7 @@ static inline uint32_t r100_mm_rreg(struct radeon_device *rdev, uint32_t reg)
+@@ -822,7 +1013,7 @@ static inline uint32_t r100_mm_rreg(struct radeon_device *rdev, uint32_t reg)
  
  static inline void r100_mm_wreg(struct radeon_device *rdev, uint32_t reg, uint32_t v)
  {
@@ -83479,7 +83491,7 @@ index 6735213..034218c 100644
  		writel(v, ((void __iomem *)rdev->rmmio) + reg);
  	else {
  		writel(reg, ((void __iomem *)rdev->rmmio) + RADEON_MM_INDEX);
-@@ -830,6 +1020,10 @@ static inline void r100_mm_wreg(struct radeon_device *rdev, uint32_t reg, uint32
+@@ -830,6 +1021,10 @@ static inline void r100_mm_wreg(struct radeon_device *rdev, uint32_t reg, uint32
  	}
  }
  
@@ -83490,7 +83502,7 @@ index 6735213..034218c 100644
  
  /*
   * Registers read & write functions.
-@@ -847,6 +1041,8 @@ static inline void r100_mm_wreg(struct radeon_device *rdev, uint32_t reg, uint32
+@@ -847,6 +1042,8 @@ static inline void r100_mm_wreg(struct radeon_device *rdev, uint32_t reg, uint32
  #define WREG32_MC(reg, v) rdev->mc_wreg(rdev, (reg), (v))
  #define RREG32_PCIE(reg) rv370_pcie_rreg(rdev, (reg))
  #define WREG32_PCIE(reg, v) rv370_pcie_wreg(rdev, (reg), (v))
@@ -83499,7 +83511,7 @@ index 6735213..034218c 100644
  #define WREG32_P(reg, val, mask)				\
  	do {							\
  		uint32_t tmp_ = RREG32(reg);			\
-@@ -908,7 +1104,7 @@ void r100_pll_errata_after_index(struct radeon_device *rdev);
+@@ -908,7 +1105,7 @@ void r100_pll_errata_after_index(struct radeon_device *rdev);
  #define ASIC_IS_AVIVO(rdev) ((rdev->family >= CHIP_RS600))
  #define ASIC_IS_DCE3(rdev) ((rdev->family >= CHIP_RV620))
  #define ASIC_IS_DCE32(rdev) ((rdev->family >= CHIP_RV730))
@@ -83508,7 +83520,7 @@ index 6735213..034218c 100644
  
  /*
   * BIOS helpers.
-@@ -966,18 +1162,29 @@ static inline void radeon_ring_write(struct radeon_device *rdev, uint32_t v)
+@@ -966,18 +1163,29 @@ static inline void radeon_ring_write(struct radeon_device *rdev, uint32_t v)
  #define radeon_get_engine_clock(rdev) (rdev)->asic->get_engine_clock((rdev))
  #define radeon_set_engine_clock(rdev, e) (rdev)->asic->set_engine_clock((rdev), (e))
  #define radeon_get_memory_clock(rdev) (rdev)->asic->get_memory_clock((rdev))
@@ -83539,7 +83551,7 @@ index 6735213..034218c 100644
  extern int radeon_clocks_init(struct radeon_device *rdev);
  extern void radeon_clocks_fini(struct radeon_device *rdev);
  extern void radeon_scratch_init(struct radeon_device *rdev);
-@@ -985,51 +1192,14 @@ extern void radeon_surface_init(struct radeon_device *rdev);
+@@ -985,51 +1193,14 @@ extern void radeon_surface_init(struct radeon_device *rdev);
  extern int radeon_cs_parser_init(struct radeon_cs_parser *p, void *data);
  extern void radeon_legacy_set_clock_gating(struct radeon_device *rdev, int enable);
  extern void radeon_atom_set_clock_gating(struct radeon_device *rdev, int enable);
@@ -83597,7 +83609,7 @@ index 6735213..034218c 100644
  
  /* rv200,rv250,rv280 */
  extern void r200_set_safe_registers(struct radeon_device *rdev);
-@@ -1037,7 +1207,7 @@ extern void r200_set_safe_registers(struct radeon_device *rdev);
+@@ -1037,7 +1208,7 @@ extern void r200_set_safe_registers(struct radeon_device *rdev);
  /* r300,r350,rv350,rv370,rv380 */
  extern void r300_set_reg_safe(struct radeon_device *rdev);
  extern void r300_mc_program(struct radeon_device *rdev);
@@ -83606,7 +83618,7 @@ index 6735213..034218c 100644
  extern void r300_clock_startup(struct radeon_device *rdev);
  extern int r300_mc_wait_for_idle(struct radeon_device *rdev);
  extern int rv370_pcie_gart_init(struct radeon_device *rdev);
-@@ -1046,7 +1216,6 @@ extern int rv370_pcie_gart_enable(struct radeon_device *rdev);
+@@ -1046,7 +1217,6 @@ extern int rv370_pcie_gart_enable(struct radeon_device *rdev);
  extern void rv370_pcie_gart_disable(struct radeon_device *rdev);
  
  /* r420,r423,rv410 */
@@ -83614,7 +83626,7 @@ index 6735213..034218c 100644
  extern u32 r420_mc_rreg(struct radeon_device *rdev, u32 reg);
  extern void r420_mc_wreg(struct radeon_device *rdev, u32 reg, u32 v);
  extern int r420_debugfs_pipes_info_init(struct radeon_device *rdev);
-@@ -1088,12 +1257,13 @@ extern void rs690_line_buffer_adjust(struct radeon_device *rdev,
+@@ -1088,12 +1258,13 @@ extern void rs690_line_buffer_adjust(struct radeon_device *rdev,
  					struct drm_display_mode *mode2);
  
  /* r600, rv610, rv630, rv620, rv635, rv670, rs780, rs880 */
@@ -83629,7 +83641,7 @@ index 6735213..034218c 100644
  extern int r600_mc_wait_for_idle(struct radeon_device *rdev);
  extern int r600_pcie_gart_init(struct radeon_device *rdev);
  extern void r600_pcie_gart_tlb_flush(struct radeon_device *rdev);
-@@ -1105,7 +1275,39 @@ extern void r600_wb_disable(struct radeon_device *rdev);
+@@ -1105,7 +1276,39 @@ extern void r600_wb_disable(struct radeon_device *rdev);
  extern void r600_scratch_init(struct radeon_device *rdev);
  extern int r600_blit_init(struct radeon_device *rdev);
  extern void r600_blit_fini(struct radeon_device *rdev);
@@ -83671,7 +83683,7 @@ index 6735213..034218c 100644
  
  #endif
 diff --git a/drivers/gpu/drm/radeon/radeon_agp.c b/drivers/gpu/drm/radeon/radeon_agp.c
-index 54bf49a..28e473f 100644
+index 54bf49a..f40dfb7 100644
 --- a/drivers/gpu/drm/radeon/radeon_agp.c
 +++ b/drivers/gpu/drm/radeon/radeon_agp.c
 @@ -134,19 +134,27 @@ int radeon_agp_init(struct radeon_device *rdev)
@@ -83725,7 +83737,7 @@ index 54bf49a..28e473f 100644
  
  	/* workaround some hw issues */
  	if (rdev->family < CHIP_R200) {
-@@ -252,10 +265,8 @@ void radeon_agp_resume(struct radeon_device *rdev)
+@@ -252,10 +265,13 @@ void radeon_agp_resume(struct radeon_device *rdev)
  void radeon_agp_fini(struct radeon_device *rdev)
  {
  #if __OS_HAS_AGP
@@ -83738,6 +83750,11 @@ index 54bf49a..28e473f 100644
  	}
  #endif
  }
++
++void radeon_agp_suspend(struct radeon_device *rdev)
++{
++	radeon_agp_fini(rdev);
++}
 diff --git a/drivers/gpu/drm/radeon/radeon_asic.c b/drivers/gpu/drm/radeon/radeon_asic.c
 new file mode 100644
 index 0000000..a4b4bc9
@@ -85027,7 +85044,7 @@ index c18fbee..a0b8280 100644
 +				enum radeon_hpd_id hpd);
  #endif
 diff --git a/drivers/gpu/drm/radeon/radeon_atombios.c b/drivers/gpu/drm/radeon/radeon_atombios.c
-index 969502a..9916d82 100644
+index a4813c6..1a4fa9b 100644
 --- a/drivers/gpu/drm/radeon/radeon_atombios.c
 +++ b/drivers/gpu/drm/radeon/radeon_atombios.c
 @@ -47,7 +47,8 @@ radeon_add_atom_connector(struct drm_device *dev,
@@ -85405,12 +85422,14 @@ index 969502a..9916d82 100644
  			} else {
  				igp_lane_info = 0;
  				connector_type =
-@@ -385,10 +529,9 @@ bool radeon_get_atom_connector_info_from_object_table(struct drm_device *dev)
+@@ -385,10 +529,11 @@ bool radeon_get_atom_connector_info_from_object_table(struct drm_device *dev)
  				}
  			}
  
 -			/* look up gpio for ddc */
 +			/* look up gpio for ddc, hpd */
++			ddc_bus.valid = false;
++			hpd.hpd = RADEON_HPD_NONE;
  			if ((le16_to_cpu(path->usDeviceTag) &
 -			     (ATOM_DEVICE_TV_SUPPORT | ATOM_DEVICE_CV_SUPPORT))
 -			    == 0) {
@@ -85418,7 +85437,7 @@ index 969502a..9916d82 100644
  				for (j = 0; j < con_obj->ucNumberOfObjects; j++) {
  					if (le16_to_cpu(path->usConnObjectId) ==
  					    le16_to_cpu(con_obj->asObjects[j].
-@@ -402,21 +545,34 @@ bool radeon_get_atom_connector_info_from_object_table(struct drm_device *dev)
+@@ -402,21 +547,34 @@ bool radeon_get_atom_connector_info_from_object_table(struct drm_device *dev)
  								 asObjects[j].
  								 usRecordOffset));
  						ATOM_I2C_RECORD *i2c_record;
@@ -85461,7 +85480,7 @@ index 969502a..9916d82 100644
  								break;
  							}
  							record =
-@@ -429,24 +585,19 @@ bool radeon_get_atom_connector_info_from_object_table(struct drm_device *dev)
+@@ -429,24 +587,16 @@ bool radeon_get_atom_connector_info_from_object_table(struct drm_device *dev)
  						break;
  					}
  				}
@@ -85474,9 +85493,7 @@ index 969502a..9916d82 100644
 -				ATOM_DEVICE_TV2_SUPPORT)
 -			    || (le16_to_cpu(path->usDeviceTag) ==
 -				ATOM_DEVICE_CV_SUPPORT))
-+			} else {
-+				hpd.hpd = RADEON_HPD_NONE;
- 				ddc_bus.valid = false;
+-				ddc_bus.valid = false;
 -			else
 -				ddc_bus = radeon_lookup_gpio(dev, line_mux);
 +			}
@@ -85493,7 +85510,7 @@ index 969502a..9916d82 100644
  				continue;
  
  			radeon_add_atom_connector(dev,
-@@ -455,7 +606,8 @@ bool radeon_get_atom_connector_info_from_object_table(struct drm_device *dev)
+@@ -455,7 +605,8 @@ bool radeon_get_atom_connector_info_from_object_table(struct drm_device *dev)
  							      usDeviceTag),
  						  connector_type, &ddc_bus,
  						  linkb, igp_lane_info,
@@ -85503,7 +85520,7 @@ index 969502a..9916d82 100644
  
  		}
  	}
-@@ -484,20 +636,23 @@ static uint16_t atombios_get_connector_object_id(struct drm_device *dev,
+@@ -484,20 +635,23 @@ static uint16_t atombios_get_connector_object_id(struct drm_device *dev,
  		uint8_t frev, crev;
  		ATOM_XTMDS_INFO *xtmds;
  
@@ -85540,7 +85557,7 @@ index 969502a..9916d82 100644
  	} else {
  		return supported_devices_connector_object_id_convert
  			[connector_type];
-@@ -510,6 +665,7 @@ struct bios_connector {
+@@ -510,6 +664,7 @@ struct bios_connector {
  	uint16_t devices;
  	int connector_type;
  	struct radeon_i2c_bus_rec ddc_bus;
@@ -85548,7 +85565,7 @@ index 969502a..9916d82 100644
  };
  
  bool radeon_get_atom_connector_info_from_supported_devices_table(struct
-@@ -525,17 +681,23 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
+@@ -525,17 +680,23 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
  	uint16_t device_support;
  	uint8_t dac;
  	union atom_supported_devices *supported_devices;
@@ -85575,7 +85592,7 @@ index 969502a..9916d82 100644
  		ATOM_CONNECTOR_INFO_I2C ci =
  		    supported_devices->info.asConnInfo[i];
  
-@@ -561,22 +723,8 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
+@@ -561,22 +722,8 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
  
  		dac = ci.sucConnectorInfo.sbfAccess.bfAssociatedDAC;
  
@@ -85600,7 +85617,7 @@ index 969502a..9916d82 100644
  
  		/* give tv unique connector ids */
  		if (i == ATOM_DEVICE_TV1_INDEX) {
-@@ -590,8 +738,30 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
+@@ -590,8 +737,30 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
  			bios_connectors[i].line_mux = 52;
  		} else
  			bios_connectors[i].ddc_bus =
@@ -85633,7 +85650,7 @@ index 969502a..9916d82 100644
  
  		/* Always set the connector type to VGA for CRT1/CRT2. if they are
  		 * shared with a DVI port, we'll pick up the DVI connector when we
-@@ -603,7 +773,8 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
+@@ -603,7 +772,8 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
  
  		if (!radeon_atom_apply_quirks
  		    (dev, (1 << i), &bios_connectors[i].connector_type,
@@ -85643,7 +85660,7 @@ index 969502a..9916d82 100644
  			continue;
  
  		bios_connectors[i].valid = true;
-@@ -618,41 +789,42 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
+@@ -618,41 +788,42 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
  		else
  			radeon_add_legacy_encoder(dev,
  						  radeon_get_encoder_id(dev,
@@ -85712,7 +85729,7 @@ index 969502a..9916d82 100644
  						}
  					}
  				}
-@@ -661,7 +833,7 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
+@@ -661,7 +832,7 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
  	}
  
  	/* add the connectors */
@@ -85721,7 +85738,7 @@ index 969502a..9916d82 100644
  		if (bios_connectors[i].valid) {
  			uint16_t connector_object_id =
  				atombios_get_connector_object_id(dev,
-@@ -674,7 +846,8 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
+@@ -674,7 +845,8 @@ bool radeon_get_atom_connector_info_from_supported_devices_table(struct
  						  connector_type,
  						  &bios_connectors[i].ddc_bus,
  						  false, 0,
@@ -85731,7 +85748,7 @@ index 969502a..9916d82 100644
  		}
  	}
  
-@@ -688,6 +861,7 @@ union firmware_info {
+@@ -688,6 +860,7 @@ union firmware_info {
  	ATOM_FIRMWARE_INFO_V1_2 info_12;
  	ATOM_FIRMWARE_INFO_V1_3 info_13;
  	ATOM_FIRMWARE_INFO_V1_4 info_14;
@@ -85739,7 +85756,7 @@ index 969502a..9916d82 100644
  };
  
  bool radeon_atom_get_clock_info(struct drm_device *dev)
-@@ -699,18 +873,16 @@ bool radeon_atom_get_clock_info(struct drm_device *dev)
+@@ -699,18 +872,16 @@ bool radeon_atom_get_clock_info(struct drm_device *dev)
  	uint8_t frev, crev;
  	struct radeon_pll *p1pll = &rdev->clock.p1pll;
  	struct radeon_pll *p2pll = &rdev->clock.p2pll;
@@ -85764,7 +85781,7 @@ index 969502a..9916d82 100644
  		/* pixel clocks */
  		p1pll->reference_freq =
  		    le16_to_cpu(firmware_info->info.usReferenceClock);
-@@ -725,6 +897,20 @@ bool radeon_atom_get_clock_info(struct drm_device *dev)
+@@ -725,6 +896,20 @@ bool radeon_atom_get_clock_info(struct drm_device *dev)
  		p1pll->pll_out_max =
  		    le32_to_cpu(firmware_info->info.ulMaxPixelClockPLL_Output);
  
@@ -85785,7 +85802,7 @@ index 969502a..9916d82 100644
  		if (p1pll->pll_out_min == 0) {
  			if (ASIC_IS_AVIVO(rdev))
  				p1pll->pll_out_min = 64800;
-@@ -739,7 +925,8 @@ bool radeon_atom_get_clock_info(struct drm_device *dev)
+@@ -739,7 +924,8 @@ bool radeon_atom_get_clock_info(struct drm_device *dev)
  			 * pre-DCE 3.0 r6xx hardware.  This might need to be adjusted per
  			 * family.
  			 */
@@ -85795,7 +85812,7 @@ index 969502a..9916d82 100644
  		}
  
  		p1pll->pll_in_min =
-@@ -800,8 +987,53 @@ bool radeon_atom_get_clock_info(struct drm_device *dev)
+@@ -800,8 +986,53 @@ bool radeon_atom_get_clock_info(struct drm_device *dev)
  		rdev->clock.default_mclk =
  		    le32_to_cpu(firmware_info->info.ulDefaultMemoryClock);
  
@@ -85849,7 +85866,7 @@ index 969502a..9916d82 100644
  	return false;
  }
  
-@@ -818,14 +1050,12 @@ bool radeon_atombios_get_tmds_info(struct radeon_encoder *encoder,
+@@ -818,14 +1049,12 @@ bool radeon_atombios_get_tmds_info(struct radeon_encoder *encoder,
  	uint16_t maxfreq;
  	int i;
  
@@ -85869,7 +85886,7 @@ index 969502a..9916d82 100644
  		maxfreq = le16_to_cpu(tmds_info->usMaxFrequency);
  		for (i = 0; i < 4; i++) {
  			tmds->tmds_pll[i].freq =
-@@ -869,29 +1099,34 @@ static struct radeon_atom_ss *radeon_atombios_get_ss_info(struct
+@@ -869,29 +1098,34 @@ static struct radeon_atom_ss *radeon_atombios_get_ss_info(struct
  	struct _ATOM_SPREAD_SPECTRUM_INFO *ss_info;
  	uint8_t frev, crev;
  	struct radeon_atom_ss *ss = NULL;
@@ -85880,14 +85897,14 @@ index 969502a..9916d82 100644
  
 -	atom_parse_data_header(mode_info->atom_context, index, NULL, &frev,
 -			       &crev, &data_offset);
--
--	ss_info =
--	    (struct _ATOM_SPREAD_SPECTRUM_INFO *)(mode_info->atom_context->bios + data_offset);
 +	if (atom_parse_data_header(mode_info->atom_context, index, NULL,
 +				   &frev, &crev, &data_offset)) {
 +		ss_info =
 +			(struct _ATOM_SPREAD_SPECTRUM_INFO *)(mode_info->atom_context->bios + data_offset);
  
+-	ss_info =
+-	    (struct _ATOM_SPREAD_SPECTRUM_INFO *)(mode_info->atom_context->bios + data_offset);
+-
 -	if (ss_info) {
  		ss =
  		    kzalloc(sizeof(struct radeon_atom_ss), GFP_KERNEL);
@@ -85916,7 +85933,7 @@ index 969502a..9916d82 100644
  	}
  	return ss;
  }
-@@ -909,18 +1144,15 @@ struct radeon_encoder_atom_dig *radeon_atombios_get_lvds_info(struct
+@@ -909,18 +1143,15 @@ struct radeon_encoder_atom_dig *radeon_atombios_get_lvds_info(struct
  	struct radeon_device *rdev = dev->dev_private;
  	struct radeon_mode_info *mode_info = &rdev->mode_info;
  	int index = GetIndexIntoMasterTable(DATA, LVDS_Info);
@@ -85940,7 +85957,7 @@ index 969502a..9916d82 100644
  		lvds =
  		    kzalloc(sizeof(struct radeon_encoder_atom_dig), GFP_KERNEL);
  
-@@ -948,11 +1180,36 @@ struct radeon_encoder_atom_dig *radeon_atombios_get_lvds_info(struct
+@@ -948,11 +1179,36 @@ struct radeon_encoder_atom_dig *radeon_atombios_get_lvds_info(struct
  		lvds->panel_pwr_delay =
  		    le16_to_cpu(lvds_info->info.usOffDelayInMs);
  		lvds->lvds_misc = lvds_info->info.ucLVDS_Misc;
@@ -85977,23 +85994,23 @@ index 969502a..9916d82 100644
  		encoder->native_mode = lvds->native_mode;
  	}
  	return lvds;
-@@ -971,11 +1228,11 @@ radeon_atombios_get_primary_dac_info(struct radeon_encoder *encoder)
+@@ -971,11 +1227,11 @@ radeon_atombios_get_primary_dac_info(struct radeon_encoder *encoder)
  	uint8_t bg, dac;
  	struct radeon_encoder_primary_dac *p_dac = NULL;
  
 -	atom_parse_data_header(mode_info->atom_context, index, NULL, &frev, &crev, &data_offset);
--
--	dac_info = (struct _COMPASSIONATE_DATA *)(mode_info->atom_context->bios + data_offset);
 +	if (atom_parse_data_header(mode_info->atom_context, index, NULL,
 +				   &frev, &crev, &data_offset)) {
 +		dac_info = (struct _COMPASSIONATE_DATA *)
 +			(mode_info->atom_context->bios + data_offset);
  
+-	dac_info = (struct _COMPASSIONATE_DATA *)(mode_info->atom_context->bios + data_offset);
+-
 -	if (dac_info) {
  		p_dac = kzalloc(sizeof(struct radeon_encoder_primary_dac), GFP_KERNEL);
  
  		if (!p_dac)
-@@ -1000,12 +1257,14 @@ bool radeon_atom_get_tv_timings(struct radeon_device *rdev, int index,
+@@ -1000,12 +1256,14 @@ bool radeon_atom_get_tv_timings(struct radeon_device *rdev, int index,
  	u8 frev, crev;
  	u16 data_offset, misc;
  
@@ -86010,7 +86027,7 @@ index 969502a..9916d82 100644
  			return false;
  
  		mode->crtc_htotal = le16_to_cpu(tv_info->aModeTimings[index].usCRTC_H_Total);
-@@ -1043,7 +1302,7 @@ bool radeon_atom_get_tv_timings(struct radeon_device *rdev, int index,
+@@ -1043,7 +1301,7 @@ bool radeon_atom_get_tv_timings(struct radeon_device *rdev, int index,
  		break;
  	case 2:
  		tv_info_v1_2 = (ATOM_ANALOG_TV_INFO_V1_2 *)(mode_info->atom_context->bios + data_offset);
@@ -86019,7 +86036,7 @@ index 969502a..9916d82 100644
  			return false;
  
  		dtd_timings = &tv_info_v1_2->aModeTimings[index];
-@@ -1082,6 +1341,64 @@ bool radeon_atom_get_tv_timings(struct radeon_device *rdev, int index,
+@@ -1082,6 +1340,64 @@ bool radeon_atom_get_tv_timings(struct radeon_device *rdev, int index,
  	return true;
  }
  
@@ -86084,7 +86101,7 @@ index 969502a..9916d82 100644
  struct radeon_encoder_tv_dac *
  radeon_atombios_get_tv_dac_info(struct radeon_encoder *encoder)
  {
-@@ -1095,11 +1412,12 @@ radeon_atombios_get_tv_dac_info(struct radeon_encoder *encoder)
+@@ -1095,11 +1411,12 @@ radeon_atombios_get_tv_dac_info(struct radeon_encoder *encoder)
  	uint8_t bg, dac;
  	struct radeon_encoder_tv_dac *tv_dac = NULL;
  
@@ -86100,7 +86117,7 @@ index 969502a..9916d82 100644
  		tv_dac = kzalloc(sizeof(struct radeon_encoder_tv_dac), GFP_KERNEL);
  
  		if (!tv_dac)
-@@ -1117,24 +1435,429 @@ radeon_atombios_get_tv_dac_info(struct radeon_encoder *encoder)
+@@ -1117,24 +1434,429 @@ radeon_atombios_get_tv_dac_info(struct radeon_encoder *encoder)
  		dac = dac_info->ucDAC2_NTSC_DAC_Adjustment;
  		tv_dac->ntsc_tvdac_adj = (bg << 16) | (dac << 20);
  
@@ -89237,7 +89254,7 @@ index b1dc1a1..4559a53 100644
  		break;
  	case DRM_MODE_CONNECTOR_LVDS:
 diff --git a/drivers/gpu/drm/radeon/radeon_cp.c b/drivers/gpu/drm/radeon/radeon_cp.c
-index 1c46848..2f042a3 100644
+index c7236f4..2f042a3 100644
 --- a/drivers/gpu/drm/radeon/radeon_cp.c
 +++ b/drivers/gpu/drm/radeon/radeon_cp.c
 @@ -435,14 +435,19 @@ static void radeon_init_pipes(struct drm_device *dev)
@@ -89262,15 +89279,7 @@ index 1c46848..2f042a3 100644
  			dev_priv->num_gb_pipes = 1;
  		}
  	}
-@@ -1646,6 +1651,7 @@ static int radeon_do_resume_cp(struct drm_device *dev, struct drm_file *file_pri
- 	radeon_cp_load_microcode(dev_priv);
- 	radeon_cp_init_ring_buffer(dev, dev_priv, file_priv);
- 
-+	dev_priv->have_z_offset = 0;
- 	radeon_do_engine_reset(dev);
- 	radeon_irq_set_state(dev, RADEON_SW_INT_ENABLE, 1);
- 
-@@ -1943,8 +1949,8 @@ struct drm_buf *radeon_freelist_get(struct drm_device * dev)
+@@ -1944,8 +1949,8 @@ struct drm_buf *radeon_freelist_get(struct drm_device * dev)
  	for (t = 0; t < dev_priv->usec_timeout; t++) {
  		u32 done_age = GET_SCRATCH(dev_priv, 1);
  		DRM_DEBUG("done_age = %d\n", done_age);
@@ -89281,7 +89290,7 @@ index 1c46848..2f042a3 100644
  			buf_priv = buf->dev_private;
  			if (buf->file_priv == NULL || (buf->pending &&
  						       buf_priv->age <=
-@@ -1953,7 +1959,8 @@ struct drm_buf *radeon_freelist_get(struct drm_device * dev)
+@@ -1954,7 +1959,8 @@ struct drm_buf *radeon_freelist_get(struct drm_device * dev)
  				buf->pending = 0;
  				return buf;
  			}
@@ -89291,7 +89300,7 @@ index 1c46848..2f042a3 100644
  		}
  
  		if (t) {
-@@ -1962,46 +1969,8 @@ struct drm_buf *radeon_freelist_get(struct drm_device * dev)
+@@ -1963,46 +1969,8 @@ struct drm_buf *radeon_freelist_get(struct drm_device * dev)
  		}
  	}
  
@@ -89338,7 +89347,7 @@ index 1c46848..2f042a3 100644
  
  void radeon_freelist_reset(struct drm_device * dev)
  {
-@@ -2184,6 +2153,7 @@ int radeon_master_create(struct drm_device *dev, struct drm_master *master)
+@@ -2185,6 +2153,7 @@ int radeon_master_create(struct drm_device *dev, struct drm_master *master)
  			 &master_priv->sarea);
  	if (ret) {
  		DRM_ERROR("SAREA setup failed\n");
@@ -89500,7 +89509,7 @@ index 28772a3..b7023ff 100644
  		int i = 0;
  		struct drm_crtc *crtc_p;
 diff --git a/drivers/gpu/drm/radeon/radeon_device.c b/drivers/gpu/drm/radeon/radeon_device.c
-index 41bb76f..7b629e3 100644
+index 41bb76f..ed6a724 100644
 --- a/drivers/gpu/drm/radeon/radeon_device.c
 +++ b/drivers/gpu/drm/radeon/radeon_device.c
 @@ -26,15 +26,64 @@
@@ -90219,7 +90228,7 @@ index 41bb76f..7b629e3 100644
  	vga_client_register(rdev->pdev, NULL, NULL, NULL);
  	iounmap(rdev->rmmio);
  	rdev->rmmio = NULL;
-@@ -631,38 +705,48 @@ void radeon_device_fini(struct radeon_device *rdev)
+@@ -631,38 +705,50 @@ void radeon_device_fini(struct radeon_device *rdev)
   */
  int radeon_suspend_kms(struct drm_device *dev, pm_message_t state)
  {
@@ -90272,10 +90281,12 @@ index 41bb76f..7b629e3 100644
  	/* evict remaining vram memory */
 -	radeon_object_evict_vram(rdev);
 +	radeon_bo_evict_vram(rdev);
++
++	radeon_agp_suspend(rdev);
  
  	pci_save_state(dev->pdev);
  	if (state.event == PM_EVENT_SUSPEND) {
-@@ -680,6 +764,9 @@ int radeon_resume_kms(struct drm_device *dev)
+@@ -680,6 +766,9 @@ int radeon_resume_kms(struct drm_device *dev)
  {
  	struct radeon_device *rdev = dev->dev_private;
  
@@ -90285,7 +90296,7 @@ index 41bb76f..7b629e3 100644
  	acquire_console_sem();
  	pci_set_power_state(dev->pdev, PCI_D0);
  	pci_restore_state(dev->pdev);
-@@ -695,6 +782,8 @@ int radeon_resume_kms(struct drm_device *dev)
+@@ -695,6 +784,8 @@ int radeon_resume_kms(struct drm_device *dev)
  	fb_set_suspend(rdev->fbdev_info, 0);
  	release_console_sem();
  
@@ -90295,7 +90306,7 @@ index 41bb76f..7b629e3 100644
  	drm_helper_resume_force_mode(dev);
  	return 0;
 diff --git a/drivers/gpu/drm/radeon/radeon_display.c b/drivers/gpu/drm/radeon/radeon_display.c
-index 6f68315..bb1c122 100644
+index 6f68315..c2848e0 100644
 --- a/drivers/gpu/drm/radeon/radeon_display.c
 +++ b/drivers/gpu/drm/radeon/radeon_display.c
 @@ -68,6 +68,36 @@ static void avivo_crtc_load_lut(struct drm_crtc *crtc)
@@ -90845,7 +90856,7 @@ index 6f68315..bb1c122 100644
  
  	drm_mode_create_scaling_mode_property(rdev->ddev);
  
-@@ -689,9 +971,26 @@ int radeon_modeset_create_props(struct radeon_device *rdev)
+@@ -689,9 +971,29 @@ int radeon_modeset_create_props(struct radeon_device *rdev)
  	return 0;
  }
  
@@ -90856,8 +90867,11 @@ index 6f68315..bb1c122 100644
 +		/* set display priority to high for r3xx, rv515 chips
 +		 * this avoids flickering due to underflow to the
 +		 * display controllers during heavy acceleration.
++		 * Don't force high on rs4xx igp chips as it seems to
++		 * affect the sound card.  See kernel bug 15982.
 +		 */
-+		if (ASIC_IS_R300(rdev) || (rdev->family == CHIP_RV515))
++		if ((ASIC_IS_R300(rdev) || (rdev->family == CHIP_RV515)) &&
++		    !(rdev->flags & RADEON_IS_IGP))
 +			rdev->disp_priority = 2;
 +		else
 +			rdev->disp_priority = 0;
@@ -90873,7 +90887,7 @@ index 6f68315..bb1c122 100644
  	int ret;
  
  	drm_mode_config_init(rdev->ddev);
-@@ -714,11 +1013,14 @@ int radeon_modeset_init(struct radeon_device *rdev)
+@@ -714,11 +1016,14 @@ int radeon_modeset_init(struct radeon_device *rdev)
  		return ret;
  	}
  
@@ -90891,7 +90905,7 @@ index 6f68315..bb1c122 100644
  		radeon_crtc_init(rdev->ddev, i);
  	}
  
-@@ -727,13 +1029,18 @@ int radeon_modeset_init(struct radeon_device *rdev)
+@@ -727,13 +1032,18 @@ int radeon_modeset_init(struct radeon_device *rdev)
  	if (!ret) {
  		return ret;
  	}
@@ -90910,7 +90924,7 @@ index 6f68315..bb1c122 100644
  		drm_mode_config_cleanup(rdev->ddev);
  		rdev->mode_info.mode_config_initialized = false;
  	}
-@@ -754,9 +1061,17 @@ bool radeon_crtc_scaling_mode_fixup(struct drm_crtc *crtc,
+@@ -754,9 +1064,17 @@ bool radeon_crtc_scaling_mode_fixup(struct drm_crtc *crtc,
  		if (encoder->crtc != crtc)
  			continue;
  		if (first) {
@@ -91026,7 +91040,7 @@ index 7f50fb8..b3749d4 100644
  
  module_init(radeon_init);
 diff --git a/drivers/gpu/drm/radeon/radeon_drv.h b/drivers/gpu/drm/radeon/radeon_drv.h
-index 350962e..448eba8 100644
+index 76e4070..448eba8 100644
 --- a/drivers/gpu/drm/radeon/radeon_drv.h
 +++ b/drivers/gpu/drm/radeon/radeon_drv.h
 @@ -106,9 +106,11 @@
@@ -91042,16 +91056,7 @@ index 350962e..448eba8 100644
  #define DRIVER_PATCHLEVEL	0
  
  enum radeon_cp_microcode_version {
-@@ -267,6 +269,8 @@ typedef struct drm_radeon_private {
- 
- 	u32 scratch_ages[5];
- 
-+	int have_z_offset;
-+
- 	/* starting from here on, data is preserved accross an open */
- 	uint32_t flags;		/* see radeon_chip_flags */
- 	resource_size_t fb_aper_offset;
-@@ -294,6 +298,9 @@ typedef struct drm_radeon_private {
+@@ -296,6 +298,9 @@ typedef struct drm_radeon_private {
  	int r700_sc_prim_fifo_size;
  	int r700_sc_hiz_tile_fifo_size;
  	int r700_sc_earlyz_tile_fifo_fize;
@@ -91061,7 +91066,7 @@ index 350962e..448eba8 100644
  
  	struct mutex cs_mutex;
  	u32 cs_id_scnt;
-@@ -309,9 +316,11 @@ typedef struct drm_radeon_buf_priv {
+@@ -311,9 +316,11 @@ typedef struct drm_radeon_buf_priv {
  	u32 age;
  } drm_radeon_buf_priv_t;
  
@@ -91074,7 +91079,7 @@ index 350962e..448eba8 100644
  	int nbox;
  	struct drm_clip_rect __user *boxes;
  } drm_radeon_kcmd_buffer_t;
-@@ -454,6 +463,15 @@ extern void r600_blit_swap(struct drm_device *dev,
+@@ -456,6 +463,15 @@ extern void r600_blit_swap(struct drm_device *dev,
  			   int sx, int sy, int dx, int dy,
  			   int w, int h, int src_pitch, int dst_pitch, int cpp);
  
@@ -91090,7 +91095,7 @@ index 350962e..448eba8 100644
  /* Flags for stats.boxes
   */
  #define RADEON_BOX_DMA_IDLE      0x1
-@@ -1104,7 +1122,6 @@ extern u32 radeon_get_scratch(drm_radeon_private_t *dev_priv, int index);
+@@ -1106,7 +1122,6 @@ extern u32 radeon_get_scratch(drm_radeon_private_t *dev_priv, int index);
  #       define R600_IT_WAIT_REG_MEM             0x00003C00
  #       define R600_IT_MEM_WRITE                0x00003D00
  #       define R600_IT_INDIRECT_BUFFER          0x00003200
@@ -91098,7 +91103,7 @@ index 350962e..448eba8 100644
  #       define R600_IT_SURFACE_SYNC             0x00004300
  #              define R600_CB0_DEST_BASE_ENA    (1 << 6)
  #              define R600_TC_ACTION_ENA        (1 << 23)
-@@ -2122,4 +2139,32 @@ extern void radeon_commit_ring(drm_radeon_private_t *dev_priv);
+@@ -2124,4 +2139,32 @@ extern void radeon_commit_ring(drm_radeon_private_t *dev_priv);
  	write &= mask;						\
  } while (0)
  
@@ -97913,7 +97918,7 @@ index 747b4bf..f6e1e8d 100644
  		sprintf(radeon_debugfs_ib_names[i], "radeon_ib_%04u", i);
  		radeon_debugfs_ib_list[i].name = radeon_debugfs_ib_names[i];
 diff --git a/drivers/gpu/drm/radeon/radeon_state.c b/drivers/gpu/drm/radeon/radeon_state.c
-index 38537d9..cc5316d 100644
+index 4747910..b3ba44c 100644
 --- a/drivers/gpu/drm/radeon/radeon_state.c
 +++ b/drivers/gpu/drm/radeon/radeon_state.c
 @@ -29,6 +29,7 @@
@@ -97924,7 +97929,7 @@ index 38537d9..cc5316d 100644
  #include "drm_sarea.h"
  #include "radeon_drm.h"
  #include "radeon_drv.h"
-@@ -91,21 +92,27 @@ static __inline__ int radeon_check_and_fixup_offset(drm_radeon_private_t *
+@@ -91,13 +92,16 @@ static __inline__ int radeon_check_and_fixup_offset(drm_radeon_private_t *
  static __inline__ int radeon_check_and_fixup_packets(drm_radeon_private_t *
  						     dev_priv,
  						     struct drm_file *file_priv,
@@ -97944,7 +97949,7 @@ index 38537d9..cc5316d 100644
  			DRM_ERROR("Invalid depth buffer offset\n");
  			return -EINVAL;
  		}
-+		dev_priv->have_z_offset = 1;
+@@ -105,8 +109,10 @@ static __inline__ int radeon_check_and_fixup_packets(drm_radeon_private_t *
  		break;
  
  	case RADEON_EMIT_PP_CNTL:
@@ -97957,7 +97962,7 @@ index 38537d9..cc5316d 100644
  			DRM_ERROR("Invalid colour buffer offset\n");
  			return -EINVAL;
  		}
-@@ -117,8 +124,8 @@ static __inline__ int radeon_check_and_fixup_packets(drm_radeon_private_t *
+@@ -118,8 +124,8 @@ static __inline__ int radeon_check_and_fixup_packets(drm_radeon_private_t *
  	case R200_EMIT_PP_TXOFFSET_3:
  	case R200_EMIT_PP_TXOFFSET_4:
  	case R200_EMIT_PP_TXOFFSET_5:
@@ -97968,7 +97973,7 @@ index 38537d9..cc5316d 100644
  			DRM_ERROR("Invalid R200 texture offset\n");
  			return -EINVAL;
  		}
-@@ -127,8 +134,9 @@ static __inline__ int radeon_check_and_fixup_packets(drm_radeon_private_t *
+@@ -128,8 +134,9 @@ static __inline__ int radeon_check_and_fixup_packets(drm_radeon_private_t *
  	case RADEON_EMIT_PP_TXFILTER_0:
  	case RADEON_EMIT_PP_TXFILTER_1:
  	case RADEON_EMIT_PP_TXFILTER_2:
@@ -97980,7 +97985,7 @@ index 38537d9..cc5316d 100644
  			DRM_ERROR("Invalid R100 texture offset\n");
  			return -EINVAL;
  		}
-@@ -142,9 +150,10 @@ static __inline__ int radeon_check_and_fixup_packets(drm_radeon_private_t *
+@@ -143,9 +150,10 @@ static __inline__ int radeon_check_and_fixup_packets(drm_radeon_private_t *
  	case R200_EMIT_PP_CUBIC_OFFSETS_5:{
  			int i;
  			for (i = 0; i < 5; i++) {
@@ -97992,7 +97997,7 @@ index 38537d9..cc5316d 100644
  					DRM_ERROR
  					    ("Invalid R200 cubic texture offset\n");
  					return -EINVAL;
-@@ -158,9 +167,10 @@ static __inline__ int radeon_check_and_fixup_packets(drm_radeon_private_t *
+@@ -159,9 +167,10 @@ static __inline__ int radeon_check_and_fixup_packets(drm_radeon_private_t *
  	case RADEON_EMIT_PP_CUBIC_OFFSETS_T2:{
  			int i;
  			for (i = 0; i < 5; i++) {
@@ -98004,7 +98009,7 @@ index 38537d9..cc5316d 100644
  					DRM_ERROR
  					    ("Invalid R100 cubic texture offset\n");
  					return -EINVAL;
-@@ -269,23 +279,24 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
+@@ -270,23 +279,24 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
  						     cmdbuf,
  						     unsigned int *cmdsz)
  {
@@ -98034,7 +98039,7 @@ index 38537d9..cc5316d 100644
  	/* XXX Are there old drivers needing other packets? */
  
  	case RADEON_3D_DRAW_IMMD:
-@@ -312,7 +323,6 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
+@@ -313,7 +323,6 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
  		break;
  
  	case RADEON_3D_LOAD_VBPNTR:
@@ -98042,7 +98047,7 @@ index 38537d9..cc5316d 100644
  
  		if (count > 18) { /* 12 arrays max */
  			DRM_ERROR("Too large payload in 3D_LOAD_VBPNTR (count=%d)\n",
-@@ -321,13 +331,16 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
+@@ -322,13 +331,16 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
  		}
  
  		/* carefully check packet contents */
@@ -98061,7 +98066,7 @@ index 38537d9..cc5316d 100644
  				DRM_ERROR
  				    ("Invalid offset (k=%d i=%d) in 3D_LOAD_VBPNTR packet.\n",
  				     k, i);
-@@ -338,8 +351,10 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
+@@ -339,8 +351,10 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
  			if (k == narrays)
  				break;
  			/* have one more to process, they come in pairs */
@@ -98073,7 +98078,7 @@ index 38537d9..cc5316d 100644
  			{
  				DRM_ERROR
  				    ("Invalid offset (k=%d i=%d) in 3D_LOAD_VBPNTR packet.\n",
-@@ -363,7 +378,9 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
+@@ -364,7 +378,9 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
  			DRM_ERROR("Invalid 3d packet for r200-class chip\n");
  			return -EINVAL;
  		}
@@ -98084,7 +98089,7 @@ index 38537d9..cc5316d 100644
  				DRM_ERROR("Invalid rndr_gen_indx offset\n");
  				return -EINVAL;
  		}
-@@ -374,12 +391,15 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
+@@ -375,12 +391,15 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
  			DRM_ERROR("Invalid 3d packet for r100-class chip\n");
  			return -EINVAL;
  		}
@@ -98104,7 +98109,7 @@ index 38537d9..cc5316d 100644
  			return -EINVAL;
  		}
  		break;
-@@ -388,31 +408,34 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
+@@ -389,31 +408,34 @@ static __inline__ int radeon_check_and_fixup_packet3(drm_radeon_private_t *
  	case RADEON_CNTL_PAINT_MULTI:
  	case RADEON_CNTL_BITBLT_MULTI:
  		/* MSB of opcode: next DWORD GUI_CNTL */
@@ -98147,19 +98152,7 @@ index 38537d9..cc5316d 100644
  		return -EINVAL;
  	}
  
-@@ -876,6 +899,11 @@ static void radeon_cp_dispatch_clear(struct drm_device * dev,
- 		if (tmp & RADEON_BACK)
- 			flags |= RADEON_FRONT;
- 	}
-+	if (flags & (RADEON_DEPTH|RADEON_STENCIL)) {
-+		if (!dev_priv->have_z_offset)
-+			printk_once(KERN_ERR "radeon: illegal depth clear request. Buggy mesa detected - please update.\n");
-+		flags &= ~(RADEON_DEPTH | RADEON_STENCIL);
-+	}
- 
- 	if (flags & (RADEON_FRONT | RADEON_BACK)) {
- 
-@@ -1065,7 +1093,7 @@ static void radeon_cp_dispatch_clear(struct drm_device * dev,
+@@ -1072,7 +1094,7 @@ static void radeon_cp_dispatch_clear(struct drm_device * dev,
  					/* judging by the first tile offset needed, could possibly
  					   directly address/clear 4x4 tiles instead of 8x2 * 4x4
  					   macro tiles, though would still need clear mask for
@@ -98168,7 +98161,7 @@ index 38537d9..cc5316d 100644
  					OUT_RING(tileoffset * 16);
  					/* the number of tiles to clear */
  					OUT_RING(nrtilesx + 1);
-@@ -1950,7 +1978,7 @@ static void radeon_apply_surface_regs(int surf_index,
+@@ -1957,7 +1979,7 @@ static void radeon_apply_surface_regs(int surf_index,
   * Note that refcount can be at most 2, since during a free refcount=3
   * might mean we have to allocate a new surface which might not always
   * be available.
@@ -98177,7 +98170,7 @@ index 38537d9..cc5316d 100644
   * freed, we suddenly need two surfaces to store A and C, which might
   * not always be available.
   */
-@@ -2611,7 +2639,6 @@ static int radeon_emit_packets(drm_radeon_private_t * dev_priv,
+@@ -2618,7 +2640,6 @@ static int radeon_emit_packets(drm_radeon_private_t * dev_priv,
  {
  	int id = (int)header.packet.packet_id;
  	int sz, reg;
@@ -98185,7 +98178,7 @@ index 38537d9..cc5316d 100644
  	RING_LOCALS;
  
  	if (id >= RADEON_MAX_STATE_PACKETS)
-@@ -2620,23 +2647,22 @@ static int radeon_emit_packets(drm_radeon_private_t * dev_priv,
+@@ -2627,23 +2648,22 @@ static int radeon_emit_packets(drm_radeon_private_t * dev_priv,
  	sz = packet[id].len;
  	reg = packet[id].start;
  
@@ -98213,7 +98206,7 @@ index 38537d9..cc5316d 100644
  	return 0;
  }
  
-@@ -2653,10 +2679,8 @@ static __inline__ int radeon_emit_scalars(drm_radeon_private_t *dev_priv,
+@@ -2660,10 +2680,8 @@ static __inline__ int radeon_emit_scalars(drm_radeon_private_t *dev_priv,
  	OUT_RING(CP_PACKET0(RADEON_SE_TCL_SCALAR_INDX_REG, 0));
  	OUT_RING(start | (stride << RADEON_SCAL_INDX_DWORD_STRIDE_SHIFT));
  	OUT_RING(CP_PACKET0_TABLE(RADEON_SE_TCL_SCALAR_DATA_REG, sz - 1));
@@ -98225,7 +98218,7 @@ index 38537d9..cc5316d 100644
  	return 0;
  }
  
-@@ -2675,10 +2699,8 @@ static __inline__ int radeon_emit_scalars2(drm_radeon_private_t *dev_priv,
+@@ -2682,10 +2700,8 @@ static __inline__ int radeon_emit_scalars2(drm_radeon_private_t *dev_priv,
  	OUT_RING(CP_PACKET0(RADEON_SE_TCL_SCALAR_INDX_REG, 0));
  	OUT_RING(start | (stride << RADEON_SCAL_INDX_DWORD_STRIDE_SHIFT));
  	OUT_RING(CP_PACKET0_TABLE(RADEON_SE_TCL_SCALAR_DATA_REG, sz - 1));
@@ -98237,7 +98230,7 @@ index 38537d9..cc5316d 100644
  	return 0;
  }
  
-@@ -2696,11 +2718,9 @@ static __inline__ int radeon_emit_vectors(drm_radeon_private_t *dev_priv,
+@@ -2703,11 +2719,9 @@ static __inline__ int radeon_emit_vectors(drm_radeon_private_t *dev_priv,
  	OUT_RING(CP_PACKET0(RADEON_SE_TCL_VECTOR_INDX_REG, 0));
  	OUT_RING(start | (stride << RADEON_VEC_INDX_OCTWORD_STRIDE_SHIFT));
  	OUT_RING(CP_PACKET0_TABLE(RADEON_SE_TCL_VECTOR_DATA_REG, (sz - 1)));
@@ -98250,7 +98243,7 @@ index 38537d9..cc5316d 100644
  	return 0;
  }
  
-@@ -2714,7 +2734,7 @@ static __inline__ int radeon_emit_veclinear(drm_radeon_private_t *dev_priv,
+@@ -2721,7 +2735,7 @@ static __inline__ int radeon_emit_veclinear(drm_radeon_private_t *dev_priv,
  
          if (!sz)
                  return 0;
@@ -98259,7 +98252,7 @@ index 38537d9..cc5316d 100644
                  return -EINVAL;
  
  	BEGIN_RING(5 + sz);
-@@ -2722,11 +2742,9 @@ static __inline__ int radeon_emit_veclinear(drm_radeon_private_t *dev_priv,
+@@ -2729,11 +2743,9 @@ static __inline__ int radeon_emit_veclinear(drm_radeon_private_t *dev_priv,
  	OUT_RING(CP_PACKET0(RADEON_SE_TCL_VECTOR_INDX_REG, 0));
  	OUT_RING(start | (1 << RADEON_VEC_INDX_OCTWORD_STRIDE_SHIFT));
  	OUT_RING(CP_PACKET0_TABLE(RADEON_SE_TCL_VECTOR_DATA_REG, (sz - 1)));
@@ -98272,7 +98265,7 @@ index 38537d9..cc5316d 100644
  	return 0;
  }
  
-@@ -2748,11 +2766,9 @@ static int radeon_emit_packet3(struct drm_device * dev,
+@@ -2755,11 +2767,9 @@ static int radeon_emit_packet3(struct drm_device * dev,
  	}
  
  	BEGIN_RING(cmdsz);
@@ -98285,7 +98278,7 @@ index 38537d9..cc5316d 100644
  	return 0;
  }
  
-@@ -2805,16 +2821,16 @@ static int radeon_emit_packet3_cliprect(struct drm_device *dev,
+@@ -2812,16 +2822,16 @@ static int radeon_emit_packet3_cliprect(struct drm_device *dev,
  		}
  
  		BEGIN_RING(cmdsz);
@@ -98305,7 +98298,7 @@ index 38537d9..cc5316d 100644
  	return 0;
  }
  
-@@ -2847,16 +2863,16 @@ static int radeon_emit_wait(struct drm_device * dev, int flags)
+@@ -2854,16 +2864,16 @@ static int radeon_emit_wait(struct drm_device * dev, int flags)
  	return 0;
  }
  
@@ -98326,7 +98319,7 @@ index 38537d9..cc5316d 100644
  
  	LOCK_TEST_WITH_RETURN(dev, file_priv);
  
-@@ -2871,18 +2887,20 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
+@@ -2878,18 +2888,20 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
  	 * races between checking values and using those values in other code,
  	 * and simply to avoid a lot of function calls to copy in data.
  	 */
@@ -98358,7 +98351,7 @@ index 38537d9..cc5316d 100644
  
  	orig_nbox = cmdbuf->nbox;
  
-@@ -2890,24 +2908,23 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
+@@ -2897,24 +2909,23 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
  		int temp;
  		temp = r300_do_cp_cmdbuf(dev, file_priv, cmdbuf);
  
@@ -98390,7 +98383,7 @@ index 38537d9..cc5316d 100644
  				DRM_ERROR("radeon_emit_packets failed\n");
  				goto err;
  			}
-@@ -2915,7 +2932,7 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
+@@ -2922,7 +2933,7 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
  
  		case RADEON_CMD_SCALARS:
  			DRM_DEBUG("RADEON_CMD_SCALARS\n");
@@ -98399,7 +98392,7 @@ index 38537d9..cc5316d 100644
  				DRM_ERROR("radeon_emit_scalars failed\n");
  				goto err;
  			}
-@@ -2923,7 +2940,7 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
+@@ -2930,7 +2941,7 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
  
  		case RADEON_CMD_VECTORS:
  			DRM_DEBUG("RADEON_CMD_VECTORS\n");
@@ -98408,7 +98401,7 @@ index 38537d9..cc5316d 100644
  				DRM_ERROR("radeon_emit_vectors failed\n");
  				goto err;
  			}
-@@ -2931,7 +2948,7 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
+@@ -2938,7 +2949,7 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
  
  		case RADEON_CMD_DMA_DISCARD:
  			DRM_DEBUG("RADEON_CMD_DMA_DISCARD\n");
@@ -98417,7 +98410,7 @@ index 38537d9..cc5316d 100644
  			if (idx < 0 || idx >= dma->buf_count) {
  				DRM_ERROR("buffer index %d (of %d max)\n",
  					  idx, dma->buf_count - 1);
-@@ -2968,7 +2985,7 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
+@@ -2975,7 +2986,7 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
  
  		case RADEON_CMD_SCALARS2:
  			DRM_DEBUG("RADEON_CMD_SCALARS2\n");
@@ -98426,7 +98419,7 @@ index 38537d9..cc5316d 100644
  				DRM_ERROR("radeon_emit_scalars2 failed\n");
  				goto err;
  			}
-@@ -2976,37 +2993,36 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
+@@ -2983,37 +2994,36 @@ static int radeon_cp_cmdbuf(struct drm_device *dev, void *data, struct drm_file
  
  		case RADEON_CMD_WAIT:
  			DRM_DEBUG("RADEON_CMD_WAIT\n");

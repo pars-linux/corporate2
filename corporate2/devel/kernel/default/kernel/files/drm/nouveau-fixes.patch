@@ -1447,3 +1447,981 @@ index e260986..f0cbbc0 100644
  	return 0;
  }
  
+commit f34fc07e3466936ed5f3b0b886132b58ef82e843
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Tue Jun 1 13:32:42 2010 +1000
+
+    drm/nouveau: move LVDS detection back to connector detect() time
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_connector.c b/drivers/gpu/drm/nouveau/nouveau_connector.c
+index abb7b32..d865707 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_connector.c
++++ b/drivers/gpu/drm/nouveau/nouveau_connector.c
+@@ -236,19 +236,6 @@ nouveau_connector_detect(struct drm_connector *connector)
+ 	struct nouveau_i2c_chan *i2c;
+ 	int type, flags;
+ 
+-	if (nv_connector->dcb->type == DCB_CONNECTOR_LVDS)
+-		nv_encoder = find_encoder_by_type(connector, OUTPUT_LVDS);
+-	if (nv_encoder && nv_connector->native_mode) {
+-		unsigned status = connector_status_connected;
+-
+-#ifdef CONFIG_ACPI
+-		if (!nouveau_ignorelid && !acpi_lid_open())
+-			status = connector_status_unknown;
+-#endif
+-		nouveau_connector_set_encoder(connector, nv_encoder);
+-		return status;
+-	}
+-
+ 	/* Cleanup the previous EDID block. */
+ 	if (nv_connector->edid) {
+ 		drm_mode_connector_update_edid_property(connector, NULL);
+@@ -320,6 +307,66 @@ detect_analog:
+ 	return connector_status_disconnected;
+ }
+ 
++static enum drm_connector_status
++nouveau_connector_detect_lvds(struct drm_connector *connector)
++{
++	struct drm_device *dev = connector->dev;
++	struct drm_nouveau_private *dev_priv = dev->dev_private;
++	struct nouveau_connector *nv_connector = nouveau_connector(connector);
++	struct nouveau_encoder *nv_encoder = NULL;
++	enum drm_connector_status status = connector_status_disconnected;
++
++	/* Cleanup the previous EDID block. */
++	if (nv_connector->edid) {
++		drm_mode_connector_update_edid_property(connector, NULL);
++		kfree(nv_connector->edid);
++		nv_connector->edid = NULL;
++	}
++
++	nv_encoder = find_encoder_by_type(connector, OUTPUT_LVDS);
++	if (!nv_encoder)
++		return connector_status_disconnected;
++
++	if (!dev_priv->vbios.fp_no_ddc) {
++		status = nouveau_connector_detect(connector);
++		if (status == connector_status_connected)
++			goto out;
++	}
++
++	/* If no EDID found above, and the VBIOS indicates a hardcoded
++	 * modeline is avalilable for the panel, set it as the panel's
++	 * native mode and exit.
++	 */
++	if (nouveau_bios_fp_mode(dev, NULL) && (dev_priv->vbios.fp_no_ddc ||
++	    nv_encoder->dcb->lvdsconf.use_straps_for_mode)) {
++		status = connector_status_connected;
++		goto out;
++	}
++
++	/* Still nothing, some VBIOS images have a hardcoded EDID block
++	 * stored for the panel stored in them.
++	 */
++	if (!dev_priv->vbios.fp_no_ddc) {
++		struct edid *edid =
++			(struct edid *)nouveau_bios_embedded_edid(dev);
++		if (edid) {
++			nv_connector->edid = kmalloc(EDID_LENGTH, GFP_KERNEL);
++			*(nv_connector->edid) = *edid;
++			status = connector_status_connected;
++		}
++	}
++
++out:
++#ifdef CONFIG_ACPI
++	if (status == connector_status_connected &&
++	    !nouveau_ignorelid && !acpi_lid_open())
++		status = connector_status_unknown;
++#endif
++
++	drm_mode_connector_update_edid_property(connector, nv_connector->edid);
++	return status;
++}
++
+ static void
+ nouveau_connector_force(struct drm_connector *connector)
+ {
+@@ -533,21 +580,28 @@ static int
+ nouveau_connector_get_modes(struct drm_connector *connector)
+ {
+ 	struct drm_device *dev = connector->dev;
++	struct drm_nouveau_private *dev_priv = dev->dev_private;
+ 	struct nouveau_connector *nv_connector = nouveau_connector(connector);
+ 	struct nouveau_encoder *nv_encoder = nv_connector->detected_encoder;
++	struct drm_display_mode mode;
+ 	int ret = 0;
+ 
+-	/* If we're not LVDS, destroy the previous native mode, the attached
+-	 * monitor could have changed.
++	/* destroy the native mode, the attached monitor could have changed.
+ 	 */
+-	if (nv_connector->dcb->type != DCB_CONNECTOR_LVDS &&
+-	    nv_connector->native_mode) {
++	if (nv_connector->native_mode) {
+ 		drm_mode_destroy(dev, nv_connector->native_mode);
+ 		nv_connector->native_mode = NULL;
+ 	}
+ 
+ 	if (nv_connector->edid)
+ 		ret = drm_add_edid_modes(connector, nv_connector->edid);
++	else
++	if (nv_encoder->dcb->type == OUTPUT_LVDS &&
++	    (nv_encoder->dcb->lvdsconf.use_straps_for_mode ||
++	     dev_priv->vbios.fp_no_ddc) &&
++	    nouveau_bios_fp_mode(dev, &mode)) {
++		nv_connector->native_mode = drm_mode_duplicate(dev, &mode);
++	}
+ 
+ 	/* Find the native mode if this is a digital panel, if we didn't
+ 	 * find any modes through DDC previously add the native mode to
+@@ -661,99 +715,28 @@ nouveau_connector_funcs = {
+ 	.force = nouveau_connector_force
+ };
+ 
+-static int
+-nouveau_connector_create_lvds(struct drm_device *dev,
+-			      struct drm_connector *connector)
+-{
+-	struct nouveau_connector *nv_connector = nouveau_connector(connector);
+-	struct drm_nouveau_private *dev_priv = dev->dev_private;
+-	struct nouveau_i2c_chan *i2c = NULL;
+-	struct nouveau_encoder *nv_encoder;
+-	struct drm_display_mode native, *mode, *temp;
+-	bool dummy, if_is_24bit = false;
+-	int ret, flags;
+-
+-	nv_encoder = find_encoder_by_type(connector, OUTPUT_LVDS);
+-	if (!nv_encoder)
+-		return -ENODEV;
+-
+-	ret = nouveau_bios_parse_lvds_table(dev, 0, &dummy, &if_is_24bit);
+-	if (ret) {
+-		NV_ERROR(dev, "Error parsing LVDS table, disabling LVDS\n");
+-		return ret;
+-	}
+-	nv_connector->use_dithering = !if_is_24bit;
+-
+-	/* Firstly try getting EDID over DDC, if allowed and I2C channel
+-	 * is available.
+-	 */
+-	if (!dev_priv->vbios.fp_no_ddc && nv_encoder->dcb->i2c_index < 0xf)
+-		i2c = nouveau_i2c_find(dev, nv_encoder->dcb->i2c_index);
+-
+-	if (i2c) {
+-		nouveau_connector_ddc_prepare(connector, &flags);
+-		nv_connector->edid = drm_get_edid(connector, &i2c->adapter);
+-		nouveau_connector_ddc_finish(connector, flags);
+-	}
+-
+-	/* If no EDID found above, and the VBIOS indicates a hardcoded
+-	 * modeline is avalilable for the panel, set it as the panel's
+-	 * native mode and exit.
+-	 */
+-	if (!nv_connector->edid && nouveau_bios_fp_mode(dev, &native) &&
+-	     (nv_encoder->dcb->lvdsconf.use_straps_for_mode ||
+-	      dev_priv->vbios.fp_no_ddc)) {
+-		nv_connector->native_mode = drm_mode_duplicate(dev, &native);
+-		goto out;
+-	}
+-
+-	/* Still nothing, some VBIOS images have a hardcoded EDID block
+-	 * stored for the panel stored in them.
+-	 */
+-	if (!nv_connector->edid && !nv_connector->native_mode &&
+-	    !dev_priv->vbios.fp_no_ddc) {
+-		struct edid *edid =
+-			(struct edid *)nouveau_bios_embedded_edid(dev);
+-		if (edid) {
+-			nv_connector->edid = kmalloc(EDID_LENGTH, GFP_KERNEL);
+-			*(nv_connector->edid) = *edid;
+-		}
+-	}
+-
+-	if (!nv_connector->edid)
+-		goto out;
+-
+-	/* We didn't find/use a panel mode from the VBIOS, so parse the EDID
+-	 * block and look for the preferred mode there.
+-	 */
+-	ret = drm_add_edid_modes(connector, nv_connector->edid);
+-	if (ret == 0)
+-		goto out;
+-	nv_connector->detected_encoder = nv_encoder;
+-	nv_connector->native_mode = nouveau_connector_native_mode(connector);
+-	list_for_each_entry_safe(mode, temp, &connector->probed_modes, head)
+-		drm_mode_remove(connector, mode);
+-
+-out:
+-	if (!nv_connector->native_mode) {
+-		NV_ERROR(dev, "LVDS present in DCB table, but couldn't "
+-			      "determine its native mode.  Disabling.\n");
+-		return -ENODEV;
+-	}
+-
+-	drm_mode_connector_update_edid_property(connector, nv_connector->edid);
+-	return 0;
+-}
++static const struct drm_connector_funcs
++nouveau_connector_funcs_lvds = {
++	.dpms = drm_helper_connector_dpms,
++	.save = NULL,
++	.restore = NULL,
++	.detect = nouveau_connector_detect_lvds,
++	.destroy = nouveau_connector_destroy,
++	.fill_modes = drm_helper_probe_single_connector_modes,
++	.set_property = nouveau_connector_set_property,
++	.force = nouveau_connector_force
++};
+ 
+ int
+ nouveau_connector_create(struct drm_device *dev,
+ 			 struct dcb_connector_table_entry *dcb)
+ {
++	const struct drm_connector_funcs *funcs = &nouveau_connector_funcs;
+ 	struct drm_nouveau_private *dev_priv = dev->dev_private;
+ 	struct nouveau_connector *nv_connector = NULL;
+ 	struct drm_connector *connector;
+ 	struct drm_encoder *encoder;
+-	int ret, type;
++	int type;
+ 
+ 	NV_DEBUG_KMS(dev, "\n");
+ 
+@@ -786,6 +769,7 @@ nouveau_connector_create(struct drm_device *dev,
+ 	case DCB_CONNECTOR_LVDS:
+ 		NV_INFO(dev, "Detected a LVDS connector\n");
+ 		type = DRM_MODE_CONNECTOR_LVDS;
++		funcs = &nouveau_connector_funcs_lvds;
+ 		break;
+ 	case DCB_CONNECTOR_DP:
+ 		NV_INFO(dev, "Detected a DisplayPort connector\n");
+@@ -810,7 +794,7 @@ nouveau_connector_create(struct drm_device *dev,
+ 	connector->interlace_allowed = false;
+ 	connector->doublescan_allowed = false;
+ 
+-	drm_connector_init(dev, connector, &nouveau_connector_funcs, type);
++	drm_connector_init(dev, connector, funcs, type);
+ 	drm_connector_helper_add(connector, &nouveau_connector_helper_funcs);
+ 
+ 	/* attach encoders */
+@@ -840,9 +824,6 @@ nouveau_connector_create(struct drm_device *dev,
+ 		drm_connector_attach_property(connector, dev->mode_config.dvi_i_select_subconnector_property, 0);
+ 	}
+ 
+-	if (dcb->type != DCB_CONNECTOR_LVDS)
+-		nv_connector->use_dithering = false;
+-
+ 	switch (dcb->type) {
+ 	case DCB_CONNECTOR_VGA:
+ 		if (dev_priv->card_type >= NV_50) {
+@@ -870,14 +851,5 @@ nouveau_connector_create(struct drm_device *dev,
+ 	}
+ 
+ 	drm_sysfs_connector_add(connector);
+-
+-	if (dcb->type == DCB_CONNECTOR_LVDS) {
+-		ret = nouveau_connector_create_lvds(dev, connector);
+-		if (ret) {
+-			connector->funcs->destroy(connector);
+-			return ret;
+-		}
+-	}
+-
+ 	return 0;
+ }
+
+commit 8aeaa5e44bdc5f4c9b6553cdc4ed56a5a9e5d23b
+Author: Francisco Jerez <currojerez@riseup.net>
+Date:   Wed Jun 16 15:52:44 2010 +0200
+
+    drm/nouveau: Put the dithering check back in nouveau_connector_create.
+    
+    a7b9f9e5adef dropped it by accident.
+    
+    Signed-off-by: Francisco Jerez <currojerez@riseup.net>
+    Tested-by: Thibaut Girka <thib@sitedethib.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_connector.c b/drivers/gpu/drm/nouveau/nouveau_connector.c
+index d865707..85bb518 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_connector.c
++++ b/drivers/gpu/drm/nouveau/nouveau_connector.c
+@@ -736,7 +736,7 @@ nouveau_connector_create(struct drm_device *dev,
+ 	struct nouveau_connector *nv_connector = NULL;
+ 	struct drm_connector *connector;
+ 	struct drm_encoder *encoder;
+-	int type;
++	int type, ret = 0;
+ 
+ 	NV_DEBUG_KMS(dev, "\n");
+ 
+@@ -812,9 +812,21 @@ nouveau_connector_create(struct drm_device *dev,
+ 
+ 	if (!connector->encoder_ids[0]) {
+ 		NV_WARN(dev, "  no encoders, ignoring\n");
+-		drm_connector_cleanup(connector);
+-		kfree(connector);
+-		return 0;
++		goto fail;
++	}
++
++	/* Check if we need dithering enabled */
++	if (dcb->type == DCB_CONNECTOR_LVDS) {
++		bool dummy, is_24bit = false;
++
++		ret = nouveau_bios_parse_lvds_table(dev, 0, &dummy, &is_24bit);
++		if (ret) {
++			NV_ERROR(dev, "Error parsing LVDS table, disabling "
++				 "LVDS\n");
++			goto fail;
++		}
++
++		nv_connector->use_dithering = !is_24bit;
+ 	}
+ 
+ 	/* Init DVI-I specific properties */
+@@ -852,4 +864,10 @@ nouveau_connector_create(struct drm_device *dev,
+ 
+ 	drm_sysfs_connector_add(connector);
+ 	return 0;
++
++fail:
++	drm_connector_cleanup(connector);
++	kfree(connector);
++	return ret;
++
+ }
+
+commit 366ba130f4ae04411c8936cd9419299fa905d412
+Author: Albert Damen <albrt@gmx.net>
+Date:   Sun Jun 20 16:57:57 2010 +0200
+
+    drm/nouveau: set encoder for lvds
+    
+    fixes oops in nouveau_connector_get_modes with nv_encoder is NULL
+    
+    Signed-off-by: Albert Damen <albrt@gmx.net>
+    Signed-off-by: Francisco Jerez <currojerez@riseup.net>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_connector.c b/drivers/gpu/drm/nouveau/nouveau_connector.c
+index 85bb518..ab1e500 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_connector.c
++++ b/drivers/gpu/drm/nouveau/nouveau_connector.c
+@@ -364,6 +364,7 @@ out:
+ #endif
+ 
+ 	drm_mode_connector_update_edid_property(connector, nv_connector->edid);
++	nouveau_connector_set_encoder(connector, nv_encoder);
+ 	return status;
+ }
+ 
+
+commit 4c0c4f58089e8d7f5417d6c9b4e43c0db7e41fc6
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Mon Jun 28 14:35:50 2010 +1000
+
+    drm/nouveau: tidy connector/encoder creation a little
+    
+    Create connectors before encoders to avoid having to do another loop across
+    encoder list whenever we create a new connector.  This allows us to pass
+    the connector to the encoder creation functions, and avoid using a
+    create_resources() callback since we can now call it directly.
+    
+    This can also potentially modify the connector ordering on nv50.  On cards
+    where the DCB connector and encoder tables are in the same order, things
+    will be unchanged.  However, there's some cards where the ordering between
+    the tables differ, and in one case, leads us to naming the connectors
+    "wrongly".
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.h b/drivers/gpu/drm/nouveau/nouveau_bios.h
+index adf4ec2..bd33a54 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.h
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.h
+@@ -81,6 +81,7 @@ struct dcb_connector_table_entry {
+ 	enum dcb_connector_type type;
+ 	uint8_t index2;
+ 	uint8_t gpio_tag;
++	void *drm;
+ };
+ 
+ struct dcb_connector_table {
+diff --git a/drivers/gpu/drm/nouveau/nouveau_connector.c b/drivers/gpu/drm/nouveau/nouveau_connector.c
+index ab1e500..fb51958 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_connector.c
++++ b/drivers/gpu/drm/nouveau/nouveau_connector.c
+@@ -728,66 +728,62 @@ nouveau_connector_funcs_lvds = {
+ 	.force = nouveau_connector_force
+ };
+ 
+-int
+-nouveau_connector_create(struct drm_device *dev,
+-			 struct dcb_connector_table_entry *dcb)
++struct drm_connector *
++nouveau_connector_create(struct drm_device *dev, int index)
+ {
+ 	const struct drm_connector_funcs *funcs = &nouveau_connector_funcs;
+ 	struct drm_nouveau_private *dev_priv = dev->dev_private;
+ 	struct nouveau_connector *nv_connector = NULL;
++	struct dcb_connector_table_entry *dcb = NULL;
+ 	struct drm_connector *connector;
+-	struct drm_encoder *encoder;
+ 	int type, ret = 0;
+ 
+ 	NV_DEBUG_KMS(dev, "\n");
+ 
++	if (index >= dev_priv->vbios.dcb.connector.entries)
++		return ERR_PTR(-EINVAL);
++
++	dcb = &dev_priv->vbios.dcb.connector.entry[index];
++	if (dcb->drm)
++		return dcb->drm;
++
+ 	switch (dcb->type) {
+-	case DCB_CONNECTOR_NONE:
+-		return 0;
+ 	case DCB_CONNECTOR_VGA:
+-		NV_INFO(dev, "Detected a VGA connector\n");
+ 		type = DRM_MODE_CONNECTOR_VGA;
+ 		break;
+ 	case DCB_CONNECTOR_TV_0:
+ 	case DCB_CONNECTOR_TV_1:
+ 	case DCB_CONNECTOR_TV_3:
+-		NV_INFO(dev, "Detected a TV connector\n");
+ 		type = DRM_MODE_CONNECTOR_TV;
+ 		break;
+ 	case DCB_CONNECTOR_DVI_I:
+-		NV_INFO(dev, "Detected a DVI-I connector\n");
+ 		type = DRM_MODE_CONNECTOR_DVII;
+ 		break;
+ 	case DCB_CONNECTOR_DVI_D:
+-		NV_INFO(dev, "Detected a DVI-D connector\n");
+ 		type = DRM_MODE_CONNECTOR_DVID;
+ 		break;
+ 	case DCB_CONNECTOR_HDMI_0:
+ 	case DCB_CONNECTOR_HDMI_1:
+-		NV_INFO(dev, "Detected a HDMI connector\n");
+ 		type = DRM_MODE_CONNECTOR_HDMIA;
+ 		break;
+ 	case DCB_CONNECTOR_LVDS:
+-		NV_INFO(dev, "Detected a LVDS connector\n");
+ 		type = DRM_MODE_CONNECTOR_LVDS;
+ 		funcs = &nouveau_connector_funcs_lvds;
+ 		break;
+ 	case DCB_CONNECTOR_DP:
+-		NV_INFO(dev, "Detected a DisplayPort connector\n");
+ 		type = DRM_MODE_CONNECTOR_DisplayPort;
+ 		break;
+ 	case DCB_CONNECTOR_eDP:
+-		NV_INFO(dev, "Detected an eDP connector\n");
+ 		type = DRM_MODE_CONNECTOR_eDP;
+ 		break;
+ 	default:
+ 		NV_ERROR(dev, "unknown connector type: 0x%02x!!\n", dcb->type);
+-		return -EINVAL;
++		return ERR_PTR(-EINVAL);
+ 	}
+ 
+ 	nv_connector = kzalloc(sizeof(*nv_connector), GFP_KERNEL);
+ 	if (!nv_connector)
+-		return -ENOMEM;
++		return ERR_PTR(-ENOMEM);
+ 	nv_connector->dcb = dcb;
+ 	connector = &nv_connector->base;
+ 
+@@ -798,24 +794,6 @@ nouveau_connector_create(struct drm_device *dev,
+ 	drm_connector_init(dev, connector, funcs, type);
+ 	drm_connector_helper_add(connector, &nouveau_connector_helper_funcs);
+ 
+-	/* attach encoders */
+-	list_for_each_entry(encoder, &dev->mode_config.encoder_list, head) {
+-		struct nouveau_encoder *nv_encoder = nouveau_encoder(encoder);
+-
+-		if (nv_encoder->dcb->connector != dcb->index)
+-			continue;
+-
+-		if (get_slave_funcs(nv_encoder))
+-			get_slave_funcs(nv_encoder)->create_resources(encoder, connector);
+-
+-		drm_mode_connector_attach_encoder(connector, encoder);
+-	}
+-
+-	if (!connector->encoder_ids[0]) {
+-		NV_WARN(dev, "  no encoders, ignoring\n");
+-		goto fail;
+-	}
+-
+ 	/* Check if we need dithering enabled */
+ 	if (dcb->type == DCB_CONNECTOR_LVDS) {
+ 		bool dummy, is_24bit = false;
+@@ -864,11 +842,12 @@ nouveau_connector_create(struct drm_device *dev,
+ 	}
+ 
+ 	drm_sysfs_connector_add(connector);
+-	return 0;
++	dcb->drm = connector;
++	return dcb->drm;
+ 
+ fail:
+ 	drm_connector_cleanup(connector);
+ 	kfree(connector);
+-	return ret;
++	return ERR_PTR(ret);
+ 
+ }
+diff --git a/drivers/gpu/drm/nouveau/nouveau_connector.h b/drivers/gpu/drm/nouveau/nouveau_connector.h
+index 4ef38ab..1ce3d91 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_connector.h
++++ b/drivers/gpu/drm/nouveau/nouveau_connector.h
+@@ -49,7 +49,7 @@ static inline struct nouveau_connector *nouveau_connector(
+ 	return container_of(con, struct nouveau_connector, base);
+ }
+ 
+-int nouveau_connector_create(struct drm_device *,
+-			     struct dcb_connector_table_entry *);
++struct drm_connector *
++nouveau_connector_create(struct drm_device *, int index);
+ 
+ #endif /* __NOUVEAU_CONNECTOR_H__ */
+diff --git a/drivers/gpu/drm/nouveau/nouveau_drv.h b/drivers/gpu/drm/nouveau/nouveau_drv.h
+index 6815b68..784fd14 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_drv.h
++++ b/drivers/gpu/drm/nouveau/nouveau_drv.h
+@@ -1079,13 +1079,13 @@ extern long nouveau_compat_ioctl(struct file *file, unsigned int cmd,
+ 				 unsigned long arg);
+ 
+ /* nv04_dac.c */
+-extern int nv04_dac_create(struct drm_device *dev, struct dcb_entry *entry);
++extern int nv04_dac_create(struct drm_connector *, struct dcb_entry *);
+ extern uint32_t nv17_dac_sample_load(struct drm_encoder *encoder);
+ extern int nv04_dac_output_offset(struct drm_encoder *encoder);
+ extern void nv04_dac_update_dacclk(struct drm_encoder *encoder, bool enable);
+ 
+ /* nv04_dfp.c */
+-extern int nv04_dfp_create(struct drm_device *dev, struct dcb_entry *entry);
++extern int nv04_dfp_create(struct drm_connector *, struct dcb_entry *);
+ extern int nv04_dfp_get_bound_head(struct drm_device *dev, struct dcb_entry *dcbent);
+ extern void nv04_dfp_bind_head(struct drm_device *dev, struct dcb_entry *dcbent,
+ 			       int head, bool dl);
+@@ -1094,10 +1094,10 @@ extern void nv04_dfp_update_fp_control(struct drm_encoder *encoder, int mode);
+ 
+ /* nv04_tv.c */
+ extern int nv04_tv_identify(struct drm_device *dev, int i2c_index);
+-extern int nv04_tv_create(struct drm_device *dev, struct dcb_entry *entry);
++extern int nv04_tv_create(struct drm_connector *, struct dcb_entry *);
+ 
+ /* nv17_tv.c */
+-extern int nv17_tv_create(struct drm_device *dev, struct dcb_entry *entry);
++extern int nv17_tv_create(struct drm_connector *, struct dcb_entry *);
+ 
+ /* nv04_display.c */
+ extern int nv04_display_create(struct drm_device *);
+diff --git a/drivers/gpu/drm/nouveau/nouveau_encoder.h b/drivers/gpu/drm/nouveau/nouveau_encoder.h
+index 9f28b94..423a6a8 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_encoder.h
++++ b/drivers/gpu/drm/nouveau/nouveau_encoder.h
+@@ -69,8 +69,8 @@ static inline struct drm_encoder *to_drm_encoder(struct nouveau_encoder *enc)
+ 
+ struct nouveau_connector *
+ nouveau_encoder_connector_get(struct nouveau_encoder *encoder);
+-int nv50_sor_create(struct drm_device *dev, struct dcb_entry *entry);
+-int nv50_dac_create(struct drm_device *dev, struct dcb_entry *entry);
++int nv50_sor_create(struct drm_connector *, struct dcb_entry *);
++int nv50_dac_create(struct drm_connector *, struct dcb_entry *);
+ 
+ struct bit_displayport_encoder_table {
+ 	uint32_t match;
+diff --git a/drivers/gpu/drm/nouveau/nv04_dac.c b/drivers/gpu/drm/nouveau/nv04_dac.c
+index 1cb19e3..8066c56 100644
+--- a/drivers/gpu/drm/nouveau/nv04_dac.c
++++ b/drivers/gpu/drm/nouveau/nv04_dac.c
+@@ -501,11 +501,13 @@ static const struct drm_encoder_funcs nv04_dac_funcs = {
+ 	.destroy = nv04_dac_destroy,
+ };
+ 
+-int nv04_dac_create(struct drm_device *dev, struct dcb_entry *entry)
++int
++nv04_dac_create(struct drm_connector *connector, struct dcb_entry *entry)
+ {
+ 	const struct drm_encoder_helper_funcs *helper;
+-	struct drm_encoder *encoder;
+ 	struct nouveau_encoder *nv_encoder = NULL;
++	struct drm_device *dev = connector->dev;
++	struct drm_encoder *encoder;
+ 
+ 	nv_encoder = kzalloc(sizeof(*nv_encoder), GFP_KERNEL);
+ 	if (!nv_encoder)
+@@ -527,5 +529,6 @@ int nv04_dac_create(struct drm_device *dev, struct dcb_entry *entry)
+ 	encoder->possible_crtcs = entry->heads;
+ 	encoder->possible_clones = 0;
+ 
++	drm_mode_connector_attach_encoder(connector, encoder);
+ 	return 0;
+ }
+diff --git a/drivers/gpu/drm/nouveau/nv04_dfp.c b/drivers/gpu/drm/nouveau/nv04_dfp.c
+index 41634d4..3559d89 100644
+--- a/drivers/gpu/drm/nouveau/nv04_dfp.c
++++ b/drivers/gpu/drm/nouveau/nv04_dfp.c
+@@ -584,11 +584,12 @@ static const struct drm_encoder_funcs nv04_dfp_funcs = {
+ 	.destroy = nv04_dfp_destroy,
+ };
+ 
+-int nv04_dfp_create(struct drm_device *dev, struct dcb_entry *entry)
++int
++nv04_dfp_create(struct drm_connector *connector, struct dcb_entry *entry)
+ {
+ 	const struct drm_encoder_helper_funcs *helper;
+-	struct drm_encoder *encoder;
+ 	struct nouveau_encoder *nv_encoder = NULL;
++	struct drm_encoder *encoder;
+ 	int type;
+ 
+ 	switch (entry->type) {
+@@ -613,11 +614,12 @@ int nv04_dfp_create(struct drm_device *dev, struct dcb_entry *entry)
+ 	nv_encoder->dcb = entry;
+ 	nv_encoder->or = ffs(entry->or) - 1;
+ 
+-	drm_encoder_init(dev, encoder, &nv04_dfp_funcs, type);
++	drm_encoder_init(connector->dev, encoder, &nv04_dfp_funcs, type);
+ 	drm_encoder_helper_add(encoder, helper);
+ 
+ 	encoder->possible_crtcs = entry->heads;
+ 	encoder->possible_clones = 0;
+ 
++	drm_mode_connector_attach_encoder(connector, encoder);
+ 	return 0;
+ }
+diff --git a/drivers/gpu/drm/nouveau/nv04_display.c b/drivers/gpu/drm/nouveau/nv04_display.c
+index c7898b4..d5fb12b 100644
+--- a/drivers/gpu/drm/nouveau/nv04_display.c
++++ b/drivers/gpu/drm/nouveau/nv04_display.c
+@@ -131,20 +131,25 @@ nv04_display_create(struct drm_device *dev)
+ 
+ 	for (i = 0; i < dcb->entries; i++) {
+ 		struct dcb_entry *dcbent = &dcb->entry[i];
++		struct drm_connector *connector;
++
++		connector = nouveau_connector_create(dev, dcbent->connector);
++		if (IS_ERR(connector))
++			continue;
+ 
+ 		switch (dcbent->type) {
+ 		case OUTPUT_ANALOG:
+-			ret = nv04_dac_create(dev, dcbent);
++			ret = nv04_dac_create(connector, dcbent);
+ 			break;
+ 		case OUTPUT_LVDS:
+ 		case OUTPUT_TMDS:
+-			ret = nv04_dfp_create(dev, dcbent);
++			ret = nv04_dfp_create(connector, dcbent);
+ 			break;
+ 		case OUTPUT_TV:
+ 			if (dcbent->location == DCB_LOC_ON_CHIP)
+-				ret = nv17_tv_create(dev, dcbent);
++				ret = nv17_tv_create(connector, dcbent);
+ 			else
+-				ret = nv04_tv_create(dev, dcbent);
++				ret = nv04_tv_create(connector, dcbent);
+ 			break;
+ 		default:
+ 			NV_WARN(dev, "DCB type %d not known\n", dcbent->type);
+@@ -155,9 +160,6 @@ nv04_display_create(struct drm_device *dev)
+ 			continue;
+ 	}
+ 
+-	for (i = 0; i < dcb->connector.entries; i++)
+-		nouveau_connector_create(dev, &dcb->connector.entry[i]);
+-
+ 	/* Save previous state */
+ 	NVLockVgaCrtcs(dev, false);
+ 
+diff --git a/drivers/gpu/drm/nouveau/nv04_tv.c b/drivers/gpu/drm/nouveau/nv04_tv.c
+index c4e3404..84b5954 100644
+--- a/drivers/gpu/drm/nouveau/nv04_tv.c
++++ b/drivers/gpu/drm/nouveau/nv04_tv.c
+@@ -223,10 +223,12 @@ static void nv04_tv_destroy(struct drm_encoder *encoder)
+ 	kfree(nv_encoder);
+ }
+ 
+-int nv04_tv_create(struct drm_device *dev, struct dcb_entry *entry)
++int
++nv04_tv_create(struct drm_connector *connector, struct dcb_entry *entry)
+ {
+ 	struct nouveau_encoder *nv_encoder;
+ 	struct drm_encoder *encoder;
++	struct drm_device *dev = connector->dev;
+ 	struct drm_nouveau_private *dev_priv = dev->dev_private;
+ 	struct i2c_adapter *adap;
+ 	struct drm_encoder_funcs *funcs = NULL;
+@@ -266,7 +268,7 @@ int nv04_tv_create(struct drm_device *dev, struct dcb_entry *entry)
+ 
+ 	was_locked = NVLockVgaCrtcs(dev, false);
+ 
+-	ret = drm_i2c_encoder_init(encoder->dev, to_encoder_slave(encoder), adap,
++	ret = drm_i2c_encoder_init(dev, to_encoder_slave(encoder), adap,
+ 				   &nv04_tv_encoder_info[type].board_info);
+ 
+ 	NVLockVgaCrtcs(dev, was_locked);
+@@ -294,7 +296,9 @@ int nv04_tv_create(struct drm_device *dev, struct dcb_entry *entry)
+ 
+ 	/* Set the slave encoder configuration */
+ 	sfuncs->set_config(encoder, nv04_tv_encoder_info[type].params);
++	sfuncs->create_resources(encoder, connector);
+ 
++	drm_mode_connector_attach_encoder(connector, encoder);
+ 	return 0;
+ 
+ fail:
+diff --git a/drivers/gpu/drm/nouveau/nv17_tv.c b/drivers/gpu/drm/nouveau/nv17_tv.c
+index 74c8803..44437ff 100644
+--- a/drivers/gpu/drm/nouveau/nv17_tv.c
++++ b/drivers/gpu/drm/nouveau/nv17_tv.c
+@@ -744,8 +744,10 @@ static struct drm_encoder_funcs nv17_tv_funcs = {
+ 	.destroy = nv17_tv_destroy,
+ };
+ 
+-int nv17_tv_create(struct drm_device *dev, struct dcb_entry *entry)
++int
++nv17_tv_create(struct drm_connector *connector, struct dcb_entry *entry)
+ {
++	struct drm_device *dev = connector->dev;
+ 	struct drm_encoder *encoder;
+ 	struct nv17_tv_encoder *tv_enc = NULL;
+ 
+@@ -774,5 +776,7 @@ int nv17_tv_create(struct drm_device *dev, struct dcb_entry *entry)
+ 	encoder->possible_crtcs = entry->heads;
+ 	encoder->possible_clones = 0;
+ 
++	nv17_tv_create_resources(encoder, connector);
++	drm_mode_connector_attach_encoder(connector, encoder);
+ 	return 0;
+ }
+diff --git a/drivers/gpu/drm/nouveau/nv50_dac.c b/drivers/gpu/drm/nouveau/nv50_dac.c
+index 1fd9537..e114f81 100644
+--- a/drivers/gpu/drm/nouveau/nv50_dac.c
++++ b/drivers/gpu/drm/nouveau/nv50_dac.c
+@@ -275,14 +275,11 @@ static const struct drm_encoder_funcs nv50_dac_encoder_funcs = {
+ };
+ 
+ int
+-nv50_dac_create(struct drm_device *dev, struct dcb_entry *entry)
++nv50_dac_create(struct drm_connector *connector, struct dcb_entry *entry)
+ {
+ 	struct nouveau_encoder *nv_encoder;
+ 	struct drm_encoder *encoder;
+ 
+-	NV_DEBUG_KMS(dev, "\n");
+-	NV_INFO(dev, "Detected a DAC output\n");
+-
+ 	nv_encoder = kzalloc(sizeof(*nv_encoder), GFP_KERNEL);
+ 	if (!nv_encoder)
+ 		return -ENOMEM;
+@@ -293,12 +290,14 @@ nv50_dac_create(struct drm_device *dev, struct dcb_entry *entry)
+ 
+ 	nv_encoder->disconnect = nv50_dac_disconnect;
+ 
+-	drm_encoder_init(dev, encoder, &nv50_dac_encoder_funcs,
++	drm_encoder_init(connector->dev, encoder, &nv50_dac_encoder_funcs,
+ 			 DRM_MODE_ENCODER_DAC);
+ 	drm_encoder_helper_add(encoder, &nv50_dac_helper_funcs);
+ 
+ 	encoder->possible_crtcs = entry->heads;
+ 	encoder->possible_clones = 0;
++
++	drm_mode_connector_attach_encoder(connector, encoder);
+ 	return 0;
+ }
+ 
+diff --git a/drivers/gpu/drm/nouveau/nv50_display.c b/drivers/gpu/drm/nouveau/nv50_display.c
+index 649db4c..5407650 100644
+--- a/drivers/gpu/drm/nouveau/nv50_display.c
++++ b/drivers/gpu/drm/nouveau/nv50_display.c
+@@ -499,6 +499,7 @@ int nv50_display_create(struct drm_device *dev)
+ 	/* We setup the encoders from the BIOS table */
+ 	for (i = 0 ; i < dcb->entries; i++) {
+ 		struct dcb_entry *entry = &dcb->entry[i];
++		struct drm_connector *connector;
+ 
+ 		if (entry->location != DCB_LOC_ON_CHIP) {
+ 			NV_WARN(dev, "Off-chip encoder %d/%d unsupported\n",
+@@ -506,14 +507,18 @@ int nv50_display_create(struct drm_device *dev)
+ 			continue;
+ 		}
+ 
++		connector = nouveau_connector_create(dev, entry->connector);
++		if (IS_ERR(connector))
++			continue;
++
+ 		switch (entry->type) {
+ 		case OUTPUT_TMDS:
+ 		case OUTPUT_LVDS:
+ 		case OUTPUT_DP:
+-			nv50_sor_create(dev, entry);
++			nv50_sor_create(connector, entry);
+ 			break;
+ 		case OUTPUT_ANALOG:
+-			nv50_dac_create(dev, entry);
++			nv50_dac_create(connector, entry);
+ 			break;
+ 		default:
+ 			NV_WARN(dev, "DCB encoder %d unknown\n", entry->type);
+@@ -521,13 +526,6 @@ int nv50_display_create(struct drm_device *dev)
+ 		}
+ 	}
+ 
+-	for (i = 0 ; i < dcb->connector.entries; i++) {
+-		if (i != 0 && dcb->connector.entry[i].index2 ==
+-			      dcb->connector.entry[i - 1].index2)
+-			continue;
+-		nouveau_connector_create(dev, &dcb->connector.entry[i]);
+-	}
+-
+ 	ret = nv50_display_init(dev);
+ 	if (ret) {
+ 		nv50_display_destroy(dev);
+diff --git a/drivers/gpu/drm/nouveau/nv50_sor.c b/drivers/gpu/drm/nouveau/nv50_sor.c
+index 496a15c..1535194 100644
+--- a/drivers/gpu/drm/nouveau/nv50_sor.c
++++ b/drivers/gpu/drm/nouveau/nv50_sor.c
+@@ -272,32 +272,22 @@ static const struct drm_encoder_funcs nv50_sor_encoder_funcs = {
+ };
+ 
+ int
+-nv50_sor_create(struct drm_device *dev, struct dcb_entry *entry)
++nv50_sor_create(struct drm_connector *connector, struct dcb_entry *entry)
+ {
+ 	struct nouveau_encoder *nv_encoder = NULL;
++	struct drm_device *dev = connector->dev;
+ 	struct drm_encoder *encoder;
+-	bool dum;
+ 	int type;
+ 
+ 	NV_DEBUG_KMS(dev, "\n");
+ 
+ 	switch (entry->type) {
+ 	case OUTPUT_TMDS:
+-		NV_INFO(dev, "Detected a TMDS output\n");
++	case OUTPUT_DP:
+ 		type = DRM_MODE_ENCODER_TMDS;
+ 		break;
+ 	case OUTPUT_LVDS:
+-		NV_INFO(dev, "Detected a LVDS output\n");
+ 		type = DRM_MODE_ENCODER_LVDS;
+-
+-		if (nouveau_bios_parse_lvds_table(dev, 0, &dum, &dum)) {
+-			NV_ERROR(dev, "Failed parsing LVDS table\n");
+-			return -EINVAL;
+-		}
+-		break;
+-	case OUTPUT_DP:
+-		NV_INFO(dev, "Detected a DP output\n");
+-		type = DRM_MODE_ENCODER_TMDS;
+ 		break;
+ 	default:
+ 		return -EINVAL;
+@@ -337,5 +327,6 @@ nv50_sor_create(struct drm_device *dev, struct dcb_entry *entry)
+ 			nv_encoder->dp.mc_unknown = 5;
+ 	}
+ 
++	drm_mode_connector_attach_encoder(connector, encoder);
+ 	return 0;
+ }
+
+commit 82a660bb46e4405bbf9cc486043d828e44a0ddc5
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Fri Jul 2 11:00:15 2010 +1000
+
+    drm/nv50: fix regression caused by ed15e77b6ee7c4fa6f50c18b3325e7f96ed3aade
+    
+    It became possible for us to have connectors present without any encoders
+    attached (TV out, we don't support TVDAC yet), which caused the DDX to
+    segfault.
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nv50_display.c b/drivers/gpu/drm/nouveau/nv50_display.c
+index 5407650..c069dd3 100644
+--- a/drivers/gpu/drm/nouveau/nv50_display.c
++++ b/drivers/gpu/drm/nouveau/nv50_display.c
+@@ -464,6 +464,7 @@ int nv50_display_create(struct drm_device *dev)
+ {
+ 	struct drm_nouveau_private *dev_priv = dev->dev_private;
+ 	struct dcb_table *dcb = &dev_priv->vbios.dcb;
++	struct drm_connector *connector, *ct;
+ 	int ret, i;
+ 
+ 	NV_DEBUG_KMS(dev, "\n");
+@@ -499,7 +500,6 @@ int nv50_display_create(struct drm_device *dev)
+ 	/* We setup the encoders from the BIOS table */
+ 	for (i = 0 ; i < dcb->entries; i++) {
+ 		struct dcb_entry *entry = &dcb->entry[i];
+-		struct drm_connector *connector;
+ 
+ 		if (entry->location != DCB_LOC_ON_CHIP) {
+ 			NV_WARN(dev, "Off-chip encoder %d/%d unsupported\n",
+@@ -526,6 +526,15 @@ int nv50_display_create(struct drm_device *dev)
+ 		}
+ 	}
+ 
++	list_for_each_entry_safe(connector, ct,
++				 &dev->mode_config.connector_list, head) {
++		if (!connector->encoder_ids[0]) {
++			NV_WARN(dev, "%s has no encoders, removing\n",
++				drm_get_connector_name(connector));
++			connector->funcs->destroy(connector);
++		}
++	}
++
+ 	ret = nv50_display_init(dev);
+ 	if (ret) {
+ 		nv50_display_destroy(dev);
+
+commit 35f32c64e33806b66219e7b9a17e7e5fa67798e5
+Author: Ben Skeggs <bskeggs@redhat.com>
+Date:   Fri Jul 2 15:12:39 2010 +1000
+
+    drm/nv04: fix regression caused by ed15e77b6ee7c4fa6f50c18b3325e7f96ed3aade
+    
+    Signed-off-by: Ben Skeggs <bskeggs@redhat.com>
+
+diff --git a/drivers/gpu/drm/nouveau/nv04_display.c b/drivers/gpu/drm/nouveau/nv04_display.c
+index d5fb12b..b35b7ed 100644
+--- a/drivers/gpu/drm/nouveau/nv04_display.c
++++ b/drivers/gpu/drm/nouveau/nv04_display.c
+@@ -94,6 +94,7 @@ nv04_display_create(struct drm_device *dev)
+ {
+ 	struct drm_nouveau_private *dev_priv = dev->dev_private;
+ 	struct dcb_table *dcb = &dev_priv->vbios.dcb;
++	struct drm_connector *connector, *ct;
+ 	struct drm_encoder *encoder;
+ 	struct drm_crtc *crtc;
+ 	int i, ret;
+@@ -131,7 +132,6 @@ nv04_display_create(struct drm_device *dev)
+ 
+ 	for (i = 0; i < dcb->entries; i++) {
+ 		struct dcb_entry *dcbent = &dcb->entry[i];
+-		struct drm_connector *connector;
+ 
+ 		connector = nouveau_connector_create(dev, dcbent->connector);
+ 		if (IS_ERR(connector))
+@@ -160,6 +160,15 @@ nv04_display_create(struct drm_device *dev)
+ 			continue;
+ 	}
+ 
++	list_for_each_entry_safe(connector, ct,
++				 &dev->mode_config.connector_list, head) {
++		if (!connector->encoder_ids[0]) {
++			NV_WARN(dev, "%s has no encoders, removing\n",
++				drm_get_connector_name(connector));
++			connector->funcs->destroy(connector);
++		}
++	}
++
+ 	/* Save previous state */
+ 	NVLockVgaCrtcs(dev, false);
+ 
