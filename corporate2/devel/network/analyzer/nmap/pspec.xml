@@ -9,7 +9,7 @@
             <Email>onur@pardus.org.tr</Email>
         </Packager>
         <License>GPLv2</License>
-        <IsA>app:console</IsA>
+        <Icon>nmap</Icon>
         <Summary>Utility for network exploration or security auditing</Summary>
         <Description>Nmap is a utility for network exploration or security auditing.</Description>
         <Archive sha1sum="f4225ef5134b4b3ba5cc3f715c368d98a4919f95" type="tarbz2">http://nmap.org/dist/nmap-5.30BETA1.tar.bz2</Archive>
@@ -17,26 +17,69 @@
             <Dependency>libpcap</Dependency>
             <Dependency>lua</Dependency>
         </BuildDependencies>
+        <Patches>
+            <Patch level="1">nmap-4.75-include.patch</Patch>
+            <Patch level="1">nmap-4.75-nolua.patch</Patch>
+            <Patch level="1">nmap-5.10_beta1-string.patch</Patch>
+            <Patch level="1">nmap-5.21-python.patch</Patch>
+            <Patch level="1">zenmap_xdgsu.patch</Patch>
+            <Patch level="1">ncat_nostrip.patch</Patch>
+            <Patch level="1">tr.patch</Patch>
+        </Patches>
     </Source>
 
     <Package>
         <Name>nmap</Name>
+        <IsA>app:console</IsA>
         <RuntimeDependencies>
             <Dependency>libpcap</Dependency>
             <Dependency>lua</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
-            <Path fileType="library">/usr/libexec</Path>
             <Path fileType="data">/usr/share/ncat</Path>
             <Path fileType="data">/usr/share/nmap</Path>
             <Path fileType="data">/usr/share/nping</Path>
             <Path fileType="man">/usr/share/man</Path>
             <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="data">/usr/share/pixmaps</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/pixmaps/nmap.png">nmap.png</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <Package>
+        <Name>zenmap</Name>
+        <IsA>app:gui</IsA>
+        <Summary>zenmap is the graphical frontend for nmap</Summary>
+        <RuntimeDependencies>
+            <Dependency releaseFrom="27">nmap</Dependency>
+            <Dependency>pygtk</Dependency>
+            <Dependency>xdg-utils</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/usr/bin/zenmap</Path>
+            <Path fileType="man">/usr/share/man/man1/zenmap.1</Path>
+            <Path fileType="doc">/usr/lib/python2.6/site-packages</Path>
+            <Path fileType="doc">/usr/share/zenmap</Path>
+            <Path fileType="doc">/usr/share/applications</Path>
         </Files>
     </Package>
 
     <History>
+        <Update release="27">
+            <Date>2010-07-07</Date>
+            <Version>5.30_beta1</Version>
+            <Comment>
+                Enable zenmap, split as another package and force xdg-su usage, fixes bug #13696
+                Split zenmap package
+                Disable strip for ncat
+                Add some small fixes
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
         <Update release="26">
             <Date>2010-04-06</Date>
             <Version>5.30_beta1</Version>
