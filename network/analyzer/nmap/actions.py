@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -13,12 +13,19 @@ WorkDir = "nmap-%s" % get.srcVERSION().replace("_", "").upper()
 
 def setup():
     autotools.autoconf()
-    autotools.configure("--without-zenmap")
+    autotools.configure("--with-openssl \
+                         --with-zenmap \
+                         --with-ndiff \
+                         --with-nping \
+                         --with-ncat \
+                         --with-liblua")
 
 def build():
     autotools.make()
 
 def install():
     autotools.rawInstall("DESTDIR=%s STRIP=true" % get.installDIR())
+    for i in ["uninstall_zenmap", "nmapfe", "xnmap"]:
+        pisitools.remove("/usr/bin/%s" % i)
 
     pisitools.dodoc("docs/README", "HACKING", "CHANGELOG", "docs/*.txt")
