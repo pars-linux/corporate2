@@ -18,8 +18,8 @@ LIBPATH = "/usr/lib/gcc-lib/%s/3.3.6" % get.HOST()
 DATAPATH = "/usr/share/gcc-data/%s/3.3.6" % get.HOST()
 STDCXX_INCDIR = "/usr/lib/gcc-lib/%s/3.3.6/include/g++-v3" % get.HOST()
 
-cflags = get.CFLAGS().replace("mtune", "mcpu").replace("-fstack-protector", "").replace("-D_FORTIFY_SOURCE=2", "").replace("-mcpu=generic", "-mcpu=%s" % get.ARCH())
-cxxflags =  get.CXXFLAGS().replace("mtune", "mcpu").replace("-fstack-protector", "").replace("-D_FORTIFY_SOURCE=2", "").replace("-mcpu=generic", "-mcpu=%s" % get.ARCH())
+cflags = get.CFLAGS().replace("mtune", "mcpu").replace("-fstack-protector", "").replace("-D_FORTIFY_SOURCE=2", "").replace("-mcpu=generic", "-mcpu=%s" % get.ARCH().replace("_", "-"))
+cxxflags =  get.CXXFLAGS().replace("mtune", "mcpu").replace("-fstack-protector", "").replace("-D_FORTIFY_SOURCE=2", "").replace("-mcpu=generic", "-mcpu=%s" % get.ARCH().replace("_", "-"))
 
 def setup():
     shelltools.export("CFLAGS", cflags)
