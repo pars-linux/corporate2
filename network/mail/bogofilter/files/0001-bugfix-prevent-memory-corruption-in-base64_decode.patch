@@ -1,0 +1,41 @@
+From 192fd9a149b318b87a01ed482fdf913feee1e2b5 Mon Sep 17 00:00:00 2001
+From: Julius Plenz <plenz@cis.fu-berlin.de>
+Date: Wed, 16 Jun 2010 12:59:19 +0200
+Subject: [PATCH] bugfix: prevent memory corruption in base64_decode
+
+If a string starting with an equal-sign is passed to the base64_decode
+function it triggers a memory corruption that in some cases makes
+bogofilter crash.
+
+If the first character in word->text ist '=', then in base_64.c:50
+`shorten' will be set to 4, the loop ll 59-63 is skipped and the code
+
+    d += 3 - shorten;
+
+will actually rewind the string-pointer d by one, thus causing the
+function to write to a potentially invalid memory area in subsequent
+calls. (Because *d at that point is the first character in the string.)
+---
+ src/base64.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/base64.c b/src/base64.c
+index db72f9e..d20e4d9 100644
+--- a/src/base64.c
++++ b/src/base64.c
+@@ -61,8 +61,10 @@ uint base64_decode(word_t *word)
+ 	    d[i] = c;
+ 	    v = v >> 8;
+ 	}
+-	d += 3 - shorten;
+-	count += 3 - shorten;
++    if(shorten != 4) {
++        d += 3 - shorten;
++        count += 3 - shorten;
++    }
+     }
+     /* XXX do we need this NUL byte? */
+     if (word->leng)
+-- 
+1.7.1
+
