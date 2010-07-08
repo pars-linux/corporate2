@@ -1,0 +1,41 @@
+From 2b2844b10d7b7e5c97f9c667d664d9418bb7769a Mon Sep 17 00:00:00 2001
+From: Ludwig Nussel <ludwig.nussel@suse.de>
+Date: Wed, 19 May 2010 15:43:44 +0200
+Subject: [PATCH] socket: ignore packet if FIONREAD returns zero
+
+zero size is reported for corrupt packets. recvmsg() later could
+nevertheless get data from a good packet that followed the bad one.
+So get out early to avoid hitting an assertion.
+---
+ avahi-core/socket.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/avahi-core/socket.c b/avahi-core/socket.c
+index 4146d5a..f9b90a2 100644
+--- a/avahi-core/socket.c
++++ b/avahi-core/socket.c
+@@ -652,6 +652,10 @@ AvahiDnsPacket *avahi_recv_dns_packet_ipv4(
+         goto fail;
+     }
+ 
++    /* For corrupt packets FIONREAD returns zero size (See rhbz #607297) */
++    if (!ms)
++        goto fail;
++
+     p = avahi_dns_packet_new(ms + AVAHI_DNS_PACKET_EXTRA_SIZE);
+ 
+     io.iov_base = AVAHI_DNS_PACKET_DATA(p);
+@@ -805,6 +809,10 @@ AvahiDnsPacket *avahi_recv_dns_packet_ipv6(
+         goto fail;
+     }
+ 
++    /* For corrupt packets FIONREAD returns zero size (See rhbz #607297) */
++    if (!ms)
++        goto fail;
++
+     p = avahi_dns_packet_new(ms + AVAHI_DNS_PACKET_EXTRA_SIZE);
+ 
+     io.iov_base = AVAHI_DNS_PACKET_DATA(p);
+-- 
+1.6.3.3
+
