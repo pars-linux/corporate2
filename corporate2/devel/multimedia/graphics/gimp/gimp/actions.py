@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -12,26 +12,21 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
-    autotools.configure("--with-x \
+    autotools.autoreconf("-fi")
+    autotools.configure("--without-webkit \
                          --disable-gtk-doc \
                          --disable-default-binary \
-                         --enable-print \
+                         --disable-altivec \
                          --enable-python \
                          --enable-mmx \
                          --enable-sse \
-                         --disable-altivec \
                          --enable-gimp-remote \
-                         --without-gtkhtml2 \
-                         --without-webkit \
-                         --without-gnomeprint \
-                         --with-gimpprint \
                          --with-libjpeg \
                          --with-libexif \
-                         --with-png \
                          --with-librsvg \
                          --with-lcms \
                          --with-poppler \
-                         --with-tiff \
+                         --with-x \
                          --with-aa")
 
     # Add illustrator and other mime types
