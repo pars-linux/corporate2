@@ -1,0 +1,34 @@
+# HG changeset patch
+# User Cole Robinson <crobinso@redhat.com>
+# Date 1277307256 14400
+# Node ID e5ab15cd4c243f9ac2e7bcad77970dbe1c74cb81
+# Parent  1ade3d1eaa72f8b6a097ac79e1fe7b5e66cedbf0
+virt-install: Fix CDROM attach for windows installs
+
+We were unintentionally dropping the CDROM device for the 2nd stage of the
+install.
+
+diff -r 1ade3d1eaa72 -r e5ab15cd4c24 virtinst/Guest.py
+--- a/virtinst/Guest.py	Mon Jun 21 11:46:13 2010 -0400
++++ b/virtinst/Guest.py	Wed Jun 23 11:34:16 2010 -0400
+@@ -822,6 +822,10 @@
+     ############################
+ 
+     def _prepare_install(self, meter):
++        # Empty install dev list
++        # Warning: moving this to cleanup_install breaks continue_install
++        self._install_devices = []
++
+         # Initialize install device list
+         self._install_devices = self.get_all_devices()[:]
+ 
+@@ -838,9 +842,6 @@
+         self._set_defaults(self._get_install_devs)
+ 
+     def _cleanup_install(self):
+-        # Empty install dev list
+-        self._install_devices = []
+-
+         self._installer.cleanup()
+ 
+     def _create_devices(self, progresscb):

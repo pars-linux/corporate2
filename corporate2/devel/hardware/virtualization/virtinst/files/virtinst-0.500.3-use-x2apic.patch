@@ -1,0 +1,23 @@
+diff -rup virtinst-0.500.3/virtinst/Guest.py new/virtinst/Guest.py
+--- virtinst-0.500.3/virtinst/Guest.py	2010-03-23 16:57:08.000000000 -0400
++++ new/virtinst/Guest.py	2010-03-24 19:44:18.000000000 -0400
+@@ -720,8 +720,17 @@ class Guest(object):
+         """
+         Return <cpu> XML
+         """
+-        # Just a stub for now
+-        return ""
++        xml = ""
++        is_kvm = self.type == "kvm"
++        model = self._caps.host.cpu.model
++
++        if is_kvm and model:
++            xml += "  <cpu match='exact'>\n"
++            xml += "    <model>%s</model>\n" % model
++            xml += "    <feature policy='force' name='x2apic'/>\n"
++            xml += "  </cpu>"
++
++        return xml
+ 
+     def _get_clock_xml(self):
+         """
