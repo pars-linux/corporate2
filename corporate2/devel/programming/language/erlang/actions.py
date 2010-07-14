@@ -92,3 +92,5 @@ def install():
     # Remove dummy installed pdf files
     shelltools.system("./genpdf clean %s/usr/share/doc/%s" % (get.installDIR(), get.srcNAME()))
 
+    pisitools.dodoc("EPLICENCE", "AUTHORS")
+
