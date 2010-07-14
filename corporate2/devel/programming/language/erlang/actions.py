@@ -34,7 +34,7 @@ def build():
     autotools.make("-j1")
 
     # Building documentation needs escript from erlang package
-    shelltools.export("PATH", "%s:%s/bin" % (os.environ.get("PATH"), get.curDIR()))
+    shelltools.export("PATH", "%s/bin:%s" % (get.curDIR(), os.environ.get("PATH")))
     autotools.make("-j1 docs")
 
 def install():
