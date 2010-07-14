@@ -13,7 +13,9 @@ def setup():
     autotools.autoreconf("-fi")
     autotools.configure("--disable-static \
                          --bindir=/bin \
-                         --sbindir=/sbin")
+                         --sbindir=/sbin \
+                         --enable-pam-module-dir=/lib/security \
+                         --enable-initscript-install")
 
 def build():
     autotools.make("V=1")
@@ -28,12 +30,7 @@ def check():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    pisitools.domove("/usr/lib/pam_cgroup.so.*.*.*", "/lib/security", "pam_cgroups.so")
-    pisitools.remove("/usr/lib/pam_cgroup*")
-
     pisitools.dodir("/cgroup")
-
-    pisitools.removeDir("/etc/rc.d")
 
     pisitools.insinto("/etc", "samples/cgconfig.conf")
     pisitools.insinto("/etc", "samples/cgrules.conf")
