@@ -1,0 +1,45 @@
+# HG changeset patch
+# User Cole Robinson <crobinso@redhat.com>
+# Date 1273090006 14400
+# Node ID 7b09131ffffcb9a49fbd2a9dae60530786d4d753
+# Parent  99cf13a133f304abf4597194070aec5d397234c7
+Specify connection when building all virtinst devices
+
+diff -r 99cf13a133f3 -r 7b09131ffffc src/virtManager/addhardware.py
+--- a/src/virtManager/addhardware.py	Wed May 05 15:57:00 2010 -0400
++++ b/src/virtManager/addhardware.py	Wed May 05 16:06:46 2010 -0400
+@@ -1222,7 +1222,8 @@
+     def validate_page_sound(self):
+         smodel = self.get_config_sound_model()
+         try:
+-            self._dev = virtinst.VirtualAudio(model=smodel)
++            self._dev = virtinst.VirtualAudio(conn=self.conn.vmm,
++                                              model=smodel)
+         except Exception, e:
+             return self.err.val_err(_("Sound device parameter error"), str(e))
+ 
+diff -r 99cf13a133f3 -r 7b09131ffffc src/virtManager/create.py
+--- a/src/virtManager/create.py	Wed May 05 15:57:00 2010 -0400
++++ b/src/virtManager/create.py	Wed May 05 16:06:46 2010 -0400
+@@ -1123,7 +1123,7 @@
+         guest.sound_devs = []
+         try:
+             if self.get_config_sound():
+-                guest.sound_devs.append(virtinst.VirtualAudio())
++                guest.sound_devs.append(virtinst.VirtualAudio(conn=guest.conn))
+         except Exception, e:
+             self.err.show_err(_("Error setting up sound device:") + str(e),
+                               "".join(traceback.format_exc()))
+diff -r 99cf13a133f3 -r 7b09131ffffc src/virtManager/uihelpers.py
+--- a/src/virtManager/uihelpers.py	Wed May 05 15:57:00 2010 -0400
++++ b/src/virtManager/uihelpers.py	Wed May 05 16:06:46 2010 -0400
+@@ -431,7 +431,8 @@
+         elif nettype == VirtualNetworkInterface.TYPE_USER:
+             pass
+ 
+-        net = VirtualNetworkInterface(type = nettype,
++        net = VirtualNetworkInterface(conn = conn.vmm,
++                                      type = nettype,
+                                       bridge = bridge,
+                                       network = netname,
+                                       macaddr = macaddr,

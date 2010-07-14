@@ -1,0 +1,75 @@
+diff -rup virt-manager-0.8.4/src/virtManager/create.py new/src/virtManager/create.py
+--- virt-manager-0.8.4/src/virtManager/create.py	2010-05-27 15:46:28.064880000 -0400
++++ new/src/virtManager/create.py	2010-05-27 15:47:11.751259000 -0400
+@@ -1603,10 +1603,16 @@ class vmmCreate(gobject.GObject):
+                     # out handler, removing the virtinst_guest which
+                     # will force one final restart.
+                     virtinst_guest.continue_install()
++
+                     util.connect_opt_out(vm, "status-changed",
+                                          self.check_install_status, None)
+                     return True
+ 
++            if vm.get_install_abort():
++                logging.debug("User manually shutdown VM, not restarting "
++                              "guest after install.")
++                return True
++
+             logging.debug("Install should be completed, starting VM.")
+             vm.startup()
+         except Exception, e:
+diff -rup virt-manager-0.8.4/src/virtManager/domain.py new/src/virtManager/domain.py
+--- virt-manager-0.8.4/src/virtManager/domain.py	2010-05-27 15:46:28.008912000 -0400
++++ new/src/virtManager/domain.py	2010-05-27 15:47:48.539183000 -0400
+@@ -75,6 +75,7 @@ class vmmDomainBase(vmmLibvirtObject):
+         self._backend = backend
+         self.uuid = uuid
+ 
++        self._install_abort = False
+         self._startup_vcpus = None
+ 
+         self._network_traffic = None
+@@ -120,6 +121,13 @@ class vmmDomainBase(vmmLibvirtObject):
+     def get_autostart(self):
+         raise NotImplementedError()
+ 
++    # If manual shutdown or destroy specified, make sure we don't continue
++    # install process
++    def set_install_abort(self, val):
++        self._install_abort = bool(val)
++    def get_install_abort(self):
++        return bool(self._install_abort)
++
+     # Device/XML altering API
+     def set_autostart(self, val):
+         raise NotImplementedError()
+@@ -1274,11 +1282,13 @@ class vmmDomain(vmmDomainBase):
+                                                     reboot_listener, self)
+ 
+     def shutdown(self):
++        self.set_install_abort(True)
+         self._unregister_reboot_listener()
+         self._backend.shutdown()
+         self._update_status()
+ 
+     def reboot(self):
++        self.set_install_abort(True)
+         self._backend.reboot(0)
+         self._update_status()
+ 
+@@ -1298,6 +1308,7 @@ class vmmDomain(vmmDomainBase):
+         self._update_status()
+ 
+     def save(self, filename, background=True):
++        self.set_install_abort(True)
+         if background:
+             conn = util.dup_conn(self.config, self.connection)
+             vm = conn.lookupByID(self.get_id())
+@@ -1308,6 +1319,7 @@ class vmmDomain(vmmDomainBase):
+         self._update_status()
+ 
+     def destroy(self):
++        self.set_install_abort(True)
+         self._unregister_reboot_listener()
+         self._backend.destroy()
+         self._update_status()
