@@ -1,0 +1,38 @@
+# HG changeset patch
+# User Cole Robinson <crobinso@redhat.com>
+# Date 1271108754 14400
+# Node ID f09702cfdb03a8902c2dac88d26fec342759f35f
+# Parent  82cef5edeb6e4b660cacc603d00df0d0b6f90d66
+console: Fix VNC over ssh when using zsh on remote machine
+
+diff -r 82cef5edeb6e -r f09702cfdb03 src/virtManager/console.py
+--- a/src/virtManager/console.py	Mon Apr 12 17:43:55 2010 -0400
++++ b/src/virtManager/console.py	Mon Apr 12 17:45:54 2010 -0400
+@@ -521,7 +521,7 @@
+             "else"
+             "   CMD='nc %(nc_params)s';"
+             "fi;"
+-            "$CMD;" % {'nc_params': nc_params}
++            "sh -c $CMD;" % {'nc_params': nc_params}
+         ]
+ 
+         argv += nc_cmd
+# HG changeset patch
+# User Cole Robinson <crobinso@redhat.com>
+# Date 1271109105 14400
+# Node ID 907ee61e5558dbf8f0b7194d4882a19e66ee6437
+# Parent  c206b12a8c7aa6946bfdca39cc429dd7fd258f2a
+console: Actually fix SSH with zsh
+
+diff -r c206b12a8c7a -r 907ee61e5558 src/virtManager/console.py
+--- a/src/virtManager/console.py	Mon Apr 12 17:46:45 2010 -0400
++++ b/src/virtManager/console.py	Mon Apr 12 17:51:45 2010 -0400
+@@ -521,7 +521,7 @@
+             "else"
+             "   CMD='nc %(nc_params)s';"
+             "fi;"
+-            "sh -c $CMD;" % {'nc_params': nc_params}
++            "sh -c \"$CMD\";" % {'nc_params': nc_params}
+         ]
+ 
+         argv += nc_cmd

@@ -1,0 +1,25 @@
+# HG changeset patch
+# User Cole Robinson <crobinso@redhat.com>
+# Date 1271108805 14400
+# Node ID c206b12a8c7aa6946bfdca39cc429dd7fd258f2a
+# Parent  f09702cfdb03a8902c2dac88d26fec342759f35f
+console: Don't through traceback if we can't read error fd.
+
+This is racy and best effort, so don't log errors if we fail.
+
+diff -r f09702cfdb03 -r c206b12a8c7a src/virtManager/console.py
+--- a/src/virtManager/console.py	Mon Apr 12 17:45:54 2010 -0400
++++ b/src/virtManager/console.py	Mon Apr 12 17:46:45 2010 -0400
+@@ -573,7 +573,11 @@
+         errfd = self.vncTunnel[1]
+         errout = ""
+         while True:
+-            new = errfd.recv(1024)
++            try:
++                new = errfd.recv(1024)
++            except:
++                break
++
+             if not new:
+                 break
+ 
