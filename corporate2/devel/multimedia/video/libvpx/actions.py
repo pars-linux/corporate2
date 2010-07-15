@@ -24,9 +24,9 @@ def setup():
                             --enable-vp8 \
                             --enable-shared \
                             --enable-runtime-cpu-detect \
-                            --enable-install-docs \
                             --enable-postproc \
                             --enable-multithread \
+                            --disable-install-docs \
                             --disable-debug \
                             --disable-debug-libs" % libdir)
 
