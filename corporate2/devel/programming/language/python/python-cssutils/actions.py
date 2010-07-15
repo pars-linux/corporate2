@@ -9,7 +9,7 @@ from pisi.actionsapi import get
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import pythonmodules
 
-WorkDir="%s-%s" % (get.srcNAME().split("python-")[1], get.srcVERSION().replace("_alph", ""))
+WorkDir="%s-0.9.7b3" % get.srcNAME()[7:]
 examples = "%s/%s/examples" % (get.docDIR(), get.srcNAME())
 
 def build():
@@ -23,6 +23,5 @@ def install():
     pythonmodules.install()
     pisitools.insinto(examples, "examples/*")
 
-    pisitools.removeDir("usr/lib/%s/site-packages/tests" % get.curPYTHON())
-
-    pisitools.dodoc("docs/*.txt", "CHANGELOG.txt")
+    pisitools.dodoc("COPYING*", "CHANGELOG.txt", "README.txt")
+    pisitools.dohtml("docs/html/*")
