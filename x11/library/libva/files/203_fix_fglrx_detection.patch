@@ -1,24 +1,24 @@
-commit 02c2bb46ae11a1674927e6e65f990df1dc9ed1ce
+commit 899026f2d0b5d61cd41fbef81873c9d03459dd4c
 Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
-Date:   Mon Mar 8 09:17:09 2010 +0100
+Date:   Mon Jul 12 13:11:08 2010 +0200
 
-    Don't link against libdrm to workaround XvBA / fglrx >= 8.66-RC1 bugs.
+    Fix detection of fglrx.
 
 diff --git a/va/Makefile.am b/va/Makefile.am
-index f382c0e..3b9ccfc 100644
+index 633d42b..e20e0a5 100644
 --- a/va/Makefile.am
 +++ b/va/Makefile.am
-@@ -36,7 +36,7 @@ libva_la_LDFLAGS = $(LDADD) -no-undefined
- libva_la_LIBADD = $(LIBVA_LIBS) -ldl
+@@ -43,7 +43,7 @@ libva_x11_backend      = libva-x11.la
+ libva_x11_backenddir   = x11
  
  libva_x11_la_SOURCES = 
 -libva_x11_la_LIBADD  = $(libvacorelib) x11/libva_x11.la $(LIBVA_LIBS) $(X11_LIBS) $(XEXT_LIBS) $(DRM_LIBS) $(XFIXES_LIBS)
-+libva_x11_la_LIBADD  = $(libvacorelib) x11/libva_x11.la $(LIBVA_LIBS) $(X11_LIBS) $(XEXT_LIBS) $(XFIXES_LIBS)
++libva_x11_la_LIBADD  = $(libvacorelib) x11/libva_x11.la $(LIBVA_LIBS) $(X11_LIBS) $(XEXT_LIBS) $(DRM_LIBS) $(XFIXES_LIBS) -ldl
  libva_x11_la_LDFLAGS = $(LDADD)
  libva_x11_la_DEPENDENCIES = $(libvacorelib) x11/libva_x11.la
  
 diff --git a/va/x11/Makefile.am b/va/x11/Makefile.am
-index 40346f1..7466fda 100644
+index 40346f1..2e3619c 100644
 --- a/va/x11/Makefile.am
 +++ b/va/x11/Makefile.am
 @@ -25,6 +25,6 @@ noinst_LTLIBRARIES = libva_x11.la
@@ -26,195 +26,18 @@ index 40346f1..7466fda 100644
  libva_x11include_HEADERS = va_dri.h va_dri2.h va_dricommon.h
  
 -libva_x11_la_SOURCES = va_x11.c va_dri.c va_dri2.c va_dricommon.c dri2_util.c dri1_util.c va_nvctrl.c
-+libva_x11_la_SOURCES = va_x11.c va_dri.c va_dri2.c va_dricommon.c dri2_util.c dri1_util.c va_nvctrl.c libdrm_glue.c
++libva_x11_la_SOURCES = va_x11.c va_dri.c va_dri2.c va_dricommon.c dri2_util.c dri1_util.c va_nvctrl.c va_fglrx.c
  
 -EXTRA_DIST = va_dristr.h va_dri2str.h va_dri2tokens.h va_nvctrl.h
-+EXTRA_DIST = va_dristr.h va_dri2str.h va_dri2tokens.h va_nvctrl.h libdrm_glue.h
-diff --git a/va/x11/dri1_util.c b/va/x11/dri1_util.c
-index 3e67e2a..f6ce1ba 100644
---- a/va/x11/dri1_util.c
-+++ b/va/x11/dri1_util.c
-@@ -1,10 +1,13 @@
-+#include "config.h"
-+#include <stdio.h>
- #include <stdlib.h>
-+#include <strings.h> /* strcasecmp() */
- #include <fcntl.h>
- #include <unistd.h>
- #include <sys/mman.h>
- #include <assert.h>
- 
--#include <xf86drm.h>
-+#include "libdrm_glue.h"
- 
- #include "X11/Xlib.h"
- #include "va.h"
-@@ -21,6 +24,75 @@ struct dri1_drawable
-     int height;
- };
- 
-+static int
-+firegl_drmOpenMinor(int minor)
-+{
-+    char buf[64];
-+    int fd;
-+
-+    sprintf(buf, "/dev/ati/card%d", minor);
-+    if ((fd = open(buf, O_RDWR, 0)) >= 0)
-+        return fd;
-+    return -1;
-+}
-+
-+static int
-+firegl_drmOpenByBusID(const char *busid)
-+{
-+    int i, fd;
-+    drmSetVersion sv;
-+    const char *buf;
-+
-+    for (i = 0; i < DRM_MAX_MINOR; i++) {
-+        if ((fd = firegl_drmOpenMinor(i)) < 0)
-+            continue;
-+        sv.drm_di_major = 1;
-+        sv.drm_di_minor = 1;
-+        sv.drm_dd_major = -1;
-+        sv.drm_dd_minor = -1;
-+        libdrm_drmSetInterfaceVersion(fd, &sv);
-+        buf = libdrm_drmGetBusid(fd);
-+        if (buf && strcasecmp(buf, busid) == 0) { /* XXX: drmMatchBusID() */
-+            libdrm_drmFreeBusid(buf);
-+            return fd;
-+        }
-+        if (buf)
-+            libdrm_drmFreeBusid(buf);
-+        close(fd);
-+    }
-+    return -1;
-+}
-+
-+static int
-+drm_open_once(struct dri_state *dri_state, const char *BusID, int *newlyopened)
-+{
-+    dri_state->driConnectedFlag = VA_NONE;
-+    dri_state->fd = libdrm_drmOpenOnce(NULL, BusID, newlyopened);
-+    if (dri_state->fd < 0) {
-+        dri_state->fd = firegl_drmOpenByBusID(BusID);
-+        if (dri_state->fd >= 0) {
-+            *newlyopened = 1;
-+            dri_state->driConnectedFlag |= VA_DRI_AMD;
-+        }
-+    }
-+    return dri_state->fd;
-+}
-+
-+static void
-+drm_close_once(struct dri_state *dri_state)
-+{
-+    /* XXX: dri_state->close() doesn't seem to be called, thus this
-+       function is never called either */
-+    if (dri_state->fd < 0)
-+        return;
-+    if (dri_state->driConnectedFlag & VA_DRI_AMD)
-+        close(dri_state->fd);
-+    else
-+        libdrm_drmCloseOnce(dri_state->fd);
-+    dri_state->fd = -1;
-+    dri_state->driConnectedFlag = VA_NONE;
-+}
-+
- static struct dri_drawable * 
- dri1CreateDrawable(VADriverContextP ctx, XID x_drawable)
- {
-@@ -64,9 +136,9 @@ dri1Close(VADriverContextP ctx)
-     free_drawable_hashtable(ctx);
-     VA_DRIDestroyContext(ctx->x11_dpy, ctx->x11_screen, dri_state->hwContextID);
-     assert(dri_state->pSAREA != MAP_FAILED);
--    drmUnmap(dri_state->pSAREA, SAREA_MAX);
-+    libdrm_drmUnmap(dri_state->pSAREA, SAREA_MAX);
-     assert(dri_state->fd >= 0);
--    drmCloseOnce(dri_state->fd);
-+    drm_close_once(dri_state);
-     VA_DRICloseConnection(ctx->x11_dpy, ctx->x11_screen);
- }
- 
-@@ -104,21 +176,20 @@ isDRI1Connected(VADriverContextP ctx, char **driver_name)
-                               &dri_state->hSAREA, &BusID))
-         goto err_out0;
- 
--    
--    dri_state->fd = drmOpenOnce(NULL, BusID, &newlyopened);
-+    drm_open_once(dri_state, BusID, &newlyopened);
-     XFree(BusID);
- 
-     if (dri_state->fd < 0)
-         goto err_out1;
- 
- 
--    if (drmGetMagic(dri_state->fd, &magic))
-+    if (libdrm_drmGetMagic(dri_state->fd, &magic))
-         goto err_out1;
- 
-     if (newlyopened && !VA_DRIAuthConnection(ctx->x11_dpy, ctx->x11_screen, magic))
-         goto err_out1;
- 
--    if (drmMap(dri_state->fd, dri_state->hSAREA, SAREA_MAX, &dri_state->pSAREA))
-+    if (libdrm_drmMap(dri_state->fd, dri_state->hSAREA, SAREA_MAX, &dri_state->pSAREA))
-         goto err_out1;
- 
-     if (!VA_DRICreateContext(ctx->x11_dpy, ctx->x11_screen,
-@@ -126,7 +197,8 @@ isDRI1Connected(VADriverContextP ctx, char **driver_name)
-                              &dri_state->hwContextID, &dri_state->hwContext))
-         goto err_out1;
- 
--    dri_state->driConnectedFlag = VA_DRI1;
-+    dri_state->driConnectedFlag &= VA_DRI_AMD; /* clear flags but AMD bit */
-+    dri_state->driConnectedFlag |= VA_DRI1;
-     dri_state->createDrawable = dri1CreateDrawable;
-     dri_state->destroyDrawable = dri1DestroyDrawable;
-     dri_state->swapBuffer = dri1SwapBuffer;
-@@ -137,10 +209,10 @@ isDRI1Connected(VADriverContextP ctx, char **driver_name)
- 
- err_out1:
-     if (dri_state->pSAREA != MAP_FAILED)
--        drmUnmap(dri_state->pSAREA, SAREA_MAX);
-+        libdrm_drmUnmap(dri_state->pSAREA, SAREA_MAX);
- 
-     if (dri_state->fd >= 0)
--        drmCloseOnce(dri_state->fd);
-+        drm_close_once(dri_state);
- 
-     VA_DRICloseConnection(ctx->x11_dpy, ctx->x11_screen);
- 
-diff --git a/va/x11/dri2_util.c b/va/x11/dri2_util.c
-index ebe7a2c..b727e97 100644
---- a/va/x11/dri2_util.c
-+++ b/va/x11/dri2_util.c
-@@ -3,7 +3,7 @@
- #include <unistd.h>
- #include <assert.h>
- 
--#include <xf86drm.h>
-+#include "libdrm_glue.h"
- 
- #include <X11/Xlibint.h>
- #include <X11/Xlib.h>
-@@ -166,7 +166,7 @@ isDRI2Connected(VADriverContextP ctx, char **driver_name)
-     if (dri_state->fd < 0)
-         goto err_out;
- 
--    if (drmGetMagic(dri_state->fd, &magic))
-+    if (libdrm_drmGetMagic(dri_state->fd, &magic))
-         goto err_out;
- 
-     if (!VA_DRI2Authenticate(ctx->x11_dpy, RootWindow(ctx->x11_dpy, ctx->x11_screen),
-diff --git a/va/x11/libdrm_glue.c b/va/x11/libdrm_glue.c
++EXTRA_DIST = va_dristr.h va_dri2str.h va_dri2tokens.h va_nvctrl.h va_fglrx.h
+diff --git a/va/x11/va_fglrx.c b/va/x11/va_fglrx.c
 new file mode 100644
-index 0000000..92c7d60
+index 0000000..247409d
 --- /dev/null
-+++ b/va/x11/libdrm_glue.c
-@@ -0,0 +1,209 @@
++++ b/va/x11/va_fglrx.c
+@@ -0,0 +1,225 @@
 +/*
-+ * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
++ * Copyright (C) 2010 Splitted-Desktop Systems. All Rights Reserved.
 + *
 + * Permission is hereby granted, free of charge, to any person obtaining a
 + * copy of this software and associated documentation files (the
@@ -237,199 +60,215 @@ index 0000000..92c7d60
 + * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 + */
 +
-+#define _GNU_SOURCE 1
-+#include "libdrm_glue.h"
 +#include <stdio.h>
 +#include <stdlib.h>
 +#include <string.h>
 +#include <dlfcn.h>
-+#include <assert.h>
++#include <X11/Xlib.h>
 +
-+#define LOAD_FUNC_(NAME, RET, ARGS, FALLBACK)   \
-+    static RET (*lib_##NAME) ARGS;              \
-+    if (lib_##NAME == NULL) {                   \
-+        lib_##NAME = libdrm_symbol(#NAME);      \
-+        if (!lib_##NAME)                        \
-+            lib_##NAME = FALLBACK;              \
-+    }                                           \
-+    assert(lib_##NAME != NULL)
++#define ADL_OK 0
++#define ADL_MAX_PATH 256
 +
-+#define LOAD_FUNC(NAME, RET, ARGS)              \
-+    LOAD_FUNC_(NAME, RET, ARGS, NULL)
-+
-+static void *libdrm_handle;
-+static int libdrm_handle_ok = -1;
-+
-+static inline void *libdrm_symbol(const char *name)
-+{
-+    if (!libdrm_open())
-+        return NULL;
-+    return dlsym(libdrm_handle, name);
-+}
-+
-+int libdrm_open(void)
-+{
-+    if (libdrm_handle_ok < 0) {
-+        libdrm_handle = dlopen("libdrm.so.2", RTLD_LOCAL|RTLD_LAZY);
-+        libdrm_handle_ok = libdrm_handle != NULL;
-+    }
-+    assert(libdrm_handle);
-+    return libdrm_handle_ok;
-+}
-+
-+void libdrm_close(void)
-+{
-+    if (libdrm_handle)
-+        dlclose(libdrm_handle);
-+}
-+
-+// Default drmOpenOnce() and drmCloseOnce() implementations based on current GIT
-+#define DRM_MAX_FDS 16
-+static struct {
-+    char *BusID;
-+    int fd;
-+    int refcount;
-+} connection[DRM_MAX_FDS];
-+
-+static int nr_fds = 0;
-+
-+// Default implementation for drmOpenOnce() if none exists in the library
-+static int
-+libdrm_default_drmOpenOnce(void *unused, const char *BusID, int *newlyopened)
-+{
-+    int i;
-+    int fd;
-+
-+    for (i = 0; i < nr_fds; i++)
-+        if (strcmp(BusID, connection[i].BusID) == 0) {
-+            connection[i].refcount++;
-+            *newlyopened = 0;
-+            return connection[i].fd;
-+        }
-+
-+    fd = libdrm_drmOpen(unused, BusID);
-+    if (fd <= 0 || nr_fds == DRM_MAX_FDS)
-+        return fd;
-+
-+    connection[nr_fds].BusID = strdup(BusID);
-+    connection[nr_fds].fd = fd;
-+    connection[nr_fds].refcount = 1;
-+    *newlyopened = 1;
-+
-+    if (0)
-+        fprintf(stderr, "saved connection %d for %s %d\n", 
-+                nr_fds, connection[nr_fds].BusID, 
-+                strcmp(BusID, connection[nr_fds].BusID));
-+    nr_fds++;
-+    return fd;
-+}
-+
-+// Default implementation for drmCloseOnce() if none exists in the library
-+static void libdrm_default_drmCloseOnce(int fd)
-+{
-+    int i;
-+
-+    for (i = 0; i < nr_fds; i++) {
-+        if (fd == connection[i].fd) {
-+            if (--connection[i].refcount == 0) {
-+                libdrm_drmClose(connection[i].fd);
-+                free(connection[i].BusID);
-+                if (i < --nr_fds) 
-+                    connection[i] = connection[nr_fds];
-+                return;
-+            }
-+        }
-+    }
-+}
-+
-+// Determine whether the DRM kernel driver has been loaded
-+int libdrm_drmAvailable(void)
-+{
-+    LOAD_FUNC(drmAvailable, int, (void));
-+    return lib_drmAvailable();
-+}
-+
-+// Open the DRM device
-+int libdrm_drmOpen(const char *name, const char *busid)
-+{
-+    LOAD_FUNC(drmOpen, int, (const char *, const char *));
-+    return lib_drmOpen(name, busid);
-+}
-+
-+// Close the device
-+int libdrm_drmClose(int fd)
-+{
-+    LOAD_FUNC(drmClose, int, (int));
-+    return lib_drmClose(fd);
-+}
-+
-+// Open the DRM device (re-use an existing connection)
-+int libdrm_drmOpenOnce(void *unused, const char *BusID, int *newlyopened)
-+{
-+    LOAD_FUNC_(drmOpenOnce, int, (void *, const char *, int *),
-+               libdrm_default_drmOpenOnce);
-+    return lib_drmOpenOnce(unused, BusID, newlyopened);
-+}
-+
-+// Close the device (unref an existing connection prior to actually closing it)
-+void libdrm_drmCloseOnce(int fd)
-+{
-+    LOAD_FUNC_(drmCloseOnce, void, (int), libdrm_default_drmCloseOnce);
-+    lib_drmCloseOnce(fd);
-+}
-+
-+// DRM connection cookie
-+int libdrm_drmGetMagic(int fd, drm_magic_t * magic)
-+{
-+    LOAD_FUNC(drmGetMagic, int, (int, drm_magic_t *));
-+    return lib_drmGetMagic(fd, magic);
-+}
-+
-+// Issue a set-version ioctl
-+int libdrm_drmSetInterfaceVersion(int fd, drmSetVersion *version)
-+{
-+    LOAD_FUNC(drmSetInterfaceVersion, int, (int, drmSetVersion *));
-+    return lib_drmSetInterfaceVersion(fd, version);
-+}
-+
-+// Get the bus ID of the device
-+char *libdrm_drmGetBusid(int fd)
-+{
-+    LOAD_FUNC(drmGetBusid, char *, (int));
-+    return lib_drmGetBusid(fd);
-+}
-+
-+// Free the bus ID information
-+void libdrm_drmFreeBusid(const char *busid)
-+{
-+    LOAD_FUNC(drmFreeBusid, void, (const char *));
-+    lib_drmFreeBusid(busid);
-+}
-+
-+// Map a region of memory
-+int libdrm_drmMap(int fd,
-+                  drm_handle_t handle,
-+                  drmSize size,
-+                  drmAddressPtr address)
-+{
-+    LOAD_FUNC(drmMap, int, (int, drm_handle_t, drmSize, drmAddressPtr));
-+    return lib_drmMap(fd, handle, size, address);
-+}
-+
-+// Unmap mappings obtained with drmMap()
-+int libdrm_drmUnmap(drmAddress address, drmSize size)
-+{
-+    LOAD_FUNC(drmUnmap, int, (drmAddress, drmSize));
-+    return lib_drmUnmap(address, size);
-+}
-diff --git a/va/x11/libdrm_glue.h b/va/x11/libdrm_glue.h
-new file mode 100644
-index 0000000..878470b
---- /dev/null
-+++ b/va/x11/libdrm_glue.h
-@@ -0,0 +1,73 @@
 +/*
-+ * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
++ * Based on public AMD Display Library (ADL) SDK:
++ * <http://developer.amd.com/gpu/adlsdk/Pages/default.aspx>
++ */
++typedef struct AdapterInfo {
++    int iSize;
++    int iAdapterIndex;
++    char strUDID[ADL_MAX_PATH]; 
++    int iBusNumber;
++    int iDeviceNumber;
++    int iFunctionNumber;
++    int iVendorID;
++    char strAdapterName[ADL_MAX_PATH];
++    char strDisplayName[ADL_MAX_PATH];
++    int iPresent;
++    int iXScreenNum;
++    int iDrvIndex;
++    char strXScreenConfigName[ADL_MAX_PATH];
++} AdapterInfo, *LPAdapterInfo;
++
++typedef struct XScreenInfo {
++    int iXScreenNum;
++    char strXScreenConfigName[ADL_MAX_PATH];
++} XScreenInfo, *LPXScreenInfo;
++
++typedef void *(*ADL_MAIN_MALLOC_CALLBACK)(int);
++typedef int (*ADL_MAIN_CONTROL_CREATE)(ADL_MAIN_MALLOC_CALLBACK, int);
++typedef int (*ADL_MAIN_CONTROL_DESTROY)(void);
++typedef int (*ADL_ADAPTER_NUMBEROFADAPTERS_GET)(int *);
++typedef int (*ADL_ADAPTER_ADAPTERINFO_GET)(LPAdapterInfo, int);
++typedef int (*ADL_ADAPTER_XSCREENINFO_GET)(LPXScreenInfo, int);
++
++static void *ADL_Main_Memory_Alloc(int iSize)
++{
++    return malloc(iSize);
++}
++
++static void ADL_Main_Memory_Free(void *arg)
++{
++    void ** const lpBuffer = arg;
++
++    if (lpBuffer && *lpBuffer) {
++        free(*lpBuffer);
++        *lpBuffer = NULL;
++    }
++}
++
++static int match_display(Display *x11_dpy, const char *display_name)
++{
++    Display *test_dpy;
++    char *test_dpy_name, *x11_dpy_name;
++    int m;
++
++    test_dpy = XOpenDisplay(display_name);
++    if (!test_dpy)
++        return 0;
++
++    test_dpy_name = XDisplayString(test_dpy);
++    x11_dpy_name  = XDisplayString(x11_dpy);
++
++    if (x11_dpy_name && test_dpy_name)
++        m = strcmp(x11_dpy_name, test_dpy_name) == 0;
++    else
++        m = !x11_dpy_name && !test_dpy_name;
++
++    XCloseDisplay(test_dpy);
++    return m;
++}
++
++Bool VA_FGLRXGetClientDriverName( Display *dpy, int screen,
++    int *ddxDriverMajorVersion, int *ddxDriverMinorVersion,
++    int *ddxDriverPatchVersion, char **clientDriverName )
++{
++    ADL_MAIN_CONTROL_CREATE          ADL_Main_Control_Create;
++    ADL_MAIN_CONTROL_DESTROY         ADL_Main_Control_Destroy;
++    ADL_ADAPTER_NUMBEROFADAPTERS_GET ADL_Adapter_NumberOfAdapters_Get;
++    ADL_ADAPTER_ADAPTERINFO_GET      ADL_Adapter_AdapterInfo_Get;
++    ADL_ADAPTER_XSCREENINFO_GET      ADL_Adapter_XScreenInfo_Get;
++
++    LPAdapterInfo lpAdapterInfo = NULL;
++    LPXScreenInfo lpXScreenInfo = NULL;
++    void *libadl_handle = NULL;
++    Bool success = False;
++    int is_adl_initialized = 0;
++    int i, num_adapters, lpAdapterInfo_size, lpXScreenInfo_size;
++
++    if (ddxDriverMajorVersion)
++        *ddxDriverMajorVersion = 0;
++    if (ddxDriverMinorVersion)
++        *ddxDriverMinorVersion = 0;
++    if (ddxDriverPatchVersion)
++        *ddxDriverPatchVersion = 0;
++    if (clientDriverName)
++        *clientDriverName = NULL;
++
++    libadl_handle = dlopen("libatiadlxx.so", RTLD_LAZY|RTLD_GLOBAL);
++    if (!libadl_handle)
++        goto end;
++
++    dlerror();
++    ADL_Main_Control_Create = (ADL_MAIN_CONTROL_CREATE)
++        dlsym(libadl_handle,"ADL_Main_Control_Create");
++    if (dlerror())
++        goto end;
++
++    ADL_Main_Control_Destroy = (ADL_MAIN_CONTROL_DESTROY)
++        dlsym(libadl_handle,"ADL_Main_Control_Destroy");
++    if (dlerror())
++        goto end;
++
++    ADL_Adapter_NumberOfAdapters_Get = (ADL_ADAPTER_NUMBEROFADAPTERS_GET)
++        dlsym(libadl_handle,"ADL_Adapter_NumberOfAdapters_Get");
++    if (dlerror())
++        goto end;
++
++    ADL_Adapter_AdapterInfo_Get = (ADL_ADAPTER_ADAPTERINFO_GET)
++        dlsym(libadl_handle,"ADL_Adapter_AdapterInfo_Get");
++    if (dlerror())
++        goto end;
++
++    ADL_Adapter_XScreenInfo_Get = (ADL_ADAPTER_XSCREENINFO_GET)
++        dlsym(libadl_handle,"ADL_Adapter_XScreenInfo_Get");
++    if (dlerror())
++        goto end;
++
++    if (ADL_Main_Control_Create(ADL_Main_Memory_Alloc, 1) != ADL_OK)
++        goto end;
++    is_adl_initialized = 1;
++
++    if (ADL_Adapter_NumberOfAdapters_Get(&num_adapters) != ADL_OK)
++        goto end;
++    if (num_adapters <= 0)
++        goto end;
++
++    lpAdapterInfo_size = num_adapters * sizeof(*lpAdapterInfo);
++    lpAdapterInfo = ADL_Main_Memory_Alloc(lpAdapterInfo_size);
++    if (!lpAdapterInfo)
++        goto end;
++    memset(lpAdapterInfo, 0, lpAdapterInfo_size);
++
++    for (i = 0; i < num_adapters; i++)
++        lpAdapterInfo[i].iSize = sizeof(lpAdapterInfo[i]);
++
++    lpXScreenInfo_size = num_adapters * sizeof(*lpXScreenInfo);
++    lpXScreenInfo = ADL_Main_Memory_Alloc(lpXScreenInfo_size);
++    if (!lpXScreenInfo)
++        goto end;
++    memset(lpXScreenInfo, 0, lpXScreenInfo_size);
++
++    if (ADL_Adapter_AdapterInfo_Get(lpAdapterInfo, lpAdapterInfo_size) != ADL_OK)
++        goto end;
++
++    if (ADL_Adapter_XScreenInfo_Get(lpXScreenInfo, lpXScreenInfo_size) != ADL_OK)
++        goto end;
++
++    for (i = 0; i < num_adapters; i++) {
++        LPXScreenInfo const lpCurrXScreenInfo = &lpXScreenInfo[i];
++        LPAdapterInfo const lpCurrAdapterInfo = &lpAdapterInfo[i];
++        if (!lpCurrAdapterInfo->iPresent)
++            continue;
++#if 0
++        printf("Adapter %d:\n", i);
++        printf("  iAdapterIndex: %d\n",    lpCurrAdapterInfo->iAdapterIndex);
++        printf("  strUDID: '%s'\n",        lpCurrAdapterInfo->strUDID);
++        printf("  iBusNumber: %d\n",       lpCurrAdapterInfo->iBusNumber);
++        printf("  iDeviceNumber: %d\n",    lpCurrAdapterInfo->iDeviceNumber);
++        printf("  iFunctionNumber: %d\n",  lpCurrAdapterInfo->iFunctionNumber);
++        printf("  iVendorID: 0x%04x\n",    lpCurrAdapterInfo->iVendorID);
++        printf("  strAdapterName: '%s'\n", lpCurrAdapterInfo->strAdapterName);
++        printf("  strDisplayName: '%s'\n", lpCurrAdapterInfo->strDisplayName);
++        printf("  iPresent: %d\n",         lpCurrAdapterInfo->iPresent);
++        printf("  iXScreenNum: %d\n",      lpCurrXScreenInfo->iXScreenNum);
++#endif
++        if (match_display(dpy, lpCurrAdapterInfo->strDisplayName) &&
++            screen == lpXScreenInfo->iXScreenNum) {
++            *clientDriverName = strdup("fglrx");
++            break;
++        }
++    }
++
++    success = True;
++end:
++    if (lpXScreenInfo)
++        ADL_Main_Memory_Free(&lpXScreenInfo);
++    if (lpAdapterInfo)
++        ADL_Main_Memory_Free(&lpAdapterInfo);
++    if (is_adl_initialized)
++        ADL_Main_Control_Destroy();
++    if (libadl_handle)
++        dlclose(libadl_handle);
++    return success;
++}
+diff --git a/va/x11/va_fglrx.h b/va/x11/va_fglrx.h
+new file mode 100644
+index 0000000..6616044
+--- /dev/null
++++ b/va/x11/va_fglrx.h
+@@ -0,0 +1,34 @@
++/*
++ * Copyright (C) 2010 Splitted-Desktop Systems. All Rights Reserved.
 + *
 + * Permission is hereby granted, free of charge, to any person obtaining a
 + * copy of this software and associated documentation files (the
@@ -452,87 +291,60 @@ index 0000000..878470b
 + * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 + */
 +
-+#ifndef LIBDRM_GLUE_H
-+#define LIBDRM_GLUE_H
++#ifndef VA_FGLRX_H
++#define VA_FGLRX_H
 +
-+#include "config.h"
-+#include <xf86drm.h>
++#include <X11/Xlib.h>
 +
-+int libdrm_open(void)
-+    ATTRIBUTE_HIDDEN;
++Bool VA_FGLRXGetClientDriverName( Display *dpy, int screen,
++    int *ddxDriverMajorVersion, int *ddxDriverMinorVersion,
++    int *ddxDriverPatchVersion, char **clientDriverName );
 +
-+void libdrm_close(void)
-+    ATTRIBUTE_HIDDEN;
-+
-+int libdrm_drmAvailable(void)
-+    ATTRIBUTE_HIDDEN;
-+
-+int libdrm_drmOpen(const char *name, const char *busid)
-+    ATTRIBUTE_HIDDEN;
-+
-+int libdrm_drmClose(int fd)
-+    ATTRIBUTE_HIDDEN;
-+
-+int libdrm_drmOpenOnce(void *unused, const char *BusID, int *newlyopened)
-+    ATTRIBUTE_HIDDEN;
-+
-+void libdrm_drmCloseOnce(int fd)
-+    ATTRIBUTE_HIDDEN;
-+
-+int libdrm_drmGetMagic(int fd, drm_magic_t * magic)
-+    ATTRIBUTE_HIDDEN;
-+
-+int libdrm_drmSetInterfaceVersion(int fd, drmSetVersion *version)
-+    ATTRIBUTE_HIDDEN;
-+
-+char *libdrm_drmGetBusid(int fd)
-+    ATTRIBUTE_HIDDEN;
-+
-+void libdrm_drmFreeBusid(const char *busid)
-+    ATTRIBUTE_HIDDEN;
-+
-+int libdrm_drmMap(int fd,
-+                  drm_handle_t handle,
-+                  drmSize size,
-+                  drmAddressPtr address)
-+    ATTRIBUTE_HIDDEN;
-+
-+int libdrm_drmUnmap(drmAddress address, drmSize size)
-+    ATTRIBUTE_HIDDEN;
-+
-+#endif /* LIBDRM_GLUE_H */
-diff --git a/va/x11/va_dricommon.h b/va/x11/va_dricommon.h
-index b762bd0..5ed7a6a 100644
---- a/va/x11/va_dricommon.h
-+++ b/va/x11/va_dricommon.h
-@@ -13,7 +13,8 @@ enum
- {
-     VA_NONE = 0,
-     VA_DRI1 = 1,
--    VA_DRI2 = 2
-+    VA_DRI2 = 2,
-+    VA_DRI_AMD = 4 /* AMD DRI implementation */
- };
- 
- union dri_buffer 
++#endif /* VA_FGLRX_H */
 diff --git a/va/x11/va_x11.c b/va/x11/va_x11.c
-index 78e38de..1216093 100644
+index 7f8fbd6..cbd2614 100644
 --- a/va/x11/va_x11.c
 +++ b/va/x11/va_x11.c
 @@ -31,6 +31,7 @@
  #include "va_dri2.h"
  #include "va_dricommon.h"
  #include "va_nvctrl.h"
-+#include "libdrm_glue.h"
++#include "va_fglrx.h"
  #include <stdio.h>
  #include <stdlib.h>
  #include <stdarg.h>
-@@ -75,6 +76,8 @@ static void va_DisplayContextDestroy (
- 	}
- 	ctx = &((*ctx)->pNext);
-     }
+@@ -130,6 +131,24 @@ static VAStatus va_NVCTRL_GetDriverName (
+     return VA_STATUS_SUCCESS;
+ }
+ 
++static VAStatus va_FGLRX_GetDriverName (
++    VADisplayContextP pDisplayContext,
++    char **driver_name
++)
++{
++    VADriverContextP ctx = pDisplayContext->pDriverContext;
++    int driver_major, driver_minor, driver_patch;
++    Bool result;
 +
-+    libdrm_close();
-     free(pDisplayContext->pDriverContext->dri_state);
-     free(pDisplayContext->pDriverContext);
-     free(pDisplayContext);
++    result = VA_FGLRXGetClientDriverName(ctx->native_dpy, ctx->x11_screen,
++                                         &driver_major, &driver_minor,
++                                         &driver_patch, driver_name);
++    if (!result)
++        return VA_STATUS_ERROR_UNKNOWN;
++
++    return VA_STATUS_SUCCESS;
++}
++
+ static VAStatus va_DisplayContextGetDriverName (
+     VADisplayContextP pDisplayContext,
+     char **driver_name
+@@ -145,7 +164,8 @@ static VAStatus va_DisplayContextGetDriverName (
+         vaStatus = va_DRIGetDriverName(pDisplayContext, driver_name);
+     if (vaStatus != VA_STATUS_SUCCESS)
+         vaStatus = va_NVCTRL_GetDriverName(pDisplayContext, driver_name);
+-   
++    if (vaStatus != VA_STATUS_SUCCESS)
++        vaStatus = va_FGLRX_GetDriverName(pDisplayContext, driver_name);
+     return vaStatus;
+ }
+ 

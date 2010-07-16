@@ -1,28 +1,28 @@
-commit 3de13e8bda7efadbdb681299d0d161f383b7cb5b
+commit d4b63e6a92660f487d631c8a0f5319d2bd5817d6
 Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
 Date:   Wed Nov 4 13:36:39 2009 +0000
 
     [G45] Implement vaPutImage() for full-sized surface uploads.
 
 diff --git a/i965_drv_video/i965_drv_video.c b/i965_drv_video/i965_drv_video.c
-index 80c61ca..da2fbd6 100644
+index 8dfb39e..6696728 100644
 --- a/i965_drv_video/i965_drv_video.c
 +++ b/i965_drv_video/i965_drv_video.c
-@@ -472,22 +472,6 @@ i965_QueryImageFormats(VADriverContextP ctx,
+@@ -457,22 +457,6 @@ i965_QueryImageFormats(VADriverContextP ctx,
  }
  
  VAStatus 
 -i965_PutImage(VADriverContextP ctx,
--               VASurfaceID surface,
--               VAImageID image,
--               int src_x,
--               int src_y,
--               unsigned int src_width,
--               unsigned int src_height,
--               int dest_x,
--               int dest_y,
--               unsigned int dest_width,
--               unsigned int dest_height)
+-              VASurfaceID surface,
+-              VAImageID image,
+-              int src_x,
+-              int src_y,
+-              unsigned int src_width,
+-              unsigned int src_height,
+-              int dest_x,
+-              int dest_y,
+-              unsigned int dest_width,
+-              unsigned int dest_height)
 -{
 -    return VA_STATUS_SUCCESS;
 -}
@@ -31,7 +31,7 @@ index 80c61ca..da2fbd6 100644
  i965_QuerySubpictureFormats(VADriverContextP ctx,
                              VAImageFormat *format_list,         /* out */
                              unsigned int *flags,                /* out */
-@@ -1532,6 +1516,72 @@ i965_GetImage(VADriverContextP ctx,
+@@ -1649,6 +1633,80 @@ i965_GetImage(VADriverContextP ctx,
  }
  
  VAStatus 
@@ -83,8 +83,16 @@ index 80c61ca..da2fbd6 100644
 +    dri_bo_map(obj_surface->bo, 1);
 +
 +    switch (obj_image->image.format.fourcc) {
-+    case VA_FOURCC('Y','V','1','2'): /* YV12 is native format here */
++    case VA_FOURCC('Y','V','1','2'):
++    case VA_FOURCC('I','4','2','0'):
++        /* I420 is native format for MPEG-2 decoded surfaces */
 +        if (render_state->interleaved_uv)
++            goto operation_failed;
++        memcpy(obj_surface->bo->virtual, image_data, obj_surface->bo->size);
++        break;
++    case VA_FOURCC('N','V','1','2'):
++        /* NV12 is native format for H.264 decoded surfaces */
++        if (!render_state->interleaved_uv)
 +            goto operation_failed;
 +        memcpy(obj_surface->bo->virtual, image_data, obj_surface->bo->size);
 +        break;

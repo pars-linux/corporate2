@@ -1,21 +1,21 @@
-commit 66831a1b979798ee34bb379d2d2a5163dc65c62e
+commit fe05bcd5dab7a3847b203575493a025d07f985ac
 Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
 Date:   Wed Jun 24 11:40:56 2009 +0000
 
     Add compatibility layer with original VA-API 0.29 to 0.31.
 
 diff --git a/va/Makefile.am b/va/Makefile.am
-index ebff3d5..1752526 100644
+index 3ec4d82..d590966 100644
 diff --git a/va/va.c b/va/va.c
-index 0d208d8..ad201fa 100644
+index 2f9a586..6918910 100644
 diff --git a/va/va_backend.h b/va/va_backend.h
-index 06fef7f..9cf8911 100644
+index 62ac970..dc06873 100644
 diff --git a/va/va_compat.c b/va/va_compat.c
 new file mode 100644
-index 0000000..c47428c
+index 0000000..eedb8d6
 --- /dev/null
 +++ b/va/va_compat.c
-@@ -0,0 +1,1184 @@
+@@ -0,0 +1,1292 @@
 +/*
 + * Copyright (C) 2009 Splitted-Desktop Systems. All Rights Reserved.
 + *
@@ -151,6 +151,13 @@ index 0000000..c47428c
 +    VAStatus (*vaPutImage)(void *, VASurfaceID, VAImageID, int, int, unsigned int, unsigned int, int, int, unsigned int, unsigned int);
 +    VAStatus (*vaAssociateSubpicture)(void *, VASubpictureID, VASurfaceID *, int, short, short, unsigned short, unsigned short, short, short, unsigned short, unsigned short, unsigned int);
 +    VAStatus (*vaSyncSurface)(void *, VASurfaceID);
++
++#if 0
++    /* 0.31.1 hooks */
++    VAStatus (*vaBufferInfo)(void *, VAContextID, VABufferID, VABufferType *, unsigned int *, unsigned int *);
++    VAStatus (*vaLockSurface)(void *, VASurfaceID, unsigned int *, unsigned int *, unsigned int *, unsigned int *, unsigned int *, unsigned int *, unsigned int *, unsigned int *, void **);
++    VAStatus (*vaUnlockSurface)(void *, VASurfaceID);
++#endif
 +} VACompatDriverVTable;
 +
 +typedef struct VACompatContext {
@@ -923,6 +930,7 @@ index 0000000..c47428c
 +    (VADriverContextP ctx, VADisplayAttribute *attr_list, int num_attributes),
 +    (ctx, attr_list, num_attributes))
 +
++#if 0
 +DEFINE_VTABLE_ENTRY(
 +    VAStatus, CreateSurfaceFromCIFrame,
 +    (VADriverContextP ctx, unsigned long frame_id, VASurfaceID *surface),
@@ -947,6 +955,7 @@ index 0000000..c47428c
 +     luma_stride, chroma_u_stride, chroma_v_stride,
 +     luma_offset, chroma_u_offset, chroma_v_offset,
 +     buffer))
++#endif
 +
 +DEFINE_VTABLE_ENTRY_(
 +    VAStatus, SyncSurface_pre31,
@@ -998,8 +1007,93 @@ index 0000000..c47428c
 +    (ctx, context),
 +    {}, { va_context_map_remove(COMPAT_CTX(ctx), context); })
 +
++#if 0
++DEFINE_VTABLE_ENTRY(
++    VAStatus, BufferInfo,
++    (VADriverContextP ctx, VAContextID context, VABufferID buf_id,
++     VABufferType *type, unsigned int *size, unsigned int *num_elements),
++    (ctx, context, buf_id, type, size, num_elements))
++
++DEFINE_VTABLE_ENTRY(
++    VAStatus, LockSurface,
++    (VADriverContextP ctx, VASurfaceID surface, unsigned int *fourcc,
++     unsigned int *luma_stride, unsigned int *chroma_u_stride,
++     unsigned int *chroma_v_stride,
++     unsigned int *luma_offset, unsigned int *chroma_u_offset,
++     unsigned int *chroma_v_offset,
++     unsigned int *buffer_name, void **buffer),
++    (ctx, surface, fourcc,
++     luma_stride, chroma_u_stride, chroma_v_stride,
++     luma_offset, chroma_u_offset, chroma_v_offset,
++     buffer_name, buffer))
++
++DEFINE_VTABLE_ENTRY(
++    VAStatus, UnlockSurface,
++    (VADriverContextP ctx, VASurfaceID surface),
++    (ctx, surface))
++#endif
++
 +#undef DEFINE_VTABLE_ENTRY
 +#undef DEFINE_VTABLE_ENTRY_
++
++static VAStatus
++va_compat_BufferInfo_default(
++    VADriverContextP ctx,
++    VAContextID      context,
++    VABufferID       buf_id,
++    VABufferType    *type,
++    unsigned int    *size,
++    unsigned int    *num_elements
++)
++{
++    VABufferCompat *compat_buffer;
++    VAStatus status;
++
++    compat_buffer = va_GetBufferCompat(ctx, buf_id);
++    if (!compat_buffer)
++        return VA_STATUS_ERROR_INVALID_BUFFER;
++
++    if (type)         *type         = compat_buffer->type;
++    if (size)         *size         = compat_buffer->size;
++    if (num_elements) *num_elements = compat_buffer->num_elements;
++    return VA_STATUS_SUCCESS;
++}
++
++static VAStatus
++va_compat_LockSurface_default(
++    VADriverContextP ctx,
++    VASurfaceID      surface,
++    unsigned int    *fourcc,
++    unsigned int    *luma_stride,
++    unsigned int    *chroma_u_stride,
++    unsigned int    *chroma_v_stride,
++    unsigned int    *luma_offset,
++    unsigned int    *chroma_u_offset,
++    unsigned int    *chroma_v_offset,
++    unsigned int    *buffer_name,
++    void           **buffer
++)
++{
++    if (fourcc)          *fourcc          = VA_FOURCC('N','V','1','2');
++    if (luma_stride)     *luma_stride     = 0;
++    if (chroma_u_stride) *chroma_u_stride = 0;
++    if (chroma_v_stride) *chroma_v_stride = 0;
++    if (luma_offset)     *luma_offset     = 0;
++    if (chroma_u_offset) *chroma_u_offset = 0;
++    if (chroma_v_offset) *chroma_v_offset = 0;
++    if (buffer_name)     *buffer_name     = 0;
++    if (buffer)          *buffer          = NULL;
++    return VA_STATUS_SUCCESS;
++}
++
++static VAStatus
++va_compat_UnlockSurface_default(
++    VADriverContextP ctx,
++    VASurfaceID      surface
++)
++{
++    return VA_STATUS_SUCCESS;
++}
 +
 +static void va_compat_init_VADriverVTable(VADriverContextP ctx, int compat_version)
 +{
@@ -1048,9 +1142,13 @@ index 0000000..c47428c
 +    INIT_VTABLE(ctx, QueryDisplayAttributes);
 +    INIT_VTABLE(ctx, GetDisplayAttributes);
 +    INIT_VTABLE(ctx, SetDisplayAttributes);
++
++#if 0
++    /* XXX: vtable_tpi */
 +    INIT_VTABLE(ctx, CreateSurfaceFromCIFrame);
 +    INIT_VTABLE(ctx, CreateSurfaceFromV4L2Buf);
 +    INIT_VTABLE(ctx, CopySurfaceToBuffer);
++#endif
 +
 +    if (compat_version && compat_version < 31) {
 +        INIT_VTABLE_(ctx, CreateContext,        CreateContext_pre31);
@@ -1062,6 +1160,16 @@ index 0000000..c47428c
 +
 +#undef INIT_VTABLE
 +#undef INIT_VTABLE__
++
++#define INIT_VTABLE_DEFAULT(CTX, PROC) \
++    (CTX)->vtable.va##PROC = va_compat_##PROC##_default
++
++    /* XXX: this should be 0.32 */
++    INIT_VTABLE_DEFAULT(ctx, BufferInfo);
++    INIT_VTABLE_DEFAULT(ctx, LockSurface);
++    INIT_VTABLE_DEFAULT(ctx, UnlockSurface);
++
++#undef INIT_VTABLE_DEFAULT
 +}
 +
 +VAStatus va_compat_init(VADisplay dpy, int compat_version, void *compat_ctx)
@@ -2675,7 +2783,7 @@ index 0000000..2c9d801
 +#endif /* VA_COMPAT_H */
 diff --git a/va/va_compat_template.h b/va/va_compat_template.h
 new file mode 100644
-index 0000000..18349de
+index 0000000..ee41aee
 --- /dev/null
 +++ b/va/va_compat_template.h
 @@ -0,0 +1,539 @@
@@ -3198,7 +3306,7 @@ index 0000000..18349de
 +    COPY_VTABLE(dest, src, vaSetSubpicturePalette);
 +    COPY_VTABLE(dest, src, vaDbgCopySurfaceToBuffer);
 +#endif
-+#if COMPAT_MAJOR == 0 && COMPAT_MINOR >= 30
++#if COMPAT_MAJOR == 0 && COMPAT_MINOR >= 30 && 0
 +    COPY_VTABLE(dest, src, vaCreateSurfaceFromCIFrame);
 +    COPY_VTABLE(dest, src, vaCreateSurfaceFromV4L2Buf);
 +    COPY_VTABLE(dest, src, vaCopySurfaceToBuffer);

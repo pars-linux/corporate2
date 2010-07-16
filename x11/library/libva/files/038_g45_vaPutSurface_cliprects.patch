@@ -1,19 +1,16 @@
-commit c31ffe80157a4e0604d2070f6014cab9f2c8309b
+commit d865489385316b2036e2f9543509dfa203553ca2
 Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
 Date:   Wed Nov 4 17:34:53 2009 +0000
 
     [G45] Handle cliprects in vaPutSurface().
 
 diff --git a/i965_drv_video/i965_drv_video.c b/i965_drv_video/i965_drv_video.c
-index da2fbd6..8669a4e 100644
+index 41d0828..7c26f24 100644
 --- a/i965_drv_video/i965_drv_video.c
 +++ b/i965_drv_video/i965_drv_video.c
-@@ -1604,13 +1604,23 @@ i965_PutSurface(VADriverContextP ctx,
-     union dri_buffer *buffer;
-     struct intel_region *dest_region;
+@@ -1733,7 +1733,9 @@ i965_PutSurface(VADriverContextP ctx,
      struct object_surface *obj_surface; 
--	int ret;
-+    int ret;
+     int ret;
      uint32_t name;
 +    VARectangle src_rect, dst_rect;
      Bool new_region = False;
@@ -21,32 +18,24 @@ index da2fbd6..8669a4e 100644
      /* Currently don't support DRI1 */
      if (dri_state->driConnectedFlag != VA_DRI2)
          return VA_STATUS_ERROR_UNKNOWN;
+@@ -1745,6 +1747,10 @@ i965_PutSurface(VADriverContextP ctx,
+     if (obj_surface->bo == NULL)
+         return VA_STATUS_SUCCESS;
  
 +    /* XXX: we currently only support up to 64 cliprects */
 +    if (number_cliprects > MAX_CLIP_RECTS)
 +        return VA_STATUS_ERROR_OPERATION_FAILED;
 +
-+    obj_surface = SURFACE(surface);
-+    if (!obj_surface)
-+        return VA_STATUS_ERROR_INVALID_SURFACE;
-+
      dri_drawable = dri_get_drawable(ctx, draw);
      assert(dri_drawable);
  
-@@ -1649,17 +1659,24 @@ i965_PutSurface(VADriverContextP ctx,
+@@ -1783,15 +1789,22 @@ i965_PutSurface(VADriverContextP ctx,
          assert(ret == 0);
      }
  
 -    i965_render_put_surface(ctx, surface,
 -                            srcx, srcy, srcw, srch,
 -                            destx, desty, destw, desth);
--    obj_surface = SURFACE(surface);
--    if(obj_surface->subpic != VA_INVALID_ID) {	
--	i965_render_put_subpic(ctx, surface,
--                           srcx, srcy, srcw, srch,
--                           destx, desty, destw, desth);
--    } 
--    dri_swap_buffer(ctx, dri_drawable);
 +    src_rect.x      = srcx;
 +    src_rect.y      = srcy;
 +    src_rect.width  = srcw;
@@ -56,23 +45,26 @@ index da2fbd6..8669a4e 100644
 +    dst_rect.y      = desty;
 +    dst_rect.width  = destw;
 +    dst_rect.height = desth;
- 
++
 +    i965_render_put_surface(ctx, surface, &src_rect, &dst_rect,
 +                            cliprects, number_cliprects);
-+
+ 
+-    if(obj_surface->subpic != VA_INVALID_ID) {	
+-	i965_render_put_subpic(ctx, surface,
+-                               srcx, srcy, srcw, srch,
+-                               destx, desty, destw, desth);
+-    } 
 +    if (obj_surface->subpic != VA_INVALID_ID)
 +	i965_render_put_subpic(ctx, surface, &src_rect, &dst_rect,
 +                               cliprects, number_cliprects);
-+
-+    dri_swap_buffer(ctx, dri_drawable);
-     return VA_STATUS_SUCCESS;
- }
  
+     dri_swap_buffer(ctx, dri_drawable);
+     obj_surface->flags |= SURFACE_DISPLAYED;
 diff --git a/i965_drv_video/i965_render.c b/i965_drv_video/i965_render.c
-index 1ae6483..163bff6 100644
+index 675f30b..62f6200 100644
 --- a/i965_drv_video/i965_render.c
 +++ b/i965_drv_video/i965_render.c
-@@ -796,13 +796,81 @@ i965_render_binding_table(VADriverContextP ctx)
+@@ -803,20 +803,86 @@ i965_render_binding_table(VADriverContextP ctx)
      dri_bo_unmap(render_state->wm.binding_table);
  }
  
@@ -158,16 +150,14 @@ index 1ae6483..163bff6 100644
      struct object_surface    *obj_surface  = SURFACE(surface);
      struct object_subpic     *obj_subpic   = SUBPIC(obj_surface->subpic);
  
-@@ -812,8 +880,6 @@ i965_subpic_render_upload_vertex(VADriverContextP ctx,
-     const float ssy = (float)output_rect->height / (float)obj_surface->height;
-     const float sx  = psx * ssx;
-     const float sy  = psy * ssy;
+     const float sx = output_rect->width  / (float)obj_surface->orig_width;
+     const float sy = output_rect->height / (float)obj_surface->orig_height;
 -    float *vb, tx1, tx2, ty1, ty2, x1, x2, y1, y2;
 -    int i = 0;
  
      VARectangle dst_rect;
      dst_rect.x      = output_rect->x + sx * (float)obj_subpic->dst_rect.x;
-@@ -821,93 +887,29 @@ i965_subpic_render_upload_vertex(VADriverContextP ctx,
+@@ -824,93 +890,30 @@ i965_subpic_render_upload_vertex(VADriverContextP ctx,
      dst_rect.width  = sx * (float)obj_subpic->dst_rect.width;
      dst_rect.height = sy * (float)obj_subpic->dst_rect.height;
  
@@ -238,8 +228,8 @@ index 1ae6483..163bff6 100644
 -
 -    obj_surface = SURFACE(surface);
 -    assert(surface);
--    width = obj_surface->width;
--    height = obj_surface->height;
+-    width = obj_surface->orig_width;
+-    height = obj_surface->orig_height;
 -
 -    u1 = (float)srcx / width;
 -    v1 = (float)srcy / height;
@@ -270,15 +260,16 @@ index 1ae6483..163bff6 100644
  
 -    dri_bo_unmap(render_state->vb.vertex_buffer);
 +    return i965_render_do_upload_vertex(ctx,
-+                                        obj_surface->width, obj_surface->height,
++                                        obj_surface->orig_width,
++                                        obj_surface->orig_height,
 +                                        src_rect,
 +                                        dst_rect,
 +                                        cliprects, num_cliprects);
  }
  
  static void
-@@ -929,17 +931,13 @@ i965_render_upload_constants(VADriverContextP ctx)
-     dri_bo_unmap(render_state->curbe.bo);
+@@ -936,17 +939,13 @@ i965_render_upload_constants(VADriverContextP ctx)
+     render_state->curbe.upload = 1;
  }
  
 -static void
@@ -301,18 +292,19 @@ index 1ae6483..163bff6 100644
  {
      i965_render_vs_unit(ctx);
      i965_render_sf_unit(ctx);
-@@ -951,22 +949,17 @@ i965_surface_render_state_setup(VADriverContextP ctx,
+@@ -957,22 +956,18 @@ i965_surface_render_state_setup(VADriverContextP ctx,
+     i965_render_cc_viewport(ctx);
      i965_render_cc_unit(ctx);
      i965_render_binding_table(ctx);
-     i965_render_upload_constants(ctx);
 -    i965_render_upload_vertex(ctx, surface,
 -                              srcx, srcy, srcw, srch,
 -                              destx, desty, destw, desth);
+     i965_render_upload_constants(ctx);
 +    return i965_render_upload_vertex(ctx, surface, src_rect, dst_rect,
 +                                     cliprects, num_cliprects);
  }
- 
 -static void
++
 +static unsigned int
  i965_subpic_render_state_setup(VADriverContextP ctx,
 -                        VASurfaceID surface,
@@ -332,7 +324,7 @@ index 1ae6483..163bff6 100644
  {
      i965_render_vs_unit(ctx);
      i965_render_sf_unit(ctx);
-@@ -977,13 +970,8 @@ i965_subpic_render_state_setup(VADriverContextP ctx,
+@@ -983,13 +978,8 @@ i965_subpic_render_state_setup(VADriverContextP ctx,
      i965_render_cc_viewport(ctx);
      i965_subpic_render_cc_unit(ctx);
      i965_render_binding_table(ctx);
@@ -347,8 +339,8 @@ index 1ae6483..163bff6 100644
 +                                            cliprects, num_cliprects);
  }
  
- static void
-@@ -1235,7 +1223,7 @@ i965_render_upload_image_palette(
+ 
+@@ -1242,7 +1232,7 @@ i965_render_upload_image_palette(
  }
  
  static void
@@ -357,7 +349,7 @@ index 1ae6483..163bff6 100644
  {
      struct i965_driver_data *i965 = i965_driver_data(ctx);
      struct i965_render_state *render_state = &i965->render_state;
-@@ -1246,7 +1234,7 @@ i965_render_startup(VADriverContextP ctx)
+@@ -1253,7 +1243,7 @@ i965_render_startup(VADriverContextP ctx)
                (0 << VB0_BUFFER_INDEX_SHIFT) |
                VB0_VERTEXDATA |
                ((4 * 4) << VB0_BUFFER_PITCH_SHIFT));
@@ -366,7 +358,7 @@ index 1ae6483..163bff6 100644
  
      if (IS_IRONLAKE(i965->intel.device_id))
          OUT_RELOC(ctx, render_state->vb.vertex_buffer, I915_GEM_DOMAIN_VERTEX, 0, 12 * 4);
-@@ -1311,8 +1299,10 @@ i965_clear_dest_region(VADriverContextP ctx)
+@@ -1318,8 +1308,10 @@ i965_clear_dest_region(VADriverContextP ctx)
  }
  
  static void
@@ -378,7 +370,7 @@ index 1ae6483..163bff6 100644
      intel_batchbuffer_start_atomic(ctx, 0x1000);
      intel_batchbuffer_emit_mi_flush(ctx);
      i965_clear_dest_region(ctx);
-@@ -1327,13 +1317,16 @@ i965_surface_render_pipeline_setup(VADriverContextP ctx)
+@@ -1334,13 +1326,16 @@ i965_surface_render_pipeline_setup(VADriverContextP ctx)
      i965_render_constant_buffer(ctx);
      i965_render_drawing_rectangle(ctx);
      i965_render_vertex_elements(ctx);
@@ -397,7 +389,7 @@ index 1ae6483..163bff6 100644
      intel_batchbuffer_start_atomic(ctx, 0x1000);
      intel_batchbuffer_emit_mi_flush(ctx);
      i965_render_pipeline_select(ctx);
-@@ -1346,7 +1339,8 @@ i965_subpic_render_pipeline_setup(VADriverContextP ctx)
+@@ -1353,7 +1348,8 @@ i965_subpic_render_pipeline_setup(VADriverContextP ctx)
      i965_render_cs_urb_layout(ctx);
      i965_render_drawing_rectangle(ctx);
      i965_render_vertex_elements(ctx);
@@ -407,7 +399,7 @@ index 1ae6483..163bff6 100644
      intel_batchbuffer_end_atomic(ctx);
  }
  
-@@ -1440,45 +1434,39 @@ i965_render_initialize(VADriverContextP ctx)
+@@ -1447,45 +1443,39 @@ i965_render_initialize(VADriverContextP ctx)
  void
  i965_render_put_surface(VADriverContextP ctx,
                          VASurfaceID surface,
@@ -473,7 +465,7 @@ index 1ae6483..163bff6 100644
      intel_batchbuffer_flush(ctx);
  }
 diff --git a/i965_drv_video/i965_render.h b/i965_drv_video/i965_render.h
-index 2643285..d1052d4 100644
+index 9abb81f..3a58430 100644
 --- a/i965_drv_video/i965_render.h
 +++ b/i965_drv_video/i965_render.h
 @@ -28,6 +28,7 @@
@@ -484,7 +476,7 @@ index 2643285..d1052d4 100644
  #define MAX_RENDER_SURFACES     16
  #define MAX_SAMPLERS            16
  
-@@ -70,27 +71,20 @@ struct i965_render_state
+@@ -69,27 +70,20 @@ struct i965_render_state
  
  Bool i965_render_init(VADriverContextP ctx);
  Bool i965_render_terminate(VADriverContextP ctx);
