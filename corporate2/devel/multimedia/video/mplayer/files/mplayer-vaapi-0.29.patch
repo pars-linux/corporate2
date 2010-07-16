@@ -1,8 +1,15 @@
-diff -Nur mplayer-old/configure mplayer/configure
---- mplayer-old/configure	2010-05-25 16:08:17.873668339 +0300
-+++ mplayer/configure	2010-05-25 16:13:33.747668143 +0300
-@@ -5477,20 +5477,35 @@
- echocheck "VA API"
+commit 5fbfa3b77f6b3f55cc61df16533324ebcf8e0b70
+Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
+Date:   Fri Feb 12 11:03:00 2010 +0000
+
+    Add compatibility with original VA-API 0.29.
+
+diff --git a/configure b/configure
+index 8011680..f7ce215 100755
+--- a/configure
++++ b/configure
+@@ -6167,20 +6167,35 @@ fi #if os2
+ echocheck "VA-API"
  if test "$_vaapi" = yes -o "$_vaapi" = auto; then
    _vaapi=no
 +  _vaapi_old=no
@@ -40,7 +47,7 @@ diff -Nur mplayer-old/configure mplayer/configure
    novomodules="vaapi $novomodules"
    _libavhwaccels=`echo $_libavhwaccels | sed -e "s/\(MPEG[124]\|H26[34]\|WMV3\|VC1\)_VAAPI_HWACCEL//g"`
  fi
-@@ -8853,6 +8868,7 @@
+@@ -8862,6 +8877,7 @@ CONFIG_MLIB     = $_mlib
  CONFIG_MUXERS   = $_mencoder
  CONFIG_POSTPROC = yes
  CONFIG_VAAPI    = $_vaapi
@@ -48,7 +55,7 @@ diff -Nur mplayer-old/configure mplayer/configure
  CONFIG_VDPAU    = $_vdpau
  CONFIG_XVMC     = $_xvmc
  CONFIG_ZLIB     = $_zlib
-@@ -9232,6 +9248,7 @@
+@@ -9241,6 +9257,7 @@ $def_tdfxvid
  $def_tga
  $def_v4l2
  $def_vaapi
@@ -56,9 +63,11 @@ diff -Nur mplayer-old/configure mplayer/configure
  $def_vaapi_glx
  $def_vdpau
  $def_vesa
-diff -Nur mplayer-old/libavcodec/vaapi_compat.h mplayer/libavcodec/vaapi_compat.h
---- mplayer-old/libavcodec/vaapi_compat.h	1970-01-01 02:00:00.000000000 +0200
-+++ mplayer/libavcodec/vaapi_compat.h	2010-05-25 16:10:19.964668063 +0300
+diff --git a/libavcodec/vaapi_compat.h b/libavcodec/vaapi_compat.h
+new file mode 100644
+index 0000000..f463118
+--- /dev/null
++++ b/libavcodec/vaapi_compat.h
 @@ -0,0 +1,92 @@
 +/*
 + * Video Acceleration API (video decoding)
@@ -152,10 +161,11 @@ diff -Nur mplayer-old/libavcodec/vaapi_compat.h mplayer/libavcodec/vaapi_compat.
 +#endif
 +
 +#endif /* AVCODEC_VAAPI_COMPAT_H */
-diff -Nur mplayer-old/libavcodec/vaapi_h264.c mplayer/libavcodec/vaapi_h264.c
---- mplayer-old/libavcodec/vaapi_h264.c	2010-05-25 16:08:17.702668432 +0300
-+++ mplayer/libavcodec/vaapi_h264.c	2010-05-25 16:10:19.964668063 +0300
-@@ -56,8 +56,8 @@
+diff --git a/libavcodec/vaapi_h264.c b/libavcodec/vaapi_h264.c
+index b61a9ca..cab6e41 100644
+--- a/libavcodec/vaapi_h264.c
++++ b/libavcodec/vaapi_h264.c
+@@ -123,8 +123,8 @@ static void fill_vaapi_pic(VAPictureH264 *va_pic,
      if (pic_structure == 0)
          pic_structure = pic->reference;
  
@@ -166,7 +176,7 @@ diff -Nur mplayer-old/libavcodec/vaapi_h264.c mplayer/libavcodec/vaapi_h264.c
  
      va_pic->flags      = 0;
      if (pic_structure != PICT_FRAME)
-@@ -238,42 +238,42 @@
+@@ -317,42 +317,42 @@ static int start_frame(AVCodecContext          *avctx,
      fill_vaapi_pic(&pic_param->CurrPic, s->current_picture_ptr, s->picture_structure);
      if (fill_vaapi_ReferenceFrames(pic_param, h) < 0)
          return -1;
@@ -245,9 +255,10 @@ diff -Nur mplayer-old/libavcodec/vaapi_h264.c mplayer/libavcodec/vaapi_h264.c
  
      /* Fill in VAIQMatrixBufferH264. */
      iq_matrix = ff_vaapi_alloc_iq_matrix(vactx, sizeof(VAIQMatrixBufferH264));
-diff -Nur mplayer-old/libavcodec/vaapi_internal.h mplayer/libavcodec/vaapi_internal.h
---- mplayer-old/libavcodec/vaapi_internal.h	2010-05-25 16:08:17.688596001 +0300
-+++ mplayer/libavcodec/vaapi_internal.h	2010-05-25 16:10:19.965668690 +0300
+diff --git a/libavcodec/vaapi_internal.h b/libavcodec/vaapi_internal.h
+index 2c0fdf9..ff83b96 100644
+--- a/libavcodec/vaapi_internal.h
++++ b/libavcodec/vaapi_internal.h
 @@ -24,8 +24,14 @@
  #ifndef AVCODEC_VAAPI_INTERNAL_H
  #define AVCODEC_VAAPI_INTERNAL_H
@@ -263,10 +274,11 @@ diff -Nur mplayer-old/libavcodec/vaapi_internal.h mplayer/libavcodec/vaapi_inter
  #include "avcodec.h"
  #include "mpegvideo.h"
  
-diff -Nur mplayer-old/libavcodec/vaapi_mpeg2.c mplayer/libavcodec/vaapi_mpeg2.c
---- mplayer-old/libavcodec/vaapi_mpeg2.c	2010-05-25 16:08:17.700421798 +0300
-+++ mplayer/libavcodec/vaapi_mpeg2.c	2010-05-25 16:10:19.965668690 +0300
-@@ -52,24 +52,24 @@
+diff --git a/libavcodec/vaapi_mpeg2.c b/libavcodec/vaapi_mpeg2.c
+index 2e870dc..637546a 100644
+--- a/libavcodec/vaapi_mpeg2.c
++++ b/libavcodec/vaapi_mpeg2.c
+@@ -52,24 +52,24 @@ static int vaapi_mpeg2_start_frame(AVCodecContext *avctx, av_unused const uint8_
      pic_param = ff_vaapi_alloc_pic_param(vactx, sizeof(VAPictureParameterBufferMPEG2));
      if (!pic_param)
          return -1;
@@ -309,7 +321,7 @@ diff -Nur mplayer-old/libavcodec/vaapi_mpeg2.c mplayer/libavcodec/vaapi_mpeg2.c
  
      switch (s->pict_type) {
      case FF_B_TYPE:
-@@ -131,7 +131,7 @@
+@@ -131,7 +131,7 @@ static int vaapi_mpeg2_decode_slice(AVCodecContext *avctx, const uint8_t *buffer
      if (!slice_param)
          return -1;
      slice_param->macroblock_offset              = macroblock_offset;
@@ -318,10 +330,11 @@ diff -Nur mplayer-old/libavcodec/vaapi_mpeg2.c mplayer/libavcodec/vaapi_mpeg2.c
      slice_param->slice_vertical_position        = s->mb_y;
      slice_param->quantiser_scale_code           = quantiser_scale_code;
      slice_param->intra_slice_flag               = intra_slice_flag;
-diff -Nur mplayer-old/libavcodec/vaapi_mpeg4.c mplayer/libavcodec/vaapi_mpeg4.c
---- mplayer-old/libavcodec/vaapi_mpeg4.c	2010-05-25 16:08:17.733668542 +0300
-+++ mplayer/libavcodec/vaapi_mpeg4.c	2010-05-25 16:10:19.966668121 +0300
-@@ -54,42 +54,42 @@
+diff --git a/libavcodec/vaapi_mpeg4.c b/libavcodec/vaapi_mpeg4.c
+index 466ce2f..ea306a4 100644
+--- a/libavcodec/vaapi_mpeg4.c
++++ b/libavcodec/vaapi_mpeg4.c
+@@ -54,42 +54,42 @@ static int vaapi_mpeg4_start_frame(AVCodecContext *avctx, av_unused const uint8_
      pic_param = ff_vaapi_alloc_pic_param(vactx, sizeof(VAPictureParameterBufferMPEG4));
      if (!pic_param)
          return -1;
@@ -398,7 +411,7 @@ diff -Nur mplayer-old/libavcodec/vaapi_mpeg4.c mplayer/libavcodec/vaapi_mpeg4.c
  
      if (s->pict_type == FF_B_TYPE)
          pic_param->backward_reference_picture = ff_vaapi_get_surface_id(&s->next_picture);
-@@ -98,7 +98,7 @@
+@@ -98,7 +98,7 @@ static int vaapi_mpeg4_start_frame(AVCodecContext *avctx, av_unused const uint8_
  
      /* Fill in VAIQMatrixBufferMPEG4 */
      /* Only the first inverse quantisation method uses the weighthing matrices */
@@ -407,10 +420,11 @@ diff -Nur mplayer-old/libavcodec/vaapi_mpeg4.c mplayer/libavcodec/vaapi_mpeg4.c
          iq_matrix = ff_vaapi_alloc_iq_matrix(vactx, sizeof(VAIQMatrixBufferMPEG4));
          if (!iq_matrix)
              return -1;
-diff -Nur mplayer-old/libavcodec/vaapi_vc1.c mplayer/libavcodec/vaapi_vc1.c
---- mplayer-old/libavcodec/vaapi_vc1.c	2010-05-25 16:08:17.721292956 +0300
-+++ mplayer/libavcodec/vaapi_vc1.c	2010-05-25 16:10:19.967668272 +0300
-@@ -146,100 +146,100 @@
+diff --git a/libavcodec/vaapi_vc1.c b/libavcodec/vaapi_vc1.c
+index 992e1da..8264dd9 100644
+--- a/libavcodec/vaapi_vc1.c
++++ b/libavcodec/vaapi_vc1.c
+@@ -146,100 +146,100 @@ static int vaapi_vc1_start_frame(AVCodecContext *avctx, av_unused const uint8_t
      pic_param = ff_vaapi_alloc_pic_param(vactx, sizeof(VAPictureParameterBufferVC1));
      if (!pic_param)
          return -1;
@@ -605,7 +619,7 @@ diff -Nur mplayer-old/libavcodec/vaapi_vc1.c mplayer/libavcodec/vaapi_vc1.c
  
      switch (s->pict_type) {
      case FF_B_TYPE:
-@@ -250,29 +250,29 @@
+@@ -250,29 +250,29 @@ static int vaapi_vc1_start_frame(AVCodecContext *avctx, av_unused const uint8_t
          break;
      }
  
@@ -643,9 +657,10 @@ diff -Nur mplayer-old/libavcodec/vaapi_vc1.c mplayer/libavcodec/vaapi_vc1.c
              break;
          default:
              ff_bp[0] = NULL;
-diff -Nur mplayer-old/libvo/vo_vaapi.c mplayer/libvo/vo_vaapi.c
---- mplayer-old/libvo/vo_vaapi.c	2010-05-25 16:08:17.777668057 +0300
-+++ mplayer/libvo/vo_vaapi.c	2010-05-25 16:10:19.968312782 +0300
+diff --git a/libvo/vo_vaapi.c b/libvo/vo_vaapi.c
+index 5f75b09..bbc95ff 100644
+--- a/libvo/vo_vaapi.c
++++ b/libvo/vo_vaapi.c
 @@ -45,7 +45,11 @@
  #include <assert.h>
  #include <X11/Xlib.h>

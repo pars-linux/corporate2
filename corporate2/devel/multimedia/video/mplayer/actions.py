@@ -14,8 +14,8 @@ from pisi.actionsapi import get
 import os
 
 WorkDir = "mplayer"
-mp_version = "31299"
-ff_version = "23406"
+mp_version = "31743"
+ff_version = "24252"
 
 dllloader = "" if get.ARCH() == "x86_64" else "--enable-win32dll \
                                                --codecsdir=/usr/lib/%(esdir)s" % {"esdir": "essential"}
@@ -31,9 +31,13 @@ def setup():
     fixPermissions("DOCS")
     #shelltools.export("LINGUAS", "tr")
 
+#define VERSION "SVN-r31743-4.3.3"
+#define MP_TITLE "%s "VERSION" (C) 2000-2010 MPlayer Team\n"
+
+    # to keep the source tarball small and avoid sandbox violation from subversion we remove .svn folders
     shelltools.unlink("version.sh")
     shelltools.echo("version.sh", '#!/bin/bash\necho "#define VERSION \\\"dev-SVN-r%s\\\"" > version.h' % mp_version)
-    shelltools.echo("version.sh", 'echo "#define MP_TITLE \\\"MPlayer dev-SVN-r%s (C) 2000-2009 MPlayer Team\\\" " >> version.h' % mp_version)
+    shelltools.echo("version.sh", 'echo "#define MP_TITLE \\\"MPlayer dev-SVN-r%s (C) 2000-2010 MPlayer Team\\\" " >> version.h' % mp_version)
     shelltools.chmod("version.sh", 0755)
 
     shelltools.export("CFLAGS", "%s -O3 -ffast-math -fomit-frame-pointer" % get.CFLAGS())
