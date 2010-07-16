@@ -11,15 +11,15 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 WorkDir = "ffmpeg"
-version = "23406"
+version = "24252"
 minimumcpu = "" if get.ARCH() == "x86_64" else "--cpu=i686"
 
 
 def setup():
     shelltools.export("CFLAGS","%s -DRUNTIME_CPUDETECT -O3 -ffast-math -fomit-frame-pointer" % get.CFLAGS())
-    pisitools.dosed("configure", "die_license_disabled nonfr.*")
+    pisitools.dosed("configure", "die_li.*aac")
 
-    # to keep the source tarball small, write svn version by hand
+    # to keep the source tarball small and to prevent sandbox problem of subversion, write svn version by hand
     shelltools.unlink("version.sh")
     shelltools.echo("version.sh", '#!/bin/bash\necho "#define FFMPEG_VERSION  \\\"SVN-r%s\\\"" > version.h' % version)
     shelltools.chmod("version.sh", 0755)
@@ -37,7 +37,6 @@ def setup():
                             --enable-x11grab \
                             --enable-libdc1394 \
                             --enable-libfaac \
-                            --enable-libfaad \
                             --enable-libgsm \
                             --enable-libmp3lame \
                             --enable-libnut \
@@ -47,6 +46,7 @@ def setup():
                             --enable-libspeex \
                             --enable-libtheora \
                             --enable-libvorbis \
+                            --enable-libvpx \
                             --enable-libx264 \
                             --enable-libxvid \
                             --enable-shared \

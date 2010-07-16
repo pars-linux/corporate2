@@ -12,10 +12,9 @@
         <IsA>app:console</IsA>
         <Summary>A command-line tool to record, convert and stream audio and video</Summary>
         <Description>FFmpeg is a complete solution to record, convert and stream audio and video.</Description>
-        <Archive sha1sum="8a116de7f9c92fa1d6da9c8f1170ccffdd42fdcf" type="targz">http://cekirdek.pardus.org.tr/~onur/distfiles/ffmpeg-23406.tar.gz</Archive>
+        <Archive sha1sum="036c73c4355a2abf5e203f40b5fe57df646151dc" type="targz">http://cekirdek.pardus.org.tr/~onur/distfiles/ffmpeg-24252.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>faac</Dependency>
-            <Dependency versionFrom="2.7">faad2</Dependency>
             <Dependency>imlib2</Dependency>
             <Dependency>lame</Dependency>
             <Dependency>libdc1394</Dependency>
@@ -36,7 +35,8 @@
             <Dependency>opencore-amr</Dependency>
             <Dependency>libvdpau</Dependency>
             <Dependency>libXfixes</Dependency>
-            <Dependency releaseFrom="5">libva</Dependency>
+            <Dependency releaseFrom="6">libva</Dependency>
+            <Dependency>libvpx-devel</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">dont-print-config.patch</Patch>
@@ -47,6 +47,7 @@
             <Patch level="1">print-cpucaps.patch</Patch>
             <Patch level="1">fix_pthread.patch</Patch>
             <Patch level="1">remove_vfw_bframe_warning.patch</Patch>
+            <Patch>x264_revert.patch</Patch>
         </Patches>
     </Source>
 
@@ -54,7 +55,6 @@
         <Name>ffmpeg</Name>
         <RuntimeDependencies>
             <Dependency>faac</Dependency>
-            <Dependency versionFrom="2.7">faad2</Dependency>
             <Dependency>imlib2</Dependency>
             <Dependency>lame</Dependency>
             <Dependency>libdc1394</Dependency>
@@ -74,7 +74,8 @@
             <Dependency>opencore-amr</Dependency>
             <Dependency>libvdpau</Dependency>
             <Dependency>libXfixes</Dependency>
-            <Dependency releaseFrom="5">libva</Dependency>
+            <Dependency releaseFrom="6">libva</Dependency>
+            <Dependency>libvpx</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="config">/etc</Path>
@@ -88,6 +89,20 @@
     </Package>
 
     <History>
+        <Update release="75">
+            <Date>2010-07-16</Date>
+            <Version>0.6.0_20100716</Version>
+            <Comment>
+                Update snapshot to 24252
+                Update to a post 0.6 release, fixes bug #13652
+                Depend on latest libva for new tfp feature
+                Fix a crash on float_to_int16_interleave_sse2, should fix bug #13255
+                Removed libfaad wrapper
+                Enable libvpx for VP8
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
         <Update release="74">
             <Date>2010-06-01</Date>
             <Version>0.5.1_20100601</Version>
