@@ -14,7 +14,7 @@
         <IsA>app:console</IsA>
         <Summary>Media Player for Linux</Summary>
         <Description>MPlayer is a movie player that can run on many platforms. It plays most MPEG/VOB, AVI, Ogg/OGM, VIVO, ASF/WMA/WMV, QT/MOV/MP4, RealMedia, Matroska, NUT, NuppelVideo, FLI, YUV4MPEG, FILM, RoQ, PVA files, supported by many native codecs.</Description>
-        <Archive sha1sum="f7f90b91f64c2228e2df5919ba4cb2a9804943ee" type="targz">http://cekirdek.pardus.org.tr/~onur/distfiles/mplayer-31299.tar.gz</Archive>
+        <Archive sha1sum="f50ec53a2a65ebd47f7d9c9df1aa84171175752d" type="targz">http://cekirdek.pardus.org.tr/~onur/distfiles/mplayer-31743.tar.gz</Archive>
         <Archive sha1sum="6f7522a14c7ff0083990d32f213ff6d8e577821e" type="targz" target="mplayer">http://cekirdek.pardus.org.tr/~onur/distfiles/MPlayer_default_skin-0.1.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>DirectFB</Dependency>
@@ -66,7 +66,8 @@
             <Dependency>mesa</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>libvdpau</Dependency>
-            <Dependency releaseFrom="5">libva</Dependency>
+            <Dependency releaseFrom="6">libva</Dependency>
+            <Dependency>libvpx-devel</Dependency>
             <Dependency>jack-audio-connection-kit</Dependency>
             <Dependency>opencore-amr</Dependency>
             <Dependency>libass</Dependency>
@@ -131,6 +132,8 @@
             -->
 
             <Patch level="1">v4lw.patch</Patch>
+
+            <Patch>x264_revert.patch</Patch>
         </Patches>
     </Source>
 
@@ -185,7 +188,8 @@
             <Dependency>mesa</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>libvdpau</Dependency>
-            <Dependency releaseFrom="5">libva</Dependency>
+            <Dependency releaseFrom="6">libva</Dependency>
+            <Dependency>libvpx</Dependency>
             <Dependency>jack-audio-connection-kit</Dependency>
             <Dependency>opencore-amr</Dependency>
             <Dependency>libass</Dependency>
@@ -215,6 +219,19 @@
     </Package>
 
     <History>
+        <Update release="129">
+            <Date>2010-07-16</Date>
+            <Version>0.0_20100716</Version>
+            <Comment>
+                Bump snapshot to 31743, ffmpeg 24252
+                Depend on latest libva for new tfp feature
+                Fix a crash on float_to_int16_interleave_sse2
+                Enable libvpx for VP8
+                Fix geometry of GL outputs, should fix bug #13154  #13778
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
         <Update release="128">
             <Date>2010-06-01</Date>
             <Version>0.0_20100601</Version>
