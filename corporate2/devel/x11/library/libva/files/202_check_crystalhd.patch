@@ -1,23 +1,23 @@
-commit 0eeee71bcd334512a6b86702ee612b35feb644b2
+commit 1df06d813ab8363dee2dc3c5d7856b155c1c8da2
 Author: Gwenole Beauchesne <gbeauchesne@splitted-desktop.com>
 Date:   Tue Feb 23 10:05:25 2010 +0000
 
     Detect Broadcom Crystal HD chip.
 
 diff --git a/va/Makefile.am b/va/Makefile.am
-index aeaf82f..f382c0e 100644
+index 2ff3a23..633d42b 100644
 --- a/va/Makefile.am
 +++ b/va/Makefile.am
-@@ -42,7 +42,7 @@ libva_x11_la_DEPENDENCIES = $(libvacorelib) x11/libva_x11.la
+@@ -27,7 +27,7 @@ INCLUDES = \
+ LDADD = \
+ 	$(LIBVA_LT_LDFLAGS)
  
- SUBDIRS = x11
- 
--libva_la_SOURCES = va.c
-+libva_la_SOURCES = va.c va_crystalhd.c
- 
- libvaincludedir = ${includedir}/va
- libvainclude_HEADERS = va.h va_x11.h va_backend.h va_version.h
-@@ -51,4 +51,5 @@ DISTCLEANFILES = \
+-libva_la_SOURCES = va.c va_trace.c
++libva_la_SOURCES = va.c va_trace.c va_crystalhd.c
+ libva_ladir = $(libdir)
+ libva_la_LDFLAGS = $(LDADD) -no-undefined
+ libva_la_LIBADD = $(LIBVA_LIBS) -ldl
+@@ -87,4 +87,5 @@ DISTCLEANFILES = \
  	va_version.h
  
  EXTRA_DIST = \
@@ -25,21 +25,23 @@ index aeaf82f..f382c0e 100644
 +	va_version.h.in \
 +	va_crystalhd.h
 diff --git a/va/va.c b/va/va.c
-index b5940e5..fd68481 100644
+index 5ff3563..cfdb5b4 100644
 --- a/va/va.c
 +++ b/va/va.c
-@@ -24,8 +24,10 @@
+@@ -23,9 +23,11 @@
+  */
  
  #define _GNU_SOURCE 1
- 
++
 +#include "config.h"
  #include "va.h"
  #include "va_backend.h"
+-#include "config.h"
 +#include "va_crystalhd.h"
  
  #include <assert.h>
  #include <stdarg.h>
-@@ -349,6 +351,15 @@ VAStatus vaInitialize (
+@@ -360,6 +362,15 @@ VAStatus vaInitialize (
          vaStatus = va_openDriver(dpy, driver_name);
          va_infoMessage("va_openDriver() returns %d\n", vaStatus);
  
