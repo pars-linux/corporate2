@@ -1,16 +1,16 @@
 diff --git a/configure.ac b/configure.ac
-index f823045..583f9c1 100644
+index 61f376e..6fe1261 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -64,6 +64,7 @@ AC_ARG_WITH(png,       AS_HELP_STRING([--without-png],[do not use PNG]),
+@@ -76,6 +76,7 @@ AC_ARG_WITH(png,       AS_HELP_STRING([--without-png],[do not use PNG]),
              [if test "x$withval" = "xno"; then ac_cv_header_png_h=no; fi])
  AC_ARG_WITH(pthread,   AS_HELP_STRING([--without-pthread],[do not use the pthread library]),
              [if test "x$withval" = "xno"; then ac_cv_header_pthread_h=no; fi])
 +AC_ARG_WITH(pulse,     AC_HELP_STRING([--without-pulse],[do not use PulseAudio sound support]))
  AC_ARG_WITH(sane,      AS_HELP_STRING([--without-sane],[do not use SANE (scanner support)]))
- AC_ARG_WITH(v4l,       AS_HELP_STRING([--without-v4l],[do not use v4l1 (v4l support)]))
- AC_ARG_WITH(xcomposite,AS_HELP_STRING([--without-xcomposite],[do not use the Xcomposite extension]),
-@@ -1308,6 +1309,30 @@ then
+ AC_ARG_WITH(tiff,       AS_HELP_STRING([--without-tiff],[do not use TIFF]),
+             [if test "x$withval" = "xno"; then ac_cv_header_tiffio_h=no; fi])
+@@ -1386,6 +1387,31 @@ then
      CFLAGS="$save_CFLAGS"
  fi
  
@@ -38,10 +38,11 @@ index f823045..583f9c1 100644
 +WINE_WARNING_WITH(pulse, [test "$ac_cv_lib_pulse_pa_stream_is_corked" != "yes"],
 +        [libpulse ${notice_platform}development files not found or too old, Pulse won't be supported.])
 +
++
  dnl **** Check for ALSA 1.x ****
  AC_SUBST(ALSALIBS,"")
  if test "$ac_cv_header_sys_asoundlib_h" = "yes" -o "$ac_cv_header_alsa_asoundlib_h" = "yes"
-@@ -1460,7 +1485,7 @@ dnl **** Check for libodbc ****
+@@ -1553,7 +1579,7 @@ dnl **** Check for libodbc ****
  WINE_CHECK_SONAME(odbc,SQLConnect,,[AC_DEFINE_UNQUOTED(SONAME_LIBODBC,["libodbc.$LIBEXT"])])
  
  dnl **** Check for any sound system ****
@@ -50,7 +51,7 @@ index f823045..583f9c1 100644
          "$ac_cv_header_sys_soundcard_h" != "yes" -a \
          "$ac_cv_header_machine_soundcard_h" != "yes" -a \
          "$ac_cv_header_soundcard_h" != "yes" -a \
-@@ -2555,6 +2580,7 @@ WINE_CONFIG_DLL(winenas.drv)
+@@ -2648,6 +2674,7 @@ WINE_CONFIG_DLL(winenas.drv)
  WINE_CONFIG_DLL(wineoss.drv)
  WINE_CONFIG_DLL(wineps.drv)
  WINE_CONFIG_DLL(wineps16.drv16,enable_win16)
