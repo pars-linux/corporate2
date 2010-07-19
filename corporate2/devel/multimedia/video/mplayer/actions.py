@@ -14,8 +14,8 @@ from pisi.actionsapi import get
 import os
 
 WorkDir = "mplayer"
-mp_version = "31743"
-ff_version = "24252"
+mp_version = "31750"
+ff_version = "24320"
 
 dllloader = "" if get.ARCH() == "x86_64" else "--enable-win32dll \
                                                --codecsdir=/usr/lib/%(esdir)s" % {"esdir": "essential"}
@@ -96,7 +96,7 @@ def setup():
                             --enable-menu \
                             --enable-mmx \
                             --enable-mmxext \
-                            --enable-network \
+                            --enable-networking \
                             --enable-openal \
                             --enable-ossaudio \
                             --enable-png \
