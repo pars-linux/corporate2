@@ -12,7 +12,11 @@
         <IsA>app:console</IsA>
         <Summary>Userspace tools for Kernel-based Virtual Machine</Summary>
         <Description>KVM (for Kernel-based Virtual Machine) is a full virtualization solution for Linux on x86 hardware containing virtualization extensions (Intel VT or AMD-V). This package includes the userspace tools needed to use KVM.</Description>
-        <Archive sha1sum="235a790056a1b751791e64dd499129b2dbf55be8" type="targz">mirrors://sourceforge/kvm/qemu-kvm/0.12.3/qemu-kvm-0.12.3.tar.gz</Archive>
+        <Archive sha1sum="955c8dad1f65df0eb5403f40a6c92d93a0a252be" type="targz">mirrors://sourceforge/kvm/qemu-kvm/0.12.4/qemu-kvm-0.12.4.tar.gz</Archive>
+        <AdditionalFiles>
+            <!-- FIXME: Sync this on major kernel bumps. It's shipped within kernel-module-headers -->
+            <AdditionalFile target="kernel/include/linux/kvm.h">kvm-2.6.31.13.h</AdditionalFile>
+        </AdditionalFiles>
         <BuildDependencies>
             <Dependency>pulseaudio</Dependency>
             <Dependency>cyrus-sasl</Dependency>
@@ -32,6 +36,63 @@
 
             <!-- Don't fallback to plain qemu is kvm fails -->
             <Patch level="1">kvm-qemu-no-fallback-if-open-kvm-fails.patch</Patch>
+
+            <!-- virtio-console changes -->
+            <Patch level="1">fedora/qemu-virtio-Remove-duplicate-macro-definition-for-max.-v.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-console-qdev-conversion-new-virtio-serial-b.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-serial-bus-Maintain-guest-and-host-port-open.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-serial-bus-Add-a-port-name-property-for-po.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-serial-bus-Add-ability-to-hot-unplug-ports.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-serial-Add-a-virtserialport-device-for-gen.patch</Patch>
+            <Patch level="1">fedora/qemu-Move-virtio-serial-to-Makefile.objs.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-serial-Use-MSI-vectors-for-port-virtqueues.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-console-Rename-virtio-serial.c-back-to-virti.patch</Patch>
+            <Patch level="1">fedora/qemu-net-add-API-to-disable-enable-polling.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-rename-features-guest_features.patch</Patch>
+            <Patch level="1">fedora/qemu-qdev-add-bit-property-type.patch</Patch>
+            <Patch level="1">fedora/qemu-qdev-fix-thinko-leading-to-guest-crashes.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-add-features-as-qdev-properties.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-net-mac-property-is-mandatory.patch</Patch>
+            <Patch level="1">fedora/qemu-exec-memory-notifiers.patch</Patch>
+            <Patch level="1">fedora/qemu-kvm-add-API-to-set-ioeventfd.patch</Patch>
+            <Patch level="1">fedora/qemu-notifier-event-notifier-implementation.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-add-notifier-support.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-add-APIs-for-queue-fields.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-add-status-change-callback.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-move-typedef-to-qemu-common.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-pci-fill-in-notifier-support.patch</Patch>
+            <Patch level="1">fedora/qemu-tap-add-interface-to-get-device-fd.patch</Patch>
+            <Patch level="1">fedora/qemu-vhost-vhost-net-support.patch</Patch>
+            <Patch level="1">fedora/qemu-tap-add-vhost-vhostfd-options.patch</Patch>
+            <Patch level="1">fedora/qemu-tap-add-API-to-retrieve-vhost-net-header.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-net-vhost-net-support.patch</Patch>
+            <Patch level="1">fedora/qemu-kvm-add-vhost.h-header.patch</Patch>
+            <Patch level="1">fedora/qemu-kvm-irqfd-support.patch</Patch>
+            <Patch level="1">fedora/qemu-msix-add-mask-unmask-notifiers.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-pci-irqfd-support.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-avoid-crash-with-non-tap-backends.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-serial-features-build-fix.patch</Patch>
+            <Patch level="1">fedora/qemu-virtio-pci-irqfd-fix-nonkvm-build.patch</Patch>
+            <Patch level="1">fedora/qemu-vhost-add-configure-check.patch</Patch>
+
+            <!-- Upstream fixes -->
+            <Patch level="1">upstream/0038-msix-migration-fix.patch</Patch>
+            <Patch level="1">upstream/0039-vhost-logging-thinko-fix.patch</Patch>
+            <Patch level="1">upstream/0040-vhost-move-vhost_set_vq_addr.patch</Patch>
+            <Patch level="1">upstream/0041-vhost-used-addr-migration-fix.patch</Patch>
+            <Patch level="1">upstream/0042-vhost-fix-used-logging-size-math.patch</Patch>
+            <Patch level="1">upstream/0043-vhost-logging-mistake-enable-not-disable-log.patch</Patch>
+            <Patch level="1">upstream/0044-vhost-fix-log-base.patch</Patch>
+            <Patch level="1">upstream/0045-pc-Add-a-Fedora-13-machine-type-that-contains-backpo.patch</Patch>
+            <Patch level="1">upstream/0046-pc-Add-backward-compatibility-options-for-virtio-ser.patch</Patch>
+            <Patch level="1">upstream/0047-virtio-serial-don-t-set-MULTIPORT-for-1-port-dev.patch</Patch>
+            <Patch level="1">upstream/0048-virtio-serial-pci-Allow-MSI-to-be-disabled.patch</Patch>
+            <Patch level="1">upstream/0049-migration-Clear-fd-also-in-error-cases.patch</Patch>
+            <Patch level="1">upstream/0050-raw-posix-Detect-CDROM-via-ioctl-on-linux.patch</Patch>
+            <Patch level="1">upstream/0051-usb-linux-increase-buffer-for-USB-control-requests.patch</Patch>
+            <Patch level="1">upstream/0052-virtio-console-patches.patch</Patch>
+            <Patch level="1">upstream/0055-boot-remove-unused-boot_devices_bitmap-variable.patch</Patch>
+            <Patch level="1">upstream/block-vvfat.c-fix-warnings-with-_FORTIFY_SOURCE.patch</Patch>
         </Patches>
     </Source>
 
@@ -52,13 +113,37 @@
             <Dependency>qemu</Dependency>
         </RuntimeDependencies>
         <Files>
+            <Path fileType="config">/etc</Path>
             <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="executable">/usr/sbin</Path>
             <Path fileType="data">/usr/share/kvm</Path>
             <Path fileType="man">/usr/share/man</Path>
         </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/ksm">fedora/ksm.sysconfig</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/ksmtuned.conf">fedora/ksmtuned.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0755" target="/usr/sbin/ksmtuned">fedora/ksmtuned</AdditionalFile>
+        </AdditionalFiles>
+        <!--
+        <Provides>
+            <COMAR script="ksm-service.py" name="ksm">System.Service</COMAR>
+            <COMAR script="ksmtuned-service.py" name="ksmtuned">System.Service</COMAR>
+        </Provides>
+        -->
     </Package>
 
     <History>
+        <Update release="53">
+            <Date>2010-07-15</Date>
+            <Version>0.12.4</Version>
+            <Comment>
+                - Version bump, add fedora patches,
+                - Install kvm tools,
+                - Add KSM support.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="52">
             <Date>2010-03-15</Date>
             <Version>0.12.3</Version>
