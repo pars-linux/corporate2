@@ -14,34 +14,59 @@
         <Description>libvirt is a toolkit to interact with the virtualization capabilities of recent versions of Linux (and other OSes). libvirt supports Xen hypervisor, QEMU emulator, KVM hypervisor, LXC Linux container system, OpenVZ Linux container system, User Mode Linux paravirtualized kernel and VirtualBox hypervisor together with remote management possibilities.</Description>
         <Archive sha1sum="553c984e1fc1eae288d32ff911ba5614010bece4" type="targz">http://libvirt.org/sources/libvirt-0.8.2.tar.gz</Archive>
         <BuildDependencies>
-            <!--Dependency>yajl</Dependency-->
+            <Dependency>kvm</Dependency>
+            <Dependency>lvm2</Dependency>
             <Dependency>avahi</Dependency>
-            <!--Dependency>netcf</Dependency-->
+            <Dependency>netcf</Dependency>
+            <Dependency>augeas</Dependency>
+            <Dependency>netcat</Dependency>
             <Dependency>gnutls</Dependency>
             <Dependency>numactl</Dependency>
+            <Dependency>libpcap</Dependency>
             <Dependency>dnsmasq</Dependency>
             <Dependency>iptables</Dependency>
             <Dependency>nfs-utils</Dependency>
             <Dependency>libcap-ng</Dependency>
             <Dependency>cyrus-sasl</Dependency>
+            <Dependency>yajl-devel</Dependency>
             <Dependency>bridge-utils</Dependency>
             <Dependency>libpciaccess</Dependency>
             <Dependency>device-mapper</Dependency>
             <!--Dependency>iscsi-initiator-utils</Dependency-->
-            <Dependency>lvm2</Dependency>
-            <Dependency>kvm</Dependency>
-            <Dependency>netcat</Dependency>
         </BuildDependencies>
+        <Patches>
+            <!-- Fix CVE-2010-2237, 2238, 2239, 2242 (#13659) -->
+            <Patch level="1">fedora/libvirt-0.8.2-01-extract-backing-store-format.patch</Patch>
+            <Patch level="1">fedora/libvirt-0.8.2-02-remove-type-field.patch</Patch>
+            <Patch level="1">fedora/libvirt-0.8.2-03-refactor-metadata-extract.patch</Patch>
+            <Patch level="1">fedora/libvirt-0.8.2-04-require-storage-format.patch</Patch>
+            <Patch level="1">fedora/libvirt-0.8.2-05-disk-path-iterator.patch</Patch>
+            <Patch level="1">fedora/libvirt-0.8.2-06-use-disk-iterator.patch</Patch>
+            <Patch level="1">fedora/libvirt-0.8.2-07-secdriver-params.patch</Patch>
+            <Patch level="1">fedora/libvirt-0.8.2-08-disable-disk-probing.patch</Patch>
+            <Patch level="1">fedora/libvirt-0.8.2-09-set-default-driver.patch</Patch>
+            <Patch level="1">fedora/libvirt-0.8.2-10-qemu-img-format-handling.patch</Patch>
+            <Patch level="1">fedora/libvirt-0.8.2-11-storage-vol-backing.patch</Patch>
+            <Patch level="1">fedora/libvirt-0.8.2-apply-iptables-sport-mapping.patch</Patch>
+
+            <!-- Policy translations -->
+            <Patch level="1">tr.patch</Patch>
+        </Patches>
     </Source>
 
     <Package>
         <Name>libvirt</Name>
         <RuntimeDependencies>
-            <!--Dependency>yajl</Dependency-->
+            <Dependency>kvm</Dependency>
+            <Dependency>lvm2</Dependency>
+            <Dependency>yajl</Dependency>
             <Dependency>avahi</Dependency>
-            <!--Dependency>netcf</Dependency-->
+            <Dependency>netcf</Dependency>
+            <Dependency>augeas</Dependency>
+            <Dependency>netcat</Dependency>
             <Dependency>gnutls</Dependency>
             <Dependency>numactl</Dependency>
+            <Dependency>libpcap</Dependency>
             <Dependency>dnsmasq</Dependency>
             <Dependency>iptables</Dependency>
             <Dependency>nfs-utils</Dependency>
@@ -50,10 +75,14 @@
             <Dependency>bridge-utils</Dependency>
             <Dependency>libpciaccess</Dependency>
             <Dependency>device-mapper</Dependency>
+
+            <!-- For newer udev rules about permissions -->
+            <Dependency releaseFrom="14">module-kvm-userspace</Dependency>
+
+            <!-- For qemu user/group -->
+            <Dependency releaseFrom="133">baselayout</Dependency>
+
             <!--Dependency>iscsi-initiator-utils</Dependency-->
-            <Dependency>lvm2</Dependency>
-            <Dependency>kvm</Dependency>
-            <Dependency>netcat</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="config">/etc</Path>
@@ -76,10 +105,22 @@
         </AdditionalFiles>
         <Provides>
             <COMAR script="service.py">System.Service</COMAR>
+            <COMAR script="package.py">System.Package</COMAR>
         </Provides>
     </Package>
 
     <History>
+        <Update release="11" type="security">
+            <Date>2010-07-13</Date>
+            <Version>0.8.2</Version>
+            <Comment>
+                - Force to run as qemu user,
+                - Enable yajl and netcf support,
+                - Fix CVE-2010-2237, 2238, 2239, 2242 (#13659).
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="10">
             <Date>2010-07-09</Date>
             <Version>0.8.2</Version>

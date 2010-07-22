@@ -1,0 +1,285 @@
+From 726a63a437efd96510ce316bf30d16f213d4db27 Mon Sep 17 00:00:00 2001
+From: Daniel P. Berrange <berrange@redhat.com>
+Date: Tue, 15 Jun 2010 16:15:51 +0100
+Subject: [PATCH 04/11] Require format to be passed into virStorageFileGetMetadata
+
+Require the disk image to be passed into virStorageFileGetMetadata.
+If this is set to VIR_STORAGE_FILE_AUTO, then the format will be
+resolved using probing. This makes it easier to control when
+probing will be used
+
+* src/qemu/qemu_driver.c, src/qemu/qemu_security_dac.c,
+  src/security/security_selinux.c, src/security/virt-aa-helper.c:
+  Set VIR_STORAGE_FILE_AUTO when calling virStorageFileGetMetadata.
+* src/storage/storage_backend_fs.c: Probe for disk format before
+  calling virStorageFileGetMetadata.
+* src/util/storage_file.h, src/util/storage_file.c: Remove format
+  from virStorageFileMeta struct & require it to be passed into
+  method.
+---
+ src/qemu/qemu_driver.c           |   27 +++++++++++++++++---
+ src/qemu/qemu_security_dac.c     |    4 ++-
+ src/security/security_selinux.c  |    4 ++-
+ src/security/virt-aa-helper.c    |    4 ++-
+ src/storage/storage_backend_fs.c |   11 ++++++--
+ src/util/storage_file.c          |   50 +++++++++++++++++++++++++------------
+ src/util/storage_file.h          |    3 +-
+ 7 files changed, 76 insertions(+), 27 deletions(-)
+
+diff --git a/src/qemu/qemu_driver.c b/src/qemu/qemu_driver.c
+index 487bfa3..97f2990 100644
+--- a/src/qemu/qemu_driver.c
++++ b/src/qemu/qemu_driver.c
+@@ -3069,7 +3069,9 @@ static int qemuSetupDiskCgroup(virCgroupPtr cgroup,
+             }
+         }
+ 
+-        rc = virStorageFileGetMetadata(path, &meta);
++        rc = virStorageFileGetMetadata(path,
++                                       VIR_STORAGE_FILE_AUTO,
++                                       &meta);
+         if (rc < 0)
+             VIR_WARN("Unable to lookup parent image for %s", path);
+ 
+@@ -3119,7 +3121,9 @@ static int qemuTeardownDiskCgroup(virCgroupPtr cgroup,
+             }
+         }
+ 
+-        rc = virStorageFileGetMetadata(path, &meta);
++        rc = virStorageFileGetMetadata(path,
++                                       VIR_STORAGE_FILE_AUTO,
++                                       &meta);
+         if (rc < 0)
+             VIR_WARN("Unable to lookup parent image for %s", path);
+ 
+@@ -9614,6 +9618,7 @@ static int qemuDomainGetBlockInfo(virDomainPtr dom,
+     virDomainDiskDefPtr disk = NULL;
+     struct stat sb;
+     int i;
++    int format;
+ 
+     virCheckFlags(0, -1);
+ 
+@@ -9658,7 +9663,21 @@ static int qemuDomainGetBlockInfo(virDomainPtr dom,
+     }
+ 
+     /* Probe for magic formats */
+-    if (virStorageFileGetMetadataFromFD(path, fd, &meta) < 0)
++    if (disk->driverType) {
++        if ((format = virStorageFileFormatTypeFromString(disk->driverType)) < 0) {
++            qemuReportError(VIR_ERR_INTERNAL_ERROR,
++                            _("unknown disk format %s for %s"),
++                            disk->driverType, disk->src);
++            goto cleanup;
++        }
++    } else {
++        if ((format = virStorageFileProbeFormat(disk->src)) < 0)
++            goto cleanup;
++    }
++
++    if (virStorageFileGetMetadataFromFD(path, fd,
++                                        format,
++                                        &meta) < 0)
+         goto cleanup;
+ 
+     /* Get info for normal formats */
+@@ -9706,7 +9725,7 @@ static int qemuDomainGetBlockInfo(virDomainPtr dom,
+        highest allocated extent from QEMU */
+     if (virDomainObjIsActive(vm) &&
+         disk->type == VIR_DOMAIN_DISK_TYPE_BLOCK &&
+-        meta.format != VIR_STORAGE_FILE_RAW &&
++        format != VIR_STORAGE_FILE_RAW &&
+         S_ISBLK(sb.st_mode)) {
+         qemuDomainObjPrivatePtr priv = vm->privateData;
+         if (qemuDomainObjBeginJob(vm) < 0)
+diff --git a/src/qemu/qemu_security_dac.c b/src/qemu/qemu_security_dac.c
+index 95015b0..acfe48e 100644
+--- a/src/qemu/qemu_security_dac.c
++++ b/src/qemu/qemu_security_dac.c
+@@ -115,7 +115,9 @@ qemuSecurityDACSetSecurityImageLabel(virDomainObjPtr vm ATTRIBUTE_UNUSED,
+         virStorageFileMetadata meta;
+         int ret;
+ 
+-        ret = virStorageFileGetMetadata(path, &meta);
++        ret = virStorageFileGetMetadata(path,
++                                        VIR_STORAGE_FILE_AUTO,
++                                        &meta);
+ 
+         if (path != disk->src)
+             VIR_FREE(path);
+diff --git a/src/security/security_selinux.c b/src/security/security_selinux.c
+index e5eef19..5c0f002 100644
+--- a/src/security/security_selinux.c
++++ b/src/security/security_selinux.c
+@@ -457,7 +457,9 @@ SELinuxSetSecurityImageLabel(virDomainObjPtr vm,
+         virStorageFileMetadata meta;
+         int ret;
+ 
+-        ret = virStorageFileGetMetadata(path, &meta);
++        ret = virStorageFileGetMetadata(path,
++                                        VIR_STORAGE_FILE_AUTO,
++                                        &meta);
+ 
+         if (path != disk->src)
+             VIR_FREE(path);
+diff --git a/src/security/virt-aa-helper.c b/src/security/virt-aa-helper.c
+index c66f107..2c045e6 100644
+--- a/src/security/virt-aa-helper.c
++++ b/src/security/virt-aa-helper.c
+@@ -830,7 +830,9 @@ get_files(vahControl * ctl)
+             do {
+                 virStorageFileMetadata meta;
+ 
+-                ret = virStorageFileGetMetadata(path, &meta);
++                ret = virStorageFileGetMetadata(path,
++                                                VIR_STORAGE_FILE_AUTO,
++                                                &meta);
+ 
+                 if (path != ctl->def->disks[i]->src)
+                     VIR_FREE(path);
+diff --git a/src/storage/storage_backend_fs.c b/src/storage/storage_backend_fs.c
+index f0cd770..d3ac0fe 100644
+--- a/src/storage/storage_backend_fs.c
++++ b/src/storage/storage_backend_fs.c
+@@ -75,14 +75,19 @@ virStorageBackendProbeTarget(virStorageVolTargetPtr target,
+ 
+     memset(&meta, 0, sizeof(meta));
+ 
+-    if (virStorageFileGetMetadataFromFD(target->path, fd, &meta) < 0) {
++    if ((target->format = virStorageFileProbeFormatFromFD(target->path, fd)) < 0) {
+         close(fd);
+         return -1;
+     }
+ 
+-    close(fd);
++    if (virStorageFileGetMetadataFromFD(target->path, fd,
++                                        target->format,
++                                        &meta) < 0) {
++        close(fd);
++        return -1;
++    }
+ 
+-    target->format = meta.format;
++    close(fd);
+ 
+     if (backingStore) {
+         *backingStore = meta.backingStore;
+diff --git a/src/util/storage_file.c b/src/util/storage_file.c
+index 221268b..9712d92 100644
+--- a/src/util/storage_file.c
++++ b/src/util/storage_file.c
+@@ -696,18 +696,23 @@ virStorageFileProbeFormat(const char *path)
+ /**
+  * virStorageFileGetMetadataFromFD:
+  *
+- * Probe for the format of 'fd' (which is an open file descriptor
+- * for the file 'path'), filling 'meta' with the detected
+- * format and other associated metadata.
++ * Extract metadata about the storage volume with the specified
++ * image format. If image format is VIR_STORAGE_FILE_AUTO, it
++ * will probe to automatically identify the format. 
+  *
+- * Callers are advised never to trust the returned 'meta->format'
+- * unless it is listed as VIR_STORAGE_FILE_RAW, since a
+- * malicious guest can turn a raw file into any other non-raw
+- * format at will.
++ * Callers are advised never to use VIR_STORAGE_FILE_AUTO as a
++ * format, since a malicious guest can turn a raw file into any
++ * other non-raw format at will.
++ *
++ * If the returned meta.backingStoreFormat is VIR_STORAGE_FILE_AUTO
++ * it indicates the image didn't specify an explicit format for its
++ * backing store. Callers are advised against probing for the
++ * backing store format in this case.
+  */
+ int
+ virStorageFileGetMetadataFromFD(const char *path,
+                                 int fd,
++                                int format,
+                                 virStorageFileMetadata *meta)
+ {
+     unsigned char *head;
+@@ -731,9 +736,16 @@ virStorageFileGetMetadataFromFD(const char *path,
+         goto cleanup;
+     }
+ 
+-    meta->format = virStorageFileProbeFormatFromBuf(path, head, len);
++    if (format == VIR_STORAGE_FILE_AUTO)
++        format = virStorageFileProbeFormatFromBuf(path, head, len);
++
++    if (format < 0 ||
++        format >= VIR_STORAGE_FILE_LAST) {
++        virReportSystemError(EINVAL, _("unknown storage file format %d"), format);
++        return -1;
++    }
+ 
+-    ret = virStorageFileGetMetadataFromBuf(meta->format, path, head, len, meta);
++    ret = virStorageFileGetMetadataFromBuf(format, path, head, len, meta);
+ 
+ cleanup:
+     VIR_FREE(head);
+@@ -743,16 +755,22 @@ cleanup:
+ /**
+  * virStorageFileGetMetadata:
+  *
+- * Probe for the format of 'path', filling 'meta' with the detected
+- * format and other associated metadata.
++ * Extract metadata about the storage volume with the specified
++ * image format. If image format is VIR_STORAGE_FILE_AUTO, it
++ * will probe to automatically identify the format. 
+  *
+- * Callers are advised never to trust the returned 'meta->format'
+- * unless it is listed as VIR_STORAGE_FILE_RAW, since a
+- * malicious guest can turn a raw file into any other non-raw
+- * format at will.
++ * Callers are advised never to use VIR_STORAGE_FILE_AUTO as a
++ * format, since a malicious guest can turn a raw file into any
++ * other non-raw format at will.
++ *
++ * If the returned meta.backingStoreFormat is VIR_STORAGE_FILE_AUTO
++ * it indicates the image didn't specify an explicit format for its
++ * backing store. Callers are advised against probing for the
++ * backing store format in this case.
+  */
+ int
+ virStorageFileGetMetadata(const char *path,
++                          int format,
+                           virStorageFileMetadata *meta)
+ {
+     int fd, ret;
+@@ -762,7 +780,7 @@ virStorageFileGetMetadata(const char *path,
+         return -1;
+     }
+ 
+-    ret = virStorageFileGetMetadataFromFD(path, fd, meta);
++    ret = virStorageFileGetMetadataFromFD(path, fd, format, meta);
+ 
+     close(fd);
+ 
+diff --git a/src/util/storage_file.h b/src/util/storage_file.h
+index 3420d44..6853182 100644
+--- a/src/util/storage_file.h
++++ b/src/util/storage_file.h
+@@ -46,7 +46,6 @@ enum virStorageFileFormat {
+ VIR_ENUM_DECL(virStorageFileFormat);
+ 
+ typedef struct _virStorageFileMetadata {
+-    int format;
+     char *backingStore;
+     int backingStoreFormat;
+     unsigned long long capacity;
+@@ -62,9 +61,11 @@ int virStorageFileProbeFormatFromFD(const char *path,
+                                     int fd);
+ 
+ int virStorageFileGetMetadata(const char *path,
++                              int format,
+                               virStorageFileMetadata *meta);
+ int virStorageFileGetMetadataFromFD(const char *path,
+                                     int fd,
++                                    int format,
+                                     virStorageFileMetadata *meta);
+ 
+ int virStorageFileIsSharedFS(const char *path);
+-- 
+1.7.1.1
+

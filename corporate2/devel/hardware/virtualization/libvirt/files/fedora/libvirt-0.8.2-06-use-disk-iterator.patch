@@ -1,0 +1,506 @@
+From 54c1bb731d2b19a46a594cf9682c022f1e1114d2 Mon Sep 17 00:00:00 2001
+From: Daniel P. Berrange <berrange@redhat.com>
+Date: Tue, 15 Jun 2010 16:40:47 +0100
+Subject: [PATCH 06/11] Convert all disk backing store loops to shared helper API
+
+Update the QEMU cgroups code, QEMU DAC security driver, SELinux
+and AppArmour security drivers over to use the shared helper API
+virDomainDiskDefForeachPath().
+
+* src/qemu/qemu_driver.c, src/qemu/qemu_security_dac.c,
+  src/security/security_selinux.c, src/security/virt-aa-helper.c:
+  Convert over to use virDomainDiskDefForeachPath()
+---
+ src/qemu/qemu_driver.c          |  161 ++++++++++++++++----------------------
+ src/qemu/qemu_security_dac.c    |   47 ++++--------
+ src/security/security_selinux.c |   67 +++++++----------
+ src/security/virt-aa-helper.c   |   71 ++++++++----------
+ 4 files changed, 142 insertions(+), 204 deletions(-)
+
+diff --git a/src/qemu/qemu_driver.c b/src/qemu/qemu_driver.c
+index 97f2990..99aeffa 100644
+--- a/src/qemu/qemu_driver.c
++++ b/src/qemu/qemu_driver.c
+@@ -3040,107 +3040,82 @@ static const char *const defaultDeviceACL[] = {
+ #define DEVICE_PTY_MAJOR 136
+ #define DEVICE_SND_MAJOR 116
+ 
+-static int qemuSetupDiskCgroup(virCgroupPtr cgroup,
+-                               virDomainObjPtr vm,
+-                               virDomainDiskDefPtr disk)
+-{
+-    char *path = disk->src;
+-    int ret = -1;
+ 
+-    while (path != NULL) {
+-        virStorageFileMetadata meta;
+-        int rc;
++static int qemuSetupDiskPathAllow(virDomainDiskDefPtr disk ATTRIBUTE_UNUSED,
++                                  const char *path,
++                                  size_t depth ATTRIBUTE_UNUSED,
++                                  void *opaque)
++{
++    virCgroupPtr cgroup = opaque;
++    int rc;
+ 
+-        VIR_DEBUG("Process path '%s' for disk", path);
+-        rc = virCgroupAllowDevicePath(cgroup, path);
+-        if (rc != 0) {
+-            /* Get this for non-block devices */
+-            if (rc == -EINVAL) {
+-                VIR_DEBUG("Ignoring EINVAL for %s", path);
+-            } else if (rc == -EACCES) { /* Get this for root squash NFS */
+-                VIR_DEBUG("Ignoring EACCES for %s", path);
+-            } else {
+-                virReportSystemError(-rc,
+-                                     _("Unable to allow device %s for %s"),
+-                                     path, vm->def->name);
+-                if (path != disk->src)
+-                    VIR_FREE(path);
+-                goto cleanup;
+-            }
++    VIR_DEBUG("Process path %s for disk", path);
++    /* XXX RO vs RW */
++    rc = virCgroupAllowDevicePath(cgroup, path);
++    if (rc != 0) {
++        /* Get this for non-block devices */
++        if (rc == -EINVAL) {
++            VIR_DEBUG("Ignoring EINVAL for %s", path);
++        } else if (rc == -EACCES) { /* Get this for root squash NFS */
++            VIR_DEBUG("Ignoring EACCES for %s", path);
++        } else {
++            virReportSystemError(-rc,
++                                 _("Unable to allow access for disk path %s"),
++                                 path);
++            return -1;
+         }
+-
+-        rc = virStorageFileGetMetadata(path,
+-                                       VIR_STORAGE_FILE_AUTO,
+-                                       &meta);
+-        if (rc < 0)
+-            VIR_WARN("Unable to lookup parent image for %s", path);
+-
+-        if (path != disk->src)
+-            VIR_FREE(path);
+-        path = NULL;
+-
+-        if (rc < 0)
+-            break; /* Treating as non fatal */
+-
+-        path = meta.backingStore;
+     }
++    return 0;
++}
+ 
+-    ret = 0;
+ 
+-cleanup:
+-    return ret;
++static int qemuSetupDiskCgroup(virCgroupPtr cgroup,
++                               virDomainDiskDefPtr disk)
++{
++    return virDomainDiskDefForeachPath(disk,
++                                       true,
++                                       true,
++                                       qemuSetupDiskPathAllow,
++                                       cgroup);
+ }
+ 
+ 
+-static int qemuTeardownDiskCgroup(virCgroupPtr cgroup,
+-                                  virDomainObjPtr vm,
+-                                  virDomainDiskDefPtr disk)
++static int qemuTeardownDiskPathDeny(virDomainDiskDefPtr disk ATTRIBUTE_UNUSED,
++                                    const char *path,
++                                    size_t depth ATTRIBUTE_UNUSED,
++                                    void *opaque)
+ {
+-    char *path = disk->src;
+-    int ret = -1;
+-
+-    while (path != NULL) {
+-        virStorageFileMetadata meta;
+-        int rc;
++    virCgroupPtr cgroup = opaque;
++    int rc;
+ 
+-        VIR_DEBUG("Process path '%s' for disk", path);
+-        rc = virCgroupDenyDevicePath(cgroup, path);
+-        if (rc != 0) {
+-            /* Get this for non-block devices */
+-            if (rc == -EINVAL) {
+-                VIR_DEBUG("Ignoring EINVAL for %s", path);
+-            } else if (rc == -EACCES) { /* Get this for root squash NFS */
+-                VIR_DEBUG("Ignoring EACCES for %s", path);
+-            } else {
+-                virReportSystemError(-rc,
+-                                     _("Unable to deny device %s for %s"),
+-                                     path, vm->def->name);
+-                if (path != disk->src)
+-                    VIR_FREE(path);
+-                goto cleanup;
+-            }
++    VIR_DEBUG("Process path %s for disk", path);
++    /* XXX RO vs RW */
++    rc = virCgroupDenyDevicePath(cgroup, path);
++    if (rc != 0) {
++        /* Get this for non-block devices */
++        if (rc == -EINVAL) {
++            VIR_DEBUG("Ignoring EINVAL for %s", path);
++        } else if (rc == -EACCES) { /* Get this for root squash NFS */
++            VIR_DEBUG("Ignoring EACCES for %s", path);
++        } else {
++            virReportSystemError(-rc,
++                                 _("Unable to allow access for disk path %s"),
++                                 path);
++            return -1;
+         }
+-
+-        rc = virStorageFileGetMetadata(path,
+-                                       VIR_STORAGE_FILE_AUTO,
+-                                       &meta);
+-        if (rc < 0)
+-            VIR_WARN("Unable to lookup parent image for %s", path);
+-
+-        if (path != disk->src)
+-            VIR_FREE(path);
+-        path = NULL;
+-
+-        if (rc < 0)
+-            break; /* Treating as non fatal */
+-
+-        path = meta.backingStore;
+     }
++    return 0;
++}
+ 
+-    ret = 0;
+ 
+-cleanup:
+-    return ret;
++static int qemuTeardownDiskCgroup(virCgroupPtr cgroup,
++                                  virDomainDiskDefPtr disk)
++{
++    return virDomainDiskDefForeachPath(disk,
++                                       true,
++                                       true,
++                                       qemuTeardownDiskPathDeny,
++                                       cgroup);
+ }
+ 
+ 
+@@ -3204,7 +3179,7 @@ static int qemuSetupCgroup(struct qemud_driver *driver,
+         }
+ 
+         for (i = 0; i < vm->def->ndisks ; i++) {
+-            if (qemuSetupDiskCgroup(cgroup, vm, vm->def->disks[i]) < 0)
++            if (qemuSetupDiskCgroup(cgroup, vm->def->disks[i]) < 0)
+                 goto cleanup;
+         }
+ 
+@@ -8035,7 +8010,7 @@ static int qemudDomainAttachDevice(virDomainPtr dom,
+                                 vm->def->name);
+                 goto endjob;
+             }
+-            if (qemuSetupDiskCgroup(cgroup, vm, dev->data.disk) < 0)
++            if (qemuSetupDiskCgroup(cgroup, dev->data.disk) < 0)
+                 goto endjob;
+         }
+ 
+@@ -8080,7 +8055,7 @@ static int qemudDomainAttachDevice(virDomainPtr dom,
+             /* Fallthrough */
+         }
+         if (ret != 0 && cgroup) {
+-            if (qemuTeardownDiskCgroup(cgroup, vm, dev->data.disk) < 0)
++            if (qemuTeardownDiskCgroup(cgroup, dev->data.disk) < 0)
+                 VIR_WARN("Failed to teardown cgroup for disk path %s",
+                          NULLSTR(dev->data.disk->src));
+         }
+@@ -8280,7 +8255,7 @@ static int qemuDomainUpdateDeviceFlags(virDomainPtr dom,
+                                 vm->def->name);
+                 goto endjob;
+             }
+-            if (qemuSetupDiskCgroup(cgroup, vm, dev->data.disk) < 0)
++            if (qemuSetupDiskCgroup(cgroup, dev->data.disk) < 0)
+                 goto endjob;
+         }
+ 
+@@ -8303,7 +8278,7 @@ static int qemuDomainUpdateDeviceFlags(virDomainPtr dom,
+         }
+ 
+         if (ret != 0 && cgroup) {
+-            if (qemuTeardownDiskCgroup(cgroup, vm, dev->data.disk) < 0)
++            if (qemuTeardownDiskCgroup(cgroup, dev->data.disk) < 0)
+                 VIR_WARN("Failed to teardown cgroup for disk path %s",
+                          NULLSTR(dev->data.disk->src));
+         }
+@@ -8430,7 +8405,7 @@ static int qemudDomainDetachPciDiskDevice(struct qemud_driver *driver,
+         VIR_WARN("Unable to restore security label on %s", dev->data.disk->src);
+ 
+     if (cgroup != NULL) {
+-        if (qemuTeardownDiskCgroup(cgroup, vm, dev->data.disk) < 0)
++        if (qemuTeardownDiskCgroup(cgroup, dev->data.disk) < 0)
+             VIR_WARN("Failed to teardown cgroup for disk path %s",
+                      NULLSTR(dev->data.disk->src));
+     }
+@@ -8493,7 +8468,7 @@ static int qemudDomainDetachSCSIDiskDevice(struct qemud_driver *driver,
+         VIR_WARN("Unable to restore security label on %s", dev->data.disk->src);
+ 
+     if (cgroup != NULL) {
+-        if (qemuTeardownDiskCgroup(cgroup, vm, dev->data.disk) < 0)
++        if (qemuTeardownDiskCgroup(cgroup, dev->data.disk) < 0)
+             VIR_WARN("Failed to teardown cgroup for disk path %s",
+                      NULLSTR(dev->data.disk->src));
+     }
+diff --git a/src/qemu/qemu_security_dac.c b/src/qemu/qemu_security_dac.c
+index acfe48e..770010d 100644
+--- a/src/qemu/qemu_security_dac.c
++++ b/src/qemu/qemu_security_dac.c
+@@ -98,45 +98,28 @@ err:
+ 
+ 
+ static int
++qemuSecurityDACSetSecurityFileLabel(virDomainDiskDefPtr disk ATTRIBUTE_UNUSED,
++                                    const char *path,
++                                    size_t depth ATTRIBUTE_UNUSED,
++                                    void *opaque ATTRIBUTE_UNUSED)
++{
++    return qemuSecurityDACSetOwnership(path, driver->user, driver->group);
++}
++
++
++static int
+ qemuSecurityDACSetSecurityImageLabel(virDomainObjPtr vm ATTRIBUTE_UNUSED,
+                                      virDomainDiskDefPtr disk)
+ 
+ {
+-    const char *path;
+-
+     if (!driver->privileged || !driver->dynamicOwnership)
+         return 0;
+ 
+-    if (!disk->src)
+-        return 0;
+-
+-    path = disk->src;
+-    do {
+-        virStorageFileMetadata meta;
+-        int ret;
+-
+-        ret = virStorageFileGetMetadata(path,
+-                                        VIR_STORAGE_FILE_AUTO,
+-                                        &meta);
+-
+-        if (path != disk->src)
+-            VIR_FREE(path);
+-        path = NULL;
+-
+-        if (ret < 0)
+-            return -1;
+-
+-        if (meta.backingStore != NULL &&
+-            qemuSecurityDACSetOwnership(meta.backingStore,
+-                                        driver->user, driver->group) < 0) {
+-            VIR_FREE(meta.backingStore);
+-            return -1;
+-        }
+-
+-        path = meta.backingStore;
+-    } while (path != NULL);
+-
+-    return qemuSecurityDACSetOwnership(disk->src, driver->user, driver->group);
++    return virDomainDiskDefForeachPath(disk,
++                                       true,
++                                       false,
++                                       qemuSecurityDACSetSecurityFileLabel,
++                                       NULL);
+ }
+ 
+ 
+diff --git a/src/security/security_selinux.c b/src/security/security_selinux.c
+index 5c0f002..d191118 100644
+--- a/src/security/security_selinux.c
++++ b/src/security/security_selinux.c
+@@ -439,54 +439,43 @@ SELinuxRestoreSecurityImageLabel(virDomainObjPtr vm,
+ 
+ 
+ static int
++SELinuxSetSecurityFileLabel(virDomainDiskDefPtr disk,
++                            const char *path,
++                            size_t depth,
++                            void *opaque)
++{
++    const virSecurityLabelDefPtr secdef = opaque;
++
++    if (depth == 0) {
++        if (disk->shared) {
++            return SELinuxSetFilecon(path, default_image_context);
++        } else if (disk->readonly) {
++            return SELinuxSetFilecon(path, default_content_context);
++        } else if (secdef->imagelabel) {
++            return SELinuxSetFilecon(path, secdef->imagelabel);
++        } else {
++            return 0;
++        }
++    } else {
++        return SELinuxSetFilecon(path, default_content_context);
++    }
++}
++
++static int
+ SELinuxSetSecurityImageLabel(virDomainObjPtr vm,
+                              virDomainDiskDefPtr disk)
+ 
+ {
+     const virSecurityLabelDefPtr secdef = &vm->def->seclabel;
+-    const char *path;
+ 
+     if (secdef->type == VIR_DOMAIN_SECLABEL_STATIC)
+         return 0;
+ 
+-    if (!disk->src)
+-        return 0;
+-
+-    path = disk->src;
+-    do {
+-        virStorageFileMetadata meta;
+-        int ret;
+-
+-        ret = virStorageFileGetMetadata(path,
+-                                        VIR_STORAGE_FILE_AUTO,
+-                                        &meta);
+-
+-        if (path != disk->src)
+-            VIR_FREE(path);
+-        path = NULL;
+-
+-        if (ret < 0)
+-           break;
+-
+-        if (meta.backingStore != NULL &&
+-            SELinuxSetFilecon(meta.backingStore,
+-                              default_content_context) < 0) {
+-            VIR_FREE(meta.backingStore);
+-            return -1;
+-        }
+-
+-        path = meta.backingStore;
+-    } while (path != NULL);
+-
+-    if (disk->shared) {
+-        return SELinuxSetFilecon(disk->src, default_image_context);
+-    } else if (disk->readonly) {
+-        return SELinuxSetFilecon(disk->src, default_content_context);
+-    } else if (secdef->imagelabel) {
+-        return SELinuxSetFilecon(disk->src, secdef->imagelabel);
+-    }
+-
+-    return 0;
++    return virDomainDiskDefForeachPath(disk,
++                                       true,
++                                       false,
++                                       SELinuxSetSecurityFileLabel,
++                                       secdef);
+ }
+ 
+ 
+diff --git a/src/security/virt-aa-helper.c b/src/security/virt-aa-helper.c
+index 2c045e6..9ed0cd3 100644
+--- a/src/security/virt-aa-helper.c
++++ b/src/security/virt-aa-helper.c
+@@ -36,7 +36,6 @@
+ #include "uuid.h"
+ #include "hostusb.h"
+ #include "pci.h"
+-#include "storage_file.h"
+ 
+ static char *progname;
+ 
+@@ -801,6 +800,28 @@ file_iterate_pci_cb(pciDevice *dev ATTRIBUTE_UNUSED,
+ }
+ 
+ static int
++add_file_path(virDomainDiskDefPtr disk,
++              const char *path,
++              size_t depth,
++              void *opaque)
++{
++    virBufferPtr buf = opaque;
++    int ret;
++
++    if (depth == 0) {
++        if (disk->readonly)
++            ret = vah_add_file(buf, path, "r");
++        else
++            ret = vah_add_file(buf, path, "rw");
++    } else {
++        ret = vah_add_file(buf, path, "r");
++    }
++
++    return ret;
++}
++
++
++static int
+ get_files(vahControl * ctl)
+ {
+     virBuffer buf = VIR_BUFFER_INITIALIZER;
+@@ -821,45 +842,15 @@ get_files(vahControl * ctl)
+         goto clean;
+     }
+ 
+-    for (i = 0; i < ctl->def->ndisks; i++)
+-        if (ctl->def->disks[i] && ctl->def->disks[i]->src) {
+-            int ret;
+-            const char *path;
+-
+-            path = ctl->def->disks[i]->src;
+-            do {
+-                virStorageFileMetadata meta;
+-
+-                ret = virStorageFileGetMetadata(path,
+-                                                VIR_STORAGE_FILE_AUTO,
+-                                                &meta);
+-
+-                if (path != ctl->def->disks[i]->src)
+-                    VIR_FREE(path);
+-                path = NULL;
+-
+-                if (ret < 0) {
+-                    vah_warning("could not open path, skipping");
+-                    continue;
+-                }
+-
+-                if (meta.backingStore != NULL &&
+-                    (ret = vah_add_file(&buf, meta.backingStore, "rw")) != 0) {
+-                    VIR_FREE(meta.backingStore);
+-                    goto clean;
+-                }
+-
+-                path = meta.backingStore;
+-            } while (path != NULL);
+-
+-            if (ctl->def->disks[i]->readonly)
+-                ret = vah_add_file(&buf, ctl->def->disks[i]->src, "r");
+-            else
+-                ret = vah_add_file(&buf, ctl->def->disks[i]->src, "rw");
+-
+-            if (ret != 0)
+-                goto clean;
+-        }
++    for (i = 0; i < ctl->def->ndisks; i++) {
++        int ret = virDomainDiskDefForeachPath(ctl->def->disks[i],
++                                              true,
++                                              false,
++                                              add_file_path,
++                                              &buf);
++        if (ret != 0)
++            goto clean;
++    }
+ 
+     for (i = 0; i < ctl->def->nserials; i++)
+         if (ctl->def->serials[i] && ctl->def->serials[i]->data.file.path)
+-- 
+1.7.1.1
+
