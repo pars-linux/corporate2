@@ -1,0 +1,1152 @@
+From bbf8c57b06ec1b63ae814114867eaceebb7dc166 Mon Sep 17 00:00:00 2001
+From: Daniel P. Berrange <berrange@redhat.com>
+Date: Tue, 15 Jun 2010 17:44:19 +0100
+Subject: [PATCH 07/11] Pass security driver object into all security driver callbacks
+
+The implementation of security driver callbacks often needs
+to access the security driver object. Currently only a handful
+of callbacks include the driver object as a parameter. Later
+patches require this is many more places.
+
+* src/qemu/qemu_driver.c: Pass in the security driver object
+  to all callbacks
+* src/qemu/qemu_security_dac.c, src/qemu/qemu_security_stacked.c,
+  src/security/security_apparmor.c, src/security/security_driver.h,
+  src/security/security_selinux.c: Add a virSecurityDriverPtr
+  param to all security callbacks
+---
+ src/qemu/qemu_driver.c           |   88 ++++++++++++++++++++-----------
+ src/qemu/qemu_security_dac.c     |   44 +++++++++++-----
+ src/qemu/qemu_security_stacked.c |  107 +++++++++++++++++++++++++-------------
+ src/security/security_apparmor.c |   57 +++++++++++++-------
+ src/security/security_driver.h   |   40 ++++++++++----
+ src/security/security_selinux.c  |   56 +++++++++++++------
+ 6 files changed, 260 insertions(+), 132 deletions(-)
+
+diff --git a/src/qemu/qemu_driver.c b/src/qemu/qemu_driver.c
+index 99aeffa..616547c 100644
+--- a/src/qemu/qemu_driver.c
++++ b/src/qemu/qemu_driver.c
+@@ -1278,7 +1278,8 @@ qemuReconnectDomain(void *payload, const char *name ATTRIBUTE_UNUSED, void *opaq
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainReserveSecurityLabel &&
+-        driver->securityDriver->domainReserveSecurityLabel(obj) < 0)
++        driver->securityDriver->domainReserveSecurityLabel(driver->securityDriver,
++                                                           obj) < 0)
+         goto error;
+ 
+     if (obj->def->id >= driver->nextvmid)
+@@ -3401,13 +3402,15 @@ static int qemudStartVMDaemon(virConnectPtr conn,
+     DEBUG0("Generating domain security label (if required)");
+     if (driver->securityDriver &&
+         driver->securityDriver->domainGenSecurityLabel &&
+-        driver->securityDriver->domainGenSecurityLabel(vm) < 0)
++        driver->securityDriver->domainGenSecurityLabel(driver->securityDriver,
++                                                       vm) < 0)
+         goto cleanup;
+ 
+     DEBUG0("Generating setting domain security labels (if required)");
+     if (driver->securityDriver &&
+         driver->securityDriver->domainSetSecurityAllLabel &&
+-        driver->securityDriver->domainSetSecurityAllLabel(vm, stdin_path) < 0) {
++        driver->securityDriver->domainSetSecurityAllLabel(driver->securityDriver,
++                                                          vm, stdin_path) < 0) {
+         if (stdin_path && virStorageFileIsSharedFS(stdin_path) != 1)
+             goto cleanup;
+     }
+@@ -3766,10 +3769,12 @@ static void qemudShutdownVMDaemon(struct qemud_driver *driver,
+     /* Reset Security Labels */
+     if (driver->securityDriver &&
+         driver->securityDriver->domainRestoreSecurityAllLabel)
+-        driver->securityDriver->domainRestoreSecurityAllLabel(vm, migrated);
++        driver->securityDriver->domainRestoreSecurityAllLabel(driver->securityDriver,
++                                                              vm, migrated);
+     if (driver->securityDriver &&
+         driver->securityDriver->domainReleaseSecurityLabel)
+-        driver->securityDriver->domainReleaseSecurityLabel(vm);
++        driver->securityDriver->domainReleaseSecurityLabel(driver->securityDriver,
++                                                           vm);
+ 
+     /* Clear out dynamically assigned labels */
+     if (vm->def->seclabel.type == VIR_DOMAIN_SECLABEL_DYNAMIC) {
+@@ -5171,7 +5176,8 @@ static int qemudDomainSaveFlag(virDomainPtr dom, const char *path,
+     if ((!bypassSecurityDriver) &&
+         driver->securityDriver &&
+         driver->securityDriver->domainSetSavedStateLabel &&
+-        driver->securityDriver->domainSetSavedStateLabel(vm, path) == -1)
++        driver->securityDriver->domainSetSavedStateLabel(driver->securityDriver,
++                                                         vm, path) == -1)
+         goto endjob;
+ 
+     if (header.compressed == QEMUD_SAVE_FORMAT_RAW) {
+@@ -5206,7 +5212,8 @@ static int qemudDomainSaveFlag(virDomainPtr dom, const char *path,
+     if ((!bypassSecurityDriver) &&
+         driver->securityDriver &&
+         driver->securityDriver->domainRestoreSavedStateLabel &&
+-        driver->securityDriver->domainRestoreSavedStateLabel(vm, path) == -1)
++        driver->securityDriver->domainRestoreSavedStateLabel(driver->securityDriver,
++                                                             vm, path) == -1)
+         VIR_WARN("failed to restore save state label on %s", path);
+ 
+     if (cgroup != NULL) {
+@@ -5253,7 +5260,8 @@ endjob:
+             if ((!bypassSecurityDriver) &&
+                 driver->securityDriver &&
+                 driver->securityDriver->domainRestoreSavedStateLabel &&
+-                driver->securityDriver->domainRestoreSavedStateLabel(vm, path) == -1)
++                driver->securityDriver->domainRestoreSavedStateLabel(driver->securityDriver,
++                                                                     vm, path) == -1)
+                 VIR_WARN("failed to restore save state label on %s", path);
+         }
+ 
+@@ -5488,7 +5496,8 @@ static int qemudDomainCoreDump(virDomainPtr dom,
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainSetSavedStateLabel &&
+-        driver->securityDriver->domainSetSavedStateLabel(vm, path) == -1)
++        driver->securityDriver->domainSetSavedStateLabel(driver->securityDriver,
++                                                         vm, path) == -1)
+         goto endjob;
+ 
+     /* Migrate will always stop the VM, so the resume condition is
+@@ -5531,7 +5540,8 @@ static int qemudDomainCoreDump(virDomainPtr dom,
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainRestoreSavedStateLabel &&
+-        driver->securityDriver->domainRestoreSavedStateLabel(vm, path) == -1)
++        driver->securityDriver->domainRestoreSavedStateLabel(driver->securityDriver,
++                                                             vm, path) == -1)
+         goto endjob;
+ 
+ endjob:
+@@ -5914,12 +5924,13 @@ static int qemudDomainGetSecurityLabel(virDomainPtr dom, virSecurityLabelPtr sec
+      *   QEMU monitor hasn't seen SIGHUP/ERR on poll().
+      */
+     if (virDomainObjIsActive(vm)) {
+-        if (driver->securityDriver && driver->securityDriver->domainGetSecurityProcessLabel) {
+-            if (driver->securityDriver->domainGetSecurityProcessLabel(vm, seclabel) == -1) {
+-                qemuReportError(VIR_ERR_INTERNAL_ERROR,
+-                                "%s", _("Failed to get security label"));
+-                goto cleanup;
+-            }
++        if (driver->securityDriver &&
++            driver->securityDriver->domainGetSecurityProcessLabel &&
++            driver->securityDriver->domainGetSecurityProcessLabel(driver->securityDriver,
++                                                                  vm, seclabel) < 0) {
++            qemuReportError(VIR_ERR_INTERNAL_ERROR,
++                            "%s", _("Failed to get security label"));
++            goto cleanup;
+         }
+     }
+ 
+@@ -6325,7 +6336,8 @@ qemudDomainSaveImageStartVM(virConnectPtr conn,
+ out:
+     if (driver->securityDriver &&
+         driver->securityDriver->domainRestoreSavedStateLabel &&
+-        driver->securityDriver->domainRestoreSavedStateLabel(vm, path) == -1)
++        driver->securityDriver->domainRestoreSavedStateLabel(driver->securityDriver,
++                                                             vm, path) == -1)
+         VIR_WARN("failed to restore save state label on %s", path);
+ 
+     return ret;
+@@ -7039,7 +7051,8 @@ static int qemudDomainChangeEjectableMedia(struct qemud_driver *driver,
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainSetSecurityImageLabel &&
+-        driver->securityDriver->domainSetSecurityImageLabel(vm, disk) < 0)
++        driver->securityDriver->domainSetSecurityImageLabel(driver->securityDriver,
++                                                            vm, disk) < 0)
+         return -1;
+ 
+     if (!(driveAlias = qemuDeviceDriveHostAlias(origdisk, qemuCmdFlags)))
+@@ -7068,7 +7081,8 @@ static int qemudDomainChangeEjectableMedia(struct qemud_driver *driver,
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainRestoreSecurityImageLabel &&
+-        driver->securityDriver->domainRestoreSecurityImageLabel(vm, origdisk) < 0)
++        driver->securityDriver->domainRestoreSecurityImageLabel(driver->securityDriver,
++                                                                vm, origdisk) < 0)
+         VIR_WARN("Unable to restore security label on ejected image %s", origdisk->src);
+ 
+     VIR_FREE(origdisk->src);
+@@ -7086,7 +7100,8 @@ error:
+     VIR_FREE(driveAlias);
+     if (driver->securityDriver &&
+         driver->securityDriver->domainRestoreSecurityImageLabel &&
+-        driver->securityDriver->domainRestoreSecurityImageLabel(vm, disk) < 0)
++        driver->securityDriver->domainRestoreSecurityImageLabel(driver->securityDriver,
++                                                                vm, disk) < 0)
+         VIR_WARN("Unable to restore security label on new media %s", disk->src);
+     return -1;
+ }
+@@ -7113,7 +7128,8 @@ static int qemudDomainAttachPciDiskDevice(struct qemud_driver *driver,
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainSetSecurityImageLabel &&
+-        driver->securityDriver->domainSetSecurityImageLabel(vm, disk) < 0)
++        driver->securityDriver->domainSetSecurityImageLabel(driver->securityDriver,
++                                                            vm, disk) < 0)
+         return -1;
+ 
+     if (qemuCmdFlags & QEMUD_CMD_FLAG_DEVICE) {
+@@ -7180,7 +7196,8 @@ error:
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainRestoreSecurityImageLabel &&
+-        driver->securityDriver->domainRestoreSecurityImageLabel(vm, disk) < 0)
++        driver->securityDriver->domainRestoreSecurityImageLabel(driver->securityDriver,
++                                                                vm, disk) < 0)
+         VIR_WARN("Unable to restore security label on %s", disk->src);
+ 
+     return -1;
+@@ -7322,7 +7339,8 @@ static int qemudDomainAttachSCSIDisk(struct qemud_driver *driver,
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainSetSecurityImageLabel &&
+-        driver->securityDriver->domainSetSecurityImageLabel(vm, disk) < 0)
++        driver->securityDriver->domainSetSecurityImageLabel(driver->securityDriver,
++                                                            vm, disk) < 0)
+         return -1;
+ 
+     /* We should have an address already, so make sure */
+@@ -7408,7 +7426,8 @@ error:
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainRestoreSecurityImageLabel &&
+-        driver->securityDriver->domainRestoreSecurityImageLabel(vm, disk) < 0)
++        driver->securityDriver->domainRestoreSecurityImageLabel(driver->securityDriver,
++                                                                vm, disk) < 0)
+         VIR_WARN("Unable to restore security label on %s", disk->src);
+ 
+     return -1;
+@@ -7435,7 +7454,8 @@ static int qemudDomainAttachUsbMassstorageDevice(struct qemud_driver *driver,
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainSetSecurityImageLabel &&
+-        driver->securityDriver->domainSetSecurityImageLabel(vm, disk) < 0)
++        driver->securityDriver->domainSetSecurityImageLabel(driver->securityDriver,
++                                                            vm, disk) < 0)
+         return -1;
+ 
+     if (!disk->src) {
+@@ -7491,7 +7511,8 @@ error:
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainRestoreSecurityImageLabel &&
+-        driver->securityDriver->domainRestoreSecurityImageLabel(vm, disk) < 0)
++        driver->securityDriver->domainRestoreSecurityImageLabel(driver->securityDriver,
++                                                                vm, disk) < 0)
+         VIR_WARN("Unable to restore security label on %s", disk->src);
+ 
+     return -1;
+@@ -7928,7 +7949,8 @@ static int qemudDomainAttachHostDevice(struct qemud_driver *driver,
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainSetSecurityHostdevLabel &&
+-        driver->securityDriver->domainSetSecurityHostdevLabel(vm, hostdev) < 0)
++        driver->securityDriver->domainSetSecurityHostdevLabel(driver->securityDriver,
++                                                              vm, hostdev) < 0)
+         return -1;
+ 
+     switch (hostdev->source.subsys.type) {
+@@ -7956,7 +7978,8 @@ static int qemudDomainAttachHostDevice(struct qemud_driver *driver,
+ error:
+     if (driver->securityDriver &&
+         driver->securityDriver->domainRestoreSecurityHostdevLabel &&
+-        driver->securityDriver->domainRestoreSecurityHostdevLabel(vm, hostdev) < 0)
++        driver->securityDriver->domainRestoreSecurityHostdevLabel(driver->securityDriver,
++                                                                  vm, hostdev) < 0)
+         VIR_WARN0("Unable to restore host device labelling on hotplug fail");
+ 
+     return -1;
+@@ -8401,7 +8424,8 @@ static int qemudDomainDetachPciDiskDevice(struct qemud_driver *driver,
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainRestoreSecurityImageLabel &&
+-        driver->securityDriver->domainRestoreSecurityImageLabel(vm, dev->data.disk) < 0)
++        driver->securityDriver->domainRestoreSecurityImageLabel(driver->securityDriver,
++                                                                vm, dev->data.disk) < 0)
+         VIR_WARN("Unable to restore security label on %s", dev->data.disk->src);
+ 
+     if (cgroup != NULL) {
+@@ -8464,7 +8488,8 @@ static int qemudDomainDetachSCSIDiskDevice(struct qemud_driver *driver,
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainRestoreSecurityImageLabel &&
+-        driver->securityDriver->domainRestoreSecurityImageLabel(vm, dev->data.disk) < 0)
++        driver->securityDriver->domainRestoreSecurityImageLabel(driver->securityDriver,
++                                                                vm, dev->data.disk) < 0)
+         VIR_WARN("Unable to restore security label on %s", dev->data.disk->src);
+ 
+     if (cgroup != NULL) {
+@@ -8889,7 +8914,8 @@ static int qemudDomainDetachHostDevice(struct qemud_driver *driver,
+ 
+     if (driver->securityDriver &&
+         driver->securityDriver->domainRestoreSecurityHostdevLabel &&
+-        driver->securityDriver->domainRestoreSecurityHostdevLabel(vm, dev->data.hostdev) < 0)
++        driver->securityDriver->domainRestoreSecurityHostdevLabel(driver->securityDriver,
++                                                                  vm, dev->data.hostdev) < 0)
+         VIR_WARN0("Failed to restore host device labelling");
+ 
+     return ret;
+diff --git a/src/qemu/qemu_security_dac.c b/src/qemu/qemu_security_dac.c
+index 770010d..0bbcf69 100644
+--- a/src/qemu/qemu_security_dac.c
++++ b/src/qemu/qemu_security_dac.c
+@@ -108,7 +108,8 @@ qemuSecurityDACSetSecurityFileLabel(virDomainDiskDefPtr disk ATTRIBUTE_UNUSED,
+ 
+ 
+ static int
+-qemuSecurityDACSetSecurityImageLabel(virDomainObjPtr vm ATTRIBUTE_UNUSED,
++qemuSecurityDACSetSecurityImageLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                     virDomainObjPtr vm ATTRIBUTE_UNUSED,
+                                      virDomainDiskDefPtr disk)
+ 
+ {
+@@ -124,7 +125,8 @@ qemuSecurityDACSetSecurityImageLabel(virDomainObjPtr vm ATTRIBUTE_UNUSED,
+ 
+ 
+ static int
+-qemuSecurityDACRestoreSecurityImageLabelInt(virDomainObjPtr vm ATTRIBUTE_UNUSED,
++qemuSecurityDACRestoreSecurityImageLabelInt(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                            virDomainObjPtr vm ATTRIBUTE_UNUSED,
+                                             virDomainDiskDefPtr disk,
+                                             int migrated)
+ {
+@@ -166,10 +168,11 @@ qemuSecurityDACRestoreSecurityImageLabelInt(virDomainObjPtr vm ATTRIBUTE_UNUSED,
+ 
+ 
+ static int
+-qemuSecurityDACRestoreSecurityImageLabel(virDomainObjPtr vm,
++qemuSecurityDACRestoreSecurityImageLabel(virSecurityDriverPtr drv,
++                                         virDomainObjPtr vm,
+                                          virDomainDiskDefPtr disk)
+ {
+-    return qemuSecurityDACRestoreSecurityImageLabelInt(vm, disk, 0);
++    return qemuSecurityDACRestoreSecurityImageLabelInt(drv, vm, disk, 0);
+ }
+ 
+ 
+@@ -192,7 +195,8 @@ qemuSecurityDACSetSecurityUSBLabel(usbDevice *dev ATTRIBUTE_UNUSED,
+ 
+ 
+ static int
+-qemuSecurityDACSetSecurityHostdevLabel(virDomainObjPtr vm,
++qemuSecurityDACSetSecurityHostdevLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                       virDomainObjPtr vm,
+                                        virDomainHostdevDefPtr dev)
+ 
+ {
+@@ -261,7 +265,8 @@ qemuSecurityDACRestoreSecurityUSBLabel(usbDevice *dev ATTRIBUTE_UNUSED,
+ 
+ 
+ static int
+-qemuSecurityDACRestoreSecurityHostdevLabel(virDomainObjPtr vm ATTRIBUTE_UNUSED,
++qemuSecurityDACRestoreSecurityHostdevLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                           virDomainObjPtr vm ATTRIBUTE_UNUSED,
+                                            virDomainHostdevDefPtr dev)
+ 
+ {
+@@ -407,7 +412,8 @@ qemuSecurityDACRestoreChardevCallback(virDomainDefPtr def ATTRIBUTE_UNUSED,
+ 
+ 
+ static int
+-qemuSecurityDACRestoreSecurityAllLabel(virDomainObjPtr vm,
++qemuSecurityDACRestoreSecurityAllLabel(virSecurityDriverPtr drv,
++                                       virDomainObjPtr vm,
+                                        int migrated)
+ {
+     int i;
+@@ -420,12 +426,14 @@ qemuSecurityDACRestoreSecurityAllLabel(virDomainObjPtr vm,
+               vm->def->name, migrated);
+ 
+     for (i = 0 ; i < vm->def->nhostdevs ; i++) {
+-        if (qemuSecurityDACRestoreSecurityHostdevLabel(vm,
++        if (qemuSecurityDACRestoreSecurityHostdevLabel(drv,
++                                                       vm,
+                                                        vm->def->hostdevs[i]) < 0)
+             rc = -1;
+     }
+     for (i = 0 ; i < vm->def->ndisks ; i++) {
+-        if (qemuSecurityDACRestoreSecurityImageLabelInt(vm,
++        if (qemuSecurityDACRestoreSecurityImageLabelInt(drv,
++                                                        vm,
+                                                         vm->def->disks[i],
+                                                         migrated) < 0)
+             rc = -1;
+@@ -461,7 +469,9 @@ qemuSecurityDACSetChardevCallback(virDomainDefPtr def ATTRIBUTE_UNUSED,
+ 
+ 
+ static int
+-qemuSecurityDACSetSecurityAllLabel(virDomainObjPtr vm, const char *stdin_path ATTRIBUTE_UNUSED)
++qemuSecurityDACSetSecurityAllLabel(virSecurityDriverPtr drv,
++                                   virDomainObjPtr vm,
++                                   const char *stdin_path ATTRIBUTE_UNUSED)
+ {
+     int i;
+ 
+@@ -472,11 +482,15 @@ qemuSecurityDACSetSecurityAllLabel(virDomainObjPtr vm, const char *stdin_path AT
+         /* XXX fixme - we need to recursively label the entriy tree :-( */
+         if (vm->def->disks[i]->type == VIR_DOMAIN_DISK_TYPE_DIR)
+             continue;
+-        if (qemuSecurityDACSetSecurityImageLabel(vm, vm->def->disks[i]) < 0)
++        if (qemuSecurityDACSetSecurityImageLabel(drv,
++                                                 vm,
++                                                 vm->def->disks[i]) < 0)
+             return -1;
+     }
+     for (i = 0 ; i < vm->def->nhostdevs ; i++) {
+-        if (qemuSecurityDACSetSecurityHostdevLabel(vm, vm->def->hostdevs[i]) < 0)
++        if (qemuSecurityDACSetSecurityHostdevLabel(drv,
++                                                   vm,
++                                                   vm->def->hostdevs[i]) < 0)
+             return -1;
+     }
+ 
+@@ -503,7 +517,8 @@ qemuSecurityDACSetSecurityAllLabel(virDomainObjPtr vm, const char *stdin_path AT
+ 
+ 
+ static int
+-qemuSecurityDACSetSavedStateLabel(virDomainObjPtr vm ATTRIBUTE_UNUSED,
++qemuSecurityDACSetSavedStateLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                  virDomainObjPtr vm ATTRIBUTE_UNUSED,
+                                   const char *savefile)
+ {
+     if (!driver->privileged)
+@@ -514,7 +529,8 @@ qemuSecurityDACSetSavedStateLabel(virDomainObjPtr vm ATTRIBUTE_UNUSED,
+ 
+ 
+ static int
+-qemuSecurityDACRestoreSavedStateLabel(virDomainObjPtr vm ATTRIBUTE_UNUSED,
++qemuSecurityDACRestoreSavedStateLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                      virDomainObjPtr vm ATTRIBUTE_UNUSED,
+                                       const char *savefile)
+ {
+     if (!driver->privileged)
+diff --git a/src/qemu/qemu_security_stacked.c b/src/qemu/qemu_security_stacked.c
+index df76135..432d095 100644
+--- a/src/qemu/qemu_security_stacked.c
++++ b/src/qemu/qemu_security_stacked.c
+@@ -57,18 +57,21 @@ qemuSecurityStackedVerify(virDomainDefPtr def)
+ 
+ 
+ static int
+-qemuSecurityStackedGenLabel(virDomainObjPtr vm)
++qemuSecurityStackedGenLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                            virDomainObjPtr vm)
+ {
+     int rc = 0;
+ 
+     if (driver->securitySecondaryDriver &&
+         driver->securitySecondaryDriver->domainGenSecurityLabel &&
+-        driver->securitySecondaryDriver->domainGenSecurityLabel(vm) < 0)
++        driver->securitySecondaryDriver->domainGenSecurityLabel(driver->securitySecondaryDriver,
++                                                                vm) < 0)
+         rc = -1;
+ 
+     if (driver->securityPrimaryDriver &&
+         driver->securityPrimaryDriver->domainGenSecurityLabel &&
+-        driver->securityPrimaryDriver->domainGenSecurityLabel(vm) < 0)
++        driver->securityPrimaryDriver->domainGenSecurityLabel(driver->securityPrimaryDriver,
++                                                              vm) < 0)
+         rc = -1;
+ 
+     return rc;
+@@ -76,18 +79,21 @@ qemuSecurityStackedGenLabel(virDomainObjPtr vm)
+ 
+ 
+ static int
+-qemuSecurityStackedReleaseLabel(virDomainObjPtr vm)
++qemuSecurityStackedReleaseLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                virDomainObjPtr vm)
+ {
+     int rc = 0;
+ 
+     if (driver->securitySecondaryDriver &&
+         driver->securitySecondaryDriver->domainReleaseSecurityLabel &&
+-        driver->securitySecondaryDriver->domainReleaseSecurityLabel(vm) < 0)
++        driver->securitySecondaryDriver->domainReleaseSecurityLabel(driver->securitySecondaryDriver,
++                                                                    vm) < 0)
+         rc = -1;
+ 
+     if (driver->securityPrimaryDriver &&
+         driver->securityPrimaryDriver->domainReleaseSecurityLabel &&
+-        driver->securityPrimaryDriver->domainReleaseSecurityLabel(vm) < 0)
++        driver->securityPrimaryDriver->domainReleaseSecurityLabel(driver->securityPrimaryDriver,
++                                                                  vm) < 0)
+         rc = -1;
+ 
+     return rc;
+@@ -95,18 +101,21 @@ qemuSecurityStackedReleaseLabel(virDomainObjPtr vm)
+ 
+ 
+ static int
+-qemuSecurityStackedReserveLabel(virDomainObjPtr vm)
++qemuSecurityStackedReserveLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                virDomainObjPtr vm)
+ {
+     int rc = 0;
+ 
+     if (driver->securitySecondaryDriver &&
+         driver->securitySecondaryDriver->domainReserveSecurityLabel &&
+-        driver->securitySecondaryDriver->domainReserveSecurityLabel(vm) < 0)
++        driver->securitySecondaryDriver->domainReserveSecurityLabel(driver->securitySecondaryDriver,
++                                                                    vm) < 0)
+         rc = -1;
+ 
+     if (driver->securityPrimaryDriver &&
+         driver->securityPrimaryDriver->domainReserveSecurityLabel &&
+-        driver->securityPrimaryDriver->domainReserveSecurityLabel(vm) < 0)
++        driver->securityPrimaryDriver->domainReserveSecurityLabel(driver->securityPrimaryDriver,
++                                                                  vm) < 0)
+         rc = -1;
+ 
+     return rc;
+@@ -114,19 +123,22 @@ qemuSecurityStackedReserveLabel(virDomainObjPtr vm)
+ 
+ 
+ static int
+-qemuSecurityStackedSetSecurityImageLabel(virDomainObjPtr vm,
++qemuSecurityStackedSetSecurityImageLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                         virDomainObjPtr vm,
+                                          virDomainDiskDefPtr disk)
+ {
+     int rc = 0;
+ 
+     if (driver->securitySecondaryDriver &&
+         driver->securitySecondaryDriver->domainSetSecurityImageLabel &&
+-        driver->securitySecondaryDriver->domainSetSecurityImageLabel(vm, disk) < 0)
++        driver->securitySecondaryDriver->domainSetSecurityImageLabel(driver->securitySecondaryDriver,
++                                                                     vm, disk) < 0)
+         rc = -1;
+ 
+     if (driver->securityPrimaryDriver &&
+         driver->securityPrimaryDriver->domainSetSecurityImageLabel &&
+-        driver->securityPrimaryDriver->domainSetSecurityImageLabel(vm, disk) < 0)
++        driver->securityPrimaryDriver->domainSetSecurityImageLabel(driver->securityPrimaryDriver,
++                                                                   vm, disk) < 0)
+         rc = -1;
+ 
+     return rc;
+@@ -134,19 +146,22 @@ qemuSecurityStackedSetSecurityImageLabel(virDomainObjPtr vm,
+ 
+ 
+ static int
+-qemuSecurityStackedRestoreSecurityImageLabel(virDomainObjPtr vm,
++qemuSecurityStackedRestoreSecurityImageLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                             virDomainObjPtr vm,
+                                              virDomainDiskDefPtr disk)
+ {
+     int rc = 0;
+ 
+     if (driver->securitySecondaryDriver &&
+         driver->securitySecondaryDriver->domainRestoreSecurityImageLabel &&
+-        driver->securitySecondaryDriver->domainRestoreSecurityImageLabel(vm, disk) < 0)
++        driver->securitySecondaryDriver->domainRestoreSecurityImageLabel(driver->securitySecondaryDriver,
++                                                                         vm, disk) < 0)
+         rc = -1;
+ 
+     if (driver->securityPrimaryDriver &&
+         driver->securityPrimaryDriver->domainRestoreSecurityImageLabel &&
+-        driver->securityPrimaryDriver->domainRestoreSecurityImageLabel(vm, disk) < 0)
++        driver->securityPrimaryDriver->domainRestoreSecurityImageLabel(driver->securityPrimaryDriver,
++                                                                       vm, disk) < 0)
+         rc = -1;
+ 
+     return rc;
+@@ -154,7 +169,8 @@ qemuSecurityStackedRestoreSecurityImageLabel(virDomainObjPtr vm,
+ 
+ 
+ static int
+-qemuSecurityStackedSetSecurityHostdevLabel(virDomainObjPtr vm,
++qemuSecurityStackedSetSecurityHostdevLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                           virDomainObjPtr vm,
+                                            virDomainHostdevDefPtr dev)
+ 
+ {
+@@ -162,12 +178,14 @@ qemuSecurityStackedSetSecurityHostdevLabel(virDomainObjPtr vm,
+ 
+     if (driver->securitySecondaryDriver &&
+         driver->securitySecondaryDriver->domainSetSecurityHostdevLabel &&
+-        driver->securitySecondaryDriver->domainSetSecurityHostdevLabel(vm, dev) < 0)
++        driver->securitySecondaryDriver->domainSetSecurityHostdevLabel(driver->securitySecondaryDriver,
++                                                                       vm, dev) < 0)
+         rc = -1;
+ 
+     if (driver->securityPrimaryDriver &&
+         driver->securityPrimaryDriver->domainSetSecurityHostdevLabel &&
+-        driver->securityPrimaryDriver->domainSetSecurityHostdevLabel(vm, dev) < 0)
++        driver->securityPrimaryDriver->domainSetSecurityHostdevLabel(driver->securityPrimaryDriver,
++                                                                     vm, dev) < 0)
+         rc = -1;
+ 
+     return rc;
+@@ -175,20 +193,22 @@ qemuSecurityStackedSetSecurityHostdevLabel(virDomainObjPtr vm,
+ 
+ 
+ static int
+-qemuSecurityStackedRestoreSecurityHostdevLabel(virDomainObjPtr vm,
++qemuSecurityStackedRestoreSecurityHostdevLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                               virDomainObjPtr vm,
+                                                virDomainHostdevDefPtr dev)
+-
+ {
+     int rc = 0;
+ 
+     if (driver->securitySecondaryDriver &&
+         driver->securitySecondaryDriver->domainRestoreSecurityHostdevLabel &&
+-        driver->securitySecondaryDriver->domainRestoreSecurityHostdevLabel(vm, dev) < 0)
++        driver->securitySecondaryDriver->domainRestoreSecurityHostdevLabel(driver->securitySecondaryDriver,
++                                                                           vm, dev) < 0)
+         rc = -1;
+ 
+     if (driver->securityPrimaryDriver &&
+         driver->securityPrimaryDriver->domainRestoreSecurityHostdevLabel &&
+-        driver->securityPrimaryDriver->domainRestoreSecurityHostdevLabel(vm, dev) < 0)
++        driver->securityPrimaryDriver->domainRestoreSecurityHostdevLabel(driver->securityPrimaryDriver,
++                                                                         vm, dev) < 0)
+         rc = -1;
+ 
+     return rc;
+@@ -196,18 +216,22 @@ qemuSecurityStackedRestoreSecurityHostdevLabel(virDomainObjPtr vm,
+ 
+ 
+ static int
+-qemuSecurityStackedSetSecurityAllLabel(virDomainObjPtr vm, const char *stdin_path)
++qemuSecurityStackedSetSecurityAllLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                       virDomainObjPtr vm,
++                                       const char *stdin_path)
+ {
+     int rc = 0;
+ 
+     if (driver->securitySecondaryDriver &&
+         driver->securitySecondaryDriver->domainSetSecurityAllLabel &&
+-        driver->securitySecondaryDriver->domainSetSecurityAllLabel(vm, stdin_path) < 0)
++        driver->securitySecondaryDriver->domainSetSecurityAllLabel(driver->securitySecondaryDriver,
++                                                                   vm, stdin_path) < 0)
+         rc = -1;
+ 
+     if (driver->securityPrimaryDriver &&
+         driver->securityPrimaryDriver->domainSetSecurityAllLabel &&
+-        driver->securityPrimaryDriver->domainSetSecurityAllLabel(vm, stdin_path) < 0)
++        driver->securityPrimaryDriver->domainSetSecurityAllLabel(driver->securityPrimaryDriver,
++                                                                 vm, stdin_path) < 0)
+         rc = -1;
+ 
+     return rc;
+@@ -215,19 +239,22 @@ qemuSecurityStackedSetSecurityAllLabel(virDomainObjPtr vm, const char *stdin_pat
+ 
+ 
+ static int
+-qemuSecurityStackedRestoreSecurityAllLabel(virDomainObjPtr vm,
++qemuSecurityStackedRestoreSecurityAllLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                           virDomainObjPtr vm,
+                                            int migrated)
+ {
+     int rc = 0;
+ 
+     if (driver->securitySecondaryDriver &&
+         driver->securitySecondaryDriver->domainRestoreSecurityAllLabel &&
+-        driver->securitySecondaryDriver->domainRestoreSecurityAllLabel(vm, migrated) < 0)
++        driver->securitySecondaryDriver->domainRestoreSecurityAllLabel(driver->securitySecondaryDriver,
++                                                                       vm, migrated) < 0)
+         rc = -1;
+ 
+     if (driver->securityPrimaryDriver &&
+         driver->securityPrimaryDriver->domainRestoreSecurityAllLabel &&
+-        driver->securityPrimaryDriver->domainRestoreSecurityAllLabel(vm, migrated) < 0)
++        driver->securityPrimaryDriver->domainRestoreSecurityAllLabel(driver->securityPrimaryDriver,
++                                                                     vm, migrated) < 0)
+         rc = -1;
+ 
+     return rc;
+@@ -235,19 +262,22 @@ qemuSecurityStackedRestoreSecurityAllLabel(virDomainObjPtr vm,
+ 
+ 
+ static int
+-qemuSecurityStackedSetSavedStateLabel(virDomainObjPtr vm,
++qemuSecurityStackedSetSavedStateLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                      virDomainObjPtr vm,
+                                       const char *savefile)
+ {
+     int rc = 0;
+ 
+     if (driver->securitySecondaryDriver &&
+         driver->securitySecondaryDriver->domainSetSavedStateLabel &&
+-        driver->securitySecondaryDriver->domainSetSavedStateLabel(vm, savefile) < 0)
++        driver->securitySecondaryDriver->domainSetSavedStateLabel(driver->securitySecondaryDriver,
++                                                                  vm, savefile) < 0)
+         rc = -1;
+ 
+     if (driver->securityPrimaryDriver &&
+         driver->securityPrimaryDriver->domainSetSavedStateLabel &&
+-        driver->securityPrimaryDriver->domainSetSavedStateLabel(vm, savefile) < 0)
++        driver->securityPrimaryDriver->domainSetSavedStateLabel(driver->securityPrimaryDriver,
++                                                                vm, savefile) < 0)
+         rc = -1;
+ 
+     return rc;
+@@ -255,19 +285,22 @@ qemuSecurityStackedSetSavedStateLabel(virDomainObjPtr vm,
+ 
+ 
+ static int
+-qemuSecurityStackedRestoreSavedStateLabel(virDomainObjPtr vm,
++qemuSecurityStackedRestoreSavedStateLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                          virDomainObjPtr vm,
+                                           const char *savefile)
+ {
+     int rc = 0;
+ 
+     if (driver->securitySecondaryDriver &&
+         driver->securitySecondaryDriver->domainRestoreSavedStateLabel &&
+-        driver->securitySecondaryDriver->domainRestoreSavedStateLabel(vm, savefile) < 0)
++        driver->securitySecondaryDriver->domainRestoreSavedStateLabel(driver->securitySecondaryDriver,
++                                                                      vm, savefile) < 0)
+         rc = -1;
+ 
+     if (driver->securityPrimaryDriver &&
+         driver->securityPrimaryDriver->domainRestoreSavedStateLabel &&
+-        driver->securityPrimaryDriver->domainRestoreSavedStateLabel(vm, savefile) < 0)
++        driver->securityPrimaryDriver->domainRestoreSavedStateLabel(driver->securityPrimaryDriver,
++                                                                    vm, savefile) < 0)
+         rc = -1;
+ 
+     return rc;
+@@ -296,14 +329,16 @@ qemuSecurityStackedSetProcessLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
+ }
+ 
+ static int
+-qemuSecurityStackedGetProcessLabel(virDomainObjPtr vm,
++qemuSecurityStackedGetProcessLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                   virDomainObjPtr vm,
+                                    virSecurityLabelPtr seclabel)
+ {
+     int rc = 0;
+ 
+     if (driver->securityPrimaryDriver &&
+         driver->securityPrimaryDriver->domainGetSecurityProcessLabel &&
+-        driver->securityPrimaryDriver->domainGetSecurityProcessLabel(vm,
++        driver->securityPrimaryDriver->domainGetSecurityProcessLabel(driver->securityPrimaryDriver,
++                                                                     vm,
+                                                                      seclabel) < 0)
+         rc = -1;
+ 
+diff --git a/src/security/security_apparmor.c b/src/security/security_apparmor.c
+index e883f69..cb5c739 100644
+--- a/src/security/security_apparmor.c
++++ b/src/security/security_apparmor.c
+@@ -148,7 +148,8 @@ profile_status_file(const char *str)
+  * load (add) a profile. Will create one if necessary
+  */
+ static int
+-load_profile(const char *profile, virDomainObjPtr vm,
++load_profile(virSecurityDriverPtr drv,
++             const char *profile, virDomainObjPtr vm,
+              const char *fn)
+ {
+     int rc = -1, status, ret;
+@@ -281,7 +282,8 @@ cleanup:
+  * NULL.
+  */
+ static int
+-reload_profile(virDomainObjPtr vm, const char *fn)
++reload_profile(virSecurityDriverPtr drv,
++               virDomainObjPtr vm, const char *fn)
+ {
+     const virSecurityLabelDefPtr secdef = &vm->def->seclabel;
+     int rc = -1;
+@@ -295,7 +297,7 @@ reload_profile(virDomainObjPtr vm, const char *fn)
+ 
+     /* Update the profile only if it is loaded */
+     if (profile_loaded(secdef->imagelabel) >= 0) {
+-        if (load_profile(secdef->imagelabel, vm, fn) < 0) {
++        if (load_profile(drv, secdef->imagelabel, vm, fn) < 0) {
+             virSecurityReportError(VIR_ERR_INTERNAL_ERROR,
+                                    _("cannot update AppArmor profile "
+                                      "\'%s\'"),
+@@ -357,7 +359,8 @@ AppArmorSecurityDriverOpen(virSecurityDriverPtr drv)
+  * called on shutdown.
+ */
+ static int
+-AppArmorGenSecurityLabel(virDomainObjPtr vm)
++AppArmorGenSecurityLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                         virDomainObjPtr vm)
+ {
+     int rc = -1;
+     char *profile_name = NULL;
+@@ -411,14 +414,15 @@ AppArmorGenSecurityLabel(virDomainObjPtr vm)
+ }
+ 
+ static int
+-AppArmorSetSecurityAllLabel(virDomainObjPtr vm, const char *stdin_path)
++AppArmorSetSecurityAllLabel(virSecurityDriverPtr drv,
++                            virDomainObjPtr vm, const char *stdin_path)
+ {
+     if (vm->def->seclabel.type == VIR_DOMAIN_SECLABEL_STATIC)
+         return 0;
+ 
+     /* if the profile is not already loaded, then load one */
+     if (profile_loaded(vm->def->seclabel.label) < 0) {
+-        if (load_profile(vm->def->seclabel.label, vm, stdin_path) < 0) {
++        if (load_profile(drv, vm->def->seclabel.label, vm, stdin_path) < 0) {
+             virSecurityReportError(VIR_ERR_INTERNAL_ERROR,
+                                    _("cannot generate AppArmor profile "
+                                    "\'%s\'"), vm->def->seclabel.label);
+@@ -433,7 +437,9 @@ AppArmorSetSecurityAllLabel(virDomainObjPtr vm, const char *stdin_path)
+  * running.
+  */
+ static int
+-AppArmorGetSecurityProcessLabel(virDomainObjPtr vm, virSecurityLabelPtr sec)
++AppArmorGetSecurityProcessLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                virDomainObjPtr vm,
++                                virSecurityLabelPtr sec)
+ {
+     int rc = -1;
+     char *profile_name = NULL;
+@@ -465,7 +471,8 @@ AppArmorGetSecurityProcessLabel(virDomainObjPtr vm, virSecurityLabelPtr sec)
+  * more details. Currently called via qemudShutdownVMDaemon.
+  */
+ static int
+-AppArmorReleaseSecurityLabel(virDomainObjPtr vm)
++AppArmorReleaseSecurityLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                             virDomainObjPtr vm)
+ {
+     const virSecurityLabelDefPtr secdef = &vm->def->seclabel;
+ 
+@@ -478,7 +485,8 @@ AppArmorReleaseSecurityLabel(virDomainObjPtr vm)
+ 
+ 
+ static int
+-AppArmorRestoreSecurityAllLabel(virDomainObjPtr vm,
++AppArmorRestoreSecurityAllLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                virDomainObjPtr vm,
+                                 int migrated ATTRIBUTE_UNUSED)
+ {
+     const virSecurityLabelDefPtr secdef = &vm->def->seclabel;
+@@ -533,15 +541,17 @@ AppArmorSetSecurityProcessLabel(virSecurityDriverPtr drv, virDomainObjPtr vm)
+ 
+ /* Called when hotplugging */
+ static int
+-AppArmorRestoreSecurityImageLabel(virDomainObjPtr vm,
++AppArmorRestoreSecurityImageLabel(virSecurityDriverPtr drv,
++                                  virDomainObjPtr vm,
+                                   virDomainDiskDefPtr disk ATTRIBUTE_UNUSED)
+ {
+-    return reload_profile(vm, NULL);
++    return reload_profile(drv, vm, NULL);
+ }
+ 
+ /* Called when hotplugging */
+ static int
+-AppArmorSetSecurityImageLabel(virDomainObjPtr vm, virDomainDiskDefPtr disk)
++AppArmorSetSecurityImageLabel(virSecurityDriverPtr drv,
++                              virDomainObjPtr vm, virDomainDiskDefPtr disk)
+ {
+     const virSecurityLabelDefPtr secdef = &vm->def->seclabel;
+     int rc = -1;
+@@ -566,7 +576,7 @@ AppArmorSetSecurityImageLabel(virDomainObjPtr vm, virDomainDiskDefPtr disk)
+ 
+         /* update the profile only if it is loaded */
+         if (profile_loaded(secdef->imagelabel) >= 0) {
+-            if (load_profile(secdef->imagelabel, vm, disk->src) < 0) {
++            if (load_profile(drv, secdef->imagelabel, vm, disk->src) < 0) {
+                 virSecurityReportError(VIR_ERR_INTERNAL_ERROR,
+                                      _("cannot update AppArmor profile "
+                                      "\'%s\'"),
+@@ -600,14 +610,16 @@ AppArmorSecurityVerify(virDomainDefPtr def)
+ }
+ 
+ static int
+-AppArmorReserveSecurityLabel(virDomainObjPtr vm ATTRIBUTE_UNUSED)
++AppArmorReserveSecurityLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                             virDomainObjPtr vm ATTRIBUTE_UNUSED)
+ {
+     /* NOOP. Nothing to reserve with AppArmor */
+     return 0;
+ }
+ 
+ static int
+-AppArmorSetSecurityHostdevLabel(virDomainObjPtr vm,
++AppArmorSetSecurityHostdevLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                virDomainObjPtr vm,
+                                 virDomainHostdevDefPtr dev ATTRIBUTE_UNUSED)
+ 
+ {
+@@ -621,7 +633,8 @@ AppArmorSetSecurityHostdevLabel(virDomainObjPtr vm,
+ }
+ 
+ static int
+-AppArmorRestoreSecurityHostdevLabel(virDomainObjPtr vm,
++AppArmorRestoreSecurityHostdevLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                    virDomainObjPtr vm,
+                                     virDomainHostdevDefPtr dev ATTRIBUTE_UNUSED)
+ 
+ {
+@@ -634,18 +647,20 @@ AppArmorRestoreSecurityHostdevLabel(virDomainObjPtr vm,
+ }
+ 
+ static int
+-AppArmorSetSavedStateLabel(virDomainObjPtr vm,
+-                          const char *savefile)
++AppArmorSetSavedStateLabel(virSecurityDriverPtr drv,
++                           virDomainObjPtr vm,
++                           const char *savefile)
+ {
+-    return reload_profile(vm, savefile);
++    return reload_profile(drv, vm, savefile);
+ }
+ 
+ 
+ static int
+-AppArmorRestoreSavedStateLabel(virDomainObjPtr vm,
++AppArmorRestoreSavedStateLabel(virSecurityDriverPtr drv,
++                               virDomainObjPtr vm,
+                                const char *savefile ATTRIBUTE_UNUSED)
+ {
+-    return reload_profile(vm, NULL);
++    return reload_profile(drv, vm, NULL);
+ }
+ 
+ virSecurityDriver virAppArmorSecurityDriver = {
+diff --git a/src/security/security_driver.h b/src/security/security_driver.h
+index 99260a4..61c9eb0 100644
+--- a/src/security/security_driver.h
++++ b/src/security/security_driver.h
+@@ -28,32 +28,48 @@ typedef enum {
+ 
+ typedef struct _virSecurityDriver virSecurityDriver;
+ typedef virSecurityDriver *virSecurityDriverPtr;
++
++typedef struct _virSecurityDriverState virSecurityDriverState;
++typedef virSecurityDriverState *virSecurityDriverStatePtr;
++
+ typedef virSecurityDriverStatus (*virSecurityDriverProbe) (void);
+ typedef int (*virSecurityDriverOpen) (virSecurityDriverPtr drv);
+-typedef int (*virSecurityDomainRestoreImageLabel) (virDomainObjPtr vm,
++typedef int (*virSecurityDomainRestoreImageLabel) (virSecurityDriverPtr drv,
++                                                   virDomainObjPtr vm,
+                                                    virDomainDiskDefPtr disk);
+ typedef int (*virSecurityDomainSetSocketLabel) (virSecurityDriverPtr drv,
+                                                 virDomainObjPtr vm);
+ typedef int (*virSecurityDomainClearSocketLabel)(virSecurityDriverPtr drv,
+                                                 virDomainObjPtr vm);
+-typedef int (*virSecurityDomainSetImageLabel) (virDomainObjPtr vm,
++typedef int (*virSecurityDomainSetImageLabel) (virSecurityDriverPtr drv,
++                                               virDomainObjPtr vm,
+                                                virDomainDiskDefPtr disk);
+-typedef int (*virSecurityDomainRestoreHostdevLabel) (virDomainObjPtr vm,
++typedef int (*virSecurityDomainRestoreHostdevLabel) (virSecurityDriverPtr drv,
++                                                     virDomainObjPtr vm,
+                                                      virDomainHostdevDefPtr dev);
+-typedef int (*virSecurityDomainSetHostdevLabel) (virDomainObjPtr vm,
++typedef int (*virSecurityDomainSetHostdevLabel) (virSecurityDriverPtr drv,
++                                                 virDomainObjPtr vm,
+                                                  virDomainHostdevDefPtr dev);
+-typedef int (*virSecurityDomainSetSavedStateLabel) (virDomainObjPtr vm,
++typedef int (*virSecurityDomainSetSavedStateLabel) (virSecurityDriverPtr drv,
++                                                    virDomainObjPtr vm,
+                                                     const char *savefile);
+-typedef int (*virSecurityDomainRestoreSavedStateLabel) (virDomainObjPtr vm,
++typedef int (*virSecurityDomainRestoreSavedStateLabel) (virSecurityDriverPtr drv,
++                                                        virDomainObjPtr vm,
+                                                         const char *savefile);
+-typedef int (*virSecurityDomainGenLabel) (virDomainObjPtr sec);
+-typedef int (*virSecurityDomainReserveLabel) (virDomainObjPtr sec);
+-typedef int (*virSecurityDomainReleaseLabel) (virDomainObjPtr sec);
+-typedef int (*virSecurityDomainSetAllLabel) (virDomainObjPtr sec,
++typedef int (*virSecurityDomainGenLabel) (virSecurityDriverPtr drv,
++                                          virDomainObjPtr sec);
++typedef int (*virSecurityDomainReserveLabel) (virSecurityDriverPtr drv,
++                                              virDomainObjPtr sec);
++typedef int (*virSecurityDomainReleaseLabel) (virSecurityDriverPtr drv,
++                                              virDomainObjPtr sec);
++typedef int (*virSecurityDomainSetAllLabel) (virSecurityDriverPtr drv,
++                                             virDomainObjPtr sec,
+                                              const char *stdin_path);
+-typedef int (*virSecurityDomainRestoreAllLabel) (virDomainObjPtr vm,
++typedef int (*virSecurityDomainRestoreAllLabel) (virSecurityDriverPtr drv,
++                                                 virDomainObjPtr vm,
+                                                  int migrated);
+-typedef int (*virSecurityDomainGetProcessLabel) (virDomainObjPtr vm,
++typedef int (*virSecurityDomainGetProcessLabel) (virSecurityDriverPtr drv,
++                                                 virDomainObjPtr vm,
+                                                  virSecurityLabelPtr sec);
+ typedef int (*virSecurityDomainSetProcessLabel) (virSecurityDriverPtr drv,
+                                                  virDomainObjPtr vm);
+diff --git a/src/security/security_selinux.c b/src/security/security_selinux.c
+index d191118..cc3812b 100644
+--- a/src/security/security_selinux.c
++++ b/src/security/security_selinux.c
+@@ -156,7 +156,8 @@ SELinuxInitialize(void)
+ }
+ 
+ static int
+-SELinuxGenSecurityLabel(virDomainObjPtr vm)
++SELinuxGenSecurityLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                        virDomainObjPtr vm)
+ {
+     int rc = -1;
+     char mcs[1024];
+@@ -220,7 +221,8 @@ done:
+ }
+ 
+ static int
+-SELinuxReserveSecurityLabel(virDomainObjPtr vm)
++SELinuxReserveSecurityLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                            virDomainObjPtr vm)
+ {
+     security_context_t pctx;
+     context_t ctx = NULL;
+@@ -275,7 +277,8 @@ SELinuxSecurityDriverOpen(virSecurityDriverPtr drv)
+ }
+ 
+ static int
+-SELinuxGetSecurityProcessLabel(virDomainObjPtr vm,
++SELinuxGetSecurityProcessLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                               virDomainObjPtr vm,
+                                virSecurityLabelPtr sec)
+ {
+     security_context_t ctx;
+@@ -387,7 +390,8 @@ err:
+ }
+ 
+ static int
+-SELinuxRestoreSecurityImageLabelInt(virDomainObjPtr vm,
++SELinuxRestoreSecurityImageLabelInt(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                    virDomainObjPtr vm,
+                                     virDomainDiskDefPtr disk,
+                                     int migrated)
+ {
+@@ -431,10 +435,11 @@ SELinuxRestoreSecurityImageLabelInt(virDomainObjPtr vm,
+ 
+ 
+ static int
+-SELinuxRestoreSecurityImageLabel(virDomainObjPtr vm,
++SELinuxRestoreSecurityImageLabel(virSecurityDriverPtr drv,
++                                 virDomainObjPtr vm,
+                                  virDomainDiskDefPtr disk)
+ {
+-    return SELinuxRestoreSecurityImageLabelInt(vm, disk, 0);
++    return SELinuxRestoreSecurityImageLabelInt(drv, vm, disk, 0);
+ }
+ 
+ 
+@@ -462,7 +467,8 @@ SELinuxSetSecurityFileLabel(virDomainDiskDefPtr disk,
+ }
+ 
+ static int
+-SELinuxSetSecurityImageLabel(virDomainObjPtr vm,
++SELinuxSetSecurityImageLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                             virDomainObjPtr vm,
+                              virDomainDiskDefPtr disk)
+ 
+ {
+@@ -500,7 +506,8 @@ SELinuxSetSecurityUSBLabel(usbDevice *dev ATTRIBUTE_UNUSED,
+ }
+ 
+ static int
+-SELinuxSetSecurityHostdevLabel(virDomainObjPtr vm,
++SELinuxSetSecurityHostdevLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                               virDomainObjPtr vm,
+                                virDomainHostdevDefPtr dev)
+ 
+ {
+@@ -568,7 +575,8 @@ SELinuxRestoreSecurityUSBLabel(usbDevice *dev ATTRIBUTE_UNUSED,
+ }
+ 
+ static int
+-SELinuxRestoreSecurityHostdevLabel(virDomainObjPtr vm,
++SELinuxRestoreSecurityHostdevLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                                   virDomainObjPtr vm,
+                                    virDomainHostdevDefPtr dev)
+ 
+ {
+@@ -715,7 +723,8 @@ SELinuxRestoreSecurityChardevCallback(virDomainDefPtr def ATTRIBUTE_UNUSED,
+ 
+ 
+ static int
+-SELinuxRestoreSecurityAllLabel(virDomainObjPtr vm,
++SELinuxRestoreSecurityAllLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                               virDomainObjPtr vm,
+                                int migrated ATTRIBUTE_UNUSED)
+ {
+     const virSecurityLabelDefPtr secdef = &vm->def->seclabel;
+@@ -728,11 +737,14 @@ SELinuxRestoreSecurityAllLabel(virDomainObjPtr vm,
+         return 0;
+ 
+     for (i = 0 ; i < vm->def->nhostdevs ; i++) {
+-        if (SELinuxRestoreSecurityHostdevLabel(vm, vm->def->hostdevs[i]) < 0)
++        if (SELinuxRestoreSecurityHostdevLabel(drv,
++                                               vm,
++                                               vm->def->hostdevs[i]) < 0)
+             rc = -1;
+     }
+     for (i = 0 ; i < vm->def->ndisks ; i++) {
+-        if (SELinuxRestoreSecurityImageLabelInt(vm,
++        if (SELinuxRestoreSecurityImageLabelInt(drv,
++                                                vm,
+                                                 vm->def->disks[i],
+                                                 migrated) < 0)
+             rc = -1;
+@@ -756,7 +768,8 @@ SELinuxRestoreSecurityAllLabel(virDomainObjPtr vm,
+ }
+ 
+ static int
+-SELinuxReleaseSecurityLabel(virDomainObjPtr vm)
++SELinuxReleaseSecurityLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                            virDomainObjPtr vm)
+ {
+     const virSecurityLabelDefPtr secdef = &vm->def->seclabel;
+ 
+@@ -779,7 +792,8 @@ SELinuxReleaseSecurityLabel(virDomainObjPtr vm)
+ 
+ 
+ static int
+-SELinuxSetSavedStateLabel(virDomainObjPtr vm,
++SELinuxSetSavedStateLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                          virDomainObjPtr vm,
+                           const char *savefile)
+ {
+     const virSecurityLabelDefPtr secdef = &vm->def->seclabel;
+@@ -792,7 +806,8 @@ SELinuxSetSavedStateLabel(virDomainObjPtr vm,
+ 
+ 
+ static int
+-SELinuxRestoreSavedStateLabel(virDomainObjPtr vm,
++SELinuxRestoreSavedStateLabel(virSecurityDriverPtr drv ATTRIBUTE_UNUSED,
++                              virDomainObjPtr vm,
+                               const char *savefile)
+ {
+     const virSecurityLabelDefPtr secdef = &vm->def->seclabel;
+@@ -963,7 +978,9 @@ SELinuxSetSecurityChardevCallback(virDomainDefPtr def ATTRIBUTE_UNUSED,
+ 
+ 
+ static int
+-SELinuxSetSecurityAllLabel(virDomainObjPtr vm, const char *stdin_path)
++SELinuxSetSecurityAllLabel(virSecurityDriverPtr drv,
++                           virDomainObjPtr vm,
++                           const char *stdin_path)
+ {
+     const virSecurityLabelDefPtr secdef = &vm->def->seclabel;
+     int i;
+@@ -978,11 +995,14 @@ SELinuxSetSecurityAllLabel(virDomainObjPtr vm, const char *stdin_path)
+                      vm->def->disks[i]->src, vm->def->disks[i]->dst);
+             continue;
+         }
+-        if (SELinuxSetSecurityImageLabel(vm, vm->def->disks[i]) < 0)
++        if (SELinuxSetSecurityImageLabel(drv,
++                                         vm, vm->def->disks[i]) < 0)
+             return -1;
+     }
+     for (i = 0 ; i < vm->def->nhostdevs ; i++) {
+-        if (SELinuxSetSecurityHostdevLabel(vm, vm->def->hostdevs[i]) < 0)
++        if (SELinuxSetSecurityHostdevLabel(drv,
++                                           vm,
++                                           vm->def->hostdevs[i]) < 0)
+             return -1;
+     }
+ 
+-- 
+1.7.1.1
+

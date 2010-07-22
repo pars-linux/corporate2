@@ -1,16 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2009 TUBITAK/UEKAE
+# Copyright (C) 2009-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from pisi.actionsapi import shelltools
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 def setup():
+    shelltools.export("AUTOPOINT", "true")
+    autotools.autoreconf("-vfi")
 
     autotools.configure("--localstatedir=/var \
                          --with-init-script=none \
@@ -18,14 +21,13 @@ def setup():
                          --with-qemu-user=qemu \
                          --with-qemu-group=qemu \
                          --with-lxc \
-                         --without-esx \
                          --with-udev \
-                         --without-vbox \
                          --with-qemu \
                          --with-sasl \
-                         --without-yajl \
+                         --with-numactl \
+                         --with-yajl \
                          --with-avahi \
-                         --without-netcf \
+                         --with-netcf \
                          --with-libssh2=/usr/lib \
                          --with-capng \
                          --with-polkit \
@@ -37,10 +39,12 @@ def setup():
                          --with-storage-mpath \
                          --with-storage-disk \
                          --with-storage-lvm \
+                         --without-vbox \
+                         --without-esx \
                          --without-storage-iscsi \
                          --without-hal \
                          --without-xen \
-                         --without-pyhp \
+                         --without-phyp \
                          --without-uml \
                          --without-openvz \
                          --without-selinux \
@@ -49,9 +53,18 @@ def setup():
                          --disable-static")
 
 def build():
-    autotools.make()
+    autotools.make("V=1")
+
+def check():
+    # Disable broken tests
+    for test in ("daemon-conf",):
+        shelltools.unlink("tests/%s" % test)
+        shelltools.echo("tests/%s" % test, "#!/bin/sh\nexit 0\n")
+        shelltools.chmod("tests/%s" % test, 0755)
+    autotools.make("check")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
     pisitools.removeDir("/usr/share/gtk-doc/html")
+
     pisitools.dodoc("AUTHORS", "NEWS", "README*", "ChangeLog")

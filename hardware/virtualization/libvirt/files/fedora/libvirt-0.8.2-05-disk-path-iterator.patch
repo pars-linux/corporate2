@@ -1,0 +1,170 @@
+From ac5067f1e2e98181ee0e9230f756697f50d853eb Mon Sep 17 00:00:00 2001
+From: Daniel P. Berrange <berrange@redhat.com>
+Date: Mon, 14 Jun 2010 18:09:15 +0100
+Subject: [PATCH 05/11] Add an API for iterating over disk paths
+
+There is duplicated code which iterates over disk backing stores
+performing some action. Provide a convenient helper for doing
+this to eliminate duplication & risk of mistakes with disk format
+probing
+
+* src/conf/domain_conf.c, src/conf/domain_conf.h,
+  src/libvirt_private.syms: Add virDomainDiskDefForeachPath()
+---
+ src/conf/domain_conf.c   |   99 ++++++++++++++++++++++++++++++++++++++++++++++
+ src/conf/domain_conf.h   |   11 +++++
+ src/libvirt_private.syms |    1 +
+ 3 files changed, 111 insertions(+), 0 deletions(-)
+
+diff --git a/src/conf/domain_conf.c b/src/conf/domain_conf.c
+index 378c06e..b20ca97 100644
+--- a/src/conf/domain_conf.c
++++ b/src/conf/domain_conf.c
+@@ -45,6 +45,7 @@
+ #include "macvtap.h"
+ #include "nwfilter_conf.h"
+ #include "ignore-value.h"
++#include "storage_file.h"
+ 
+ #define VIR_FROM_THIS VIR_FROM_DOMAIN
+ 
+@@ -7273,4 +7274,102 @@ done:
+ }
+ 
+ 
++int virDomainDiskDefForeachPath(virDomainDiskDefPtr disk,
++                                bool allowProbing,
++                                bool ignoreOpenFailure,
++                                virDomainDiskDefPathIterator iter,
++                                void *opaque)
++{
++    virHashTablePtr paths;
++    int format;
++    int ret = -1;
++    size_t depth = 0;
++    char *nextpath = NULL;
++
++    if (!disk->src)
++        return 0;
++
++    if (disk->driverType) {
++        const char *formatStr = disk->driverType;
++        if (STREQ(formatStr, "aio"))
++            formatStr = "raw"; /* Xen compat */
++
++        if ((format = virStorageFileFormatTypeFromString(formatStr)) < 0) {
++            virDomainReportError(VIR_ERR_INTERNAL_ERROR,
++                                 _("unknown disk format '%s' for %s"),
++                                 disk->driverType, disk->src);
++            return -1;
++        }
++    } else {
++        if (allowProbing) {
++            format = VIR_STORAGE_FILE_AUTO;
++        } else {
++            virDomainReportError(VIR_ERR_INTERNAL_ERROR,
++                                 _("no disk format for %s and probing is disabled"),
++                                 disk->src);
++            return -1;
++        }
++    }
++
++    paths = virHashCreate(5);
++
++    do {
++        virStorageFileMetadata meta;
++        const char *path = nextpath ? nextpath : disk->src;
++        int fd;
++
++        if (iter(disk, path, depth, opaque) < 0)
++            goto cleanup;
++
++        if (virHashLookup(paths, path)) {
++            virDomainReportError(VIR_ERR_INTERNAL_ERROR,
++                                 _("backing store for %s is self-referential"),
++                                 disk->src);
++            goto cleanup;
++        }
++
++        if ((fd = open(path, O_RDONLY)) < 0) {
++            if (ignoreOpenFailure) {
++                char ebuf[1024];
++                VIR_WARN("Ignoring open failure on %s: %s", path,
++                         virStrerror(errno, ebuf, sizeof(ebuf)));
++                break;
++            } else {
++                virReportSystemError(errno,
++                                     _("unable to open disk path %s"),
++                                     path);
++                goto cleanup;
++            }
++        }
++
++        if (virStorageFileGetMetadataFromFD(path, fd, format, &meta) < 0) {
++            close(fd);
++            goto cleanup;
++        }
++        close(fd);
++
++        if (virHashAddEntry(paths, path, (void*)0x1) < 0) {
++            virReportOOMError();
++            goto cleanup;
++        }
++
++        depth++;
++        nextpath = meta.backingStore;
++
++        format = meta.backingStoreFormat;
++
++        if (format == VIR_STORAGE_FILE_AUTO &&
++            !allowProbing)
++            format = VIR_STORAGE_FILE_RAW; /* Stops further recursion */
++    } while (nextpath);
++
++    ret = 0;
++
++cleanup:
++    virHashFree(paths, NULL);
++    VIR_FREE(nextpath);
++
++    return ret;
++}
++
+ #endif /* ! PROXY */
+diff --git a/src/conf/domain_conf.h b/src/conf/domain_conf.h
+index 01da17e..d46869e 100644
+--- a/src/conf/domain_conf.h
++++ b/src/conf/domain_conf.h
+@@ -1079,6 +1079,17 @@ int virDomainChrDefForeach(virDomainDefPtr def,
+                            void *opaque);
+ 
+ 
++typedef int (*virDomainDiskDefPathIterator)(virDomainDiskDefPtr disk,
++                                            const char *path,
++                                            size_t depth,
++                                            void *opaque);
++
++int virDomainDiskDefForeachPath(virDomainDiskDefPtr disk,
++                                bool allowProbing,
++                                bool ignoreOpenFailure,
++                                virDomainDiskDefPathIterator iter,
++                                void *opaque);
++
+ VIR_ENUM_DECL(virDomainVirt)
+ VIR_ENUM_DECL(virDomainBoot)
+ VIR_ENUM_DECL(virDomainFeature)
+diff --git a/src/libvirt_private.syms b/src/libvirt_private.syms
+index 4607f49..b5f3695 100644
+--- a/src/libvirt_private.syms
++++ b/src/libvirt_private.syms
+@@ -225,6 +225,7 @@ virDomainSnapshotDefFormat;
+ virDomainSnapshotAssignDef;
+ virDomainObjAssignDef;
+ virDomainChrDefForeach;
++virDomainDiskDefForeachPath;
+ 
+ 
+ # domain_event.h
+-- 
+1.7.1.1
+
