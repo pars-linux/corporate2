@@ -27,5 +27,4 @@ def install():
     pisitools.dodoc("AUTHORS", "BUGS", "ChangeLog", "NEWS", "README", "THANKS", "TODO")
     pisitools.dodoc("doc/API", "doc/USER.jp", "doc/FAT")
 
-    pisitools.remove("/usr/bin/label")
-    pisitools.removeDir("/usr/bin")
+    #pisitools.removeDir("/usr/bin")
