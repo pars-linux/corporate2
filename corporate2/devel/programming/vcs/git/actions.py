@@ -17,9 +17,11 @@ DESTDIR                 = %s
 prefix                  = /usr
 htmldir                 = /usr/share/doc/git
 ETC_GITCONFIG           = /etc/gitconfig
-GITWEB_CSS              = /gitweb/gitweb.css
-GITWEB_LOGO             = /gitweb/git-logo.png
-GITWEB_FAVICON          = /gitweb/git-favicon.png
+GITWEB_CSS              = gitweb/gitweb.css
+GITWEB_LOGO             = gitweb/git-logo.png
+GITWEB_FAVICON          = gitweb/git-favicon.png
+GITWEB_JS               = gitweb/gitweb.js
+gitwebdir               = /var/www/localhost/cgi-bin
 ASCIIDOC8               = 1
 ASCIIDOC_NO_ROFF        = 1
 BLK_SHA1                = 1
@@ -29,6 +31,7 @@ NO_PYTHON               = 1
 
 def setup():
     shelltools.echo("config.mak", config)
+    pisitools.dosed("gitweb/Makefile", "^(gitwebstaticdir_SQ = .*)static(.*)", r"\1gitweb\2")
 
 def build():
     pisitools.dosed("Makefile", "^CC = .*$", "CC = %s" % get.CC())
@@ -43,11 +46,6 @@ def install():
     # Install bash completion
     pisitools.insinto("/etc/bash_completion.d", "contrib/completion/git-completion.bash", "git")
     shelltools.chmod("%s/etc/bash_completion.d/git" % get.installDIR(), 0644)
-
-    # gitweb
-    pisitools.insinto("/var/www/localhost/cgi-bin", "gitweb/gitweb.cgi", "gitweb.cgi")
-    pisitools.insinto("/var/www/localhost/cgi-bin/gitweb", "gitweb/*.css")
-    pisitools.insinto("/var/www/localhost/cgi-bin/gitweb", "gitweb/*.png")
 
     # for git-daemon
     pisitools.dodir("/pub/scm")
