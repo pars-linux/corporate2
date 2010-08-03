@@ -19,7 +19,6 @@ def setup():
                          --enable-async-events \
                          --enable-async-preload \
                          --enable-pipe-render \
-                         --enable-cpu-neon \
                          --disable-async-render \
                          --with-x \
                          --disable-static")
