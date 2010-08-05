@@ -12,6 +12,9 @@ from pisi.actionsapi import get
 
 NoStrip = ["/"]
 
+if "_" in get.srcVERSION():
+    WorkDir = get.srcNAME()
+
 def setup():
     pisitools.dosed("configure.in", "multisound/Makefile", "")
     pisitools.dosed("Makefile.am", "multisound", "")
