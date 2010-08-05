@@ -1,6 +1,6 @@
 diff -Nur rpm2targz-9.0.0.4g-old/rpmoffset.c rpm2targz-9.0.0.4g/rpmoffset.c
---- rpm2targz-9.0.0.4g-old/rpmoffset.c	2010-08-05 16:01:16.379359842 +0300
-+++ rpm2targz-9.0.0.4g/rpmoffset.c	2010-08-05 22:19:04.539928089 +0300
+--- rpm2targz-9.0.0.4g-old/rpmoffset.c	2010-08-05 23:02:43.933842054 +0300
++++ rpm2targz-9.0.0.4g/rpmoffset.c	2010-08-05 23:09:01.698801889 +0300
 @@ -25,6 +25,14 @@
  	const size_t len;
  } magic_t;
@@ -24,19 +24,13 @@ diff -Nur rpm2targz-9.0.0.4g-old/rpmoffset.c rpm2targz-9.0.0.4g/rpmoffset.c
  	size_t i, read_cnt, offset, left;
  	FILE *fp = stdin;
  	char p[BUFSIZ];
-@@ -77,6 +86,19 @@
+@@ -77,6 +86,13 @@
  			}
  		}
  
 +		/* Do not stop when we find lzma, to prefer xz over lzma, since xz has lzma header at the beginning */
 +		for (i = 0; i < read_cnt; i++) {
 +			if (read_cnt + left > 10 && is_lzma_header(p+i)) {
-+				/*
-+				if (show_magic)
-+					printf("lzma ");
-+				printf("%zu\n", offset+i);
-+				return 0;
-+				*/
 +				lzma_offset = offset + i;
 +			}
 +		}
@@ -44,7 +38,7 @@ diff -Nur rpm2targz-9.0.0.4g-old/rpmoffset.c rpm2targz-9.0.0.4g/rpmoffset.c
  		memmove(p, p + left + read_cnt - MAGIC_SIZE_MIN + 1, MAGIC_SIZE_MIN - 1);
  
  		offset += read_cnt;
-@@ -86,6 +108,12 @@
+@@ -86,6 +102,12 @@
  		}
  	}
  
