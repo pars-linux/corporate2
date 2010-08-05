@@ -541,15 +541,15 @@ diff --git a/toolkit/components/downloads/src/nsDownloadManager.cpp b/toolkit/co
 +#include "nsKDEUtils.h"
 +#endif
 +
+ #ifdef XP_MACOSX
+ #include <CoreFoundation/CoreFoundation.h>
+ #endif
+ 
  #define DOWNLOAD_MANAGER_BUNDLE "chrome://mozapps/locale/downloads/downloads.properties"
  #define DOWNLOAD_MANAGER_ALERT_ICON "chrome://mozapps/skin/downloads/downloadIcon.png"
  #define PREF_BDM_SHOWALERTONCOMPLETE "browser.download.manager.showAlertOnComplete"
  #define PREF_BDM_SHOWALERTINTERVAL "browser.download.manager.showAlertInterval"
- #define PREF_BDM_RETENTION "browser.download.manager.retention"
- #define PREF_BDM_QUITBEHAVIOR "browser.download.manager.quitBehavior"
- #define PREF_BDM_ADDTORECENTDOCS "browser.download.manager.addToRecentDocs"
- #define PREF_BDM_SCANWHENDONE "browser.download.manager.scanWhenDone"
-@@ -2158,16 +2162,25 @@ nsDownload::SetState(DownloadState aStat
+@@ -2162,16 +2166,25 @@ nsDownload::SetState(DownloadState aStat
        nsCOMPtr<nsIPrefBranch> pref(do_GetService(NS_PREFSERVICE_CONTRACTID));
  
        // Master pref to control this function.
@@ -575,7 +575,7 @@ diff --git a/toolkit/components/downloads/src/nsDownloadManager.cpp b/toolkit/co
          PRInt64 goat = PR_Now() - mStartTime;
          showTaskbarAlert = goat > alertIntervalUSec;
  
-@@ -2193,16 +2206,17 @@ nsDownload::SetState(DownloadState aStat
+@@ -2197,16 +2210,17 @@ nsDownload::SetState(DownloadState aStat
                // because if it is, they'll click open the download manager and
                // the items they downloaded will have been removed.
                alerts->ShowAlertNotification(
@@ -586,7 +586,7 @@ diff --git a/toolkit/components/downloads/src/nsDownloadManager.cpp b/toolkit/co
          }
 +        } // end non-KDE block
        }
- #if defined(XP_WIN) && !defined(WINCE)
+ #if (defined(XP_WIN) && !defined(WINCE)) || defined(XP_MACOSX)
        nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(mTarget);
        nsCOMPtr<nsIFile> file;
        nsAutoString path;
