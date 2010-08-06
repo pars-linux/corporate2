@@ -80,6 +80,9 @@ def build():
 def install():
     autotools.rawInstall('DESTDIR="%s"' % get.installDIR())
 
+    # comes with kvm
+    pisitools.remove("/usr/bin/qemu-io")
+
     for i in ["pc-bios/README", "LICENSE", "TODO", "README", "qemu-doc.html", "qemu-tech.html"]:
         pisitools.dodoc(i)
 
