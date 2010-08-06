@@ -1,0 +1,188 @@
+2008-04-23  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/27799
+	PR tree-optimization/32921
+	PR tree-optimization/32624
+	* tree-ssa-structalias.c (merge_smts_into): Only merge the
+	SMTs aliases and the tag itself into the solution.
+	* tree-ssa-alias.c (compute_flow_sensitive_aliasing): Do not
+	merge the points-to solution back into the SMT aliases.
+	(may_alias_p): Use alias_set_subset_of instead of
+	aliases_conflict_p.  A pointer which points to
+	memory with alias set zero may access any variable.
+
+	* gcc.dg/tree-ssa/pr27799.c: New testcase.
+	* gcc.dg/tree-ssa/20030807-7.c: Remove xfail, scan vrp dump.
+
+Index: gcc/tree-ssa-structalias.c
+===================================================================
+*** gcc/tree-ssa-structalias.c.orig	2009-05-15 13:32:18.000000000 +0200
+--- gcc/tree-ssa-structalias.c	2009-05-15 13:33:34.000000000 +0200
+*************** set_used_smts (void)
+*** 4876,4883 ****
+  static void
+  merge_smts_into (tree p, bitmap solution)
+  {
+-   unsigned int i;
+-   bitmap_iterator bi;
+    tree smt;
+    bitmap aliases;
+    tree var = p;
+--- 4876,4881 ----
+*************** merge_smts_into (tree p, bitmap solution
+*** 4888,4907 ****
+    smt = var_ann (var)->symbol_mem_tag;
+    if (smt)
+      {
+!       alias_set_type smtset = get_alias_set (TREE_TYPE (smt));
+! 
+!       /* Need to set the SMT subsets first before this
+! 	 will work properly.  */
+        bitmap_set_bit (solution, DECL_UID (smt));
+-       EXECUTE_IF_SET_IN_BITMAP (used_smts, 0, i, bi)
+- 	{
+- 	  tree newsmt = referenced_var (i);
+- 	  tree newsmttype = TREE_TYPE (newsmt);
+- 
+- 	  if (alias_set_subset_of (get_alias_set (newsmttype),
+- 				   smtset))
+- 	    bitmap_set_bit (solution, i);
+- 	}
+  
+        aliases = MTAG_ALIASES (smt);
+        if (aliases)
+--- 4886,4893 ----
+    smt = var_ann (var)->symbol_mem_tag;
+    if (smt)
+      {
+!       /* The smt itself isn't included in its aliases.  */
+        bitmap_set_bit (solution, DECL_UID (smt));
+  
+        aliases = MTAG_ALIASES (smt);
+        if (aliases)
+Index: gcc/tree-ssa-alias.c
+===================================================================
+*** gcc/tree-ssa-alias.c.orig	2009-05-15 13:33:12.000000000 +0200
+--- gcc/tree-ssa-alias.c	2009-05-15 13:34:18.000000000 +0200
+*************** compute_flow_sensitive_aliasing (struct
+*** 2437,2443 ****
+    for (i = 0; VEC_iterate (tree, ai->processed_ptrs, i, ptr); i++)
+      {
+        struct ptr_info_def *pi = SSA_NAME_PTR_INFO (ptr);
+-       tree tag = symbol_mem_tag (SSA_NAME_VAR (ptr));
+  
+        /* Set up aliasing information for PTR's name memory tag (if it has
+  	 one).  Note that only pointers that have been dereferenced will
+--- 2437,2442 ----
+*************** compute_flow_sensitive_aliasing (struct
+*** 2445,2462 ****
+        if (pi->name_mem_tag && pi->pt_vars)
+  	{
+  	  if (!bitmap_empty_p (pi->pt_vars))
+! 	    {
+! 	      union_alias_set_into (pi->name_mem_tag, pi->pt_vars);
+! 	      union_alias_set_into (tag, pi->pt_vars);
+! 	      bitmap_clear_bit (MTAG_ALIASES (tag), DECL_UID (tag));
+! 	    
+! 	      /* It may be the case that this the tag uid was the only
+! 		 bit we had set in the aliases list, and in this case,
+! 		 we don't want to keep an empty bitmap, as this
+! 		 asserts in tree-ssa-operands.c .  */
+! 	      if (bitmap_empty_p (MTAG_ALIASES (tag)))
+! 		BITMAP_FREE (MTAG_ALIASES (tag));
+! 	    }
+  	}
+      }
+    timevar_pop (TV_FLOW_SENSITIVE);
+--- 2444,2450 ----
+        if (pi->name_mem_tag && pi->pt_vars)
+  	{
+  	  if (!bitmap_empty_p (pi->pt_vars))
+! 	    union_alias_set_into (pi->name_mem_tag, pi->pt_vars);
+  	}
+      }
+    timevar_pop (TV_FLOW_SENSITIVE);
+*************** may_alias_p (tree ptr, alias_set_type me
+*** 2901,2907 ****
+    alias_stats.tbaa_queries++;
+  
+    /* If the alias sets don't conflict then MEM cannot alias VAR.  */
+!   if (!alias_sets_conflict_p (mem_alias_set, var_alias_set))
+      {
+        alias_stats.alias_noalias++;
+        alias_stats.tbaa_resolved++;
+--- 2889,2896 ----
+    alias_stats.tbaa_queries++;
+  
+    /* If the alias sets don't conflict then MEM cannot alias VAR.  */
+!   if (mem_alias_set != var_alias_set
+!       && !alias_set_subset_of (mem_alias_set, var_alias_set))
+      {
+        alias_stats.alias_noalias++;
+        alias_stats.tbaa_resolved++;
+Index: gcc/testsuite/gcc.dg/tree-ssa/20030807-7.c
+===================================================================
+*** gcc/testsuite/gcc.dg/tree-ssa/20030807-7.c.orig	2008-08-26 09:17:01.000000000 +0200
+--- gcc/testsuite/gcc.dg/tree-ssa/20030807-7.c	2009-05-15 13:33:35.000000000 +0200
+***************
+*** 1,5 ****
+  /* { dg-do compile } */
+! /* { dg-options "-O2 -fdump-tree-dom3" } */
+    
+  extern void abort (void);
+  
+--- 1,5 ----
+  /* { dg-do compile } */
+! /* { dg-options "-O2 -fdump-tree-vrp1" } */
+    
+  extern void abort (void);
+  
+*************** simplify_condition (cond_p)
+*** 32,38 ****
+    c_simplify_stmt (&decl);
+  }
+  
+! /* There should be exactly one IF conditional.  TBAA is not able to 
+!    determine that 'decl' and 'cond' can't alias.  */
+! /* { dg-final { scan-tree-dump-times "if " 1 "dom3" { xfail *-*-* } } } */
+! /* { dg-final { cleanup-tree-dump "dom3" } } */
+--- 32,37 ----
+    c_simplify_stmt (&decl);
+  }
+  
+! /* There should be exactly one IF conditional.  */
+! /* { dg-final { scan-tree-dump-times "if " 1 "vrp1" } } */
+! /* { dg-final { cleanup-tree-dump "vrp1" } } */
+Index: gcc/testsuite/gcc.dg/tree-ssa/pr27799.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- gcc/testsuite/gcc.dg/tree-ssa/pr27799.c	2009-05-15 13:33:35.000000000 +0200
+***************
+*** 0 ****
+--- 1,26 ----
++ /* { dg-do link } */
++ /* { dg-options "-O2" } */
++ 
++ struct X { double m; int x; };
++ struct Y { int y; short d; };
++ struct YY { int y; short d; char c; };
++ 
++ extern void link_error (void);
++ 
++ int foo(struct X *x,  struct Y *y)
++ {
++   x->x =  0;
++   y->y =  1;
++   if (x->x != 0)
++     link_error ();
++ }
++ 
++ int foo_no(struct X *x,  struct YY *y)
++ {
++   x->x =  0;
++   y->y =  1;
++   if (x->x != 0)
++     link_error ();
++ }
++ 
++ int main() {}

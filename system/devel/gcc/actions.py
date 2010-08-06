@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -10,16 +10,18 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-arch = get.ARCH().replace("x86_64", "x86-64")
+flags = "-march=%s -O2 -pipe -fomit-frame-pointer" % get.ARCH().replace("x86_64", "x86-64")
 
-def setup():
-    shelltools.export("CFLAGS", "-march=%s -O2 -pipe -fomit-frame-pointer" % arch)
-    shelltools.export("CXXFLAGS", "-march=%s -O2 -pipe -fomit-frame-pointer" % arch)
+def exportFlags():
+    shelltools.export("CFLAGS", flags)
+    shelltools.export("CXXFLAGS", flags)
 
-    # FIXME: this may not be necessary for biarch
     shelltools.export("CC", "gcc")
     shelltools.export("CXX", "g++")
+    shelltools.export("LC_ALL", "en_US.UTF-8")
 
+def setup():
+    exportFlags()
     shelltools.makedirs("build")
     shelltools.cd("build")
 
@@ -59,22 +61,17 @@ def setup():
 
 
 def build():
-    shelltools.export("CFLAGS", "-march=%s -O2 -pipe -fomit-frame-pointer" % arch)
-    shelltools.export("CXXFLAGS", "-march=%s -O2 -pipe -fomit-frame-pointer" % arch)
-
-    # FIXME: this may not be necessary for biarch
-    shelltools.export("CC", "gcc")
-    shelltools.export("CXX", "g++")
-
+    exportFlags()
     shelltools.cd("build")
-    autotools.make('BOOT_CFLAGS="%s" profiledbootstrap' % get.CFLAGS())
+    autotools.make('BOOT_CFLAGS="%s" profiledbootstrap' % flags)
 
 def install():
+    exportFlags()
     shelltools.cd("build")
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     for header in ["limits.h","syslimits.h"]:
-        pisitools.insinto("/usr/lib/gcc/%s/4.3.3/include" % get.HOST() , "gcc/include-fixed/%s" % header)
+        pisitools.insinto("/usr/lib/gcc/%s/%s/include" % (get.HOST(), get.srcVERSION()) , "gcc/include-fixed/%s" % header)
 
     # Not needed
     pisitools.removeDir("/usr/lib/gcc/*/*/include-fixed")

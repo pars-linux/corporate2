@@ -1,0 +1,115 @@
+2008-04-17  Richard Guenther  <rguenther@suse.de>
+
+	* alias.c (alias_set_subset_of): Correctly handle asking
+	if zero is a subset of an alias set with zero child.
+	* tree-ssa-alias.c (have_common_aliases_p): Simplify logic.
+	(compute_flow_insensitive_aliasing): Correctly walk all
+	pointers.  Do not unnecessarily union sets.
+
+Index: gcc/alias.c
+===================================================================
+*** gcc/alias.c.orig	2009-01-31 21:54:41.000000000 +0100
+--- gcc/alias.c	2009-05-15 13:32:24.000000000 +0200
+*************** alias_set_subset_of (alias_set_type set1
+*** 305,312 ****
+    /* Otherwise, check if set1 is a subset of set2.  */
+    ase = get_alias_set_entry (set2);
+    if (ase != 0
+!       && (splay_tree_lookup (ase->children,
+! 			     (splay_tree_key) set1)))
+      return true;
+    return false;
+  }
+--- 305,313 ----
+    /* Otherwise, check if set1 is a subset of set2.  */
+    ase = get_alias_set_entry (set2);
+    if (ase != 0
+!       && ((ase->has_zero_child && set1 == 0)
+! 	  || splay_tree_lookup (ase->children,
+! 			        (splay_tree_key) set1)))
+      return true;
+    return false;
+  }
+Index: gcc/tree-ssa-alias.c
+===================================================================
+*** gcc/tree-ssa-alias.c.orig	2009-05-15 13:32:18.000000000 +0200
+--- gcc/tree-ssa-alias.c	2009-05-15 13:33:12.000000000 +0200
+*************** have_common_aliases_p (bitmap tag1aliase
+*** 2473,2481 ****
+    /* This is the old behavior of have_common_aliases_p, which is to
+       return false if both sets are empty, or one set is and the other
+       isn't.  */
+!      if ((tag1aliases == NULL && tag2aliases != NULL)
+!       || (tag2aliases == NULL && tag1aliases != NULL)
+!       || (tag1aliases == NULL && tag2aliases == NULL))
+      return false;
+  
+    return bitmap_intersect_p (tag1aliases, tag2aliases);
+--- 2473,2479 ----
+    /* This is the old behavior of have_common_aliases_p, which is to
+       return false if both sets are empty, or one set is and the other
+       isn't.  */
+!   if (tag1aliases == NULL || tag2aliases == NULL)
+      return false;
+  
+    return bitmap_intersect_p (tag1aliases, tag2aliases);
+*************** compute_flow_insensitive_aliasing (struc
+*** 2563,2574 ****
+        tree tag1 = symbol_mem_tag (p_map1->var);
+        bitmap may_aliases1 = MTAG_ALIASES (tag1);
+  
+!       for (j = i + 1; j < ai->num_pointers; j++)
+  	{
+  	  struct alias_map_d *p_map2 = ai->pointers[j];
+  	  tree tag2 = symbol_mem_tag (p_map2->var);
+  	  bitmap may_aliases2 = may_aliases (tag2);
+  
+  	  /* If the pointers may not point to each other, do nothing.  */
+  	  if (!may_alias_p (p_map1->var, p_map1->set, tag2, p_map2->set, true))
+  	    continue;
+--- 2561,2576 ----
+        tree tag1 = symbol_mem_tag (p_map1->var);
+        bitmap may_aliases1 = MTAG_ALIASES (tag1);
+  
+!       for (j = 0; j < ai->num_pointers; j++)
+  	{
+  	  struct alias_map_d *p_map2 = ai->pointers[j];
+  	  tree tag2 = symbol_mem_tag (p_map2->var);
+  	  bitmap may_aliases2 = may_aliases (tag2);
+  
++ 	  /* By convention tags don't alias themselves.  */
++ 	  if (tag1 == tag2)
++ 	    continue;
++ 
+  	  /* If the pointers may not point to each other, do nothing.  */
+  	  if (!may_alias_p (p_map1->var, p_map1->set, tag2, p_map2->set, true))
+  	    continue;
+*************** compute_flow_insensitive_aliasing (struc
+*** 2578,2595 ****
+  	  if (have_common_aliases_p (may_aliases1, may_aliases2))
+  	    continue;
+  
+! 	  if (may_aliases2 && !bitmap_empty_p (may_aliases2))
+! 	    {
+! 	      union_alias_set_into (tag1, may_aliases2);
+! 	    }
+! 	  else
+! 	    {
+! 	      /* Since TAG2 does not have any aliases of its own, add
+! 		 TAG2 itself to the alias set of TAG1.  */
+! 	      add_may_alias (tag1, tag2);
+! 	    }
+  	}
+- 
+      }
+  
+    /* We have to add all HEAP variables to all SMTs aliases bitmaps.
+--- 2580,2587 ----
+  	  if (have_common_aliases_p (may_aliases1, may_aliases2))
+  	    continue;
+  
+! 	  add_may_alias (tag1, tag2);
+  	}
+      }
+  
+    /* We have to add all HEAP variables to all SMTs aliases bitmaps.

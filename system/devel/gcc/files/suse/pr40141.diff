@@ -1,0 +1,730 @@
+2009-05-15  Richard Guenther  <rguenther@suse.de>
+
+	Backport from gcc-4_4-branch
+
+	2008-11-25  Richard Guenther  <rguenther@suse.de>
+
+        PR middle-end/38151
+        PR middle-end/38236
+        * tree-ssa-alias.c (struct alias_info): Remove written_vars.
+        Remove dereferenced_ptrs_store and dereferenced_ptrs_load
+        in favor of dereferenced_ptrs.
+        (init_alias_info): Adjust.
+        (delete_alias_info): Likewise.
+        (compute_flow_insensitive_aliasing): Properly
+        include all aliased variables.
+        (update_alias_info_1): Use dereferenced_ptrs.
+        (setup_pointers_and_addressables): Likewise.
+        (get_smt_for): Honor ref-all pointers and pointers with known alias
+        set properly.
+        * config/i386/i386.c (ix86_gimplify_va_arg): Use ref-all pointers.
+
+	2008-11-20  Uros Bizjak  <ubizjak@gmail.com>
+
+        PR target/38151
+        * config/i386/i386.c (classify_argument) [integer mode size <= 64bit]:
+        Handle cases when integer argument crosses argument register boundary.
+
+	2008-04-29  Richard Guenther  <rguenther@suse.de>
+
+        * tree-ssa-alias.c (finalize_ref_all_pointers): Remove.
+        (compute_may_aliases): Do not call finalize_ref_all_pointers.
+        (compute_flow_insensitive_aliasing): Do not treat
+        PTR_IS_REF_ALL pointers special.
+        (get_smt_for): Likewise.
+        (may_alias_p): Re-structure.
+        (is_escape_site): A ref-all pointer conversion is not an escape site.
+        * tree-ssa-structalias.c (find_what_p_points_to): Do not treat
+        PTR_IS_REF_ALL pointers special.
+        * tree-ssa-structalias.h (struct alias_info): Remove
+        ref_all_symbol_mem_tag field.
+        (PTR_IS_REF_ALL): Remove.
+
+
+Index: gcc/tree-ssa-structalias.c
+===================================================================
+--- gcc/tree-ssa-structalias.c.orig	2009-09-21 11:42:18.000000000 +0200
++++ gcc/tree-ssa-structalias.c	2009-09-21 11:43:45.000000000 +0200
+@@ -3536,13 +3536,8 @@ update_alias_info (tree stmt, struct ali
+ 	     all the variables OP points to.  */
+ 	  pi->is_dereferenced = 1;
+ 
+-	  /* If this is a store operation, mark OP as being
+-	     dereferenced to store, otherwise mark it as being
+-	     dereferenced to load.  */
+-	  if (num_stores > 0)
+-	    pointer_set_insert (ai->dereferenced_ptrs_store, var);
+-	  else
+-	    pointer_set_insert (ai->dereferenced_ptrs_load, var);
++	  /* Mark OP as being dereferenced.  */
++	  pointer_set_insert (ai->dereferenced_ptrs, var);
+ 
+ 	  /* Update the frequency estimate for all the dereferences of
+ 	     pointer OP.  */
+@@ -3567,7 +3562,7 @@ update_alias_info (tree stmt, struct ali
+ 	  if (get_call_expr_in (stmt)
+ 	      || stmt_escape_type == ESCAPE_STORED_IN_GLOBAL)
+ 	    {
+-	      pointer_set_insert (ai->dereferenced_ptrs_store, var);
++	      pointer_set_insert (ai->dereferenced_ptrs, var);
+ 	      pi->is_dereferenced = 1;
+ 	    }
+ 	}
+@@ -3585,29 +3580,6 @@ update_alias_info (tree stmt, struct ali
+ 
+       mem_ref_stats->num_mem_stmts++;
+ 
+-      /* Add all decls written to to the list of written variables.  */
+-      if (TREE_CODE (stmt) == GIMPLE_MODIFY_STMT
+-	  && TREE_CODE (GIMPLE_STMT_OPERAND (stmt, 0)) != SSA_NAME)
+-	{
+-	  tree lhs = GIMPLE_STMT_OPERAND (stmt, 0);
+-	  while (handled_component_p (lhs))
+-	    lhs = TREE_OPERAND (lhs, 0);
+-	  if (DECL_P (lhs))
+-	    {
+-	      subvar_t svars;
+-	      if (var_can_have_subvars (lhs)
+-		  && (svars = get_subvars_for_var (lhs)))
+-		{
+-		  unsigned int i;
+-		  tree subvar;
+-		  for (i = 0; VEC_iterate (tree, svars, i, subvar); ++i)
+-		    pointer_set_insert (ai->written_vars, subvar);
+-		}
+-	      else
+-		pointer_set_insert (ai->written_vars, lhs);
+-	    }
+-	}
+-
+       /* Notice that we only update memory reference stats for symbols
+ 	 loaded and stored by the statement if the statement does not
+ 	 contain pointer dereferences and it is not a call/asm site.
+@@ -5026,17 +4998,9 @@ find_what_p_points_to (tree p)
+ 
+ 	  /* Instead of using pt_anything, we merge in the SMT aliases
+ 	     for the underlying SMT.  In addition, if they could have
+-	     pointed to anything, they could point to global memory.
+-	     But we cannot do that for ref-all pointers because these
+-	     aliases have not been computed yet.  */
++	     pointed to anything, they could point to global memory.  */
+ 	  if (was_pt_anything)
+ 	    {
+-	      if (PTR_IS_REF_ALL (p))
+-		{
+-		  pi->pt_anything = 1;
+-		  return false;
+-		}
+-
+ 	      merge_smts_into (p, finished_solution);
+ 	      pi->pt_global_mem = 1;
+ 	    }
+Index: gcc/tree-ssa-structalias.h
+===================================================================
+--- gcc/tree-ssa-structalias.h.orig	2009-09-21 11:42:18.000000000 +0200
++++ gcc/tree-ssa-structalias.h	2009-09-21 11:43:45.000000000 +0200
+@@ -21,9 +21,6 @@
+ #ifndef TREE_SSA_STRUCTALIAS_H
+ #define TREE_SSA_STRUCTALIAS_H
+ 
+-/* True if the data pointed to by PTR can alias anything.  */
+-#define PTR_IS_REF_ALL(PTR) TYPE_REF_CAN_ALIAS_ALL (TREE_TYPE (PTR))
+-
+ struct constraint;
+ typedef struct constraint *constraint_t;
+ 
+@@ -48,18 +45,8 @@ struct alias_info
+   struct alias_map_d **pointers;
+   size_t num_pointers;
+ 
+-  /* Variables that have been written to directly (i.e., not through a
+-     pointer dereference).  */
+-  struct pointer_set_t *written_vars;
+-
+-  /* Pointers that have been used in an indirect store operation.  */
+-  struct pointer_set_t *dereferenced_ptrs_store;
+-
+-  /* Pointers that have been used in an indirect load operation.  */
+-  struct pointer_set_t *dereferenced_ptrs_load;
+-
+-  /* Memory tag for all the PTR_IS_REF_ALL pointers.  */
+-  tree ref_all_symbol_mem_tag;
++  /* Pointers that have been used in an indirect load/store operation.  */
++  struct pointer_set_t *dereferenced_ptrs;
+ };
+ 
+ /* In tree-ssa-alias.c.  */
+Index: gcc/tree-ssa-alias.c
+===================================================================
+--- gcc/tree-ssa-alias.c.orig	2009-09-21 11:42:18.000000000 +0200
++++ gcc/tree-ssa-alias.c	2009-09-21 11:43:45.000000000 +0200
+@@ -196,7 +196,6 @@ static bitmap_obstack alias_bitmap_obsta
+ 
+ /* Local functions.  */
+ static void compute_flow_insensitive_aliasing (struct alias_info *);
+-static void finalize_ref_all_pointers (struct alias_info *);
+ static void dump_alias_stats (FILE *);
+ static bool may_alias_p (tree, alias_set_type, tree, alias_set_type, bool);
+ static tree create_memory_tag (tree type, bool is_type_tag);
+@@ -1894,12 +1893,6 @@ compute_may_aliases (void)
+      avoid invalid transformations on them.  */
+   maybe_create_global_var ();
+ 
+-  /* If the program contains ref-all pointers, finalize may-alias information
+-     for them.  This pass needs to be run after call-clobbering information
+-     has been computed.  */
+-  if (ai->ref_all_symbol_mem_tag)
+-    finalize_ref_all_pointers (ai);
+-
+   /* Compute memory partitions for every memory variable.  */
+   compute_memory_partitions ();
+ 
+@@ -2220,9 +2213,7 @@ init_alias_info (void)
+   ai->ssa_names_visited = sbitmap_alloc (num_ssa_names);
+   sbitmap_zero (ai->ssa_names_visited);
+   ai->processed_ptrs = VEC_alloc (tree, heap, 50);
+-  ai->written_vars = pointer_set_create ();
+-  ai->dereferenced_ptrs_store = pointer_set_create ();
+-  ai->dereferenced_ptrs_load = pointer_set_create ();
++  ai->dereferenced_ptrs = pointer_set_create ();
+ 
+   /* Clear out all memory reference stats.  */
+   init_mem_ref_stats ();
+@@ -2269,9 +2260,7 @@ delete_alias_info (struct alias_info *ai
+     free (ai->pointers[i]);
+   free (ai->pointers);
+ 
+-  pointer_set_destroy (ai->written_vars);
+-  pointer_set_destroy (ai->dereferenced_ptrs_store);
+-  pointer_set_destroy (ai->dereferenced_ptrs_load);
++  pointer_set_destroy (ai->dereferenced_ptrs);
+   free (ai);
+ 
+   delete_mem_ref_stats (cfun);
+@@ -2518,31 +2507,22 @@ compute_flow_insensitive_aliasing (struc
+       tree tag = symbol_mem_tag (p_map->var);
+       tree var;
+ 
+-      /* Call-clobbering information is not finalized yet at this point.  */
+-      if (PTR_IS_REF_ALL (p_map->var))
+-	continue;
+-
+       for (j = 0; j < ai->num_addressable_vars; j++)
+ 	{
+ 	  struct alias_map_d *v_map;
+ 	  var_ann_t v_ann;
+-	  bool tag_stored_p, var_stored_p;
+ 	  
+ 	  v_map = ai->addressable_vars[j];
+ 	  var = v_map->var;
+ 	  v_ann = var_ann (var);
+ 
+-	  /* Skip memory tags and variables that have never been
+-	     written to.  We also need to check if the variables are
+-	     call-clobbered because they may be overwritten by
+-	     function calls.  */
+-	  tag_stored_p = pointer_set_contains (ai->written_vars, tag)
+-	                 || is_call_clobbered (tag);
+-	  var_stored_p = pointer_set_contains (ai->written_vars, var)
+-	                 || is_call_clobbered (var);
+-	  if (!tag_stored_p && !var_stored_p)
+-	    continue;
+-	     
++	  /* We used to skip variables that have never been written to
++	     if the memory tag has been never written to directly (or
++	     either of them were call clobbered).  This is not enough
++	     though, as this misses writes through the tags aliases.
++	     So, for correctness we need to include any aliased
++	     variable here.  */
++
+ 	  if (may_alias_p (p_map->var, p_map->set, var, v_map->set, false))
+ 	    {
+ 	      /* We should never have a var with subvars here, because
+@@ -2583,18 +2563,12 @@ compute_flow_insensitive_aliasing (struc
+       tree tag1 = symbol_mem_tag (p_map1->var);
+       bitmap may_aliases1 = MTAG_ALIASES (tag1);
+ 
+-      if (PTR_IS_REF_ALL (p_map1->var))
+-	continue;
+-
+       for (j = i + 1; j < ai->num_pointers; j++)
+ 	{
+ 	  struct alias_map_d *p_map2 = ai->pointers[j];
+ 	  tree tag2 = symbol_mem_tag (p_map2->var);
+ 	  bitmap may_aliases2 = may_aliases (tag2);
+ 
+-	  if (PTR_IS_REF_ALL (p_map2->var))
+-	    continue;
+-
+ 	  /* If the pointers may not point to each other, do nothing.  */
+ 	  if (!may_alias_p (p_map1->var, p_map1->set, tag2, p_map2->set, true))
+ 	    continue;
+@@ -2639,49 +2613,6 @@ compute_flow_insensitive_aliasing (struc
+ }
+ 
+ 
+-/* Finalize may-alias information for ref-all pointers.  Traverse all
+-   the addressable variables found in setup_pointers_and_addressables.
+-
+-   If flow-sensitive alias analysis has attached a name memory tag to
+-   a ref-all pointer, we will use it for the dereferences because that
+-   will have more precise aliasing information.  But if there is no
+-   name tag, we will use a special symbol tag that aliases all the
+-   call-clobbered addressable variables.  */
+-
+-static void
+-finalize_ref_all_pointers (struct alias_info *ai)
+-{
+-  size_t i;
+-
+-  /* First add the real call-clobbered variables.  */
+-  for (i = 0; i < ai->num_addressable_vars; i++)
+-    {
+-      tree var = ai->addressable_vars[i]->var;
+-      if (is_call_clobbered (var))
+-	add_may_alias (ai->ref_all_symbol_mem_tag, var);
+-    }
+-
+-  /* Then add the call-clobbered pointer memory tags.  See
+-     compute_flow_insensitive_aliasing for the rationale.  */
+-  for (i = 0; i < ai->num_pointers; i++)
+-    {
+-      tree ptr = ai->pointers[i]->var, tag;
+-      /* Avoid adding to self and clean up.  */
+-      if (PTR_IS_REF_ALL (ptr))
+-	{
+-	  struct ptr_info_def *pi = get_ptr_info (ptr);
+-	  if (pi->is_dereferenced)
+-	    pi->pt_anything = 0;
+-	  continue;
+-	}
+-      tag = symbol_mem_tag (ptr);
+-      if (is_call_clobbered (tag))
+-	add_may_alias (ai->ref_all_symbol_mem_tag, tag);
+-    }
+-
+-}
+-
+-
+ /* Create a new alias set entry for VAR in AI->ADDRESSABLE_VARS.  */
+ 
+ static void
+@@ -2723,7 +2654,7 @@ setup_pointers_and_addressables (struct
+ 	  /* Since we don't keep track of volatile variables, assume that
+ 	     these pointers are used in indirect store operations.  */
+ 	  if (TREE_THIS_VOLATILE (var))
+-	    pointer_set_insert (ai->dereferenced_ptrs_store, var);
++	    pointer_set_insert (ai->dereferenced_ptrs, var);
+ 
+ 	  num_pointers++;
+ 	}
+@@ -2821,8 +2752,7 @@ setup_pointers_and_addressables (struct
+          array and create a symbol memory tag for them.  */
+       if (POINTER_TYPE_P (TREE_TYPE (var)))
+ 	{
+-	  if ((pointer_set_contains (ai->dereferenced_ptrs_store, var)
+-	       || pointer_set_contains (ai->dereferenced_ptrs_load, var)))
++	  if (pointer_set_contains (ai->dereferenced_ptrs, var))
+ 	    {
+ 	      tree tag, old_tag;
+ 	      var_ann_t t_ann;
+@@ -2848,11 +2778,6 @@ setup_pointers_and_addressables (struct
+ 
+ 	      /* Associate the tag with pointer VAR.  */
+ 	      set_symbol_mem_tag (var, tag);
+-
+-	      /* If pointer VAR has been used in a store operation,
+-		 then its memory tag must be marked as written-to.  */
+-	      if (pointer_set_contains (ai->dereferenced_ptrs_store, var))
+-		pointer_set_insert (ai->written_vars, tag);
+ 	    }
+ 	  else
+ 	    {
+@@ -2966,74 +2891,84 @@ may_alias_p (tree ptr, alias_set_type me
+       return false;
+     }
+ 
++  /* If the pointed to memory has alias set zero, or the pointer
++     is ref-all, or the pointer decl is marked that no TBAA is to
++     be applied, the MEM can alias VAR.  */
++  if (mem_alias_set == 0
++      || DECL_POINTER_ALIAS_SET (ptr) == 0
++      || TYPE_REF_CAN_ALIAS_ALL (TREE_TYPE (ptr))
++      || DECL_NO_TBAA_P (ptr))
++    {
++      alias_stats.alias_mayalias++;
++      alias_stats.simple_resolved++;
++      return true;
++    }
++
+   gcc_assert (TREE_CODE (mem) == SYMBOL_MEMORY_TAG);
+ 
+-  if (!DECL_NO_TBAA_P (ptr))
++  alias_stats.tbaa_queries++;
++
++  /* If the alias sets don't conflict then MEM cannot alias VAR.  */
++  if (!alias_sets_conflict_p (mem_alias_set, var_alias_set))
+     {
+-      alias_stats.tbaa_queries++;
++      alias_stats.alias_noalias++;
++      alias_stats.tbaa_resolved++;
++      return false;
++    }
+ 
+-      /* If the alias sets don't conflict then MEM cannot alias VAR.  */
+-      if (!alias_sets_conflict_p (mem_alias_set, var_alias_set))
+-	{
+-	  alias_stats.alias_noalias++;
+-	  alias_stats.tbaa_resolved++;
+-	  return false;
+-	}
++  /* If VAR is a record or union type, PTR cannot point into VAR
++     unless there is some explicit address operation in the
++     program that can reference a field of the type pointed-to by
++     PTR.  This also assumes that the types of both VAR and PTR
++     are contained within the compilation unit, and that there is
++     no fancy addressing arithmetic associated with any of the
++     types involved.  */
++  if (mem_alias_set != 0 && var_alias_set != 0)
++    {
++      tree ptr_type = TREE_TYPE (ptr);
++      tree var_type = TREE_TYPE (var);
++
++      /* The star count is -1 if the type at the end of the
++	 pointer_to chain is not a record or union type. */ 
++      if (!alias_set_only
++	  && ipa_type_escape_star_count_of_interesting_type (var_type) >= 0)
++	{
++	  int ptr_star_count = 0;
++
++	  /* ipa_type_escape_star_count_of_interesting_type is a
++	     little too restrictive for the pointer type, need to
++	     allow pointers to primitive types as long as those
++	     types cannot be pointers to everything.  */
++	  while (POINTER_TYPE_P (ptr_type))
++	    {
++	      /* Strip the *s off.  */ 
++	      ptr_type = TREE_TYPE (ptr_type);
++	      ptr_star_count++;
++	    }
+ 
+-      /* If VAR is a record or union type, PTR cannot point into VAR
+-	 unless there is some explicit address operation in the
+-	 program that can reference a field of the type pointed-to by
+-	 PTR.  This also assumes that the types of both VAR and PTR
+-	 are contained within the compilation unit, and that there is
+-	 no fancy addressing arithmetic associated with any of the
+-	 types involved.  */
+-      if (mem_alias_set != 0 && var_alias_set != 0)
+-	{
+-	  tree ptr_type = TREE_TYPE (ptr);
+-	  tree var_type = TREE_TYPE (var);
+-      
+-	  /* The star count is -1 if the type at the end of the
+-	     pointer_to chain is not a record or union type. */ 
+-	  if ((!alias_set_only) && 
+-	      ipa_type_escape_star_count_of_interesting_type (var_type) >= 0)
++	  /* There does not appear to be a better test to see if
++	     the pointer type was one of the pointer to everything
++	     types.  */
++	  if (ptr_star_count > 0)
+ 	    {
+-	      int ptr_star_count = 0;
+-	  
+-	      /* ipa_type_escape_star_count_of_interesting_type is a
+-		 little too restrictive for the pointer type, need to
+-		 allow pointers to primitive types as long as those
+-		 types cannot be pointers to everything.  */
+-	      while (POINTER_TYPE_P (ptr_type))
+-		{
+-		  /* Strip the *s off.  */ 
+-		  ptr_type = TREE_TYPE (ptr_type);
+-		  ptr_star_count++;
+-		}
+-	  
+-	      /* There does not appear to be a better test to see if
+-		 the pointer type was one of the pointer to everything
+-		 types.  */
+-	      if (ptr_star_count > 0)
+-		{
+-		  alias_stats.structnoaddress_queries++;
+-		  if (ipa_type_escape_field_does_not_clobber_p (var_type, 
+-								TREE_TYPE (ptr)))
+-		    {
+-		      alias_stats.structnoaddress_resolved++;
+-		      alias_stats.alias_noalias++;
+-		      return false;
+-		    }
+-		}
+-	      else if (ptr_star_count == 0)
++	      alias_stats.structnoaddress_queries++;
++	      if (ipa_type_escape_field_does_not_clobber_p (var_type, 
++							    TREE_TYPE (ptr)))
+ 		{
+-		  /* If PTR_TYPE was not really a pointer to type, it cannot 
+-		     alias.  */ 
+-		  alias_stats.structnoaddress_queries++;
+ 		  alias_stats.structnoaddress_resolved++;
+ 		  alias_stats.alias_noalias++;
+ 		  return false;
+ 		}
+ 	    }
++	  else if (ptr_star_count == 0)
++	    {
++	      /* If PTR_TYPE was not really a pointer to type, it cannot 
++		 alias.  */ 
++	      alias_stats.structnoaddress_queries++;
++	      alias_stats.structnoaddress_resolved++;
++	      alias_stats.alias_noalias++;
++	      return false;
++	    }
+ 	}
+     }
+ 
+@@ -3139,12 +3074,6 @@ is_escape_site (tree stmt)
+ 	     pointer escapes since we can't track the integer.  */
+ 	  if (POINTER_TYPE_P (from) && !POINTER_TYPE_P (to))
+ 	    return ESCAPE_BAD_CAST;
+-
+-	  /* Same if the RHS is a conversion between a regular pointer and a
+-	     ref-all pointer since we can't track the SMT of the former.  */
+-	  if (POINTER_TYPE_P (from) && !TYPE_REF_CAN_ALIAS_ALL (from)
+-	      && POINTER_TYPE_P (to) && TYPE_REF_CAN_ALIAS_ALL (to))
+-	    return ESCAPE_BAD_CAST;
+ 	}
+ 
+       /* If the LHS is an SSA name, it can't possibly represent a non-local
+@@ -3248,14 +3177,21 @@ get_smt_for (tree ptr, struct alias_info
+   size_t i;
+   tree tag;
+   tree tag_type = TREE_TYPE (TREE_TYPE (ptr));
+-  alias_set_type tag_set = get_alias_set (tag_type);
++  alias_set_type tag_set;
+ 
+-  /* We use a unique memory tag for all the ref-all pointers.  */
+-  if (PTR_IS_REF_ALL (ptr))
++  /* Get the alias set to be used for the pointed-to memory.  If that
++     differs from what we would get from looking at the type adjust
++     the tag_type to void to make sure we get a proper alias set from
++     just looking at the SMT we create.  */
++  tag_set = get_alias_set (tag_type);
++  if (TYPE_REF_CAN_ALIAS_ALL (TREE_TYPE (ptr))
++      /* This is overly conservative but we do not want to assign
++         restrict alias sets here (which if they are not assigned
++         are -2 but still "known").  */
++      || DECL_POINTER_ALIAS_SET_KNOWN_P (ptr))
+     {
+-      if (!ai->ref_all_symbol_mem_tag)
+-	ai->ref_all_symbol_mem_tag = create_memory_tag (void_type_node, true);
+-      return ai->ref_all_symbol_mem_tag;
++      tag_set = 0;
++      tag_type = void_type_node;
+     }
+ 
+   /* To avoid creating unnecessary memory tags, only create one memory tag
+@@ -3287,7 +3223,8 @@ get_smt_for (tree ptr, struct alias_info
+ 	 artificial variable representing the memory location
+ 	 pointed-to by PTR.  */
+       tag = symbol_mem_tag (ptr);
+-      if (tag == NULL_TREE)
++      if (tag == NULL_TREE
++	  || tag_set != get_alias_set (tag))
+ 	tag = create_memory_tag (tag_type, true);
+ 
+       /* Add PTR to the POINTERS array.  Note that we are not interested in
+Index: gcc/config/i386/i386.c
+===================================================================
+--- gcc/config/i386/i386.c.orig	2009-09-21 11:42:18.000000000 +0200
++++ gcc/config/i386/i386.c	2009-09-21 11:43:45.000000000 +0200
+@@ -3855,11 +3855,33 @@ classify_argument (enum machine_mode mod
+     case CSImode:
+     case CHImode:
+     case CQImode:
+-      if (bit_offset + GET_MODE_BITSIZE (mode) <= 32)
+-	classes[0] = X86_64_INTEGERSI_CLASS;
+-      else
+-	classes[0] = X86_64_INTEGER_CLASS;
+-      return 1;
++      {
++	int size = (bit_offset % 64)+ (int) GET_MODE_BITSIZE (mode);
++
++	if (size <= 32)
++	  {
++	    classes[0] = X86_64_INTEGERSI_CLASS;
++	    return 1;
++	  }
++	else if (size <= 64)
++	  {
++	    classes[0] = X86_64_INTEGER_CLASS;
++	    return 1;
++	  }
++	else if (size <= 64+32)
++	  {
++	    classes[0] = X86_64_INTEGER_CLASS;
++	    classes[1] = X86_64_INTEGERSI_CLASS;
++	    return 2;
++	  }
++	else if (size <= 64+64)
++	  {
++	    classes[0] = classes[1] = X86_64_INTEGER_CLASS;
++	    return 2;
++	  }
++	else
++	  gcc_unreachable ();
++      }
+     case CDImode:
+     case TImode:
+       classes[0] = classes[1] = X86_64_INTEGER_CLASS;
+@@ -5336,6 +5358,8 @@ ix86_gimplify_va_arg (tree valist, tree
+ 	      enum machine_mode mode = GET_MODE (reg);
+ 	      tree piece_type = lang_hooks.types.type_for_mode (mode, 1);
+ 	      tree addr_type = build_pointer_type (piece_type);
++	      tree daddr_type = build_pointer_type_for_mode (piece_type,
++							     ptr_mode, true);
+ 	      tree src_addr, src;
+ 	      int src_offset;
+ 	      tree dest_addr, dest;
+@@ -5355,8 +5379,8 @@ ix86_gimplify_va_arg (tree valist, tree
+ 				      size_int (src_offset));
+ 	      src = build_va_arg_indirect_ref (src_addr);
+ 
+-	      dest_addr = fold_convert (addr_type, addr);
+-	      dest_addr = fold_build2 (POINTER_PLUS_EXPR, addr_type, dest_addr,
++	      dest_addr = fold_convert (daddr_type, addr);
++	      dest_addr = fold_build2 (POINTER_PLUS_EXPR, daddr_type, dest_addr,
+ 				       size_int (INTVAL (XEXP (slot, 1))));
+ 	      dest = build_va_arg_indirect_ref (dest_addr);
+ 
+Index: gcc/testsuite/gcc.c-torture/execute/pr38151.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ gcc/testsuite/gcc.c-torture/execute/pr38151.c	2009-09-21 11:43:45.000000000 +0200
+@@ -0,0 +1,46 @@
++void abort (void);
++
++struct S2848
++{
++  unsigned int a;
++  _Complex int b;
++  struct
++  {
++  } __attribute__ ((aligned)) c;
++};
++
++struct S2848 s2848;
++
++int fails;
++
++void  __attribute__((noinline))
++check2848va (int z, ...)
++{
++  struct S2848 arg;
++  __builtin_va_list ap;
++
++  __builtin_va_start (ap, z);
++
++  arg = __builtin_va_arg (ap, struct S2848);
++
++  if (s2848.a != arg.a)
++    ++fails;
++  if (s2848.b != arg.b)
++    ++fails;
++
++  __builtin_va_end (ap);
++}
++
++int main (void)
++{
++  s2848.a = 4027477739U;
++  s2848.b = (723419448 + -218144346 * __extension__ 1i);
++
++  check2848va (1, s2848);
++
++  if (fails)
++    abort ();
++
++  return 0;
++}
++
+Index: gcc/testsuite/gcc.c-torture/execute/pr38236.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ gcc/testsuite/gcc.c-torture/execute/pr38236.c	2009-09-21 11:43:45.000000000 +0200
+@@ -0,0 +1,22 @@
++struct X { int i; };
++
++int __attribute__((noinline))
++foo (struct X *p, int *q, int a, int b)
++{
++  struct X x, y;
++  if (a)
++    p = &x;
++  if (b)
++    q = &x.i;
++  else
++    q = &y.i;
++  *q = 1;
++  return p->i; 
++}
++extern void abort (void);
++int main()
++{
++  if (foo((void *)0, (void *)0, 1, 1) != 1)
++    abort ();
++  return 0;
++}
+Index: gcc/testsuite/gcc.c-torture/execute/pr40141.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ gcc/testsuite/gcc.c-torture/execute/pr40141.c	2009-09-21 11:43:45.000000000 +0200
+@@ -0,0 +1,16 @@
++extern void abort (void);
++typedef int __m128 __attribute__((vector_size(16),may_alias));
++typedef float floatA __attribute__((may_alias));
++
++int main()
++{
++  __m128 x = { 0, 0, 0, 0 };
++  int i;
++  for (i = 0; i < 4; ++i) {
++      const float xx = ((floatA*)&x)[i];
++      if (xx != 0.f)
++	abort ();
++  }
++  return 0;
++}
++
+Index: gcc/testsuite/gcc.target/i386/pr38151-1.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ gcc/testsuite/gcc.target/i386/pr38151-1.c	2009-09-21 11:43:45.000000000 +0200
+@@ -0,0 +1,29 @@
++/* { dg-do run } */
++/* { dg-options "-O2" } */
++
++void abort (void);
++
++struct S2848
++{
++  unsigned int a;
++  _Complex int b;
++};
++
++struct S2848 s2848;
++
++void __attribute__((noinline))
++check2848 (struct S2848 arg0)
++{
++  if (arg0.b != s2848.b)
++    abort ();
++}
++
++int main()
++{
++  s2848.a = 4027477739U;
++  s2848.b = (723419448 + -218144346 * __extension__ 1i);
++
++  check2848 (s2848);
++
++  return 0;
++}
