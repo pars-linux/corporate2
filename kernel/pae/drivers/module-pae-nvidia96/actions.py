@@ -9,12 +9,19 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = "NVIDIA-Linux-x86-%s" % get.srcVERSION()
+WorkDir = "."
 KDIR = kerneltools.getKernelVersion()
 NoStrip = ["/lib/modules"]
 
+arch = get.ARCH().replace("i686", "x86")
 driver = "nvidia96"
 base = "/usr/lib/xorg/%s" % driver
+
+def setup():
+    shelltools.system("sh NVIDIA-Linux-%s-%s-pkg0.run -x --target tmp" % (arch, get.srcVERSION()))
+    shelltools.move("tmp/*", ".")
+
+    shelltools.system("patch -p0 < no-smbus.patch")
 
 def build():
     shelltools.export("SYSSRC", "/lib/modules/%s/build" % KDIR)
