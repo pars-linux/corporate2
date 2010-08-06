@@ -6,7 +6,7 @@ import subprocess
 
 from zorg.config import getDeviceInfo
 
-version = "173.14.25"
+version = "173.14.27"
 driver = "nvidia173"
 base = "/usr/lib/xorg/%s" % driver
 
