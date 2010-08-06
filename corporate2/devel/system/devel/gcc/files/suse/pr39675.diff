@@ -1,0 +1,83 @@
+2009-04-20  Ira Rosen  <irar@il.ibm.com>
+
+	PR tree-optimization/39675
+	* tree-vect-transform.c (vect_transform_loop): Remove currently
+	redundant check of the return code of vect_schedule_slp. Check that
+	stmt_vec_info still exists for the statement, before checking its
+	vectorization type.
+
+	* gcc.dg/vect/O3-pr39675-1.c: New test.
+
+Index: gcc/testsuite/gcc.dg/vect/O3-pr39675-1.c
+===================================================================
+--- gcc/testsuite/gcc.dg/vect/O3-pr39675-1.c	(revision 0)
++++ gcc/testsuite/gcc.dg/vect/O3-pr39675-1.c	(revision 146365)
+@@ -0,0 +1,30 @@
++/* { dg-do compile } */
++
++typedef struct {
++    float vertexAttrib[16][4];
++    float vertexAttribPre[16][4];
++    float rasterAttrib[16][4];
++    float rasterAttribPre[16][4];
++} CRCurrentState;
++void crStateCurrentInit(CRCurrentState *c)
++{
++  unsigned int i;
++  for (i = 0; i < 16; i++)
++    {
++      (c->vertexAttribPre[i])[0] = (c->vertexAttrib[i])[0];
++      (c->vertexAttribPre[i])[1] = (c->vertexAttrib[i])[1];
++      (c->vertexAttribPre[i])[2] = (c->vertexAttrib[i])[2];
++      (c->vertexAttribPre[i])[3] = (c->vertexAttrib[i])[3];
++      (c->rasterAttrib[i])[0] = (c->vertexAttrib[i])[0];
++      (c->rasterAttrib[i])[1] = (c->vertexAttrib[i])[1];
++      (c->rasterAttrib[i])[2] = (c->vertexAttrib[i])[2];
++      (c->rasterAttrib[i])[3] = (c->vertexAttrib[i])[3];
++      (c->rasterAttribPre[i])[0] = (c->vertexAttrib[i])[0];
++      (c->rasterAttribPre[i])[1] = (c->vertexAttrib[i])[1];
++      (c->rasterAttribPre[i])[2] = (c->vertexAttrib[i])[2];
++      (c->rasterAttribPre[i])[3] = (c->vertexAttrib[i])[3];
++    }
++}
++
++/* { dg-final { cleanup-tree-dump "vect" } } */
++
+Index: gcc/tree-vect-transform.c
+===================================================================
+*** gcc/tree-vect-transform.c	(revision 146386)
+--- gcc/tree-vect-transform.c	(working copy)
+*************** vect_transform_loop (loop_vec_info loop_
+*** 7592,7611 ****
+  		  if (vect_print_dump_info (REPORT_DETAILS))
+  		    fprintf (vect_dump, "=== scheduling SLP instances ===");
+  
+! 		  is_store = vect_schedule_slp (loop_vinfo, nunits);
+! 
+! 		  /* IS_STORE is true if STMT is a store. Stores cannot be of
+! 		     hybrid SLP type. They are removed in
+! 		     vect_schedule_slp_instance and their vinfo is destroyed. */
+! 		  if (is_store)
+! 		    {
+! 		      bsi_next (&si);
+! 		      continue;
+! 		    }
+  		}
+  
+  	      /* Hybrid SLP stmts must be vectorized in addition to SLP.  */
+! 	      if (PURE_SLP_STMT (stmt_info))
+  		{
+  		  bsi_next (&si);
+  		  continue;
+--- 7592,7602 ----
+  		  if (vect_print_dump_info (REPORT_DETAILS))
+  		    fprintf (vect_dump, "=== scheduling SLP instances ===");
+  
+! 		  vect_schedule_slp (loop_vinfo, nunits);
+  		}
+  
+  	      /* Hybrid SLP stmts must be vectorized in addition to SLP.  */
+! 	      if (!vinfo_for_stmt (stmt) || PURE_SLP_STMT (stmt_info))
+  		{
+  		  bsi_next (&si);
+  		  continue;

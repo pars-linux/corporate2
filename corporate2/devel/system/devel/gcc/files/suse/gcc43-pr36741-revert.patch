@@ -1,0 +1,47 @@
+Revert:
+2008-08-28  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/36741
+	* tree.c (int_fits_type_p): Don't forget unsigned integers
+	  of type sizetype which higher end word equals -1.
+
+	* g++.dg/other/new-size-type.C: New test.
+
+Index: gcc/tree.c
+===================================================================
+--- gcc/tree.c.orig	2009-08-04 12:22:36.000000000 +0200
++++ gcc/tree.c	2009-11-20 13:50:50.000000000 +0100
+@@ -6305,21 +6305,6 @@ int_fits_type_p (const_tree c, const_tre
+      for "unknown if constant fits", 0 for "constant known *not* to fit" and 1
+      for "constant known to fit".  */
+ 
+-  if (TREE_TYPE (c) == sizetype
+-      && TYPE_UNSIGNED (TREE_TYPE (c))
+-      && TREE_INT_CST_HIGH (c) == -1
+-      && !TREE_OVERFLOW (c))
+-      /* So c is an unsigned integer which type is sizetype.
+-         sizetype'd integers are sign extended even though they are
+-	 unsigned. If the integer value fits in the lower end word of c,
+-	 and if the higher end word has all its bits set to 1, that
+-	 means the higher end bits are set to 1 only for sign extension.
+-	 So let's convert c into an equivalent zero extended unsigned
+-	 integer.  */
+-      c = force_fit_type_double (size_type_node,
+-				 TREE_INT_CST_LOW (c),
+-				 TREE_INT_CST_HIGH (c),
+-				 false, false);
+   /* Check if C >= type_low_bound.  */
+   if (type_low_bound && TREE_CODE (type_low_bound) == INTEGER_CST)
+     {
+Index: gcc/testsuite/g++.dg/other/new-size-type.C
+===================================================================
+--- gcc/testsuite/g++.dg/other/new-size-type.C.orig	2008-11-05 22:19:39.000000000 +0100
++++ gcc/testsuite/g++.dg/other/new-size-type.C	2009-11-20 13:50:50.000000000 +0100
+@@ -5,6 +5,6 @@
+ const char*
+ foo()
+ {
+-    return new char[~static_cast<size_t>(0)];// { dg-bogus "large" }
++    return new char[~static_cast<size_t>(0)];// { dg-bogus "large" "" { xfail *-*-* } }
+ }
+ 

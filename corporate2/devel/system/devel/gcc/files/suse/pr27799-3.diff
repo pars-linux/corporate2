@@ -1,0 +1,71 @@
+Fix wrong alias info with missing SFT aliases for SMTs.  bnc#419260
+
+Index: gcc/tree-ssa-alias.c
+===================================================================
+*** gcc/tree-ssa-alias.c.orig	2009-05-15 13:34:18.000000000 +0200
+--- gcc/tree-ssa-alias.c	2009-05-15 13:37:40.000000000 +0200
+*************** compute_flow_insensitive_aliasing (struc
+*** 2497,2502 ****
+--- 2497,2503 ----
+  	{
+  	  struct alias_map_d *v_map;
+  	  var_ann_t v_ann;
++ 	  tree alias_var;
+  	  
+  	  v_map = ai->addressable_vars[j];
+  	  var = v_map->var;
+*************** compute_flow_insensitive_aliasing (struc
+*** 2509,2515 ****
+  	     So, for correctness we need to include any aliased
+  	     variable here.  */
+  
+! 	  if (may_alias_p (p_map->var, p_map->set, var, v_map->set, false))
+  	    {
+  	      /* We should never have a var with subvars here, because
+  	         they shouldn't get into the set of addressable vars */
+--- 2510,2520 ----
+  	     So, for correctness we need to include any aliased
+  	     variable here.  */
+  
+! 	  /* For the may_alias_p query we have to use the parent variable.  */
+! 	  alias_var = (TREE_CODE (var) == STRUCT_FIELD_TAG
+! 		       ? SFT_PARENT_VAR (var) : var);
+! 	  if (may_alias_p (p_map->var, p_map->set,
+! 			   alias_var, get_alias_set (alias_var), false))
+  	    {
+  	      /* We should never have a var with subvars here, because
+  	         they shouldn't get into the set of addressable vars */
+Index: gcc/testsuite/gcc.c-torture/execute/nov419260.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- gcc/testsuite/gcc.c-torture/execute/nov419260.c	2009-05-15 13:34:27.000000000 +0200
+***************
+*** 0 ****
+--- 1,27 ----
++ struct seq_elem {
++     struct seq_elem *next;
++     struct seq_elem *prev;
++ };
++ 
++ static struct seq_elem b;
++ void
++ __attribute__((noinline))
++ init (struct seq_elem *a)
++ {
++   b.prev = a;
++   b.next = 0;
++   a->prev = 0;
++   a->next = &b;
++ }
++ 
++ extern void abort (void);
++ int main(void)
++ {
++   struct seq_elem a;
++   init (&a);
++   struct seq_elem *ttt = a.next;
++   ttt->prev->next = ttt->next;
++   if (ttt == a.next)
++     abort ();
++   return 0;
++ }
