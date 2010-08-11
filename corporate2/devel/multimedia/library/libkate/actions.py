@@ -10,8 +10,7 @@ from pisi.actionsapi import get
 
 def setup():
     pisitools.dosed("configure", "HAVE_PYTHON=yes", "HAVE_PYTHON=no")
-    autotools.configure("--enable-docs \
-                         --enable-static=no")
+    autotools.configure("--enable-static=no")
 
 def build():
     autotools.make()
