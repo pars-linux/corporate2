@@ -12,17 +12,15 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 def setup():
-    # Don't use zlib from source
-    pisitools.dosed("configure.in", "zlib/Makefile dnl", "dnl zlib/Makefile")
     autotools.autoreconf("-fi")
 
     # Export flags
     shelltools.export("CFLAGS", "%s -DHAVE_ERRNO_AS_DEFINE=1 -fPIC" % get.CFLAGS())
     shelltools.export("CXXFLAGS", "%s \
-                                   -felide-constructors \
-                                   -fno-exceptions \
-                                   -fno-rtti \
-                                   -fno-implicit-templates -fPIC" % get.CXXFLAGS())
+                                     -felide-constructors \
+                                     -fno-exceptions \
+                                     -fno-rtti \
+                                     -fno-implicit-templates -fPIC" % get.CXXFLAGS())
 
     # Configure!
     autotools.configure("--libexecdir=/usr/sbin \
@@ -45,10 +43,8 @@ def setup():
                          --with-charset=utf8 \
                          --with-collation=utf8_general_ci \
                          --with-extra-charsets=all \
-                         --with-berkeley-db=./bdb \
                          --with-geometry \
                          --with-big-tables \
-                         --without-bench \
                          --enable-assembler \
                          --with-plugins=innobase \
                          --with-embedded-server")
