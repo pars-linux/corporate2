@@ -18,6 +18,7 @@ def setup():
 
     autotools.rawConfigure("--shared \
                             --release \
+                            --dot dot \
                             --prefix /usr \
                             --with-doxywizard")
 
