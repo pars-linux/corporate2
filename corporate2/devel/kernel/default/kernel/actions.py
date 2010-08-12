@@ -45,4 +45,3 @@ def install():
     # Build and install the new 'perf' tool
     autotools.make("V=1 -C tools/perf perf")
     pisitools.insinto("/usr/bin", "tools/perf/perf", "perf.%s-%s" % (get.srcNAME(), get.srcVERSION()))
-    autotools.install("-C tools/perf/Documentation install-man mandir=%s/usr/share/man" % get.installDIR())
