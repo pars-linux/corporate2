@@ -19,13 +19,10 @@
         </AdditionalFiles>
         <BuildDependencies>
             <Dependency>cpio</Dependency>
-            <Dependency>xmlto</Dependency>
             <Dependency>unifdef</Dependency>
             <Dependency>elfutils</Dependency>
-            <Dependency>asciidoc</Dependency>
             <Dependency>diffutils</Dependency>
             <Dependency>bootsplash</Dependency>
-            <Dependency>docbook-xsl</Dependency>
         </BuildDependencies>
         <Patches>
             <!-- Fix x86 MCE malfunctioning (#11923) -->
@@ -38,7 +35,8 @@
             <!-- btrfs: prevent users from setting ACLs on files they do not own (CVE-2010-2071) (#13492) -->
             <!-- sctp: crash due to malformed SCTPChunkInit packet (CVE-2010-1173) (#12914) -->
             <!-- KEYS: find_keyring_by_name() can gain access to a freed keyring (#12915)  -->
-            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.16.bz2</Patch>
+            <!-- xfs: prevent swapext from operating on write-only files (CVE-2010-2226) (#13530) -->
+            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.18.bz2</Patch>
 
             <!-- Security patches -->
 
@@ -67,18 +65,12 @@
 
             <!-- Subset of Fedora Kernel Patches -->
 
-            <!-- ext4: Fix possible data corruption with ext4 mounted with -o discard -->
-            <Patch level="1">fedora/ext4-issue-discard-operation-before-releasing-blocks.patch</Patch>
-
             <!-- Enable support for kworld ub435-q and 340u usb atsc tuners -->
             <Patch level="1">fedora/linux-2.6-v4l-dvb-add-kworld-a340-support.patch</Patch>
             <Patch level="1">fedora/linux-2.6-v4l-dvb-add-lgdt3304-support.patch</Patch>
 
             <!-- thinkpad_acpi: Fix backlight control on some recent Thinkpads -->
             <Patch level="1">fedora/thinkpad-acpi-fix-backlight.patch</Patch>
-
-            <!-- ssb: check for sprom to fix hard hangs -->
-            <Patch level="1">fedora/ssb_check_for_sprom.patch</Patch>
 
             <!-- hid: add multi-input quirk for eGalax Touchcontroller -->
             <Patch level="1">fedora/linux-2.6-input-hid-quirk-egalax.patch</Patch>
@@ -140,10 +132,12 @@
             <Patch level="1">drm/add-list_sort.patch</Patch>
             <Patch level="1">drm/i2c-algo-bit-Add-pre-and-post-xfer-hooks.patch</Patch>
             <Patch level="1">drm/2.6.34-base.patch</Patch>
-            <Patch level="1">drm/2.6.34.patch</Patch>
+            <!-- FIXME: port to .18
+            <Patch level="1">drm/2.6.34.patch</Patch>-->
 
             <!--<Patch level="1">drm/vga-switcheroo-fixes.patch</Patch>-->
 
+            <!-- FIXME: port to .18
             <Patch level="1">drm/i915-edp-fixes.patch</Patch>
 
             <Patch level="1">drm/drm-nouveau-don-t-execute-INIT_GPIO-unless-we-re-rea.patch</Patch>
@@ -157,6 +151,7 @@
             <Patch level="1">drm/fedora/drm-intel-make-lvds-work.patch</Patch>
             <Patch level="1">drm/fedora/linux-2.6-intel-iommu-igfx.patch</Patch>
             <Patch level="1">drm/fedora/drm-intel-gen5-dither.patch</Patch>
+            -->
 
             <!-- Use the same resolution when switching from vesafb to KMS -->
             <Patch level="1">drm/pardus/kms-use-vesafb-mode.patch</Patch>
@@ -427,6 +422,18 @@
     </Package>
 
     <History>
+        <Update release="141" type="security">
+            <Date>2010-08-12</Date>
+            <Version>2.6.32.18</Version>
+            <Comment>
+                - Version bump to 2.6.32.18,
+                - btrfs: fix checks in BTRFS_IOC_CLONE_RANGE (CVE-2010-{2537,2538}) (#13897),
+                - GFS2: rename causes kernel Oops (CVE-2010-2798) (#13905),
+                - xfs: prevent swapext from operating on write-only files (CVE-2010-2226) (#13530),
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="140">
             <Date>2010-07-05</Date>
             <Version>2.6.32.16</Version>
