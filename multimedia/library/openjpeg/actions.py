@@ -18,14 +18,16 @@ def setup():
 def build():
     autotools.make("CC=\"%s\" LIBRARIES=\"-lm\" COMPILERFLAGS=\"%s -std=c99 -fPIC\"" % (get.CC(), get.CFLAGS()))
 
+    # doxygen builddep causes a circle between ['doxygen', 'graphviz', 'gtk2', 'cups', 'poppler', 'openjpeg']
     # docs
-    shelltools.cd("doc")
-    shelltools.system("doxygen Doxyfile.dox")
+    # shelltools.cd("doc")
+    # shelltools.system("doxygen Doxyfile.dox")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     pisitools.dosym("../openjpeg.h", "/usr/include/openjpeg/openjpeg.h")
 
-    pisitools.dohtml("html/*")
+    # pisitools.dohtml("html/*")
+
     pisitools.dodoc("ChangeLog", "README.linux", "license.txt")
