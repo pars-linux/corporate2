@@ -5,7 +5,6 @@
 
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 def setup():
@@ -14,16 +13,13 @@ def setup():
     pisitools.dosed("tmake/lib/linux-g++/tmake.conf", "PARDUS_CFLAGS", get.CFLAGS())
     pisitools.dosed("tmake/lib/linux-g++/tmake.conf", "PARDUS_LDFLAGS", get.LDFLAGS())
 
-    shelltools.export("QTDIR", "/usr/qt/4")
-
     autotools.rawConfigure("--shared \
                             --release \
                             --dot dot \
-                            --prefix /usr \
-                            --with-doxywizard")
+                            --prefix /usr")
 
 def build():
-    autotools.make("QMAKE=qmake-qt4")
+    autotools.make()
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
