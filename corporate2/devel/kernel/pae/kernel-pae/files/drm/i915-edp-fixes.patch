@@ -20,11 +20,37 @@ Date:   Wed Jun 30 11:46:17 2010 +1000
     Signed-off-by: Dave Airlie <airlied@redhat.com>
     Signed-off-by: Eric Anholt <eric@anholt.net>
 
-diff --git a/drivers/gpu/drm/i915/intel_dp.c b/drivers/gpu/drm/i915/intel_dp.c
-index 77e40cf..b223312 100644
---- a/drivers/gpu/drm/i915/intel_dp.c
-+++ b/drivers/gpu/drm/i915/intel_dp.c
-@@ -138,6 +138,12 @@ intel_dp_link_required(struct drm_device *dev,
+Index: linux-2.6.32/drivers/gpu/drm/i915/intel_dp.c
+===================================================================
+--- linux-2.6.32.orig/drivers/gpu/drm/i915/intel_dp.c
++++ linux-2.6.32/drivers/gpu/drm/i915/intel_dp.c
+@@ -43,6 +43,7 @@
+ #define DP_LINK_CONFIGURATION_SIZE	9
+ 
+ #define IS_eDP(i) ((i)->type == INTEL_OUTPUT_EDP)
++#define IS_PCH_eDP(dp_priv) ((dp_priv)->has_edp)
+ 
+ struct intel_dp_priv {
+ 	uint32_t output_reg;
+@@ -58,6 +59,7 @@ struct intel_dp_priv {
+ 	struct intel_encoder *intel_encoder;
+ 	struct i2c_adapter adapter;
+ 	struct i2c_algo_dp_aux_data algo;
++	bool has_edp;
+ };
+ 
+ static void
+@@ -130,14 +132,21 @@ intel_dp_link_required(struct drm_device
+ 		       struct intel_encoder *intel_encoder, int pixel_clock)
+ {
+ 	struct drm_i915_private *dev_priv = dev->dev_private;
++	struct intel_dp_priv *dp_priv = intel_encoder->dev_priv;
+ 
+-	if (IS_eDP(intel_encoder))
++	if (IS_eDP(intel_encoder) || IS_PCH_eDP(dp_priv))
+ 		return (pixel_clock * dev_priv->edp_bpp) / 8;
+ 	else
+ 		return pixel_clock * 3;
  }
  
  static int
@@ -37,7 +63,7 @@ index 77e40cf..b223312 100644
  intel_dp_mode_valid(struct drm_connector *connector,
  		    struct drm_display_mode *mode)
  {
-@@ -145,8 +151,11 @@ intel_dp_mode_valid(struct drm_connector *connector,
+@@ -145,8 +154,11 @@ intel_dp_mode_valid(struct drm_connector
  	int max_link_clock = intel_dp_link_clock(intel_dp_max_link_bw(intel_encoder));
  	int max_lanes = intel_dp_max_lane_count(intel_encoder);
  
@@ -51,7 +77,7 @@ index 77e40cf..b223312 100644
  		return MODE_CLOCK_HIGH;
  
  	if (mode->clock < 10000)
-@@ -498,7 +507,7 @@ intel_dp_mode_fixup(struct drm_encoder *encoder, struct drm_display_mode *mode,
+@@ -498,7 +510,7 @@ intel_dp_mode_fixup(struct drm_encoder *
  
  	for (lane_count = 1; lane_count <= max_lane_count; lane_count <<= 1) {
  		for (clock = 0; clock <= max_clock; clock++) {
@@ -60,7 +86,7 @@ index 77e40cf..b223312 100644
  
  			if (intel_dp_link_required(encoder->dev, intel_encoder, mode->clock)
  					<= link_avail) {
-@@ -513,6 +522,18 @@ intel_dp_mode_fixup(struct drm_encoder *encoder, struct drm_display_mode *mode,
+@@ -513,6 +525,18 @@ intel_dp_mode_fixup(struct drm_encoder *
  			}
  		}
  	}
@@ -79,138 +105,7 @@ index 77e40cf..b223312 100644
  	return false;
  }
  
-
-commit 47008d8cb76c53100e210e6540964644bde6fcb4
-Author: Zhao Yakui <yakui.zhao@intel.com>
-Date:   Tue Jun 1 16:35:45 2010 +0800
-
-    drm/i915: Configure dither for eDP
-    
-    The non-8 BPC can be used for the eDP output device that is
-    connected through DP-A or DP-D on PCH. In such case we should
-    set the PIPECONF dither correctly.
-    
-    Signed-off-by: Zhao Yakui <yakui.zhao@intel.com>
-    Tested-by: Jan-Hendrik Zab <jan@jhz.name>
-    Signed-off-by: Zhenyu Wang <zhenyuw@linux.intel.com>
-
-diff --git a/drivers/gpu/drm/i915/intel_display.c b/drivers/gpu/drm/i915/intel_display.c
-index c7502b6..5225012 100644
---- a/drivers/gpu/drm/i915/intel_display.c
-+++ b/drivers/gpu/drm/i915/intel_display.c
-@@ -3239,6 +3239,18 @@ static int intel_crtc_mode_set(struct drm_crtc *crtc,
- 	/* setup pipeconf */
- 	pipeconf = I915_READ(pipeconf_reg);
- 
-+	/* configure the dither for eDP */
-+	if (HAS_PCH_SPLIT(dev) &&
-+	    (is_edp || (is_dp && intel_pch_has_edp(crtc)))) {
-+		pipeconf &= ~PIPE_DITHER_TYPE_MASK;
-+		if ((pipeconf & PIPE_BPC_MASK) != PIPE_8BPC) {
-+			pipeconf |= PIPE_ENABLE_DITHER;
-+			pipeconf |= PIPE_DITHER_TYPE_ST01;
-+		} else {
-+			pipeconf &= ~PIPE_ENABLE_DITHER;
-+		}
-+	}
-+
- 	/* Set up the display plane register */
- 	dspcntr = DISPPLANE_GAMMA_ENABLE;
- 
-
-commit df25c51f76c81c634f58e8861581a14cdd85b31d
-Author: Linus Torvalds <torvalds@linux-foundation.org>
-Date:   Fri Jul 2 10:04:42 2010 +1000
-
-    drm/i915: fix hibernation since 4bdadb9785696439c6e2b3efe34aa76df1149c83
-    
-    Since 4bdadb9785696439c6e2b3efe34aa76df1149c83, we've been passing
-    GFP_MOVABLE where we weren't before caused hibernate on Intel hardware
-    to results in a lot of memory corruptions on resume.
-    
-    [airlied: linus please enhance commit msg if you commit this]
-    
-    http://bugzilla.kernel.org/show_bug.cgi?id=13811
-    
-    Reported-by: Evengi Golov (in bugzilla)
-    Signed-off-by: Dave Airlie <airlied@redhat.com>
-    Tested-by: M. Vefa Bicakci <bicave@superonline.com>
-
-diff --git a/drivers/gpu/drm/i915/i915_gem.c b/drivers/gpu/drm/i915/i915_gem.c
-index ef3d91d..1974293 100644
---- a/drivers/gpu/drm/i915/i915_gem.c
-+++ b/drivers/gpu/drm/i915/i915_gem.c
-@@ -2312,7 +2312,7 @@ i915_gem_object_get_pages(struct drm_gem_object *obj,
- 	mapping = inode->i_mapping;
- 	for (i = 0; i < page_count; i++) {
- 		page = read_cache_page_gfp(mapping, i,
--					   mapping_gfp_mask (mapping) |
-+					   GFP_HIGHUSER |
- 					   __GFP_COLD |
- 					   gfpmask);
- 		if (IS_ERR(page))
-
-commit 5a9109631d2f99ae441cac41da9d3c78923794c2
-Author: Zhao Yakui <yakui.zhao@intel.com>
-Date:   Mon May 31 14:56:27 2010 +0800
-
-    drm/i915: Add the support of eDP on DP-D for Ibex/CPT
-    
-    This one adds support for eDP that connected on PCH DP-D port
-    instead of CPU DP-A port, and only DP-D port could be used for eDP.
-    
-    https://bugs.freedesktop.org/show_bug.cgi?id=27220
-    
-    Signed-off-by: Zhao Yakui <yakui.zhao@intel.com>
-    Tested-by: Jan-Hendrik Zab <jan@jhz.name>
-    Tested-by: Templar <templar@rshc.de>
-    Signed-off-by: Zhenyu Wang <zhenyuw@linux.intel.com>
-
-diff --git a/drivers/gpu/drm/i915/intel_display.c b/drivers/gpu/drm/i915/intel_display.c
-index 5225012..0873bf8 100644
---- a/drivers/gpu/drm/i915/intel_display.c
-+++ b/drivers/gpu/drm/i915/intel_display.c
-@@ -3073,7 +3073,7 @@ static int intel_crtc_mode_set(struct drm_crtc *crtc,
- 				temp |= PIPE_8BPC;
- 			else
- 				temp |= PIPE_6BPC;
--		} else if (is_edp) {
-+		} else if (is_edp || (is_dp && intel_pch_has_edp(crtc))) {
- 			switch (dev_priv->edp_bpp/3) {
- 			case 8:
- 				temp |= PIPE_8BPC;
-diff --git a/drivers/gpu/drm/i915/intel_dp.c b/drivers/gpu/drm/i915/intel_dp.c
-index b223312..04b20b3 100644
---- a/drivers/gpu/drm/i915/intel_dp.c
-+++ b/drivers/gpu/drm/i915/intel_dp.c
-@@ -43,6 +43,7 @@
- #define DP_LINK_CONFIGURATION_SIZE	9
- 
- #define IS_eDP(i) ((i)->type == INTEL_OUTPUT_EDP)
-+#define IS_PCH_eDP(dp_priv) ((dp_priv)->has_edp)
- 
- struct intel_dp_priv {
- 	uint32_t output_reg;
-@@ -58,6 +59,7 @@ struct intel_dp_priv {
- 	struct intel_encoder *intel_encoder;
- 	struct i2c_adapter adapter;
- 	struct i2c_algo_dp_aux_data algo;
-+	bool has_edp;
- };
- 
- static void
-@@ -130,8 +132,9 @@ intel_dp_link_required(struct drm_device *dev,
- 		       struct intel_encoder *intel_encoder, int pixel_clock)
- {
- 	struct drm_i915_private *dev_priv = dev->dev_private;
-+	struct intel_dp_priv *dp_priv = intel_encoder->dev_priv;
- 
--	if (IS_eDP(intel_encoder))
-+	if (IS_eDP(intel_encoder) || IS_PCH_eDP(dp_priv))
- 		return (pixel_clock * dev_priv->edp_bpp) / 8;
- 	else
- 		return pixel_clock * 3;
-@@ -555,14 +558,14 @@ intel_reduce_ratio(uint32_t *num, uint32_t *den)
+@@ -534,14 +558,14 @@ intel_reduce_ratio(uint32_t *num, uint32
  }
  
  static void
@@ -227,7 +122,7 @@ index b223312..04b20b3 100644
  	m_n->gmch_n = link_clock * nlanes;
  	intel_reduce_ratio(&m_n->gmch_m, &m_n->gmch_n);
  	m_n->link_m = pixel_clock;
-@@ -570,6 +573,28 @@ intel_dp_compute_m_n(int bytes_per_pixel,
+@@ -549,6 +573,28 @@ intel_dp_compute_m_n(int bytes_per_pixel
  	intel_reduce_ratio(&m_n->link_m, &m_n->link_n);
  }
  
@@ -256,7 +151,7 @@ index b223312..04b20b3 100644
  void
  intel_dp_set_m_n(struct drm_crtc *crtc, struct drm_display_mode *mode,
  		 struct drm_display_mode *adjusted_mode)
-@@ -579,7 +604,7 @@ intel_dp_set_m_n(struct drm_crtc *crtc, struct drm_display_mode *mode,
+@@ -558,7 +604,7 @@ intel_dp_set_m_n(struct drm_crtc *crtc, 
  	struct drm_connector *connector;
  	struct drm_i915_private *dev_priv = dev->dev_private;
  	struct intel_crtc *intel_crtc = to_intel_crtc(crtc);
@@ -265,7 +160,7 @@ index b223312..04b20b3 100644
  	struct intel_dp_m_n m_n;
  
  	/*
-@@ -594,6 +619,8 @@ intel_dp_set_m_n(struct drm_crtc *crtc, struct drm_display_mode *mode,
+@@ -573,6 +619,8 @@ intel_dp_set_m_n(struct drm_crtc *crtc, 
  
  		if (intel_encoder->type == INTEL_OUTPUT_DISPLAYPORT) {
  			lane_count = dp_priv->lane_count;
@@ -274,7 +169,7 @@ index b223312..04b20b3 100644
  			break;
  		}
  	}
-@@ -603,7 +630,7 @@ intel_dp_set_m_n(struct drm_crtc *crtc, struct drm_display_mode *mode,
+@@ -582,7 +630,7 @@ intel_dp_set_m_n(struct drm_crtc *crtc, 
  	 * the number of bytes_per_pixel post-LUT, which we always
  	 * set up for 8-bits of R/G/B, or 3 bytes total.
  	 */
@@ -283,23 +178,25 @@ index b223312..04b20b3 100644
  			     mode->clock, adjusted_mode->clock, &m_n);
  
  	if (HAS_PCH_SPLIT(dev)) {
-@@ -732,13 +759,13 @@ intel_dp_dpms(struct drm_encoder *encoder, int mode)
+@@ -756,7 +804,7 @@ intel_dp_dpms(struct drm_encoder *encode
  	if (mode != DRM_MODE_DPMS_ON) {
  		if (dp_reg & DP_PORT_EN) {
  			intel_dp_link_down(intel_encoder, dp_priv->DP);
--			if (IS_eDP(intel_encoder))
-+			if (IS_eDP(intel_encoder) || IS_PCH_eDP(dp_priv))
+-			if (IS_eDP(intel_encoder)) {
++			if (IS_eDP(intel_encoder) || IS_PCH_eDP(dp_priv)) {
  				ironlake_edp_backlight_off(dev);
- 		}
+ 				ironlake_edp_panel_off(dev);
+ 			}
+@@ -764,7 +812,7 @@ intel_dp_dpms(struct drm_encoder *encode
  	} else {
  		if (!(dp_reg & DP_PORT_EN)) {
  			intel_dp_link_train(intel_encoder, dp_priv->DP, dp_priv->link_configuration);
--			if (IS_eDP(intel_encoder))
-+			if (IS_eDP(intel_encoder) || IS_PCH_eDP(dp_priv))
+-			if (IS_eDP(intel_encoder)) {
++			if (IS_eDP(intel_encoder) || IS_PCH_eDP(dp_priv)) {
+ 				ironlake_edp_panel_on(dev);
  				ironlake_edp_backlight_on(dev);
- 		}
- 	}
-@@ -1246,6 +1273,7 @@ static int intel_dp_get_modes(struct drm_connector *connector)
+ 			}
+@@ -1264,6 +1312,7 @@ static int intel_dp_get_modes(struct drm
  	struct intel_encoder *intel_encoder = to_intel_encoder(connector);
  	struct drm_device *dev = intel_encoder->base.dev;
  	struct drm_i915_private *dev_priv = dev->dev_private;
@@ -307,7 +204,7 @@ index b223312..04b20b3 100644
  	int ret;
  
  	/* We should parse the EDID data and find out if it has an audio sink
-@@ -1256,7 +1284,7 @@ static int intel_dp_get_modes(struct drm_connector *connector)
+@@ -1274,7 +1323,7 @@ static int intel_dp_get_modes(struct drm
  		return ret;
  
  	/* if eDP has no EDID, try to use fixed panel mode from VBT */
@@ -316,7 +213,7 @@ index b223312..04b20b3 100644
  		if (dev_priv->panel_fixed_mode != NULL) {
  			struct drm_display_mode *mode;
  			mode = drm_mode_duplicate(dev, dev_priv->panel_fixed_mode);
-@@ -1320,6 +1348,26 @@ intel_dp_hot_plug(struct intel_encoder *intel_encoder)
+@@ -1338,6 +1387,26 @@ intel_dp_hot_plug(struct intel_encoder *
  		intel_dp_check_link_status(intel_encoder);
  }
  
@@ -343,7 +240,7 @@ index b223312..04b20b3 100644
  void
  intel_dp_init(struct drm_device *dev, int output_reg)
  {
-@@ -1356,6 +1404,11 @@ intel_dp_init(struct drm_device *dev, int output_reg)
+@@ -1374,6 +1443,11 @@ intel_dp_init(struct drm_device *dev, in
  	if (IS_eDP(intel_encoder))
  		intel_encoder->clone_mask = (1 << INTEL_EDP_CLONE_BIT);
  
@@ -355,7 +252,7 @@ index b223312..04b20b3 100644
  	intel_encoder->crtc_mask = (1 << 0) | (1 << 1);
  	connector->interlace_allowed = true;
  	connector->doublescan_allowed = 0;
-@@ -1404,7 +1457,7 @@ intel_dp_init(struct drm_device *dev, int output_reg)
+@@ -1422,7 +1496,7 @@ intel_dp_init(struct drm_device *dev, in
  	intel_encoder->ddc_bus = &dp_priv->adapter;
  	intel_encoder->hot_plug = intel_dp_hot_plug;
  
@@ -364,11 +261,43 @@ index b223312..04b20b3 100644
  		/* initialize panel mode from VBT if available for eDP */
  		if (dev_priv->lfp_lvds_vbt_mode) {
  			dev_priv->panel_fixed_mode =
-diff --git a/drivers/gpu/drm/i915/intel_drv.h b/drivers/gpu/drm/i915/intel_drv.h
-index e302537..29b57af 100644
---- a/drivers/gpu/drm/i915/intel_drv.h
-+++ b/drivers/gpu/drm/i915/intel_drv.h
-@@ -175,6 +175,7 @@ extern void intel_dp_init(struct drm_device *dev, int dp_reg);
+Index: linux-2.6.32/drivers/gpu/drm/i915/intel_display.c
+===================================================================
+--- linux-2.6.32.orig/drivers/gpu/drm/i915/intel_display.c
++++ linux-2.6.32/drivers/gpu/drm/i915/intel_display.c
+@@ -3075,7 +3075,7 @@ static int intel_crtc_mode_set(struct dr
+ 				temp |= PIPE_8BPC;
+ 			else
+ 				temp |= PIPE_6BPC;
+-		} else if (is_edp) {
++		} else if (is_edp || (is_dp && intel_pch_has_edp(crtc))) {
+ 			switch (dev_priv->edp_bpp/3) {
+ 			case 8:
+ 				temp |= PIPE_8BPC;
+@@ -3241,6 +3241,18 @@ static int intel_crtc_mode_set(struct dr
+ 	/* setup pipeconf */
+ 	pipeconf = I915_READ(pipeconf_reg);
+ 
++	/* configure the dither for eDP */
++	if (HAS_PCH_SPLIT(dev) &&
++	    (is_edp || (is_dp && intel_pch_has_edp(crtc)))) {
++		pipeconf &= ~PIPE_DITHER_TYPE_MASK;
++		if ((pipeconf & PIPE_BPC_MASK) != PIPE_8BPC) {
++			pipeconf |= PIPE_ENABLE_DITHER;
++			pipeconf |= PIPE_DITHER_TYPE_ST01;
++		} else {
++			pipeconf &= ~PIPE_ENABLE_DITHER;
++		}
++	}
++
+ 	/* Set up the display plane register */
+ 	dspcntr = DISPPLANE_GAMMA_ENABLE;
+ 
+Index: linux-2.6.32/drivers/gpu/drm/i915/intel_drv.h
+===================================================================
+--- linux-2.6.32.orig/drivers/gpu/drm/i915/intel_drv.h
++++ linux-2.6.32/drivers/gpu/drm/i915/intel_drv.h
+@@ -175,6 +175,7 @@ extern void intel_dp_init(struct drm_dev
  void
  intel_dp_set_m_n(struct drm_crtc *crtc, struct drm_display_mode *mode,
  		 struct drm_display_mode *adjusted_mode);
