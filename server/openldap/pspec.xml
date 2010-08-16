@@ -10,7 +10,7 @@
         </Packager>
         <License>OPENLDAP</License>
         <Summary>Open-source suite of LDAP applications and development tools</Summary>
-        <Description>OpenLDAP is an open-source suite of LDAP (Lightweight Directory Access Protocol) applications and development tools</Description>
+        <Description>OpenLDAP is an open-source suite of LDAP (Lightweight Directory Access Protocol) applications and development tools.</Description>
         <Archive sha1sum="26027e7020256c5f47e17787f17ee8b31af42378" type="targz">http://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-2.4.23.tgz</Archive>
         <BuildDependencies>
             <Dependency>cyrus-sasl</Dependency>
@@ -34,6 +34,7 @@
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="config">/etc/openldap/ldap.conf*</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="man">/usr/share/man/man1</Path>
             <Path fileType="header">/usr/include</Path>
@@ -44,7 +45,7 @@
         <Name>openldap-server</Name>
         <IsA>service</IsA>
         <Summary>OpenLDAP server slapd and releated tools</Summary>
-        <Description>OpenLDAP server slapd, additional backends, configuration files, schema definitions required for operation, and database maintenance tools</Description>
+        <Description>OpenLDAP server slapd, additional backends, configuration files, schema definitions required for operation, and database maintenance tools.</Description>
         <RuntimeDependencies>
             <Dependency>cyrus-sasl</Dependency>
             <Dependency versionFrom="2.3.39">openldap-client</Dependency>
@@ -52,7 +53,11 @@
         <Files>
             <Path fileType="executable">/usr/sbin</Path>
             <Path fileType="library">/usr/libexec</Path>
-            <Path fileType="config">/etc</Path>
+            <Path fileType="config">/etc/conf.d</Path>
+            <Path fileType="config">/etc/openldap/DB_CONFIG.example</Path>
+            <Path fileType="config">/etc/openldap/schema</Path>
+            <Path fileType="config">/etc/openldap/slapd.conf*</Path>
+            <Path fileType="config">/etc/openldap/ssl*</Path>
             <Path fileType="data">/var</Path>
             <Path fileType="doc">/usr/share/doc</Path>
             <Path fileType="man">/usr/share/man/man3</Path>
@@ -60,7 +65,7 @@
             <Path fileType="man">/usr/share/man/man8</Path>
         </Files>
         <AdditionalFiles>
-            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/slapd">slapd.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/slapd.conf">slapd.conf</AdditionalFile>
             <AdditionalFile owner="root" permission="0755" target="/etc/openldap/ssl/gencert.sh">gencert.sh</AdditionalFile>
         </AdditionalFiles>
         <Provides>
@@ -70,6 +75,13 @@
     </Package>
 
     <History>
+        <Update release="28">
+            <Date>2010-08-16</Date>
+            <Version>2.4.23</Version>
+            <Comment>Moved ldap.conf to openldap-client package.</Comment>
+            <Name>Bahadır Kandemir</Name>
+            <Email>bahadir@pardus.org.tr</Email>
+        </Update>
         <Update release="27">
             <Date>2010-07-15</Date>
             <Version>2.4.23</Version>

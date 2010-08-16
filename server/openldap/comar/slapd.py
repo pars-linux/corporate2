@@ -3,7 +3,7 @@ from comar.service import *
 serviceType = "server"
 serviceDesc = _({"en": "OpenLDAP Server",
                  "tr": "OpenLDAP Sunucusu"})
-serviceConf = "slapd"
+serviceConf = "slapd.conf"
 
 def start():
     import os
