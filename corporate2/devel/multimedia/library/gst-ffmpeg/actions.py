@@ -10,7 +10,7 @@ from pisi.actionsapi import pisitools
 
 
 def setup():
-    autotools.autoreconf("-fi")
+    autotools.autoreconf("-vfi")
     autotools.configure("--disable-static \
                          --disable-valgrind \
                          --with-system-ffmpeg")
