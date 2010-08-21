@@ -14,11 +14,11 @@ shelltools.export("HOME", get.workDIR())
 
 def setup():
     shelltools.export("AUTOPOINT", "true")
-    autotools.autoreconf("-fi")
+    autotools.autoreconf("-vfi")
     #shelltools.system("./autogen.sh --disable-gtk-doc --disable-docbook")
 
-    autotools.configure("--with-package-name=\"GStreamer package for Pardus\" \
-                         --with-package-origin=\"http://www.pardus.org.tr/eng\" \
+    autotools.configure('--with-package-name="GStreamer package for Pardus" \
+                         --with-package-origin="http://www.pardus.org.tr/eng" \
                          --enable-tests \
                          --enable-nls \
                          --disable-dependency-tracking \
@@ -27,7 +27,7 @@ def setup():
                          --disable-static \
                          --disable-rpath \
                          --disable-valgrind \
-                         --disable-gtk-doc")
+                         --disable-gtk-doc')
 
 def build():
     autotools.make()
