@@ -7,6 +7,7 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import get
 
 def setup():
+    autotools.autoreconf("-vif")
     autotools.configure("--enable-bittorrent \
                          --enable-metalink \
                          --enable-epoll \
@@ -17,7 +18,8 @@ def setup():
                          --with-sqlite3 \
                          --with-libxml2 \
                          --with-libcares \
-                         --with-libz")
+                         --with-libz \
+                         --with-ca-bundle=/etc/ssl/certs/ca-bundle.crt")
 
 def build():
     autotools.make("-C po update-gmo")
