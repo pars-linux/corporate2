@@ -15,8 +15,8 @@ import os
 
 WorkDir = "mplayer"
 gcc_version = "4.3.5"
-mp_version = "31982"
-ff_version = "24839"
+mp_version = "32006"
+ff_version = "24910"
 
 dllloader = "" if get.ARCH() == "x86_64" else "--enable-win32dll \
                                                --codecsdir=/usr/lib/%(esdir)s" % {"esdir": "essential"}
