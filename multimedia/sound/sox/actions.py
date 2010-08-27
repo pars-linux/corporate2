@@ -28,8 +28,6 @@ def setup():
                          --with-mad \
                          --with-id3tag \
                          --with-lame \
-                         --with-amr-wb \
-                         --with-amr-nb \
                          --with-samplerate \
                          --with-ladspa")
 
