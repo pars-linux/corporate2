@@ -16,11 +16,12 @@ def setup():
     shelltools.export("CC", get.CC())
     shelltools.export("CFLAGS", "%s -fno-strict-aliasing" % get.CFLAGS())
 
+    pisitools.dosed("configure", '^has_wx="yes', 'has_wx="no')
     shelltools.chmod("configure")
-    autotools.configure('--enable-amr \
-                         --enable-svg \
+    autotools.configure('--enable-svg \
                          --enable-pic \
                          --disable-wx \
+                         --disable-amr \
                          --use-a52=no \
                          --use-ffmpeg=no \
                          --use-ogg=system \
