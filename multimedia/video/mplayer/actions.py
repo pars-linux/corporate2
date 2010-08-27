@@ -15,11 +15,9 @@ import os
 
 WorkDir = "mplayer"
 gcc_version = "4.3.5"
-mp_version = "32006"
-ff_version = "24910"
+mp_version = "32021"
+ff_version = "24953"
 
-dllloader = "" if get.ARCH() == "x86_64" else "--enable-win32dll \
-                                               --codecsdir=/usr/lib/%(esdir)s" % {"esdir": "essential"}
 
 def fixPermissions(dest):
     for root, dirs, files in os.walk(dest):
@@ -109,6 +107,7 @@ def setup():
                             --enable-shm \
                             --enable-smb \
                             --enable-sse \
+                            --enable-sse2 \
                             --enable-tga \
                             --enable-tv \
                             --enable-tv-v4l1 \
@@ -126,10 +125,9 @@ def setup():
                             --enable-xvmc \
                             --with-xvmclib=XvMCW \
                             --charset=UTF-8 \
-                            %s \
                             --extra-libs="-lopenal -ljack -lass" \
                             --disable-rpath' \
-                            % dllloader)
+                            )
 
                             # stuff that fail hede=yes check, but working with hede=auto
                             # --disable-faad-external \
