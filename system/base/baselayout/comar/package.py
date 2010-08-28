@@ -106,6 +106,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
               "postdrop",
               "postfix",
               "postgres",
+              "privoxy",
               "power",
               "pulse",
               "pulse-access",
@@ -159,6 +160,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
              "postfix",
              "postgres",
              "pulse",
+             "privoxy",
              "qemu",
              "quasselcore",
              "radiusd",
@@ -249,10 +251,6 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     # privoxy
     hav("addGroup", (162, "privoxy"))
 
-    # kvm & qemu groups
-    hav("addGroup", (163, "kvm"))
-    hav("addGroup", (164, "qemu"))
-
     # Comar' profile groups
     hav("addGroup", (200, "pnp"))
     hav("addGroup", (201, "removable"))
@@ -306,7 +304,6 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     hav("addUser", (160, "usbmuxd", "usbmuxd daemon", "/dev/null", "/bin/false", "", ["usbmuxd"], [], []))
     hav("addUser", (161, "openvpn", "OpenVPN", "/etc/openvpn", "/sbin/nologin", "", ["openvpn"], [], []))
     hav("addUser", (162, "privoxy", "Privoxy", "/etc/privoxy", "/sbin/nologin", "", ["privoxy"], [], []))
-    hav("addUser", (163, "qemu", "qemu user", "/", "/sbin/nologin", "", ["qemu", "kvm"], [], []))
 
     # Comar' profile users
     hav("addUser", (200, "pnp", "PnP", "/dev/null", "/bin/false", "", ["pnp"], [], []))
