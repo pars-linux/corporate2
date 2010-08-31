@@ -8,7 +8,7 @@ from pisi.actionsapi import pythonmodules
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = "yali-master_20100722"
+#WorkDir = "yali-master_20100722"
 def setup():
     if get.ARCH() == "i686":
         repo_uri = "http://packages.pardus.org.tr/corporate2/pisi-index.xml.bz2"
