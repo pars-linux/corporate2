@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Licensed under the GNU General Public License, version 2.
@@ -6,13 +5,18 @@
 
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import shelltools
+from pisi.actionsapi import get
 
 def setup():
-    autotools.autoconf()
+    cflags = "%s -fno-strict-aliasing" % get.CFLAGS()
+    shelltools.export("CFLAGS", cflags)
+    shelltools.export("CXXFLAGS", cflags)
+
     autotools.configure("--enable-gtk2 \
                          --enable-shared \
                          --disable-optimise \
-                         --enable-debug_info \
+                         --disable-debug \
                          --enable-no_deps \
                          --disable-rpath \
                          --enable-intl \
