@@ -1,0 +1,91 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>samba4</Name>
+        <Homepage>http://www.samba.org</Homepage>
+        <Packager>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv3</License>
+        <License>LGPLv3</License>
+        <IsA>app:console</IsA>
+        <IsA>library</IsA>
+        <Summary>A suite of SMB and CIFS client/server programs for UNIX</Summary>
+        <Description>Samba 4 is the ambitious next version of the Samba suite that is being developed in parallel to the stable 3.0 series. The main emphasis in this branch is support for the Active Directory logon protocols used by Windows 2000 and above.</Description>
+        <Archive sha1sum="dc7bc71001a45d49d6fda31f40fc950a8a657452" type="targz">http://www.samba.org/samba/ftp/samba4/samba-4.0.0alpha10.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>docbook-xsl</Dependency>
+            <Dependency>ctdb</Dependency>
+            <Dependency>perl-Parse-Yapp</Dependency>
+            <Dependency>cyrus-sasl</Dependency>
+            <Dependency versionFrom="2.0.1">libtalloc</Dependency>
+            <Dependency versionFrom="0.9.8">libtevent</Dependency>
+            <Dependency versionFrom="1.2.0">libtdb</Dependency>
+        </BuildDependencies>
+    </Source>
+
+    <Package>
+        <Name>samba4</Name>
+        <RuntimeDependencies>
+            <Dependency>cyrus-sasl</Dependency>
+            <Dependency versionFrom="2.0.1">libtalloc</Dependency>
+            <Dependency versionFrom="1.2.0">libtdb</Dependency>
+            <Dependency versionFrom="0.9.8">libtevent</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc</Path>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="executable">/sbin</Path>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="executable">/usr/sbin</Path>
+            <Path fileType="localedata">/usr/share/locale</Path>
+            <Path fileType="data">/usr/share/samba</Path>
+            <Path fileType="data">/var/log/samba</Path>
+            <Path fileType="data">/var/run/samba</Path>
+            <Path fileType="data">/var/lib/samba</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>samba4-devel</Name>
+        <IsA>data</IsA>
+        <Summary>Header and pkg-config files of Samba4 package</Summary>
+        <RuntimeDependencies>
+            <Dependency release="1">samba4</Dependency>
+            <Dependency>libtalloc</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>samba4-pidl</Name>
+        <IsA>data</IsA>
+        <Summary>Perl IDL compiler</Summary>
+        <RuntimeDependencies>
+            <Dependency>perl</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="3">perl-Parse-Yapp</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="library">/usr/lib/perl*</Path>
+            <Path fileType="data">/usr/share/perl*</Path>
+            <Path fileType="man">/usr/share/man</Path>
+        </Files>
+    </Package>
+
+    <History>
+        <Update release="1">
+            <Date>2010-07-14</Date>
+            <Version>4.0.0_alpha10</Version>
+            <Comment>First release.</Comment>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
