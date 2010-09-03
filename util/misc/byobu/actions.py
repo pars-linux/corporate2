@@ -6,16 +6,16 @@
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import shelltools
+from pisi.actionsapi import autotools
 
+def setup():
+    autotools.configure()
+
+def build():
+    autotools.make()
 
 def install():
-    pisitools.insinto("/", "etc")
-    pisitools.insinto("/", "usr")
+    autotools.install()
 
-    for pofile in shelltools.ls("po/*.po"):
-        lang = shelltools.baseName(pofile)[:-3]
-        pisitools.domo(pofile, lang, "byobu.mo")
-
-    pisitools.dodoc("AUTHORS", "README", "COPYING")
+    pisitools.dodoc("AUTHORS", "README", "COPYING", "ChangeLog")
 
