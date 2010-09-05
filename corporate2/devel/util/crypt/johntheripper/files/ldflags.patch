@@ -1,91 +1,95 @@
-diff -Nur john-1.7.3.4-old/src/Makefile john-1.7.3.4/src/Makefile
---- john-1.7.3.4-old/src/Makefile	2010-06-28 17:58:40.864950124 +0300
-+++ john-1.7.3.4/src/Makefile	2010-06-28 17:59:32.762823731 +0300
-@@ -15,9 +15,9 @@
- PERL = perl
- NULL = /dev/null
- CPPFLAGS = -E
--CFLAGS = -c -Wall -O2 -fomit-frame-pointer -I/usr/local/include -L/usr/local/lib
-+CFLAGS = -c -Wall -O2 -fomit-frame-pointer  
- ASFLAGS = -c
--LDFLAGS = -s -L/usr/local/lib -L/usr/local/ssl/lib -lcrypto -lm
-+override LDFLAGS +=    -lcrypto -lm
+diff -Nur john-1.7.6-old/src/Makefile john-1.7.6/src/Makefile
+--- john-1.7.6-old/src/Makefile	2010-09-05 01:46:00.584269654 +0300
++++ john-1.7.6/src/Makefile	2010-09-05 01:46:02.676269508 +0300
+@@ -21,12 +21,12 @@
+ #OMPFLAGS = -fopenmp
+ # Sun Studio with OpenMP (set the OMP_NUM_THREADS env var at runtime)
+ #OMPFLAGS = -xopenmp
+-CFLAGS = -c -Wall -O2 -fomit-frame-pointer -I/usr/local/include $(OMPFLAGS)
++CFLAGS = -c -Wall -O2 -fomit-frame-pointer  $(OMPFLAGS)
+ # -DHAVE_SKEY
+ ASFLAGS = -c $(OMPFLAGS)
+-LDFLAGS = -s -L/usr/local/lib -L/usr/local/ssl/lib -lcrypto -lm $(OMPFLAGS)
++override LDFLAGS +=    -lcrypto -lm $(OMPFLAGS)
+ # -lskey
+-LDFLAGS_MKV = -s -lm
++LDFLAGS_MKV =  -lm
  OPT_NORMAL = -funroll-loops
  OPT_INLINE = -finline-functions
  
-@@ -417,7 +417,7 @@
+@@ -430,7 +430,7 @@
+ 		JOHN_OBJS="$(JOHN_OBJS) c3_fmt.o" \
+ 		CC=cc \
+ 		CFLAGS="-c -fast -xarch=native64 -DHAVE_CRYPT $(OMPFLAGS)" \
+-		LDFLAGS="-s -xarch=native64 $(OMPFLAGS) -lc -lrt" \
++		LDFLAGS=" -xarch=native64 $(OMPFLAGS) -lc -lrt" \
+ 		OPT_NORMAL="" \
+ 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
+ 
+@@ -447,7 +447,7 @@
+ 		JOHN_OBJS="$(JOHN_OBJS) c3_fmt.o" \
+ 		CC=cc \
+ 		CFLAGS="-c -xO4 -xarch=v8plusa -xchip=ultra -DHAVE_CRYPT $(OMPFLAGS)" \
+-		LDFLAGS="-s $(OMPFLAGS) -lc -lrt" \
++		LDFLAGS=" $(OMPFLAGS) -lc -lrt" \
+ 		OPT_NORMAL="" \
+ 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
+ 
+@@ -457,7 +457,7 @@
+ 		JOHN_OBJS="$(JOHN_OBJS) c3_fmt.o" \
+ 		CC=cc \
+ 		CFLAGS="-c -xO4 -xarch=v8 -DHAVE_CRYPT $(OMPFLAGS)" \
+-		LDFLAGS="-s $(OMPFLAGS) -lc -lrt" \
++		LDFLAGS=" $(OMPFLAGS) -lc -lrt" \
+ 		OPT_NORMAL="" \
+ 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
+ 
+@@ -475,7 +475,7 @@
+ 		CC=cc \
+ 		CFLAGS="-c -fast -xarch=native64 -DHAVE_CRYPT $(OMPFLAGS)" \
+ 		ASFLAGS="-c -xarch=native64 $(OMPFLAGS)" \
+-		LDFLAGS="-s -xarch=native64 $(OMPFLAGS) -lrt" \
++		LDFLAGS=" -xarch=native64 $(OMPFLAGS) -lrt" \
+ 		OPT_NORMAL="" \
+ 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
+ 
+@@ -494,7 +494,7 @@
+ 		CC=cc \
+ 		CFLAGS="-c -fast -xarch=native -DHAVE_CRYPT $(OMPFLAGS)" \
+ 		ASFLAGS="-c -xarch=native $(OMPFLAGS)" \
+-		LDFLAGS="-s -xarch=native $(OMPFLAGS) -lrt" \
++		LDFLAGS=" -xarch=native $(OMPFLAGS) -lrt" \
+ 		OPT_NORMAL="" \
+ 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
+ 
+@@ -512,7 +512,7 @@
+ 		CC=cc \
+ 		CFLAGS="-c -fast -xarch=native -DHAVE_CRYPT $(OMPFLAGS)" \
+ 		ASFLAGS="-c -xarch=native $(OMPFLAGS)" \
+-		LDFLAGS="-s -xarch=native $(OMPFLAGS) -lrt" \
++		LDFLAGS=" -xarch=native $(OMPFLAGS) -lrt" \
+ 		OPT_NORMAL="" \
+ 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
+ 
+@@ -532,7 +532,7 @@
+ 		CC=cc \
+ 		CFLAGS="-c -xO4 -DHAVE_CRYPT $(OMPFLAGS)" \
+ 		ASFLAGS="-c $(OMPFLAGS)" \
+-		LDFLAGS="-s $(OMPFLAGS) -lc -lrt" \
++		LDFLAGS=" $(OMPFLAGS) -lc -lrt" \
+ 		OPT_NORMAL="" \
+ 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
+ 
+@@ -599,7 +599,7 @@
  	$(MAKE) $(PROJ) \
  		CC=cc \
- 		CFLAGS="-c -fast -xarch=native64" \
--		LDFLAGS="-s -xarch=native64 -lc -lrt" \
-+		LDFLAGS=" -xarch=native64 -lc -lrt" \
- 		OPT_NORMAL="" \
- 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
- 
-@@ -448,7 +448,7 @@
- 		JOHN_OBJS="$(JOHN_OBJS_ORIG) spro-sparc.o" \
- 		CC=cc \
- 		CFLAGS="-c -xO4 -xarch=v8plusa -xchip=ultra" \
--		LDFLAGS="-s -lc -lrt" \
-+		LDFLAGS=" -lc -lrt" \
- 		OPT_NORMAL="" \
- 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
- 
-@@ -458,7 +458,7 @@
- 		JOHN_OBJS="$(JOHN_OBJS_ORIG) spro-sparc.o" \
- 		CC=cc \
- 		CFLAGS="-c -xO4 -xarch=v8" \
--		LDFLAGS="-s -lc -lrt" \
-+		LDFLAGS=" -lc -lrt" \
- 		OPT_NORMAL="" \
- 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
- 
-@@ -487,7 +487,7 @@
- 		CC=cc \
- 		CFLAGS="-c -fast -xarch=native64" \
- 		ASFLAGS="-c -xarch=native64" \
--		LDFLAGS="-s -xarch=native64 -lrt" \
-+		LDFLAGS=" -xarch=native64 -lrt" \
- 		OPT_NORMAL="" \
- 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
- 
-@@ -506,7 +506,7 @@
- 		CC=cc \
- 		CFLAGS="-c -fast -xarch=native" \
- 		ASFLAGS="-c -xarch=native" \
--		LDFLAGS="-s -xarch=native -lrt" \
-+		LDFLAGS=" -xarch=native -lrt" \
- 		OPT_NORMAL="" \
- 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
- 
-@@ -523,7 +523,7 @@
- 		CC=cc \
- 		CFLAGS="-c -fast -xarch=native" \
- 		ASFLAGS="-c -xarch=native" \
--		LDFLAGS="-s -xarch=native -lrt" \
-+		LDFLAGS=" -xarch=native -lrt" \
- 		OPT_NORMAL="" \
- 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
- 
-@@ -542,7 +542,7 @@
- 		CC=cc \
- 		CFLAGS="-c -xO4" \
- 		ASFLAGS="-c" \
--		LDFLAGS="-s -lc -lrt" \
-+		LDFLAGS=" -lc -lrt" \
- 		OPT_NORMAL="" \
- 		OPT_INLINE="-xinline=s1,s2,s3,s4,s5,s6,s7,s8"
- 
-@@ -608,7 +608,7 @@
- 	$(MAKE) $(PROJ) \
- 		CC=cc \
- 		CFLAGS="$(CFLAGS) -c -qunroll=2 -qarch=ppc -qchars=signed" \
+ 		CFLAGS="-c -qunroll=2 -qarch=ppc -qchars=signed" \
 -		LDFLAGS="-s -lbsd" \
 +		LDFLAGS=" -lbsd" \
  		OPT_NORMAL="-O2" \
  		OPT_INLINE="-O3 -Q=99 -w"
  
-@@ -728,7 +728,7 @@
+@@ -744,7 +744,7 @@
  	$(MAKE) $(PROJ) \
  		CC=cc \
  		CFLAGS="-c -Aa -D_HPUX_SOURCE -DANSI_CPP" \
@@ -94,7 +98,7 @@ diff -Nur john-1.7.3.4-old/src/Makefile john-1.7.3.4/src/Makefile
  		OPT_NORMAL="+O2" \
  		OPT_INLINE="+O3 +Oinline"
  
-@@ -737,7 +737,7 @@
+@@ -753,7 +753,7 @@
  	$(MAKE) $(PROJ) \
  		CC=cc \
  		CFLAGS="-c -O2 -64 -mips4 -r10000 -signed" \
@@ -103,7 +107,7 @@ diff -Nur john-1.7.3.4-old/src/Makefile john-1.7.3.4/src/Makefile
  		OPT_NORMAL="-LNO:opt=1 -OPT:Olimit=2194" \
  		OPT_INLINE="-INLINE:all"
  
-@@ -746,7 +746,7 @@
+@@ -762,7 +762,7 @@
  	$(MAKE) $(PROJ) \
  		CC=cc \
  		CFLAGS="-c -O2 -64 -mips3 -signed" \
@@ -112,7 +116,7 @@ diff -Nur john-1.7.3.4-old/src/Makefile john-1.7.3.4/src/Makefile
  		OPT_NORMAL="-LNO:opt=1 -OPT:Olimit=2194" \
  		OPT_INLINE="-INLINE:all"
  
-@@ -755,7 +755,7 @@
+@@ -771,7 +771,7 @@
  	$(MAKE) $(PROJ) \
  		CC=cc \
  		CFLAGS="-c -O2 -32 -signed" \
