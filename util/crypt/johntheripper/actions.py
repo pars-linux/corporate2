@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008-2009 TUBITAK/UEKAE
+# Copyright 2008-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/copyleft/gpl.txt.
 
@@ -16,9 +16,14 @@ arch = "linux-x86-64" if get.ARCH() == "x86_64" else "linux-x86-sse2"
 
 conf = {"CC": get.CC(),
         "CXX": get.CXX(),
-        "CFLAGS": "%s -fno-PIC -fno-PIE" % get.CFLAGS(),
-        "LDFLAGS": "%s -nopie" % get.LDFLAGS(),
+        "CFLAGS": get.CFLAGS(),
+        "LDFLAGS": get.LDFLAGS(),
         "ARCH": arch}
+        # "CFLAGS": "%s -fno-PIC -fno-PIE" % get.CFLAGS(),
+        # "LDFLAGS": "%s -nopie" % get.LDFLAGS(),
+
+def setup():
+    pisitools.dosed("src/params.h", '#define.*JOHN_SYSTEMWIDE_HOME.*"/usr/share/john"', '#define JOHN_SYSTEMWIDE_HOME "/etc/john"')
 
 def build():
     shelltools.cd("src")
@@ -26,10 +31,11 @@ def build():
                     CC=%(CC)s \
                     AS=%(CC)s \
                     LD=%(CC)s \
-                    CFLAGS="-c -Wall %(CFLAGS)s -DJOHN_SYSTEMWIDE -DJOHN_SYSTEMWIDE_HOME=\\\"\\\\\\\"/etc/john\\\\\\\"\\\"" \
+                    CFLAGS="-c -Wall %(CFLAGS)s -DJOHN_SYSTEMWIDE" \
                     LDFLAGS="%(LDFLAGS)s" \
                     OPT_NORMAL="" \
                     %(ARCH)s' % conf)
+                    # CFLAGS="-c -Wall %(CFLAGS)s -DJOHN_SYSTEMWIDE -DJOHN_SYSTEMWIDE_HOME=\\\"\\\\\\\"/etc/john\\\\\\\"\\\"" \
 
 def install():
     pisitools.dosbin("run/john")
