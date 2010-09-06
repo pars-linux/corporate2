@@ -2,20 +2,22 @@
 from comar.service import *
 
 serviceType = "server"
-serviceDesc = _({"en": "SNMPTrap Daemon",
-                 "tr": "SNMPTrap Servisi"})
+serviceDesc = _({"en": "Simple Network Management Protocol (SNMP) Trap Daemon",
+                 "tr": "Simple Network Management Protocol (SNMP) Trap Servisi"})
 serviceConf = "snmptrapd"
+
+pidfile = "/var/run/snmptrapd.pid"
 
 @synchronized
 def start():
     startService(command="/usr/sbin/snmptrapd",
-                args="-p /var/run/snmptrapd.pid %s"  % config.get("SNMPTRAPD_FLAGS", ""),
-                pidfile="/var/run/snmptrapd.pid",
+                args="-p %s %s"  % (pidfile, config.get("SNMPTRAPD_FLAGS", "")),
+                pidfile=pidfile,
                 donotify=True)
 
 @synchronized
 def stop():
-    stopService(pidfile="/var/run/snmptrapd.pid", donotify=True)
+    stopService(pidfile=pidfile, donotify=True)
 
 def status():
-    return isServiceRunning("/var/run/snmptrapd.pid")
+    return isServiceRunning(pidfile)

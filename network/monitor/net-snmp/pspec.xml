@@ -5,10 +5,10 @@
         <Name>net-snmp</Name>
         <Homepage>http://net-snmp.sourceforge.net/</Homepage>
         <Packager>
-            <Name>Pardus</Name>
-            <Email>admins@pardus.org.tr</Email>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
         </Packager>
-        <License>GPLv2</License>
+        <License>BSD</License>
         <IsA>library</IsA>
         <IsA>app:console</IsA>
         <Summary>A collection of SNMP protocol tools and libraries</Summary>
@@ -17,9 +17,20 @@
         <BuildDependencies>
             <Dependency versionFrom="5.10.1">perl</Dependency>
             <Dependency>libnl</Dependency>
+            <Dependency>setuptools</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">net-snmp-5.4.1-pie.patch</Patch>
+            <Patch level="1">net-snmp-5.5-dir-fix.patch</Patch>
+            <Patch level="1">net-snmp-5.5-sensors3.patch</Patch>
+            <Patch level="1">net-snmp-5.5-udptable-index.patch</Patch>
+            <Patch level="1">net-snmp-5.5-missing-bcast.patch</Patch>
+            <Patch level="1">net-snmp-5.5-tcp-pid.patch</Patch>
+            <Patch level="1">net-snmp-5.5-test-tmpdir.patch</Patch>
+            <Patch level="1">net-snmp-5.5-include-struct.patch</Patch>
+            <Patch level="1">net-snmp-5.5-mktemp-size.patch</Patch>
+            <Patch level="1">net-snmp-5.5-apsl-copying.patch</Patch>
+            <Patch level="1">net-snmp-5.5-perl-linking.patch</Patch>
             <Patch level="1">locale.patch</Patch>
         </Patches>
     </Source>
@@ -31,19 +42,20 @@
             <Dependency>libnl</Dependency>
         </RuntimeDependencies>
         <Files>
+            <Path fileType="config">/etc/snmp</Path>
+            <Path fileType="header">/usr/include</Path>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="executable">/usr/sbin/snmpd</Path>
             <Path fileType="config">/etc/conf.d/snmpd</Path>
-            <Path fileType="config">/etc/snmp/snmpd.conf.example</Path>
             <Path fileType="library">/usr/lib</Path>
-            <Path fileType="header">/usr/include</Path>
             <Path fileType="data">/usr/share/snmp</Path>
             <Path fileType="data">/var/lib</Path>
             <Path fileType="man">/usr/share/man</Path>
             <Path fileType="doc">/usr/share/doc</Path>
         </Files>
         <AdditionalFiles>
-            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/snmpd">snmpd.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/snmpd">confd-snmpd.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/snmp/snmpd.conf">net-snmpd.conf</AdditionalFile>
         </AdditionalFiles>
         <Provides>
             <COMAR script="snmpd.py">System.Service</COMAR>
@@ -53,14 +65,16 @@
     <Package>
         <Name>net-snmptrap</Name>
         <RuntimeDependencies>
-            <Dependency>net-snmp</Dependency>
+            <Dependency releaseFrom="11">net-snmp</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="executable">/usr/sbin/snmptrapd</Path>
             <Path fileType="config">/etc/conf.d/snmptrapd</Path>
+            <Path fileType="config">/etc/snmp/snmptrapd.conf</Path>
+            <Path fileType="executable">/usr/sbin/snmptrapd</Path>
         </Files>
         <AdditionalFiles>
-            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/snmptrapd">snmptrapd.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/snmptrapd">confd-snmptrapd.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/snmp/snmptrapd.conf">net-snmptrapd.conf</AdditionalFile>
         </AdditionalFiles>
         <Provides>
             <COMAR script="snmptrapd.py">System.Service</COMAR>
@@ -68,6 +82,13 @@
     </Package>
 
     <History>
+        <Update release="11">
+            <Date>2010-09-06</Date>
+            <Version>5.5</Version>
+            <Comment>Add patches, change license, enable Python build, make net-snmbtrap strictly depend on latest release of net-snmp, add sample configurations.</Comment>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
         <Update release="10">
             <Date>2009-12-29</Date>
             <Version>5.5</Version>
