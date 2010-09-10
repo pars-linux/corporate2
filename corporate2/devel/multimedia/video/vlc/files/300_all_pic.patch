@@ -1,16 +1,7 @@
---- vlc-0.8.6-rc1.orig/libs/loader/Makefile.am
-+++ vlc-0.8.6-rc1/libs/loader/Makefile.am
-@@ -16,7 +16,7 @@ endif
- # TODO: real check for vsscanf() and <sys/mmap.h>
- AM_CPPFLAGS = -D__WINE__ -DHAVE_SYS_MMAN_H=1 -DHAVE_VSSCANF=1 \
- 	-DWIN32_PATH=\"\" -DTRACE\(...\)=\(void\)0
--AM_CFLAGS = -fno-PIC `$(top_builddir)/vlc-config --cflags` -U_FILE_OFFSET_BITS \
-+AM_CFLAGS = -fPIC `$(top_builddir)/vlc-config --cflags` -U_FILE_OFFSET_BITS \
- 	-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer
- 
- noinst_HEADERS = com.h driver.h ext.h ldt_keeper.h loader.h registry.h \
---- vlc-0.8.6-rc1.orig/libs/loader/module.c
-+++ vlc-0.8.6-rc1/libs/loader/module.c
+Index: vlc-1.1/libs/loader/module.c
+===================================================================
+--- vlc-1.1.orig/libs/loader/module.c
++++ vlc-1.1/libs/loader/module.c
 @@ -63,8 +63,8 @@
  
  #ifdef EMU_QTX_API
@@ -58,8 +49,10 @@
        wrapper_target=(void(*)(void))retproc;
        retproc=(FARPROC)wrapper;
      }
---- vlc-0.8.6-rc1.orig/libs/loader/stubs.s
-+++ vlc-0.8.6-rc1/libs/loader/stubs.s
+Index: vlc-1.1/libs/loader/stubs.s
+===================================================================
+--- vlc-1.1.orig/libs/loader/stubs.s
++++ vlc-1.1/libs/loader/stubs.s
 @@ -33,3 +33,6 @@ exp_EH_prolog:
  	leal  12(%esp), %ebp
  	pushl %eax
@@ -67,8 +60,10 @@
 +
 +.section .note.GNU-stack,"",@progbits
 +
---- vlc-0.8.6-rc1.orig/libs/loader/wrapper.S
-+++ vlc-0.8.6-rc1/libs/loader/wrapper.S
+Index: vlc-1.1/libs/loader/wrapper.S
+===================================================================
+--- vlc-1.1.orig/libs/loader/wrapper.S
++++ vlc-1.1/libs/loader/wrapper.S
 @@ -1,17 +1,19 @@
  .section .data
 -.globl caller_return
@@ -184,8 +179,10 @@
 +
 +.section .note.GNU-stack,"",@progbits
 +
---- vlc-0.8.6-rc1.orig/libs/loader/wrapper.h
-+++ vlc-0.8.6-rc1/libs/loader/wrapper.h
+Index: vlc-1.1/libs/loader/wrapper.h
+===================================================================
+--- vlc-1.1.orig/libs/loader/wrapper.h
++++ vlc-1.1/libs/loader/wrapper.h
 @@ -7,10 +7,6 @@ typedef struct {
    uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
  } reg386_t;
@@ -197,3 +194,16 @@
  extern void (*wrapper_target)(void);
  
  extern int wrapper(void);
+Index: vlc-1.1/libs/loader/Makefile.am
+===================================================================
+--- vlc-1.1.orig/libs/loader/Makefile.am
++++ vlc-1.1/libs/loader/Makefile.am
+@@ -14,7 +14,7 @@ noinst_LTLIBRARIES = libloader.la
+ # TODO: real check for vsscanf() and <sys/mmap.h>
+ AM_CPPFLAGS = -D__WINE__ -DHAVE_SYS_MMAN_H=1 -DHAVE_VSSCANF=1 \
+ 	-DWIN32_PATH=\"\" -DTRACE\(...\)=\(void\)0
+-AM_CFLAGS = -fno-PIC `$(top_builddir)/vlc-config --cflags libs` -U_FILE_OFFSET_BITS \
++AM_CFLAGS = -fPIC `$(top_builddir)/vlc-config --cflags libs` -U_FILE_OFFSET_BITS \
+ 	-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer
+ 
+ noinst_HEADERS = com.h driver.h ext.h ldt_keeper.h loader.h registry.h \
