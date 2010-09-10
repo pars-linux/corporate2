@@ -10,6 +10,8 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
+shelltools.export("HOME", get.workDIR())
+
 # enable loader builds DLL loader for ELF i386 platforms only
 dllloader = "" if get.ARCH() == "x86_64" else "--enable-loader"
 
@@ -19,10 +21,8 @@ def setup():
 
     shelltools.export("AUTOPOINT", "true")
     autotools.autoreconf("-vfi")
-    autotools.configure("--enable-release \
-                         --enable-shared \
+    autotools.configure("--enable-shared \
                          --enable-qt4 \
-                         --enable-hal \
                          --enable-vlm \
                          --enable-lua \
                          --enable-sout \
@@ -33,8 +33,6 @@ def setup():
                          --enable-smb \
                          --enable-dvbpsi \
                          --enable-v4l \
-                         --enable-libcdio \
-                         --enable-cddax \
                          --enable-libcddb \
                          --enable-vcdx \
                          --enable-vcd \
@@ -56,10 +54,8 @@ def setup():
                          --enable-png \
                          --enable-faad \
                          --enable-aa \
-                         --enable-x11 \
                          --enable-xvideo \
                          --enable-glx \
-                         --enable-xinerama \
                          --enable-opengl \
                          --enable-sdl \
                          --enable-freetype \
@@ -72,9 +68,12 @@ def setup():
                          --enable-lirc \
                          --enable-gnutls \
                          --enable-mozilla \
+                         --with-mozilla-pkg=libxul \
                          --enable-x264 \
                          --enable-upnp \
+                         --enable-id3tag \
                          --with-x \
+                         --with-kde-solid=no \
                          --disable-static \
                          --disable-altivec \
                          --disable-snapshot \
@@ -91,12 +90,11 @@ def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     for icon in ("128x128", "48x48", "32x32", "16x16"):
-         pisitools.insinto("/usr/share/icons/hicolor/%s/apps/" % icon, "share/vlc%s.png" % icon, "vlc.png")
+        pisitools.insinto("/usr/share/icons/hicolor/%s/apps/" % icon, "share/icons/%s/vlc*.png" % icon)
 
     # Fix Firefox plugin location
     pisitools.rename("/usr/lib/mozilla","nsbrowser")
     pisitools.remove("/usr/lib/nsbrowser/plugins/*.la")
 
-    pisitools.dodoc("AUTHORS", "THANKS", "NEWS", "README", "MAINTAINERS", "HACKING",
-                    "doc/fortunes.txt", "doc/intf-cdda.txt", "doc/intf-vcd.txt")
+    pisitools.dodoc("AUTHORS", "THANKS", "NEWS", "README", "HACKING", "doc/fortunes.txt", "doc/intf-vcd.txt")
 
