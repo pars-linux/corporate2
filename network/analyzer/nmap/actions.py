@@ -9,9 +9,10 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = "nmap-%s" % get.srcVERSION().replace("_", "").upper()
+WorkDir = "nmap-%sDC1" % get.srcVERSION().replace("_", "").upper()
 
 def setup():
+    pisitools.dosed("ncat/Makefile.in", "-m 755 -s ncat", "-m 755 ncat")
     autotools.autoconf()
     autotools.configure("--with-openssl \
                          --with-zenmap \
