@@ -14,7 +14,7 @@ from pisi.actionsapi import get
 examples = "%s/%s/examples" % (get.docDIR(), get.srcNAME())
 
 def setup():
-    pythonmodules.run('configure \
+    pythonmodules.run('configure.py \
                        --boost-python-libname=boost_python \
                        --taglib-inc-dir=/usr/include/taglib')
 
