@@ -57,10 +57,7 @@ def install():
     pisitools.dolib("libglx.so*", "%s/extensions" % base)
     pisitools.dolib("libvdpau_nvidia.so*", "%s/lib/vdpau" % base)
 
-    # Headers
-    pisitools.insinto("%s/include/CL" % base, "cl*.h")
-    pisitools.insinto("%s/include/GL" % base, "gl*.h")
-    pisitools.insinto("%s/include/cuda" % base, "cuda*.h")
+    pisitools.insinto("/etc/OpenCL/vendors", "nvidia.icd")
 
     # Documentation
     docdir = "xorg-video-%s" % driver
