@@ -11,14 +11,13 @@
         <License>GPLv2</License>
         <IsA>app:gui</IsA>
         <Summary>Additional KDE modules</Summary>
-        <Description>Contains KDE addon modules: plugins for konqueror, noatun, etc.</Description>
+        <Description>Contains KDE addon modules: plugins for konqueror, kate, etc.</Description>
         <Archive type="tarbz2" sha1sum="5342e2f0a21e9028d9aaa2ee253f89f615ee57de">mirrors://kde/stable/3.5.10/src/kdeaddons-3.5.10.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>kdelibs</Dependency>
-            <Dependency>kdepim</Dependency>
-            <Dependency>kdemultimedia</Dependency>
-            <!--<Dependency>arts</Dependency>-->
-            <Dependency>libsdl</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdebase</Dependency>
+            <Dependency>kdepim-core</Dependency>
         </BuildDependencies>
         <Patches>
             <!-- Konqueror's context menu has a 'Feed to Akregator' entry
@@ -32,31 +31,235 @@
 
             <Patch>google-suggest.diff</Patch>
             <Patch level="1">fix-underlinking.patch</Patch>
+
+            <!-- http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=commit;h=46009205a943a5f5b712cc11b72e9b017141ffeb -->
+            <Patch level="1">new_autoconf.patch</Patch>
         </Patches>
     </Source>
     <Package>
-        <Name>kdeaddons</Name>
+        <Name>kdeaddons-kaddressbook-plugins</Name>
+        <PartOf>desktop.kde.addon</PartOf>
+        <Summary>Additional Kaddressbook plugins</Summary>
+        <Description>This package contains GMX import/export and import geo data of contacts as flags in KWorldClock plugins for kaddressbook.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdepim-core</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeaddons</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkaddrbk_*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kaddressbook</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kaddressbook</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeaddons-kate-plugins</Name>
+        <PartOf>desktop.kde.addon</PartOf>
+        <Summary>Additional Kate text editor plugins</Summary>
+        <Description>This package contains cppsymbolviewer, filelistloader, filetemplates, helloworld, htmltools, insertcommand, kjswrapper, kpybrowser, make, modeline, scripts, snippets, tabbarextension, openheader, textfilter, xmlcheck, xmltools plugins for Kate.</Description>
         <RuntimeDependencies>
             <Dependency>kdelibs</Dependency>
-            <Dependency>kdepim</Dependency>
-            <Dependency>kdemultimedia</Dependency>
-            <!--<Dependency>arts</Dependency>-->
-            <Dependency>libsdl</Dependency>
+            <Dependency>kdebase</Dependency>
+            <Dependency>qt3</Dependency>
         </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeaddons</Package>
+        </Replaces>
         <Files>
-            <Path fileType="executable">/usr/kde/3.5/bin</Path>
-            <Path fileType="library">/usr/kde/3.5/lib</Path>
-            <Path fileType="doc">/usr/kde/3.5/share/doc</Path>
-            <Path fileType="data">/usr/kde/3.5/share/apps</Path>
-            <Path fileType="data">/usr/kde/3.5/share/icons</Path>
-            <Path fileType="data">/usr/kde/3.5/share/mimelnk</Path>
-            <Path fileType="data">/usr/kde/3.5/share/applnk</Path>
-            <Path fileType="config">/usr/kde/3.5/share/config*</Path>
-            <Path fileType="data">/usr/kde/3.5/share/services</Path>
-            <Path fileType="data">/usr/kde/3.5/share/applications</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kate*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkatetabbarextensionplugin.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/katefll.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kate*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kate*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kate-plugins</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeaddons-kfile-plugins</Name>
+        <PartOf>desktop.kde.addon</PartOf>
+        <Summary>Additional Kfile library plugins</Summary>
+        <Description>This package contains cert, desktop, folder, html, lnk, mhtml, txt plugins for kfile.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeaddons</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/lnkforward</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kfile_cert.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kfile_desktop.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kfile_folder.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kfile_html.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kfile_lnk.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kfile_mhtml.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kfile_txt.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/lnkforward.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/mimelnk/application/x-win-lnk.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kfile_*</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeaddons-kicker-applets</Name>
+        <PartOf>desktop.kde.addon</PartOf>
+        <Summary>Additional Kicker panel applets</Summary>
+        <Description>This package contains kbinaryclock, kolourpicker, ktimemon, kbandwidth, math, mediacontrol applets for kicker.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdebase</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeaddons</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kbinaryclock_panelapplet.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kolourpicker_panelapplet.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/ktimemon_panelapplet.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/math_panelapplet.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/mediacontrol_panelapplet.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kicker/applets</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/mediacontrol</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kbinaryclock.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/*/*/apps/ktimemon.png</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kicker-applets</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeaddons-knewsticker-scripts</Name>
+        <PartOf>network.plugin</PartOf>
+        <Summary>Additional knewsticker scripts</Summary>
+        <Description>This package contains fyensget, bbc, kataribe, newsrss, stock scripts for knewsticker applet.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdenetwork-knewsticker</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeaddons</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="data">/usr/kde/3.5/share/apps/knewsticker/scripts</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeaddons-konqueror-plugins</Name>
+        <PartOf>desktop.kde.addon</PartOf>
+        <Summary>Additional konqueror file/web browser plugins</Summary>
+        <Description>This package contains akregator, arkplugin, autorefresh, babelfish, crashes, dirfilter, domtreeviewer, fsview, imagerotation, khtmlsettingsplugin, kimgalleryplugin, kuick, mediarealfolder, microformat, minitools, rellinks, searchbar, sidebar/mediaplayer, sidebar/newsticker, smbmounter, uachanger, validators, webarchiver plugins for Konqueror file/web browser.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdebase</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeaddons</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/fsview</Path>
+            <Path fileType="executable">/usr/kde/3.5/bin/jpegorient</Path>
+            <Path fileType="executable">/usr/kde/3.5/bin/kio_media_realfolder</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kcm_kuick.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/konqsidebar_delicious.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/konqsidebar_metabar.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/konq_sidebarnews.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libakregatorkonq*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libarkplugin.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libautorefresh.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libbabelfishplugin.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libcrashesplugin.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libdirfilterplugin.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libdomtreeviewerplugin.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libfsviewpart.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkhtmlsettingsplugin.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkimgallery.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkuickplugin.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libmfkonqmficon.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libminitoolsplugin.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/librellinksplugin.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libsearchbarplugin.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libuachangerplugin.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libvalidatorsplugin.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libwebarchiverplugin.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/webarchivethumbnail.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/arkplugin.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/crashesplugin.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/dirfilterplugin.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/fsview.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/kcmkuick.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/khtmlsettingsplugin.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/kimgalleryplugin.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/kuickplugin.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/plugin_babelfish.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/plugin_domtreeviewer.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/plugin_validators.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/plugin_webarchiver.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/uachangerplugin.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/akregator/pics/rss.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/domtreeviewer/domtreeviewerui.rc</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/fsview/fsview_part.rc</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/imagerotation</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/khtml/kpartplugins</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/konq*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/metabar</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/microformat/pics/microformat.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/konq_sidebarnews.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config/translaterc</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/actions/babelfish.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/actions/cssvalidator.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/actions/domtreeviewer.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/actions/htmlvalidator.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/actions/imagegallery.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/actions/minitools.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/actions/validators.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/actions/webarchiver.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/16x16/apps/konqsidebar_*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/actions/minitools.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/fsview.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/metabar.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/locolor/16x16/apps/autorefresh.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/akregator_konqplugin.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/ark_plugin.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/fsview_part.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kuick_plugin.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/webarchivethumbnail.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/konq-plugins</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeaddons-renamedlg-plugins</Name>
+        <PartOf>desktop.kde.addon</PartOf>
+        <Summary>Additional renamedlg library plugins</Summary>
+        <Description>This packages contains images and audio plugins for renamedlg library.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeaddons</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libren*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/ren*</Path>
         </Files>
     </Package>
     <History>
+        <Update release="22">
+            <Date>2010-07-09</Date>
+            <Version>3.5.10</Version>
+            <Comment>adapt to autoconf >= 2.64 changes, patch by Onur.</Comment>
+            <Name>Serdar Dalgıç</Name>
+            <Email>serdar@pardus.org.tr</Email>
+        </Update>
+        <Update release="21">
+            <Date>2010-01-29</Date>
+            <Version>3.5.10</Version>
+            <Comment>Split kaddressbook-plugins, kate-plugins, kfile-plugins, kicker-applets, knewsticker-scripts, konq-plugins, renamedlg-plugins packages. Remove ksig docs.</Comment>
+            <Name>Doruk Fişek</Name>
+            <Email>dfisek@fisek.com.tr</Email>
+        </Update>
         <Update release="20">
             <Date>2010-01-28</Date>
             <Version>3.5.10</Version>
