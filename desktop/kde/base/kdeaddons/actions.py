@@ -30,3 +30,6 @@ def build():
 
 def install():
     kde.install()
+
+    # DO_NOT_COMPILE doesn't cover docs
+    pisitools.removeDir("/usr/kde/3.5/share/doc/HTML/en/ksig/")
