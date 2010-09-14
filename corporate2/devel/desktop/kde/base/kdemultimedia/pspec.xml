@@ -14,24 +14,19 @@
         <Description>Contains KDE multimedia applications like KsCD, juK and base KDE multimedia libraries.</Description>
         <Archive type="tarbz2" sha1sum="c85337b959882ec9f3bb51f5e1ee4ec74a988518">mirrors://kde/stable/3.5.10/src/kdemultimedia-3.5.10.tar.bz2</Archive>
         <BuildDependencies>
-            <Dependency>kdebase</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdelibs</Dependency>
             <Dependency>cdparanoia</Dependency>
-            <Dependency>akode</Dependency>
-            <Dependency>libsamplerate</Dependency>
-            <Dependency>audiofile</Dependency>
-            <Dependency>libmad</Dependency>
+            <Dependency>taglib</Dependency>
+            <Dependency>libogg</Dependency>
             <Dependency>flac</Dependency>
-            <Dependency>lame</Dependency>
-            <Dependency>vorbis-tools</Dependency>
-            <Dependency>xine-lib</Dependency>
             <Dependency>alsa-lib</Dependency>
+            <Dependency>libvorbis</Dependency>
             <Dependency>libtheora</Dependency>
+            <Dependency>akode</Dependency>
             <Dependency>gstreamer</Dependency>
             <Dependency>gst-plugins-base</Dependency>
-            <Dependency>taglib</Dependency>
-            <Dependency>tunepimp</Dependency>
-            <Dependency>musicbrainz</Dependency>
-            <Dependency>speex</Dependency>
+            <Dependency>gst-plugins-ugly</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch>kmix-hidden.patch</Patch>
@@ -54,31 +49,158 @@
             <!-- Upstream fixes for Juk -->
             <Patch>juk-branch-fixes.patch</Patch>
 
+            <!-- http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=commit;h=46009205a943a5f5b712cc11b72e9b017141ffeb -->
+            <Patch level="1">new_autoconf.patch</Patch>
         </Patches>
     </Source>
     <Package>
-        <Name>kdemultimedia</Name>
+        <Name>kdemultimedia-juk</Name>
+        <PartOf>multimedia.sound</PartOf>
+        <Summary>A jukebox and music manager</Summary>
+        <Description>Though an able music player, JuK is primarily an audio jukebox application, with a strong focus on management of music. Many features include collection list, dynamic search playlists, automatic directory scanning and m3u import, tag editing and musicbrainz support. In tree view mode, playlists are automatically generated for sets of albums, artists and genres.</Description>
         <RuntimeDependencies>
-            <Dependency>kdebase</Dependency>
-            <Dependency>cdparanoia</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
             <Dependency>akode</Dependency>
-            <Dependency>libsamplerate</Dependency>
-            <Dependency>audiofile</Dependency>
-            <Dependency>libmad</Dependency>
-            <Dependency>flac</Dependency>
-            <Dependency>lame</Dependency>
-            <Dependency>vorbis-tools</Dependency>
-            <Dependency>xine-lib</Dependency>
-            <Dependency>alsa-lib</Dependency>
-            <Dependency>libtheora</Dependency>
             <Dependency>gstreamer</Dependency>
             <Dependency>gst-plugins-base</Dependency>
             <Dependency>gst-plugins-ugly</Dependency>
             <Dependency>taglib</Dependency>
-            <Dependency>tunepimp</Dependency>
-            <Dependency>musicbrainz</Dependency>
-            <Dependency>speex</Dependency>
         </RuntimeDependencies>
+        <Replaces>
+            <Package>kdemultimedia</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/juk</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/juk.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/juk</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/konqueror/servicemenus/jukservicemenu.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/*/*/apps/juk*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/actions/juk*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/juk</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdemultimedia-kaudiocreator</Name>
+        <PartOf>multimedia.converter</PartOf>
+        <Summary>Audio extraction tool</Summary>
+        <Description>Kaudiocreator is a utility for storing backup copies of your audio compact discs by extracting them digitally and encoding in the codec of your choosing. It also provides a job control system so you can see what files have succeeded or failed, and stop or cancel jobs as the application progresses.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdemultimedia-core</Dependency>
+            <Dependency>lame</Dependency>
+            <Dependency>vorbis-tools</Dependency>
+            <Dependency>flac</Dependency>
+            <Dependency>alsa-lib</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdemultimedia</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kaudiocreator</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kaudiocreator.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kaudiocreator</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/kaudiocreator-*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/upgrade-kaudiocreator-metadata.sh</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/konqueror/servicemenus/audiocd_extract.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kaudiocreator*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/*/*/apps/kaudiocreator.png</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kaudiocreator</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdemultimedia-kmid</Name>
+        <PartOf>multimedia.sound</PartOf>
+        <Summary>Midi player</Summary>
+        <Description>KMid is a midi player. It displays the text of karaoke files and change its colour as it is being played so that the tune can be easily followed. It uses /dev/sequencer as output device supporting external synths, AWE , GUS and also FM cards.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdemultimedia</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kmid</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkmidpart.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkmidlib.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kmid.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kmid</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kmid.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/mimelnk/audio/x-karaoke.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/servicetypes/audiomidi.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kmid</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdemultimedia-kmix</Name>
+        <PartOf>multimedia.sound</PartOf>
+        <Summary>Sound mixer</Summary>
+        <Description>KMix is an application to allow you to adjust the volume and manage all available channels of your sound card.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>alsa-lib</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdemultimedia</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kmix*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kmix*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkdeinit_kmix*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kmix.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kicker/applets/kmixapplet.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kmix</Path>
+            <Path fileType="data">/usr/kde/3.5/share/autostart/restore_kmix_volumes.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kmix.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kmixctrl_restore.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kmix</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdemultimedia-kscd</Name>
+        <PartOf>multimedia.sound</PartOf>
+        <Summary>KDE CD player</Summary>
+        <Description>KsCD is a small, fast, CDDB enabled audio CD player.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdemultimedia-core</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>alsa-lib</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdemultimedia</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kscd</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kscd.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kscd</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/profiles/kscd.profile</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kscd*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kscd</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kscd*</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdemultimedia-core</Name>
+        <IsA>library</IsA>
+        <Summary>Base files for KDE multimedia applications</Summary>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>cdparanoia</Dependency>
+            <Dependency>taglib</Dependency>
+            <Dependency>libogg</Dependency>
+            <Dependency>flac</Dependency>
+            <Dependency>alsa-lib</Dependency>
+            <Dependency>libvorbis</Dependency>
+            <Dependency>libtheora</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdemultimedia</Package>
+        </Replaces>
         <Files>
             <Path fileType="executable">/usr/kde/3.5/bin</Path>
             <Path fileType="config">/usr/kde/3.5/etc</Path>
@@ -88,6 +210,27 @@
         </Files>
     </Package>
     <History>
+        <Update release="47">
+            <Date>2010-07-09</Date>
+            <Version>3.5.10</Version>
+            <Comment>Adapt to autoconf >= 2.64 changes, patch by Onur.</Comment>
+            <Name>Serdar Dalgıç</Name>
+            <Email>serdar@pardus.org.tr</Email>
+        </Update>
+        <Update release="46">
+            <Date>2010-07-08</Date>
+            <Version>3.5.10</Version>
+            <Comment>Split kscd.</Comment>
+            <Name>Serdar Dalgıç</Name>
+            <Email>serdar@pardus.org.tr</Email>
+        </Update>
+        <Update release="45">
+            <Date>2010-01-29</Date>
+            <Version>3.5.10</Version>
+            <Comment>Split juk, kaudiocreator, kmid, kmix. Remove krec, kaboodle, noatun, artsbuilder docs.</Comment>
+            <Name>Doruk Fişek</Name>
+            <Email>dfisek@fisek.com.tr</Email>
+        </Update>
         <Update release="44">
             <Date>2010-01-28</Date>
             <Version>3.5.10</Version>
