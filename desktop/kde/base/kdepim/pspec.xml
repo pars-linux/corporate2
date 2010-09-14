@@ -14,13 +14,15 @@
         <Description>kdepim contains KDE Personal Information Management applications like KMail, KNode, and KOrganizer.</Description>
         <Archive type="tarbz2" sha1sum="537da60fe3564ecc0ed2802e744fbf96386909a9">mirrors://kde/stable/3.5.10/src/kdepim-3.5.10.tar.bz2</Archive>
         <BuildDependencies>
-            <Dependency versionFrom="3.5.10">kdebase</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
             <Dependency>libopensync</Dependency>
             <Dependency>cyrus-sasl</Dependency>
             <Dependency>pilot-link</Dependency>
             <Dependency>gnokii</Dependency>
             <Dependency>libmal</Dependency>
             <Dependency>gpgme</Dependency>
+            <Dependency>libXScrnSaver</Dependency>
         </BuildDependencies>
         <Patches>
             <!-- Branch diff -->
@@ -90,31 +92,364 @@
 
             <!-- Fix word-wrapping in kmail mailinglistproperties dialog (#2840) -->
             <Patch level="1">set-wordwrap-kmail-mailinglistproperties.patch</Patch>
+
+            <!-- http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=commit;h=46009205a943a5f5b712cc11b72e9b017141ffeb -->
+            <Patch level="1">new_autoconf.patch</Patch>
         </Patches>
     </Source>
     <Package>
-        <Name>kdepim</Name>
+        <Name>kdepim-akregator</Name>
+        <PartOf>network.rss</PartOf>
+        <Summary>RSS/Atom Feed Reader</Summary>
+        <Description>Akregator is a news feed reader that enables you to follow news sites, blogs and other RSS/Atom-enabled web sites without the need to manually check for updates using a web browser. Akregator is designed to be both easy to use and to be powerful enough to read hundreds of news sources conveniently. It comes with Konqueror integration for adding news feeds and with an internal browser for easy news reading.</Description>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.5.10">kdebase</Dependency>
+            <Dependency>kdepim-core</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdepim</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/akregator</Path>
+            <Path fileType="header">/usr/kde/3.5/include/akregator</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libakregator*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libakregatorprivate.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/akregator.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/akregator</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/akregator.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/mk4config.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/actions/rss_tag.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/*/*/apps/akregator*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/akregator_*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/feed.protocol</Path>
+            <Path fileType="data">/usr/kde/3.5/share/servicetypes/akregator_plugin.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kdepim-apidocs/akregator</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/akregator</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdepim-kalarm</Name>
+        <PartOf>util.misc</PartOf>
+        <Summary>Personal alarm message, command and email scheduler</Summary>
+        <Description>KAlarm provides a graphical interface to set up personal alarm messages which pop up on the screen at the chosen time, or you can schedule commands to be executed or emails to be sent. .</Description>
+        <RuntimeDependencies>
+            <Dependency>kdepim-core</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdepim</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kalarm*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kalarm.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/Applications/kalarm.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/.hidden/kalarmd.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kalarm</Path>
+            <Path fileType="data">/usr/kde/3.5/share/autostart/kalarm*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/*/*/*/kalarm.png</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kdepim-apidocs/kalarm</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kalarm</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdepim-karm</Name>
+        <PartOf>util.misc</PartOf>
+        <Summary>Personal Time Tracker</Summary>
+        <Description>Karm is a personal time tracker that docks your system tray. It several tasks being timed simultaneously. Tasks can be hierarchical and implicit timing of super/sub tasks is possible. Karm may detect when your keyboard and mouse have been idle for more than a certain amount of time (default 15 minutes) and suggest to you that you revert your timers, to the start of the idle period.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdepim-core</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>libXScrnSaver</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdepim</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/karm</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkarmpart.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/karm.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/Utilities/karm.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/karm*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/karm.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/karm_part.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kdepim-apidocs/karm/html</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/karm</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdepim-kitchensync</Name>
+        <IsA>library</IsA>
+        <PartOf>hardware.mobile</PartOf>
+        <Summary>Synchronization framework</Summary>
+        <Description>Kitchensync is a synchronization framework, still under heavy development. It also contains the multisync GUI frontend.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdepim-core</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
             <Dependency>libopensync</Dependency>
-            <Dependency>cyrus-sasl</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdepim</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kitchensync</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkitchensyncpart.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkitchensync.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libqopensync.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kitchensync.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kitchensync</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kitchensync.png</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kdepim-apidocs/kitchensync/html</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdepim-kmail</Name>
+        <PartOf>network.mail</PartOf>
+        <Summary>Fully featured KDE e-mail client</Summary>
+        <Description>KMail is a fully-featured email client that fits nicely into KDE. It has features such as support for powerful filters, PGP/GnuPG privacy, inline attachments, drag and drop support of messages and attachments, support for multiple POP3 and IMAP accounts, and integration into the Kontact personal information management suite.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdepim-core</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>gnupg</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdepim</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kmail*</Path>
+            <Path fileType="header">/usr/kde/3.5/include/kmail*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kcm_kmail.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkmail*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkmailprivate.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/KMail.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kmail_view.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/Utilities/kmailcvt.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/kmail*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/upgrade-signature.pl</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/upgrade-transport.pl</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kmail</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/konqueror/servicemenus/email.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/custommimeheader.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/customtemplates_kfg.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kmail.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/replyphrases.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/templatesconfiguration_kfg.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config/kmail.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/*/*/apps/kmail*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kmail_config_*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/servicetypes/dcopimap.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/servicetypes/dcopmail.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kdepim-apidocs/kmail/html</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kmail</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile target="/usr/kde/3.5/share/apps/konqueror/servicemenus/email.desktop" permission="0644" owner="root">email.desktop</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+    <Package>
+        <Name>kdepim-knode</Name>
+        <PartOf>network.rss</PartOf>
+        <Summary>News/NNTP Reader</Summary>
+        <Description>KNode is an easy-to-use GNKSA compilant NNTP newsreader with support for MIME and multiple servers.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdepim-core</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdepim</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/knode</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kcm_knode.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libknodepart.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libknodecommon.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/KNode.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/knode</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/knode*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/knewsservice.protocol</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/knode_config_*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/knode</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdepim-kontact</Name>
+        <PartOf>office.misc</PartOf>
+        <Summary>Personal Information Manager and Groupware Suite</Summary>
+        <Description>Kontact is a personal information manager and groupware software suite for KDE. It supports calendars, contacts, notes, to-do lists, news, and email. It uses KParts to embed the various applications (KMail, KAddressBook, Akregator, etc.) into the container application.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdepim-core</Dependency>
+            <Dependency>kdepim-kmail</Dependency>
+            <Dependency>kdepim-korganizer</Dependency>
+            <Dependency>kdepim-kpilot</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdepim</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kontact</Path>
+            <Path fileType="header">/usr/kde/3.5/include/kontact</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kcm_kmailsummary.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kcm_kontact*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kcm_korgsummary.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kcm_sdsummary.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkontact_*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkontact.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkpinterfaces.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kontactdcop.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/Kontact.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/knotes/knotes_part.rc</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kontact*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kontact.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/*/*/*/kontact*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kcmkmailsummary.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kcmkontact*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kcmkorgsummary.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kcmsdsummary.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kontact*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/servicetypes/kontactplugin.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kontact</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kdepim-apidocs/kontact/html</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdepim-korganizer</Name>
+        <PartOf>office.misc</PartOf>
+        <Summary>Calendar/scheduling tool</Summary>
+        <Description>KOrganizer provides management of events and tasks, alarm notification, web export, network transparent handling of data, group scheduling, import and export of calendar files and more. It is able to work together with a wide variety of groupware servers. It supports the two dominant standards for storing and exchanging calendar data, vCalendar and iCalendar.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdepim-core</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdepim</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/ical2vcal</Path>
+            <Path fileType="executable">/usr/kde/3.5/bin/korga*</Path>
+            <Path fileType="header">/usr/kde/3.5/include/calendar</Path>
+            <Path fileType="header">/usr/kde/3.5/include/korganizer</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kcm_korganizer.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkorg*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkocorehelper.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkorg*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/korganizer.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/korganizer.upd</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/korga*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/autostart/korgac.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/korganizer.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/korganizer.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/korganizer*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/webcal.protocol</Path>
+            <Path fileType="data">/usr/kde/3.5/share/servicetypes/calendar*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/servicetypes/dcopcalendar.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/servicetypes/korg*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/korganizer</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kdepim-apidocs/korganizer/html</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdepim-kpilot</Name>
+        <PartOf>hardware.mobile</PartOf>
+        <Summary>Synchronization for Palm-based devices</Summary>
+        <Description>KPilot connects your Palm device and integrates a number of fine KDE applications into a package that can do everything the Palm can and more. It has plugins that can exchange information between your device and other applications like KOrganizer or POP3/SMTP mail servers. In KPilot you can display and edit your contacts, write notes or install new programs on your device.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdepim-core</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
             <Dependency>pilot-link</Dependency>
             <Dependency>libmal</Dependency>
-            <Dependency>gpgme</Dependency>
-            <Dependency>gnupg</Dependency>
             <Dependency>gnokii</Dependency>
         </RuntimeDependencies>
+        <Replaces>
+            <Package>kdepim</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kpalmdoc</Path>
+            <Path fileType="executable">/usr/kde/3.5/bin/kpilot*</Path>
+            <Path fileType="header">/usr/kde/3.5/include/kpilot</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/conduit_*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kcm_kpilot.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkpilot.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kpalmdoc.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kpilot*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kaddressbook/contacteditorpages/KPilotCustomFieldEditor.ui</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/kpalmdoc.upd</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/kpilot.upd</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kpilot</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/abbrowserconduit.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/docconduit.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/knotesconduit.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kpalmdoc.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kpilot*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/malconduit.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/memofileconduit.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/popmail.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/sysinfoconduit.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/timeconduit.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/vcalconduitbase.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/apps/kpalmdoc.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/*/*/apps/kpilot*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/abbrowser_conduit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/doc_conduit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/knotes-conduit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kpilot_config.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/mal_conduit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/memofile-conduit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/notepad-conduit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/popmail-conduit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/sysinfo_conduit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/time_conduit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/todo-conduit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/vcal-conduit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/servicetypes/kpilotconduit.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kpilot</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kdepim-apidocs/kpilot</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdepim-core</Name>
+        <IsA>library</IsA>
+        <Summary>Base KDE Personal Information Manager (PIM) applications and libraries</Summary>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>gpgme</Dependency>
+            <Dependency>cyrus-sasl</Dependency>
+            <Dependency>pilot-link</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdepim</Package>
+        </Replaces>
         <Files>
             <Path fileType="executable">/usr/kde/3.5/bin</Path>
             <Path fileType="library">/usr/kde/3.5/lib</Path>
             <Path fileType="data">/usr/kde/3.5/share</Path>
             <Path fileType="header">/usr/kde/3.5/include</Path>
         </Files>
-        <AdditionalFiles>
-            <AdditionalFile target="/usr/kde/3.5/share/apps/konqueror/servicemenus/email.desktop" permission="0644" owner="root">email.desktop</AdditionalFile>
-        </AdditionalFiles>
     </Package>
     <History>
+        <Update release="60">
+            <Date>2010-07-09</Date>
+            <Version>3.5.10</Version>
+            <Comment>adapt to autoconf >= 2.64 changes, patch by Onur.</Comment>
+            <Name>Serdar Dalgıç</Name>
+            <Email>serdar@pardus.org.tr</Email>
+        </Update>
+        <Update release="59">
+            <Date>2010-06-07</Date>
+            <Version>3.5.10</Version>
+            <Comment>Split akregator, kalarm, karm, kitchensync, kmail, knode, kontact, korganizer, kpilot. Remove kandy and korn docs.</Comment>
+            <Name>Doruk Fişek</Name>
+            <Email>dfisek@fisek.com.tr</Email>
+        </Update>
         <Update release="58">
             <Date>2010-06-07</Date>
             <Version>3.5.10</Version>

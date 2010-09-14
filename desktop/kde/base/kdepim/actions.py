@@ -23,7 +23,11 @@ def setup():
     kde.configure("--with-sasl")
 
 def build():
-    kde.make("-j1")
+    kde.make()
 
 def install():
     kde.install()
+
+    # DO_NOT_COMPILE doesn't cover docs
+    pisitools.removeDir("/usr/kde/3.5/share/doc/HTML/en/kandy/")
+    pisitools.removeDir("/usr/kde/3.5/share/doc/HTML/en/korn/")
