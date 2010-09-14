@@ -19,7 +19,7 @@ def setup():
     pisitools.dosed("admin/acinclude.m4.in", "KDE_CHECK_PYTHON_INTERN\(\"2.5", "KDE_CHECK_PYTHON_INTERN(\"%s" % get.curPYTHON().split("python")[1])
     kde.make("-f admin/Makefile.common")
 
-    shelltools.export("DO_NOT_COMPILE", "kvoctrain")
+    shelltools.export("DO_NOT_COMPILE", "kvoctrain blinken")
     kde.configure()
 
 def build():
@@ -30,3 +30,10 @@ def install():
 
     #remove desktop files, these come from kdebase now, #3665
     pisitools.removeDir("/usr/kde/3.5/share/applnk")
+
+    # remove emptydir
+    pisitools.removeDir("/usr/kde/3.5/share/doc/HTML/en/kdeedu-apidocs/libkdeedu")    
+
+    # DO_NOT_COMPILE doesn't cover docs
+    pisitools.removeDir("/usr/kde/3.5/share/doc/HTML/en/blinken")
+    pisitools.removeDir("/usr/kde/3.5/share/doc/HTML/en/kvoctrain")
