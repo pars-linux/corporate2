@@ -5,33 +5,256 @@
         <Name>kdesdk</Name>
         <Homepage>http://www.kde.org/</Homepage>
         <Packager>
-            <Name>Gökmen Göksel</Name>
-            <Email>gokmen@pardus.org.tr</Email>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
         </Packager>
         <License>GPLv2</License>
-        <IsA>app:gui</IsA>
         <Summary>KDE SDK: Cervisia, KBabel, KCachegrind, Kompare ...</Summary>
         <Archive type="tarbz2" sha1sum="1a6702e8e7741690496327b8a908fabdab5d3c79">mirrors://kde/stable/3.5.10/src/kdesdk-3.5.10.tar.bz2</Archive>
         <BuildDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>apr</Dependency>
             <Dependency>kdelibs</Dependency>
-            <Dependency>valgrind</Dependency>
             <Dependency>graphviz</Dependency>
             <Dependency>subversion</Dependency>
+            <Dependency>kdepim-core</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch>3_5_BRANCH.diff</Patch>
             <Patch>kdesdk-3.5.9-fix-underlinking.patch</Patch>
+
+            <!-- http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=commit;h=46009205a943a5f5b712cc11b72e9b017141ffeb -->
+            <Patch level="1">new_autoconf.patch</Patch>
         </Patches>
     </Source>
     <Package>
-        <Name>kdesdk</Name>
+        <Name>kdesdk-cervisia</Name>
+        <IsA>app:gui</IsA>
+        <PartOf>programming.tool</PartOf>
+        <Summary>Graphical front-end for CVS</Summary>
+        <Description>Cervisia implements the common cvs functions of adding, removing, and committing files. More advanced capabilities are importing and checking-out modules, adding/removing watches, editing/unediting and locking/unlocking files, blame-annotated file viewing, tagging/branching, conflict resolution/mergings and the ability to update to a given tag, branch or datae. Additionally, it has graphical functions that include tree and list view of the change log of a file, color coded file status, and graphical diff'ing between versions, similar to xdiff.</Description>
         <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>kdesdk-core</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdesdk</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/cervisia</Path>
+            <Path fileType="executable">/usr/kde/3.5/bin/cvsaskpass</Path>
+            <Path fileType="executable">/usr/kde/3.5/bin/cvsservice</Path>
+            <Path fileType="header">/usr/kde/3.5/include/cvsjob_stub.h</Path>
+            <Path fileType="header">/usr/kde/3.5/include/cvsservice_stub.h</Path>
+            <Path fileType="header">/usr/kde/3.5/include/repository_stub.h</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/cervisia.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/cvsaskpass.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/cvsservice.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libcervisiapart.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libcvsservice.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkdeinit_cervisia.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkdeinit_cvsaskpass.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkdeinit_cvsservice.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/cervisia.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/cervisia*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/cervisia*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/change_colors.pl</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/move_repositories.pl</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/cervisiapart.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/actions/vcs_*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/cervisia.png</Path>
+            <Path fileType="man">/usr/kde/3.5/share/man/man1/cervisia.1</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/cvsservice.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/cervisia</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdesdk-kbabel</Name>
+        <IsA>app:gui</IsA>
+        <PartOf>editor</PartOf>
+        <Summary>PO/Gettext file editor/manager</Summary>
+        <Description>KBabel's main component is a powerful and comfortable PO file editor which features full navigation capabilities, full editing functionality, the ability to search for translations in different dictionaries, spell and syntax checking, showing diffs, and much more. It also includes a "Catalog Manager", which is a file manager view that provides an overview of PO files; not to forget a standalone dictionary application.</Description>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>kdesdk-core</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdesdk</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/catalogmanager</Path>
+            <Path fileType="executable">/usr/kde/3.5/bin/kbabel*</Path>
+            <Path fileType="header">/usr/kde/3.5/include/kbabel</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kbabel*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kfile_po.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/pothumbnail.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkbabel*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/catalogmanager.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kbabel*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/catalogmanager/catalogmanagerui.rc</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kbabel</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/kbabel-*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kbabel.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kbprojectsettings.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/*/*/apps/catalogmanager.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/*/*/apps/kbabel*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/dbsearchengine.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kbabel_*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kfile_po.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/po*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/tmxcompendium.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/servicetypes/kbabel*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kbabel</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdesdk-kbugbuster</Name>
+        <IsA>app:gui</IsA>
+        <PartOf>programming.tool</PartOf>
+        <Summary>A GUI for kde.org's bugzilla</Summary>
+        <Description>KBugBuster is a client for the KDE Project's Bugzilla bug tracking system. It provides a variety of tools for querying, viewing, and manipulating bug reports.</Description>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>kdepim-core</Dependency>
+            <Dependency>kdesdk-core</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdesdk</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kbugbuster</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kcal_bugzilla.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kbugbuster.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kbugbuster</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/*/*/apps/kbugbuster.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kresources/kcal/bugzilla.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kbugbuster</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdesdk-kcachegrind</Name>
+        <IsA>app:gui</IsA>
+        <PartOf>programming.tool</PartOf>
+        <Summary>A GUI front-end for Cachegrind</Summary>
+        <Description>KCachegrind visualizes profiles of program runs in various ways, including a tree map and call graph visualization, and source and assembler annotation. It is designed to be fast and to provide a quick overview of very large programs.</Description>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>graphviz</Dependency>
+            <Dependency>kdesdk-core</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdesdk</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/*calltree</Path>
+            <Path fileType="executable">/usr/kde/3.5/bin/kcachegrind</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kcachegrind.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kcachegrind</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/*/*/apps/kcachegrind.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/mimelnk/application/x-kcachegrind.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kcachegrind</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdesdk-kompare</Name>
+        <IsA>app:gui</IsA>
+        <PartOf>programming.tool</PartOf>
+        <Summary>Graphical difference viewer</Summary>
+        <Description>Kompare is a graphical user interface for viewing the differences between files. It can compare two documents, create a diff file, display a diff file and/or blend a diff file back into the original documents. It can also recursively compare directories and merge a patch into an existing directory.</Description>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>kdesdk-core</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdesdk</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kompare</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkomparenavtreepart.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkomparepart.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkompareinterface.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kompare.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kompare</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kompare.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kompare*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/servicetypes/kompare*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kompare</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdesdk-kuiviewer</Name>
+        <IsA>app:gui</IsA>
+        <PartOf>programming.tool</PartOf>
+        <Summary>.ui files display/tester</Summary>
+        <Description>KUIViewer is a utility to display and test the user interface (.ui) files generated by Qt Designer. The interfaces can be displayed in a variety of different widget styles.</Description>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>kdesdk-core</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdesdk</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kuiviewer</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkuiviewerpart.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/quithumbnail.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kuiviewer.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kuiviewer*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/*/*/apps/kuiviewer.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/designerthumbnail.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kuiviewer_part.desktop</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdesdk-umbrello</Name>
+        <IsA>app:gui</IsA>
+        <PartOf>programming.tool</PartOf>
+        <Summary>KDE UML Modeller</Summary>
+        <Description>Umbrello UML Modeller is a Unified Modelling Language diagram application for KDE.</Description>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>kdesdk-core</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdesdk</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/umbodoc</Path>
+            <Path fileType="executable">/usr/kde/3.5/bin/umbrello</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/umbrello.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/umbrello*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/umbrello</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/actions/umbrello_diagram_*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/mimetypes/umbrellofile.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/umbrello.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/mimetypes/umbrellofile.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/mimelnk/application/x-umbrello.desktop</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdesdk-core</Name>
+        <IsA>library</IsA>
+        <IsA>app:console</IsA>
+        <Summary>KDE SDK core libraries and applications</Summary>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency>apr</Dependency>
             <Dependency>cvs</Dependency>
             <Dependency>kdelibs</Dependency>
-            <Dependency>valgrind</Dependency>
+            <!--<Dependency>valgrind</Dependency>-->
             <Dependency>graphviz</Dependency>
             <Dependency>subversion</Dependency>
         </RuntimeDependencies>
+        <Replaces>
+            <Package>kdesdk</Package>
+        </Replaces>
         <Files>
             <Path fileType="executable">/usr/kde/3.5/bin</Path>
             <Path fileType="library">/usr/kde/3.5/lib</Path>
@@ -41,6 +264,20 @@
         </Files>
     </Package>
     <History>
+        <Update release="24">
+            <Date>2010-07-09</Date>
+            <Version>3.5.10</Version>
+            <Comment>Adapt to autoconf >= 2.64 changes, patch by Onur.</Comment>
+            <Name>Serdar Dalgıç</Name>
+            <Email>serdar@pardus.org.tr</Email>
+        </Update>
+        <Update release="23">
+            <Date>2010-02-01</Date>
+            <Version>3.5.10</Version>
+            <Comment>Split cervisia, kbabel, kbugbuster, kcachegrind, kompare, kuiviewer, umbrello packages.</Comment>
+            <Name>Doruk Fişek</Name>
+            <Email>dfisek@fisek.com.tr</Email>
+        </Update>
         <Update release="22">
             <Date>2010-02-01</Date>
             <Version>3.5.10</Version>
