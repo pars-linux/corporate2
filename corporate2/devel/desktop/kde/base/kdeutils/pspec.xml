@@ -5,17 +5,18 @@
         <Name>kdeutils</Name>
         <Homepage>http://www.kde.org/</Homepage>
         <Packager>
-            <Name>Gökmen Göksel</Name>
-            <Email>gokmen@pardus.org.tr</Email>
+            <Name>Serdar Dalgıç</Name>
+            <Email>serdar@pardus.org.tr</Email>
         </Packager>
         <License>GPLv2+</License>
         <IsA>app:gui</IsA>
         <Summary>KDE utilities</Summary>
         <Archive type="tarbz2" sha1sum="dfa440253fd9802d1a9665d339c20d903ea676af">mirrors://kde/stable/3.5.10/src/kdeutils-3.5.10.tar.bz2</Archive>
         <BuildDependencies>
-            <Dependency>kdebase</Dependency>
+            <Dependency>kdelibs</Dependency>
             <Dependency>gmp</Dependency>
-            <Dependency>lirc</Dependency>
+            <Dependency>libXext</Dependency>
+            <Dependency>qt3</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">02_kmilo-defaultwidget-config.patch</Patch>
@@ -36,30 +37,356 @@
 
             <!-- Don't let khexedit.part associate with application/octet-stream -->
             <Patch level="1">remove-khexedit-mime-assignment.patch</Patch>
+
+            <!-- http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=commit;h=46009205a943a5f5b712cc11b72e9b017141ffeb -->
+            <Patch level="1">new_autoconf.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
-        <Name>kdeutils</Name>
+        <Name>kdeutils-ark</Name>
+        <PartOf>util.archive</PartOf>
+        <Summary>Tool to manage various archive formats</Summary>
+        <Description>Archives can be viewed, extracted, created and modified from within Ark. The program can handle various formats such as tar, gzip, bzip2, zip, rar and lha. Ark is also integrated into the Konqueror file/web browser.</Description>
         <RuntimeDependencies>
-            <Dependency>kdebase</Dependency>
-            <Dependency>gnupg</Dependency>
-            <Dependency>gmp</Dependency>
-            <Dependency>lirc</Dependency>
+            <Dependency>kdeutils-core</Dependency>
             <Dependency>p7zip</Dependency>
         </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/ark</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/ark.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libarkpart.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkdeinit_ark.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/ark.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/ark</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/ark.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/ark.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/ark_part.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/ark</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeutils-kcalc</Name>
+        <PartOf>science.mathematics</PartOf>
+        <Summary>Scientific calculator</Summary>
+        <Description>KCalc is a calculator which offers many more mathematical functions than meet the eye on a first glance. It provides trigonometric functions, logic operations and statistical calculations with a configurable precision. There is also a results-stack which lets you conveniently recall previous results.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>gmp</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kcalc</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kcalc.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkdeinit_kcalc.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kcalc.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kcalc/kcalcui.rc</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/kcalcrc.upd</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kcalc.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kcalc.*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kcalc</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kdeutils-apidocs/kcalc</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeutils-kcharselect</Name>
+        <PartOf>util.misc</PartOf>
+        <Summary>Character selection utility</Summary>
+        <Description>KCharSelect is a tool to select special characters from all installed fonts and copy them into the clipboard.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kcharselect</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/KCharSelect.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kcharselect/kcharselectui.rc</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kconf_update/kcharselect.upd</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kcharselect.png</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kcharselect</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeutils-kdf</Name>
+        <PartOf>hardware.disk</PartOf>
+        <Summary>Tools for monitoring available diskspace</Summary>
+        <Description>KDiskFree displays the available file devices (hard drive partitions, floppy and CD/DVD drives, etc.) along with information on their capacity, free space, type and mount point. It also allows you to mount and unmount drives and view them in a file manager. Its counterpart kwikdisk docks into the system tray and provides more-less the same functionality.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kdf</Path>
+            <Path fileType="executable">/usr/kde/3.5/bin/kwikdisk</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kcm_kdf.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kcmdf.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kdf.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kwikdisk.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kdf</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/apps/kcmdf.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kdf.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kwikdisk.png</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kdf</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeutils-kedit</Name>
+        <PartOf>util.misc</PartOf>
+        <Summary>A simple text editor for KDE</Summary>
+        <Description>KEdit serves well for creating small plain text documents. KEdit's functionality is intentionally rather limited to ensure a reasonably fast start.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kedit</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kedit.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkdeinit_kedit.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/KEdit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kedit</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kedit.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kedit.png</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kedit</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeutils-kfloppy</Name>
+        <PartOf>hardware.disk</PartOf>
+        <Summary>GUI floppy formatter</Summary>
+        <Description>Kfloppy is a utility that provides a straightforward graphical means to format 3.5" and 5.25" floppy disks.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kfloppy</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/KFloppy.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/konqueror/servicemenus/floppy_format.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kfloppy.png</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kfloppy</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeutils-kgpg</Name>
+        <PartOf>util.crypt</PartOf>
+        <Summary>A front-end for GnuPG</Summary>
+        <Description>Kgpg includes a key management window and an editor. Users can easily create cryptographic keys, and write, encrypt, decrypt, sign, or verify messages. Through integration with the Konqueror browser, users can easily encrypt/decrypt files by right-clicking.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>gnupg</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kgpg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kgpg.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kgpg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/konqueror/servicemenus/encrypt*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/autostart/kgpg.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kgpg.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kgpg.png</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kgpg</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeutils-khexedit</Name>
+        <PartOf>editor</PartOf>
+        <Summary>Binary file editor</Summary>
+        <Description>KHexEdit is a versatile binary file editor. Its key features are undo/redo, overwrite/insert modes, hexadecimal, octal, binary or text only display, goto/search/replace/insert, character table, pretty printing (postscript), export to HTML, session management and drag/drop.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/khexedit</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkbyteseditwidget.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkhexeditcommon.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkhexedit2part.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/khexedit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/khexedit*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/khexedit.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kbyteseditwidget.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/khexedit2part.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/khexedit</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeutils-kjots</Name>
+        <PartOf>util.misc</PartOf>
+        <Summary>Small note taking program</Summary>
+        <Description>Kjots is a notebook utility that organizes notes. It uses a basic tree structure to organize information: it refers to nodes as ‘books’ and leaves as ‘pages’. It includes a book view, which shows a table of contents, and a view mode for all entries.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kjots</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/Kjots.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kjots</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kjots.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kjots.png</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kjots</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeutils-kregexpeditor</Name>
+        <PartOf>editor</PartOf>
+        <Summary>Regular expression editor</Summary>
+        <Description>kregexpeditor has a very intuitive interface and contains both an inbuilt graphical editor, a verification window as well as a command line edit where one can try out different combinations of regular expressions.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kregexpeditor</Path>
+            <Path fileType="header">/usr/kde/3.5/include/kmultiformlist*</Path>
+            <Path fileType="header">/usr/kde/3.5/include/kwidgetstreamer.h</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkregexpeditorgui.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkregexpeditorcommon.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kregexpeditor.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kregexpeditor</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kregexpeditor.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kregexpeditorgui.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/KRegExpEditor</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeutils-ktimer</Name>
+        <PartOf>util.misc</PartOf>
+        <Summary>A timer application</Summary>
+        <Description>Ktimer allows you to execute commands after a certain amount of time. It also supports looping commands as well as delaying the execution of a command.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/ktimer</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/ktimer.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/ktimer.png</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/ktimer</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeutils-kwallet</Name>
+        <PartOf>util.crypt</PartOf>
+        <Summary>A credentials Management Application</Summary>
+        <Description>Kwallet provides a centralized way for users to store sensitive passwords in encrypted files, called "wallets". For added security, each wallet can be used to store a different kind of credentials, each with their own password.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kwalletmanager</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kcm_kwallet.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kwalletconfig.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kwalletmanager-kwalletd.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kwalletmanager.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kwalletmanager/icons/crystalsvg/*/*/*.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kwalletmanager/kwalleteditor.rc</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kwalletmanager/kwalletmanager.rc</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kwalletmanager.png</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kwallet_config.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kwalletmanager_show.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kwallet</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile target="/usr/kde/3.5/share/applications/kde/kwalletmanager.desktop" permission="0644" owner="root">kwalletmanager.desktop</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+    <Package>
+        <Name>kdeutils-superkaramba</Name>
+        <PartOf>desktop.misc</PartOf>
+        <Summary>Tool for interactive KDE applets</Summary>
+        <Description>SuperKaramba allows you to easily create interactive eye-candy on the KDE desktop. The interactive programs are usually embedded directly into the background and do not disturb the normal view of the desktop.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/superkaramba</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/Utilities/superkaramba.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/superkaramba/superkarambaui.rc</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/apps/superkaramba.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/crystalsvg/*/mimetypes/superkaramba_theme.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/mimelnk/application/x-superkaramba.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kdeutils-apidocs/superkaramba/html</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/superkaramba</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdeutils-core</Name>
+        <IsA>library</IsA>
+        <Summary>Base file for KDE utilities</Summary>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>lirc</Dependency>
+            <Dependency>libXext</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdeutils</Package>
+        </Replaces>
         <Files>
             <Path fileType="executable">/usr/kde/3.5/bin</Path>
             <Path fileType="library">/usr/kde/3.5/lib</Path>
             <Path fileType="data">/usr/kde/3.5/share</Path>
             <Path fileType="header">/usr/kde/3.5/include</Path>
         </Files>
-        <AdditionalFiles>
-            <AdditionalFile target="/usr/kde/3.5/share/applications/kde/kwalletmanager.desktop" permission="0644" owner="root">kwalletmanager.desktop</AdditionalFile>
-        </AdditionalFiles>
     </Package>
 
     <History>
+        <Update release="37">
+            <Date>2010-07-09</Date>
+            <Version>3.5.10</Version>
+            <Comment>Adapt to autoconf >= 2.64 changes, patch by Onur.</Comment>
+            <Name>Serdar Dalgıç</Name>
+            <Email>serdar@pardus.org.tr</Email>
+        </Update>
+        <Update release="36">
+            <Date>2010-05-29</Date>
+            <Version>3.5.10</Version>
+            <Comment>Split ark, kcalc, kcharselect, kdf, kfloppy, kgpg, khexedit, kjots, kregexpeditor, ktimer, kwallet, superkaramba, kedit.</Comment>
+            <Name>Doruk Fişek</Name>
+            <Email>dfisek@fisek.com.tr</Email>
+        </Update>
         <Update release="35">
             <Date>2010-04-05</Date>
             <Version>3.5.10</Version>
