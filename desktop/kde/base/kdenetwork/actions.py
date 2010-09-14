@@ -20,6 +20,7 @@ def setup():
     kde.make("-f admin/Makefile.common")
 
     shelltools.export("DO_NOT_COMPILE", "ksirc wifi lanbrowsing")
+
     kde.configure("--with-slp \
                    --with-wifi \
                    --disable-sametime-plugin \
@@ -39,3 +40,7 @@ def install():
     pisitools.remove("/usr/kde/3.5/share/apps/konqueror/servicemenus/kget_download.desktop")
 
     pisitools.insinto("/etc/ppp/peers", "kppp_peers", "kppp")
+
+    # DO_NOT_COMPILE doesn't cover docs
+    pisitools.removeDir ("/usr/kde/3.5/share/doc/HTML/en/ksirc/")
+    pisitools.removeDir ("/usr/kde/3.5/share/doc/HTML/en/kwifimanager/")
