@@ -10,20 +10,15 @@
         </Packager>
         <License>GPLv2</License>
         <IsA>app:gui</IsA>
+        <PartOf>multimedia.graphics</PartOf>
         <Summary>KDE graphics-related apps</Summary>
         <Archive type="tarbz2" sha1sum="9634e3ab364d017152fb6d636efad8811aeec6c3">mirrors://kde/stable/3.5.10/src/kdegraphics-3.5.10.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>kdelibs</Dependency>
-            <Dependency>kdebase</Dependency>
             <Dependency>fontconfig</Dependency>
             <Dependency>libgphoto2</Dependency>
             <Dependency>sane-backends</Dependency>
-            <Dependency>libart_lgpl</Dependency>
             <Dependency>imlib</Dependency>
-            <Dependency>lcms</Dependency>
-            <Dependency>ghostscript</Dependency>
-            <Dependency>agg</Dependency>
-            <Dependency>poppler</Dependency>
             <Dependency>poppler-qt3</Dependency>
             <Dependency>openexr</Dependency>
             <Dependency>libpaper</Dependency>
@@ -44,27 +39,267 @@
 
             <!-- Use KFax for tiff files instead of gwenview, only kfax can show multi-page tiff files -->
             <Patch>use-kfax-for-tiff-files.diff</Patch>
+
+            <!-- http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=commit;h=46009205a943a5f5b712cc11b72e9b017141ffeb -->
+            <Patch level="1">new_autoconf.patch</Patch>
         </Patches>
     </Source>
     <Package>
-        <Name>kdegraphics</Name>
+        <Name>kdegraphics-kcoloredit</Name>
+        <PartOf>multimedia.graphics</PartOf>
+        <Summary>Color palette editor</Summary>
+        <Description>KColorEdit is a palette files editor. It can be used for editing color palettes and for color choosing and naming. It supports KDE and GIMP palette files.</Description>
         <RuntimeDependencies>
             <Dependency>kdelibs</Dependency>
-            <Dependency>kdebase</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdegraphics</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kcolor*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kcolor*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kcoloredit/kcoloreditui.rc</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kcolor*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kcoloredit</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdegraphics-kdvi</Name>
+        <PartOf>multimedia.graphics</PartOf>
+        <Summary>DVI viewer</Summary>
+        <Description>This software (and embeddable KPart) displays *.DVI files from TeX typesetting system.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdegraphics-core</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdegraphics</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kdvi</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kdvipart.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kdvi.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kdvi</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kdvi.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kdvi.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kdvimultipage.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kdvi</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdegraphics-kfax</Name>
+        <PartOf>network.fax</PartOf>
+        <Summary>Fax viewer</Summary>
+        <Description>Kfax displays raw and tiffed fax images (g3, g3-2d, g4).</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdegraphics</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kfax</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kfax.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kfax</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kfax.*</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdegraphics-kfaxview</Name>
+        <PartOf>network.fax</PartOf>
+        <Summary>Kfax's embeddable kpart</Summary>
+        <Description>Kfaxview is an embeddable kpart to display tiffed fax images.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>kdegraphics-core</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdegraphics</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kfaxview</Path>
+            <Path fileType="header">/usr/kde/3.5/include/kfaximage.h</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kfaxviewpart.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkfaximage.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kfaxview.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kfaxview/kviewshell.rc</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kfaxview.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kfaxmultipage*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kdegraphics-apidocs/kfaxview/html</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdegraphics-kiconedit</Name>
+        <PartOf>multimedia.graphics</PartOf>
+        <Summary>Icon editor</Summary>
+        <Description>The KDE Icon Editor is a small graphics drawing program especially for creating icons using the standard KDE icon palette. It has most of the tools which are needed for easy creation of icons including Line, Ellipse, Circle, Rectangle, Freehand, Eraser, and Spraycan.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdegraphics</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kiconedit</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kiconedit.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kiconedit</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kiconedit.png</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kiconedit</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdegraphics-kolourpaint</Name>
+        <PartOf>multimedia.graphics</PartOf>
+        <Summary>An easy-to-use paint program</Summary>
+        <Description>KolourPaint is an easy-to-use paint program. Features include undo/redo, more than a dozen tools, selections, transparent image editing and zoom support (with an optional grid and thumbnail).</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdegraphics</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kolourpaint</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kolourpaint.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kolourpaint</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kolourpaint.*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kolourpaint</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdegraphics-kooka</Name>
+        <PartOf>hardware.scanner</PartOf>
+        <Summary>A raster image scan program</Summary>
+        <Description>Kooka is a raster image scan program. It supports scanning in different modes and resolutions, preview, scan area selection, and an image save assistant which features a gallery organised in a treeview with a comfortable image viewer and thumbnail support. OCR is also optionally supported through GOCR package.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>gocr</Dependency>
+            <Dependency>kdegraphics-core</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdegraphics</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kooka</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kooka.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kooka</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config/kookarc</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kooka</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdegraphics-kpdf</Name>
+        <PartOf>multimedia.graphics</PartOf>
+        <Summary>A PDF viewer</Summary>
+        <Description>KPDF is a PDF (portable document format) reader with many unique features such as continuous mode and presentation support. Capture images and text easily, text search, add bookmarks to pages, text in PDFs can be read through KTTS text-to-speech, change the default background/text colors. It provides side panel with thumbnails, allows double page mode.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
             <Dependency>fontconfig</Dependency>
+            <Dependency>libpaper</Dependency>
+            <Dependency>libXft</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdegraphics</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kpdf</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/libkpdfpart.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kpdf.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kpdf*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/config.kcfg/kpdf.kcfg</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kpdf.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/services/kpdf_part.desktop</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kpdf</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdegraphics-kruler</Name>
+        <PartOf>multimedia.graphics</PartOf>
+        <Summary>Measure objects on the screen</Summary>
+        <Description>KRuler is a nice little tool for all who want to keep control of their screen full of pixels. Use it to verify the layout of your newly created web pages or to quickly determine the minimum size of graphical user items you want to build into your application.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdegraphics</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kruler</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kruler.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applnk/Graphics/kruler.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kruler</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kruler.*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kruler</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdegraphics-ksnapshot</Name>
+        <PartOf>multimedia.graphics</PartOf>
+        <Summary>A screenshot application</Summary>
+        <Description>KSnapshot allows users to use hotkeys to take a screenshot of the entire screen, a selected portion, one window or just one part of a window. Users then have the choice to save the screenshot in a variety of formats, copy it to the clipboard or directly open it with any program that is associated with image files.</Description>
+        <RuntimeDependencies>
+            <Dependency>libXext</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdegraphics</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/ksnapshot</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/ksnapshot.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/ksnapshot.*</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/ksnapshot</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdegraphics-kuickshow</Name>
+        <PartOf>multimedia.graphics</PartOf>
+        <Summary>An image viewer</Summary>
+        <Description>KuickShow is a very fast image viewer that lets you easily browse large galleries. A builtin filebrowser and manager is also available. It supports many file formats, including JPEG, GIF, PNG, PSD, BMP, TIFF, XPM, XBM, XCF, EIM, etc. It can zoom, mirror, rotate images, adjust brightness, contrast, and gamma, and do a slideshow. It is fully configurable through dialogs. It offers a filebrowser with basic filemanager capabilities like renaming, deleting, creating directories, etc.</Description>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>imlib</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>kdegraphics</Package>
+        </Replaces>
+        <Files>
+            <Path fileType="executable">/usr/kde/3.5/bin/kuickshow</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/kde3/kuickshow.*</Path>
+            <Path fileType="library">/usr/kde/3.5/lib/libkdeinit_kuickshow.*</Path>
+            <Path fileType="data">/usr/kde/3.5/share/applications/kde/kuickshow.desktop</Path>
+            <Path fileType="data">/usr/kde/3.5/share/apps/kuickshow</Path>
+            <Path fileType="data">/usr/kde/3.5/share/icons/hicolor/*/apps/kuickshow.png</Path>
+            <Path fileType="doc">/usr/kde/3.5/share/doc/HTML/en/kuickshow</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>kdegraphics-core</Name>
+        <IsA>library</IsA>
+        <Summary>Base files for kdegraphics applications</Summary>
+        <RuntimeDependencies>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt3</Dependency>
             <Dependency>libgphoto2</Dependency>
             <Dependency>sane-backends</Dependency>
-            <Dependency>libart_lgpl</Dependency>
-            <Dependency>imlib</Dependency>
-            <Dependency>lcms</Dependency>
-            <Dependency>ghostscript</Dependency>
-            <Dependency>gwenview</Dependency>
+            <Dependency>libXxf86vm</Dependency>
             <Dependency>openexr</Dependency>
-            <Dependency>poppler</Dependency>
             <Dependency>poppler-qt3</Dependency>
-            <Dependency>gocr</Dependency>
-            <Dependency>libpaper</Dependency>
         </RuntimeDependencies>
+        <Replaces>
+            <Package>kdegraphics</Package>
+        </Replaces>
         <Files>
             <Path fileType="executable">/usr/kde/3.5/bin</Path>
             <Path fileType="library">/usr/kde/3.5/lib</Path>
@@ -73,6 +308,20 @@
         </Files>
     </Package>
     <History>
+        <Update release="49">
+            <Date>2010-07-09</Date>
+            <Version>3.5.10</Version>
+            <Comment>Adapt to autoconf >= 2.64 changes, patch by Onur.</Comment>
+            <Name>Serdar Dalgıç</Name>
+            <Email>serdar@pardus.org.tr</Email>
+        </Update>
+        <Update release="48">
+            <Date>2010-01-29</Date>
+            <Version>3.5.10</Version>
+            <Comment>Split kcoloredit, kdvi, kfax, kfaxview, kiconedit, kolourpaint, kooka, kpdf, kruler, ksnapshot and kuickshow. Remove kpovmodeler and kview docs.</Comment>
+            <Name>Doruk Fişek</Name>
+            <Email>dfisek@fisek.com.tr</Email>
+        </Update>
         <Update release="47">
             <Date>2010-01-28</Date>
             <Version>3.5.10</Version>
