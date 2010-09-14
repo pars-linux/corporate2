@@ -6,17 +6,19 @@ serviceDesc = _({"en": "DHCP Daemon",
                  "tr": "DHCP Servisi"})
 serviceConf = "dhcpd"
 
+pidfile = "/var/run/dhcpd.pid"
+
 @synchronized
 def start():
     startService(command="/usr/sbin/dhcpd",
-                 args="%s %s" % (config.get("DHCPD_OPTS", ""), config.get("DHCPD_IFACE", "")),
+                 args="%s %s" % (config.get("DHCPD_ARGS", ""), config.get("INTERFACES", "")),
                  donotify=True)
 
 @synchronized
 def stop():
     stopService(command="/usr/sbin/dhcpd",
-                pidfile="/var/run/dhcpd.pid",
+                pidfile=pidfile,
                 donotify=True)
 
 def status():
-    return isServiceRunning("/var/run/dhcpd.pid")
+    return isServiceRunning(pidfile)
