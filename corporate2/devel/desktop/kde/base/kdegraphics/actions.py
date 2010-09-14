@@ -9,6 +9,7 @@ from pisi.actionsapi import kde
 from pisi.actionsapi import get
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
+from pisi.actionsapi import pisitools
 
 KeepSpecial=["libtool"]
 shelltools.export("HOME", get.workDIR())
@@ -28,3 +29,7 @@ def build():
 
 def install():
     kde.install()
+
+    # DO_NOT_COMPILE doesn't cover docs
+    pisitools.removeDir("/usr/kde/3.5/share/doc/HTML/en/kpovmodeler/")
+    pisitools.removeDir("/usr/kde/3.5/share/doc/HTML/en/kview/")
