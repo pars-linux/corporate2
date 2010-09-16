@@ -13,6 +13,7 @@ serviceDefault = "conditional"
 
 NTPCONF = "/etc/ntp.conf"
 NTPSTEP = "/etc/ntp/step-tickers"
+PIDFILE = "/var/run/ntpdate.pid"
 
 MSG_NOSERVER = _({"en"  : "NTP server not specified in %s or %s." % (NTPSTEP, NTPCONF),
                   "tr"  : "%s veya %s dosyasında hiç NTP sunucu belirtilmemiş." % (NTPSTEP, NTPCONF)})
@@ -53,11 +54,11 @@ def start():
     startService(command="/usr/sbin/ntpdate",
                  args="%s %s" % (config.get("OPTIONS", "-U ntp -s -b"), tickers),
                  makepid=True,
-                 pidfile="/var/run/ntpdate.pid",
+                 pidfile=PIDFILE,
                  donotify=True)
 
-    if os.path.exists("/var/run/ntpdate.pid"):
-        os.unlink("/var/run/ntpdate.pid")
+    if os.path.exists(PIDFILE):
+        os.unlink(PIDFILE)
 
     if config.get("SYNC_HWCLOCK", "no") == "yes":
         run("/sbin/hwclock --systohc")

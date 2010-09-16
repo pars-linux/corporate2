@@ -5,8 +5,8 @@
         <Name>ntp</Name>
         <Homepage>http://www.ntp.org</Homepage>
         <Packager>
-            <Name>Bahadır Kandemir</Name>
-            <Email>bahadir@pardus.org.tr</Email>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
         </Packager>
         <License>MIT</License>
         <License>BSD</License>
@@ -14,13 +14,15 @@
         <IsA>service</IsA>
         <Summary>NTP daemon and client</Summary>
         <Description>Network Time Protocol utilities and daemons that will synchronize your computer's time to Coordinated Universal Time (UTC) via the NTP protocol and NTP servers.</Description>
-        <Archive sha1sum="c4fa55afb8f2104146d25b75a09437ebffb4d657" type="targz">http://www.eecis.udel.edu/~ntp/ntp_spool/ntp4/ntp-4.2.6p1.tar.gz</Archive>
+        <Archive sha1sum="04b5e3c3755fe9e5bcec5bd5d29255cfef2102c4" type="targz">http://www.eecis.udel.edu/~ntp/ntp_spool/ntp4/ntp-4.2/ntp-4.2.6p2.tar.gz</Archive>
+        <Archive sha1sum="9b6baf20b5943651a6bf8d6cf9a78e318573b541" type="targz">http://cekirdek.pardus.org.tr/~ibrahim/dist/ntpstat-0.2.tgz</Archive>
         <AdditionalFiles>
             <AdditionalFile permission="0755" target="fix-man-pages">fix-man-pages.sh</AdditionalFile>
         </AdditionalFiles>
         <BuildDependencies>
             <Dependency>avahi</Dependency>
             <Dependency>libcap</Dependency>
+            <!--<Dependency>libedit</Dependency>-->
             <Dependency>net-snmp</Dependency>
             <Dependency>perl-HTML-Parser</Dependency>
         </BuildDependencies>
@@ -29,21 +31,21 @@
             <Patch level="1">fedora/ntp-4.2.6p1-droproot.patch</Patch>
             <Patch level="1">fedora/ntp-4.2.6p1-bcast.patch</Patch>
             <Patch level="1">fedora/ntp-4.2.6p1-cmsgalign.patch</Patch>
-            <Patch level="1">fedora/ntp-4.2.6p1-tentative.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p2-tentative.patch</Patch>
             <Patch level="1">fedora/ntp-4.2.6p1-retcode.patch</Patch>
             <Patch level="1">fedora/ntp-4.2.6p1-rtnetlink.patch</Patch>
-            <Patch level="1">fedora/ntp-4.2.6p1-html2man.patch</Patch>
-            <Patch level="1">fedora/ntp-4.2.6p1-htmldoc.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p2-html2man.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p2-htmldoc.patch</Patch>
             <Patch level="1">fedora/ntp-4.2.6p1-nano.patch</Patch>
             <Patch level="1">fedora/ntp-4.2.4p7-getprecision.patch</Patch>
             <Patch level="1">fedora/ntp-4.2.6p1-logdefault.patch</Patch>
-            <Patch level="1">fedora/ntp-4.2.6p1-mlock.patch</Patch>
+            <Patch level="1">fedora/ntp-4.2.6p2-mlock.patch</Patch>
 
             <!-- ntpstat patches -->
-            <!--
-            <Patch level="1">fedora/ntpstat-0.2-clksrc.patch</Patch>
-            <Patch level="1">fedora/ntpstat-0.2-multipacket.patch</Patch>
-            -->
+            <Patch level="0">fedora/ntpstat-0.2-clksrc.patch</Patch>
+            <Patch level="0">fedora/ntpstat-0.2-multipacket.patch</Patch>
+            <Patch level="0">fedora/ntpstat-0.2-sysvars.patch</Patch>
+            <Patch level="0">fedora/ntpstat-0.2-maxerror.patch</Patch>
         </Patches>
     </Source>
 
@@ -53,14 +55,16 @@
         <RuntimeDependencies>
             <Dependency>avahi</Dependency>
             <Dependency>libcap</Dependency>
+            <!--<Dependency>libedit</Dependency>-->
             <Dependency>net-snmp</Dependency>
             <Dependency>ntp-client</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="executable">/usr/sbin</Path>
             <Path fileType="config">/etc/ntp.conf</Path>
             <Path fileType="config">/etc/conf.d</Path>
             <Path fileType="config">/etc/ntp/crypto</Path>
+            <Path fileType="executable">/usr/bin/ntpstat</Path>
+            <Path fileType="executable">/usr/sbin</Path>
             <Path fileType="doc">/usr/share/doc</Path>
             <Path fileType="man">/usr/share/man</Path>
             <Path fileType="data">/var/lib/ntp</Path>
@@ -117,6 +121,13 @@
     </Package>
 
     <History>
+        <Update release="16">
+            <Date>2010-09-15</Date>
+            <Version>4.2.6_p2</Version>
+            <Comment>Version bump, activate ntpstat.</Comment>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
         <Update release="15">
             <Date>2010-06-18</Date>
             <Version>4.2.6_p1</Version>
