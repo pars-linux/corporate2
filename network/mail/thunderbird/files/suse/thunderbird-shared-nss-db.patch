@@ -4,11 +4,10 @@ Subject: use libnsssharedhelper if available at compile time
          (can be disabled by exporting MOZ_XRE_NO_NSSHELPER=1)
 References:
 
-
 diff --git a/config/autoconf.mk.in b/config/autoconf.mk.in
 --- a/config/autoconf.mk.in
-+++ config/autoconf.mk.in
-@@ -478,16 +478,20 @@ MOZ_XIE_LIBS		= @MOZ_XIE_LIBS@
++++ b/config/autoconf.mk.in
+@@ -464,16 +464,20 @@ MOZ_PANGO_LIBS          = @MOZ_PANGO_LIB
  XT_LIBS			= @XT_LIBS@
  
  MOZ_ALSA_LIBS           = @MOZ_ALSA_LIBS@
@@ -23,16 +22,16 @@ diff --git a/config/autoconf.mk.in b/config/autoconf.mk.in
 +
  MOZ_NATIVE_MAKEDEPEND	= @SYSTEM_MAKEDEPEND@
  
- # Used for LD_LIBRARY_PATH
- LIBS_PATH       = @LIBS_PATH@
- 
  MOZ_AUTO_DEPS	= @MOZ_AUTO_DEPS@
  COMPILER_DEPEND = @COMPILER_DEPEND@
  MDDEPDIR        := @MDDEPDIR@
+ 
+ MOZ_DEMANGLE_SYMBOLS = @MOZ_DEMANGLE_SYMBOLS@
+ 
 diff --git a/configure.in b/configure.in
 --- a/configure.in
-+++ configure.in
-@@ -6979,16 +6979,31 @@ AC_SUBST(MOZ_CAIRO_LIBS)
++++ b/configure.in
+@@ -6841,16 +6841,31 @@ AC_SUBST(MOZ_CAIRO_LIBS)
  
  dnl qcms
  dnl ========================================================
@@ -64,13 +63,24 @@ diff --git a/configure.in b/configure.in
  if test "$MOZ_XUL"; then
    AC_DEFINE(MOZ_XUL)
  fi
---- mail/app/Makefile.in.orig	2009-02-26 11:02:11.000000000 +0100
-+++ mail/app/Makefile.in	2009-02-26 11:04:00.000000000 +0100
-@@ -129,6 +129,7 @@
+diff --git a/mail/app/Makefile.in b/mail/app/Makefile.in
+--- a/mail/app/Makefile.in
++++ b/mail/app/Makefile.in
+@@ -127,16 +127,17 @@ APP_XPCOM_LIBS = $(XPCOM_LIBS)
+ endif
+ 
+ LIBS += \
+ 	$(STATIC_COMPONENTS_LINKER_PATH) \
+ 	$(MOZ_JS_LIBS) \
  	$(EXTRA_DSO_LIBS) \
  	$(APP_XPCOM_LIBS) \
  	$(NSPR_LIBS) \
 +	$(NSSHELPER_LIBS) \
  	$(TK_LIBS) \
  	$(NULL)
+ 
+ # Add explicit X11 dependency when building against X11 toolkits
+ ifneq (,$(filter gtk gtk2 xlib,$(MOZ_WIDGET_TOOLKIT)))
+ LIBS += $(XLDFLAGS) $(XLIBS)
+ endif
  

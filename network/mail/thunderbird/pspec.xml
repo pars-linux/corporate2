@@ -15,8 +15,9 @@
         <IsA>app:gui</IsA>
         <Summary>The Stand-Alone Mozilla Mail Component</Summary>
         <Description>Thunderbird is a redesign of the Mozilla Mail Component. It is written using the XUL user interface language and designed to be cross-platform.</Description>
-        <Archive sha1sum="bc2880f5e63bc51625201b0a42c5465c7becf58e" type="tarbz2">http://cekirdek.pardus.org.tr/~ozan/dist/sources/thunderbird/thunderbird-3.0.5-source.tar.bz2</Archive>
-        <Archive sha1sum="0a676c432ae9d2f80b046c7521ff0b1727aecf2a" type="tarbz2" target="thunderbird">http://cekirdek.pardus.org.tr/~ozan/dist/sources/thunderbird/l10n-3.0.5.tar.bz2</Archive>
+        <Archive sha1sum="0945e19347271cf5671d7a4adc92acb23170d03c" type="tarbz2">http://cekirdek.pardus.org.tr/~ozan/dist/sources/thunderbird/thunderbird-3.1.4-source.tar.bz2</Archive>
+        <Archive sha1sum="de93878da7e10f2a11ac28259076dc1360812c3c" type="tarbz2" target="thunderbird">http://cekirdek.pardus.org.tr/~ozan/dist/sources/thunderbird/l10n-3.1.4.tar.bz2</Archive>
+        <!--<Archive sha1sum="a437531183b680e5100659f62e231bc8358d5c18" type="tarbz2" target="thunderbird/mailnews/extensions">http://cekirdek.pardus.org.tr/~ozan/dist/sources/thunderbird/enigmail-1.1.2.tar.bz2</Archive>-->
         <AdditionalFiles>
             <AdditionalFile target=".mozconfig">pardus/mozconfig</AdditionalFile>
             <AdditionalFile target=".pardus-default-prefs.js">pardus/pardus-default-prefs.js</AdditionalFile>
@@ -32,9 +33,11 @@
             <Dependency>gconf</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>libIDL</Dependency>
+            <Dependency>pixman</Dependency>
             <Dependency>alsa-lib</Dependency>
             <Dependency>hunspell</Dependency>
             <Dependency>libgnome</Dependency>
+            <Dependency>libnotify</Dependency>
             <Dependency>xdg-utils</Dependency>
             <Dependency>gnome-vfs</Dependency>
             <Dependency>libgnomeui</Dependency>
@@ -45,35 +48,28 @@
         </BuildDependencies>
         <Patches>
             <!-- SuSE patches -->
-            <Patch>suse/thunderbird-appname.patch</Patch>
 
-            <!-- Fix broken startup notification -->
-            <Patch>suse/mozilla-startup-notification.patch</Patch>
-
-            <!-- Support alternative KDE button order -->
-            <Patch>suse/mozilla-gtkfilepicker-buttonorder.patch</Patch>
+            <Patch level="1">suse/thunderbird-appname.patch</Patch>
+            <Patch level="1">suse/tb-ssldap.patch</Patch>
 
             <!--<Patch>suse/tb-develdirs.patch</Patch>-->
-            <Patch>suse/mozilla-path_len.patch</Patch>
-            <Patch>suse/mozilla-helper-app.patch</Patch>
-            <Patch compressionType="bz2">suse/mozilla-system-hunspell.patch.bz2</Patch>
+            <Patch level="1">suse/mozilla-helper-app.patch</Patch>
+
+            <!--<Patch compressionType="bz2">suse/mozilla-system-hunspell.patch.bz2</Patch>-->
 
             <!-- Not useful if we don't package mozilla-nss-helper
             <Patch>suse/mozilla-shared-nss-db.patch</Patch>
-            <Patch>suse/thunderbird-shared-nss-db.patch</Patch>-->
+            <Patch>suse/thunderbird-shared-nss-db.patch</Patch>
+            -->
 
             <!-- X session management doesn't work correctly with Thunderbird -->
             <Patch>suse/mozilla-xsmp.patch</Patch>
 
-            <!--<Patch>suse/locale.patch</Patch>-->
 
             <!-- Pardus patches -->
 
-            <!-- What is this about?!
-            <Patch level="1">embed-typeaheadfind.patch</Patch>-->
-
             <!-- Translation fixes -->
-            <!--<Patch>pardus/secureconnection-translation.diff</Patch>-->
+            <Patch level="1">pardus/some-tr-translations.patch</Patch>
             <Patch level="1">pardus/fix-fixed-width-tr-translation.patch</Patch>
 
             <!-- Zemberek integration -->
@@ -100,9 +96,11 @@
             <Dependency>gconf</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>libIDL</Dependency>
+            <Dependency>pixman</Dependency>
             <Dependency>hunspell</Dependency>
             <Dependency>alsa-lib</Dependency>
             <Dependency>libgnome</Dependency>
+            <Dependency>libnotify</Dependency>
             <Dependency>gnome-vfs</Dependency>
             <Dependency>libgnomeui</Dependency>
             <Dependency>fontconfig</Dependency>
@@ -138,7 +136,38 @@
         </AdditionalFiles>
     </Package>
 
+    <!--
+    <Package>
+        <Name>enigmail</Name>
+        <Summary>OpenPGP addon for Thunderbird and SeaMonkey</Summary>
+        <RuntimeDependencies>
+            <Dependency>gnupg</Dependency>
+            <Dependency>pinentry</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="data">/usr/lib/MozillaThunderbird/extensions</Path>
+        </Files>
+    </Package>
+    -->
+
     <History>
+        <Update release="55" type="security">
+            <Date>2010-09-20</Date>
+            <Version>3.1.4</Version>
+            <Comment>Version bump</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="54" type="security">
+            <Date>2010-07-23</Date>
+            <Version>3.1.1</Version>
+            <Comment>
+                - Version bump to 3.1.1,
+                - Added new libnotify dependency.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="53" type="security">
             <Date>2010-06-23</Date>
             <Version>3.0.5</Version>

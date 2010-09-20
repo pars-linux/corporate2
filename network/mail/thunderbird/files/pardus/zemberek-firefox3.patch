@@ -2,9 +2,9 @@ Index: mozilla/extensions/spellcheck/hunspell/src/mozHunspell.h
 ===================================================================
 --- mozilla/extensions/spellcheck/hunspell/src/mozHunspell.h.orig
 +++ mozilla/extensions/spellcheck/hunspell/src/mozHunspell.h
-@@ -70,7 +70,7 @@
- #include "nsInterfaceHashtable.h"
+@@ -71,7 +71,7 @@
  #include "nsWeakReference.h"
+ #include "nsCycleCollectionParticipant.h"
  
 -#define MOZ_HUNSPELL_CONTRACTID "@mozilla.org/spellchecker/engine;1"
 +#define MOZ_HUNSPELL_CONTRACTID "@mozilla.org/spellchecker/hunspell;1"
@@ -28,8 +28,8 @@ Index: mozilla/extensions/spellcheck/src/Makefile.in
 ===================================================================
 --- mozilla/extensions/spellcheck/src/Makefile.in.orig
 +++ mozilla/extensions/spellcheck/src/Makefile.in
-@@ -90,11 +90,16 @@ LOCAL_INCLUDES += $(MOZ_HUNSPELL_CFLAGS)
- endif
+@@ -84,11 +84,16 @@ SHARED_LIBRARY_LIBS += ../hunspell/src/$
+ LOCAL_INCLUDES += -I$(srcdir)/../hunspell/src
  endif
  
 +SHARED_LIBRARY_LIBS += ../zemberek/src/$(LIB_PREFIX)zemberek_s.$(LIB_SUFFIX)
@@ -45,7 +45,7 @@ Index: mozilla/extensions/spellcheck/src/Makefile.in
  		$(NULL)
  
  include $(topsrcdir)/config/rules.mk
-@@ -102,3 +107,6 @@ include $(topsrcdir)/config/rules.mk
+@@ -96,3 +101,6 @@ include $(topsrcdir)/config/rules.mk
  LOCAL_INCLUDES += \
  	-I$(topsrcdir)/xpcom/io \
  	$(NULL)
@@ -63,9 +63,9 @@ Index: mozilla/extensions/spellcheck/src/mozSpellChecker.cpp
 -#define DEFAULT_SPELL_CHECKER "@mozilla.org/spellchecker/engine;1"
 +#define DEFAULT_SPELL_CHECKER "@mozilla.org/spellchecker/hunspell;1"
  
- NS_IMPL_ISUPPORTS1(mozSpellChecker, nsISpellChecker)
- 
-@@ -356,13 +356,20 @@ mozSpellChecker::SetCurrentDictionary(co
+ NS_IMPL_CYCLE_COLLECTING_ADDREF(mozSpellChecker)
+ NS_IMPL_CYCLE_COLLECTING_RELEASE(mozSpellChecker)
+@@ -368,13 +368,20 @@ mozSpellChecker::SetCurrentDictionary(co
    nsresult rv;
    nsCString *contractId;
  
@@ -88,15 +88,14 @@ Index: mozilla/extensions/spellcheck/src/mozSpellChecker.cpp
      if (NS_FAILED(rv))
        return rv;
  
-@@ -541,7 +548,12 @@ mozSpellChecker::InitSpellCheckDictionar
-       if (mDictionariesMap.Get(dictName, NULL))
+@@ -554,6 +561,12 @@ mozSpellChecker::InitSpellCheckDictionar
          continue;
  
--      mDictionariesMap.Put(dictName, new nsCString(*contractId));
+       mDictionariesMap.Put(dictName, new nsCString(contractId));
 +      if (dictName.Equals(NS_LITERAL_STRING("tr-TR").get()))
 +        mDictionariesMap.Put(dictName, new nsCString("@mozilla.org/spellchecker/zemberek;1"));
 +      else
-+        mDictionariesMap.Put(dictName, new nsCString(*contractId));
++        mDictionariesMap.Put(dictName, new nsCString(contractId));
 +
 +
      }
@@ -126,7 +125,7 @@ Index: mozilla/extensions/spellcheck/src/mozSpellCheckerFactory.cpp
  #endif
  
  NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(mozSpellChecker, Init)
-@@ -133,6 +137,12 @@ static nsModuleComponentInfo components[
+@@ -133,6 +137,12 @@ static const nsModuleComponentInfo compo
          mozHunspellConstructor
      },
      {
@@ -139,7 +138,7 @@ Index: mozilla/extensions/spellcheck/src/mozSpellCheckerFactory.cpp
          "mozHunspellDirProvider",
          HUNSPELLDIRPROVIDER_CID,
          mozHunspellDirProvider::kContractID,
-@@ -140,6 +150,14 @@ static nsModuleComponentInfo components[
+@@ -140,6 +150,14 @@ static const nsModuleComponentInfo compo
          mozHunspellDirProvider::Register,
          mozHunspellDirProvider::Unregister
      },
@@ -1690,7 +1689,7 @@ Index: mail/components/compose/content/MsgComposeCommands.js
 ===================================================================
 --- mail/components/compose/content/MsgComposeCommands.js.orig
 +++ mail/components/compose/content/MsgComposeCommands.js
-@@ -2375,7 +2375,7 @@ function InitLanguageMenu()
+@@ -2359,7 +2359,7 @@ function InitLanguageMenu()
    if (!languageMenuList)
      return;
  
@@ -1699,7 +1698,7 @@ Index: mail/components/compose/content/MsgComposeCommands.js
                                 .getService(mozISpellCheckingEngine);
    var o1 = {};
    var o2 = {};
-@@ -2471,7 +2471,7 @@ function ChangeLanguage(event)
+@@ -2455,7 +2455,7 @@ function ChangeLanguage(event)
    // We need to change the dictionary language and if we are using inline spell check,
    // recheck the message
  
@@ -1725,7 +1724,7 @@ Index: mozilla/extensions/spellcheck/osxspell/src/mozOSXSpell.h
 ===================================================================
 --- mozilla/extensions/spellcheck/osxspell/src/mozOSXSpell.h.orig
 +++ mozilla/extensions/spellcheck/osxspell/src/mozOSXSpell.h
-@@ -48,7 +48,7 @@
+@@ -49,7 +49,7 @@
  
  // Use the same contract ID as the Hunspell spellchecker so we get picked up
  // instead on Mac OS X but we have our own CID. 
