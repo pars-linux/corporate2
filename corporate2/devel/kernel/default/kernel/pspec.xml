@@ -36,15 +36,29 @@
             <!-- sctp: crash due to malformed SCTPChunkInit packet (CVE-2010-1173) (#12914) -->
             <!-- KEYS: find_keyring_by_name() can gain access to a freed keyring (#12915)  -->
             <!-- xfs: prevent swapext from operating on write-only files (CVE-2010-2226) (#13530) -->
-            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.19.bz2</Patch>
+            <!-- ext4: fix integer overflow in ext4_ext_get_blocks() (CVE-2010-3015) (#14032) -->
+            <!-- can: add limit for nframes and clean up signed/unsigned variables (CVE-2010-2959) (#14088) -->
+            <!-- wireless: fix 64K kernel heap content leak via ioctl (CVE-2010-2955) (#14198) -->
+            <!-- dev/sequencer open failure is not handled correctly (CVE-2010-3080) (#14324) -->
+            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.22.bz2</Patch>
 
             <!-- Security patches -->
+
+            <!-- net sched: fix some kernel memory leaks (CVE-2010-2942)(#14082) -->
+            <Patch level="1">kernel/net-2.6.git-1c40be12f7d8ca1d387510d39787b12e512a7ce8.patch</Patch>
+
+            <!-- irda: Correctly clean up self->ias_obj on irda_bind() failure (CVE-2010-2954) (#14201) -->
+            <Patch level="1">kernel/net-2.6.git-628e300cccaa628d8fb92aa28cb7530a3d5f2257.patch</Patch>
+
+            <!-- xfs: XFS_IOC_FSGETXATTR ioctl memory leak (CVE-2010-3078) (#14321) -->
+            <Patch level="1">kernel/0001-xfs-prevent-reading-uninitialized-stack-memory.patch</Patch>
+
 
             <!-- FIXME: Squashfs-lzma support (There's a cleaner patch for this in LKML) -->
             <Patch level="1">squashfs/squashfs-devel-add-lzma-support.patch</Patch>
 
-            <!-- Add TuxOnIce 3.1 support -->
-            <Patch level="1" compressionType="bz2">tuxonice/tuxonice-3.1-for-2.6.32.patch.bz2</Patch>
+            <!-- Add TuxOnIce 3.2-rc2 support -->
+            <Patch level="1" compressionType="bz2">tuxonice/tuxonice-3.2-rc2-for-2.6.32.patch.bz2</Patch>
 
 
             <!-- Moblin patches -->
@@ -126,6 +140,7 @@
             <Patch level="1">drm/add-list_sort.patch</Patch>
             <Patch level="1">drm/i2c-algo-bit-Add-pre-and-post-xfer-hooks.patch</Patch>
             <Patch level="1">drm/2.6.34-base.patch</Patch>
+            <!--
             <Patch level="1">drm/2.6.34.patch</Patch>
 
             <Patch level="1">drm/vga-switcheroo-fixes.patch</Patch>
@@ -143,6 +158,7 @@
             <Patch level="1">drm/fedora/drm-intel-make-lvds-work.patch</Patch>
             <Patch level="1">drm/fedora/linux-2.6-intel-iommu-igfx.patch</Patch>
             <Patch level="1">drm/fedora/drm-intel-gen5-dither.patch</Patch>
+            -->
 
             <!-- Use the same resolution when switching from vesafb to KMS -->
             <Patch level="1">drm/pardus/kms-use-vesafb-mode.patch</Patch>
@@ -426,6 +442,23 @@
     </Package>
 
     <History>
+        <Update release="143" type="security">
+            <Date>2010-09-22</Date>
+            <Version>2.6.32.22</Version>
+            <Comment>
+                - Version bump to 2.6.32.22,
+                - Enable CONFIG_NET_CLS_GROUP for lxc container support,
+                - Fix integer overflow in ext4_ext_get_blocks() (CVE-2010-3015) (#14032),
+                - net sched: fix some kernel memory leaks (CVE-2010-2942)(#14082),
+                - can: add limit for nframes and clean up signed/unsigned variables (CVE-2010-2959) (#14088),
+                - wireless: fix 64K kernel heap content leak via ioctl (CVE-2010-2955) (#14198),
+                - irda: Correctly clean up self->ias_obj on irda_bind() failure (CVE-2010-2954) (#14201),
+                - dev/sequencer open failure is not handled correctly (CVE-2010-3080) (#14324),
+                - xfs: XFS_IOC_FSGETXATTR ioctl memory leak (CVE-2010-3078) (#14321),
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="142">
             <Date>2010-08-14</Date>
             <Version>2.6.32.19</Version>
