@@ -29,6 +29,8 @@ def setup():
     pisitools.dosed("%s/2.6.x/Makefile" % BuildDir, r"^(GCC_VER_MAJ *=).*$", r"\1 4")
     pisitools.dosed("common/etc/ati/authatieventsd.sh", "/var/lib/xdm/authdir/authfiles", "/var/run/xauth")
 
+    shelltools.system("patch -p0 < compat_alloc_user_space.patch")
+
 def build():
     shelltools.cd(BuildDir)
     shelltools.system("sh make.sh")
