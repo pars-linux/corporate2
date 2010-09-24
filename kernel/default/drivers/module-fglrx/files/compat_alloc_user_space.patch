@@ -1,0 +1,60 @@
+--- common/lib/modules/fglrx/build_mod/make.sh      2010-04-09 19:21:39.000000000 +0100
++++ common/lib/modules/fglrx/build_mod/make.sh        2010-09-22 08:15:33.000000000 +0100
+@@ -382,6 +391,29 @@ then
+ fi
+ 
+ # ==============================================================
++# resolve if we are building for a kernel with a fix for CVE-2010-3081
++# On kernels with the fix, use arch_compat_alloc_user_space instead
++# of compat_alloc_user_space since the latter is GPL-only
++
++COMPAT_ALLOC_USER_SPACE=compat_alloc_user_space
++
++src_file=$linuxincludes/../arch/x86/include/asm/compat.h
++if [ ! -e $src_file ];
++then
++  echo "Warning:"                                                  >> $logfile
++  echo "kernel includes at $linuxincludes not found or incomplete" >> $logfile
++  echo "file: $src_file"                                           >> $logfile
++  echo ""                                                          >> $logfile
++else
++  if [ `cat $src_file | grep -c arch_compat_alloc_user_space` -gt 0 ]
++  then
++    COMPAT_ALLOC_USER_SPACE=arch_compat_alloc_user_space
++  fi
++  echo "file $src_file says: COMPAT_ALLOC_USER_SPACE=$COMPAT_ALLOC_USER_SPACE" >> $logfile
++fi
++
++
++# ==============================================================
+ # break down OsRelease string into its components
+ 
+ major=`echo $OsRelease | sed -n -e s/"^\([[:digit:]]*\)\.\([[:digit:]]*\)\.\([[:digit:]]*\)\(.*\)"/"\\1"/p`
+@@ -417,7 +449,7 @@ echo 'This is a dummy file created to su
+ 
+ make CC=${CC} \
+     LIBIP_PREFIX=$(echo "$LIBIP_PREFIX" | sed -e 's|^\([^/]\)|../\1|') \
+-    MODFLAGS="-DMODULE -DATI -DFGL -DPAGE_ATTR_FIX=$PAGE_ATTR_FIX $def_smp $def_modversions" \
++    MODFLAGS="-DMODULE -DATI -DFGL -DPAGE_ATTR_FIX=$PAGE_ATTR_FIX -DCOMPAT_ALLOC_USER_SPACE=$COMPAT_ALLOC_USER_SPACE $def_smp $def_modversions" \
+     KVER=${uname_r} \
+     PAGE_ATTR_FIX=$PAGE_ATTR_FIX \
+     > tlog 2>&1 
+
+--- common/lib/modules/fglrx/build_mod/kcl_ioctl.c  2010-04-09 19:21:39.000000000 +0100
++++ common/lib/modules/fglrx/build_mod/kcl_ioctl.c    2010-09-22 08:15:33.000000000 +0100
+@@ -193,7 +193,13 @@ void ATI_API_CALL KCL_IOCTL_UnregisterCo
+  */
+ void* ATI_API_CALL KCL_IOCTL_AllocUserSpace32(long size)
+ {
+-    return compat_alloc_user_space(size);
++    void __user *ret = COMPAT_ALLOC_USER_SPACE(size);
++
++    /* prevent stack overflow */
++    if (!access_ok(VERIFY_WRITE, ret, size))
++        return NULL;
++
++    return (void *)ret;
+ }
+ 
+ #endif // __x86_64__
+
