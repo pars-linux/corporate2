@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -16,6 +16,7 @@ def setup():
     # SQLITE_SECURE_DELETE overwrites written data with zeros.
     shelltools.export("CFLAGS", "%s \
                        -DSQLITE_SECURE_DELETE=1 \
+                       -DSQLITE_ENABLE_UNLOCK_NOTIFY=1 \
                        -DSQLITE_ENABLE_COLUMN_METADATA=1 \
                        -DSQLITE_DISABLE_DIRSYNC=1 \
                        -DSQLITE_ENABLE_FTS3=3 \
