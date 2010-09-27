@@ -21,18 +21,14 @@ def setup():
     # Enable PAE and update kernel configuration
     pisitools.dosed(".config", "CONFIG_HIGHMEM64G is not set", "CONFIG_HIGHMEM4G is not set")
     pisitools.dosed(".config", "CONFIG_HIGHMEM4G=y", "CONFIG_HIGHMEM64G=y")
-    #kerneltools.updateKConfig()
-    shelltools.system('yes "" | make oldconfig')
+
+    kerneltools.updateKConfig()
 
 def build():
     kerneltools.build(debugSymbols=False)
 
 def install():
-    #kerneltools.install(installFirmwares=False)
-    kerneltools.install()
-
-    # Ugly hack to remove the firmwares
-    pisitools.removeDir("/lib/firmware")
+    kerneltools.install(installFirmwares=False)
 
     # Dump kernel version into /etc/kernel/
     kerneltools.dumpVersion()
@@ -42,6 +38,9 @@ def install():
     kerneltools.installHeaders(extra=["drivers/media/dvb/dvb-core",
                                       "drivers/media/dvb/frontends",
                                       "drivers/media/video"])
+
+    # Create source symlink in /lib/modules
+    kerneltools.installSource(onlySymlink=True)
 
     # Clean module-init-tools related stuff
     kerneltools.cleanModuleFiles()
