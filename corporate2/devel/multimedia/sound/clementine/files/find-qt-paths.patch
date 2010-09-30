@@ -1,0 +1,31 @@
+Index: clementine-0.5.3/CMakeLists.txt
+===================================================================
+--- clementine-0.5.3.orig/CMakeLists.txt
++++ clementine-0.5.3/CMakeLists.txt
+@@ -178,8 +178,9 @@ endif(USE_SYSTEM_QTSINGLEAPPLICATION)
+ 
+ # QtIoCompressor isn't patched, so we can use a system version if it's
+ # available
+-find_path(QTIOCOMPRESSOR_INCLUDE_DIRS qtiocompressor.h PATH_SUFFIXES QtSolutions)
+-find_library(QTIOCOMPRESSOR_LIBRARIES QtSolutions_IOCompressor-2.3)
++find_path(QTIOCOMPRESSOR_INCLUDE_DIRS qtiocompressor.h PATHS /usr/qt/4/include PATH_SUFFIXES QtSolutions)
++find_library(QTIOCOMPRESSOR_LIBRARIES QtSolutions_IOCompressor-2.3 PATHS
++    /usr/qt/4/lib)
+ if(NOT QTIOCOMPRESSOR_INCLUDE_DIRS OR NOT QTIOCOMPRESSOR_LIBRARIES)
+   add_subdirectory(3rdparty/qtiocompressor)
+   set(QTIOCOMPRESSOR_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/qtiocompressor)
+@@ -190,11 +191,11 @@ endif(NOT QTIOCOMPRESSOR_INCLUDE_DIRS OR
+ # used to link to system installed qxt instead.
+ option(USE_SYSTEM_QXT "Don't set this option unless your system Qxt library has been compiled with the Clementine patches in 3rdparty" OFF)
+ if (USE_SYSTEM_QXT)
+-  find_path(QXTCORE_INCLUDE_DIRS qxtglobal.h PATH_SUFFIXES QxtCore)
+-  find_path(QXTGUI_INCLUDE_DIRS qxtglobalshortcut.h PATH_SUFFIXES QxtGui)
++  find_path(QXTCORE_INCLUDE_DIRS qxtglobal.h PATHS /usr/qt/4/include PATH_SUFFIXES QxtCore)
++  find_path(QXTGUI_INCLUDE_DIRS qxtglobalshortcut.h HINTS /usr/qt/4/include PATH_SUFFIXES QxtGui)
+   set(QXT_INCLUDE_DIRS ${QXTCORE_INCLUDE_DIRS} ${QXTGUI_INCLUDE_DIRS})
+   # We only need its header. We don't need to link to QxtCore.
+-  find_library(QXT_LIBRARIES QxtGui)
++  find_library(QXT_LIBRARIES QxtGui PATHS /usr/qt/4/lib)
+ else (USE_SYSTEM_QXT)
+   add_definitions(-DQXT_STATIC -DBUILD_QXT_GUI -DBUILD_QXT_CORE)
+   set(QXT_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/qxt)
