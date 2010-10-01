@@ -37,9 +37,6 @@ def install():
     pisitools.domove("%s/lib/modules/*" % base, base)
     pisitools.removeDir("%s/lib/modules" % base)
 
-    # Headers
-    pisitools.insinto(base, "usr/include")
-
     # Our libc is TLS enabled so use TLS library
     pisitools.remove("%s/lib/libnvidia-tls.so.*" % base)
 
