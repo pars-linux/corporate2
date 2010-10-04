@@ -11,7 +11,7 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import libtools
 from pisi.actionsapi import get
 
-WorkDir = "lame-398-2"
+# WorkDir = "lame-398-2"
 
 def setup():
     shelltools.export("AT_M4DIR", get.curDIR())
