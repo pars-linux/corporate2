@@ -40,18 +40,15 @@
             <!-- can: add limit for nframes and clean up signed/unsigned variables (CVE-2010-2959) (#14088) -->
             <!-- wireless: fix 64K kernel heap content leak via ioctl (CVE-2010-2955) (#14198) -->
             <!-- dev/sequencer open failure is not handled correctly (CVE-2010-3080) (#14324) -->
-            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.22.bz2</Patch>
+            <!-- drivers/net/usb/hso.c: prevent reading uninitialized memory (#14348) -->
+            <!-- drivers/net/eql: prevent reading uninitialized memory (#14345) -->
+            <!-- drivers/net/cxgb3: prevent reading uninitialized memory (#14342) -->
+            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.24.bz2</Patch>
 
             <!-- Security patches -->
 
             <!-- net sched: fix some kernel memory leaks (CVE-2010-2942)(#14082) -->
             <Patch level="1">kernel/net-2.6.git-1c40be12f7d8ca1d387510d39787b12e512a7ce8.patch</Patch>
-
-            <!-- irda: Correctly clean up self->ias_obj on irda_bind() failure (CVE-2010-2954) (#14201) -->
-            <Patch level="1">kernel/net-2.6.git-628e300cccaa628d8fb92aa28cb7530a3d5f2257.patch</Patch>
-
-            <!-- xfs: XFS_IOC_FSGETXATTR ioctl memory leak (CVE-2010-3078) (#14321) -->
-            <Patch level="1">kernel/0001-xfs-prevent-reading-uninitialized-stack-memory.patch</Patch>
 
 
             <!-- FIXME: Squashfs-lzma support (There's a cleaner patch for this in LKML) -->
@@ -76,18 +73,43 @@
 
             <!-- Subset of Fedora Kernel Patches -->
 
+            <!-- WMI fixes and autoloading support -->
+            <Patch level="1">fedora/linux-2.6-autoload-wmi.patch</Patch>
+            <Patch level="1">fedora/wmi-check-find_guid-return-value-to-prevent-oops.patch</Patch>
+            <Patch level="1">fedora/wmi-survive-bios-with-duplicate-guids.patch</Patch>
+
+            <!-- patches from Intel to address intermittent firmware failures with iwlagn -->
+            <Patch level="1">fedora/iwlwifi-reset-card-during-probe.patch</Patch>
+            <Patch level="1">fedora/iwlwifi_-add-function-to-reset_tune-radio-if-needed.patch</Patch>
+            <Patch level="1">fedora/iwlwifi_-Logic-to-control-how-frequent-radio-should-be-reset-if-needed.patch</Patch>
+            <Patch level="1">fedora/iwlwifi_-Tune-radio-to-prevent-unexpected-behavior.patch</Patch>
+            <Patch level="1">fedora/iwlwifi_-multiple-force-reset-mode.patch</Patch>
+            <Patch level="1">fedora/iwlwifi_-Adjusting-PLCP-error-threshold-for-1000-NIC.patch</Patch>
+            <Patch level="1">fedora/iwlwifi_-separated-time-check-for-different-type-of-force-reset.patch</Patch>
+            <Patch level="1">fedora/iwlwifi_-add-internal-short-scan-support-for-3945.patch</Patch>
+            <Patch level="1">fedora/iwlwifi_-Recover-TX-flow-stall-due-to-stuck-queue.patch</Patch>
+            <Patch level="1">fedora/iwlwifi_-move-plcp-check-to-separated-function.patch</Patch>
+            <Patch level="1">fedora/iwlwifi_-Recover-TX-flow-failure.patch</Patch>
+            <Patch level="1">fedora/iwlwifi_-code-cleanup-for-connectivity-recovery.patch</Patch>
+            <Patch level="1">fedora/iwlwifi_-iwl_good_ack_health-only-apply-to-AGN-device.patch</Patch>
+            <Patch level="1">fedora/iwlwifi-fix-scan-races.patch</Patch>
+            <Patch level="1">fedora/iwlwifi-fix-internal-scan-race.patch</Patch>
+            <Patch level="1">fedora/iwlwifi-recover_from_tx_stall.patch</Patch>
+            <Patch level="1">fedora/iwlwifi-manage-QoS-by-mac-stack.patch</Patch>
+            <Patch level="1">fedora/mac80211-explicitly-disable-enable-QoS.patch</Patch>
+
             <!-- Enable support for kworld ub435-q and 340u usb atsc tuners -->
             <Patch level="1">fedora/linux-2.6-v4l-dvb-add-kworld-a340-support.patch</Patch>
             <Patch level="1">fedora/linux-2.6-v4l-dvb-add-lgdt3304-support.patch</Patch>
-
-            <!-- thinkpad_acpi: Fix backlight control on some recent Thinkpads -->
-            <Patch level="1">fedora/thinkpad-acpi-fix-backlight.patch</Patch>
 
             <!-- hid: add multi-input quirk for eGalax Touchcontroller -->
             <Patch level="1">fedora/linux-2.6-input-hid-quirk-egalax.patch</Patch>
 
             <!-- Add EC path for Thinkpad X100 -->
             <Patch level="1">fedora/thinkpad-acpi-add-x100e.patch</Patch>
+
+            <!-- thinkpad_acpi: Fix backlight control on some recent Thinkpads -->
+            <Patch level="1">fedora/thinkpad-acpi-fix-backlight.patch</Patch>
 
             <!-- acpi: ACPI embedded controller fixes from Fedora 13 -->
             <Patch level="1">fedora/acpi-ec-add-delay-before-write.patch</Patch>
@@ -103,6 +125,11 @@
 
             <!-- input: The input layer spews crap no-one cares about -->
             <Patch level="1">fedora/linux-2.6-input-kill-stupid-messages.patch</Patch>
+
+            <Patch level="1">fedora/linux-2.6-dell-laptop-rfkill-fix.patch</Patch>
+
+            <!-- phylib: Support phy module autoloading -->
+            <Patch level="1">fedora/linux-2.6-phylib-autoload.patch</Patch>
 
             <!-- pci: disable message signaled interrupts  -->
             <Patch level="1">fedora/linux-2.6-defaults-pci_no_msi.patch</Patch>
@@ -365,6 +392,19 @@
     </Package>
 
     <History>
+        <Update release="144" type="security">
+            <Date>2010-10-04</Date>
+            <Version>2.6.32.24</Version>
+            <Comment>
+                - Version bump,
+                - drivers/net/usb/hso.c: prevent reading uninitialized memory (#14348),
+                - drivers/net/eql: prevent reading uninitialized memory (#14345),
+                - drivers/net/cxgb3: prevent reading uninitialized memory (#14342),
+                - Add patches from Intel to address intermittent firmware failures with iwlagn (#13981)
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="143" type="security">
             <Date>2010-09-22</Date>
             <Version>2.6.32.22</Version>
