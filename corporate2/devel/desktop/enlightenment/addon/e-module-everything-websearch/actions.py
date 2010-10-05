@@ -10,8 +10,6 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-WorkDir = "everything-websearch-%s" % get.srcVERSION()
-
 def setup():
     shelltools.export("AUTOPOINT", "/bin/true")
 
