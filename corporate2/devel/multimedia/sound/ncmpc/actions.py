@@ -10,7 +10,6 @@ from pisi.actionsapi import get
 
 def setup():
     autotools.autoreconf("-fi")
-
     autotools.configure("--enable-colors \
                          --enable-lirc \
                          --enable-lyrics-screen")
