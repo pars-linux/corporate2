@@ -155,11 +155,13 @@ find_live_mount() {
     then
         for x in $*
         do
-            FS_TYPE=`disktype $ROOT_DEVICE | grep KERNELMODULE | awk '{print $2}'`
-            if [ -f /lib/modules/*/$FS_TYPE.ko ]
+            # this is used for non Linux fs detection
+            FS_TYPE=`disktype $1 | grep KERNELMODULE | awk '{print $2}'`
+            if [ -n "$FS_TYPE" -a -f /lib/modules/*/$FS_TYPE.ko ]
             then
                 modprobe $FS_TYPE 1> /dev/null 2>&1
             fi
+
             mount -r ${x} /newroot/mnt/cdrom > /dev/null 2>&1
 
             if [ "$?" = "0" ]
@@ -385,8 +387,18 @@ parse_cmdline() {
             quiet)
                 QUIET=1
             ;;
+            blacklist=*)
+                modules=${x#blacklist=}
+                for module in ${modules//,/ }; do
+                    echo "blacklist $module" >> /etc/modprobe.d/cmdline.conf
+                done
+            ;;
         esac
     done
+
+    if [ -f /etc/modprobe.d/cmdline.conf ]; then
+        cp /etc/modprobe.d/cmdline.conf /dev/.modprobe.initramfs.conf
+    fi
 }
 
 
