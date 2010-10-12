@@ -1,0 +1,898 @@
+diff -upr openchange-0.9-COCHRANE/exchange.idl openchange/exchange.idl
+--- openchange-0.9-COCHRANE/exchange.idl	2009-12-24 14:11:15.000000000 +0100
++++ openchange/exchange.idl	2010-06-22 19:26:45.000000000 +0200
+@@ -1034,7 +1034,7 @@ System Attendant Private Interface
+ 	typedef [public,nodiscriminant,flag(NDR_NOALIGN)] union {
+ 		[case(PT_I2)]		uint16			i;
+ 		[case(PT_LONG)]     	uint32			l;
+-		[case(PT_DOUBLE)]	dlong			dbl;
++		[case(PT_DOUBLE)]	double			dbl;
+ 		[case(PT_ERROR)]       	uint32			err;
+ 		[case(PT_BOOLEAN)]	uint8			b;
+ 		[case(PT_I8)]		dlong			d;
+diff -upr openchange-0.9-COCHRANE/libmapi/emsmdb.c openchange/libmapi/emsmdb.c
+--- openchange-0.9-COCHRANE/libmapi/emsmdb.c	2009-12-21 13:53:05.000000000 +0100
++++ openchange/libmapi/emsmdb.c	2010-06-22 19:26:45.000000000 +0200
+@@ -263,6 +263,8 @@ static int mapi_response_destructor(void
+ {
+ 	struct mapi_response	*mapi_response = (struct mapi_response *)data;
+ 
++	if (!mapi_response) return 0;
++
+ 	if (mapi_response->mapi_repl) {
+ 		if (mapi_response->handles) {
+ 			talloc_free(mapi_response->handles);
+@@ -350,6 +352,7 @@ start:
+ 	emsmdb_ctx->cache_size = emsmdb_ctx->cache_count = 0;
+ 
+ 	if (r.out.mapi_response->mapi_repl && r.out.mapi_response->mapi_repl->error_code) {
++		talloc_set_destructor((void *)mapi_response, NULL);
+ 		r.out.mapi_response->handles = NULL;
+ 	}
+ 
+@@ -567,6 +570,7 @@ const void *pull_emsmdb_property(TALLOC_
+ 	uint64_t			*pt_i8;
+ 	uint32_t			*pt_long;
+ 	uint8_t				*pt_boolean;
++	double				*pt_double;
+ 	struct FILETIME			*pt_filetime;
+ 	struct GUID			*pt_clsid;
+ 	struct SBinary_short		pt_binary;
+@@ -612,6 +616,12 @@ const void *pull_emsmdb_property(TALLOC_
+ 		*offset = ndr->offset;
+ 		talloc_free(ndr);
+ 		return (const void *) pt_i8;
++	case PT_DOUBLE:
++		pt_double = talloc_zero(mem_ctx, double);
++		ndr_pull_double(ndr, NDR_SCALARS, pt_double);
++		*offset = ndr->offset;
++		talloc_free(ndr);
++		return (const void *) pt_double;
+ 	case PT_UNICODE:
+ 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_NULLTERM);
+ 		ndr_pull_string(ndr, NDR_SCALARS, &pt_unicode);
+@@ -681,8 +691,9 @@ const void *pull_emsmdb_property(TALLOC_
+ 		talloc_free(ndr);
+ 		return (const void *) MVbin;
+ 	default:
++		fprintf (stderr, "unhandled type case in pull_emsmdb_property(): 0x%x\n", (tag & 0xFFFF));
+ 		return NULL;
+-	}	
++	}
+ }
+ 
+ 
+diff -upr openchange-0.9-COCHRANE/libmapi/IMAPISession.c openchange/libmapi/IMAPISession.c
+--- openchange-0.9-COCHRANE/libmapi/IMAPISession.c	2009-12-21 13:13:28.000000000 +0100
++++ openchange/libmapi/IMAPISession.c	2010-06-22 19:26:45.000000000 +0200
+@@ -378,7 +378,6 @@ retry:
+ 	if (retval == ecWrongServer && retry == false) {
+ 		retval = FindGoodServer(session, mailbox, false);
+ 		OPENCHANGE_RETVAL_IF(retval, retval, mem_ctx);
+-		talloc_free(mapi_response);
+ 		talloc_free(mem_ctx);
+ 		retry = true;
+ 		goto retry;
+@@ -394,7 +393,7 @@ retry:
+ 	mapi_object_set_logon_store(obj_store);
+ 
+ 	/* retrieve store content */
+-	obj_store->private_data = talloc((TALLOC_CTX *)session, mapi_object_store_t);
++	obj_store->private_data = talloc_zero((TALLOC_CTX *)session, mapi_object_store_t);
+ 	store = (mapi_object_store_t *)obj_store->private_data;
+ 	OPENCHANGE_RETVAL_IF(!obj_store->private_data, MAPI_E_NOT_ENOUGH_RESOURCES, mem_ctx);
+ 
+diff -upr openchange-0.9-COCHRANE/libmapi/property.c openchange/libmapi/property.c
+--- openchange-0.9-COCHRANE/libmapi/property.c	2009-12-19 14:58:47.000000000 +0100
++++ openchange/libmapi/property.c	2010-06-22 19:26:48.000000000 +0200
+@@ -22,6 +22,7 @@
+ #include <libmapi/proto_private.h>
+ #include <gen_ndr/ndr_property.h>
+ #include <param.h>
++#include "defs_private.h"
+ 
+ /**
+    \file property.c
+@@ -29,6 +30,7 @@
+    \brief Functions for manipulating MAPI properties
+  */
+ 
++
+ /**
+   \details Create a property tag array
+   
+@@ -370,6 +372,9 @@ _PUBLIC_ bool set_SPropValue(struct SPro
+ 	case PT_LONG:
+ 		lpProps->value.l = *((const uint32_t *)data);
+ 		break;
++	case PT_DOUBLE:
++		memcpy(&lpProps->value.dbl, (uint8_t *)data, 8);
++		break;
+ 	case PT_I8:
+ 		lpProps->value.d = *((const uint64_t *)data);
+ 		break;
+@@ -441,6 +446,7 @@ _PUBLIC_ uint32_t get_mapi_property_size
+ 	case PT_ERROR:
+ 		return sizeof (uint32_t);
+ 	case PT_DOUBLE:
++		return sizeof (double);
+ 	case PT_I8:
+ 		return sizeof (uint64_t);
+ 	case PT_STRING8:
+@@ -455,6 +461,106 @@ _PUBLIC_ uint32_t get_mapi_property_size
+ 	return 0;
+ }
+ 
++/**
++   \details Return the expected size of the utf8 string after
++   conversion to utf16 by iconv() function.
++
++   \param inbuf pointer to the input string
++
++   \return expected length of the converted string
++
++   \note This routine is based upon utf8_pull() function from
++   samba4/lib/util/charset/iconv.c
++ */
++static size_t get_utf8_utf16_conv_length(const char *inbuf)
++{
++	size_t		in_left;
++	size_t		out_left;
++	size_t		max_out;
++	const uint8_t	*c = (const uint8_t *) inbuf;
++
++	/* Sanity checks */
++	if (!inbuf) return 0;
++
++	in_left = strlen(inbuf);
++	out_left = in_left;
++	out_left = ( out_left * 3);
++	/* includes null-termination bytes */
++	max_out = out_left + 2;
++
++	while (in_left >= 1 && out_left >= 2) {
++		if ((c[0] & 0x80) == 0) {
++			c += 1;
++			in_left -= 1;
++			out_left -= 2;
++			continue;
++		}
++
++		if ((c[0] & 0xe0) == 0xc0) {
++			if (in_left < 2 || (c[1] & 0xc0) != 0x80) {
++				return -1;
++			}
++			c += 2;
++			in_left -= 2;
++			out_left -= 2;
++			continue;
++		}
++
++		if ((c[0] & 0xf0) == 0xe0) {
++			if (in_left < 3 ||
++			    (c[1] & 0xc0) != 0x80 ||
++			    (c[2] & 0xc0) != 0x80) {
++				return -1;
++			}
++			c += 3;
++			in_left -= 3;
++			out_left -= 2;
++			continue;
++		}
++
++		if ((c[0] & 0xf8) == 0xf0) {
++			unsigned int codepoint;
++			if (in_left < 4 ||
++			    (c[1] & 0xc0) != 0x80 ||
++			    (c[2] & 0xc0) != 0x80 ||
++			    (c[3] & 0xc0) != 0x80) {
++				return -1;
++			}
++			codepoint = 
++				(c[3]&0x3f) | 
++				((c[2]&0x3f)<<6) | 
++				((c[1]&0x3f)<<12) |
++				((c[0]&0x7)<<18);
++			if (codepoint < 0x10000) {
++				c += 4;
++				in_left -= 4;
++				out_left -= 2;
++				continue;
++			}
++
++			codepoint -= 0x10000;
++
++			if (out_left < 4) {
++				return -1;
++			}
++
++			c += 4;
++			in_left -= 4;
++			out_left -= 4;
++			continue;
++		}
++		
++		/* we don't handle 5 byte sequences */
++		return -1;
++	}
++
++	if (in_left > 0) {
++		return -1;
++	}
++
++	return (max_out - out_left);
++}
++
+ /*
+   convenient function which cast a SPropValue structure in a mapi_SPropValue one and return the associated size
+ */
+@@ -474,7 +580,10 @@ _PUBLIC_ uint32_t cast_mapi_SPropValue(s
+ 		mapi_sprop->value.l = sprop->value.l;
+ 		return sizeof(uint32_t);
+ 	case PT_DOUBLE:
+-		mapi_sprop->value.dbl = sprop->value.dbl;
++		memcpy(&mapi_sprop->value.dbl, (uint8_t *)&sprop->value.dbl, 8);
++		return sizeof(double);
++	case PT_I8:
++		mapi_sprop->value.d = sprop->value.d;
+ 		return sizeof(uint64_t);
+ 	case PT_STRING8:
+ 		mapi_sprop->value.lpszA = sprop->value.lpszA;
+@@ -483,7 +592,7 @@ _PUBLIC_ uint32_t cast_mapi_SPropValue(s
+ 	case PT_UNICODE:
+ 		mapi_sprop->value.lpszW = sprop->value.lpszW;
+ 		if (!mapi_sprop->value.lpszW) return 0;
+-		return (strlen(sprop->value.lpszW) * 2 + 2);
++		return get_utf8_utf16_conv_length(mapi_sprop->value.lpszW);
+ 	case PT_SYSTIME:
+ 		mapi_sprop->value.ft.dwLowDateTime = sprop->value.ft.dwLowDateTime;
+ 		mapi_sprop->value.ft.dwHighDateTime = sprop->value.ft.dwHighDateTime;
+@@ -492,6 +601,9 @@ _PUBLIC_ uint32_t cast_mapi_SPropValue(s
+ 		mapi_sprop->value.bin.cb = sprop->value.bin.cb;
+ 		mapi_sprop->value.bin.lpb = sprop->value.bin.lpb;
+ 		return (mapi_sprop->value.bin.cb + sizeof(uint16_t));
++        case PT_ERROR:
++                mapi_sprop->value.err = sprop->value.err;
++                return sizeof(uint32_t);
+ 	case PT_MV_STRING8:
+ 		{
+ 			uint32_t	i;
+@@ -507,13 +619,58 @@ _PUBLIC_ uint32_t cast_mapi_SPropValue(s
+ 			}
+ 			return size;
+ 		}
++	case PT_MV_UNICODE:
++		{
++			uint32_t	i;
++			uint32_t	size = 0;
++
++			mapi_sprop->value.MVszW.cValues = sprop->value.MVszW.cValues;
++			size += 4;
++
++			mapi_sprop->value.MVszW.strings = talloc_array(global_mapi_ctx->mem_ctx, struct mapi_LPWSTR, mapi_sprop->value.MVszW.cValues);
++			for (i = 0; i < mapi_sprop->value.MVszW.cValues; i++) {
++				mapi_sprop->value.MVszW.strings[i].lppszW = sprop->value.MVszW.lppszW[i];
++				size += strlen(mapi_sprop->value.MVszW.strings[i].lppszW) + 1;
++			}
++			return size;
++		}
++	case PT_MV_BINARY:
++		{
++			uint32_t        i;
++			uint32_t        size = 0;
++
++			mapi_sprop->value.MVbin.cValues = sprop->value.MVbin.cValues;
++			size += 4;
++
++			mapi_sprop->value.MVbin.bin = talloc_array(global_mapi_ctx->mem_ctx, struct SBinary_short, mapi_sprop->value.MVbin.cValues);
++			for (i = 0; i < mapi_sprop->value.MVbin.cValues; i++) {
++				mapi_sprop->value.MVbin.bin[i].cb = sprop->value.MVbin.lpbin[i].cb;
++				mapi_sprop->value.MVbin.bin[i].lpb = sprop->value.MVbin.lpbin[i].lpb;
++				size += sprop->value.MVbin.lpbin[i].cb + sizeof (uint16_t);
++			}
++			return size;
++		}
++	case PT_MV_LONG:
++		{
++			uint32_t i;
++
++			mapi_sprop->value.MVl.cValues = sprop->value.MVl.cValues;
++			mapi_sprop->value.MVl.lpl = talloc_array (global_mapi_ctx->mem_ctx, uint32_t, mapi_sprop->value.MVl.cValues);
++			for (i = 0; i < mapi_sprop->value.MVl.cValues; i++) {
++				mapi_sprop->value.MVl.lpl[i] = sprop->value.MVl.lpl[i];
++			}
++			return sizeof(mapi_sprop->value.MVl.cValues) + (mapi_sprop->value.MVl.cValues * sizeof (uint32_t));
++		}
++        default:
++                fprintf(stderr, "unhandled conversion case in cast_mapi_SPropValue(): 0x%x\n", (sprop->ulPropTag & 0xFFFF));
++
+ 	}
+ 	return 0;
+ 
+ }
+ 
+ /*
+- *
++ * convenience function to convert a mapi_SPropValue structure into a SPropValue structure and return the associated size
+  */
+ _PUBLIC_ uint32_t cast_SPropValue(struct mapi_SPropValue *mapi_sprop, struct SPropValue *sprop)
+ {
+@@ -531,6 +688,9 @@ _PUBLIC_ uint32_t cast_SPropValue(struct
+ 		return sizeof(uint32_t);
+ 	case PT_DOUBLE:
+ 		sprop->value.dbl = mapi_sprop->value.dbl;
++		return sizeof(double);
++	case PT_I8:
++		sprop->value.d = mapi_sprop->value.d;
+ 		return sizeof(uint64_t);
+ 	case PT_STRING8:
+ 		sprop->value.lpszA = mapi_sprop->value.lpszA;
+@@ -548,7 +708,9 @@ _PUBLIC_ uint32_t cast_SPropValue(struct
+ 		sprop->value.bin.cb = mapi_sprop->value.bin.cb;
+ 		sprop->value.bin.lpb = mapi_sprop->value.bin.lpb;
+ 		return (sprop->value.bin.cb + sizeof(uint16_t));
+-
++        case PT_ERROR:
++                sprop->value.err = (enum MAPISTATUS)mapi_sprop->value.err;
++                return sizeof(uint32_t);
+ 	case PT_MV_STRING8:
+ 		{
+ 		uint32_t	i;
+@@ -564,6 +726,24 @@ _PUBLIC_ uint32_t cast_SPropValue(struct
+ 		}
+ 		return size;
+ 		}
++        case PT_MV_UNICODE:
++                {
++                        uint32_t        i;
++                        uint32_t        size = 0;
++
++                        sprop->value.MVszW.cValues = mapi_sprop->value.MVszW.cValues;
++                        size += 4;
++
++                        sprop->value.MVszW.lppszW = talloc_array(global_mapi_ctx->mem_ctx, const char*, sprop->value.MVszW.cValues);
++                        for (i = 0; i < sprop->value.MVszW.cValues; i++) {
++                                sprop->value.MVszW.lppszW[i] = mapi_sprop->value.MVszW.strings[i].lppszW;
++                                size += 2 * (strlen(sprop->value.MVszW.lppszW[i]) + 1);
++                        }
++                        return size;
++                }
++        default:
++                fprintf(stderr, "unhandled conversion case in cast_SPropValue(): 0x%x\n", (sprop->ulPropTag & 0xFFFF));
++
+ 	}
+ 	return 0;
+ }
+diff -upr openchange-0.9-COCHRANE/libmapi/utils.c openchange/libmapi/utils.c
+--- openchange-0.9-COCHRANE/libmapi/utils.c	2009-12-20 09:14:02.000000000 +0100
++++ openchange/libmapi/utils.c	2010-06-22 19:26:45.000000000 +0200
+@@ -101,30 +101,6 @@ _PUBLIC_ struct Binary_r *generate_recip
+ }
+ 
+ /**
+- * convert utf8 windows string into classic utf8
+- * NOTE: windows utf8 encoding is equal or larger to classic utf8
+- *       we should anyway find a better way to allocate the output buf
+- */
+-
+-int yyparse_utf8(char *, const char *);
+-
+-_PUBLIC_ char *windows_to_utf8(TALLOC_CTX *mem_ctx, const char *input)
+-{
+-	char	*tmp = NULL;
+-	char	*output;
+-
+-	if (!input) return NULL;
+-
+-	tmp = malloc(strlen(input) + 1);
+-	yyparse_utf8(tmp, input);
+-	output = talloc_strdup(mem_ctx, tmp);
+-	free(tmp);
+-	
+-	return output;
+-}
+-
+-
+-/**
+    \details Create a FID from an EntryID
+ 
+    \param cb count of lpb bytes
+diff -upr openchange-0.9-COCHRANE/Makefile openchange/Makefile
+--- openchange-0.9-COCHRANE/Makefile	2010-06-17 22:21:16.000000000 +0200
++++ openchange/Makefile	2010-06-22 19:26:45.000000000 +0200
+@@ -306,14 +306,6 @@ libmapi-openchange.$(SHLIBEXT).$(LIBMAPI
+ libmapi/version.h: VERSION
+ 	@./script/mkversion.sh 	VERSION libmapi/version.h $(PACKAGE_VERSION) $(top_builddir)/
+ 
+-libmapi/utf8_convert.yy.c: 	libmapi/utf8_convert.l
+-	@echo "Generating $@"
+-	@$(FLEX) -Plibmapi_utf8_convert_ -t $< > $@
+-
+-# Avoid warnings:
+-libmapi/utf8_convert.yy.o: CFLAGS=
+-libmapi/utf8_convert.yy.po: CFLAGS=
+-
+ libmapi/proto.h libmapi/proto_private.h:		\
+ 	libmapi/nspi.c					\
+ 	libmapi/emsmdb.c				\
+@@ -356,9 +348,9 @@ libmapi/proto.h libmapi/proto_private.h:
+ libmapi/emsmdb.c: libmapi/emsmdb.h gen_ndr/ndr_exchange_c.h
+ 
+ libmapi/mapitags.c libmapi/mapicode.c mapitags_enum.h mapicodes_enum.h: \
+-	libmapi/conf/mapi-properties 					\
+-	libmapi/conf/mapi-codes 					\
+-	libmapi/conf/mapi-named-properties 				\
++	libmapi/conf/mapi-properties								\
++	libmapi/conf/mapi-codes									\
++	libmapi/conf/mapi-named-properties							\
+ 	libmapi/conf/mparse.pl
+ 	@./libmapi/conf/build.sh
+ 
+diff -upr openchange-0.9-COCHRANE/utils/mapitest/mapitest_common.c openchange/utils/mapitest/mapitest_common.c
+--- openchange-0.9-COCHRANE/utils/mapitest/mapitest_common.c	2009-12-24 14:11:15.000000000 +0100
++++ openchange/utils/mapitest/mapitest_common.c	2010-06-22 19:26:45.000000000 +0200
+@@ -186,7 +186,7 @@ _PUBLIC_ bool mapitest_common_find_folde
+ 			fid = (const uint64_t *)find_SPropValue_data(&rowset.aRow[index], PR_FID);
+ 			tmp = (const char *)find_SPropValue_data(&rowset.aRow[index], PR_DISPLAY_NAME);
+ 
+-			newname = windows_to_utf8(mt->mem_ctx, tmp);
++			newname = talloc_strdup(mt->mem_ctx, tmp);
+ 			if (newname && fid && !strcmp(newname, name)) {
+ 				retval = OpenFolder(obj_parent, *fid, obj_child);
+ 				mapi_object_release(&obj_htable);
+diff -upr openchange-0.9-COCHRANE/utils/openchangeclient.c openchange/utils/openchangeclient.c
+--- openchange-0.9-COCHRANE/utils/openchangeclient.c	2009-12-24 14:11:15.000000000 +0100
++++ openchange/utils/openchangeclient.c	2010-06-22 19:26:45.000000000 +0200
+@@ -65,6 +65,7 @@ static void init_oclient(struct oclient 
+ 	oclient->private = false;
+ 	oclient->freebusy = NULL;
+ 	oclient->force = false;
++	oclient->summary = false;
+ 
+ 	/* contact related parameters */
+ 	oclient->email = NULL;
+@@ -93,14 +94,6 @@ static void init_oclient(struct oclient 
+ 	oclient->ocpf_dump = NULL;
+ }
+ 
+-static char *utf8tolinux(TALLOC_CTX *mem_ctx, const char *wstring)
+-{
+-	char		*newstr;
+-
+-	newstr = windows_to_utf8(mem_ctx, wstring);
+-	return newstr;
+-}
+-
+ static enum MAPISTATUS openchangeclient_getdir(TALLOC_CTX *mem_ctx,
+ 					       mapi_object_t *obj_container,
+ 					       mapi_object_t *obj_child,
+@@ -111,7 +104,6 @@ static enum MAPISTATUS openchangeclient_
+ 	struct SRowSet		SRowSet;
+ 	mapi_object_t		obj_htable;
+ 	mapi_object_t		obj_folder;
+-	char			*newname;
+ 	char     		**folder  = NULL;
+ 	const char		*name;
+ 	const uint64_t		*fid;
+@@ -140,17 +132,15 @@ static enum MAPISTATUS openchangeclient_
+ 		while (((retval = QueryRows(&obj_htable, 0x32, TBL_ADVANCE, &SRowSet)) != MAPI_E_NOT_FOUND) && SRowSet.cRows) {
+ 			for (index = 0; (index < SRowSet.cRows) && (found == false); index++) {
+ 				fid = (const uint64_t *)find_SPropValue_data(&SRowSet.aRow[index], PR_FID);
+-				name = (const char *)find_SPropValue_data(&SRowSet.aRow[index], PR_DISPLAY_NAME);
++				name = (const char *)find_SPropValue_data(&SRowSet.aRow[index], PR_DISPLAY_NAME_UNICODE);
+ 
+-				newname = utf8tolinux(mem_ctx, name);
+-				if (newname && fid && !strcmp(newname, folder[i])) {
++				if (name && fid && !strcmp(name, folder[i])) {
+ 					retval = OpenFolder(&obj_folder, *fid, obj_child);
+ 					MAPI_RETVAL_IF(retval, retval, folder);
+ 
+ 					found = true;
+ 					mapi_object_copy(&obj_folder, obj_child);
+ 				}
+-				MAPIFreeBuffer(newname);
+ 			}
+ 		}
+ 
+@@ -201,7 +191,10 @@ static bool oclient_read_file(TALLOC_CTX
+ 		return false;
+ 	}
+ 	/* stat the file */
+-	if (fstat(fd, &sb) != 0) return false;
++	if (fstat(fd, &sb) != 0) {
++		close(fd);
++		return false;
++	}
+ 
+ 	switch (mapitag) {
+ 	case PR_HTML:
+@@ -346,7 +339,9 @@ static bool store_attachment(mapi_object
+ 	}
+ 
+ 	path = talloc_asprintf(mem_ctx, "%s/%s", oclient->store_folder, filename);
+-	if ((fd = open(path, O_CREAT|O_WRONLY, S_IWUSR|S_IRUSR)) == -1) return false;
++	if ((fd = open(path, O_CREAT|O_WRONLY, S_IWUSR|S_IRUSR)) == -1) {
++		goto error;
++	}
+ 	talloc_free(path);
+ 
+ 	retval = OpenStream(&obj_attach, PR_ATTACH_DATA_BIN, 0, &obj_stream);
+@@ -815,7 +810,7 @@ static enum MAPISTATUS openchangeclient_
+ 	/* set message properties */
+ 	msgflag = MSGFLAG_UNSENT;
+ 	oclient->subject = (!oclient->subject) ? "" : oclient->subject;
+-	set_SPropValue_proptag(&props[0], PR_SUBJECT, 
++	set_SPropValue_proptag(&props[0], PR_SUBJECT_UNICODE, 
+ 			       (const void *)oclient->subject);
+ 	set_SPropValue_proptag(&props[1], PR_MESSAGE_FLAGS, 
+ 			       (const void *)&msgflag);
+@@ -833,7 +828,7 @@ static enum MAPISTATUS openchangeclient_
+ 			bin.cb = strlen(oclient->pr_body);
+ 			openchangeclient_stream(mem_ctx, obj_message, obj_stream, PR_BODY, 2, bin);
+ 		} else {
+-			set_SPropValue_proptag(&props[2], PR_BODY, 
++			set_SPropValue_proptag(&props[2], PR_BODY_UNICODE, 
+ 								   (const void *)oclient->pr_body);
+ 			prop_count++;
+ 		}
+@@ -1061,13 +1056,13 @@ static enum MAPISTATUS appointment_SetPr
+ 	lpProps = talloc_array(mem_ctx, struct SPropValue, 2);
+ 
+ 	if (oclient->subject) {
+-		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_CONVERSATION_TOPIC, 
++		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_CONVERSATION_TOPIC_UNICODE, 
+ 			       (const void *) oclient->subject);
+-		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_NORMALIZED_SUBJECT,
++		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_NORMALIZED_SUBJECT_UNICODE,
+ 			       (const void *) oclient->subject);
+ 	}
+ 	if (oclient->pr_body) {
+-		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_BODY, (const void *)oclient->pr_body);
++		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_BODY_UNICODE, (const void *)oclient->pr_body);
+ 	}
+ 	if (oclient->location) {
+ 		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PidLidLocation, (const void *)oclient->location);
+@@ -1228,12 +1223,12 @@ static enum MAPISTATUS contact_SetProps(
+ 	lpProps = talloc_array(mem_ctx, struct SPropValue, 2);
+ 
+ 	if (oclient->card_name) {
+-		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_NORMALIZED_SUBJECT, (const void *)oclient->card_name);
++		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_NORMALIZED_SUBJECT_UNICODE, (const void *)oclient->card_name);
+ 		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PidLidFileUnder, (const void *)oclient->card_name);
+ 		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, SPropTagArray->aulPropTag[0], (const void *)oclient->card_name);
+ 	}
+ 	if (oclient->full_name) {
+-		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_DISPLAY_NAME, (const void *)oclient->full_name);
++		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_DISPLAY_NAME_UNICODE, (const void *)oclient->full_name);
+ 	}
+ 	if (oclient->email) {
+ 		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PidLidEmail1OriginalDisplayName, (const void *)oclient->email);
+@@ -1315,8 +1310,8 @@ static enum MAPISTATUS task_SetProps(TAL
+ 	lpProps = talloc_array(mem_ctx, struct SPropValue, 2);
+ 
+ 	if (oclient->card_name) {
+-		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_CONVERSATION_TOPIC, (const void *)oclient->card_name);
+-		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_NORMALIZED_SUBJECT, (const void *)oclient->card_name);
++		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_CONVERSATION_TOPIC_UNICODE, (const void *)oclient->card_name);
++		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_NORMALIZED_SUBJECT_UNICODE, (const void *)oclient->card_name);
+ 	}
+ 
+ 	if (oclient->dtstart) {
+@@ -1344,7 +1339,7 @@ static enum MAPISTATUS task_SetProps(TAL
+ 	}
+ 
+ 	if (oclient->pr_body) {
+-		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_BODY, (const void *)oclient->pr_body);
++		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_BODY_UNICODE, (const void *)oclient->pr_body);
+ 	}
+ 
+ 	if (!oclient->update) {
+@@ -1431,10 +1426,10 @@ static enum MAPISTATUS note_SetProps(TAL
+ 	lpProps = talloc_array(mem_ctx, struct SPropValue, 2);
+ 
+ 	if (oclient->card_name) {
+-		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_CONVERSATION_TOPIC, (const void *)oclient->card_name);
+-		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_SUBJECT, (const void *)oclient->card_name);
+-		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_NORMALIZED_SUBJECT, (const void *)oclient->card_name);
+-		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_BODY, (const void *)oclient->card_name);
++		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_CONVERSATION_TOPIC_UNICODE, (const void *)oclient->card_name);
++		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_SUBJECT_UNICODE, (const void *)oclient->card_name);
++		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_NORMALIZED_SUBJECT_UNICODE, (const void *)oclient->card_name);
++		lpProps = add_SPropValue(mem_ctx, lpProps, &cValues, PR_BODY_UNICODE, (const void *)oclient->card_name);
+ 	}
+ 
+ 	if (!oclient->update) {
+@@ -1540,6 +1535,7 @@ static const char *get_container_class(T
+ 	SPropTagArray = set_SPropTagArray(mem_ctx, 0x1, PR_CONTAINER_CLASS);
+ 	retval = GetProps(&obj_folder, SPropTagArray, &lpProps, &count);
+ 	MAPIFreeBuffer(SPropTagArray);
++	mapi_object_release(&obj_folder);
+ 	if ((lpProps[0].ulPropTag != PR_CONTAINER_CLASS) || (retval != MAPI_E_SUCCESS)) {
+ 		errno = 0;
+ 		return IPF_NOTE;
+@@ -1556,7 +1552,6 @@ static bool get_child_folders(TALLOC_CTX
+ 	struct SPropTagArray	*SPropTagArray;
+ 	struct SRowSet		rowset;
+ 	const char	       	*name;
+-	char			*newname;
+ 	const char		*comment;
+ 	const uint32_t		*total;
+ 	const uint32_t		*unread;
+@@ -1574,9 +1569,9 @@ static bool get_child_folders(TALLOC_CTX
+ 	if (retval != MAPI_E_SUCCESS) return false;
+ 
+ 	SPropTagArray = set_SPropTagArray(mem_ctx, 0x6,
+-					  PR_DISPLAY_NAME,
++					  PR_DISPLAY_NAME_UNICODE,
+ 					  PR_FID,
+-					  PR_COMMENT,
++					  PR_COMMENT_UNICODE,
+ 					  PR_CONTENT_UNREAD,
+ 					  PR_CONTENT_COUNT,
+ 					  PR_FOLDER_CHILD_COUNT);
+@@ -1587,8 +1582,8 @@ static bool get_child_folders(TALLOC_CTX
+ 	while (((retval = QueryRows(&obj_htable, 0x32, TBL_ADVANCE, &rowset)) != MAPI_E_NOT_FOUND) && rowset.cRows) {
+ 		for (index = 0; index < rowset.cRows; index++) {
+ 			fid = (const uint64_t *)find_SPropValue_data(&rowset.aRow[index], PR_FID);
+-			name = (const char *)find_SPropValue_data(&rowset.aRow[index], PR_DISPLAY_NAME);
+-			comment = (const char *)find_SPropValue_data(&rowset.aRow[index], PR_COMMENT);
++			name = (const char *)find_SPropValue_data(&rowset.aRow[index], PR_DISPLAY_NAME_UNICODE);
++			comment = (const char *)find_SPropValue_data(&rowset.aRow[index], PR_COMMENT_UNICODE);
+ 			total = (const uint32_t *)find_SPropValue_data(&rowset.aRow[index], PR_CONTENT_COUNT);
+ 			unread = (const uint32_t *)find_SPropValue_data(&rowset.aRow[index], PR_CONTENT_UNREAD);
+ 			child = (const uint32_t *)find_SPropValue_data(&rowset.aRow[index], PR_FOLDER_CHILD_COUNT);
+@@ -1596,11 +1591,9 @@ static bool get_child_folders(TALLOC_CTX
+ 			for (i = 0; i < count; i++) {
+ 				printf("|   ");
+ 			}
+-			newname = utf8tolinux(mem_ctx, name);
+ 			printf("|---+ %-15s : %-20s (Total: %u / Unread: %u - Container class: %s) [FID: 0x%016"PRIx64"]\n", 
+-			       newname, comment?comment:"", total?*total:0, unread?*unread:0,
++			       name, comment?comment:"", total?*total:0, unread?*unread:0,
+ 			       get_container_class(mem_ctx, parent, *fid), *fid);
+-			MAPIFreeBuffer(newname);
+ 			if (child && *child) {
+ 				ret = get_child_folders(mem_ctx, &obj_folder, *fid, count + 1);
+ 				if (ret == false) return ret;
+@@ -1608,6 +1601,9 @@ static bool get_child_folders(TALLOC_CTX
+ 			
+ 		}
+ 	}
++	mapi_object_release(&obj_htable);
++	mapi_object_release(&obj_folder);
++
+ 	return true;
+ }
+ 
+@@ -1620,7 +1616,6 @@ static bool get_child_folders_pf(TALLOC_
+ 	struct SPropTagArray	*SPropTagArray;
+ 	struct SRowSet		rowset;
+ 	const char	       	*name;
+-	char			*newname;
+ 	const uint32_t		*child;
+ 	uint32_t		index;
+ 	const uint64_t		*fid;
+@@ -1635,7 +1630,7 @@ static bool get_child_folders_pf(TALLOC_
+ 	if (retval != MAPI_E_SUCCESS) return false;
+ 
+ 	SPropTagArray = set_SPropTagArray(mem_ctx, 0x3,
+-					  PR_DISPLAY_NAME,
++					  PR_DISPLAY_NAME_UNICODE,
+ 					  PR_FID,
+ 					  PR_FOLDER_CHILD_COUNT);
+ 	retval = SetColumns(&obj_htable, SPropTagArray);
+@@ -1645,15 +1640,13 @@ static bool get_child_folders_pf(TALLOC_
+ 	while (((retval = QueryRows(&obj_htable, 0x32, TBL_ADVANCE, &rowset)) != MAPI_E_NOT_FOUND) && rowset.cRows) {
+ 		for (index = 0; index < rowset.cRows; index++) {
+ 			fid = (const uint64_t *)find_SPropValue_data(&rowset.aRow[index], PR_FID);
+-			name = (const char *)find_SPropValue_data(&rowset.aRow[index], PR_DISPLAY_NAME);
++			name = (const char *)find_SPropValue_data(&rowset.aRow[index], PR_DISPLAY_NAME_UNICODE);
+ 			child = (const uint32_t *)find_SPropValue_data(&rowset.aRow[index], PR_FOLDER_CHILD_COUNT);
+ 
+ 			for (i = 0; i < count; i++) {
+ 				printf("|   ");
+ 			}
+-			newname = utf8tolinux(mem_ctx, name);
+-			printf("|---+ %-15s [FID: 0x%016"PRIx64"]\n", newname, *fid);
+-			MAPIFreeBuffer(newname);
++			printf("|---+ %-15s [FID: 0x%016"PRIx64"]\n", name, *fid);
+ 			if (*child) {
+ 				ret = get_child_folders_pf(mem_ctx, &obj_folder, *fid, count + 1);
+ 				if (ret == false) return ret;
+@@ -1686,16 +1679,15 @@ static bool openchangeclient_mailbox(TAL
+ 	struct SPropValue		*lpProps;
+ 	uint32_t			cValues;
+ 	const char			*mailbox_name;
+-	char				*utf8_mailbox_name;
+ 
+ 	/* Retrieve the mailbox folder name */
+-	SPropTagArray = set_SPropTagArray(mem_ctx, 0x1, PR_DISPLAY_NAME);
++	SPropTagArray = set_SPropTagArray(mem_ctx, 0x1, PR_DISPLAY_NAME_UNICODE);
+ 	retval = GetProps(obj_store, SPropTagArray, &lpProps, &cValues);
+ 	MAPIFreeBuffer(SPropTagArray);
+ 	if (retval != MAPI_E_SUCCESS) return false;
+ 
+-	if (lpProps[0].value.lpszA) {
+-		mailbox_name = lpProps[0].value.lpszA;
++	if (lpProps[0].value.lpszW) {
++		mailbox_name = lpProps[0].value.lpszW;
+ 	} else {
+ 		return false;
+ 	}
+@@ -1704,9 +1696,7 @@ static bool openchangeclient_mailbox(TAL
+ 	retval = GetDefaultFolder(obj_store, &id_mailbox, olFolderTopInformationStore);
+ 	if (retval != MAPI_E_SUCCESS) return false;
+ 
+-	utf8_mailbox_name = utf8tolinux(mem_ctx, mailbox_name);
+-	printf("+ %s\n", utf8_mailbox_name);
+-	MAPIFreeBuffer(utf8_mailbox_name);
++	printf("+ %s\n", mailbox_name);
+ 	return get_child_folders(mem_ctx, obj_store, id_mailbox, 0);
+ }
+ 
+diff -upr openchange-0.9-COCHRANE/utils/openchangeclient.h openchange/utils/openchangeclient.h
+--- openchange-0.9-COCHRANE/utils/openchangeclient.h	2008-11-30 07:44:59.000000000 +0100
++++ openchange/utils/openchangeclient.h	2010-06-22 19:26:45.000000000 +0200
+@@ -75,6 +75,7 @@ struct oclient {
+ 	const char		*folder_comment;
+ 	const char		*freebusy;
+ 	bool			force;
++	bool			summary;
+ 	/* PF related options */
+ 	bool			pf;
+ 	const char		*folder;
+diff -upr openchange-0.9-COCHRANE/utils/openchangepfadmin.c openchange/utils/openchangepfadmin.c
+--- openchange-0.9-COCHRANE/utils/openchangepfadmin.c	2009-01-28 04:34:25.000000000 +0100
++++ openchange/utils/openchangepfadmin.c	2010-06-22 19:26:45.000000000 +0200
+@@ -76,14 +76,6 @@ static void list_IPF_class(void)
+ 	}
+ }
+ 
+-static char *utf8tolinux(TALLOC_CTX *mem_ctx, const char *wstring)
+-{
+-	char		*newstr;
+-
+-	newstr = windows_to_utf8(mem_ctx, wstring);
+-	return newstr;
+-}
+-
+ static bool get_child_folders_pf(TALLOC_CTX *mem_ctx, mapi_object_t *parent, mapi_id_t folder_id, int count)
+ {
+ 	enum MAPISTATUS		retval;
+@@ -93,7 +85,6 @@ static bool get_child_folders_pf(TALLOC_
+ 	struct SPropTagArray	*SPropTagArray;
+ 	struct SRowSet		rowset;
+ 	const char	       	*name;
+-	char			*newname;
+ 	const uint32_t		*child;
+ 	uint32_t		index;
+ 	const uint64_t		*fid;
+@@ -108,7 +99,7 @@ static bool get_child_folders_pf(TALLOC_
+ 	if (retval != MAPI_E_SUCCESS) return false;
+ 
+ 	SPropTagArray = set_SPropTagArray(mem_ctx, 0x3,
+-					  PR_DISPLAY_NAME,
++					  PR_DISPLAY_NAME_UNICODE,
+ 					  PR_FID,
+ 					  PR_FOLDER_CHILD_COUNT);
+ 	retval = SetColumns(&obj_htable, SPropTagArray);
+@@ -118,15 +109,13 @@ static bool get_child_folders_pf(TALLOC_
+ 	while (((retval = QueryRows(&obj_htable, 0x32, TBL_ADVANCE, &rowset)) != MAPI_E_NOT_FOUND) && rowset.cRows) {
+ 		for (index = 0; index < rowset.cRows; index++) {
+ 			fid = (const uint64_t *)find_SPropValue_data(&rowset.aRow[index], PR_FID);
+-			name = (const char *)find_SPropValue_data(&rowset.aRow[index], PR_DISPLAY_NAME);
++			name = (const char *)find_SPropValue_data(&rowset.aRow[index], PR_DISPLAY_NAME_UNICODE);
+ 			child = (const uint32_t *)find_SPropValue_data(&rowset.aRow[index], PR_FOLDER_CHILD_COUNT);
+ 
+ 			for (i = 0; i < count; i++) {
+ 				printf("|   ");
+ 			}
+-			newname = utf8tolinux(mem_ctx, name);
+-			printf("|---+ %-15s\n", newname);
+-			MAPIFreeBuffer(newname);
++			printf("|---+ %-15s\n", name);
+ 			if (*child) {
+ 				ret = get_child_folders_pf(mem_ctx, &obj_folder, *fid, count + 1);
+ 				if (ret == false) return ret;
+@@ -146,7 +135,6 @@ static enum MAPISTATUS openchangepfadmin
+ 	struct SPropTagArray	*SPropTagArray;
+ 	struct SRowSet		rowset;
+ 	mapi_object_t		obj_htable;
+-	char			*newname;
+ 	const char		*name;
+ 	const uint64_t		*fid;
+ 	uint32_t		index;
+@@ -156,7 +144,7 @@ static enum MAPISTATUS openchangepfadmin
+ 	MAPI_RETVAL_IF(retval, GetLastError(), NULL);
+ 
+ 	SPropTagArray = set_SPropTagArray(mem_ctx, 0x2,
+-					  PR_DISPLAY_NAME,
++					  PR_DISPLAY_NAME_UNICODE,
+ 					  PR_FID);
+ 	retval = SetColumns(&obj_htable, SPropTagArray);
+ 	MAPIFreeBuffer(SPropTagArray);
+@@ -165,15 +153,13 @@ static enum MAPISTATUS openchangepfadmin
+ 	while (((retval = QueryRows(&obj_htable, 0x32, TBL_ADVANCE, &rowset)) != MAPI_E_NOT_FOUND) && rowset.cRows) {
+ 		for (index = 0; index < rowset.cRows; index++) {
+ 			fid = (const uint64_t *)find_SPropValue_data(&rowset.aRow[index], PR_FID);
+-			name = (const char *)find_SPropValue_data(&rowset.aRow[index], PR_DISPLAY_NAME);
++			name = (const char *)find_SPropValue_data(&rowset.aRow[index], PR_DISPLAY_NAME_UNICODE);
+ 
+-			newname = utf8tolinux(mem_ctx, name);
+-			if (newname && fid && !strcmp(newname, folder)) {
++			if (name && fid && !strcmp(name, folder)) {
+ 				retval = OpenFolder(obj_container, *fid, obj_child);
+ 				MAPI_RETVAL_IF(retval, GetLastError(), NULL);
+ 				return MAPI_E_SUCCESS;
+ 			}
+-			MAPIFreeBuffer(newname);
+ 		}
+ 	}
+ 
+diff -upr openchange-0.9-COCHRANE/utils/openchange-tools.c openchange/utils/openchange-tools.c
+--- openchange-0.9-COCHRANE/utils/openchange-tools.c	2009-12-19 01:14:30.000000000 +0100
++++ openchange/utils/openchange-tools.c	2010-06-22 19:26:45.000000000 +0200
+@@ -36,16 +36,16 @@ static void popt_openchange_version_call
+ }
+ 
+ struct poptOption popt_openchange_version[] = {
+-	{ NULL, 0, POPT_ARG_CALLBACK, (void *)popt_openchange_version_callback	},
+-	{ "version", 'V', POPT_ARG_NONE, NULL, 'V', "Print version "		},
+-	{ NULL }
++	{ NULL, '\0', POPT_ARG_CALLBACK, (void *)popt_openchange_version_callback, '\0', NULL, NULL },
++	{ "version", 'V', POPT_ARG_NONE, NULL, 'V', "Print version ", NULL },
++	POPT_TABLEEND
+ };
+ 
+ 
+ /*
+  * Retrieve the property value for a given SRow and property tag.  
+  *
+- * If the property type is a string: fetch PT_STRING8 then PT_UNICODE
++ * If the property type is a string: fetch PT_UNICODE then PT_STRING8
+  * in case the desired property is not available in first choice.
+  *
+  * Fetch property normally for any others properties
+@@ -56,11 +56,11 @@ _PUBLIC_ void *octool_get_propval(struct
+ 
+ 	if (((proptag & 0xFFFF) == PT_STRING8) ||
+ 	    ((proptag & 0xFFFF) == PT_UNICODE)) {
+-		proptag = (proptag & 0xFFFF0000) | PT_STRING8;
++		proptag = (proptag & 0xFFFF0000) | PT_UNICODE;
+ 		str = (const char *) find_SPropValue_data(aRow, proptag);
+ 		if (str) return (void *)str;
+ 
+-		proptag = (proptag & 0xFFFF0000) | PT_UNICODE;
++		proptag = (proptag & 0xFFFF0000) | PT_STRING8;
+ 		str = (const char *) find_SPropValue_data(aRow, proptag);
+ 		return (void *)str;
+ 	} 
+@@ -125,13 +125,13 @@ _PUBLIC_ enum MAPISTATUS octool_get_body
+ 
+ 	switch (format) {
+ 	case olEditorText:
+-		data = octool_get_propval(aRow, PR_BODY);
++		data = octool_get_propval(aRow, PR_BODY_UNICODE);
+ 		if (data) {
+ 			body->data = talloc_memdup(mem_ctx, data, strlen(data));
+ 			body->length = strlen(data);
+ 		} else {
+ 			mapi_object_init(&obj_stream);
+-			retval = OpenStream(obj_message, PR_BODY, 0, &obj_stream);
++			retval = OpenStream(obj_message, PR_BODY_UNICODE, 0, &obj_stream);
+ 			MAPI_RETVAL_IF(retval, GetLastError(), NULL);
+ 			
+ 			retval = octool_get_stream(mem_ctx, &obj_stream, body);
+@@ -239,9 +239,9 @@ _PUBLIC_ enum MAPISTATUS octool_message(
+ 	}
+ 	
+ 	from = (const char *) octool_get_propval(&aRow, PR_SENT_REPRESENTING_NAME);
+-	to = (const char *) octool_get_propval(&aRow, PR_DISPLAY_TO);
+-	cc = (const char *) octool_get_propval(&aRow, PR_DISPLAY_CC);
+-	bcc = (const char *) octool_get_propval(&aRow, PR_DISPLAY_BCC);
++	to = (const char *) octool_get_propval(&aRow, PR_DISPLAY_TO_UNICODE);
++	cc = (const char *) octool_get_propval(&aRow, PR_DISPLAY_CC_UNICODE);
++	bcc = (const char *) octool_get_propval(&aRow, PR_DISPLAY_BCC_UNICODE);
+ 
+ 	has_attach = (const uint8_t *) octool_get_propval(&aRow, PR_HASATTACH);
+ 	cp = (const uint32_t *) octool_get_propval(&aRow, PR_MESSAGE_CODEPAGE);
