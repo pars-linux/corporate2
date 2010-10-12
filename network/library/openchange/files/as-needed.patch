@@ -1,0 +1,243 @@
+Index: openchange-0.9-COCHRANE/Makefile
+===================================================================
+--- openchange-0.9-COCHRANE.orig/Makefile
++++ openchange-0.9-COCHRANE/Makefile
+@@ -297,8 +297,7 @@ libmapi.$(SHLIBEXT).$(PACKAGE_VERSION): 
+ 	libmapi/socket/netif.po				\
+ 	libmapi/utf8_convert.yy.po
+ 	@echo "Linking $@"
+-	@$(CC) $(DSOOPT) $(CFLAGS) $(LDFLAGS) -Wl,-soname,libmapi.$(SHLIBEXT).$(LIBMAPI_SO_VERSION) -o $@ $^ $(LIBS)
+-
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -Wl,-soname,libmapi.$(SHLIBEXT).$(LIBMAPI_SO_VERSION) $(LIBS) -o $@ 
+ 
+ libmapi.$(SHLIBEXT).$(LIBMAPI_SO_VERSION): libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	ln -fs $< $@
+@@ -539,7 +538,7 @@ libmapiadmin.$(SHLIBEXT).$(PACKAGE_VERSI
+ 	libmapiadmin/mapiadmin.po 		\
+ 	libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	@echo "Linking $@"
+-	@$(CC) $(DSOOPT) $(LDFLAGS) -Wl,-soname,libmapiadmin.$(SHLIBEXT).$(LIBMAPIADMIN_SO_VERSION) -o $@ $^ $(LIBS) $(LIBMAPIADMIN_LIBS) 
++	@$(CC) $(CFLAGS) $(LDFLAGS)  $(DSOOPT) $^ -Wl,-soname,libmapiadmin.$(SHLIBEXT).$(LIBMAPIADMIN_SO_VERSION) $(LIBS) $(LIBMAPIADMIN_LIBS) -o $@ 
+ 
+ libmapiadmin/proto.h libmapiadmin/proto_private.h: 	\
+ 	libmapiadmin/mapiadmin.c 			\
+@@ -623,7 +622,7 @@ libocpf.$(SHLIBEXT).$(PACKAGE_VERSION):	
+ 	libocpf/ocpf_write.po			\
+ 	libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	@echo "Linking $@"
+-	@$(CC) $(DSOOPT) $(LDFLAGS) -Wl,-soname,libocpf.$(SHLIBEXT).$(LIBOCPF_SO_VERSION) -o $@ $^ $(LIBS)
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -Wl,-soname,libocpf.$(SHLIBEXT).$(LIBOCPF_SO_VERSION) $(LIBS) -o $@ 
+ 
+ libocpf.$(SHLIBEXT).$(LIBOCPF_SO_VERSION): libocpf.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	ln -fs $< $@
+@@ -704,7 +703,7 @@ torture/openchange.$(SHLIBEXT):			\
+ 	torture/openchange.po			\
+ 	libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $(DSOOPT) $^ -L. $(LIBS)
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -L. $(LIBS) -o $@ 
+ 
+ torture/torture_proto.h: torture/mapi_restrictions.c	\
+ 	torture/mapi_criteria.c		\
+@@ -790,7 +789,7 @@ mapiproxy/dcesrv_mapiproxy.$(SHLIBEXT): 
+ 						gen_ndr/ndr_exchange.po				
+ 
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION)
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION) -o $@
+ 
+ mapiproxy/dcesrv_mapiproxy.c: gen_ndr/ndr_exchange_s.c gen_ndr/ndr_exchange.c
+ 
+@@ -838,7 +837,7 @@ mapiproxy/libmapiproxy.$(SHLIBEXT).$(PAC
+ 							mapiproxy/libmapiproxy/mapi_handles.po			\
+ 							mapiproxy/libmapiproxy/entryid.po			\
+ 							libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+-	@$(CC) -o $@ $(DSOOPT) -Wl,-soname,libmapiproxy.$(SHLIBEXT).$(LIBMAPIPROXY_SO_VERSION) $^ -L. $(LIBS) $(TDB_LIBS)
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -Wl,-soname,libmapiproxy.$(SHLIBEXT).$(LIBMAPIPROXY_SO_VERSION) -L. $(LIBS) $(TDB_LIBS) -o $@ 
+ 
+ mapiproxy/libmapiproxy.$(SHLIBEXT).$(LIBMAPIPROXY_SO_VERSION): libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	ln -fs $< $@
+@@ -881,7 +880,7 @@ mapiproxy/libmapiserver.$(SHLIBEXT).$(PA
+ 							mapiproxy/libmapiserver/libmapiserver_oxorule.po	 \
+ 							ndr_mapi.po				\
+ 							gen_ndr/ndr_exchange.po
+-	@$(CC) -o $@ $(DSOOPT) -Wl,-soname,libmapiserver.$(SHLIBEXT).$(LIBMAPIPROXY_SO_VERSION) $^ $(LIBS)
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -Wl,-soname,libmapiserver.$(SHLIBEXT).$(LIBMAPIPROXY_SO_VERSION) $(LIBS) -o $@ 
+ 
+ mapiproxy/libmapiserver.$(SHLIBEXT).$(LIBMAPISERVER_SO_VERSION): libmapiserver.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	ln -fs $< $@
+@@ -924,7 +923,7 @@ mapiproxy/libmapistore.$(SHLIBEXT).$(PAC
+ 							mapiproxy/libmapistore/mapistore_processing.po	\
+ 							mapiproxy/libmapistore/mapistore_backend.po	\
+ 							mapiproxy/libmapistore/mapistore_tdb_wrap.po
+-	@$(CC) -o $@ $(DSOOPT) $(LDFLAGS) -Wl,-soname,libmapistore.$(SHLIBEXT).$(LIBMAPISTORE_SO_VERSION) $^ -L. $(LIBS) $(TDB_LIBS)
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -Wl,-soname,libmapistore.$(SHLIBEXT).$(LIBMAPISTORE_SO_VERSION) -L. $(LIBS) $(TDB_LIBS) -o $@ 
+ 
+ mapiproxy/libmapistore.$(SHLIBEXT).$(LIBMAPISTORE_SO_VERSION): libmapistore.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	ln -fs $< $@
+@@ -957,8 +956,8 @@ distclean:: mapistore_sqlite3-distclean
+ 
+ mapiproxy/libmapistore/backends/mapistore_sqlite3.$(SHLIBEXT): mapiproxy/libmapistore/backends/mapistore_sqlite3.po
+ 	@echo "Linking mapistore module $@"
+-	@$(CC) $(SQLITE_CFLAGS) -o $@ $(DSOOPT) $(LDFLAGS) $^ -L. $(LIBS) $(SQLITE_LIBS) 	\
+-	-Lmapiproxy mapiproxy/libmapistore.$(SHLIBEXT).$(PACKAGE_VERSION)
++	@$(CC) $(SQLITE_CFLAGS) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -L. $(LIBS) $(SQLITE_LIBS) 	\
++	-Lmapiproxy mapiproxy/libmapistore.$(SHLIBEXT).$(PACKAGE_VERSION) -o $@
+ 
+ #######################
+ # mapistore test tools
+@@ -969,7 +968,7 @@ mapistore_test: bin/mapistore_test
+ bin/mapistore_test: 	mapiproxy/libmapistore/tests/mapistore_test.o		\
+ 			mapiproxy/libmapistore.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $^ $(LDFLAGS) $(LIBS) -lpopt
++	@$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LIBS) -lpopt -o $@
+ 
+ mapistore_clean:
+ 	rm -f mapiproxy/libmapistore/tests/*.o
+@@ -1007,13 +1006,13 @@ clean:: mapiproxy-modules-clean
+ 
+ mapiproxy/modules/mpm_downgrade.$(SHLIBEXT): mapiproxy/modules/mpm_downgrade.po
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION)
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION) -o $@
+ 
+ mapiproxy/modules/mpm_pack.$(SHLIBEXT):	mapiproxy/modules/mpm_pack.po	\
+ 					ndr_mapi.po			\
+ 					gen_ndr/ndr_exchange.po
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION)
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION) -o $@ 
+ 
+ mapiproxy/modules/mpm_cache.$(SHLIBEXT): mapiproxy/modules/mpm_cache.po		\
+ 					 mapiproxy/modules/mpm_cache_ldb.po	\
+@@ -1021,11 +1020,11 @@ mapiproxy/modules/mpm_cache.$(SHLIBEXT):
+ 					 ndr_mapi.po				\
+ 					 gen_ndr/ndr_exchange.po
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION)
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION) -o $@
+ 
+ mapiproxy/modules/mpm_dummy.$(SHLIBEXT): mapiproxy/modules/mpm_dummy.po
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION)
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION) -o $@
+ 
+ 
+ ####################
+@@ -1076,7 +1075,7 @@ mapiproxy/servers/exchange_nsp.$(SHLIBEX
+ 						mapiproxy/servers/default/nspi/emsabp_tdb.po		\
+ 						mapiproxy/servers/default/nspi/emsabp_property.po	
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION)
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION) -o $@
+ 
+ mapiproxy/servers/exchange_emsmdb.$(SHLIBEXT):	mapiproxy/servers/default/emsmdb/dcesrv_exchange_emsmdb.po	\
+ 						mapiproxy/servers/default/emsmdb/emsmdbp.po			\
+@@ -1089,13 +1088,13 @@ mapiproxy/servers/exchange_emsmdb.$(SHLI
+ 						mapiproxy/servers/default/emsmdb/oxcnotif.po			\
+ 						mapiproxy/servers/default/emsmdb/oxorule.po			
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION) \
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION) \
+ 						mapiproxy/libmapiserver.$(SHLIBEXT).$(PACKAGE_VERSION)		\
+-						mapiproxy/libmapistore.$(SHLIBEXT).$(PACKAGE_VERSION)
++						mapiproxy/libmapistore.$(SHLIBEXT).$(PACKAGE_VERSION) -o $@
+ 
+ mapiproxy/servers/exchange_ds_rfr.$(SHLIBEXT):	mapiproxy/servers/default/rfr/dcesrv_exchange_ds_rfr.po
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION)
++	@$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ -L. $(LIBS) -Lmapiproxy mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION) -o $@
+ 
+ #################################################################
+ # Tools compilation rules
+@@ -1130,7 +1129,7 @@ bin/openchangeclient: 	utils/openchangec
+ 			libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)		\
+ 			libocpf.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	@echo "Linking $@"
+-	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS) -lpopt
++	@$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LIBS) -lpopt -o $@
+ 
+ 
+ ##############
+@@ -1158,7 +1157,7 @@ bin/mapiprofile: 	utils/mapiprofile.o 		
+ 			utils/openchange-tools.o 		\
+ 			libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	@echo "Linking $@"
+-	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS) -lpopt
++	@$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LIBS) -lpopt -o $@ 
+ 
+ 
+ ###################
+@@ -1187,7 +1186,7 @@ bin/openchangepfadmin:	utils/openchangep
+ 			libmapi.$(SHLIBEXT).$(PACKAGE_VERSION) 		\
+ 			libmapiadmin.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $^ $(LDFLAGS) $(LIBS) $(LIBMAPIADMIN_LIBS) -lpopt			
++	@$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LIBS) $(LIBMAPIADMIN_LIBS) -lpopt -o $@
+ 
+ 
+ ###################
+@@ -1218,7 +1217,7 @@ bin/exchange2mbox:	utils/exchange2mbox.o
+ 			utils/openchange-tools.o			\
+ 			libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $^ $(LIBS) $(LDFLAGS) -lpopt  $(MAGIC_LIBS)
++	@$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LIBS) -lpopt $(MAGIC_LIBS) -o $@
+ 
+ 
+ ###################
+@@ -1282,7 +1281,7 @@ bin/exchange2ical:	utils/exchange2ical_t
+ 			utils/openchange-tools.o			\
+ 			libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	@echo "Linking $@"
+-	@$(CC) $(LDFLAGS) -o $@ $^ $(LIBS) $(ICAL_LIBS) -lpopt
++	@$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LIBS) $(ICAL_LIBS) -lpopt -o $@ 
+ 
+ 
+ ###################
+@@ -1338,7 +1337,7 @@ bin/mapitest:	utils/mapitest/mapitest.o	
+ 		utils/mapitest/modules/module_mapidump.o	\
+ 		libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)		
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $^ $(LDFLAGS) $(LIBS) -lpopt
++	@$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LIBS) -lpopt -o $@
+ 
+ utils/mapitest/proto.h:					\
+ 	utils/mapitest/mapitest_suite.c			\
+@@ -1393,7 +1392,7 @@ bin/openchangemapidump:	utils/backup/ope
+ 			utils/openchange-tools.o			\
+ 			libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $^ $(LDFLAGS) $(LIBS) -lpopt
++	@$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LIBS) -lpopt -o $@ 
+ 
+ 
+ ###############
+@@ -1418,7 +1417,7 @@ clean:: schemaIDGUID-clean
+ 
+ bin/schemaIDGUID: utils/schemaIDGUID.o
+ 	@echo "Linking $@"
+-	@$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
++	$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LIBS) -o $@
+ 
+ 
+ ##################
+@@ -1442,7 +1441,7 @@ clean:: locale_codepage-clean
+ 
+ bin/locale_codepage: libmapi/tests/locale_codepage.o libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+ 	@echo "Linking $@"
+-	@$(CC) -o $@ $^ $(LDFLAGS) $(LIBS) -lpopt
++	@$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LIBS) -lpopt -o $@
+ 
+ ###################
+ # python code
+@@ -1455,7 +1454,7 @@ pymapi: $(pythonscriptdir)/mapi.$(SHLIBE
+ pymapi/%: CFLAGS+=`$(PYTHON_CONFIG) --cflags` -fPIC
+ 
+ $(pythonscriptdir)/mapi.$(SHLIBEXT): $(patsubst %.c,%.o,$(wildcard pymapi/*.c)) libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+-	$(CC) -o $@ $^ `$(PYTHON_CONFIG) --libs` $(DSOOPT)
++	$(CC) $(CFLAGS) $(LDFLAGS) $(DSOOPT) $^ `$(PYTHON_CONFIG) --libs` -lpthread -o $@ 
+ 
+ pymapi-install::
+ 	$(INSTALL) -d $(DESTDIR)$(PYCDIR)
