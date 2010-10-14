@@ -14,10 +14,9 @@ def setup():
 
 def build():
     autotools.make()
-    autotools.make("-C doc/design-paper tor-design.pdf")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
     pisitools.dodoc("AUTHORS", "ChangeLog", "README", "doc/*.txt",
-                    "doc/spec/*.txt", "doc/design-paper/tor-design.pdf")
+                    "doc/spec/*.txt")
     pisitools.dohtml("doc/website/*")
