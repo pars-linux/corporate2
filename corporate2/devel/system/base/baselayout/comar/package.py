@@ -103,6 +103,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
               "partimag",
               "pnp",
               "pnpadmin",
+              "polipo",
               "postdrop",
               "postfix",
               "postgres",
@@ -157,6 +158,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
              "oprofile",
              "partimag",
              "pnp",
+             "polipo",
              "postfix",
              "postgres",
              "pulse",
@@ -251,6 +253,9 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     # privoxy
     hav("addGroup", (162, "privoxy"))
 
+    # polipo
+    hav("addGroup", (166, "polipo"))
+
     # Comar' profile groups
     hav("addGroup", (200, "pnp"))
     hav("addGroup", (201, "removable"))
@@ -304,6 +309,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     hav("addUser", (160, "usbmuxd", "usbmuxd daemon", "/dev/null", "/bin/false", "", ["usbmuxd"], [], []))
     hav("addUser", (161, "openvpn", "OpenVPN", "/etc/openvpn", "/sbin/nologin", "", ["openvpn"], [], []))
     hav("addUser", (162, "privoxy", "Privoxy", "/etc/privoxy", "/sbin/nologin", "", ["privoxy"], [], []))
+    hav("addUser", (164, "polipo", "polipo user", "/dev/null", "/sbin/nologin", "", ["polipo"], [], []))
 
     # Comar' profile users
     hav("addUser", (200, "pnp", "PnP", "/dev/null", "/bin/false", "", ["pnp"], [], []))
