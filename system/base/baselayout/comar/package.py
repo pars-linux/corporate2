@@ -95,6 +95,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
               "named",
               "netadmin",
               "netuser",
+              "nginx",
               "nm-openconnect",
               "ntlmaps",
               "ntp",
@@ -151,6 +152,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
              "mpd",
              "mysql",
              "named",
+             "nginx",
              "nm-openconnect",
              "ntlmaps",
              "ntp",
@@ -256,6 +258,9 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     # polipo
     hav("addGroup", (166, "polipo"))
 
+    # nginx
+    hav("addGroup", (167, "nginx"))
+
     # Comar' profile groups
     hav("addGroup", (200, "pnp"))
     hav("addGroup", (201, "removable"))
@@ -310,6 +315,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     hav("addUser", (161, "openvpn", "OpenVPN", "/etc/openvpn", "/sbin/nologin", "", ["openvpn"], [], []))
     hav("addUser", (162, "privoxy", "Privoxy", "/etc/privoxy", "/sbin/nologin", "", ["privoxy"], [], []))
     hav("addUser", (164, "polipo", "polipo user", "/dev/null", "/sbin/nologin", "", ["polipo"], [], []))
+    hav("addUser", (166, "nginx", "nginx user", "/etc/nginx", "/sbin/nologin", "", ["nginx"], [], []))
 
     # Comar' profile users
     hav("addUser", (200, "pnp", "PnP", "/dev/null", "/bin/false", "", ["pnp"], [], []))
