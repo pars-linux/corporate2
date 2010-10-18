@@ -9,7 +9,6 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-WorkDir = "rrdtool-1.3.99909060808"
 
 def setup():
     shelltools.export("AUTOPOINT", "/bin/true")
@@ -37,10 +36,15 @@ def build():
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
-    # remove useless .packlist and .bs by hand.
-    pisitools.remove("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/RRDs/.packlist" % get.curPERL())
-    pisitools.remove("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/RRDp/.packlist" % get.curPERL())
-    pisitools.remove("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/RRDs/RRDs.bs" % get.curPERL())
-    # remove empty dir
-    pisitools.removeDir("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/RRDp" % get.curPERL())
+    # remove useless .packlist .bs and emptydirs by hand.
+    if(get.ARCH() == "i386"):
+        pisitools.remove("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/RRDs/.packlist" % get.curPERL())
+        pisitools.remove("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/RRDp/.packlist" % get.curPERL())
+        pisitools.remove("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/RRDs/RRDs.bs" % get.curPERL())
+        pisitools.removeDir("/usr/lib/perl5/vendor_perl/%s/i686-linux-thread-multi/auto/RRDp" % get.curPERL())
+    elif(get.ARCH() == "x86_64"):
+        pisitools.remove("/usr/lib/perl5/vendor_perl/%s/x86_64-linux-thread-multi/auto/RRDs/.packlist" % get.curPERL())
+        pisitools.remove("/usr/lib/perl5/vendor_perl/%s/x86_64-linux-thread-multi/auto/RRDp/.packlist" % get.curPERL())
+        pisitools.remove("/usr/lib/perl5/vendor_perl/%s/x86_64-linux-thread-multi/auto/RRDs/RRDs.bs" % get.curPERL())
+        pisitools.removeDir("/usr/lib/perl5/vendor_perl/%s/x86_64-linux-thread-multi/auto/RRDp" % get.curPERL())
 
