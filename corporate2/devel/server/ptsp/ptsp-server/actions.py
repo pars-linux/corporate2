@@ -17,10 +17,7 @@ def install():
     pisitools.insinto("/opt/ptsp/", "*")
 
     pisitools.insinto("/tftpboot/pts/%s-ptsp" % suffix, "boot/kernel-%s" % suffix)
-
-    shelltools.system("/sbin/mkinitramfs --network --kernel=%s "
-                      "--rootdir=%s/opt/ptsp --output=%s/tftpboot/pts/%s-ptsp/" %
-                      (suffix, get.installDIR(), get.installDIR(), suffix))
+    pisitools.insinto("/tftpboot/pts/%s-ptsp" % suffix, "boot/initramfs-%s" % suffix)
 
     # latest-ptsp also is used by AdditionalFiles
     pisitools.dosym("%s-ptsp" % suffix, "/tftpboot/pts/latest-ptsp")
