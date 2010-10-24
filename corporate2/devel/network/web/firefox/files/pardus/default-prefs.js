@@ -26,6 +26,9 @@ pref("middlemouse.contentLoadURL", false);
 pref("spellchecker.dictionary", "tr-TR");
 pref("startup.homepage_override_url", "resource:/browserconfig.properties");
 
+// http://bugs.pardus.org.tr/show_bug.cgi?id=14496
+pref("gfx.color_management.mode", 0);
+
 pref("font.default.null", "sans-serif");
 pref("font.default.tr", "sans-serif");
 pref("font.default.x-unicode", "sans-serif");
