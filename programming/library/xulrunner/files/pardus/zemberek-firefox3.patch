@@ -12,7 +12,6 @@ Index: extensions/spellcheck/hunspell/src/mozHunspell.h
  /* 56c778e4-1bee-45f3-a689-886692a97fe7 */   \
  { 0x56c778e4, 0x1bee, 0x45f3, \
 Index: extensions/spellcheck/Makefile.in
-===================================================================
 --- extensions/spellcheck/Makefile.in.orig
 +++ extensions/spellcheck/Makefile.in
 @@ -47,7 +47,7 @@ DIRS		= idl locales
@@ -25,10 +24,9 @@ Index: extensions/spellcheck/Makefile.in
  
  DIRS += src
 Index: extensions/spellcheck/src/Makefile.in
-===================================================================
 --- extensions/spellcheck/src/Makefile.in.orig
 +++ extensions/spellcheck/src/Makefile.in
-@@ -84,11 +84,16 @@ SHARED_LIBRARY_LIBS += ../hunspell/src/$
+@@ -84,11 +84,17 @@ SHARED_LIBRARY_LIBS += ../hunspell/src/$
  LOCAL_INCLUDES += -I$(srcdir)/../hunspell/src
  endif
  
@@ -39,21 +37,21 @@ Index: extensions/spellcheck/src/Makefile.in
  		$(LIBS_DIR) \
  		$(MOZ_COMPONENT_LIBS) \
 +		$(MOZ_DBUS_GLIB_LIBS) \
++		-ldbus-glib-1 \
  		$(MOZ_UNICHARUTIL_LIBS) \
  		$(MOZ_HUNSPELL_LIBS) \
 +		$(MOZ_ZEMBEREK_LIBS) \
  		$(NULL)
  
  include $(topsrcdir)/config/rules.mk
-@@ -96,3 +101,6 @@ include $(topsrcdir)/config/rules.mk
+@@ -96,3 +102,6 @@ include $(topsrcdir)/config/rules.mk
  LOCAL_INCLUDES += \
  	-I$(topsrcdir)/xpcom/io \
  	$(NULL)
 +
-+CXXFLAGS += $(TK_CFLAGS) $(MOZ_DBUS_GLIB_CFLAGS)
++CXXFLAGS += $(TK_CFLAGS) $(MOZ_DBUS_GLIB_CFLAGS) $(MOZ_DBUS_CFLAGS) -ldbus-glib-1
 +CXXFLAGS := $(subst -pedantic,,$(CXXFLAGS))
 Index: extensions/spellcheck/src/mozSpellChecker.cpp
-===================================================================
 --- extensions/spellcheck/src/mozSpellChecker.cpp.orig
 +++ extensions/spellcheck/src/mozSpellChecker.cpp
 @@ -43,7 +43,7 @@
@@ -102,7 +100,6 @@ Index: extensions/spellcheck/src/mozSpellChecker.cpp
  
      NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(count, words);
 Index: extensions/spellcheck/src/mozSpellCheckerFactory.cpp
-===================================================================
 --- extensions/spellcheck/src/mozSpellCheckerFactory.cpp.orig
 +++ extensions/spellcheck/src/mozSpellCheckerFactory.cpp
 @@ -41,7 +41,9 @@
@@ -154,7 +151,6 @@ Index: extensions/spellcheck/src/mozSpellCheckerFactory.cpp
    {
        NULL,
 Index: extensions/spellcheck/zemberek/Makefile.in
-===================================================================
 --- /dev/null
 +++ extensions/spellcheck/zemberek/Makefile.in
 @@ -0,0 +1,50 @@
@@ -209,10 +205,9 @@ Index: extensions/spellcheck/zemberek/Makefile.in
 +
 +include $(topsrcdir)/config/rules.mk
 Index: extensions/spellcheck/zemberek/src/Makefile.in
-===================================================================
 --- /dev/null
 +++ extensions/spellcheck/zemberek/src/Makefile.in
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,81 @@
 +# ***** BEGIN LICENSE BLOCK *****
 +# Version: MPL 1.1/GPL 2.0/LGPL 2.1
 +#
@@ -282,7 +277,8 @@ Index: extensions/spellcheck/zemberek/src/Makefile.in
 +
 +EXTRA_DSO_LDOPTS = \
 +		$(LIBS_DIR) \
-+        $(MOZ_DBUS_GLIB_LIBS) \
++       $(MOZ_DBUS_GLIB_LIBS) \
++       -ldbus-glib-1 \
 +		$(XPCOM_LIBS) \
 +		$(NSPR_LIBS) \
 +		$(MOZ_UNICHARUTIL_LIBS) \
@@ -290,7 +286,7 @@ Index: extensions/spellcheck/zemberek/src/Makefile.in
 +
 +include $(topsrcdir)/config/rules.mk
 +
-+CXXFLAGS += $(TK_CFLAGS) $(MOZ_DBUS_GLIB_CFLAGS)
++CXXFLAGS += $(TK_CFLAGS) $(MOZ_DBUS_GLIB_CFLAGS) $(MOZ_DBUS_CFLAGS) -ldbus-glib-1
 +CXXFLAGS := $(subst -pedantic,,$(CXXFLAGS))
 +
 Index: extensions/spellcheck/zemberek/src/mozZemberek.cpp
@@ -782,7 +778,6 @@ Index: extensions/spellcheck/zemberek/src/mozZemberek.cpp
 +  return NS_OK;
 +}
 Index: extensions/spellcheck/zemberek/src/mozZemberekDirProvider.cpp
-===================================================================
 --- /dev/null
 +++ extensions/spellcheck/zemberek/src/mozZemberekDirProvider.cpp
 @@ -0,0 +1,182 @@
@@ -969,7 +964,6 @@ Index: extensions/spellcheck/zemberek/src/mozZemberekDirProvider.cpp
 +char const *const
 +mozZemberekDirProvider::kContractID = "@mozilla.org/spellcheck/dir-provider;1";
 Index: extensions/spellcheck/zemberek/src/mozZemberekDirProvider.h
-===================================================================
 --- /dev/null
 +++ extensions/spellcheck/zemberek/src/mozZemberekDirProvider.h
 @@ -0,0 +1,85 @@
@@ -1059,7 +1053,6 @@ Index: extensions/spellcheck/zemberek/src/mozZemberekDirProvider.h
 +
 +#endif // mozZemberekDirProvider
 Index: extensions/spellcheck/zemberek/src/mozZemberekFactory.cpp
-===================================================================
 --- /dev/null
 +++ extensions/spellcheck/zemberek/src/mozZemberekFactory.cpp
 @@ -0,0 +1,83 @@
@@ -1147,7 +1140,6 @@ Index: extensions/spellcheck/zemberek/src/mozZemberekFactory.cpp
 +//
 +NS_IMPL_NSGETMODULE(mozZemberekModule, components)
 Index: extensions/spellcheck/zemberek/src/mozZemberek.h
-===================================================================
 --- /dev/null
 +++ extensions/spellcheck/zemberek/src/mozZemberek.h
 @@ -0,0 +1,95 @@
@@ -1247,7 +1239,6 @@ Index: extensions/spellcheck/zemberek/src/mozZemberek.h
 +
 +#endif
 Index: extensions/spellcheck/zemberek/src/zemberek.cpp
-===================================================================
 --- /dev/null
 +++ extensions/spellcheck/zemberek/src/zemberek.cpp
 @@ -0,0 +1,79 @@
@@ -1331,7 +1322,6 @@ Index: extensions/spellcheck/zemberek/src/zemberek.cpp
 +    return strdup("UTF-8");
 +}
 Index: extensions/spellcheck/zemberek/src/zemberek.h
-===================================================================
 --- /dev/null
 +++ extensions/spellcheck/zemberek/src/zemberek.h
 @@ -0,0 +1,34 @@
@@ -1370,7 +1360,6 @@ Index: extensions/spellcheck/zemberek/src/zemberek.h
 +
 +#endif
 Index: extensions/spellcheck/zemberek/src/zsconn.cpp
-===================================================================
 --- /dev/null
 +++ extensions/spellcheck/zemberek/src/zsconn.cpp
 @@ -0,0 +1,110 @@
@@ -1485,7 +1474,6 @@ Index: extensions/spellcheck/zemberek/src/zsconn.cpp
 +}
 +
 Index: extensions/spellcheck/zemberek/src/zsconn.h
-===================================================================
 --- /dev/null
 +++ extensions/spellcheck/zemberek/src/zsconn.h
 @@ -0,0 +1,43 @@
@@ -1533,7 +1521,6 @@ Index: extensions/spellcheck/zemberek/src/zsconn.h
 +
 +#endif
 Index: extensions/spellcheck/zemberek/src/zstring.cpp
-===================================================================
 --- /dev/null
 +++ extensions/spellcheck/zemberek/src/zstring.cpp
 @@ -0,0 +1,80 @@
@@ -1618,7 +1605,6 @@ Index: extensions/spellcheck/zemberek/src/zstring.cpp
 +}
 +
 Index: extensions/spellcheck/zemberek/src/zstring.h
-===================================================================
 --- /dev/null
 +++ extensions/spellcheck/zemberek/src/zstring.h
 @@ -0,0 +1,50 @@
