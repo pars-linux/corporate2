@@ -3,15 +3,11 @@ Subject: Add the option to use libproxy for system proxy settings
 References:
 https://bugzilla.mozilla.org/show_bug.cgi?id=517655
 
-diff --git a/config/autoconf.mk.in b/config/autoconf.mk.in
---- a/config/autoconf.mk.in
-+++ b/config/autoconf.mk.in
-@@ -542,16 +542,20 @@ FT2_CFLAGS             = @FT2_CFLAGS@
- FT2_LIBS               = @FT2_LIBS@
- 
- MOZ_PANGO_CFLAGS        = @MOZ_PANGO_CFLAGS@
- MOZ_PANGO_LIBS          = @MOZ_PANGO_LIBS@
- 
+Index: mozilla/config/autoconf.mk.in
+===================================================================
+--- mozilla.orig/config/autoconf.mk.in
++++ mozilla/config/autoconf.mk.in
+@@ -549,6 +549,10 @@ MOZ_PANGO_LIBS          = @MOZ_PANGO_LIB
  MOZ_XIE_LIBS		= @MOZ_XIE_LIBS@
  XT_LIBS			= @XT_LIBS@
  
@@ -22,20 +18,11 @@ diff --git a/config/autoconf.mk.in b/config/autoconf.mk.in
  MOZ_LIBNOTIFY_CFLAGS	= @MOZ_LIBNOTIFY_CFLAGS@
  MOZ_LIBNOTIFY_LIBS	= @MOZ_LIBNOTIFY_LIBS@
  MOZ_ENABLE_LIBNOTIFY	= @MOZ_ENABLE_LIBNOTIFY@
- 
- GLIB_CFLAGS	= @GLIB_CFLAGS@
- GLIB_LIBS	= @GLIB_LIBS@
- GLIB_GMODULE_LIBS	= @GLIB_GMODULE_LIBS@
- LIBIDL_CFLAGS = @LIBIDL_CFLAGS@
-diff --git a/config/system-headers b/config/system-headers
---- a/config/system-headers
-+++ b/config/system-headers
-@@ -1013,11 +1013,14 @@ hunspell.hxx
- #if MOZ_NATIVE_BZ2==1
- bzlib.h
- #endif
- #if MOZ_PLATFORM_MAEMO==5
- hildon-uri.h
+Index: mozilla/config/system-headers
+===================================================================
+--- mozilla.orig/config/system-headers
++++ mozilla/config/system-headers
+@@ -1018,6 +1018,9 @@ hildon-uri.h
  hildon-mime.h
  libosso.h
  #endif
@@ -45,15 +32,11 @@ diff --git a/config/system-headers b/config/system-headers
  #if MOZ_NATIVE_LIBEVENT==1
  event.h
  #endif
-diff --git a/configure.in b/configure.in
---- a/configure.in
-+++ b/configure.in
-@@ -5325,16 +5325,39 @@ then
-         AC_DEFINE(MOZ_ENABLE_DBUS)
-     fi
- fi
- AC_SUBST(MOZ_ENABLE_DBUS)
- AC_SUBST(MOZ_DBUS_GLIB_CFLAGS)
+Index: mozilla/configure.in
+===================================================================
+--- mozilla.orig/configure.in
++++ mozilla/configure.in
+@@ -5333,6 +5333,29 @@ AC_SUBST(MOZ_DBUS_GLIB_CFLAGS)
  AC_SUBST(MOZ_DBUS_GLIB_LIBS)
  
  dnl ========================================================
@@ -83,20 +66,11 @@ diff --git a/configure.in b/configure.in
  dnl = libnotify support
  dnl ========================================================
  
- if test "$MOZ_ENABLE_GTK2"
- then
-     MOZ_ENABLE_LIBNOTIFY=1
- 
-     MOZ_ARG_DISABLE_BOOL(libnotify,
-diff --git a/toolkit/library/Makefile.in b/toolkit/library/Makefile.in
---- a/toolkit/library/Makefile.in
-+++ b/toolkit/library/Makefile.in
-@@ -243,16 +243,20 @@ endif
- ifdef MOZ_TREE_FREETYPE
- EXTRA_DSO_LDOPTS += $(FT2_LIBS)
- endif
- 
- ifdef MOZ_ENABLE_STARTUP_NOTIFICATION
+Index: mozilla/toolkit/library/Makefile.in
+===================================================================
+--- mozilla.orig/toolkit/library/Makefile.in
++++ mozilla/toolkit/library/Makefile.in
+@@ -248,6 +248,10 @@ ifdef MOZ_ENABLE_STARTUP_NOTIFICATION
  EXTRA_DSO_LDOPTS += $(MOZ_STARTUP_NOTIFICATION_LIBS)
  endif
  
@@ -107,20 +81,11 @@ diff --git a/toolkit/library/Makefile.in b/toolkit/library/Makefile.in
  ifeq ($(OS_ARCH),BeOS)
  EXTRA_DSO_LDOPTS += -lbe -ltracker
  endif
- 
- ifeq ($(OS_ARCH),SunOS)
- EXTRA_DSO_LDOPTS += -lelf -ldemangle -lCstd
- endif
- 
-diff --git a/toolkit/system/unixproxy/Makefile.in b/toolkit/system/unixproxy/Makefile.in
---- a/toolkit/system/unixproxy/Makefile.in
-+++ b/toolkit/system/unixproxy/Makefile.in
-@@ -15,16 +15,17 @@
- #
- # The Initial Developer of the Original Code is
- # IBM Corporation.
- # Portions created by the Initial Developer are Copyright (C) 2004
- # the Initial Developer. All Rights Reserved.
+Index: mozilla/toolkit/system/unixproxy/Makefile.in
+===================================================================
+--- mozilla.orig/toolkit/system/unixproxy/Makefile.in
++++ mozilla/toolkit/system/unixproxy/Makefile.in
+@@ -20,6 +20,7 @@
  #
  # Contributor(s):
  #  Brian Ryner <bryner@brianryner.com>
@@ -128,17 +93,7 @@ diff --git a/toolkit/system/unixproxy/Makefile.in b/toolkit/system/unixproxy/Mak
  #
  # Alternatively, the contents of this file may be used under the terms of
  # either the GNU General Public License Version 2 or later (the "GPL"), or
- # the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- # in which case the provisions of the GPL or the LGPL are applicable instead
- # of those above. If you wish to allow use of your version of this file only
- # under the terms of either the GPL or the LGPL, and not to allow others to
- # use your version of this file under the terms of the MPL, indicate your
-@@ -53,15 +54,30 @@ LIBXUL_LIBRARY  = 1
- 
- REQUIRES = \
-         xpcom \
-         string \
-         necko \
+@@ -58,10 +59,25 @@ REQUIRES = \
          mozgnome \
          $(NULL)
  
@@ -165,10 +120,10 @@ diff --git a/toolkit/system/unixproxy/Makefile.in b/toolkit/system/unixproxy/Mak
 +endif # MOZ_ENABLE_LIBPROXY
 +
  include $(topsrcdir)/config/rules.mk
-diff --git a/toolkit/system/unixproxy/nsLibProxySettings.cpp b/toolkit/system/unixproxy/nsLibProxySettings.cpp
-new file mode 100644
+Index: mozilla/toolkit/system/unixproxy/nsLibProxySettings.cpp
+===================================================================
 --- /dev/null
-+++ b/toolkit/system/unixproxy/nsLibProxySettings.cpp
++++ mozilla/toolkit/system/unixproxy/nsLibProxySettings.cpp
 @@ -0,0 +1,167 @@
 +/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* ***** BEGIN LICENSE BLOCK *****
