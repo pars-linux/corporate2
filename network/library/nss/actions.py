@@ -10,7 +10,7 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir="mozilla"
+WorkDir="%s-%s/mozilla" % (get.srcNAME(), get.srcVERSION())
 
 def setup():
     # Create nss.pc and nss-config dynamically
