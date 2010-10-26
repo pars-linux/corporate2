@@ -36,13 +36,13 @@ def build():
     autotools.make()
 
 def install():
-    #first install pidl and make it pidl compatible
-    shelltools.cd("pidl/")
+    shelltools.cd("source4/")
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    #samba joins now
-    shelltools.cd("../source4/")
+
+    shelltools.cd("../pidl/")
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+    pisitools.remove("usr/lib/perl*/vendor_perl/*/*/auto/Parse/Pidl/.packlist")
 
     #do mid-level sym
     libs = ["libldb", "libndr", "libndr_standard", "libsamba-hostconfig", "libdcerpc", "libdcerpc_samr", "libsamba-util"]
@@ -102,3 +102,7 @@ def install():
         pisitools.remove("/usr/include/samba-4.0/%s" % header)
 
     pisitools.removeDir("/usr/lib/%s" % get.curPYTHON())
+
+    # Avoid conflict with perl-Parse-Yapp
+    pisitools.removeDir("/usr/lib/perl*/vendor_perl/%s/Parse/Yapp" % get.curPERL())
+    pisitools.removeDir("/usr/share/perl*/Parse/Yapp")
