@@ -1,0 +1,136 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>libproxy</Name>
+        <Homepage>http://code.google.com/p/libproxy/</Homepage>
+        <Packager>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Packager>
+        <License>LGPLv2.1</License>
+        <IsA>app:console</IsA>
+        <Summary>Proxy configuration library</Summary>
+        <Description>libproxy is a library that provides automatic proxy configuration management.</Description>
+        <Archive sha1sum="d770dcc63bc5e361948c6d3dcc74c5db81e2200c" type="targz">http://libproxy.googlecode.com/files/libproxy-0.4.3.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>gconf</Dependency>
+            <Dependency>libXmu</Dependency>
+            <Dependency>webkit-gtk-devel</Dependency>
+            <Dependency>xulrunner-devel</Dependency>
+            <Dependency>NetworkManager</Dependency>
+            <!--<Dependency>kdelibs-devel</Dependency>
+            <Dependency versionFrom="4.6.2">qt-devel</Dependency>-->
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">fix-werror.diff</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>libproxy</Name>
+        <Files>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="executable">/usr/libexec</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
+            <Path fileType="data">/usr/share/cmake</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>libproxy-gnome</Name>
+        <RuntimeDependencies>
+            <Dependency versionFrom="0.4.3">libproxy</Dependency>
+            <Dependency>gconf</Dependency>
+            <Dependency>libXmu</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libproxy/*/modules/config_gnome.*</Path>
+            <!-- add gconf helper to gnome package -->
+            <Path fileType="executable">/usr/lib/libproxy/pxgconf</Path>
+        </Files>
+    </Package>
+
+    <!--
+    <Package>
+        <Name>libproxy-kde</Name>
+        <RuntimeDependencies>
+            <Dependency versionFrom="0.4.3">libproxy</Dependency>
+            <Dependency>kdelibs</Dependency>
+            <Dependency>qt</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libproxy/*/modules/config_kde*</Path>
+        </Files>
+    </Package>
+    -->
+
+    <Package>
+        <Name>libproxy-webkit-gtk</Name>
+        <RuntimeDependencies>
+            <Dependency versionFrom="0.4.3">libproxy</Dependency>
+            <Dependency>webkit-gtk</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libproxy/*/modules/pacrunner_webkit*</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>libproxy-mozjs</Name>
+        <RuntimeDependencies>
+            <Dependency versionFrom="0.4.3">libproxy</Dependency>
+            <Dependency>xulrunner</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libproxy/*/modules/pacrunner_mozjs*</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>libproxy-networkmanager</Name>
+        <RuntimeDependencies>
+            <Dependency versionFrom="0.4.3">libproxy</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libproxy/*/modules/network_networkmanager*</Path>
+        </Files>
+    </Package>
+
+    <History>
+        <Update release="4">
+            <Date>2010-06-21</Date>
+            <Version>0.4.3</Version>
+            <Comment>Version bump to 0.4.3</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="3">
+            <Date>2010-03-19</Date>
+            <Version>0.4.0</Version>
+            <Comment>Add reverseDependencyUpdate, since ABI breakage.</Comment>
+            <Requires>
+                <Action>reverseDependencyUpdate</Action>
+            </Requires>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="2">
+            <Date>2010-03-15</Date>
+            <Version>0.4.0</Version>
+            <Comment>Version bump to latest release and split libproxy modules.</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2009-03-06</Date>
+            <Version>0.2.3</Version>
+            <Comment>First release.</Comment>
+            <Name>Burak Çalışkan</Name>
+            <Email>burakclskn@gmail.com</Email>
+        </Update>
+    </History>
+</PISI>
