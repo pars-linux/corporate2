@@ -1,0 +1,23 @@
+diff -r 247fd11d763d libaudiofile/modules/msadpcm.c
+--- a/libaudiofile/modules/msadpcm.c	Sat Jan 03 20:35:58 2009 +0100
++++ b/libaudiofile/modules/msadpcm.c	Sun Jan 04 01:43:06 2009 +0100
+@@ -129,8 +129,7 @@
+ 	ms_adpcm_state	*state[2];
+ 
+ 	/* Calculate the number of bytes needed for decoded data. */
+-	outputLength = msadpcm->samplesPerBlock * sizeof (int16_t) *
+-		msadpcm->track->f.channelCount;
++	outputLength = msadpcm->samplesPerBlock * sizeof (int16_t);
+ 
+ 	channelCount = msadpcm->track->f.channelCount;
+ 
+@@ -180,8 +179,7 @@
+ 		The first two samples have already been 'decoded' in
+ 		the block header.
+ 	*/
+-	samplesRemaining = (msadpcm->samplesPerBlock - 2) *
+-		msadpcm->track->f.channelCount;
++	samplesRemaining = msadpcm->samplesPerBlock - 2;
+ 
+ 	while (samplesRemaining > 0)
+ 	{
