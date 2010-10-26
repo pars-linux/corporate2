@@ -1,0 +1,429 @@
+Index: audiofile-0.2.6/libaudiofile/afinternal.h
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/afinternal.h
++++ audiofile-0.2.6/libaudiofile/afinternal.h
+@@ -149,7 +149,7 @@ typedef struct _AFmoduleinst
+ 		struct { struct _AFmoduleinst *source; } pull;
+ 		struct { struct _AFmoduleinst *sink; } push;
+ 	} u;
+-	_AFmodule *mod;
++	const _AFmodule *mod;
+ 	bool free_on_close;	/* AF_TRUE=don't free module until close */
+ 	bool valid;	/* internal use only */
+ #ifdef AF_DEBUG		/* these are set in _AFsetupmodules */
+Index: audiofile-0.2.6/libaudiofile/modules.c
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/modules.c
++++ audiofile-0.2.6/libaudiofile/modules.c
+@@ -74,7 +74,7 @@ extern const _AFmodule int2rebufferv2f, 
+ 	_AFnewmodinst creates a module instance from a module.
+ 	It returns a structure, not a pointer to a structure.
+ */
+-_AFmoduleinst _AFnewmodinst (_AFmodule *mod)
++_AFmoduleinst _AFnewmodinst (const _AFmodule *mod)
+ {
+ 	_AFmoduleinst ret;
+ 
+@@ -227,7 +227,7 @@ static void name##describe(struct _AFmod
+ 	desc;\
+ }\
+ \
+-static _AFmodule name =\
++static const _AFmodule name =\
+ { \
+ 	#name,\
+ 	name##describe, \
+@@ -403,7 +403,7 @@ typedef struct pcmmodspec
+ /*
+ 	initpcmmod
+ */
+-static _AFmoduleinst initpcmmod (_AFmodule *mod,
++static _AFmoduleinst initpcmmod (const _AFmodule *mod,
+ 	_PCMInfo *input_mapping, _PCMInfo *output_mapping)
+ {
+ 	_AFmoduleinst ret = _AFnewmodinst(mod);
+@@ -727,7 +727,7 @@ static void name##run(_AFchunk *inc, _AF
+ 	}\
+ }\
+ \
+-static _AFmodule name =\
++static const _AFmodule name =\
+ { \
+ 	#name, \
+ 	channelchangedescribe, \
+@@ -761,8 +761,8 @@ CHANNELINTMOD(channelchange4, schar4)
+ /*
+ 	initchannelchange
+ */
+-static _AFmoduleinst initchannelchange (_AFmodule *mod,
+-	double *matrix, _PCMInfo *outpcm,
++static _AFmoduleinst initchannelchange (const _AFmodule *mod,
++	const double *matrix, _PCMInfo *outpcm,
+ 	int inchannels, int outchannels,
+ 	bool reading)
+ {
+@@ -790,37 +790,37 @@ static _AFmoduleinst initchannelchange (
+ 
+ 		if (inchannels==1 && outchannels==2)
+ 		{
+-			static double m[]={1,1};
++			static const double m[]={1,1};
+ 			matrix=m;
+ 			special=AF_TRUE;
+ 		}
+ 		else if (inchannels==1 && outchannels==4)
+ 		{
+-			static double m[]={1,1,0,0};
++			static const double m[]={1,1,0,0};
+ 			matrix=m;
+ 			special=AF_TRUE;
+ 		}
+ 		else if (inchannels==2 && outchannels==1)
+ 		{
+-			static double m[]={.5,.5};
++			static const double m[]={.5,.5};
+ 			matrix=m;
+ 			special=AF_TRUE;
+ 		}
+ 		else if (inchannels==2 && outchannels==4)
+ 		{
+-			static double m[]={1,0,0,1,0,0,0,0};
++			static const double m[]={1,0,0,1,0,0,0,0};
+ 			matrix=m;
+ 			special=AF_TRUE;
+ 		}
+ 		else if (inchannels==4 && outchannels==1)
+ 		{
+-			static double m[]={.5,.5,.5,.5};
++			static const double m[]={.5,.5,.5,.5};
+ 			matrix=m;
+ 			special=AF_TRUE;
+ 		}
+ 		else if (inchannels==4 && outchannels==2)
+ 		{
+-			static double m[]={1,0,1,0,0,1,0,1};
++			static const double m[]={1,0,1,0,0,1,0,1};
+ 			matrix=m;
+ 			special=AF_TRUE;
+ 		}
+@@ -1371,21 +1371,21 @@ static void disposerateconvertmods (_Tra
+ 
+ /* The stuff in this section is used by arrangemodules(). */
+ 
+-static _AFmodule *unsigned2signed[5] =
++static const _AFmodule *unsigned2signed[5] =
+ {
+ 	NULL,
+ 	&unsigned2signed1, &unsigned2signed2,
+ 	&unsigned2signed3, &unsigned2signed4
+ };
+ 
+-static _AFmodule *signed2unsigned[5] =
++static const _AFmodule *signed2unsigned[5] =
+ {
+ 	NULL,
+ 	&signed2unsigned1, &signed2unsigned2,
+ 	&signed2unsigned3, &signed2unsigned4
+ };
+ 
+-static _AFmodule *swapbytes[9] =
++static const _AFmodule *swapbytes[9] =
+ {
+ 	NULL, NULL, &swap2, &swap3, &swap4,
+ 	NULL, NULL, NULL, &swap8
+@@ -1433,32 +1433,32 @@ static format_code get_format_code (_Aud
+ 	return -1;
+ }
+ 
+-static _AFmodule *to_flt[6] =
++static const _AFmodule *to_flt[6] =
+ {
+ 	&int2float1, &int2float2, &int2float3, &int2float4,
+ 	NULL, &double2float
+ };
+ 
+-static _AFmodule *to_dbl[6] =
++static const _AFmodule *to_dbl[6] =
+ {
+ 	&int2double1, &int2double2, &int2double3, &int2double4,
+ 	&float2double, NULL
+ };
+ 
+-static _AFmodule *clip[6] =
++static const _AFmodule *clip[6] =
+ {
+ 	&clip1, &clip2, &clip3, &clip4,
+ 	&clipfloat, &clipdouble
+ };
+ 
+-static _AFmodule *channelchanges[6] =
++static const _AFmodule *channelchanges[6] =
+ {
+ 	&channelchange1, &channelchange2, &channelchange3, &channelchange4,
+ 	&channelchangefloat, &channelchangedouble
+ };
+ 
+ /* indices are of type format_code: matrix[infmtcode][outfmtcode] */
+-static _AFmodule *convertmatrix[6][6] =
++static const _AFmodule *convertmatrix[6][6] =
+ {
+ 	/* TO:
+ 	{
+Index: audiofile-0.2.6/libaudiofile/modules.h
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/modules.h
++++ audiofile-0.2.6/libaudiofile/modules.h
+@@ -102,7 +102,7 @@ void _AFsimplemodrun_push (_AFmoduleinst
+ void _AFfreemodspec (_AFmoduleinst *i);
+ 
+ /* _AFnewmodinst returns a structure, not a pointer. */
+-_AFmoduleinst _AFnewmodinst (_AFmodule *mod);
++_AFmoduleinst _AFnewmodinst (const _AFmodule *mod);
+ 
+ status _AFinitmodules (AFfilehandle h, _Track *trk);
+ status _AFsetupmodules (AFfilehandle h, _Track *trk);
+Index: audiofile-0.2.6/libaudiofile/avr.c
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/avr.c
++++ audiofile-0.2.6/libaudiofile/avr.c
+@@ -48,7 +48,7 @@
+ 
+ #include "avr.h"
+ 
+-_AFfilesetup _af_avr_default_filesetup =
++const _AFfilesetup _af_avr_default_filesetup =
+ {
+ 	_AF_VALID_FILESETUP,	/* valid */
+ 	AF_FILE_AVR,		/* fileFormat */
+Index: audiofile-0.2.6/libaudiofile/iff.c
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/iff.c
++++ audiofile-0.2.6/libaudiofile/iff.c
+@@ -55,7 +55,7 @@ static status ParseVHDR (AFfilehandle fi
+ static status ParseBODY (AFfilehandle file, AFvirtualfile *fh, u_int32_t type,
+ 	size_t size);
+ 
+-_AFfilesetup _af_iff_default_filesetup =
++const _AFfilesetup _af_iff_default_filesetup =
+ {
+ 	_AF_VALID_FILESETUP,	/* valid */
+ 	AF_FILE_IFF_8SVX,	/* fileFormat */
+Index: audiofile-0.2.6/libaudiofile/ircam.c
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/ircam.c
++++ audiofile-0.2.6/libaudiofile/ircam.c
+@@ -59,7 +59,7 @@ const u_int8_t _af_ircam_vax_magic[4] = 
+ 	_af_ircam_mips_magic[4] = {0x64, 0xa3, 0x03, 0x00},
+ 	_af_ircam_next_magic[4] = {0x64, 0xa3, 0x04, 0x00};
+ 
+-_AFfilesetup _af_ircam_default_filesetup =
++const _AFfilesetup _af_ircam_default_filesetup =
+ {
+ 	_AF_VALID_FILESETUP,	/* valid */
+ 	AF_FILE_IRCAM,		/* fileFormat */
+Index: audiofile-0.2.6/libaudiofile/nist.c
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/nist.c
++++ audiofile-0.2.6/libaudiofile/nist.c
+@@ -46,7 +46,7 @@
+ 
+ #include "nist.h"
+ 
+-_AFfilesetup _af_nist_default_filesetup =
++const _AFfilesetup _af_nist_default_filesetup =
+ {
+ 	_AF_VALID_FILESETUP,	/* valid */
+ 	AF_FILE_NIST_SPHERE,	/* fileFormat */
+Index: audiofile-0.2.6/libaudiofile/raw.c
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/raw.c
++++ audiofile-0.2.6/libaudiofile/raw.c
+@@ -35,7 +35,7 @@
+ #include "util.h"
+ #include "setup.h"
+ 
+-_AFfilesetup _af_raw_default_filesetup =
++const _AFfilesetup _af_raw_default_filesetup =
+ {
+ 	_AF_VALID_FILESETUP,	/* valid */
+ 	AF_FILE_RAWDATA,	/* fileFormat */
+Index: audiofile-0.2.6/libaudiofile/units.h
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/units.h
++++ audiofile-0.2.6/libaudiofile/units.h
+@@ -63,7 +63,7 @@ typedef struct _Unit
+ 	int defaultSampleWidth;
+ 
+ 	int compressionTypeCount;
+-	int *compressionTypes;
++	const int *compressionTypes;
+ 
+ 	int markerCount;
+ 
+@@ -71,7 +71,7 @@ typedef struct _Unit
+ 	int loopPerInstrumentCount;
+ 
+ 	int instrumentParameterCount;
+-	_InstParamInfo *instrumentParameters;
++	const _InstParamInfo *instrumentParameters;
+ } _Unit;
+ 
+ typedef struct _CompressionUnit
+Index: audiofile-0.2.6/libaudiofile/wave.c
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/wave.c
++++ audiofile-0.2.6/libaudiofile/wave.c
+@@ -66,7 +66,7 @@ const _InstParamInfo _af_wave_inst_param
+ 	{ AF_INST_NUMDBS_GAIN, AU_PVTYPE_LONG, "Gain in dB", {0} }
+ };
+ 
+-_AFfilesetup _af_wave_default_filesetup =
++const _AFfilesetup _af_wave_default_filesetup =
+ {
+ 	_AF_VALID_FILESETUP,	/* valid */
+ 	AF_FILE_WAVE,		/* fileFormat */
+Index: audiofile-0.2.6/libaudiofile/aiff.c
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/aiff.c
++++ audiofile-0.2.6/libaudiofile/aiff.c
+@@ -83,7 +83,7 @@ const int _af_aiffc_compression_types[_A
+ 	AF_COMPRESSION_G711_ALAW
+ };
+ 
+-_AFfilesetup _af_aiff_default_filesetup =
++const _AFfilesetup _af_aiff_default_filesetup =
+ {
+ 	_AF_VALID_FILESETUP,	/* valid */
+ 	AF_FILE_AIFF,		/* fileFormat */
+Index: audiofile-0.2.6/libaudiofile/next.c
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/next.c
++++ audiofile-0.2.6/libaudiofile/next.c
+@@ -53,7 +53,7 @@ const int _af_next_compression_types[_AF
+ 	AF_COMPRESSION_G711_ALAW
+ };
+ 
+-_AFfilesetup _af_next_default_filesetup =
++const _AFfilesetup _af_next_default_filesetup =
+ {
+ 	_AF_VALID_FILESETUP,	/* valid */
+ 	AF_FILE_NEXTSND,	/* fileFormat */
+Index: audiofile-0.2.6/libaudiofile/modules/g711.c
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/modules/g711.c
++++ audiofile-0.2.6/libaudiofile/modules/g711.c
+@@ -106,7 +106,7 @@ bool _af_g711_format_ok (_AudioFormat *f
+ 	return AF_TRUE;
+ }
+ 
+-static _AFmodule g711compress, g711decompress;
++static const _AFmodule g711compress, g711decompress;
+ 
+ typedef unsigned char g711samp;
+ 
+@@ -323,7 +323,7 @@ static void g711reset2 (_AFmoduleinst *i
+ 	d->trk->frames2ignore = 0;
+ }
+ 
+-static _AFmodule g711compress =
++static const _AFmodule g711compress =
+ {
+ 	"g711compress",
+ 	g711compressdescribe,
+@@ -334,7 +334,7 @@ static _AFmodule g711compress =
+ 	_AFfreemodspec
+ };
+ 
+-static _AFmodule g711decompress =
++static const _AFmodule g711decompress =
+ {
+ 	"g711decompress",
+ 	g711decompressdescribe,
+Index: audiofile-0.2.6/libaudiofile/modules/ima.c
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/modules/ima.c
++++ audiofile-0.2.6/libaudiofile/modules/ima.c
+@@ -46,7 +46,7 @@
+ 
+ #define CHNK(X)
+ 
+-static _AFmodule ima_adpcm_decompress;
++static const _AFmodule ima_adpcm_decompress;
+ 
+ typedef struct
+ {
+@@ -257,7 +257,7 @@ static void ima_adpcm_reset2 (_AFmodulei
+ 	assert(d->track->nextfframe % framesPerBlock == 0);
+ }
+ 
+-static _AFmodule ima_adpcm_decompress =
++static const _AFmodule ima_adpcm_decompress =
+ {
+ 	"ima_adpcm_decompress",
+ 	ima_adpcm_decompress_describe,
+Index: audiofile-0.2.6/libaudiofile/modules/msadpcm.c
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/modules/msadpcm.c
++++ audiofile-0.2.6/libaudiofile/modules/msadpcm.c
+@@ -45,7 +45,7 @@
+ 
+ #define CHNK(X)
+ 
+-static _AFmodule ms_adpcm_decompress;
++static const _AFmodule ms_adpcm_decompress;
+ 
+ typedef struct ms_adpcm_state
+ {
+@@ -376,7 +376,7 @@ static void ms_adpcm_reset2 (_AFmodulein
+ 	assert(d->track->nextfframe % framesPerBlock == 0);
+ }
+ 
+-static _AFmodule ms_adpcm_decompress =
++static const _AFmodule ms_adpcm_decompress =
+ {
+ 	"ms_adpcm_decompress",
+ 	ms_adpcm_decompress_describe,
+Index: audiofile-0.2.6/libaudiofile/modules/pcm.c
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/modules/pcm.c
++++ audiofile-0.2.6/libaudiofile/modules/pcm.c
+@@ -58,7 +58,7 @@ bool _af_pcm_format_ok (_AudioFormat *f)
+ 	The pcm module does both reading and writing.
+ */
+ 
+-static _AFmodule pcm;
++static const _AFmodule pcm;
+ 
+ typedef struct pcm_data
+ {
+@@ -262,7 +262,7 @@ static void pcmreset2 (_AFmoduleinst *i)
+ 	d->trk->frames2ignore = 0;
+ }
+ 
+-static _AFmodule pcm =
++static const _AFmodule pcm =
+ {
+ 	"pcm",
+ 	AF_NULL,
+Index: audiofile-0.2.6/libaudiofile/modules/rebuffer.template
+===================================================================
+--- audiofile-0.2.6.orig/libaudiofile/modules/rebuffer.template
++++ audiofile-0.2.6/libaudiofile/modules/rebuffer.template
+@@ -226,7 +226,7 @@ static void PRFX(rebufferv2ffree)(struct
+     free(d->saved_buf);
+ }
+ 
+-static _AFmodule PRFX(rebufferv2f) =
++static const _AFmodule PRFX(rebufferv2f) =
+ {
+   NAMESTRING(rebufferv2f),
+   AF_NULL,
+@@ -525,7 +525,7 @@ static void PRFX(rebufferf2vfree)(struct
+     free(d->buf);
+ }
+ 
+-static _AFmodule PRFX(rebufferf2v) =
++static const _AFmodule PRFX(rebufferf2v) =
+ {
+   NAMESTRING(rebufferf2v),
+   AF_NULL,
