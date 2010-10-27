@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -14,12 +14,13 @@ WorkDir = "mjpegtools-%s" % get.srcVERSION().replace("_", "")
 
 def setup():
     shelltools.export("CFLAGS", "%s -fno-strict-aliasing" % get.CFLAGS())
-    autotools.autoreconf("-fi -I m4")
+    autotools.autoreconf("-vfi")
 
     pisitools.dosed("configure", "ARCHFLAGS=.*", "ARCHFLAGS=")
     autotools.configure("--with-x \
                          --enable-largefile \
                          --enable-simd-accel \
+                         --with-dv-yv12 \
                          --disable-static \
                          --with-libpng \
                          --with-libdv=/usr")
