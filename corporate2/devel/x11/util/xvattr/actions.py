@@ -10,7 +10,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
-    autotools.autoreconf("-fi -I m4")
+    autotools.autoreconf("-vfi")
     autotools.configure("--disable-static")
 
 def build():
