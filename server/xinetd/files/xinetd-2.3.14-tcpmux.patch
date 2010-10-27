@@ -1,0 +1,16 @@
+--- xinetd-2.3.14/xinetd/service.c.tcpmux	2010-01-21 09:50:05.000000000 +0100
++++ xinetd-2.3.14/xinetd/service.c	2010-01-21 10:21:14.000000000 +0100
+@@ -952,7 +952,12 @@ void close_all_svc_descriptors(void)
+         out_of_memory( "close_all_svc_descriptors" ) ;
+ 
+    for ( osp = SP( psi_start( iter ) ) ; osp ; osp = SP( psi_next( iter ) ) )
+-        (void) Sclose( SVC_FD( osp ) ) ;
++   {
++#ifdef HAVE_POLL
++        if ( osp && SVC_POLLFD( osp ) )
++#endif
++            (void) Sclose( SVC_FD( osp ) ) ;
++   }
+   
+    psi_destroy( iter ) ;
+ }
