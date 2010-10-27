@@ -12,11 +12,13 @@ from pisi.actionsapi import libtools
 from pisi.actionsapi import get
 
 def setup():
-    for fl in ["NEWS", "AUTHORS", "ChangeLog"]:
-        shelltools.touch(fl)
-    autotools.autoreconf("-fi -Im4")
+    for i in ["NEWS", "AUTHORS", "ChangeLog"]:
+        shelltools.touch(i)
 
-    libtools.libtoolize("--force --install")
+    # autotools.autoreconf("-vfi -Im4")
+    autotools.autoreconf("-vfi")
+
+    # libtools.libtoolize("--force --install")
     autotools.configure("--disable-debugging \
                          --disable-static")
 
