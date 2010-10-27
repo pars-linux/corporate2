@@ -13,7 +13,6 @@ from pisi.actionsapi import get
 WorkDir = "xvidcore/build/generic"
 
 def setup():
-    autotools.autoreconf("-fi")
     autotools.configure()
 
 def build():
