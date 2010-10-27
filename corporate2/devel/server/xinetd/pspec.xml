@@ -5,8 +5,8 @@
         <Name>xinetd</Name>
         <Homepage>http://www.xinetd.org</Homepage>
         <Packager>
-            <Name>Bahadır Kandemir</Name>
-            <Email>bahadir@pardus.org.tr</Email>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
         </Packager>
         <License>BSD</License>
         <IsA>service</IsA>
@@ -17,10 +17,23 @@
             <Dependency>tcp-wrappers</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch>pie.patch</Patch>
-            <Patch>xinetd-2.3.14-config.patch</Patch>
-            <Patch>xinetd-2.3.14-DESTDIR.patch</Patch>
+            <Patch level="0">xinetd-2.3.14-config.patch</Patch>
+            <Patch level="0">xinetd-2.3.14-DESTDIR.patch</Patch>
             <Patch level="1">xinetd-2.3.14-install-contrib.patch</Patch>
+            <Patch level="0">xinetd-2.3.11-pie.patch</Patch>
+            <Patch level="1">xinetd-2.3.12-tcp_rpc.patch</Patch>
+            <Patch level="1">xinetd-2.3.14-label.patch</Patch>
+            <Patch level="1">xinetd-2.3.14-bind-ipv6.patch</Patch>
+            <Patch level="1">xinetd-2.3.14-ssize_t.patch</Patch>
+            <Patch level="1">xinetd-2.3.14-ident-bind.patch</Patch>
+            <Patch level="1">xinetd-2.3.14-readable-debuginfo.patch</Patch>
+            <Patch level="1">xinetd-2.3.14-autoconf.patch</Patch>
+            <Patch level="1">xinetd-2.3.14-poll.patch</Patch>
+            <Patch level="1">xinetd-2.3.14-file-limit.patch</Patch>
+            <Patch level="1">xinetd-2.3.14-tcpmux.patch</Patch>
+            <Patch level="1">xinetd-2.3.14-clean-pfd.patch</Patch>
+            <Patch level="1">xinetd-2.3.14-ipv6confusion.patch</Patch>
+            <Patch level="1">xinetd-2.3.14-udp-reconfig.patch</Patch>
         </Patches>
     </Source>
 
@@ -33,9 +46,11 @@
             <Path fileType="config">/etc</Path>
             <Path fileType="executable">/usr/sbin</Path>
             <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
         </Files>
         <AdditionalFiles>
             <AdditionalFile owner="root" permission="0644" target="/etc/xinetd.conf">xinetd.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/xinetd">xinetd.sysconf</AdditionalFile>
         </AdditionalFiles>
         <Provides>
             <COMAR script="service.py">System.Service</COMAR>
@@ -43,6 +58,13 @@
     </Package>
 
     <History>
+        <Update release="5">
+            <Date>2010-10-27</Date>
+            <Version>2.3.14</Version>
+            <Comment>Add some patches, improve init script.</Comment>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
         <Update release="4">
             <Date>2010-04-21</Date>
             <Version>2.3.14</Version>

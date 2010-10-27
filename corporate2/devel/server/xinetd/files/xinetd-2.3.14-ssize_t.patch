@@ -1,0 +1,660 @@
+--- xinetd-2.3.14/libs/src/sio/impl.h.ssize_t	2006-10-27 12:33:29.000000000 -0400
++++ xinetd-2.3.14/libs/src/sio/impl.h	2006-10-27 12:40:21.000000000 -0400
+@@ -142,9 +142,9 @@
+  * Internal functions that are visible
+  */
+ int __sio_writef( __sio_od_t *odp, int fd ) ;
+-int __sio_extend_buffer( __sio_id_t *idp, int fd, int b_left ) ;
++ssize_t __sio_extend_buffer( __sio_id_t *idp, int fd, ssize_t b_left ) ;
+ int __sio_init( __sio_descriptor_t *dp, int fd, enum __sio_stream stream_type );
+-int __sio_more( __sio_id_t *idp, int fd ) ;
++ssize_t __sio_more( __sio_id_t *idp, int fd ) ;
+ sio_status_e __sio_switch( __sio_id_t *idp, int fd ) ;
+ 
+ 
+--- xinetd-2.3.14/libs/src/sio/siosup.c.ssize_t	2003-09-06 10:41:59.000000000 -0400
++++ xinetd-2.3.14/libs/src/sio/siosup.c	2006-10-27 12:40:23.000000000 -0400
+@@ -599,9 +599,9 @@
+  *       If it does not return SIO_ERR, it sets start, nextb, end
+  *         If it returns SIO_ERR, it does not change anything
+  */
+-static int __sio_readf( __sio_id_t *idp, int fd )
++static ssize_t __sio_readf( __sio_id_t *idp, int fd )
+ {
+-   int cc ;
++   ssize_t cc ;
+ 
+    /*
+     * First check for a tied fd and flush the stream if necessary
+@@ -634,7 +634,7 @@
+          {
+             if ( __sio_switch( idp, fd ) == FAILURE )
+                return( SIO_ERR ) ;
+-            cc = -1 ;
++            cc = (ssize_t)-1 ;
+          }
+       }
+       else
+@@ -680,7 +680,7 @@
+    for ( ;; )
+    {
+       cc = read( fd, idp->buf, (int) idp->buffer_size ) ;
+-      if ( cc == -1 )
++      if ( cc == (ssize_t)-1 )
+          if ( errno == EINTR )
+             continue ;
+          else
+@@ -705,9 +705,9 @@
+  *    auxiliary buffer)
+  *      Also, if successful, idp->nextb is set to idp->buf, idp->end is modified.
+  */
+-int __sio_extend_buffer( __sio_id_t *idp, int fd, int b_left )
++ssize_t __sio_extend_buffer( __sio_id_t *idp, int fd, ssize_t b_left )
+ {
+-   int b_read ;
++   ssize_t b_read ;
+ 
+    /*
+     * copy to auxiliary buffer
+@@ -733,10 +733,10 @@
+  *
+  * Return value: the number of bytes read.
+  */
+-int __sio_more( __sio_id_t *idp, int fd )
++ssize_t __sio_more( __sio_id_t *idp, int fd )
+ {
+    int b_left = &idp->buf[ idp->buffer_size ] - idp->end ;
+-   int cc ;
++   ssize_t cc ;
+ 
+    if ( b_left <= 0 )
+       return( 0 ) ;
+--- xinetd-2.3.14/libs/src/sio/sprint.c.ssize_t	2006-10-27 13:14:49.000000000 -0400
++++ xinetd-2.3.14/libs/src/sio/sprint.c	2006-10-27 13:14:51.000000000 -0400
+@@ -18,7 +18,7 @@
+ typedef unsigned long long 		u_wide_int ;
+ typedef int 				bool_int ;
+ 
+-static char *conv_10( wide_int num, bool_int is_unsigned, bool_int *is_negative, char *buf_end, int *len );
++static char *conv_10( wide_int num, bool_int is_unsigned, bool_int *is_negative, char *buf_end, size_t *len );
+ 
+ #define S_NULL_LEN 			6
+ static char S_NULL[S_NULL_LEN+1] = "(null)";
+@@ -69,7 +69,7 @@
+ 	}							\
+ 	if ( __SIO_MUST_FLUSH( *odp, c ) && fd >= 0 )		\
+ 	{							\
+-		int b_in_buffer = sp - odp->start ;		\
++		ssize_t b_in_buffer = sp - odp->start ;		\
+ 								\
+ 		odp->nextb = sp ;				\
+ 		if ( __sio_writef( odp, fd ) != b_in_buffer )	\
+@@ -122,11 +122,11 @@
+  *     - all floating point arguments are passed as doubles
+  */
+ /* VARARGS2 */
+-int Sprint( int fd, const char *fmt, ...) 
++ssize_t Sprint( int fd, const char *fmt, ...) 
+ {
+ 	__sio_descriptor_t *dp ;
+ 	__sio_od_t *odp ;
+-	int cc ;
++	ssize_t cc ;
+ 	va_list ap ;
+ 
+ 	if( sio_setup( fd, &dp, __SIO_OUTPUT_STREAM ) == SIO_ERR )
+@@ -143,7 +143,7 @@
+ /*
+  * This is the equivalent of vfprintf for SIO
+  */
+-int Sprintv( int fd, const char *fmt, va_list ap)
++ssize_t Sprintv( int fd, const char *fmt, va_list ap)
+ {
+ 	__sio_descriptor_t *dp ;
+ 	__sio_od_t *odp ;
+@@ -162,7 +162,7 @@
+  * in buf).
+  */
+ static char *conv_fp( char format, double num, boolean_e add_dp, 
+-   int precision, bool_int *is_negative, char buf[], int *len )
++   size_t precision, bool_int *is_negative, char buf[], size_t *len )
+ 	/* always add decimal point if YES */
+ {
+ 	char *s = buf ;
+@@ -220,7 +220,7 @@
+ 	if ( format != 'f' )
+ 	{
+ 		char temp[ EXPONENT_LENGTH ] ;		/* for exponent conversion */
+-		int t_len ;
++		size_t t_len ;
+ 		bool_int exponent_is_negative ;
+ 
+ 		*s++ = format ;		/* either e or E */
+@@ -261,7 +261,7 @@
+  * which is a pointer to the END of the buffer + 1 (i.e. if the buffer
+  * is declared as buf[ 100 ], buf_end should be &buf[ 100 ])
+  */
+-static char *conv_p2( u_wide_int num, int nbits, char format, char *buf_end, int *len )
++static char *conv_p2( u_wide_int num, int nbits, char format, char *buf_end, size_t *len )
+ {
+ 	int mask = ( 1 << nbits ) - 1 ;
+ 	char *p = buf_end ;
+@@ -292,7 +292,7 @@
+  * which is a pointer to the END of the buffer + 1 (i.e. if the buffer
+  * is declared as buf[ 100 ], buf_end should be &buf[ 100 ])
+  */
+-static char *conv_10( wide_int num, bool_int is_unsigned, bool_int *is_negative, char *buf_end, int *len )
++static char *conv_10( wide_int num, bool_int is_unsigned, bool_int *is_negative, char *buf_end, size_t *len )
+ {
+ 	char *p = buf_end ;
+ 	u_wide_int magnitude ;
+@@ -346,19 +346,19 @@
+  * Do format conversion placing the output in odp.
+  * Note: we do not support %n for security reasons.
+  */
+-int __sio_converter( __sio_od_t *odp, int fd, const char *fmt, va_list ap )
++ssize_t __sio_converter( __sio_od_t *odp, int fd, const char *fmt, va_list ap )
+ {
+ 	char *sp = NULL;
+ 	char *bep = NULL;
+-	int cc = 0 ;
+-	int i ;
++	ssize_t cc = 0 ;
++	size_t i ;
+ 
+ 	char *s = NULL;
+ 	char *q = NULL;
+-	int s_len ;
++	size_t s_len ;
+ 
+ 	int min_width = 0 ;
+-	int precision = 0 ;
++	size_t precision = 0 ;
+ 	enum { LEFT, RIGHT } adjust ;
+ 	char pad_char ;
+ 	char prefix_char ;
+--- xinetd-2.3.14/libs/src/sio/sio.c.ssize_t	2006-10-27 12:35:12.000000000 -0400
++++ xinetd-2.3.14/libs/src/sio/sio.c	2006-10-27 13:28:09.000000000 -0400
+@@ -28,17 +28,17 @@
+ /*
+  * Stream write call: arguments same as those of write(2)
+  */
+-int Swrite( int fd, const char *addr, unsigned int nbytes )
++ssize_t Swrite( int fd, const char *addr, size_t nbytes )
+ {
+ 	__sio_descriptor_t *dp ;
+ 	__sio_od_t *odp ;
+-	unsigned int b_transferred ;
+-	unsigned int b_avail ;
+-	int total_b_transferred ;
+-	int b_written ;
+-	int b_in_buffer ;
++	size_t b_transferred ;
++	size_t b_avail ;
++	ssize_t total_b_transferred ;
++	ssize_t b_written ;
++	ssize_t b_in_buffer ;
+ 
+-	if ( nbytes > INT_MAX )
++	if ( nbytes > SSIZE_MAX )
+ 		return( SIO_ERR );
+ 	if( sio_setup( fd, &dp, __SIO_OUTPUT_STREAM ) == SIO_ERR )
+ 		return( SIO_ERR );
+@@ -62,7 +62,7 @@
+ 	b_in_buffer = odp->buf_end - odp->start ;
+ 	b_written = __sio_writef( odp, fd ) ;
+ 	if ( b_written != b_in_buffer )
+-		return( (b_written >= (int)nbytes) ? (int)nbytes : b_written ) ;
++		return( (b_written >= (ssize_t)nbytes) ? (ssize_t)nbytes : b_written ) ;
+ 	
+ 	total_b_transferred = b_transferred ;
+ 	addr += b_transferred ;
+@@ -83,7 +83,7 @@
+ 		 * the buffer is full
+ 		 */
+ 		b_written = __sio_writef( odp, fd ) ;
+-		if ( b_written != (int)odp->buffer_size )
++		if ( b_written != (ssize_t)odp->buffer_size )
+ 		{
+ 			if ( b_written != SIO_ERR )
+ 			{
+@@ -157,8 +157,8 @@
+ 	__sio_id_t *idp ;
+ 	char *cp ;
+ 	char *line_start ;
+-	int b_left ;
+-	int extension ;
++	ssize_t b_left ;
++	ssize_t extension ;
+ 
+ 	if( sio_setup( fd, &dp, __SIO_INPUT_STREAM ) == SIO_ERR )
+ 		return( NULL );
+@@ -361,7 +361,7 @@
+ 
+ #ifndef sio_memscan
+ 
+-static char *sio_memscan( const char *from, int how_many, char ch )
++static char *sio_memscan( const char *from, size_t how_many, char ch )
+ {
+    char *p ;
+    char *last = from + how_many ;
+@@ -377,7 +377,7 @@
+ 
+ #ifdef NEED_MEMCOPY
+ 
+-void __sio_memcopy( const char *from, char *to, int nbytes )
++void __sio_memcopy( const char *from, char *to, size_t nbytes )
+ {
+    while ( nbytes-- )
+       *to++ = *from++ ;
+--- xinetd-2.3.14/xinetd/udpint.c.ssize_t	2005-10-05 13:20:11.000000000 -0400
++++ xinetd-2.3.14/xinetd/udpint.c	2006-10-27 12:17:10.000000000 -0400
+@@ -226,7 +226,7 @@
+ {
+    char   *p ;
+    int   left ;
+-   int   cc ;
++   ssize_t   cc ;
+    const char   *func = "send_data" ;
+ 
+    for ( p = buf, left = len ; left > 0 ; left -= cc, p+= cc )
+@@ -236,7 +236,7 @@
+       else
+          cc = sendto( sd, p, left, 0, SA( addr ), sizeof( *addr ) ) ;
+ 
+-      if ( cc == -1 ) {
++      if ( cc == (ssize_t)-1 ) {
+          if ( errno == EINTR )
+          {
+             cc = 0 ;
+@@ -264,12 +264,12 @@
+ 
+    for ( ;; )
+    {
+-      int cc ;
++      ssize_t cc ;
+ 
+       from_len = sizeof( pp->from ) ;
+       cc = recvfrom( INT_REMOTE( ip ), pp->data, pp->size,
+                                     0, SA( &pp->from ), &from_len ) ;
+-      if ( cc == -1 )
++      if ( cc == (ssize_t)-1 )
+       {
+          if ( errno != EINTR )
+          {
+@@ -306,14 +306,14 @@
+ static status_e udp_local_to_remote( channel_s *chp )
+ {
+    char   buf[ MAX_DATAGRAM_SIZE ] ;
+-   int    cc ;
++   ssize_t    cc ;
+    const char   *func = "udp_local_to_remote" ;
+ 
+    for ( ;; )
+    {
+       cc = recv( chp->ch_local_socket, buf, sizeof( buf ), 0 ) ;
+    
+-      if ( cc == -1 )
++      if ( cc == (ssize_t)-1 )
+       {
+          if ( errno != EINTR ) 
+          {
+--- xinetd-2.3.14/xinetd/service.c.ssize_t	2006-10-27 12:17:10.000000000 -0400
++++ xinetd-2.3.14/xinetd/service.c	2006-10-27 12:17:10.000000000 -0400
+@@ -610,7 +610,7 @@
+    /* print the banner regardless of access control */
+    if ( SC_BANNER(scp) != NULL ) {
+       char tmpbuf[TMPSIZE];
+-      int retval;
++      ssize_t retval;
+       int bannerfd = open(SC_BANNER(scp), O_RDONLY);
+ 
+       if( bannerfd < 0 ) {
+@@ -620,7 +620,7 @@
+       }
+ 
+       while( (retval = read(bannerfd, tmpbuf, sizeof(tmpbuf))) ) {
+-         if (retval == -1)
++         if (retval == (ssize_t)-1)
+          {
+             if (errno == EINTR)
+                continue;
+--- xinetd-2.3.14/xinetd/signals.c.ssize_t	2003-12-23 10:30:10.000000000 -0500
++++ xinetd-2.3.14/xinetd/signals.c	2006-10-27 12:17:10.000000000 -0400
+@@ -402,7 +402,7 @@
+  */
+ static void my_handler( int sig )
+ {
+-   int ret_val;
++   ssize_t ret_val;
+    int saved_errno = errno;
+ #if NSIG < 256
+    unsigned char sig_byte;
+@@ -412,13 +412,13 @@
+    do
+    {
+       ret_val = write(signals_pending[1], &sig_byte, 1);
+-   } while (ret_val == -1 && errno == EINTR);
++   } while (ret_val == (ssize_t)-1 && errno == EINTR);
+ #else
+    if (signals_pending[1] < 0) return;
+    do
+    {
+       ret_val = write(signals_pending[1], &sig, sizeof(int));
+-   } while (ret_val == -1 && errno == EINTR);
++   } while (ret_val == (ssize_t)-1 && errno == EINTR);
+ #endif
+    errno = saved_errno;
+ }
+@@ -470,12 +470,12 @@
+ #endif
+ 
+    while( --i >= 0 ) {
+-      int ret_val;
++      ssize_t ret_val;
+       do
+       {
+          ret_val = read(signals_pending[0], &sig, sizeof(sig));
+-      } while (ret_val == -1 && errno == EINTR);
+-      if (ret_val != sizeof(sig) ) {
++      } while (ret_val == (ssize_t)-1 && errno == EINTR);
++      if (ret_val != (ssize_t)sizeof(sig) ) {
+          msg(LOG_ERR, func, "Error retrieving pending signal: %m");
+          return;
+       }
+--- xinetd-2.3.14/xinetd/connection.c.ssize_t	2005-10-05 13:20:11.000000000 -0400
++++ xinetd-2.3.14/xinetd/connection.c	2006-10-27 12:17:10.000000000 -0400
+@@ -96,13 +96,15 @@
+       if ( SVC_SOCKET_TYPE( sp ) == SOCK_DGRAM )
+       {
+          char t_ch ;
++	 ssize_t val;
+ 
+          /*
+           * This trick is done to get the remote address.
+           * select(2) guaranteed that we won't block on the recvfrom
+           */
+-         if ( recvfrom( SVC_FD( sp ), &t_ch, 1, MSG_PEEK,
+-                              &cp->co_remote_address.sa, &sin_len ) == -1 )
++	 val = recvfrom( SVC_FD( sp ), &t_ch, 1, MSG_PEEK,
++                              &cp->co_remote_address.sa, &sin_len );
++         if ( val == (ssize_t)-1 )
+          {
+             msg( LOG_ERR, func, "service %s, recvfrom: %m", SVC_ID( sp ) ) ;
+             return( FAILED ) ;
+--- xinetd-2.3.14/xinetd/util.c.ssize_t	2005-10-05 17:45:41.000000000 -0400
++++ xinetd-2.3.14/xinetd/util.c	2006-10-27 12:17:10.000000000 -0400
+@@ -198,7 +198,8 @@
+  */
+ status_e write_buf( int fd, const char *buf, int len )
+ {
+-   int cc, i ;
++   int i ;
++   ssize_t cc;
+ 
+    for ( i = 0 ; len > 0 ; i += cc, len -= cc )
+    {
+@@ -234,7 +235,7 @@
+ void drain( int sd )
+ {
+    char buf[ 256 ] ; /* This size is arbitrarily chosen */
+-   int ret ;
++   ssize_t ret ;
+    int old_val ;
+ 
+    /* Put in non-blocking mode so we don't hang. */
+--- xinetd-2.3.14/xinetd/redirect.c.ssize_t	2003-08-06 02:12:10.000000000 -0400
++++ xinetd-2.3.14/xinetd/redirect.c	2006-10-27 12:17:10.000000000 -0400
+@@ -58,7 +58,8 @@
+    struct service *sp = SERVER_SERVICE( serp );
+    struct service_config *scp = SVC_CONF( sp );
+    int RedirDescrip = SERVER_FD( serp );
+-   int maxfd, num_read, num_wrote=0, ret=0;
++   int maxfd;
++   ssize_t num_read, num_wrote=0, ret=0;
+    unsigned int sin_len = 0;
+    unsigned long bytes_in = 0, bytes_out = 0;
+    int no_to_nagle = 1;
+@@ -156,7 +157,7 @@
+             do {
+                num_read = read(RedirDescrip,
+                   buff, sizeof(buff));
+-               if (num_read == -1 && errno == EINTR)
++               if (num_read == (ssize_t)-1 && errno == EINTR)
+                   continue;
+                if (num_read <= 0)
+                   goto REDIROUT;
+--- xinetd-2.3.14/xinetd/tcpint.c.ssize_t	2005-10-05 13:20:11.000000000 -0400
++++ xinetd-2.3.14/xinetd/tcpint.c	2006-10-27 12:17:10.000000000 -0400
+@@ -273,7 +273,7 @@
+ static stream_status_e tcp_local_to_remote( channel_s *chp )
+ {
+    char  buf[ DATAGRAM_SIZE ] ;
+-   int   rcc, wcc ;
++   ssize_t   rcc, wcc ;
+    char *p ;
+    int   left ;
+    const char *func = "tcp_local_to_remote" ;
+@@ -283,7 +283,7 @@
+       rcc = recv( chp->ch_local_socket, buf, sizeof( buf ), 0 ) ;
+       if ( rcc == 0 )
+          return( S_SERVER_ERR ) ;
+-      else if ( rcc == -1 )
++      else if ( rcc == (ssize_t)-1 )
+       {
+          if ( errno != EINTR )
+          {
+@@ -300,7 +300,7 @@
+       wcc = send( chp->ch_remote_socket, p, left, 0 ) ;
+       if ( wcc == 0 )
+          return( S_CLIENT_ERR ) ;
+-      else if ( wcc == -1 )
++      else if ( wcc == (ssize_t)-1 )
+       {
+          if ( errno == EINTR )
+             wcc = 0 ;
+@@ -326,7 +326,7 @@
+ static stream_status_e tcp_remote_to_local( channel_s *chp )
+ {
+    char  buf[ DATAGRAM_SIZE ] ;
+-   int   rcc, wcc ;
++   ssize_t   rcc, wcc ;
+    int   left ;
+    char *p ;
+    const char *func = "tcp_remote_to_local" ;
+@@ -336,7 +336,7 @@
+       rcc = recv( chp->ch_remote_socket, buf, sizeof( buf ), 0 ) ;
+       if ( rcc == 0 )
+          return( S_CLIENT_ERR ) ;
+-      else if ( rcc == -1 )
++      else if ( rcc == (ssize_t)-1 )
+       {
+          if ( errno != EINTR )
+          {
+@@ -353,7 +353,7 @@
+       wcc = send( chp->ch_local_socket, p, left, 0 ) ;
+       if ( wcc == 0 ) {
+          return( S_SERVER_ERR ) ;
+-      } else if ( wcc == -1 ) {
++      } else if ( wcc == (ssize_t)-1 ) {
+          if ( errno == EINTR ) {
+             rcc = 0 ;
+          } else {
+--- xinetd-2.3.14/xinetd/builtins.c.ssize_t	2005-10-06 11:38:04.000000000 -0400
++++ xinetd-2.3.14/xinetd/builtins.c	2006-10-27 12:17:10.000000000 -0400
+@@ -129,7 +129,7 @@
+ static void stream_echo( const struct server *serp )
+ {
+    char   buf[ BUFFER_SIZE ] ;
+-   int    cc ;
++   ssize_t    cc ;
+    int    descriptor = SERVER_FD( serp ) ;
+    struct service *svc = SERVER_SERVICE( serp ) ;;
+ 
+@@ -149,7 +149,7 @@
+       cc = read( descriptor, buf, sizeof( buf ) ) ;
+       if ( cc == 0 )
+          break ;
+-      if ( cc == -1 ) {
++      if ( cc == (ssize_t)-1 ) {
+          if ( errno == EINTR )
+             continue ;
+          else
+@@ -167,7 +167,7 @@
+ {
+    char            buf[ DATAGRAM_SIZE ] ;
+    union xsockaddr lsin;
+-   int             cc ;
++   ssize_t             cc ;
+    socklen_t       sin_len = 0;
+    int             descriptor = SERVER_FD( serp ) ;
+    const char     *func = "dgram_echo";
+@@ -178,15 +178,15 @@
+       sin_len = sizeof( struct sockaddr_in6 );
+ 
+    cc = recvfrom( descriptor, buf, sizeof( buf ), 0, SA( &lsin ), &sin_len ) ;
+-   if ( cc != -1 ) {
+-      (void) sendto( descriptor, buf, cc, 0, SA( &lsin ), sizeof( lsin ) ) ;
++   if ( cc != (ssize_t)-1 ) {
++      (void) sendto( descriptor, buf, (size_t)cc, 0, SA( &lsin ), sizeof( lsin ) ) ;
+    }
+ }
+ 
+ static void stream_discard( const struct server *serp )
+ {
+    char  buf[ BUFFER_SIZE ] ;
+-   int   cc ;
++   ssize_t   cc ;
+    int    descriptor = SERVER_FD( serp ) ;
+    struct service *svc = SERVER_SERVICE( serp ) ;;
+ 
+@@ -204,7 +204,7 @@
+    for ( ;; )
+    {
+       cc = read( descriptor, buf, sizeof( buf ) ) ;
+-      if ( (cc == 0) || ((cc == -1) && (errno != EINTR)) )
++      if ( (cc == 0) || ((cc == (ssize_t)-1) && (errno != EINTR)) )
+          break ;
+    }
+    if( SVC_WAITS( svc ) ) /* Service forks, so close it */
+@@ -293,14 +293,16 @@
+    unsigned int    buflen      = sizeof( time_buf ) ;
+    int             descriptor  = SERVER_FD( serp ) ;
+    const char     *func       = "dgram_daytime";
++   ssize_t         val;
+ 
+    if ( SC_IPV4( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
+       sin_len = sizeof( struct sockaddr_in );
+    else if ( SC_IPV6( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
+       sin_len = sizeof( struct sockaddr_in6 );
+ 
+-   if ( recvfrom( descriptor, time_buf, sizeof( time_buf ), 0,
+-            SA( &lsin ), &sin_len ) == -1 )
++   val = recvfrom( descriptor, time_buf, sizeof( time_buf ), 0,
++            SA( &lsin ), &sin_len );
++   if ( val == (ssize_t)-1 )
+       return ;
+ 
+    daytime_protocol( time_buf, &buflen ) ;
+@@ -359,13 +361,15 @@
+    socklen_t       sin_len = 0 ;
+    int             fd      = SERVER_FD( serp ) ;
+    const char     *func    = "dgram_daytime";
++   ssize_t         val;
+ 
+    if ( SC_IPV4( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
+       sin_len = sizeof( struct sockaddr_in );
+    else if ( SC_IPV6( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
+       sin_len = sizeof( struct sockaddr_in6 );
+ 
+-   if ( recvfrom( fd, buf, sizeof( buf ), 0, SA( &lsin ), &sin_len ) == -1 )
++   val = recvfrom( fd, buf, sizeof( buf ), 0, SA( &lsin ), &sin_len );
++   if ( val == (ssize_t)-1 )
+       return ;
+ 
+    time_protocol( time_buf ) ;
+@@ -465,13 +469,15 @@
+    int             fd      = SERVER_FD( serp ) ;
+    unsigned int    left    = sizeof( buf ) ;
+    const char     *func    = "dgram_chargen";
++   ssize_t         val;
+ 
+    if ( SC_IPV4( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
+       sin_len = sizeof( struct sockaddr_in );
+    else if ( SC_IPV6( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
+       sin_len = sizeof( struct sockaddr_in6 );
+ 
+-   if ( recvfrom( fd, buf, sizeof( buf ), 0, SA( &lsin ), &sin_len ) == -1 )
++   val = recvfrom( fd, buf, sizeof( buf ), 0, SA( &lsin ), &sin_len );
++   if ( val == (ssize_t)-1 )
+       return ;
+ 
+ #if BUFFER_SIZE < LINE_LENGTH+2
+--- xinetd-2.3.14/xinetd/ident.c.ssize_t	2005-10-05 13:20:11.000000000 -0400
++++ xinetd-2.3.14/xinetd/ident.c	2006-10-27 12:17:10.000000000 -0400
+@@ -267,7 +267,7 @@
+ static char *get_line( int sd, char *buf, unsigned bufsize )
+ {
+    int     size ;
+-   int     cc ;
++   ssize_t     cc ;
+    char   *p ;
+    char   *s ;
+    const char *func = "get_line" ;
+@@ -275,7 +275,7 @@
+    for ( p = buf, size = bufsize ; size > 0 ; p += cc, size -= cc )
+    {
+       cc = read( sd, p, size ) ;
+-      if ( cc == -1 ) {
++      if ( cc == (ssize_t)-1 ) {
+          if ( errno == EINTR )
+          {
+             cc = 0 ;
+--- xinetd-2.3.14/libs/src/sio/sio.h.ssize_t	2003-06-10 09:15:44.000000000 -0400
++++ xinetd-2.3.14/libs/src/sio/sio.h	2006-10-27 15:47:37.000000000 -0400
+@@ -12,6 +12,8 @@
+ #define __SIO_H
+ 
+ #include <errno.h>
++#include <string.h>
++#include <unistd.h>
+ #include <stdarg.h>
+ 
+ /*
+@@ -56,7 +58,7 @@
+ 	 *		buffer is right below buf and is of the same size.
+ 	 */
+ 	char *buf ;
+-	unsigned buffer_size ;
++	size_t buffer_size ;
+ 
+ 	char *start ;                 /* start of valid buffer contents   	*/
+ 	char *end ;                   /* end of valid buffer contents + 1 	*/
+@@ -163,15 +165,15 @@
+ /*
+  * The Write functions
+  */
+-int Swrite ( int fd, const char *buf, unsigned int nbytes );
+-int Sprint ( int fd, const char *format, ... )
++ssize_t Swrite ( int fd, const char *buf, size_t );
++ssize_t Sprint ( int fd, const char *format, ... )
+ #ifdef __GNUC__
+ 	__attribute__ ((format (printf, 2, 3)));
+ #else
+ 	;
+ #endif
+ int Sputchar( int fd, char c );
+-int Sprintv ( int fd, const char *format, va_list ap )
++ssize_t Sprintv ( int fd, const char *format, va_list ap )
+ #ifdef __GNUC__
+ 	__attribute__ ((format (printf, 2, 0)));
+ #else
+@@ -186,7 +188,7 @@
+ int Sclose ( int fd ) ;
+ int Sbuftype ( int fd, int type ) ;
+ int Smorefds ( int ) ;
+-int __sio_converter( __sio_od_t *, int , const char *, va_list );
++ssize_t __sio_converter( __sio_od_t *, int , const char *, va_list );
+ int sio_setup(int fd, __sio_descriptor_t **dp, unsigned int type );
+ 
+ #ifdef __GNUC__

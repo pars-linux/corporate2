@@ -1,0 +1,1202 @@
+diff -Nurp xinetd-2.3.14-orig/config.h.in xinetd-2.3.14-poll/config.h.in
+--- xinetd-2.3.14-orig/config.h.in	2009-07-27 13:27:59.000000000 +0200
++++ xinetd-2.3.14-poll/config.h.in	2009-09-02 11:30:27.000000000 +0200
+@@ -106,6 +106,8 @@
+ 
+ #undef HAVE_HOWL
+ 
++#undef HAVE_POLL
++
+ /* OS specific */
+ #undef solaris
+ 
+diff -Nurp xinetd-2.3.14-orig/configure.in xinetd-2.3.14-poll/configure.in
+--- xinetd-2.3.14-orig/configure.in	2009-09-02 11:32:54.000000000 +0200
++++ xinetd-2.3.14-poll/configure.in	2009-09-02 11:30:27.000000000 +0200
+@@ -35,6 +35,7 @@ AC_CHECK_LIB(c, sys_siglist, [AC_DEFINE(
+ AC_CHECK_FUNC(gai_strerror,[AC_DEFINE(HAVE_GAI_STRERROR, 1, "")])
+ AC_CHECK_FUNC(freeaddrinfo,[AC_DEFINE(HAVE_FREEADDRINFO, 1, "")])
+ AC_CHECK_FUNC(getaddrinfo,[AC_DEFINE(HAVE_GETADDRINFO, 1, "")])
++AC_CHECK_FUNC(poll, [AC_DEFINE(HAVE_POLL, 1, "")])
+ 
+ AC_CHECK_HEADERS(sys/types.h sys/termios.h termios.h sys/ioctl.h sys/select.h rpc/rpc.h rpc/rpcent.h sys/file.h ftw.h machine/reg.h netdb.h)
+ AC_CHECK_HEADER(sys/resource.h, [AC_DEFINE(HAVE_SYS_RESOURCE_H, 1, "")])
+diff -Nurp xinetd-2.3.14-orig/xinetd/conf.c xinetd-2.3.14-poll/xinetd/conf.c
+--- xinetd-2.3.14-orig/xinetd/conf.c	2003-12-30 14:44:09.000000000 +0100
++++ xinetd-2.3.14-poll/xinetd/conf.c	2009-09-02 11:30:27.000000000 +0200
+@@ -209,8 +209,13 @@ unsigned cnf_start_services( struct conf
+    pset_clear( sconfs ) ;
+ 
+    if ( debug.on )
++#ifdef HAVE_POLL
++      msg( LOG_DEBUG, func, "pfds_last = %d, services_started = %d",
++            ps.rws.pfds_last, services_started ) ;
++#else
+       msg( LOG_DEBUG, func, "mask_max = %d, services_started = %d",
+             ps.rws.mask_max, services_started ) ;
++#endif
+          
+    return( services_started ) ;
+ }
+diff -Nurp xinetd-2.3.14-orig/xinetd/defs.h xinetd-2.3.14-poll/xinetd/defs.h
+--- xinetd-2.3.14-orig/xinetd/defs.h	2005-03-29 17:50:34.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/defs.h	2009-09-02 11:30:27.000000000 +0200
+@@ -111,6 +111,15 @@ union xsockaddr {
+ #define LISTEN_BACKLOG               64
+ 
+ /*
++ * constants for limiting ps.rws.fd_list 
++ */
++
++#ifdef HAVE_POLL
++#define INIT_POLLFDS                 1024
++#define MAX_POLLFDS                  8192
++#endif
++
++/*
+  * When explicit values are given for enum's, that is because the structures 
+  * that the enum's are in may be initialized by a memory clear operation.
+  */
+diff -Nurp xinetd-2.3.14-orig/xinetd/child.c xinetd-2.3.14-poll/xinetd/child.c
+--- xinetd-2.3.14-orig/xinetd/child.c	2003-09-06 16:41:59.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/child.c	2009-09-02 11:30:27.000000000 +0200
+@@ -109,8 +109,7 @@ void exec_server( const struct server *s
+ 
+ 
+ #ifdef RLIMIT_NOFILE
+-   rl.rlim_max = ps.ros.orig_max_descriptors ;
+-   rl.rlim_cur = ps.ros.max_descriptors ;
++   rl.rlim_max = rl.rlim_cur = ps.ros.max_descriptors ;
+    (void) setrlimit( RLIMIT_NOFILE, &rl ) ;
+ #endif
+ #ifdef RLIMIT_AS
+diff -Nurp xinetd-2.3.14-orig/xinetd/init.c xinetd-2.3.14-poll/xinetd/init.c
+--- xinetd-2.3.14-orig/xinetd/init.c	2003-09-06 16:41:59.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/init.c	2009-09-02 11:30:27.000000000 +0200
+@@ -17,7 +17,7 @@
+ #include <unistd.h>
+ #include <stdio.h>
+ #include <errno.h>
+-
++#include <malloc.h>
+ #include "sio.h"
+ #include "init.h"
+ #include "defs.h"
+@@ -140,7 +140,6 @@ static void set_fd_limit(void)
+ {
+ #ifdef RLIMIT_NOFILE
+    struct rlimit rl ;
+-   rlim_t maxfd ;
+     
+    /*
+     * Set the soft file descriptor limit to the hard limit.
+@@ -151,25 +150,9 @@ static void set_fd_limit(void)
+       exit( 1 ) ;
+    }
+ 
+-   maxfd = rl.rlim_max;
+    if ( rl.rlim_max == RLIM_INFINITY ) 
+       rl.rlim_max = FD_SETSIZE;
+ 
+-   /* XXX: a dumb way to prevent fd_set overflow possibilities; the rest
+-    * of xinetd should be changed to use an OpenBSD inetd-like fd_grow(). */
+-   if ( rl.rlim_max > FD_SETSIZE )
+-      rl.rlim_max = FD_SETSIZE;
+-     
+-   rl.rlim_cur = rl.rlim_max ;
+-   if ( setrlimit( RLIMIT_NOFILE, &rl ) == -1 )
+-   {
+-      syscall_failed("setrlimit(RLIMIT_NOFILE)");
+-      ps.ros.max_descriptors = FD_SETSIZE;
+-      ps.ros.orig_max_descriptors = FD_SETSIZE;
+-      return ;
+-   }
+-
+-   ps.ros.orig_max_descriptors = maxfd ;
+    ps.ros.max_descriptors = rl.rlim_max ;
+ #else      /* ! RLIMIT_NOFILE */
+    ps.ros.max_descriptors = getdtablesize() ;
+@@ -292,15 +275,27 @@ static pset_h new_table( unsigned size )
+  */
+ static void init_rw_state( void )
+ {
++   const char *func = "init_rw_state" ;
+    SERVERS( ps ) = new_table( 0 ) ;
+    RETRIES( ps ) = new_table( 0 ) ;
+    SERVICES( ps ) = new_table( 0 ) ;
+ 
+    ps.rws.descriptors_free = ps.ros.max_descriptors - DESCRIPTORS_RESERVED ;
+ 
++#ifdef HAVE_POLL
++   ps.rws.pfds_allocated = INIT_POLLFDS ;
++   ps.rws.pfd_array = (struct pollfd *) 
++                      malloc( sizeof( struct pollfd ) * ps.rws.pfds_allocated ) ;
++   if ( ps.rws.pfd_array == NULL ) 
++   {
++      out_of_memory(func);
++      exit( 1 ) ;
++   }
++   ps.rws.pfds_last = 0 ;
++#else
+    FD_ZERO( &ps.rws.socket_mask ) ;
+    ps.rws.mask_max = 0 ;
+-
++#endif /* HAVE_POLL */
+ }
+ 
+ 
+diff -Nurp xinetd-2.3.14-orig/xinetd/intcommon.c xinetd-2.3.14-poll/xinetd/intcommon.c
+--- xinetd-2.3.14-orig/xinetd/intcommon.c	2003-08-06 08:12:10.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/intcommon.c	2009-09-03 16:15:49.000000000 +0200
+@@ -14,6 +14,9 @@
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <unistd.h>
++#ifdef HAVE_POLL
++#include <poll.h>
++#endif
+ 
+ #include "intcommon.h"
+ #include "msg.h"
+@@ -36,27 +39,38 @@ void int_fail( const struct intercept_s 
+ /*
+  * Returns either a positive number or -1
+  */
++#ifdef HAVE_POLL
++int int_poll( int pfds_last, struct pollfd *pfd_array )
++{
++   const char *func = "int_poll" ;
++#else
+ int int_select( int max, fd_set *read_mask )
+ {
+    const char *func = "int_select" ;
++#endif
+ 
+    for ( ;; )
+    {
+       int n_ready ;
+ 
+-      n_ready = select( max+1, read_mask,
+-                                 FD_SET_NULL, FD_SET_NULL, TIMEVAL_NULL ) ;
++      do {
++#ifdef HAVE_POLL
++         n_ready = poll( pfd_array, pfds_last, -1 );
++#else
++         n_ready = select( max+1, read_mask,
++                           FD_SET_NULL, FD_SET_NULL, TIMEVAL_NULL ) ;
++#endif
++      } while (n_ready == -1 && errno == EINTR);
++
++
+       if ( n_ready > 0 )
+          return( n_ready ) ;
+-      else if ( n_ready == -1 ) {
+-         if ( errno == EINTR )
+-            continue ;
+-         else
+-         {
+-            msg( LOG_ERR, func, "select: %m" ) ;
+-            return( -1 ) ;
+-         }
+-      }
++#ifdef HAVE_POLL
++      msg( LOG_ERR, func, "poll: %m" ) ;
++#else
++      msg( LOG_ERR, func, "select: %m" ) ;
++#endif
++      return( -1 ) ;
+    }
+ }
+ 
+diff -Nurp xinetd-2.3.14-orig/xinetd/internals.c xinetd-2.3.14-poll/xinetd/internals.c
+--- xinetd-2.3.14-orig/xinetd/internals.c	2003-09-06 16:41:59.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/internals.c	2009-09-03 10:38:29.000000000 +0200
+@@ -53,6 +53,9 @@ void dump_internal_state(void)
+    const char *dump_file = DUMP_FILE ;
+    time_t current_time ;
+    int fd ;
++#ifdef HAVE_POLL
++   int *listed_fds;
++#endif
+    unsigned u ;
+    const char *func = "dump_internal_state" ;
+ 
+@@ -104,6 +107,41 @@ void dump_internal_state(void)
+       server_dump( SERP( pset_pointer( RETRIES( ps ), u ) ), dump_fd ) ;
+    Sputchar( dump_fd, '\n' ) ;
+ 
++#ifdef HAVE_POLL
++   /*
++    * Dump the socket mask
++    */
++   listed_fds = (int *)calloc(sizeof(int),ps.ros.max_descriptors);
++   if (listed_fds != NULL)
++   {
++      Sprint( dump_fd, "Socket mask:" ) ;
++      for ( fd = 0 ; fd < ps.rws.pfds_last ; fd++ )
++      {
++         listed_fds[ps.rws.pfd_array[fd].fd] = 1;
++         Sprint( dump_fd, " %d", ps.rws.pfd_array[fd].fd ) ;
++      }
++      Sputchar( dump_fd, '\n' ) ;
++      Sprint( dump_fd, "pfds_last = %d\n", ps.rws.pfds_last ) ;
++
++      /*
++       * Dump the descriptors that are open and are *not* in the socket list
++       */
++      Sprint( dump_fd, "Open descriptors (not in socket mask):" ) ;
++      for ( fd = 0 ; (unsigned)fd < ps.ros.max_descriptors ; fd++ )
++      {
++         struct stat st ;
++
++         if ( !listed_fds[fd] && fstat( fd, &st ) != -1 )
++            Sprint( dump_fd, " %d", fd ) ;
++      }
++
++      Sputchar( dump_fd, '\n' ) ;
++      Sputchar( dump_fd, '\n' ) ;
++      free(listed_fds);
++   }
++   else
++     Sprint( dump_fd, "Could not dump open descriptors, not enough memory!\n" );
++#else /* !HAVE_POLL */
+    /*
+     * Dump the socket mask
+     */
+@@ -114,6 +152,7 @@ void dump_internal_state(void)
+    Sputchar( dump_fd, '\n' ) ;
+    Sprint( dump_fd, "mask_max = %d\n", ps.rws.mask_max ) ;
+ 
++
+    /*
+     * Dump the descriptors that are open and are *not* in the socket mask
+     */
+@@ -130,6 +169,7 @@ void dump_internal_state(void)
+    }
+    Sputchar( dump_fd, '\n' ) ;
+    Sputchar( dump_fd, '\n' ) ;
++#endif /* !HAVE_POLL */
+ 
+    Sprint( dump_fd, "active_services = %d\n", ps.rws.active_services ) ;
+    Sprint( dump_fd, "available_services = %d\n", ps.rws.available_services ) ;
+@@ -162,7 +202,6 @@ enum check_type { PERIODIC, USER_REQUEST
+ static void consistency_check( enum check_type type )
+ {
+    int         fd ;
+-   fd_set      socket_mask_copy ;
+    unsigned    u ;
+    int         errors ;
+    unsigned    total_running_servers        = 0 ;
+@@ -171,7 +210,19 @@ static void consistency_check( enum chec
+    bool_int    service_count_check_failed   = FALSE ;
+    const char  *func                        = "consistency_check" ;
+ 
++
++#ifdef HAVE_POLL
++  struct pollfd *pfd_array_copy = calloc(sizeof(struct pollfd), ps.rws.pfds_last);
++  if (pfd_array_copy == NULL)
++  {
++     msg( LOG_ERR, func, "Could not run consistency check! Not enough memory!\n" ) ;
++     return;
++  }
++  memcpy(pfd_array_copy, ps.rws.pfd_array, ps.rws.pfds_last*sizeof(struct pollfd));
++#else /* !HAVE_POLL */
++   fd_set      socket_mask_copy ;
+    socket_mask_copy = ps.rws.socket_mask ;
++#endif /* HAVE_POLL */
+ 
+    for ( u = 0 ; u < pset_count( SERVICES( ps ) ) ; u++ )
+    {
+@@ -184,9 +235,22 @@ static void consistency_check( enum chec
+ 
+       if ( SVC_IS_AVAILABLE( sp ) || SVC_IS_DISABLED ( sp ) )
+       {
++
+          /*
+           * In this case, there may be some servers running
+           */
++#ifdef HAVE_POLL
++         if ( pfd_array_copy[ SVC_POLLFD_OFF( sp ) ].events )
++         {
++            if ( SVC_IS_DISABLED( sp ) )
++            {
++               msg( LOG_ERR, func,
++                  "fd of disabled service %s still in socket mask", sid ) ;
++               error_count++ ;
++            }
++            pfd_array_copy[ SVC_POLLFD_OFF( sp ) ].events = 0;
++         }
++#else /* !HAVE_POLL */
+          if ( FD_ISSET( SVC_FD( sp ), &socket_mask_copy ) )
+          {
+             if ( SVC_IS_DISABLED( sp ) )
+@@ -197,8 +261,9 @@ static void consistency_check( enum chec
+             }
+             FD_CLR( SVC_FD( sp ), &socket_mask_copy ) ;
+          }
+-         error_count += thread_check( sp, running_servers, retry_servers ) ;
++#endif /* HAVE_POLL */
+ 
++         error_count += thread_check( sp, running_servers, retry_servers ) ;
+          errors = service_count_check( sp, running_servers, retry_servers ) ;
+          if ( ! errors && ! service_count_check_failed )
+          {
+@@ -248,6 +313,18 @@ static void consistency_check( enum chec
+    /*
+     * Check if there are any descriptors set in socket_mask_copy
+     */
++#ifdef HAVE_POLL
++   for ( fd = 0 ; fd < ps.rws.pfds_last ; fd++)
++     if ( pfd_array_copy[fd].events && pfd_array_copy[fd].fd != signals_pending[0] && 
++          pfd_array_copy[fd].fd != signals_pending[1] )
++     {
++         msg( LOG_ERR, func,
++            "descriptor %d set in socket mask but there is no service for it",
++               fd ) ;
++         error_count++ ;
++     }
++   free(pfd_array_copy);
++#else /* !HAVE_POLL */
+    for ( fd = 0 ; (unsigned)fd < ps.ros.max_descriptors ; fd++ )
+       if ( FD_ISSET( fd, &socket_mask_copy ) && ((fd != signals_pending[0]) && fd != signals_pending[1]))
+       {
+@@ -256,6 +333,7 @@ static void consistency_check( enum chec
+                fd ) ;
+          error_count++ ;
+       }
++#endif /* !HAVE_POLL */
+ 
+    if ( error_count != 0 )
+       msg( LOG_WARNING, func,
+@@ -304,7 +382,6 @@ static unsigned service_count_check( str
+ }
+ 
+ 
+-
+ /*
+  * If the service is single-threaded:
+  *         if the descriptor is set in the socket mask, there must
+@@ -317,7 +394,11 @@ static unsigned thread_check( struct ser
+                                unsigned retry_servers )
+ {
+    unsigned error_count = 0 ;
++#ifdef HAVE_POLL
++   struct pollfd *pfd= SVC_POLLFD( sp ) ;
++#else
+    int sd = SVC_FD( sp ) ;
++#endif
+    char *sid = SVC_ID( sp ) ;
+    const char *func = "thread_check" ;
+ 
+@@ -325,13 +406,21 @@ static unsigned thread_check( struct ser
+    {
+       bool_int has_servers = ( running_servers + retry_servers != 0 ) ;
+ 
++#ifdef HAVE_POLL
++      if ( has_servers && pfd->events )
++#else
+       if ( has_servers && FD_ISSET( sd, &ps.rws.socket_mask ) )
++#endif
+       {
+          msg( LOG_ERR, func,
+ "Active single-threaded service %s: server running, descriptor set", sid ) ;
+          error_count++ ;
+       }
++#ifdef HAVE_POLL
++      if ( !has_servers && !pfd->events )
++#else
+       if ( !has_servers && !FD_ISSET( sd, &ps.rws.socket_mask ) )
++#endif
+       {
+          msg( LOG_ERR, func,
+ "Active single-threaded service %s: no server running, descriptor not set",
+@@ -340,7 +429,11 @@ static unsigned thread_check( struct ser
+       }
+    }
+    else
++#ifdef HAVE_POLL
++      if ( ! pfd->events )
++#else
+       if ( ! FD_ISSET( sd, &ps.rws.socket_mask ) )
++#endif
+       {
+          msg( LOG_ERR, func,
+             "Active multi-threaded service %s: descriptor not set", sid ) ;
+diff -Nurp xinetd-2.3.14-orig/xinetd/main.c xinetd-2.3.14-poll/xinetd/main.c
+--- xinetd-2.3.14-orig/xinetd/main.c	2009-07-27 13:27:59.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/main.c	2009-09-03 16:23:11.000000000 +0200
+@@ -25,6 +25,9 @@
+ #include "xtimer.h"
+ #include "sensor.h"
+ #include "xmdns.h"
++#ifdef HAVE_POLL
++#include "xpoll.h"
++#endif
+ 
+ #ifdef __GNUC__
+ __attribute__ ((noreturn))
+@@ -119,16 +122,24 @@ static void main_loop(void)
+ {
+    const char      *func = "main_loop" ;
+    struct timeval   tv, *tvptr = NULL;
++#ifdef HAVE_POLL
++   struct pollfd   *signal_pfd;
+ 
+-   FD_SET(signals_pending[0], &ps.rws.socket_mask);
++   ps.rws.pfd_array[ps.rws.pfds_last].fd = signals_pending[0] ;
++   ps.rws.pfd_array[ps.rws.pfds_last].events = POLLIN ;
++   signal_pfd = &ps.rws.pfd_array[ps.rws.pfds_last] ;
++   ps.rws.pfds_last++;
++#else
++   FD_SET(signals_pending[0], &ps.rws.socket_mask) ;
+    if ( signals_pending[0] > ps.rws.mask_max )
+       ps.rws.mask_max = signals_pending[0] ;
+-   if ( signals_pending[1] > ps.rws.mask_max )
+-      ps.rws.mask_max = signals_pending[1] ;
++#endif /* HAVE_POLL */
+ 
+    for ( ;; )
+    {
++#ifndef HAVE_POLL
+       fd_set read_mask ;
++#endif
+       int n_active ;
+       unsigned u ;
+ 
+@@ -144,9 +155,14 @@ static void main_loop(void)
+          tvptr = NULL;
+       }
+ 
++#ifdef HAVE_POLL
++      n_active = poll( ps.rws.pfd_array, ps.rws.pfds_last,
++                       tvptr == NULL ? -1 : tvptr->tv_sec*1000 ) ;
++#else
+       read_mask = ps.rws.socket_mask ;
+       n_active = select( ps.rws.mask_max+1, &read_mask,
+                         FD_SET_NULL, FD_SET_NULL, tvptr ) ;
++#endif
+       if ( n_active == -1 )
+       {
+          if ( errno == EINTR ) {
+@@ -165,11 +181,27 @@ static void main_loop(void)
+ 
+       xtimer_poll();
+ 
+-      if( FD_ISSET(signals_pending[0], &read_mask) ) {
++#ifdef HAVE_POLL
++      if ( POLLFD_REVENTS( signal_pfd ) ) 
++      {
++        if ( POLLFD_REVENTS( signal_pfd ) & (POLLERR | POLLHUP | 
++            POLLNVAL) ) 
++          find_bad_fd();
++        else
++        {
++          check_pipe();
++          if ( --n_active == 0 )
++            continue ;
++        }
++      }
++#else
++      if( FD_ISSET(signals_pending[0], &read_mask) ) 
++      {
+          check_pipe();
+             if ( --n_active == 0 )
+                continue ;
+       }
++#endif
+ 
+ #ifdef HAVE_MDNS
+       if( xinetd_mdns_poll() == 0 )
+@@ -186,19 +218,33 @@ static void main_loop(void)
+          if ( ! SVC_IS_ACTIVE( sp ) )
+             continue ;
+ 
++#ifdef HAVE_POLL
++         if ( SVC_REVENTS( sp ) )
++         {
++           if ( SVC_REVENTS( sp ) & (POLLERR | POLLHUP | 
++               POLLNVAL) ) 
++             find_bad_fd();
++           else
++           {
++             svc_request( sp ) ;
++             if ( --n_active == 0 )
++               break ;
++           }
++         }
++#else
+          if ( FD_ISSET( SVC_FD( sp ), &read_mask ) )
+          {
+             svc_request( sp ) ;
+             if ( --n_active == 0 )
+                break ;
+          }
++#endif
+       }
+       if ( n_active > 0 )
+          msg( LOG_ERR, func, "%d descriptors still set", n_active ) ;
+    }
+ }
+ 
+-
+ /*
+  * This function identifies if any of the fd's in the socket mask
+  * is bad. We use it in case select(2) returns EBADF
+@@ -208,13 +254,29 @@ static void main_loop(void)
+ static void find_bad_fd(void)
+ {
+    int fd ;
++#ifdef HAVE_POLL
++   const char *reason;
++#else
+    struct stat st ;
++#endif
+    unsigned bad_fd_count = 0 ;
+    const char *func = "find_bad_fd" ;
+ 
++#ifdef HAVE_POLL
++   for ( fd = 0 ; (unsigned)fd < ps.rws.pfds_last ; fd++ )
++      if ( ps.rws.pfd_array[fd].revents & ( POLLHUP|POLLNVAL|POLLERR ) )
++      {
++         if ( ps.rws.pfd_array[fd].revents & POLLHUP )
++            reason = "hung up";
++         else if ( ps.rws.pfd_array[fd].revents & POLLNVAL )
++            reason = "been closed";
++         else if ( ps.rws.pfd_array[fd].revents & POLLERR )
++            reason = "reported error condition";
++#else
+    for ( fd = 0 ; (unsigned)fd < ps.ros.max_descriptors ; fd++ )
+       if ( FD_ISSET( fd, &ps.rws.socket_mask ) && fstat( fd, &st ) == -1 )
+       {
++#endif
+          int found = FALSE ;
+          unsigned u ;
+ 
+@@ -239,7 +301,11 @@ static void find_bad_fd(void)
+          }
+          if ( ! found )
+          {
++#ifdef HAVE_POLL
++            ps.rws.pfd_array[fd].events = 0;
++#else
+             FD_CLR( fd, &ps.rws.socket_mask ) ;
++#endif
+             msg( LOG_ERR, func,
+                "No active service for file descriptor %d\n", fd ) ;
+             bad_fd_count++ ;
+diff -Nurp xinetd-2.3.14-orig/xinetd/redirect.c xinetd-2.3.14-poll/xinetd/redirect.c
+--- xinetd-2.3.14-orig/xinetd/redirect.c	2009-07-27 13:27:59.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/redirect.c	2009-09-02 16:00:34.000000000 +0200
+@@ -58,14 +58,19 @@ void redir_handler( struct server *serp 
+    struct service *sp = SERVER_SERVICE( serp );
+    struct service_config *scp = SVC_CONF( sp );
+    int RedirDescrip = SERVER_FD( serp );
+-   int maxfd;
+    ssize_t num_read, num_wrote=0, ret=0;
+    unsigned int sin_len = 0;
+    unsigned long bytes_in = 0, bytes_out = 0;
+    int no_to_nagle = 1;
+    int on = 1, v6on;
+    char buff[NET_BUFFER];
++#ifdef HAVE_POLL
++   struct pollfd *pfd_array;
++   int            pfds_last = 0;
++#else
+    fd_set rdfd, msfd;
++   int maxfd;
++#endif
+    struct timeval *timep = NULL;
+    const char *func = "redir_handler";
+    union xsockaddr serveraddr ;
+@@ -141,19 +146,43 @@ void redir_handler( struct server *serp 
+          msg(LOG_ERR, func, "setsockopt RedirDescrip failed: %m");
+       }
+ 
++#ifdef HAVE_POLL
++#define REDIR_DESCRIP_INDEX 0
++#define REDIR_SERVER_INDEX 1
++      pfd_array = (struct pollfd *)calloc(sizeof(struct pollfd),INIT_POLLFDS);
++      if (pfd_array == NULL)
++      {
++         msg( LOG_ERR, func, "Cannot allocate memory for file descriptors!\n");
++         exit( 1 );
++      }
++      pfd_array[ REDIR_DESCRIP_INDEX ].fd = RedirDescrip;
++      pfd_array[ REDIR_DESCRIP_INDEX ].events = POLLIN;
++      pfd_array[ REDIR_SERVER_INDEX ].fd = RedirServerFd;
++      pfd_array[ REDIR_SERVER_INDEX ].events = POLLIN;
++      pfds_last += 2;
++#else
+       maxfd = (RedirServerFd > RedirDescrip)?RedirServerFd:RedirDescrip;
+       FD_ZERO(&msfd);
+       FD_SET(RedirDescrip, &msfd);
+       FD_SET(RedirServerFd, &msfd);
++#endif
+ 
+       while(1) {
++#ifdef HAVE_POLL
++         if ( poll( pfd_array, pfds_last, -1 ) <= 0 ) {
++#else
+          memcpy(&rdfd, &msfd, sizeof(rdfd));
+          if (select(maxfd + 1, &rdfd, (fd_set *)0, (fd_set *)0, timep) <= 0) {
++#endif
+             /* place for timeout code, currently does not time out */
+             break;
+          }
+ 
++#ifdef HAVE_POLL
++         if ( pfd_array[REDIR_DESCRIP_INDEX].revents ) {
++#else
+          if (FD_ISSET(RedirDescrip, &rdfd)) {
++#endif
+             do {
+                num_read = read(RedirDescrip,
+                   buff, sizeof(buff));
+@@ -179,7 +208,11 @@ void redir_handler( struct server *serp 
+             }
+          }
+ 
++#ifdef HAVE_POLL
++         if ( pfd_array[REDIR_SERVER_INDEX].revents ) {
++#else
+          if (FD_ISSET(RedirServerFd, &rdfd)) {
++#endif
+             do {
+                num_read = read(RedirServerFd,
+                   buff, sizeof(buff));
+diff -Nurp xinetd-2.3.14-orig/xinetd/server.c xinetd-2.3.14-poll/xinetd/server.c
+--- xinetd-2.3.14-orig/xinetd/server.c	2005-03-29 17:50:34.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/server.c	2009-09-02 11:30:27.000000000 +0200
+@@ -298,7 +298,11 @@ void server_end( struct server *serp )
+       
+       /* Added this for when accepting wait=yes services */
+       if( SVC_WAITS( sp ) )
++#ifdef HAVE_POLL
++         SVC_EVENTS( sp ) = POLLIN ;
++#else
+          FD_SET( SVC_FD( sp ), &ps.rws.socket_mask ) ;
++#endif /* HAVE_POLL */
+ 
+       svc_postmortem( sp, serp ) ;
+       server_release( serp ) ;
+diff -Nurp xinetd-2.3.14-orig/xinetd/service.c xinetd-2.3.14-poll/xinetd/service.c
+--- xinetd-2.3.14-orig/xinetd/service.c	2009-07-27 13:27:59.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/service.c	2009-09-02 17:03:49.000000000 +0200
+@@ -71,8 +71,6 @@ static const struct name_value service_s
+       { "BAD STATE",          0                        }
+    } ;
+ 
+-
+-
+ /*
+  * Allocate a new struct service and initialize it from scp 
+  */
+@@ -115,6 +113,10 @@ struct service *svc_make_special( struct
+ 
+ void svc_free( struct service *sp )
+ {
++#ifdef HAVE_POLL
++   *SVC_POLLFD( sp ) = ps.rws.pfd_array[--ps.rws.pfds_last] ;
++#endif /* HAVE_POLL */
++
+    sc_free( SVC_CONF(sp) ) ;
+    CLEAR( *sp ) ;
+    FREE_SVC( sp ) ;
+@@ -325,6 +327,25 @@ status_e svc_activate( struct service *s
+       return( OK );
+    }
+ 
++#ifdef HAVE_POLL
++   if ( ps.rws.pfds_last >= ps.rws.pfds_allocated )
++   {
++     int pos;
++     ps.rws.pfds_allocated += INIT_POLLFDS;
++     struct pollfd *tmp = (struct pollfd *)realloc( ps.rws.pfd_array,
++       ps.rws.pfds_allocated*sizeof(struct pollfd));
++     if ( tmp == NULL )
++     {
++       out_of_memory( func );
++       return( FAILED );
++     }
++     memset(&ps.rws.pfd_array[ps.rws.pfds_last], 0, (ps.rws.pfds_allocated-
++       ps.rws.pfds_last)*sizeof(struct pollfd));
++     ps.rws.pfd_array = tmp;
++   }
++   SVC_POLLFD( sp ) = &ps.rws.pfd_array[ps.rws.pfds_last++] ;
++#endif /* HAVE_POLL */
++
+    if( SC_IPV4( scp ) ) {
+       SVC_FD(sp) = socket( AF_INET, 
+                            SC_SOCKET_TYPE( scp ), SC_PROTOVAL( scp ) ) ;
+@@ -390,9 +411,14 @@ status_e svc_activate( struct service *s
+ 
+    SVC_STATE(sp) = SVC_ACTIVE ;
+ 
++#ifdef HAVE_POLL
++   SVC_EVENTS( sp ) = POLLIN ;
++#else
+    FD_SET( SVC_FD(sp), &ps.rws.socket_mask ) ;
++
+    if ( SVC_FD(sp) > ps.rws.mask_max )
+       ps.rws.mask_max = SVC_FD(sp) ;
++#endif /* HAVE_POLL */
+ 
+    ps.rws.active_services++ ;
+    ps.rws.available_services++ ;
+@@ -442,7 +468,11 @@ void svc_deactivate( struct service *sp 
+ 
+    if ( SVC_IS_ACTIVE( sp ) )
+    {
++#ifdef HAVE_POLL
++      SVC_EVENTS( sp ) = 0;
++#else      
+       FD_CLR( SVC_FD( sp ), &ps.rws.socket_mask ) ;
++#endif /* HAVE_POLL */
+       ps.rws.active_services-- ;
+    }
+ 
+@@ -465,7 +495,15 @@ void svc_suspend( struct service *sp )
+       return ;
+    }
+ 
++#ifdef HAVE_POLL
++   /* 
++    * don't reap the pfd from pfd_array, since we must have it allocated for
++    * SVC_FD( sp )
++    */
++   SVC_EVENTS( sp ) = 0;
++#else
+    FD_CLR( SVC_FD( sp ), &ps.rws.socket_mask ) ;
++#endif
+    ps.rws.active_services-- ;
+    if ( debug.on )
+       msg( LOG_DEBUG, func, "Suspended service %s", SVC_ID( sp ) ) ;
+@@ -481,7 +519,12 @@ void svc_resume( struct service *sp )
+ {
+    const char *func = "svc_resume" ;
+ 
++#ifdef HAVE_POLL
++   SVC_EVENTS( sp ) = POLLIN ;
++#else
+    FD_SET( SVC_FD( sp ), &ps.rws.socket_mask ) ;
++#endif
++
+    ps.rws.active_services++ ;
+    if ( debug.on )
+       msg( LOG_DEBUG, func, "Resumed service %s", SVC_ID( sp ) ) ;
+diff -Nurp xinetd-2.3.14-orig/xinetd/service.h xinetd-2.3.14-poll/xinetd/service.h
+--- xinetd-2.3.14-orig/xinetd/service.h	2005-03-29 17:50:34.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/service.h	2009-09-03 16:24:16.000000000 +0200
+@@ -17,6 +17,9 @@
+ #include "pset.h"
+ #include "xlog.h"
+ #include "server.h"
++#ifdef HAVE_POLL
++#include "xpoll.h"
++#endif
+ 
+ /*
+  * $Id: service.h,v 1.5 2005/03/29 15:50:34 bbraun Exp $
+@@ -45,7 +48,13 @@ struct service
+    state_e                svc_state ;
+    int                    svc_ref_count ;   /* # of pters to this struct */
+    struct service_config *svc_conf ;    /* service configuration */
++
++#ifdef HAVE_POLL
++   struct pollfd         *svc_pfd ;  /* pointer to the pollfd */
++#else
+    int                    svc_fd ;	/* The Listening FD for the service */
++#endif /* HAVE_POLL */
++
+    unsigned               svc_running_servers ;
+    unsigned               svc_retry_servers ;
+    unsigned               svc_attempts ; /* # of attempts to start server */
+@@ -70,7 +79,17 @@ struct service
+  * Field access macros
+  */
+ #define SVC_CONF( sp )             ( (sp)->svc_conf )
++
++#ifdef HAVE_POLL
++#define SVC_POLLFD( sp )           ( (sp)->svc_pfd )
++#define SVC_POLLFD_OFF( sp )       ( SVC_POLLFD( sp )-ps.rws.pfd_array )
++#define SVC_EVENTS( sp )           ( POLLFD_EVENTS( SVC_POLLFD( sp ) ) )
++#define SVC_REVENTS( sp )          ( POLLFD_REVENTS( SVC_POLLFD( sp ) ) )
++#define SVC_FD( sp )               ( POLLFD_FD( SVC_POLLFD( sp ) ) )
++#else
+ #define SVC_FD( sp )               ( (sp)->svc_fd )
++#endif /* HAVE_POLL */
++
+ #define SVC_RUNNING_SERVERS( sp )  (sp)->svc_running_servers
+ #define SVC_RETRIES( sp )          (sp)->svc_retry_servers
+ #define SVC_LOG( sp )              (sp)->svc_log
+diff -Nurp xinetd-2.3.14-orig/xinetd/state.h xinetd-2.3.14-poll/xinetd/state.h
+--- xinetd-2.3.14-orig/xinetd/state.h	2005-03-31 01:15:28.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/state.h	2009-09-02 11:30:27.000000000 +0200
+@@ -21,7 +21,10 @@
+ #endif
+ #include "libportable.h"
+ 
+-#ifdef HAVE_SYS_SELECT_H
++#ifdef HAVE_POLL
++#include <poll.h>
++#endif
++#if HAVE_SYS_SELECT_H
+ #include <sys/select.h>
+ #endif
+ 
+@@ -32,7 +35,6 @@
+ 
+ struct read_only_state
+ {
+-   rlim_t      orig_max_descriptors ; /* original soft rlimit                */
+    rlim_t      max_descriptors ;      /* original hard rlimit or OPEN_MAX    */
+    rlim_t      process_limit ;        /* if 0, there is no limit             */
+    int         cc_interval ;          /* # of seconds the cc gets invoked.   */
+@@ -58,8 +60,15 @@ struct read_write_state
+    int              available_services ;   /* # of available services       */
+    int              active_services ;      /* services with descriptors set */
+                                            /* in socket mask                */
++#ifdef HAVE_POLL 
++   struct pollfd   *pfd_array;             /* array passed to poll(2)       */
++   int              pfds_last;             /* index of last fd in the array */
++   int              pfds_allocated;        /* size of the array             */
++#else
+    fd_set           socket_mask ;
+    int              mask_max ;
++#endif /* HAVE_POLL */
++
+    pset_h           servers ;              /* table of running servers      */
+    pset_h           retries ;              /* table of servers to retry     */
+    pset_h           services ;             /* table of services             */
+diff -Nurp xinetd-2.3.14-orig/xinetd/tcpint.c xinetd-2.3.14-poll/xinetd/tcpint.c
+--- xinetd-2.3.14-orig/xinetd/tcpint.c	2009-07-27 13:27:59.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/tcpint.c	2009-09-02 16:49:32.000000000 +0200
+@@ -63,7 +63,15 @@ struct intercept_s *si_init( struct serv
+    return( ip ) ;
+ }
+ 
++#ifdef HAVE_POLL
++static status_e handle_io( psi_h iter, channel_s *chp,
++                           struct pollfd *pfd_handled,
++                           struct pollfd *pfd_array,
++                           int *pfds_last,
++                           stream_status_e (*iofunc)() );
++#else
+ static status_e handle_io( psi_h iter, channel_s *chp, fd_set *maskp, stream_status_e (*iofunc)() );
++#endif
+ static stream_status_e tcp_local_to_remote( channel_s *chp );
+ static stream_status_e tcp_remote_to_local( channel_s *chp );
+ static void connection_request( struct intercept_s *ip, channel_s **chpp );
+@@ -82,14 +90,26 @@ void si_exit(void)
+ static void si_mux(void)
+ {
+    struct intercept_s   *ip = &stream_intercept_state ;
++#ifdef HAVE_POLL
++   struct pollfd        *pfd_array;
++   int                   pfds_last = 0;
++   int                   pfds_allocated = INIT_POLLFDS;
++#else
+    fd_set                     socket_mask ;
+    int                        mask_max ;
++#endif
+    psi_h                      iter ;
+    const char                *func = "si_mux" ;
+ 
++#ifdef HAVE_POLL
++   pfd_array = calloc(sizeof(struct pollfd),INIT_POLLFDS);
++   pfd_array[ pfds_last ].fd = INT_REMOTE( ip ) ;
++   pfd_array[ pfds_last++ ].events = POLLIN | POLLOUT;
++#else
+    FD_ZERO( &socket_mask ) ;
+    FD_SET( INT_REMOTE( ip ), &socket_mask ) ;
+    mask_max = INT_REMOTE( ip ) ;
++#endif
+ 
+    iter = psi_create( INT_CONNECTIONS( ip ) ) ;
+    if ( iter == NULL )
+@@ -101,26 +121,43 @@ static void si_mux(void)
+    for ( ;; )
+    {
+       channel_s *chp ;
++#ifndef HAVE_POLL
+       fd_set read_mask ;
++#endif
+       int n_ready ;
+ 
++#ifdef HAVE_POLL
++      n_ready = int_poll( pfds_last, pfd_array ) ;
++#else
+       read_mask = socket_mask ;
+       n_ready = int_select( mask_max+1, &read_mask ) ;
++#endif
+ 
+       if ( n_ready == -1 )
+          return ;
+       
++#ifdef HAVE_POLL
++      if ( pfd_array[0].revents & ( POLLIN | POLLOUT ) )
++#else
+       if ( FD_ISSET( INT_REMOTE( ip ), &read_mask ) )
++#endif
+       {
+          connection_request( ip, &chp ) ;
+          if ( chp != NULL )
+          {
++#ifdef HAVE_POLL
++            pfd_array[ pfds_last ].fd = chp->ch_local_socket ;
++            pfd_array[ pfds_last++ ].events = POLLIN | POLLOUT ;
++            pfd_array[ pfds_last ].fd = chp->ch_remote_socket ;
++            pfd_array[ pfds_last++ ].events = POLLIN | POLLOUT ;
++#else
+             FD_SET( chp->ch_local_socket, &socket_mask ) ;
+             if ( chp->ch_local_socket > mask_max )
+                mask_max = chp->ch_local_socket ;
+             FD_SET( chp->ch_remote_socket, &socket_mask ) ;
+             if ( chp->ch_remote_socket > mask_max )
+                mask_max = chp->ch_remote_socket ;
++#endif
+          }
+          if ( --n_ready == 0 )
+             continue ;
+@@ -128,27 +165,57 @@ static void si_mux(void)
+ 
+       for ( chp = CHP( psi_start(iter) ) ; chp ; chp = CHP( psi_next(iter) ) )
+       {
++#ifdef HAVE_POLL
++         int i;
++         struct pollfd *local_pfd = NULL, *remote_pfd = NULL;
++
++         /* TODO: detection with O(n)=1 */
++         for (i = 0 ; i < pfds_last ; i++ )
++           if (pfd_array[i].fd == chp->ch_local_socket)
++             local_pfd = &pfd_array[i];
++           else if (pfd_array[i] .fd== chp->ch_remote_socket)
++             remote_pfd = &pfd_array[i];
++
++         if ( local_pfd != NULL && 
++              local_pfd->revents & ( POLLIN | POLLOUT) )
++#else
+          if ( FD_ISSET( chp->ch_local_socket, &read_mask ) )
++#endif
+          {
+ #ifdef DEBUG_TCPINT
+             if ( debug.on )
+                msg( LOG_DEBUG, func, "Input available on local socket %d", 
+                                                          chp->ch_local_socket ) ;
+ #endif
++#ifdef HAVE_POLL
++            if ( handle_io( iter, chp, local_pfd, pfd_array,
++                    &pfds_last, tcp_local_to_remote ) == FAILED )
++#else
+             if ( handle_io( iter, chp, &socket_mask, tcp_local_to_remote ) == FAILED )
++#endif
+                return ;
+             if ( --n_ready == 0 )
+                break ;
+          }
+ 
++#ifdef HAVE_POLL
++         if ( remote_pfd != NULL && 
++              remote_pfd->revents & ( POLLIN | POLLOUT) )
++#else
+          if ( FD_ISSET( chp->ch_remote_socket, &read_mask ) )
++#endif
+          {
+ #ifdef DEBUG_TCPINT
+             msg( LOG_DEBUG, func, "Input available on remote socket %d", 
+                                                       chp->ch_remote_socket ) ;
+ #endif
++#ifdef HAVE_POLL
++            if ( handle_io( iter, chp, remote_pfd, pfd_array,
++                    &pfds_last, tcp_local_to_remote ) == FAILED )
++#else
+             if ( handle_io( iter, chp,
+                         &socket_mask, tcp_remote_to_local ) == FAILED )
++#endif
+                return ;
+             if ( --n_ready == 0 )
+                break ;
+@@ -158,10 +225,19 @@ static void si_mux(void)
+ }
+ 
+ 
++#ifdef HAVE_POLL
++static status_e handle_io( psi_h iter, 
++                            channel_s *chp, 
++                            struct pollfd *pfd_handled,
++                            struct pollfd *pfd_array,
++                            int *pfds_last,
++                            stream_status_e (*iofunc)() )
++#else
+ static status_e handle_io( psi_h iter, 
+                             channel_s *chp, 
+                             fd_set *maskp, 
+                             stream_status_e (*iofunc)() )
++#endif
+ {
+    const char *func = "handle_io" ;
+ 
+@@ -178,8 +254,13 @@ static status_e handle_io( psi_h iter, 
+                   xaddrname( &chp->ch_from ), ntohs(xaddrport( &chp->ch_from )),
+                         chp->ch_local_socket, chp->ch_remote_socket ) ;
+ 
++#ifdef HAVE_POLL
++         if ( pfd_handled != NULL)
++           *pfd_handled = pfd_array[ --( *pfds_last ) ];
++#else
+          FD_CLR( chp->ch_local_socket, maskp ) ;
+          FD_CLR( chp->ch_remote_socket, maskp ) ;
++#endif
+          (void) Sclose( chp->ch_remote_socket ) ;
+          (void) Sclose( chp->ch_local_socket ) ;
+          psi_remove( iter ) ;
+diff -Nurp xinetd-2.3.14-orig/xinetd/udpint.c xinetd-2.3.14-poll/xinetd/udpint.c
+--- xinetd-2.3.14-orig/xinetd/udpint.c	2009-07-27 13:27:59.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/udpint.c	2009-09-02 16:59:33.000000000 +0200
+@@ -15,6 +15,9 @@
+ #include <syslog.h>
+ #include <errno.h>
+ 
++#ifdef HAVE_POLL
++#include <poll.h>
++#endif
+ #ifdef HAVE_SYS_SELECT_H
+ #include <sys/select.h>
+ #endif
+@@ -97,34 +100,61 @@ void di_exit(void)
+ static void di_mux(void)
+ {
+    struct intercept_s   *ip = &dgram_intercept_state ;
++#ifdef HAVE_POLL
++   struct pollfd        *pfd_array;
++   int                   pfds_last = 0;
++   int                   pfds_allocated = INIT_POLLFDS;
++#else
+    fd_set                     socket_mask ;
+    int                        mask_max ;
++#endif
+ 
++#ifdef HAVE_POLL
++   pfd_array = (struct pollfd *)calloc(sizeof(struct pollfd),INIT_POLLFDS);
++   pfd_array[ pfds_last ].fd = INT_REMOTE( ip );
++   pfd_array[ pfds_last++ ].events = POLLIN | POLLOUT;
++#else
+    FD_ZERO( &socket_mask ) ;
+    FD_SET( INT_REMOTE( ip ), &socket_mask ) ;
+    mask_max = INT_REMOTE( ip ) ;
++#endif
+ 
+    for ( ;; )
+    {
+       unsigned u ;
+       channel_s *chp ;
++#ifndef HAVE_POLL
+       fd_set read_mask ;
++#endif
+       int n_ready ;
+ 
++#ifdef HAVE_POLL
++      n_ready = int_poll( pfds_last, pfd_array ) ;
++#else
+       read_mask = socket_mask ;
+       n_ready = int_select( mask_max+1, &read_mask ) ;
++#endif
+ 
+       if ( n_ready == -1 )
+          return ;
+       
++#ifdef HAVE_POLL
++      if ( pfd_array[0].revents & ( POLLIN | POLLOUT ) )
++#else
+       if ( FD_ISSET( INT_REMOTE( ip ), &read_mask ) )
++#endif
+       {
+          udp_remote_to_local( ip, &chp ) ;
+          if ( chp != NULL )
+          {
++#ifdef HAVE_POLL
++            pfd_array[ pfds_last ].fd = chp->ch_local_socket ;
++            pfd_array[ pfds_last++ ].events = POLLIN | POLLOUT ;
++#else
+             FD_SET( chp->ch_local_socket, &socket_mask ) ;
+             if ( chp->ch_local_socket > mask_max )
+                mask_max = chp->ch_local_socket ;
++#endif
+          }
+          if ( --n_ready == 0 )
+             continue ;
+@@ -134,7 +164,17 @@ static void di_mux(void)
+       {
+          chp = CHP( pset_pointer( INT_CONNECTIONS( ip ), u ) ) ;
+ 
++#ifdef HAVE_POLL
++         int i;
++         /* TODO: detection with O(n)=1 */
++         for (i = 0 ; i < pfds_last ; i++)
++           if (pfd_array[i].fd == chp->ch_local_socket)
++             break;
++         if (pfd_array[i].fd == chp->ch_local_socket &&
++             (pfd_array[i].revents & ( POLLIN | POLLOUT )))
++#else
+          if ( FD_ISSET( chp->ch_local_socket, &read_mask ) )
++#endif
+          {
+             if ( udp_local_to_remote( chp ) == FAILED )
+                return ;
+diff -Nurp xinetd-2.3.14-orig/xinetd/xmdns.c xinetd-2.3.14-poll/xinetd/xmdns.c
+--- xinetd-2.3.14-orig/xinetd/xmdns.c	2005-04-08 23:23:07.000000000 +0200
++++ xinetd-2.3.14-poll/xinetd/xmdns.c	2009-09-02 17:01:54.000000000 +0200
+@@ -109,7 +109,26 @@ int xinetd_mdns_init(void) {
+       ps.rws.mdns_state = NULL;
+       return -1;
+    }
++#ifdef HAVE_POLL
++   if ( ps.rws.pfds_last >= ps.rws.pfds_allocated )
++   {
++     ps.rws.pfds_allocated += INIT_POLLFDS;
++     struct pollfd *tmp = (struct pollfd *)realloc( ps.rws.pfd_array,
++         ps.rws.pfds_allocated*sizeof(struct pollfd));
++     if ( tmp == NULL )
++     {
++       out_of_memory( func );
++       return -1;
++     }
++     memset(&ps.rws.pfd_array[ps.rws.pfds_last], 0, (ps.rws.pfds_allocated-
++           ps.rws.pfds_last)*sizeof(struct pollfd));
++     ps.rws.pfd_array = tmp;
++   }
++   ps.rws.pfd_array[ ps.rws.pfds_last ].fd = sw_discovery_socket(*(sw_discovery *)ps.rws.mdns_state);
++   ps.rws.pfd_array[ ps.rws.pfds_last++ ].events = POLLIN;
++#else
+    FD_SET( sw_discovery_socket(*(sw_discovery *)ps.rws.mdns_state), &ps.rws.socket_mask ) ;
++#endif
+    return 0;
+ #endif
+ }
+diff -Nurp xinetd-2.3.14-orig/xinetd/xpoll.h xinetd-2.3.14-poll/xinetd/xpoll.h
+--- xinetd-2.3.14-orig/xinetd/xpoll.h	1970-01-01 01:00:00.000000000 +0100
++++ xinetd-2.3.14-poll/xinetd/xpoll.h	2009-09-02 11:30:27.000000000 +0200
+@@ -0,0 +1,23 @@
++/*
++ * (c) Copyright 2009 by Red Hat Inc.
++ * All rights reserved.  The file named COPYRIGHT specifies the terms 
++ * and conditions for redistribution.
++ */
++#include "config.h"
++#ifdef HAVE_POLL
++#ifndef _X_POLL_H
++#define _X_POLL_H
++
++#include <poll.h>
++#include "defs.h"
++
++
++/* Field accessor methods for pollfd in defined in poll.h */
++#define POLLFD_FD( pfd )           ( (pfd)->fd )
++#define POLLFD_EVENTS( pfd )       ( (pfd)->events )
++#define POLLFD_REVENTS( pfd )      ( (pfd)->revents )
++
++/* TODO: write memory management stuff in xpoll.c if needed */
++
++#endif /* _X_POLL_H */
++#endif /* HAVE_POLL */

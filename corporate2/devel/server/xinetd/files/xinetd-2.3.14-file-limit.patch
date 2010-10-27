@@ -1,0 +1,126 @@
+diff -Nurp xinetd-2.3.14-orig/xinetd/attr.h xinetd-2.3.14-files/xinetd/attr.h
+--- xinetd-2.3.14-orig/xinetd/attr.h	2005-10-05 19:15:33.000000000 +0200
++++ xinetd-2.3.14-files/xinetd/attr.h	2009-10-20 13:08:45.000000000 +0200
+@@ -61,12 +61,13 @@
+ #define A_DISABLED         43
+ #define A_MDNS             44
+ #define A_LIBWRAP          45
++#define A_RLIMIT_FILES     46
+ 
+ /*
+  * SERVICE_ATTRIBUTES is the number of service attributes and also
+  * the number from which defaults-only attributes start.
+  */
+-#define SERVICE_ATTRIBUTES      ( A_MDNS + 1 )
++#define SERVICE_ATTRIBUTES      ( A_MDNS + 2 )
+ 
+ /*
+  * Mask of attributes that must be specified.
+diff -Nurp xinetd-2.3.14-orig/xinetd/child.c xinetd-2.3.14-files/xinetd/child.c
+--- xinetd-2.3.14-orig/xinetd/child.c	2009-10-20 13:07:34.000000000 +0200
++++ xinetd-2.3.14-files/xinetd/child.c	2009-10-20 13:10:16.000000000 +0200
+@@ -109,6 +109,10 @@ void exec_server( const struct server *s
+ 
+ 
+ #ifdef RLIMIT_NOFILE
++   if ( SC_RLIM_FILES( scp ))
++   {
++      ps.ros.max_descriptors = SC_RLIM_FILES( scp );
++   }
+    rl.rlim_max = rl.rlim_cur = ps.ros.max_descriptors ;
+    (void) setrlimit( RLIMIT_NOFILE, &rl ) ;
+ #endif
+diff -Nurp xinetd-2.3.14-orig/xinetd/parse.c xinetd-2.3.14-files/xinetd/parse.c
+--- xinetd-2.3.14-orig/xinetd/parse.c	2005-10-05 19:15:33.000000000 +0200
++++ xinetd-2.3.14-files/xinetd/parse.c	2009-10-20 13:08:45.000000000 +0200
+@@ -92,6 +92,9 @@ static const struct attribute service_at
+ #ifdef RLIMIT_DATA
+    { "rlimit_data",    A_RLIMIT_DATA,    1,  rlim_data_parser       },
+ #endif
++#ifdef RLIMIT_NOFILE
++   { "rlimit_files",   A_RLIMIT_FILES,   1,  rlim_files_parser      },
++#endif
+ #ifdef RLIMIT_RSS
+    { "rlimit_rss",     A_RLIMIT_RSS,     1,  rlim_rss_parser        },
+ #endif
+diff -Nurp xinetd-2.3.14-orig/xinetd/parsers.c xinetd-2.3.14-files/xinetd/parsers.c
+--- xinetd-2.3.14-orig/xinetd/parsers.c	2005-10-05 23:45:41.000000000 +0200
++++ xinetd-2.3.14-files/xinetd/parsers.c	2009-10-20 13:08:45.000000000 +0200
+@@ -1415,6 +1415,29 @@ status_e rlim_data_parser( pset_h values
+ }
+ #endif
+ 
++#ifdef RLIMIT_NOFILE
++status_e rlim_files_parser( pset_h values, 
++                         struct service_config *scp, 
++                         enum assign_op op )
++{
++   char *mem = (char *) pset_pointer( values, 0 ) ;
++   const char *func = "rlim_files_parser" ;
++
++   if ( EQ( mem, "UNLIMITED" ) )
++      SC_RLIM_FILES(scp) = (rlim_t)RLIM_INFINITY ;
++   else
++   {
++      if ( get_limit ( mem, &SC_RLIM_FILES(scp)) )
++      {
++         parsemsg( LOG_ERR, func,
++            "Max files limit is invalid: %s", mem ) ;
++         return( FAILED ) ;
++      }
++   }
++   return( OK ) ;
++}
++#endif
++
+ #ifdef RLIMIT_RSS
+ status_e rlim_rss_parser( pset_h values, 
+                           struct service_config *scp, 
+diff -Nurp xinetd-2.3.14-orig/xinetd/parsers.h xinetd-2.3.14-files/xinetd/parsers.h
+--- xinetd-2.3.14-orig/xinetd/parsers.h	2005-10-05 19:15:33.000000000 +0200
++++ xinetd-2.3.14-files/xinetd/parsers.h	2009-10-20 13:08:45.000000000 +0200
+@@ -57,6 +57,9 @@ status_e rlim_cpu_parser(pset_h, struct 
+ #ifdef RLIMIT_DATA
+ status_e rlim_data_parser(pset_h, struct service_config *, enum assign_op) ;
+ #endif
++#ifdef RLIMIT_NOFILE
++status_e rlim_files_parser(pset_h, struct service_config *, enum assign_op) ;
++#endif
+ #ifdef RLIMIT_RSS
+ status_e rlim_rss_parser(pset_h, struct service_config *, enum assign_op) ;
+ #endif
+diff -Nurp xinetd-2.3.14-orig/xinetd/sconf.h xinetd-2.3.14-files/xinetd/sconf.h
+--- xinetd-2.3.14-orig/xinetd/sconf.h	2009-10-20 13:07:34.000000000 +0200
++++ xinetd-2.3.14-files/xinetd/sconf.h	2009-10-20 13:08:45.000000000 +0200
+@@ -143,6 +143,7 @@ struct service_config
+    rlim_t               sc_rlim_as;
+    rlim_t               sc_rlim_cpu;
+    rlim_t               sc_rlim_data;
++   rlim_t               sc_rlim_files;
+    rlim_t               sc_rlim_rss;
+    rlim_t               sc_rlim_stack;
+    mode_t               sc_umask;
+@@ -191,6 +192,7 @@ struct service_config
+ #define SC_RLIM_AS( scp )        (scp)->sc_rlim_as
+ #define SC_RLIM_CPU( scp )       (scp)->sc_rlim_cpu
+ #define SC_RLIM_DATA( scp )      (scp)->sc_rlim_data
++#define SC_RLIM_FILES( scp )     (scp)->sc_rlim_files
+ #define SC_RLIM_RSS( scp )       (scp)->sc_rlim_rss
+ #define SC_RLIM_STACK( scp )     (scp)->sc_rlim_stack
+ #define SC_TYPE( scp )           (scp)->sc_type
+diff -Nurp xinetd-2.3.14-orig/xinetd/xinetd.conf.man xinetd-2.3.14-files/xinetd/xinetd.conf.man
+--- xinetd-2.3.14-orig/xinetd/xinetd.conf.man	2009-10-20 13:07:34.000000000 +0200
++++ xinetd-2.3.14-files/xinetd/xinetd.conf.man	2009-10-20 13:08:45.000000000 +0200
+@@ -569,6 +569,12 @@ is implemented, it is more useful to set
+ rlimit_rss and rlimit_stack. This resource limit is only implemented on
+ Linux systems.
+ .TP
++.B rlimit_files
++Sets the maximum number of open files that the service may use.
++One parameter is required, which is a positive integer representing
++the number of open file descriptors. Practical limit of this number
++is around 1024000.
++.TP
+ .B rlimit_cpu
+ Sets the maximum number of CPU seconds that the service may use.
+ One parameter is required, which is either a positive integer representing

@@ -1,0 +1,77 @@
+Generate debuginfo package with all include files readable. 
+
+The support libraries would install their header files with 640 permissions,
+which is not what we want.
+
+diff -up xinetd-2.3.14/libs/src/misc/Makefile.in.orig xinetd-2.3.14/libs/src/misc/Makefile.in
+--- xinetd-2.3.14/libs/src/misc/Makefile.in.orig	2003-02-19 18:29:27.000000000 +0100
++++ xinetd-2.3.14/libs/src/misc/Makefile.in	2008-09-18 10:18:59.000000000 +0200
+@@ -49,7 +49,7 @@ CC_FLAGS		= $(DEBUG)
+ CFLAGS			= @CFLAGS@ $(CPP_FLAGS) $(CC_FLAGS) -I$(INCLUDEDIR)
+ 
+ INSTALL			= @INSTALL@
+-FMODE			= -m 640		# used by install
++FMODE			= -m 644		# used by install
+ RANLIB			= @RANLIB@
+ 
+ LIBNAME			= lib$(NAME).a
+diff -up xinetd-2.3.14/libs/src/portable/Makefile.in.orig xinetd-2.3.14/libs/src/portable/Makefile.in
+--- xinetd-2.3.14/libs/src/portable/Makefile.in.orig	2003-02-19 18:29:27.000000000 +0100
++++ xinetd-2.3.14/libs/src/portable/Makefile.in	2008-09-18 10:19:09.000000000 +0200
+@@ -44,7 +44,7 @@ CC_FLAGS		= $(DEBUG)
+ CFLAGS			= @CFLAGS@ $(CPP_FLAGS) $(CC_FLAGS) -I$(INCLUDEDIR)
+ 
+ INSTALL			= @INSTALL@
+-FMODE			= -m 640		# used by install
++FMODE			= -m 644		# used by install
+ RANLIB			= @RANLIB@
+ 
+ LIBNAME			= lib$(NAME).a
+diff -up xinetd-2.3.14/libs/src/pset/Makefile.in.orig xinetd-2.3.14/libs/src/pset/Makefile.in
+--- xinetd-2.3.14/libs/src/pset/Makefile.in.orig	2003-02-19 18:29:27.000000000 +0100
++++ xinetd-2.3.14/libs/src/pset/Makefile.in	2008-09-18 10:19:17.000000000 +0200
+@@ -41,7 +41,7 @@ CC_FLAGS		= $(DEBUG)
+ CFLAGS			= @CFLAGS@ $(CPP_FLAGS) $(CC_FLAGS)
+ 
+ INSTALL			= @INSTALL@
+-FMODE			= -m 640			# used by install
++FMODE			= -m 644			# used by install
+ RANLIB			= @RANLIB@
+ 
+ LIBNAME			= lib$(NAME).a
+diff -up xinetd-2.3.14/libs/src/sio/Makefile.in.orig xinetd-2.3.14/libs/src/sio/Makefile.in
+--- xinetd-2.3.14/libs/src/sio/Makefile.in.orig	2003-02-19 18:29:27.000000000 +0100
++++ xinetd-2.3.14/libs/src/sio/Makefile.in	2008-09-18 10:19:25.000000000 +0200
+@@ -40,7 +40,7 @@ CC_FLAGS		= $(DEBUG)
+ CFLAGS			= @CFLAGS@ $(CPP_FLAGS) $(CC_FLAGS) -I$(INCLUDEDIR)
+ 
+ INSTALL			= @INSTALL@
+-FMODE			= -m 640			# used by install
++FMODE			= -m 644			# used by install
+ RANLIB			= @RANLIB@
+ 
+ LIBNAME			= lib$(NAME).a
+diff -up xinetd-2.3.14/libs/src/str/Makefile.in.orig xinetd-2.3.14/libs/src/str/Makefile.in
+--- xinetd-2.3.14/libs/src/str/Makefile.in.orig	2003-02-19 18:29:27.000000000 +0100
++++ xinetd-2.3.14/libs/src/str/Makefile.in	2008-09-18 10:19:33.000000000 +0200
+@@ -51,7 +51,7 @@ CC_FLAGS		= $(DEBUG)
+ CFLAGS			= @CFLAGS@ $(CPP_FLAGS) $(CC_FLAGS)
+ 
+ INSTALL			= @INSTALL@
+-FMODE			= -m 640			# used by install
++FMODE			= -m 644			# used by install
+ RANLIB			= @RANLIB@
+ 
+ LIBNAME			= lib$(NAME).a
+diff -up xinetd-2.3.14/libs/src/xlog/Makefile.in.orig xinetd-2.3.14/libs/src/xlog/Makefile.in
+--- xinetd-2.3.14/libs/src/xlog/Makefile.in.orig	2003-02-19 18:29:27.000000000 +0100
++++ xinetd-2.3.14/libs/src/xlog/Makefile.in	2008-09-18 10:19:41.000000000 +0200
+@@ -46,7 +46,7 @@ CC_FLAGS		= $(DEBUG)
+ CFLAGS			= @CFLAGS@ $(CPP_FLAGS) $(CC_FLAGS)
+ 
+ INSTALL			= @INSTALL@
+-FMODE			= -m 640			# used by install
++FMODE			= -m 644			# used by install
+ RANLIB			= @RANLIB@
+ 
+ LIBNAME			= lib$(NAME).a

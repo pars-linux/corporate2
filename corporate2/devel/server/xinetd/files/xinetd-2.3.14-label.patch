@@ -1,0 +1,227 @@
+diff -urp xinetd-2.3.14.orig/config.h.in xinetd-2.3.14/config.h.in
+--- xinetd-2.3.14.orig/config.h.in	2006-06-16 13:20:01.000000000 -0400
++++ xinetd-2.3.14/config.h.in	2006-09-20 17:12:00.000000000 -0400
+@@ -112,6 +112,7 @@
+ /* Options */
+ #undef HAVE_LIBWRAP
+ #undef LIBWRAP
++#undef LABELED_NET
+ 
+ #undef HAVE_LOADAVG
+ 
+diff -urp xinetd-2.3.14.orig/configure.in xinetd-2.3.14/configure.in
+--- xinetd-2.3.14.orig/configure.in	2006-06-16 13:20:01.000000000 -0400
++++ xinetd-2.3.14/configure.in	2006-09-20 17:12:00.000000000 -0400
+@@ -289,6 +289,34 @@ AC_ARG_WITH(libwrap,
+ 	AC_MSG_RESULT(no)
+ )
+ 
++AC_MSG_CHECKING(whether to use labeled-networking)
++AC_ARG_WITH(labeled-networking,
++[  --with-labeled-networking[=PATH]   Compile in labeled networking support.],
++[ case "$withval" in
++	no)
++		AC_MSG_RESULT(no)
++		;;
++	yes)
++		AC_MSG_RESULT(yes)
++		AC_CHECK_LIB(selinux, setexeccon, [
++			AC_DEFINE(LABELED_NET)
++			LABELLIBS="-lselinux" ])
++		LIBS="$LABELLIBS $LIBS"
++		;;
++	*)
++		AC_MSG_RESULT(yes)
++		AC_DEFINE(LABELED_NET)
++		if test -d "$withval"; then
++			LABELLIBS="-L$withval -lselinux"
++		else
++			LABELLIBS="$withval"
++		fi
++		LIBS="$LABELLIBS $LIBS"
++		;;
++	esac ],
++	AC_MSG_RESULT(no)
++)
++
+ AC_FUNC_MMAP
+ 
+ AC_CHECK_FUNCS(isatty)
+diff -urp xinetd-2.3.14.orig/xinetd/child.c xinetd-2.3.14/xinetd/child.c
+--- xinetd-2.3.14.orig/xinetd/child.c	2006-06-16 13:20:01.000000000 -0400
++++ xinetd-2.3.14/xinetd/child.c	2006-09-20 17:12:00.000000000 -0400
+@@ -31,6 +31,9 @@
+ #ifdef HAVE_NETDB_H
+ #include <netdb.h>
+ #endif
++#ifdef LABELED_NET
++#include <selinux/selinux.h>
++#endif
+ 
+ #include "str.h"
+ #include "child.h"
+@@ -44,6 +47,12 @@
+ #include "options.h"
+ #include "redirect.h"
+ 
++/* Local declarations */
++#ifdef LABELED_NET
++static int set_context_from_socket( int fd );
++#endif
++
++
+ /*
+  * This function is running in the new process
+  */
+@@ -143,6 +152,20 @@ void exec_server( const struct server *s
+    }
+ #endif
+ 
++   /*
++      Set the context if the option was given
++   */
++#ifdef LABELED_NET
++   if (SC_LABELED_NET(scp))
++   {
++      if (set_context_from_socket( descriptor ) < 0) {
++         msg( LOG_ERR, func,
++             "Changing process context failed for %s", SC_ID( scp )) ;
++         _exit( 1 ) ;
++      }
++   }
++#endif
++
+    (void) Sclose( descriptor ) ;
+ 
+ #ifndef solaris
+@@ -461,3 +484,33 @@ void child_exit(void)
+    }
+ }
+ 
++#ifdef LABELED_NET
++static int set_context_from_socket( int fd )
++{
++   const char *func = "set_context_from_socket" ;
++   security_context_t peer_context;
++
++   if (getpeercon(fd, &peer_context) < 0)
++      return -1;
++
++   int retval = setexeccon(peer_context);
++   freecon( peer_context );
++
++   if (debug.on)
++   {
++      security_context_t current_exec_context;
++      if ( getexeccon( &current_exec_context ) == 0 ) {
++
++         msg( LOG_DEBUG, func, 
++	   "current security exec context now: %s", 
++	   current_exec_context ? current_exec_context : "unknown" );
++
++         freecon( current_exec_context );
++      } 
++      else
++         msg( LOG_DEBUG, func, "Error calling getexeccon: %m" );
++   }
++
++   return retval;
++}
++#endif
+diff -urp xinetd-2.3.14.orig/xinetd/confparse.c xinetd-2.3.14/xinetd/confparse.c
+--- xinetd-2.3.14.orig/xinetd/confparse.c	2006-06-16 13:20:01.000000000 -0400
++++ xinetd-2.3.14/xinetd/confparse.c	2006-09-20 17:16:35.000000000 -0400
+@@ -697,6 +697,35 @@ static status_e check_entry( struct serv
+          return( FAILED ) ;
+    }
+ 
++#ifdef LABELED_NET
++      if (SC_LABELED_NET(scp)) {
++         if ( SC_IS_INTERNAL( scp ) ) {
++            msg( LOG_ERR, func,
++               "Internal services cannot support labeled networking: %s",
++               SC_ID(scp) ) ;
++            return( FAILED ) ;
++         }
++         if ( SC_SOCKET_TYPE(scp) != SOCK_STREAM ) {
++            msg( LOG_ERR, func,
++               "Non-stream socket types cannot support labeled networking: %s",
++               SC_ID(scp) ) ;
++            return( FAILED ) ;
++         }
++         if ( SC_WAITS( scp ) ) {
++            msg( LOG_ERR, func,
++               "Tcp wait services cannot support labeled networking: %s",
++               SC_ID(scp) ) ;
++            return( FAILED ) ;
++         }
++         if ( SC_REDIR_ADDR( scp ) != NULL) {
++            msg( LOG_ERR, func,
++               "Redirected services cannot support labeled networking: %s",
++               SC_ID(scp) ) ;
++            return( FAILED ) ;
++         }
++      }
++#endif
++
+    if ( SC_IS_MUXCLIENT( scp ) ) 
+    {
+ 	   if ( !SC_IS_UNLISTED( scp ) )
+diff -urp xinetd-2.3.14.orig/xinetd/main.c xinetd-2.3.14/xinetd/main.c
+--- xinetd-2.3.14.orig/xinetd/main.c	2006-06-16 13:20:01.000000000 -0400
++++ xinetd-2.3.14/xinetd/main.c	2006-09-20 17:12:00.000000000 -0400
+@@ -80,7 +80,10 @@ int main( int argc, char *argv[] )
+ #ifdef HAVE_DNSREGISTRATION
+    "rendezvous "
+ #endif
+-#if !defined(LIBWRAP) && !defined(HAVE_LOADAVG) && !defined(HAVE_MDNS) && !defined(HAVE_HOWL) && !defined(HAVE_DNSREGISTRATION)
++#ifdef LABELED_NET
++   "labeled-networking "
++#endif
++#if !defined(LIBWRAP) && !defined(HAVE_LOADAVG) && !defined(HAVE_MDNS) && !defined(HAVE_HOWL) && !defined(HAVE_DNSREGISTRATION) && !defined(LABELED_NET)
+    "no "
+ #endif
+    "options compiled in."
+diff -urp xinetd-2.3.14.orig/xinetd/nvlists.c xinetd-2.3.14/xinetd/nvlists.c
+--- xinetd-2.3.14.orig/xinetd/nvlists.c	2006-06-16 13:20:01.000000000 -0400
++++ xinetd-2.3.14/xinetd/nvlists.c	2006-09-20 17:12:00.000000000 -0400
+@@ -47,6 +47,7 @@ const struct name_value service_flags[] 
+       { "SENSOR",                     SF_SENSOR              },
+       { "IPv4",                       SF_IPV4                },
+       { "IPv6",                       SF_IPV6                },
++      { "LABELED",                    SF_LABELED             },
+       { CHAR_NULL,                    0                      }
+    } ;
+ 
+diff -urp xinetd-2.3.14.orig/xinetd/sconf.h xinetd-2.3.14/xinetd/sconf.h
+--- xinetd-2.3.14.orig/xinetd/sconf.h	2006-06-16 13:20:01.000000000 -0400
++++ xinetd-2.3.14/xinetd/sconf.h	2006-09-20 17:12:00.000000000 -0400
+@@ -58,6 +58,7 @@
+ #define SF_SENSOR       9
+ #define SF_IPV4         10
+ #define SF_IPV6         11
++#define SF_LABELED      12
+ 
+ /*
+  * Values for log options
+@@ -239,6 +240,7 @@ struct service_config
+ #define SC_SENSOR( scp )          M_IS_SET( (scp)->sc_xflags, SF_SENSOR )
+ #define SC_IPV4( scp )            M_IS_SET( (scp)->sc_xflags, SF_IPV4 )
+ #define SC_IPV6( scp )            M_IS_SET( (scp)->sc_xflags, SF_IPV6 )
++#define SC_LABELED_NET( scp )     M_IS_SET( (scp)->sc_xflags, SF_LABELED )
+ 
+ #define SC_IS_RPC( scp )         ( M_IS_SET( (scp)->sc_type, ST_RPC ) )
+ #define SC_IS_INTERNAL( scp )    ( M_IS_SET( (scp)->sc_type, ST_INTERNAL ) )
+diff -urp xinetd-2.3.14.orig/xinetd/xinetd.conf.man xinetd-2.3.14/xinetd/xinetd.conf.man
+--- xinetd-2.3.14.orig/xinetd/xinetd.conf.man	2006-06-16 13:20:01.000000000 -0400
++++ xinetd-2.3.14/xinetd/xinetd.conf.man	2006-09-20 17:12:00.000000000 -0400
+@@ -145,6 +145,9 @@ Sets the service to be an IPv4 service (
+ .B IPv6
+ Sets the service to be an IPv6 service (AF_INET6), if IPv6 is available on the system.
+ .TP
++.B LABELED
++The LABELED flag will tell xinetd to change the child processes SE Linux context to match that of the incoming connection as it starts the service. This only works for external tcp non-waiting servers and is an error if applied to an internal, udp, or tcp-wait server.
++.TP
+ .B REUSE
+ The REUSE flag is deprecated.  All services now implicitly use the REUSE flag.
+ .RE

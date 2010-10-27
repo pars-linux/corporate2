@@ -8,16 +8,18 @@ serviceDesc = _({"en": "eXtended InterNET Services Daemon",
                  })
 serviceDefault = "off"
 
+PIDFILE = "/var/run/xinetd.pid"
+
 @synchronized
 def start():
     startService(command="/usr/sbin/xinetd",
-                 args="-pidfile /var/run/xinetd.pid -stayalive -reuse",
-                 pidfile="/var/run/xinetd.pid",
+                 args="-pidfile %s -stayalive %s" % (PIDFILE, config.get("EXTRAOPTIONS")),
+                 pidfile=PIDFILE,
                  donotify=True)
 
 @synchronized
 def stop():
-    stopService(pidfile="/var/run/xinetd.pid",
+    stopService(pidfile=PIDFILE,
                 donotify=True)
 
 def reload():
@@ -25,4 +27,4 @@ def reload():
                 signal=signal.SIGHUP)
 
 def status():
-    return isServiceRunning("/var/run/xinetd.pid")
+    return isServiceRunning(PIDFILE)
