@@ -25,4 +25,4 @@ def stop():
         pass
 
 def status():
-    return isServiceRunning(pidfile=PIDFILE)
+    return isServiceRunning(PIDFILE)
