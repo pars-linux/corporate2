@@ -1,45 +1,45 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# (c) TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-from pisi.actionsapi import autotools
 from pisi.actionsapi import shelltools
+from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
     shelltools.cd("src")
-    autotools.configure("--enable-pam")
+    autotools.configure("--enable-pam \
+                         --enable-odbc \
+                         --localstatedir=/var")
 
 def build():
-    shelltools.cd("src")
-    autotools.make("-j1")
+    autotools.make("-C src -j1")
 
 def install():
-    # ejabberdctl
-    #pisitools.insinto("/usr/sbin", "tools/*")
+    autotools.rawInstall("-C src DESTDIR=%s" % get.installDIR())
 
-    # mnesia path
-    pisitools.dodir("/var/lib/ejabberd/db")
-    pisitools.dodir("/etc/ejabberd")
-
-    shelltools.cd("src")
-    # NOTE: Don't forget to update service.py with new versions...
-    destdir = get.installDIR()
-    ejabberddir = "%s/usr/lib/ejabberd/" % destdir
-    etcdir = "%s/etc/ejabberd/" % destdir
-    logdir = "%s/var/log/ejabberd/" % destdir
-    autotools.rawInstall("DESTDIR=%s EJABBERDDIR=%s ETCDIR=%s LOGDIR=%s" % (
-            destdir,
-            ejabberddir,
-            etcdir,
-            logdir))
-
+    # fix example SSL certificate path to real one,
+    # which we created recently
     pisitools.dosed("%s/etc/ejabberd/ejabberd.cfg" % get.installDIR(),
                     "/path/to/ssl.pem",
-                    "/etc/ejabberd/ssl.pem")
-    shelltools.cd("../")
-    pisitools.dodoc("ChangeLog", "COPYING")
+                    "/etc/ejabberd/ejabberd.pem")
+
+    # fix captcha path
+    pisitools.dosed("%s/etc/ejabberd/ejabberd.cfg" % get.installDIR(),
+                    "/lib/ejabberd/priv/bin/captcha.sh",
+                    "/usr/lib/ejabberd/priv/bin/captcha.sh")
+
+    pisitools.dodir("/var/lib/ejabberd/spool")
+    pisitools.dodir("/var/lib/ejabberd/db")
+    pisitools.dodir("/var/log/ejabberd")
+    pisitools.dodir("/etc/ejabberd")
+
+    # install sql-scripts for creating db schemes for various RDBMS
+    pisitools.insinto("/usr/share/%s" % get.srcNAME(), "src/odbc/mssql*")
+    pisitools.insinto("/usr/share/%s" % get.srcNAME(), "src/odbc/pg.sql")
+    pisitools.insinto("/usr/share/%s" % get.srcNAME(), "src/odbc/mysql.sql")
+
+    pisitools.dodoc("README", "COPYING")
