@@ -15,6 +15,9 @@ def setup():
                          --without-selinux \
                          --with-audit \
                          --with-libpam \
+                         --enable-nls \
+                         --with-skey \
+                         --without-group-name-max-length \
                          --disable-shared")
 
 def build():
