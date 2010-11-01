@@ -29,16 +29,7 @@ def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     # These were explicitly not installed in udev-125, so I remove them.
-    # FIXME: Check whether this utility can be useful for us, enable it if yes.
     pisitools.remove("/lib/udev/rules.d/79-fstab_import.rules")
-
-    # FIXME: We have GROUP conversions here!
-    # Only some gentoo and 50-udev-default.rules are affected by the renamings below
-
-    pisitools.dosed("%s/lib/udev/rules.d/60-floppy.rules" % get.installDIR(), '-G floppy', '-G pnp')
-    pisitools.dosed("%s/lib/udev/rules.d/50-udev-default.rules" % get.installDIR(), 'GROUP="floppy"', 'GROUP="pnp"')
-    pisitools.dosed("%s/lib/udev/rules.d/50-udev-default.rules" % get.installDIR(), 'GROUP="lp"', 'GROUP="pnp"')
-    pisitools.dosed("%s/lib/udev/rules.d/50-udev-default.rules" % get.installDIR(), 'GROUP="cdrom"', 'GROUP="removable"')
 
     # create needed directories
     for d in ("", "net", "pts", "shm", "hugepages"):
