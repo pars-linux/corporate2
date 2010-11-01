@@ -26,4 +26,6 @@ def install():
     # Doesn't get deleted by pisi because of buggy mime info
     pisitools.remove("/usr/lib/perl5/vendor_perl/%s/perlpod.pod" % get.curPERL())
 
-    pisitools.removeDir("/usr/share/man")
+    pisitools.removeDir("/usr/lib/perl5/vendor_perl/%s/%s-linux-thread-multi/" % (get.curPERL(), get.ARCH()))
+    # conflicts with perl-doc package
+    pisitools.remove("/usr/share/man/man3/Pod::Simple*")
