@@ -1,0 +1,111 @@
+#!/bin/bash
+#
+# ejabberd    Start and stop ejabberd.
+
+# chkconfig: - 40 60
+# description: ejabberd
+# processname: ejabberd
+# pidfile: /var/run/ejabberd.pid
+
+### BEGIN INIT INFO
+# Provides: ejabberd
+# Required-Start: network
+# Required-Stop: network
+# Default-Start:
+# Default-Stop: 0 1 6
+# Short-Description: Start and stop ejabberd
+# Description: A distributed, fault-tolerant Jabber/XMPP server
+### END INIT INFO
+
+. /etc/rc.d/init.d/functions
+
+if [ -r /etc/sysconfig/ejabberd ]; then
+	. /etc/sysconfig/ejabberd
+fi
+
+if [ ! "$CONFIG_FILE" ]; then
+	CONFIG_FILE=/etc/ejabberd/ejabberd.cfg
+fi
+
+# we're using symlinked consolehelper to check user's rights
+progctl=/usr/bin/ejabberdctl
+
+start() {
+        echo -n $"Starting ejabberd: "
+	if [ "$ULIMIT_MAX_FILES" ]; then
+		ulimit -n $ULIMIT_MAX_FILES
+	fi
+
+	# check whether ejabberd was already started
+	if $progctl status > /dev/null 2>&1 ; then
+		echo -n "already running" && warning && echo
+		return 0
+	fi
+
+	daemon $progctl start	--config $CONFIG_FILE \
+				--ctl-config /etc/ejabberd/ejabberdctl.cfg \
+				--logs "/var/log/ejabberd" \
+				--spool "/var/lib/ejabberd/spool" \
+				2>/dev/null
+        RETVAL=$?
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/ejabberd
+        echo
+
+	# it takes some time to actually start necessary nodes
+	sleep 5
+
+        return $RETVAL
+}
+
+stop() {
+        # Stop daemons.
+        echo -n "Shutting down ejabberd: "
+
+	# check whether ejabberd was already stopped
+	if ! $progctl status > /dev/null 2>&1 ; then
+		echo -n "already stopped" && warning && echo
+		return 0
+	fi
+
+	daemon $progctl stop 2>/dev/null
+        RETVAL=$?
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/ejabberd
+        echo
+
+	# it takes some time to actually stop necessary nodes
+	sleep 5
+
+        return $RETVAL
+}
+
+restart() {
+        stop
+	sleep 5
+        start
+}
+
+# See how we were called.
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart|force-reload)
+        restart
+        ;;
+  condrestart|try-restart)
+        [ -f /var/lock/subsys/ejabberd ] && restart || :
+        ;;
+  status)
+	$progctl status
+        ;;
+  *)
+        echo "Usage: ejabberd {start|stop|restart|force-reload|condrestart|try-restart|status}"
+        exit 2
+esac
+
+exit $?
+
+
