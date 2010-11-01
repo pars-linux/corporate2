@@ -7,16 +7,15 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
-from pisi.actionsapi import qt4
 
 WorkDir = "doxygen-%s" % get.srcVERSION()
 
 def setup():
     shelltools.cd("addon/doxywizard")
-    qt4.configure(installPrefix="/usr/qt/4")
+    shelltools.system("qmake-qt4")
 
 def build():
-    qt4.make("-C addon/doxywizard")
+    autotools.make("-C addon/doxywizard")
 
 def install():
     pisitools.dobin("bin/doxywizard")
