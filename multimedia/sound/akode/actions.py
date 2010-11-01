@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -15,6 +15,9 @@ shelltools.export("HOME", get.workDIR())
 KeepSpecial=["libtool"]
 
 def setup():
+    # Fix ffmpeg build error
+    shelltools.export("CXXFLAGS", "%s -D__STDC_CONSTANT_MACROS" % get.CXXFLAGS())
+
     kde.configure("--with-libsamplerate \
                    --with-alsa \
                    --with-flac \
