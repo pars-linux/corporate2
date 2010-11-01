@@ -23,7 +23,7 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    pisitools.remove("/etc/reader.conf")
+    pisitools.removeDir("/etc")
 
     pisitools.insinto("/lib/udev/rules.d/", "src/pcscd_ccid.rules", "60-pcscd_ccid.rules")
 
