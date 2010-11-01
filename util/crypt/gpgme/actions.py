@@ -25,4 +25,6 @@ def check():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
+    pisitools.removeDir("/usr/libexec")
+
     pisitools.dodoc("AUTHORS", "ChangeLog", "NEWS", "README", "THANKS", "TODO")
