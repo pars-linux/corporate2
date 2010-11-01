@@ -14,7 +14,7 @@ from pisi.actionsapi import get
 KeepSpecial = ["libtool"]
 
 def setup():
-    autotools.autoconf("-f")
+    kde.make("-f admin/Makefile.common")
     kde.configure("--enable-libsuffix= \
                    --enable-ffmpeg-all-codecs \
                    --disable-rpath \
