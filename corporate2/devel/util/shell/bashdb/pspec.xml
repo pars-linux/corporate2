@@ -13,16 +13,31 @@
         <Summary>A Debugger for Bash</Summary>
         <Description>bashdb is a comprehensive source-code debugger for bash.</Description>
         <Archive sha1sum="b249fcf3c7d62a2634c0c05c65dec10b99f5e600" type="targz">mirrors://sourceforge/bashdb/bashdb-4.0-0.4.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>emacs</Dependency>
+        </BuildDependencies>
     </Source>
 
     <Package>
         <Name>bashdb</Name>
+        <Conflicts>
+            <Package releaseTo="3">bashdb</Package>
+        </Conflicts>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="doc">/usr/share/doc</Path>
             <Path fileType="data">/usr/share/bashdb</Path>
             <Path fileType="info">/usr/share/info</Path>
             <Path fileType="man">/usr/share/man</Path>
+        </Files>
+    </Package>
+    <Package>
+        <Name>bashdb-emacs</Name>
+        <RuntimeDependencies>
+            <Dependency releaseFrom="4">bashdb</Dependency>
+            <Dependency>emacs</Dependency>
+        </RuntimeDependencies>
+        <Files>
             <Path fileType="data">/usr/share/emacs</Path>
         </Files>
     </Package>
@@ -31,7 +46,7 @@
         <Update release="4">
             <Date>2010-10-29</Date>
             <Version>4.0.0.4</Version>
-            <Comment>Mass rebuild for Pardus Corporate 2 Alpha 3</Comment>
+            <Comment>Mass rebuild for Pardus Corporate 2 Alpha 3. Split bashdb-emacs package, work done by Serdar Dalgic.</Comment>
             <Name>Ozan Çağlayan</Name>
             <Email>ozan@pardus.org.tr</Email>
         </Update>
