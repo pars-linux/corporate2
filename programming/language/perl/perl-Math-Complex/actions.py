@@ -22,4 +22,7 @@ def check():
 
 def install():
     perlmodules.install()
-    pisitools.removeDir("/usr/share/man")
+
+    pisitools.removeDir("/usr/lib/perl5/vendor_perl/%s/%s-linux-thread-multi/" % (get.curPERL(), get.ARCH()))
+    # conflicts with perl-doc package
+    pisitools.removeDir("/usr/share")
