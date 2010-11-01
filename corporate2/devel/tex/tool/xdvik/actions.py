@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009 TUBITAK/UEKAE
+# Copyright 2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -13,16 +13,19 @@ from pisi.actionsapi import shelltools
 def setup():
     shelltools.export("AR", "/usr/bin/ar")
     shelltools.export("RANLIB", "/usr/bin/ranlib")
+
     autotools.configure("--disable-multiplatform \
                          --enable-t1lib \
                          --enable-gf \
+                         --disable-shared \
                          --with-system-t1lib \
-                         --with-system-kpathsea \
-                         --with-kpathsea-include=/usr/include/kpathsea")
+                         --without-system-kpathsea \
+                         --with-kpathsea-include=/usr/include/kpathsea \
+                         --with-xdvi-x-toolkit='motif'")
 
 def build():
+    autotools.make("-C texk/kpathsea texmf='/usr/share/texmf'")
     shelltools.cd("texk/xdvik")
-    autotools.make("kpathsea_dir='/usr/include/kpathsea' texmf='/usr/share/texmf'")
     shelltools.system("/usr/bin/emacs -batch -q --no-site-file -L  -f batch-byte-compile xdvi-search.el")
 
 def install():
@@ -31,14 +34,11 @@ def install():
 
     shelltools.cd("texk/xdvik")
 
-    autotools.install("kpathsea_dir='/usr/include/kpathsea' texmf='%s/usr/share/texmf'" % get.installDIR())
+    autotools.install("texmf='%s/usr/share/texmf'" % get.installDIR())
 
-    pisitools.domove("/usr/share/texmf/xdvi/XDvi" , "/etc/X11/app-defaults/")
-    pisitools.dosym("/etc/X11/app-defaults/XDvi", "/usr/share/texmf/xdvi/XDvi")
+    pisitools.domove("/usr/share/texmf/xdvi/XDvi" , "/usr/share/X11/app-defaults/")
+    pisitools.dosym("/usr/share/X11/app-defaults/XDvi", "/usr/share/texmf/xdvi/XDvi")
 
-    for i in ["xdvi-ptex.sample", "xdvi.cfg"]:
-        pisitools.domove("/usr/share/texmf/xdvi/%s" % i, "/etc/texmf/xdvi/")
-        pisitools.dosym("/etc/texmf/xdvi/%s" % i, "/usr/share/texmf/xdvi/%s" % i)
 
     pisitools.insinto("/usr/share/emacs/site-lisp/tex-utils/", "*.el")
 
