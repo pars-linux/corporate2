@@ -9,8 +9,6 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-shelltools.system("texmf-update")
-
 def setup():
     shelltools.unlink("%s/%s/doc/auctex.info" % (get.workDIR(), get.srcDIR()))
 
