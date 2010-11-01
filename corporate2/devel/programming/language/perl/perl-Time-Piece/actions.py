@@ -23,4 +23,5 @@ def check():
 def install():
     perlmodules.install()
 
-    pisitools.removeDir("/usr/share/man")
+    # conflicts with perl-doc package
+    pisitools.removeDir("/usr/share")
