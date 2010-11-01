@@ -7,6 +7,7 @@
 
 from pisi.actionsapi import pythonmodules
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import get
 
 def setup():
     pythonmodules.compile()
@@ -14,4 +15,4 @@ def setup():
 def install():
     pythonmodules.install()
 
-    pisitools.dohtml("docs")
+    pisitools.insinto("%s/%s" % (get.docDIR(), get.srcNAME()),"demos")
