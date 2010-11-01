@@ -5,15 +5,16 @@
         <Name>squid</Name>
         <Homepage>http://www.squid-cache.org</Homepage>
         <Packager>
-            <Name>Bahadır Kandemir</Name>
-            <Email>bahadir@pardus.org.tr</Email>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
         </Packager>
         <License>GPLv2</License>
         <IsA>service</IsA>
         <Summary>A caching web proxy, with advanced features</Summary>
         <Description>Squid is a high-performance proxy caching server for Web clients, supporting FTP, gopher, and HTTP data objects.</Description>
-        <Archive sha1sum="6745233b85ba018b5961ad736d8f2522ae6aa8ff" type="tarbz2">http://www.squid-cache.org/Versions/v3/3.1/squid-3.1.3.tar.bz2</Archive>
+        <Archive sha1sum="d80045c7ab0cadbaeafdcae42d9dd7d1861fc4c1" type="tarbz2">http://www.squid-cache.org/Versions/v3/3.1/squid-3.1.9.tar.bz2</Archive>
         <BuildDependencies>
+            <Dependency>cppunit-devel</Dependency>
             <Dependency>libecap</Dependency>
             <Dependency>libcap</Dependency>
             <Dependency>net-snmp</Dependency>
@@ -22,22 +23,17 @@
             <Dependency>openldap-client</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">squid-make.diff</Patch>
             <Patch level="1">squid-config.diff</Patch>
-            <Patch level="0">squid-user_group.diff</Patch>
-            <Patch level="1">squid-ssl.diff</Patch>
-            <Patch level="0">squid-visible_hostname.diff</Patch>
-            <Patch level="1">squid-cachemgr.conf_locationfix.diff</Patch>
-            <Patch level="0">squid-shutdown_lifetime.diff</Patch>
-            <Patch level="0">squid-3.1.2-mysql-helper-joomla.diff</Patch>
-            <Patch level="1">squid-getconf_mess.diff</Patch>
+            <Patch level="1">squid-3.1.0.9-location.patch</Patch>
+            <Patch level="1">squid-3.0.STABLE1-perlpath.patch</Patch>
+            <Patch level="1">squid-3.1.0.15-smb-path.patch</Patch>
+            <Patch level="1">squid-3.0.STABLE7-from_manpg.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>squid</Name>
         <RuntimeDependencies>
-            <Dependency>libecap</Dependency>
             <Dependency>libcap</Dependency>
             <Dependency>net-snmp</Dependency>
             <Dependency>mit-kerberos</Dependency>
@@ -63,6 +59,7 @@
             <AdditionalFile owner="root" permission="0644" target="/etc/pam.d/squid">squid.pam</AdditionalFile>
             <AdditionalFile owner="root" permission="0644" target="/etc/squid/squid.conf">squid.conf</AdditionalFile>
             <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/squid">squid.confd</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/apache2/conf.d/squid.conf">squid.httpd</AdditionalFile>
         </AdditionalFiles>
         <Provides>
             <COMAR script="package.py">System.Package</COMAR>
@@ -71,6 +68,17 @@
     </Package>
 
     <History>
+        <Update release="12">
+            <Date>2010-10-27</Date>
+            <Version>3.1.9</Version>
+            <Comment>
+                * Version bump,
+                * Grab some patches, overhaul configure parameters,
+                * Fix subprocess.call usage,
+            </Comment>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
         <Update release="11">
             <Date>2010-10-27</Date>
             <Version>3.1.3</Version>
