@@ -14,12 +14,9 @@ def setup():
     pisitools.dosed("doc/mkcert.sh", "dovecot-openssl.cnf", "/etc/dovecot/ssl/openssl.cnf")
     autotools.configure("--sysconfdir=/etc/dovecot \
                          --localstatedir=/var \
-                         --enable-ipv6 \
                          --with-ioloop=best \
-                         --with-poll=best \
                          --with-mysql \
                          --with-pgsql \
-                         --with-pop3d \
                          --with-ssl=openssl \
                          --with-ssldir=/etc/ssl \
                          --with-pam \
