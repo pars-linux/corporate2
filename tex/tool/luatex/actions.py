@@ -15,86 +15,86 @@ from pisi.actionsapi import cmaketools
 WorkDir = "luatex-beta-%s" % get.srcVERSION()
 GetWorkdir = "%s/%s" % (get.workDIR(), WorkDir)
 
-def setup():
-    shelltools.cd("source")
-    autotools.autoreconf("-vif")
-    libtools.libtoolize()
 
+def setup():
+    libtools.libtoolize()
     shelltools.export("LC_ALL","C")
-    shelltools.cd("texk/web2c")
+    shelltools.cd("%s/source/texk/web2c" % GetWorkdir)
 
     autotools.configure("--disable-cxx-runtime-hack \
                         --disable-afm2pl    \
-                        --disable-aleph     \
-                        --disable-bibtex    \
-                        --disable-bibtex8   \
-                        --disable-cfftot1   \
-                        --disable-cjkutils  \
-                        --disable-detex     \
-                        --disable-devnag    \
-                        --disable-dialog    \
-                        --disable-dtl       \
-                        --enable-dump-share \
-                        --disable-dvi2tty   \
-                        --disable-dvidvi    \
+                        --disable-aleph		\
+                        --disable-bibtex	\
+                        --disable-bibtex8	\
+                        --disable-cfftot1	\
+                        --disable-cjkutils	\
+                        --disable-detex		\
+                        --disable-devnag	\
+                        --disable-dialog	\
+                        --disable-dtl		\
+                        --enable-dump-share	\
+                        --disable-dvi2tty	\
+                        --disable-dvidvi	\
                         --without-dviljk    \
-                        --disable-dvipdfm   \
-                        --disable-dvipdfmx  \
-                        --disable-dvipos    \
-                        --disable-dvipsk    \
-                        --disable-gsftopk   \
-                        --disable-lacheck   \
+                        --disable-dvipdfm	\
+                        --disable-dvipdfmx	\
+                        --disable-dvipos	\
+                        --disable-dvipsk	\
+                        --disable-gsftopk	\
+                        --disable-ipc		\
+                        --disable-lacheck	\
                         --disable-lcdf-typetools \
                         --disable-makeindexk \
-                        --disable-mf        \
-                        --disable-mmafm     \
-                        --disable-mmpfb     \
-                        --disable-mp        \
-                        --disable-musixflx  \
-                        --disable-otfinfo   \
-                        --disable-otftotfm  \
-                        --disable-pdfopen   \
-                        --disable-pdftex    \
-                        --disable-ps2eps    \
-                        --disable-ps2pkm    \
-                        --disable-psutils   \
-                        --disable-seetexk   \
+                        --disable-mf		\
+                        --disable-mmafm		\
+                        --disable-mmpfb		\
+                        --disable-mp		\
+                        --disable-musixflx	\
+                        --disable-otfinfo	\
+                        --disable-otftotfm	\
+                        --disable-pdfopen	\
+                        --disable-pdftex	\
+                        --disable-ps2eps	\
+                        --disable-ps2pkm	\
+                        --disable-psutils	\
+                        --disable-ptex		\
+                        --disable-seetexk	\
                         --disable-t1dotlessj  \
-                        --disable-t1lint    \
-                        --disable-t1rawafm  \
-                        --disable-t1reencode    \
+                        --disable-t1lint	\
+                        --disable-t1rawafm	\
+                        --disable-t1reencode	\
                         --disable-t1testpage \
-                        --disable-t1utils   \
-                        --disable-tex       \
-                        --disable-tex4htk   \
-                        --disable-tpic2pdftex   \
-                        --disable-ttf2pk    \
-                        --disable-ttfdump   \
-                        --disable-ttftotype42   \
-                        --disable-vlna      \
+                        --disable-t1utils	\
+                        --disable-tex		\
+                        --disable-tex4htk	\
+                        --disable-tpic2pdftex	\
+                        --disable-ttf2pk	\
+                        --disable-ttfdump	\
+                        --disable-ttftotype42	\
+                        --disable-vlna		\
                         --disable-web-progs \
-                        --disable-xdv2pdf   \
+                        --disable-xdv2pdf	\
                         --disable-xdvipdfmx \
-                        --without-x         \
-                        --without-system-kpathsea   \
-                        --with-system-gd    \
-                        --with-system-libpng    \
+                        --disable-xetex		\
+                        --without-x			\
+                        --with-system-kpathsea	\
+                        --with-system-gd	\
+                        --with-system-libpng	\
                         --with-system-teckit \
                         --with-system-zlib \
                         --with-system-t1lib \
                         --with-system-xpdf \
+                        --with-system-zziplib \
                         --disable-largefile \
                         --disable-multiplatform \
                         --disable-shared")
 
-    shelltools.cd("../../..")
-    for i in ["libs/dummy", "libs/obsdcompat", "texk/kpathsea"]:
-        shelltools.cd("source/%s" % i)
+    for i in ["libs/obsdcompat", "texk/kpathsea"]:
+        shelltools.cd("%s/source/%s" % (GetWorkdir, i))
         autotools.configure()
-        shelltools.cd("../../..")
 
 def build():
-    for i in ["libs/dummy", "libs/obsdcompat", "texk/kpathsea"]:
+    for i in ["libs/obsdcompat", "texk/kpathsea"]:
         shelltools.cd("%s/source/%s" % (GetWorkdir, i))
         autotools.make()
 
@@ -104,7 +104,6 @@ def build():
 def install():
     shelltools.cd("%s/source/texk/web2c" % GetWorkdir)
 
-    autotools.rawInstall("DESTDIR=%s bin_PROGRAMS='luatex' SUBDIRS='' nodist_man_MANS=''" % get.installDIR())
-    pisitools.dodoc("%s/README" % GetWorkdir, "%s/manual/*.pdf" % GetWorkdir)
+    autotools.rawInstall("DESTDIR=%s bin_PROGRAMS='luatex' SUBDIRS='' nodist_man_MANS=''" % get.installDIR()) 
 
-    pisitools.removeDir("/usr/share/man/")
+    pisitools.dodoc("%s/README" % GetWorkdir, "%s/manual/*.pdf" % GetWorkdir)
