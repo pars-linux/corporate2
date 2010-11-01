@@ -7,7 +7,7 @@ serviceType = "server"
 serviceDesc = _({"en": "Squid Proxy Daemon",
                  "tr": "Squid Vekil Servisi"})
 
-MSG_ERR_CACHEDIRNOTDEF = _({"en": "cache_dir defined in %s doest\'t exist, please edit your config file and set a valid directory",
+MSG_ERR_CACHEDIRNOTDEF = _({"en": "cache_dir defined in %s doesnt\'t exist, please edit your config file and set a valid directory.",
                             "tr": "%s ayar dosyasında tanımlı olan cache_dir klasörü sistemde bulunmuyor, lütfen geçerli bir yol girin."})
 
 serviceConf = "squid"
