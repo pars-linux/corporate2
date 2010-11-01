@@ -24,7 +24,6 @@ def check_cache():
             CACHEDIR = line.split()[2]
 
     if not os.path.exists(CACHEDIR):
-        #fail('cache_dir defined in %s doesn\'t exist, please edit your config file and set a valid directory.' % SQUIDCONF)
         fail(MSG_ERR_CACHEDIRNOTDEF % SQUIDCONF)
 
     if not os.path.exists("%s/00" % CACHEDIR):
