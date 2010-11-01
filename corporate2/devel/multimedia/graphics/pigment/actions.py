@@ -11,14 +11,14 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
-    libtools.libtoolize("--force --install")
-    autotools.autoconf()
-    autotools.configure("--disable-static\
-                         --prefix=%s/usr" % get.installDIR())
+    autotools.autoreconf("-vfi -I common/m4 -Wno-portability")
+    autotools.configure("--disable-static \
+                         --disable-gtk-doc")
 
 def build():
     autotools.make()
 
 def install():
-    autotools.install()
+    autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+
     pisitools.dodoc("COPYING", "AUTHORS", "TODO", "NEWS", "ChangeLog")
