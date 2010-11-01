@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009 TUBITAK/UEKAE
+# Copyright 2009-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -32,10 +32,11 @@ def setup():
                          --disable-hid2hci \
                          --enable-pcmcia \
                          --enable-configfiles \
+                         --with-ouifile=/usr/share/misc/oui.txt \
                          --libexecdir=/lib \
                          --localstatedir=/var")
 def build():
-    autotools.make("V=1")
+    autotools.make()
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
