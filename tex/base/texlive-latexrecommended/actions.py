@@ -7,7 +7,6 @@
 
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import texlivemodules
-
 from pisi.actionsapi import get
 from pisi.actionsapi import shelltools
 
@@ -19,7 +18,4 @@ def build():
 def install():
     texlivemodules.install()
 
-    # Install texmf bin scripts
-    pisitools.dosym("/usr/share/texmf-dist/scripts/thumbpdf/thumbpdf.pl", "/usr/bin/thumbpdf" )
-    pisitools.dosym("/usr/share/texmf-dist/scripts/oberdiek/pdfatfi.pl", "/usr/bin/pdfatfi" )
 
