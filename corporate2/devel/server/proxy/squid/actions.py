@@ -10,53 +10,47 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-WorkDir = "squid-%s" % get.srcVERSION().replace("0.", "0.STABLE")
+WorkDir = "%s" % get.srcDIR().replace("0.", "0.STABLE")
 
 def setup():
+    autotools.autoreconf("-vfi")
     autotools.configure('--enable-shared=yes \
                          --enable-static=no \
+                         --disable-dependency-tracking \
+                         --enable-arp-acl \
+                         --enable-follow-x-forwarded-for \
                          --enable-xmalloc-statistics \
-                         --enable-carp \
-                         --enable-async-io \
-                         --enable-storeio="aufs,diskd,ufs" \
-                         --enable-removal-policies="heap,lru" \
-                         --enable-icmp \
+                         --enable-auth="basic,digest,negotiate,ntlm" \
+                         --enable-basic-auth-helpers="LDAP,MSNT,NCSA,PAM,SMB,YP,getpwnam,multi-domain-NTLM,SASL,DB,POP3,squid_radius_auth" \
+                         --enable-ntlm-auth-helpers="smb_lm,no_check,fakeauth" \
+                         --enable-digest-auth-helpers="password,ldap,eDirectory" \
+                         --enable-negotiate-auth-helpers="squid_kerb_auth" \
+                         --enable-external-acl-helpers="ip_user,ldap_group,session,unix_group,wbinfo_group" \
+                         --enable-cache-digests \
+                         --enable-cachemgr-hostname="localhost" \
                          --enable-delay-pools \
-                         --disable-esi \
+                         --enable-epoll \
                          --enable-icap-client \
-                         --enable-ecap \
-                         --enable-useragent-log \
+                         --enable-ident-lookups \
+                         --with-large-files \
                          --enable-referer-log \
+                         --enable-linux-netfilter \
+                         --enable-removal-policies="heap,lru" \
+                         --enable-snmp \
+                         --enable-ssl \
+                         --enable-storeio="aufs,diskd,ufs" \
+                         --enable-useragent-log \
                          --enable-wccp \
                          --enable-wccpv2 \
-                         --disable-kill-parent-hack \
-                         --enable-snmp \
-                         --enable-cachemgr-hostname="localhost" \
-                         --enable-arp-acl \
-                         --enable-htcp \
-                         --enable-ssl \
-                         --enable-forw-via-db \
-                         --enable-follow-x-forwarded-for \
-                         --enable-cache-digests \
-                         --disable-poll \
-                         --enable-epoll \
-                         --enable-linux-netfilter \
-                         --disable-ident-lookups \
-                         --enable-default-hostsfile=/etc/hosts \
-                         --enable-auth="basic,digest,negotiate,ntlm" \
-                         --enable-basic-auth-helpers="getpwnam,LDAP,MSNT,multi-domain-NTLM,NCSA,PAM,SMB,YP,SASL,POP3,DB,squid_radius_auth" \
-                         --enable-ntlm-auth-helpers="fakeauth,no_check,smb_lm" \
-                         --enable-negotiate-auth-helpers="squid_kerb_auth" \
-                         --enable-digest-auth-helpers="password,ldap,eDirectory" \
-                         --enable-external-acl-helpers="ip_user,ldap_group,session,unix_group,wbinfo_group" \
-                         --with-pthreads \
+                         --enable-esi \
+                         --with-aio \
+                         --with-default-user="squid" \
+                         --with-filedescriptors=16384 \
                          --with-dl \
-                         --with-large-files \
-                         --with-build-environment=default \
-                         --with-default-user=squid \
+                         --with-openssl \
+                         --with-pthreads \
                          --enable-mit=/usr \
-                         --enable-http-violations \
-                         --enable-zph-qos \
+                         --with-pidfile=/var/run/squid.pid \
                          --sysconfdir=/etc/squid \
                          --localstatedir=/var \
                          --libexecdir=/usr/lib/squid \
@@ -71,6 +65,8 @@ def install():
 
     pisitools.dodir("/var/cache/squid")
     pisitools.dodir("/var/log/squid")
+
+    pisitools.removeDir("/usr/include")
 
     pisitools.dosym("/usr/share/squid/errors/en", "/etc/squid/errors")
 
