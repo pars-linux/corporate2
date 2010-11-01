@@ -18,8 +18,11 @@ def setup():
     autotools.configure("--disable-gtk-doc \
                          --disable-static \
                          --enable-sql \
-                         --disable-gtk-doc \
                          --with-unixodbc=/usr")
+
+
+def check():
+    autotools.make("check")
 
 def build():
     autotools.make("-j1")
