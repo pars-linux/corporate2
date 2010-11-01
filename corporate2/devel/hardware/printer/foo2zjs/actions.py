@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2006-2009 TUBITAK/UEKAE
+# Copyright 2006-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -20,6 +20,9 @@ def setup():
     # Remove these. They are supported well by Splix.
     shelltools.unlink("foomatic-db/printer/Xerox-Phaser_6110.xml")
     shelltools.unlink("PPD/Xerox-Phaser_6110.ppd")
+
+    # Remove prebuilt objects to fix build errors on x86_64
+    shelltools.unlink("*.o")
 
 def build():
     autotools.make()
