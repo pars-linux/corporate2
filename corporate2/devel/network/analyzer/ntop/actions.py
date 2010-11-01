@@ -14,7 +14,9 @@ from pisi.actionsapi import get
 
 def setup():
     shelltools.system("./autogen.sh --noconfig")
-    autotools.configure("--enable-mysql --enable-fc --enable-efficiency --enable-snmp --disable-static")
+    autotools.configure("--enable-mysql --enable-fc --enable-efficiency \
+                        --enable-snmp --disable-static \
+                        --localstatedir=/var/lib")
 
 def build():
     autotools.make()
