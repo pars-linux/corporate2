@@ -12,8 +12,7 @@ from pisi.actionsapi import get
 
 def setup():
     autotools.autoreconf("-vfi -I common/m4 -Wno-portability")
-    autotools.configure("--disable-static \
-                         --disable-gtk-doc")
+    autotools.configure("--disable-static")
 
 def build():
     autotools.make()
