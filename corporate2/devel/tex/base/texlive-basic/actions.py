@@ -12,6 +12,8 @@ from pisi.actionsapi import shelltools
 
 WorkDir = "%s-%s" % (get.srcNAME(), get.srcVERSION().split("_")[-1])
 
+shelltools.system("/usr/bin/texmf-update")
+
 def build():
     texlivemodules.compile()
 
