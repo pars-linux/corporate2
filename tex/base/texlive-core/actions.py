@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009 TUBITAK/UEKAE
+# Copyright 2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -12,9 +12,8 @@ from pisi.actionsapi import get
 from pisi.actionsapi import libtools
 from pisi.actionsapi import texlivemodules
 
-from pisi.actionsapi import get
 
-WorkDir = "%s-%s" % (get.srcNAME(), get.srcVERSION().split("_")[-1])
+WorkDir = "%s-%s" % (get.srcNAME(), get.srcVERSION().split('_')[-1])
 
 CoreSource="texlive-%s-source" % get.srcVERSION().split('_')[-1]
 
@@ -22,23 +21,34 @@ def setup():
     shelltools.move("texmf", "%s/texmf" % CoreSource)
     shelltools.move("texmf-dist", "%s/texmf-dist" % CoreSource)
 
-    shelltools.cd(CoreSource)
     libtools.libtoolize("--copy --force")
-
-    shelltools.cd("libs/teckit/")
-    shelltools.export("AT_M4DIR", ".")
-    autotools.autoreconf("-fi")
 
     shelltools.cd("%s/%s/%s" % (get.workDIR(), WorkDir, CoreSource))
 
     autotools.configure(" --bindir=/usr/bin \
+                          --datadir=/usr/share \
+                          --prefix=/usr \
                           --with-system-freetype2 \
                           --with-freetype2-include=/usr/include \
                           --with-system-zlib \
                           --with-system-pnglib \
+                          --with-system-xpdf \
+                          --with-system-teckit \
                           --without-texinfo \
-                          --without-dialog \
-                          --without-texi2html \
+                          --with-xdvipdfmx \
+                          --with-teckit-includes=/usr/include/teckit \
+                          --disable-detex \
+                          --disable-dvi2tty \
+                          --disable-dvipng \
+                          --disable-dvipdfmx \
+                          --disable-luatex \
+                          --disable-ps2eps \
+                          --disable-psutils \
+                          --disable-tlutils \
+                          --enable-xetex \
+                          --disable-xdvik \
+                          --disable-xindy \
+                          --disable-dialog \
                           --disable-multiplatform \
                           --with-epsfwin \
                           --with-mftalkwin \
@@ -46,47 +56,35 @@ def setup():
                           --with-tektronixwin \
                           --with-unitermwin \
                           --with-ps=gs \
-                          --without-psutils \
-                          --without-sam2p \
-                          --without-t1utils \
                           --enable-ipc \
-                          --without-etex \
-                          --with-xetex \
-                          --without-dvipng \
-                          --without-dvipdfm \
-                          --without-dvipdfmx \
-                          --with-xdvipdfmx \
-                          --without-lcdf-typetools \
-                          --without-pdfopen \
-                          --without-ps2eps \
-                          --without-detex \
-                          --without-ttf2pk \
-                          --without-tex4htk \
-                          --without-cjkutils \
-                          --without-xdvik \
-                          --without-oxdvik \
-                          --without-xindy \
-                          --without-luatex \
-                          --without-dvi2tty \
-                          --without-vlna \
+                          --disable-lcdf-typetools \
+                          --disable-pdfopen \
+                          --disable-ttf2pk \
+                          --disable-tex4htk \
+                          --disable-cjkutils \
+                          --disable-vlna \
                           --disable-largefile \
                           --enable-shared \
-                          --disable-static")
+                          --disable-native-texlive-build")
 
 def build():
     shelltools.cd(CoreSource)
-    autotools.make("texmf=/usr/share/texmf/")
+    autotools.make()
 
 def install():
 
-    # Installing texmf, texmf-dist, tlpkg
-    for texmf in ["texmf", "texmf-dist"]:
-        shelltools.copytree("%s/%s" % (CoreSource, texmf), "%s/usr/share/%s" % (get.installDIR(), texmf))
-    shelltools.copytree("tlpkg", "%s/usr/share/tlpkg" % get.installDIR())
-
     shelltools.cd(CoreSource)
+    autotools.install("bindir=%s/usr/bin texmf=%s/usr/share/texmf run_texlinks=true run_mktexlsr=true" % (get.installDIR() , get.installDIR()))
 
-    autotools.install("bindir=%s/usr/bin texmf=%s/usr/share/texmf/ run_texlinks=true run_mktexlsr=true" % (get.installDIR(), get.installDIR()))
+    # Installing texmf, texmf-dist, tlpkg, texmf-var
+
+    texlivemodules.installTexmfFiles()
+
+    pisitools.domove("/usr/texmf/*" , "/usr/share/")
+    pisitools.domove("/usr/texmf-dist/*" , "/usr/share/")
+
+    pisitools.removeDir("/usr/texmf")
+    pisitools.removeDir("/usr/texmf-dist")
 
     # Install documents
     docs = ["ChangeLog", "README", "BUGS", "NEWS", "README.14m", "PROJECTS"]
@@ -100,39 +98,42 @@ def install():
 
     # Remove these directories
     pisitools.removeDir("/usr/share/texmf/doc")
-    pisitools.removeDir("/usr/share/texmf-dist/doc")
 
     for d in ["web2c", "updmap.d", "fmtutil.d", "texmf.d", "language.dat.d", "language.def.d"]:
         pisitools.dodir("/etc/texmf/%s" % d)
+
+    pisitools.domove("/usr/share/web2c/texmf.cnf", "/etc/texmf/texmf.d/")
+    pisitools.domove("/usr/share/web2c/fmtutil.cnf", "/etc/texmf/fmtutil.d/")
+    pisitools.domove("/usr/share/texmf/web2c/updmap.cfg","/etc/texmf/updmap.d/", "00updmap.cfg")
 
     # Remove those as they will be regenerated by texmf-update
     pisitools.remove("/usr/share/texmf/web2c/fmtutil.cnf")
     pisitools.remove("/usr/share/texmf/web2c/texmf.cnf")
 
-    pisitools.domove("/usr/share/texmf/web2c/updmap.cfg","/etc/texmf/updmap.d/", "00updmap.cfg")
-    pisitools.dodir("/etc/texmf/dvips.d")
-    pisitools.dodir("/etc/texmf/dvips/config")
-    pisitools.domove("/usr/share/texmf/dvips/config/config.ps", "/etc/texmf/dvips.d/", "00%s-config.ps" % get.srcNAME())
+    # Remove unnecessary files
+    pisitools.remove("/usr/bin/man")
 
-    # Create symlinks from format to engines
-    texlivemodules.createSymlinksFormat2Engines()
-
-    # Handle config files
-    shelltools.cd("%s/usr/share/texmf" % get.installDIR())
-    texlivemodules.handleConfigFiles(".", "cfg", "cnf")
+    shelltools.cd("%s/usr/share/texmf/" % get.installDIR())
+    texlivemodules.handleConfigFiles()
 
     pisitools.dodir("/usr/share/texmf-site")
 
     # Symlinks for regenerated files by texmf-update
-    for sym in ["fmtutil.cnf", "texmf.cnf", "updmap.cfg"]:
+    for sym in ["updmap.cfg", "texmf.cnf", "fmtutil.cnf"]:
+        pisitools.dosym("/etc/texmf/web2c/%s" % sym, "/usr/share/web2c/%s" % sym)
         pisitools.dosym("/etc/texmf/web2c/%s" % sym, "/usr/share/texmf/web2c/%s" % sym)
     pisitools.dosym("/etc/texmf/dvips/config/config.ps", "/usr/share/dvips/config/config.ps")
+
     pisitools.dosym("tex", "/usr/bin/virtex")
     pisitools.dosym("pdftex", "/usr/bin/pdfvirtex")
-
-    pisitools.dodir("/var/lib/texmf")
 
     # Rename mpost to leave room for mplib
     pisitools.domove("/usr/bin/mpost", "/usr/bin/", "mpost-%s" % get.srcNAME())
     pisitools.dosym("mpost-%s" % get.srcNAME(), "/usr/bin/mpost")
 
+    # Keep it as that's where the formats will go
+    pisitools.dodir("/var/lib/texmf")
+
+    #Remove false symlinks (NOTE: MAKEFILE in texk/texlive/linked_scripts causes it, has to be FIXED)
+    pisitools.remove("/usr/bin/makeglossaries") # comes with latex-glossaries
+    pisitools.remove("/usr/share/scripts/scripts/glossaries/makeglossaries") # comes with latex-glossaries
