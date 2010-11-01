@@ -14,8 +14,6 @@ import os
 WorkDir="feynmf-%s" % get.srcVERSION()
 shelltools.export("VARTEXFONTS", get.curDIR())
 
-shelltools.system("/usr/bin/texmf-update")
-
 def build():
     autotools.make("MP=mpost all manual.ps")
     autotools.make("-f Makefile.cnl ps")
