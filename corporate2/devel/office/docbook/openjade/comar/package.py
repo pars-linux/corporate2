@@ -2,20 +2,12 @@
 
 import os
 
-openjade = "openjade-1.3.2-3"
-
 def postInstall(fromVersion, fromRelease, toVersion, toRelease):
-    os.system("/usr/bin/install-catalog --add /etc/sgml/openjade.cat \
-               /usr/share/sgml/%s/catalog" % openjade)
-    os.system("/usr/bin/install-catalog --add /etc/sgml/openjade.cat \
-              /usr/share/sgml/%s/dsssl/catalog" % openjade)
-    os.system("/usr/bin/install-catalog --add /etc/sgml/sgml-docbook.cat \
-               /etc/sgml/openjade.cat")
+    os.system("/usr/bin/install-catalog --add /etc/sgml/openjade-%s-%s.soc \
+               /usr/share/sgml/openjade-%s/catalog" % (toVersion, toRelease, toVersion))
 
 def preRemove():
-    os.system("/usr/bin/install-catalog --remove /etc/sgml/openjade.cat \
-               /usr/share/sgml/%s/catalog" % openjade)
-    os.system("/usr/bin/install-catalog --remove /etc/sgml/openjade.cat \
-              /usr/share/sgml/%s/dsssl/catalog" % openjade)
-    os.system("/usr/bin/install-catalog --remove /etc/sgml/sgml-docbook.cat \
-               /etc/sgml/openjade.cat")
+    ver = "1.3.2"
+    release = "5"
+    os.system("/usr/bin/install-catalog --remove /etc/sgml/openjade-%s-%s.soc \
+               /usr/share/sgml/openjade-%s/catalog" % (ver, release, ver))

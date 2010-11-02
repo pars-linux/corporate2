@@ -8,44 +8,52 @@
             <Name>Semen Cirit</Name>
             <Email>scirit@pardus.org.tr</Email>
         </Packager>
-        <License>as-is</License>
+        <License>BSD</License>
         <IsA>app:console</IsA>
         <Summary>An implementation of DSSSL</Summary>
         <Description>OpenJade is an implementation of Document Style Semantics and Specification Language (DSSSL), a style language to format Standard Generalized Markup Language (SGML) or Extensible Markup Language (XML) documents.</Description>
         <Archive sha1sum="54e1999f41450fbd62c5d466002d79d3efca2321" type="targz">ftp://ftp.freestandards.org/pub/lsb/app-battery/packages/openjade-1.3.2.tar.gz</Archive>
         <BuildDependencies>
-            <Dependency>sgml-common</Dependency>
             <Dependency>opensp</Dependency>
+            <Dependency>sgml-common</Dependency>
         </BuildDependencies>
-         <Patches>
-             <Patch>openjade-1.3.2-msggen.pl.patch</Patch>
-             <Patch level="1">openjade-1.3.2-ldflags.patch</Patch>
-             <Patch>openjade-1.3.2-lib64-fix.patch</Patch>
+        <Patches>
+            <Patch>openjade-1.3.2-msggen.pl.patch</Patch>
+            <Patch>openjade-1.3.2-lib64-fix.patch</Patch>
+            <Patch level="1">fedora/openjade-deplibs.patch</Patch>
+            <Patch level="1">fedora/openjade-nola.patch</Patch>
+            <Patch level="1">fedora/openjade-1.3.1-nsl.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>openjade</Name>
         <RuntimeDependencies>
-            <Dependency>sgml-common</Dependency>
             <Dependency>opensp</Dependency>
+            <Dependency>sgml-common</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="doc">/usr/share/doc/openjade</Path>
+            <Path fileType="man">/usr/share/man/man1</Path>
             <Path fileType="data">/usr/share/sgml</Path>
+            <Path fileType="data">/etc/sgml</Path>
         </Files>
-        <AdditionalFiles>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/sgml/openjade-1.3.2-3/dsssl/catalog">openjade-1.3.2.dsssl-catalog</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/sgml/openjade-1.3.2-3/catalog">openjade-1.3.2.catalog</AdditionalFile>
-        </AdditionalFiles>
         <Provides>
+            <!-- FIXME: Update hardcoded versions -->
             <COMAR script="package.py">System.Package</COMAR>
         </Provides>
     </Package>
 
     <History>
+        <Update release="5">
+            <Date>2010-11-02</Date>
+            <Version>1.3.2</Version>
+            <Comment>Refactor package, fix buggy postinstall script.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="4">
             <Date>2010-11-01</Date>
             <Version>1.3.2</Version>
