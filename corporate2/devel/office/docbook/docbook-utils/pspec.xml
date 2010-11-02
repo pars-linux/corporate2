@@ -8,40 +8,81 @@
             <Name>Semen Cirit</Name>
             <Email>scirit@pardus.org.tr</Email>
         </Packager>
-        <License>GPLv2</License>
+        <License>GPLv2+</License>
         <IsA>app:console</IsA>
-        <Summary>Docbook processor utilities</Summary>
-        <Description>Contains a set of utilities to process files of type Docbook.</Description>
+        <Summary>Shell scripts for managing DocBook documents</Summary>
+        <Description>docbook-utils contains scripts for easy conversion from DocBook files to other formats and for comparing SGML files.</Description>
         <Archive sha1sum="aae596844930e0e4bb7f8824024be0982cc4fa85" type="targz">ftp://sources.redhat.com/pub/docbook-tools/new-trials/SOURCES/docbook-utils-0.6.14.tar.gz</Archive>
         <BuildDependencies>
-            <Dependency>openjade</Dependency>
-            <Dependency>docbook-sgml3_1</Dependency>
-            <Dependency>docbook-sgml4_1</Dependency>
-            <Dependency>docbook-dsssl</Dependency>
-            <Dependency>docbook-xml4_1_2</Dependency>
+            <Dependency>links</Dependency>
             <Dependency>SGMLSpm</Dependency>
             <Dependency>jadetex</Dependency>
-            <Dependency>links</Dependency>
+            <Dependency>docbook-dsssl</Dependency>
+            <Dependency>docbook-sgml3_1</Dependency>
+            <Dependency>docbook-sgml4_1</Dependency>
+            <Dependency>docbook-xml4_1_2</Dependency>
+            <Dependency releaseFrom="5">openjade</Dependency>
         </BuildDependencies>
+        <Patches>
+            <Patch level="1">docbook-utils-spaces.patch</Patch>
+            <Patch level="1">docbook-utils-2ndspaces.patch</Patch>
+            <Patch level="1">docbook-utils-w3mtxtconvert.patch</Patch>
+            <Patch level="1">docbook-utils-grepnocolors.patch</Patch>
+            <Patch level="1">docbook-utils-sgmlinclude.patch</Patch>
+            <Patch level="1">docbook-utils-rtfmanpage.patch</Patch>
+            <Patch level="1">docbook-utils-papersize.patch</Patch>
+            <Patch level="1">docbook-utils-nofinalecho.patch</Patch>
+            <Patch level="1">docbook-utils-newgrep.patch</Patch>
+        </Patches>
     </Source>
 
     <Package>
         <Name>docbook-utils</Name>
         <RuntimeDependencies>
-            <Dependency>openjade</Dependency>
-            <Dependency>docbook-sgml3_1</Dependency>
-            <Dependency>docbook-sgml4_1</Dependency>
-            <Dependency>docbook-dsssl</Dependency>
-            <!--Dependency>docbook-xml4_1_2</Dependency-->
-            <Dependency>SGMLSpm</Dependency>
             <Dependency>links</Dependency>
             <Dependency>jadetex</Dependency>
+            <Dependency>SGMLSpm</Dependency>
+            <Dependency>openjade</Dependency>
+            <Dependency>docbook-dsssl</Dependency>
+            <Dependency>docbook-sgml3_1</Dependency>
+            <Dependency>docbook-sgml4_1</Dependency>
+            <!--Dependency>docbook-xml4_1_2</Dependency-->
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="doc">/usr/share/doc/docbook-utils</Path>
-            <Path fileType="man">/usr/share/man</Path>
             <Path fileType="data">/usr/share/sgml</Path>
+            <Path fileType="man">/usr/share/man</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0755" target="/usr/bin/db2html">db2html</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/sgml/docbook/utils-0.6.14/docbook-utils.dsl">gdp-both.dsl</AdditionalFile>
+            <AdditionalFile owner="root" permission="0755" target="/usr/share/sgml/docbook/utils-0.6.14/docbook2man-spec.pl">docbook2man-spec.pl</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <Package>
+        <Name>docbook-utils-pdf</Name>
+        <Summary>A script for converting DocBook documents to PDF format</Summary>
+        <RuntimeDependencies>
+            <Dependency>dvips</Dependency>
+            <Dependency>jadetex</Dependency>
+            <Dependency>docbook-utils</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="5">docbook-utils</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="executable">/usr/bin/docbook2pdf</Path>
+            <Path fileType="executable">/usr/bin/docbook2dvi</Path>
+            <Path fileType="executable">/usr/bin/docbook2ps</Path>
+            <Path fileType="executable">/usr/bin/db2pdf</Path>
+            <Path fileType="executable">/usr/bin/db2dvi</Path>
+            <Path fileType="executable">/usr/bin/db2ps</Path>
+            <Path fileType="man">/usr/share/man/man1/db2pdf.*</Path>
+            <Path fileType="man">/usr/share/man/man1/docbook2pdf.*</Path>
+            <Path fileType="man">/usr/share/man/man1/docbook2dvi.*</Path>
+            <Path fileType="man">/usr/share/man/man1/docbook2ps.*</Path>
         </Files>
     </Package>
 
