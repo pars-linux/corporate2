@@ -13,6 +13,7 @@ from pisi.actionsapi import get
 shelltools.export("HOME", get.workDIR())
 
 def setup():
+    autotools.autoreconf("-fi")
     autotools.configure("--exec-prefix= \
                          --libexecdir=/lib/udev \
                          --libdir=/usr/lib \
