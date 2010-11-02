@@ -16,10 +16,10 @@ def setup():
                          --disable-static \
                          --disable-xmltoman \
                          --disable-mono \
-                         --disable-qt3 \
                          --disable-doxygen-doc \
                          --disable-gtk3 \
                          --disable-introspection \
+                         --enable-qt3 \
                          --enable-compat-howl \
                          --enable-compat-libdns_sd \
                          --localstatedir=/var \
