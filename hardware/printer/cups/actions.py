@@ -14,21 +14,21 @@ def setup():
     shelltools.export("DSOFLAGS", get.LDFLAGS())
     shelltools.export("CFLAGS", "%s -DLDAP_DEPRECATED" % get.CFLAGS())
 
-    # FIXME: pnp, pnpadmin -> lp, lpadmin
     # pdftops from cups is currently overridden by our additional file
 
     # For --enable-avahi
     autotools.aclocal("-I config-scripts")
     autotools.autoconf("-I config-scripts")
 
-    autotools.configure('--with-cups-user=pnp \
-                         --with-cups-group=pnp \
-                         --with-system-groups=pnpadmin \
+    autotools.configure('--with-cups-user=lp \
+                         --with-cups-group=lp \
+                         --with-system-groups=lpadmin \
                          --with-docdir=/usr/share/cups/html \
                          --with-dbusdir=/etc/dbus-1 \
                          --with-pdftops=pdftops \
-                         --with-optim="%s -fstack-protector-all" \
+                         --with-optim="%s -fstack-protector-all -DLDAP_DEPRECATED=1" \
                          --with-php=/usr/bin/php-cgi \
+                         --without-java \
                          --localstatedir=/var \
                          --enable-slp \
                          --enable-acl \
@@ -45,9 +45,9 @@ def setup():
                          --enable-dnssd \
                          --enable-browsing \
                          --enable-ldap \
+                         --enable-threads \
                          --enable-gnutls \
                          --disable-launchd \
-                         --disable-threads \
                          --without-rcdir' % get.CFLAGS())
 
 
@@ -64,7 +64,5 @@ def install():
 
     # Serial backend needs to run as root
     shelltools.chmod("%s/usr/lib/cups/backend/serial" % get.installDIR(), 0700)
-
-    pisitools.removeDir("/etc/xinetd.d/")
 
     pisitools.dodoc("CHANGES.txt", "CREDITS.txt", "LICENSE.txt", "README.txt")
