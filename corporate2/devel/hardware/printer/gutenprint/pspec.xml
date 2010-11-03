@@ -13,17 +13,19 @@
         <Summary>High quality printer drivers</Summary>
         <Description>gutenprint contains drivers for Canon, Epson, Lexmark, Sony, Olympus, and PCL printers for use with Ghostscript, CUPS, Foomatic, and the Gimp.</Description>
         <Archive sha1sum="9fbe1ab899d5e83f34e21534cc5c1b8921c9039b" type="tarbz2">mirrors://sourceforge/gimp-print/gutenprint-5.2.6.tar.bz2</Archive>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="src/cups/cups-genppdupdate.in">fedora/cups-genppdupdate.py.in</AdditionalFile>
+        </AdditionalFiles>
         <BuildDependencies>
             <Dependency>cups</Dependency>
-            <Dependency>ghostscript</Dependency>
             <Dependency>foomatic-db</Dependency>
+            <Dependency versionFrom="9.00">ghostscript-devel</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">gutenprint-brother-hl-2040.patch</Patch>
-            <Patch level="1">gutenprint-5.2.3-default-a4.patch</Patch>
-            <Patch level="1">gutenprint-O6.patch</Patch>
-            <Patch level="1">gutenprint-postscriptdriver.patch</Patch>
-            <Patch level="1">gutenprint-device-ids.patch</Patch>
+            <Patch level="1">fedora/gutenprint-brother-hl-2040.patch</Patch>
+            <Patch level="1">fedora/gutenprint-O6.patch</Patch>
+            <Patch level="1">fedora/gutenprint-postscriptdriver.patch</Patch>
+            <Patch level="1">fedora/gutenprint-device-ids.patch</Patch>
         </Patches>
     </Source>
 
@@ -34,30 +36,50 @@
 
             <!-- For gutenprint-foomaticppdupdate script -->
             <Dependency>pycups</Dependency>
-            <Dependency>ghostscript</Dependency>
             <Dependency>foomatic-db</Dependency>
+            <Dependency versionFrom="9.00">ghostscript</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="config">/etc/cups</Path>
             <Path fileType="executable">/usr/lib/cups</Path>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="executable">/usr/sbin</Path>
-            <Path fileType="header">/usr/include/gutenprint</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="doc">/usr/share/doc</Path>
             <Path fileType="man">/usr/share/man/</Path>
-            <Path fileType="data">/usr/lib/pkgconfig</Path>
             <Path fileType="data">/usr/share/cups</Path>
             <Path fileType="data">/usr/share/foomatic</Path>
             <Path fileType="data">/usr/share/gutenprint</Path>
             <Path fileType="localedata">/usr/share/locale</Path>
         </Files>
         <AdditionalFiles>
-            <AdditionalFile owner="root" permission="0755" target="/usr/sbin/gutenprint-foomaticppdupdate">gutenprint-foomaticppdupdate</AdditionalFile>
+            <AdditionalFile owner="root" permission="0755" target="/usr/sbin/gutenprint-foomaticppdupdate">fedora/gutenprint-foomaticppdupdate</AdditionalFile>
         </AdditionalFiles>
+        <Provides>
+            <COMAR script="package.py">System.Package</COMAR>
+        </Provides>
+    </Package>
+
+    <Package>
+        <Name>gutenprint-devel</Name>
+        <Summary>Development files for gutenprint</Summary>
+        <RuntimeDependencies>
+            <Dependency release="current">gutenprint</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="header">/usr/include/gutenprint</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
+            <Path fileType="man">/usr/share/man/man3</Path>
+        </Files>
     </Package>
 
     <History>
+        <Update release="15">
+            <Date>2010-11-03</Date>
+            <Version>5.2.6</Version>
+            <Comment>Merge from 2011, depend on the newer ghostscript.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="14">
             <Date>2010-10-27</Date>
             <Version>5.2.6</Version>
