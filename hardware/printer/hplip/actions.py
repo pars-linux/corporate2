@@ -25,9 +25,6 @@ def mygunzip(_file):
 def setup():
     pisitools.dosed("hpssd.py", "/usr/bin/env python", "/usr/bin/python")
 
-    #FIXME: GROUP conversion (lp->pnp)
-    pisitools.dosed("data/rules/40-hplip.rules", "GROUP=\"lp\"", "GROUP=\"pnp\"")
-
     for f in ("NEWS", "INSTALL", "README", "AUTHORS", "ChangeLog"):
         shelltools.touch(f)
 
