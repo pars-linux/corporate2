@@ -38,7 +38,7 @@ def setup():
 
 def build():
     autotools.make("-C build -j1")
-    autotools.make("-C lib shared")
+    autotools.make("-C build/lib shared")
 
 def install():
     for lib in ["atlas","cblas","f77blas"]:
