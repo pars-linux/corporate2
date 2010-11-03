@@ -16,8 +16,8 @@ def start():
 
     # Load ppdev and lp drivers if wanted
     if config.get("LOAD_LP_MODULE") == "yes":
-        os.system("modprobe -q lp")
-        os.system("modprobe -q ppdev")
+        os.system("/sbin/modprobe -q lp")
+        os.system("/sbin/modprobe -q ppdev")
 
     startService(command="/usr/sbin/cupsd",
                  donotify=True)
@@ -26,10 +26,12 @@ def start():
     # One for low-level usb
     os.system("udevadm trigger --subsystem-match=usb \
                                --attr-match=bInterfaceClass=07 \
-                               --attr-match=bInterfaceSubClass=01")
+                               --attr-match=bInterfaceSubClass=01 \
+                               --action=add")
     # One for usblp backend
     os.system("udevadm trigger --subsystem-match=usb \
-                               --property-match=DEVNAME=\"/dev/usb/lp*\"")
+                               --property-match=DEVNAME=\"/dev/usb/lp*\" \
+                               --action=add")
 
 @synchronized
 def reload():
