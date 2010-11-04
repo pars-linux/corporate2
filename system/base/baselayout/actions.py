@@ -34,6 +34,9 @@ def install():
     pisitools.dosym("/var/tmp", "/usr/tmp")
     pisitools.dosym("share/man", "/usr/local/man")
 
+    # For Corporate2's KDE3
+    pisitools.dosym("/etc/xdg/autostart", "/usr/share/autostart")
+
     if get.ARCH() == "x86_64":
         # Directories for 32bit libraries
         pisitools.dodir("/lib32")
