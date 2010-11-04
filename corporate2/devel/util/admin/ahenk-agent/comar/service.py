@@ -17,7 +17,8 @@ def start():
 
 @synchronized
 def stop():
-    stopService(pidfile="/var/run/ahenk-agent.pid",
+    stopService(command="/usr/bin/ahenk_agent",
+                args="-k",
                 donotify=True)
 
 def status():
