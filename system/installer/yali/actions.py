@@ -10,10 +10,7 @@ from pisi.actionsapi import get
 
 #WorkDir = "yali-master_20100722"
 def setup():
-    if get.ARCH() == "i686":
-        repo_uri = "http://packages.pardus.org.tr/corporate2/pisi-index.xml.bz2"
-    else:
-        repo_uri = "http://x86-64.comu.edu.tr/pisi-index.xml.bz2"
+    repo_uri = "http://packages.pardus.org.tr/pardus/corporate2/stable/%s/pisi-index.xml.xz" % get.ARCH()
 
     pisitools.dosed("yali/constants.py", "@REPO_URI@", repo_uri)
 
