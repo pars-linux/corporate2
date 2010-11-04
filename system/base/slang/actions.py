@@ -10,6 +10,7 @@ from pisi.actionsapi import get
 
 def setup():
     autotools.configure("--disable-static \
+                         --without-onig \
                          --with-png \
                          --with-readline=gnu")
 
