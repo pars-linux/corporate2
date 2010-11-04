@@ -13,6 +13,7 @@ from pisi.actionsapi import get
 #WorkDir = "%s-4.11.2-snapshot-c93f5da3d4e4" % get.srcNAME()
 
 def setup():
+    pisitools.dosed("specs/linux-g++", "@@PYTHON_VER@@", get.curPYTHON())
     pythonmodules.run('configure.py \
                        -b /usr/bin \
                        -d /usr/lib/%s/site-packages \
