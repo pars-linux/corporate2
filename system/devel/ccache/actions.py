@@ -11,7 +11,8 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
-    shelltools.system("rm -rf zlib")
+    if shelltools.isDirectory("zlib"):
+        shelltools.unlinkDir("zlib")
     autotools.configure()
 
 def build():
@@ -28,4 +29,4 @@ def install():
         pisitools.dosym("../../../bin/ccache", "/usr/lib/ccache/bin/%s" % cc)
         pisitools.dosym("../../../bin/ccache", "/usr/lib/ccache/bin/%s-%s" % (get.HOST(), cc))
 
-    pisitools.dodoc("COPYING", "README.txt")
+    pisitools.dodoc("LICENSE.txt", "README.txt")
