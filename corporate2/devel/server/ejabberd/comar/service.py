@@ -20,13 +20,14 @@ def start():
         os.system("ulimit -n %s" % ulimit_max_files)
 
     # Start the node
+    args=" ".join(["start",
+                   "--config %s" % config_file,
+                   "--ctl-config /etc/ejabberd/ejabberdctl.cfg",
+                   "--logs \"/var/log/ejabberd\"",
+                   "--spool \"/var/lib/ejabberd/spool\""])
+
     startService(command="/usr/sbin/ejabberdctl",
-                 args=" ".join(["start",
-                                "--config %s" % config_file,
-                                "--ctl-config /etc/ejabberd/ejabberdctl.cfg",
-                                "--logs \"/var/log/ejabberd\"",
-                                "--spool \"/var/lib/ejabberd/spool\""]),
-                 donotify=True)
+                 args=args)
 
     # It takes some time to actually start necessary nodes
     time.sleep(5)
