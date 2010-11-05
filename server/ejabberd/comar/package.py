@@ -12,7 +12,6 @@ permissions = {
                 "/etc/ejabberd/inetrc"                      :   ["0640", "ejabberd:ejabberd"],
                 "/var/lib/ejabberd"                         :   ["0750", "ejabberd:ejabberd"],
                 "/var/lib/ejabberd/spool"                   :   ["0750", "ejabberd:ejabberd"],
-                "/var/lib/ejabberd/spool/.erlang.cookie"    :   ["0400", "ejabberd:ejabberd"],
                 "/var/lock/ejabberdctl"                     :   ["0750", "ejabberd:ejabberd"],
                 "/var/log/ejabberd"                         :   ["0750", "ejabberd:ejabberd"],
                 "/usr/lib/ejabberd/priv/bin/epam"           :   ["4750", "root:ejabberd"],
@@ -39,7 +38,7 @@ def backup():
             shutil.rmtree(backup_dir)
 
 def postInstall(fromVersion, fromRelease, toVersion, toRelease):
-    backup()
+    #backup()
 
     # Create certificate if it doesn't exist
     os.system("/etc/ejabberd/self-cert.sh")
@@ -48,8 +47,8 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     # rather than in /var/lib/ejabberd
     cookie_file = ".erlang.cookie"
     if os.path.exists("/var/lib/ejabberd/%s" % cookie_file):
-        shutil.copy("/var/lib/ejabberd/%s" % cookie_file,
-                    "/var/lib/ejabberd/spool/%s" % cookie_file)
+        shutil.copy2("/var/lib/ejabberd/%s" % cookie_file,
+                     "/var/lib/ejabberd/spool/%s" % cookie_file)
 
     for _file, perms in permissions.items():
         if os.path.exists(_file):
