@@ -12,48 +12,34 @@ from pisi.actionsapi import get
 
 WorkDir="krb5-%s" % get.srcVERSION()
 
-def rename_man_pages():
-    manpages = ["appl/bsd/klogind.M",
-                "appl/bsd/kshd.M",
-                "appl/sample/sserver/sserver.M",
-                "appl/telnet/telnetd/telnetd.8",
-                "appl/gssftp/ftpd/ftpd.M",
-                "config-files/kdc.conf.M",
-                "config-files/krb5.conf.M",
-                "kadmin/cli/kadmin.M",
-                "slave/kpropd.M",
-                "slave/kprop.M"]
-    for manpage in manpages:
-        shelltools.move(manpage, "%s.in" % manpage)
-
 def setup():
-    shelltools.cd("src")
-
     # Rebuild configure scripts
-    shelltools.chmod("rebuild-configure-scripts.sh")
-    shelltools.system("./rebuild-configure-scripts.sh")
+    shelltools.cd("src")
+    autotools.autoheader()
+    autotools.autoconf()
 
     # Rename man pages to regenerate them
-    rename_man_pages()
+    for manpage in open("../manpaths.txt", "r"):
+        shelltools.move(manpage.strip(), "%s.in" % manpage.strip())
 
-    shelltools.export("CFLAGS", "-I/usr/include/et -fPIC -fno-strict-aliasing %s" % get.CFLAGS())
+    shelltools.export("CFLAGS", "-I/usr/include/et -fPIC -fno-strict-aliasing -fstack-protector-all %s" % get.CFLAGS())
 
     # Fix pthread linking
     pisitools.dosed("configure", "-lthread", "-lpthread")
     pisitools.dosed("configure", "-pthread", "-lpthread")
 
+    # dirsrv or ldap?
     autotools.configure("--with-system-et \
                          --with-system-ss \
                          --with-pam \
-                         --with-ldap \
+                         --with-dirsrv \
                          --with-netlib=-lresolv \
                          --without-selinux \
                          --without-tcl \
-                         --localstatedir=/var/lib/kerberos \
+                         --localstatedir=/var/kerberos \
                          --disable-rpath \
                          --enable-shared \
                          --enable-pkinit \
-                         --enable-dns \
                          --enable-dns-for-realm")
 
     # Fix krb5-config script to remove rpaths and CFLAGS
@@ -71,24 +57,28 @@ def check():
 
 def install():
     shelltools.cd("src")
-    autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+    autotools.rawInstall("DESTDIR=%s EXAMPLEDIR=%s/%s/%s/examples" %
+            (get.installDIR(),
+             get.defaultprefixDIR(),
+             get.docDIR(),
+             get.srcNAME()))
 
     # Install additional headers
     for d in ("kadm5", "krb5"):
         pisitools.insinto("/usr/include/%s" % d, "include/%s/*.h" % d)
 
-    # Add "k" prefix to some apps and manpages to resolve conflicts
-    for app in ["telnetd", "ftpd"]:
-        pisitools.rename("/usr/share/man/man8/%s.8" % app, "k%s.8" % app)
-        pisitools.rename("/usr/sbin/%s" % app, "k%s" % app)
+    pisitools.dodoc("plugins/kdb/ldap/libkdb_ldap/kerberos.ldif")
+    pisitools.dodoc("plugins/kdb/ldap/libkdb_ldap/kerberos.schema")
 
-    for app in ["rcp", "rsh", "telnet", "ftp", "rlogin"]:
-        pisitools.rename("/usr/share/man/man1/%s.1" % app, "k%s.1" % app)
-        pisitools.rename("/usr/bin/%s" % app, "k%s" % app)
+    shelltools.cd("..")
+
+    pisitools.dodir("/var/kerberos/krb5kdc")
+
+    for plugin in ("preauth", "kdb", "authdata"):
+        pisitools.dodir("/usr/lib/krb5/plugins/%s" % plugin)
 
     # Install info and docs
-    pisitools.doinfo("../doc/*.info")
-    pisitools.dodoc("../README")
+    pisitools.doinfo("doc/*.info")
+    pisitools.dodoc("README")
 
-    # Remove examples
-    pisitools.removeDir("/usr/share/examples")
+

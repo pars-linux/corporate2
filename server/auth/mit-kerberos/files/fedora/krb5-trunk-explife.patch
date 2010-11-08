@@ -1,0 +1,28 @@
+Rob Crittenden noticed that, in populate_krb5_db_entry(), key
+expirations weren't being computed as expected.  It turns out
+that neither KDB_PRINC_EXPIRE_TIME_ATTR nor KDB_PWD_EXPIRE_TIME_ATTR
+is defined to 1, so the check for their bits could never succeed as
+written.  RT#6762.
+
+Index: src/plugins/kdb/ldap/libkdb_ldap/ldap_misc.c
+===================================================================
+--- src/plugins/kdb/ldap/libkdb_ldap/ldap_misc.c	(revision 24252)
++++ src/plugins/kdb/ldap/libkdb_ldap/ldap_misc.c	(working copy)
+@@ -2087,7 +2087,7 @@
+             goto cleanup;
+ 
+         if (attr_present == TRUE) {
+-            if ((mask & KDB_PRINC_EXPIRE_TIME_ATTR) == 1) {
++            if (mask & KDB_PRINC_EXPIRE_TIME_ATTR) {
+                 if (expiretime < entry->expiration)
+                     entry->expiration = expiretime;
+             } else {
+@@ -2127,7 +2127,7 @@
+             if ((st=krb5_dbe_lookup_last_pwd_change(context, entry, &last_pw_changed)) != 0)
+                 goto cleanup;
+ 
+-            if ((mask & KDB_PWD_EXPIRE_TIME_ATTR) == 1) {
++            if (mask & KDB_PWD_EXPIRE_TIME_ATTR) {
+                 if ((last_pw_changed + pw_max_life) < entry->pw_expiration)
+                     entry->pw_expiration = last_pw_changed + pw_max_life;
+             } else
