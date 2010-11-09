@@ -2,12 +2,23 @@ Index: pkinit-nss-0.7.8-1/configure.ac
 ===================================================================
 --- pkinit-nss-0.7.8-1.orig/configure.ac
 +++ pkinit-nss-0.7.8-1/configure.ac
-@@ -99,7 +99,7 @@ else
+@@ -63,7 +63,7 @@ AC_CHECK_DECLS(KRB5KDC_ERR_SVC_UNAVAILAB
+ AC_ARG_WITH(krb5-version,[AS_HELP_STRING([--with-krb5-version=AUTO],[Attempt to build for a specified version of MIT Kerberos.])],krb5_version=$withval,krb5_version=AUTO)
+ if test "x$krb5_version" = xAUTO ; then
+ 	AC_MSG_RESULT([Using backport preauth plugin header support.])
+-	AC_MSG_CHECKING([whether this is Kerberos 1.5, 1.6, 1.6.1/1.6.2, 1.6.3/1.6.4, 1.7])
++	AC_MSG_CHECKING([whether this is Kerberos 1.5, 1.6, 1.6.1/1.6.2, 1.6.3/1.6.4, 1.7, 1.8])
+ dnl	if test x$ac_cv_have_decl_KRB5KDC_ERR_SVC_UNAVAILABLE = xyes ; then
+ dnl		AC_MSG_RESULT([looks like 1.6.3.])
+ dnl		krb5_version=1.6.3
+@@ -99,8 +99,8 @@ else
  	AC_MSG_RESULT([Requested build for $krb5_version.])
  fi
  case "$krb5_version" in
 -	1.7)
-+	1.7*)
- 		AC_MSG_RESULT([Building for Kerberos 1.7.])
+-		AC_MSG_RESULT([Building for Kerberos 1.7.])
++	1.8*)
++		AC_MSG_RESULT([Building for Kerberos 1.8.])
  		if test x$ac_cv_header_krb5_preauth_plugin_h = xno ; then
  			BACKPORT_CPPFLAGS='-I$(top_srcdir)/backport-1.7'
+ 		fi
