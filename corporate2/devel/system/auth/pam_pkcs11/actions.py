@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2007-2010 TUBITAK/UEKAE
+# Copyright (C) 2007-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -41,5 +41,4 @@ def install():
         pisitools.insinto("/etc/pam_pkcs11", f, shelltools.baseName(f).rstrip(".example"))
 
     pisitools.dodoc("NEWS", "README", "doc/README*")
-    pisitools.dohtml("doc/api/*.html")
     pisitools.doman("doc/*.[18]")
