@@ -13,12 +13,12 @@ from pisi.actionsapi import get
 shelltools.export("HOME", get.workDIR())
 
 def setup():
-    #pisitools.dosed("giscanner/Makefile.in", "py_compile = .*", "py_compile = /bin/true")
     autotools.autoreconf("-fi")
-    autotools.configure("--disable-static")
+    autotools.configure("--disable-static \
+                         --disable-gtk-doc")
 
 def build():
-    autotools.make("V=1")
+    autotools.make()
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
