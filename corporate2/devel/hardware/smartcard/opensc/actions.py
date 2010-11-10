@@ -12,13 +12,15 @@ from pisi.actionsapi import get
 
 def setup():
     pisitools.dosed("Makefile.am", "win32 ", "")
+    shelltools.unlink("m4/libassuan.m4")
     autotools.autoreconf("-fi")
+
     autotools.configure("--disable-static \
                          --enable-pcsc \
                          --enable-openct \
                          --enable-nsplugin \
                          --with-pinentry=/usr/bin/pinentry \
-                         --with-pcsc-provider=/usr/lib/libpcsclite.so.1 \
+                         --with-pcsc-provider=libpcsclite.so.1 \
                          --with-plugindir=/usr/lib/nsbrowser/plugins/")
 
 def build():
@@ -27,6 +29,9 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
     pisitools.removeDir("/usr/share/doc/opensc")
+
+    pisitools.remove("/usr/lib/nsbrowser/plugins/opensc-signer.so")
+    pisitools.domove("/usr/lib/opensc-signer.so", "/usr/lib/nsbrowser/plugins")
 
     pisitools.insinto("/etc", "etc/opensc.conf")
 
