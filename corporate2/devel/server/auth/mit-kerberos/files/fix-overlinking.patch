@@ -1,0 +1,68 @@
+Index: krb5-1.8.3/src/config/shlib.conf
+===================================================================
+--- krb5-1.8.3.orig/src/config/shlib.conf
++++ krb5-1.8.3/src/config/shlib.conf
+@@ -38,8 +38,8 @@ STOBJEXT=.o
+ SHOBJEXT=.so
+ PFOBJEXT=.po
+ # Default for systems w/o shared libraries
+-CC_LINK_STATIC='$(CC) $(PROG_LIBPATH) $(CFLAGS) $(LDFLAGS)'
+-CXX_LINK_STATIC='$(CXX) $(PROG_LIBPATH) $(CXXFLAGS) $(LDFLAGS)'
++CC_LINK_STATIC='$(CC) $(CFLAGS) $(LDFLAGS) $(PROG_LIBPATH)'
++CXX_LINK_STATIC='$(CXX) $(CXXFLAGS) $(LDFLAGS) $(PROG_LIBPATH)'
+ #
+ SHLIB_EXPORT_FILE_DEP='$(SHLIB_EXPORT_FILE)'
+ # This will do for most platforms, and we'll substitute for
+@@ -408,7 +408,7 @@ mips-*-netbsd*)
+ 	SHLIBEXT=.so
+ 	# Linux ld doesn't default to stuffing the SONAME field...
+ 	# Use objdump -x to examine the fields of the library
+-	LDCOMBINE='$(CC) -shared -fPIC -Wl,-h,$(LIBPREFIX)$(LIBBASE)$(SHLIBSEXT),--no-undefined'
++	LDCOMBINE='$(CC) -shared -fPIC -Wl,-h,$(LIBPREFIX)$(LIBBASE)$(SHLIBSEXT),--no-undefined $(LDFLAGS)'
+ 	# 
+ 	LDCOMBINE_TAIL='-Wl,--version-script binutils.versions && $(PERL) -w $(top_srcdir)/util/export-check.pl $(SHLIB_EXPORT_FILE) $@'
+ 	SHLIB_EXPORT_FILE_DEP=binutils.versions
+@@ -419,12 +419,12 @@ mips-*-netbsd*)
+ 	PROFFLAGS=-pg
+ 	RPATH_FLAG='-Wl,-rpath -Wl,'
+ 	PROG_RPATH_FLAGS='$(RPATH_FLAG)$(PROG_RPATH)'
+-	CC_LINK_SHARED='$(CC) $(PROG_LIBPATH) $(PROG_RPATH_FLAGS) $(CFLAGS) $(LDFLAGS)'
+-	CC_LINK_SHARED='$(CC) $(PROG_LIBPATH) $(PROG_RPATH_FLAGS) $(CFLAGS) -pie -Wl,-z,relro,-z,now $(LDFLAGS)'
++	CC_LINK_SHARED='$(CC) $(CFLAGS) $(LDFLAGS) $(PROG_LIBPATH) $(PROG_RPATH_FLAGS)'
++	CC_LINK_SHARED='$(CC) $(CFLAGS) -pie -Wl,-z,relro,-z,now $(LDFLAGS) $(PROG_LIBPATH) $(PROG_RPATH_FLAGS)'
+ 	INSTALL_SHLIB='${INSTALL} -m755'
+-	CC_LINK_STATIC='$(CC) $(PROG_LIBPATH) $(CFLAGS) $(LDFLAGS)'
+-	CXX_LINK_SHARED='$(CXX) $(PROG_LIBPATH) $(PROG_RPATH_FLAGS) $(CXXFLAGS) $(LDFLAGS)'
+-	CXX_LINK_STATIC='$(CXX) $(PROG_LIBPATH) $(CXXFLAGS) $(LDFLAGS)'
++	CC_LINK_STATIC='$(CC) $(CFLAGS) $(LDFLAGS) $(PROG_LIBPATH)'
++	CXX_LINK_SHARED='$(CXX) $(CXXFLAGS) $(LDFLAGS) $(PROG_LIBPATH) $(PROG_RPATH_FLAGS)'
++	CXX_LINK_STATIC='$(CXX) $(CXXFLAGS) $(LDFLAGS) $(PROG_LIBPATH)'
+ 	RUN_ENV='LD_LIBRARY_PATH=`echo $(PROG_LIBPATH) | sed -e "s/-L//g" -e "s/ /:/g"`; export LD_LIBRARY_PATH; '
+ 
+ 	## old version:
+Index: krb5-1.8.3/src/kadmin/cli/Makefile.in
+===================================================================
+--- krb5-1.8.3.orig/src/kadmin/cli/Makefile.in
++++ krb5-1.8.3/src/kadmin/cli/Makefile.in
+@@ -2,7 +2,7 @@ mydir=kadmin/cli
+ BUILDTOP=$(REL)..$(S)..
+ PROG_LIBPATH=-L$(TOPLIBD)
+ PROG_RPATH=$(KRB5_LIBDIR)
+-KDB_DEP_LIB=$(DL_LIB) $(THREAD_LINKOPTS)
++KDB_DEP_LIB=$(DL_LIB)
+ DEFS=
+ 
+ PROG = kadmin
+@@ -17,10 +17,10 @@ LOCALINCLUDES=-I$(srcdir)
+ all:: $(PROG).local $(PROG)
+ 
+ $(PROG).local: $(LOCAL_OBJS) $(SS_DEPLIB) $(KADMSRV_DEPLIBS) $(KRB5_BASE_DEPLIBS)
+-	$(CC_LINK) -o $(PROG).local $(LOCAL_OBJS) $(SS_LIB) $(KADMSRV_LIBS) $(KDB_DEP_LIB) $(KRB5_BASE_LIBS)
++	$(CC_LINK) $(LOCAL_OBJS) $(SS_LIB) $(KADMSRV_LIBS) $(KDB_DEP_LIB) $(KRB5_BASE_LIBS) -o $(PROG).local
+ 
+ $(PROG): $(KADMIN_OBJS) $(SS_DEPLIB) $(KADMCLNT_DEPLIBS) $(KRB5_BASE_DEPLIBS)
+-	$(CC_LINK) -o $(PROG) $(KADMIN_OBJS) $(SS_LIB) $(KADMCLNT_LIBS) $(KRB5_BASE_LIBS)
++	$(CC_LINK) $(KADMIN_OBJS) $(SS_LIB) $(KADMCLNT_LIBS) $(KRB5_BASE_LIBS) -o $(PROG)
+ 
+ kadmin_ct.o: kadmin_ct.c
+ 

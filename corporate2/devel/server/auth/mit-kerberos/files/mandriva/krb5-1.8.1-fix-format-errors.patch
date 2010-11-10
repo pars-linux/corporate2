@@ -1,0 +1,105 @@
+diff -Naur -x '*~' krb5-1.8.1-fix-format-errors//src/clients/klist/klist.c krb5-1.8.1/src/clients/klist/klist.c
+--- krb5-1.8.1-fix-format-errors//src/clients/klist/klist.c	2010-04-26 00:01:40.000000000 +0200
++++ krb5-1.8.1/src/clients/klist/klist.c	2010-04-26 00:37:34.000000000 +0200
+@@ -487,7 +487,7 @@
+                                     timestring,
+                                     timestamp_width+1,
+                                     &fill)) {
+-        printf(timestring);
++        printf("%s", timestring);
+     }
+ }
+ 
+diff -Naur -x '*~' krb5-1.8.1-fix-format-errors//src/clients/ksu/ccache.c krb5-1.8.1/src/clients/ksu/ccache.c
+--- krb5-1.8.1-fix-format-errors//src/clients/ksu/ccache.c	2010-04-26 00:01:40.000000000 +0200
++++ krb5-1.8.1/src/clients/ksu/ccache.c	2010-04-26 00:40:10.000000000 +0200
+@@ -359,7 +359,7 @@
+                                     fmtbuf,
+                                     sizeof(fmtbuf),
+                                     &fill))
+-        printf(fmtbuf);
++        printf("%s", fmtbuf);
+ }
+ 
+ 
+diff -Naur -x '*~' krb5-1.8.1-fix-format-errors//src/kadmin/dbutil/dump.c krb5-1.8.1/src/kadmin/dbutil/dump.c
+--- krb5-1.8.1-fix-format-errors//src/kadmin/dbutil/dump.c	2010-04-26 00:01:42.000000000 +0200
++++ krb5-1.8.1/src/kadmin/dbutil/dump.c	2010-04-26 00:14:09.000000000 +0200
+@@ -1180,7 +1180,7 @@
+      * to be opened if we try a dump that uses it.
+      */
+     if (!dbactive) {
+-        com_err(progname, 0, Err_no_database);
++        com_err(progname, 0, "%s", Err_no_database);
+         exit_status++;
+         return;
+     }
+diff -Naur -x '*~' krb5-1.8.1-fix-format-errors//src/kadmin/dbutil/kadm5_create.c krb5-1.8.1/src/kadmin/dbutil/kadm5_create.c
+--- krb5-1.8.1-fix-format-errors//src/kadmin/dbutil/kadm5_create.c	2010-04-26 00:01:42.000000000 +0200
++++ krb5-1.8.1/src/kadmin/dbutil/kadm5_create.c	2010-04-26 00:11:32.000000000 +0200
+@@ -288,7 +288,7 @@
+     fullname = build_name_with_realm(name, realm);
+     ret = krb5_parse_name(context, fullname, &ent.principal);
+     if (ret) {
+-        com_err(progname, ret, str_PARSE_NAME);
++        com_err(progname, ret, "%s", str_PARSE_NAME);
+         return(ERR);
+     }
+     ent.max_life = lifetime;
+diff -Naur -x '*~' krb5-1.8.1-fix-format-errors//src/kadmin/dbutil/kdb5_stash.c krb5-1.8.1/src/kadmin/dbutil/kdb5_stash.c
+--- krb5-1.8.1-fix-format-errors//src/kadmin/dbutil/kdb5_stash.c	2010-04-26 00:01:42.000000000 +0200
++++ krb5-1.8.1/src/kadmin/dbutil/kdb5_stash.c	2010-04-26 00:06:56.000000000 +0200
+@@ -122,7 +122,7 @@
+             com_err(progname, KRB5_PROG_KEYTYPE_NOSUPP,
+                     "while setting up enctype %d", master_keyblock.enctype);
+         else
+-            com_err(progname, KRB5_PROG_KEYTYPE_NOSUPP, tmp);
++            com_err(progname, KRB5_PROG_KEYTYPE_NOSUPP, "%s", tmp);
+         exit_status++; return;
+     }
+ 
+diff -Naur -x '*~' krb5-1.8.1-fix-format-errors//src/lib/rpc/unit-test/rpc_test_svc.c krb5-1.8.1/src/lib/rpc/unit-test/rpc_test_svc.c
+--- krb5-1.8.1-fix-format-errors//src/lib/rpc/unit-test/rpc_test_svc.c	2010-04-26 00:01:47.000000000 +0200
++++ krb5-1.8.1/src/lib/rpc/unit-test/rpc_test_svc.c	2010-04-26 00:02:19.000000000 +0200
+@@ -17,7 +17,7 @@
+ void _msgout(msg)
+ 	char *msg;
+ {
+-	syslog(LOG_ERR, msg);
++	syslog(LOG_ERR, "%s", msg);
+ }
+ 
+ void
+diff -Naur -x '*~' krb5-1.8.1-fix-format-errors//src/slave/kprop.c krb5-1.8.1/src/slave/kprop.c
+--- krb5-1.8.1-fix-format-errors//src/slave/kprop.c	2010-04-26 00:01:53.000000000 +0200
++++ krb5-1.8.1/src/slave/kprop.c	2010-04-26 00:31:14.000000000 +0200
+@@ -591,7 +591,7 @@
+             snprintf(buf, sizeof(buf),
+                      "while encoding database block starting at %d",
+                      sent_size);
+-            com_err(progname, retval, buf);
++            com_err(progname, retval, "%s", buf);
+             send_error(context, my_creds, fd, buf, retval);
+             exit(1);
+         }
+diff -Naur -x '*~' krb5-1.8.1-fix-format-errors//src/slave/kpropd.c krb5-1.8.1/src/slave/kpropd.c
+--- krb5-1.8.1-fix-format-errors//src/slave/kpropd.c	2010-04-26 00:01:53.000000000 +0200
++++ krb5-1.8.1/src/slave/kpropd.c	2010-04-26 00:34:53.000000000 +0200
+@@ -1445,7 +1445,7 @@
+             snprintf(buf, sizeof(buf),
+                      "while reading database block starting at offset %d",
+                      received_size);
+-            com_err(progname, retval, buf);
++            com_err(progname, retval, "%s", buf);
+             send_error(context, fd, retval, buf);
+             exit(1);
+         }
+@@ -1457,7 +1457,7 @@
+             snprintf(buf, sizeof(buf),
+                      "while decoding database block starting at offset %d",
+                      received_size);
+-            com_err(progname, retval, buf);
++            com_err(progname, retval, "%s", buf);
+             send_error(context, fd, retval, buf);
+             krb5_free_data_contents(context, &inbuf);
+             exit(1);
