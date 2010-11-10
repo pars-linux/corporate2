@@ -13,17 +13,20 @@
         <IsA>app:console</IsA>
         <Summary>PAM login module for X.509 certificate based user login</Summary>
         <Description>pam_pkcs11 is a pluggable authentication module(pam) which allows X.509 certificate based user login. The certificate and its dedicated private key are thereby accessed by means of an appropriate PKCS #11 module.</Description>
-        <Archive sha1sum="4baa9ee35f3a818e3e1a33ae4bb612edccf17941" type="targz">http://www.opensc-project.org/files/pam_pkcs11/pam_pkcs11-0.6.2.tar.gz</Archive>
+        <Archive sha1sum="9ac2ec1420745aa071bc117b046d640990293eb3" type="targz">http://www.opensc-project.org/files/pam_pkcs11/pam_pkcs11-0.6.3.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>nss</Dependency>
             <Dependency>nspr</Dependency>
-            <Dependency>pcsc-lite</Dependency>
             <Dependency>openldap-client</Dependency>
+            <Dependency>pcsc-lite-devel</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">conf-nss.patch</Patch>
-            <Patch level="1">pam_pkcs11-0.6.0-nss-autoconf.patch</Patch>
+            <Patch level="1">pam_pkcs11-0.6.2-login_required.patch</Patch>
             <Patch level="1">skip-cert-polify-if-none-with-nss.patch</Patch>
+            <Patch level="1">pam_pkcs11-0.6.0-nss-autoconf.patch</Patch>
+            <Patch level="1">changeset_trunk_src_common_algorithm.c_429.diff</Patch>
+            <Patch level="1">fix-build-pcsc-1.6.patch</Patch>
         </Patches>
     </Source>
 
@@ -49,10 +52,18 @@
         <AdditionalFiles>
             <!-- Out-of-the-box configuration file for AKIS -->
             <AdditionalFile owner="root" permission="0644" target="/etc/pam_pkcs11/pam_pkcs11.conf.akis">pam_pkcs11.conf.akis</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/pam_pkcs11/pkcs11_eventmgr.conf.akis">pkcs11_eventmgr.conf.akis</AdditionalFile>
         </AdditionalFiles>
     </Package>
 
     <History>
+        <Update release="8">
+            <Date>2010-11-08</Date>
+            <Version>0.6.3</Version>
+            <Comment>Version bump</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="7">
             <Date>2010-10-27</Date>
             <Version>0.6.2</Version>
