@@ -13,7 +13,6 @@ def setup():
     autotools.autoreconf("-fi")
 
     autotools.configure("--enable-usbdropdir=/usr/lib/pcsc/drivers \
-                         --enable-libhal \
                          --disable-dependency-tracking \
                          --disable-static")
 
@@ -22,6 +21,8 @@ def build():
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+
+    pisitools.remove("/usr/share/doc/pcsc-lite/ifdhandler-3.tex")
 
     pisitools.dodoc("AUTHORS", "ChangeLog", "DRIVERS", "HELP", "NEWS",
                     "README", "SECURITY", "doc/README.DAEMON")
