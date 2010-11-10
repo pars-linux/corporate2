@@ -3,15 +3,23 @@ import os
 
 serviceType = "server"
 serviceDefault = "off"
-serviceDesc = _({"en": "CUPS Printer Server",
-                 "tr": "CUPS Yazıcı Sunucusu"})
-serviceConf = "cups"
+serviceDesc = _({"en": "Kerberos 5 administrative server",
+                 "tr": "Kerberos 5 yönetimsel sunucusu"})
+serviceConf = "kadmin"
 
-PIDFILE = "/var/run/cupsd.pid"
+PIDFILE = "/var/run/kadmind.pid"
+KADMIND = "/usr/sbin/kadmind"
+
+MSG_ERROR_SLAVE = "Error. This appears to be a slave server, found kpropd.acl"
 
 @synchronized
 def start():
-    startService(command="/usr/sbin/cupsd",
+    if not os.path.exists("/var/kerberos/krb5kdc/principal"):
+        # Make an educated guess -- if they're using kldap somewhere,
+        # then we don't know for sure that this is an error.
+
+    startService(command=KADMIND,
+                 args=
                  donotify=True)
 
 @synchronized

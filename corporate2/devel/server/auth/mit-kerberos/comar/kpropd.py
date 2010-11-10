@@ -3,26 +3,32 @@ import os
 
 serviceType = "server"
 serviceDefault = "off"
-serviceDesc = _({"en": "CUPS Printer Server",
-                 "tr": "CUPS Yazıcı Sunucusu"})
-serviceConf = "cups"
+serviceDesc = _({"en": "Kerberos 5 propagation client",
+                 "tr": "Kerberos 5 propagasyon istemcisi"})
 
+KPROPD = "/usr/sbin/kpropd"
 PIDFILE = "/var/run/cupsd.pid"
+KPROPDACL = "/var/kerberos/krb5kdc/kpropd.acl"
+
+MSG_MISSING_KPROPD = _({
+                        "en" : "%s doesn't exist, exiting." % KPROPD,
+                        "tr" : "%s bulunamadı." % KPROPD,
+                        })
 
 @synchronized
 def start():
-    startService(command="/usr/sbin/cupsd",
-                 donotify=True)
-
-@synchronized
-def reload():
-    if os.path.exists(PIDFILE):
-        # 1 is SIGHUP
-        os.kill(int(open(PIDFILE, "r").read().strip()), 1)
+    if os.path.exists(KPROPDACL):
+        startService(command=KPROPD,
+                     args="-S",
+                     donotify=True)
+    else:
+        # Warn
+        fail(MSG_MISSING_KPROPD)
 
 @synchronized
 def stop():
-    stopService(pidfile=PIDFILE, donotify=True)
+    stopService(command=KPROPD,
+                donotify=True)
 
 def status():
-    return isServiceRunning(pidfile=PIDFILE)
+    return isServiceRunning(command=KPROPD)
