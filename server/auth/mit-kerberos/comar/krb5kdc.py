@@ -3,15 +3,29 @@ import os
 
 serviceType = "server"
 serviceDefault = "off"
-serviceDesc = _({"en": "CUPS Printer Server",
-                 "tr": "CUPS Yazıcı Sunucusu"})
-serviceConf = "cups"
 
-PIDFILE = "/var/run/cupsd.pid"
+serviceDesc = _({"en": "Kerberos 5 server",
+                 "tr": "Kerberos 5 sunucusu"})
+
+serviceConf = "krb5kdc"
+
+KRB5KDC = "/usr/sbin/krb5kdc"
+PIDFILE = "/var/run/krb5kdc.pid"
 
 @synchronized
 def start():
-    startService(command="/usr/sbin/cupsd",
+    ARGS = "-P %s" % PIDFILE
+
+    # Check if a realm is given
+    realm = config.get("KRB5REALM", "")
+    if realm:
+        ARGS += "-r %s" % realm
+
+    if config.get("KRB5KDC_ARGS", ""):
+        ARGS += "%s" % config.get("KRB5KDC_ARGS", "")
+
+    startService(command=KRB5KDC,
+                 args=ARGS,
                  donotify=True)
 
 @synchronized
