@@ -10,8 +10,6 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
-    autotools.autoreconf("-fis")
-
     autotools.configure("--enable-udev \
                          --enable-twinserial \
                          --disable-static \
@@ -23,8 +21,6 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    pisitools.removeDir("/etc")
-
-    pisitools.insinto("/lib/udev/rules.d/", "src/pcscd_ccid.rules", "60-pcscd_ccid.rules")
+    pisitools.insinto("/lib/udev/rules.d/", "src/pcscd_ccid.rules", "85-pcscd_ccid.rules")
 
     pisitools.dodoc("AUTHORS", "ChangeLog", "COPYING", "NEWS", "README")
