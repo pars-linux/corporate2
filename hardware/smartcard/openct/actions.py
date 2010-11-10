@@ -16,7 +16,6 @@ def setup():
                          --enable-usb \
                          --enable-doc \
                          --enable-pcsc \
-                         --localstatedir=/var \
                          --with-bundle=/usr/lib/pcsc/drivers \
                          --with-udev=/lib/udev")
 
@@ -35,7 +34,6 @@ def install():
 
     pisitools.dodir("/var/run/openct")
     shelltools.chmod("%s/var/run/openct" % get.installDIR(), 0755)
-    #shelltools.chown("%s/var/run/openct" % get.installDIR(), gid="pnp")
 
     pisitools.remove("/usr/lib/openct-ifd.so")
 
