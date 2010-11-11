@@ -3,20 +3,23 @@
 # Copyright 2006/2/18 Scott Balneaves sbalneav@ltsp.org 
 #
 
-ACTION!="add",          GOTO="add_end"
+ACTION!="add", GOTO="add_end"
+
 # USB Floppy
-KERNEL=="sd[a-z]",      SYSFS{bInterfaceSubClass}=="04", \
-                        RUN+="/etc/udev/scripts/ptsp-device.sh"
+KERNEL=="sd[a-z]", ATTR{bInterfaceSubClass}=="04", RUN+="/etc/udev/scripts/ptsp-device.sh"
+
 # USB Pens
 KERNEL=="sd[a-z][0-9]*", RUN+="/etc/udev/scripts/ptsp-device.sh %s{size}"
 
 # USB CDRoms
-KERNEL=="sr[0-9]",      RUN+="/etc/udev/scripts/ptsp-device.sh"
+KERNEL=="sr[0-9]", RUN+="/etc/udev/scripts/ptsp-device.sh"
+
 # IDE CDRoms
-BUS=="ide",             SYSFS{removable}=="1", \
-                        RUN+="/etc/udev/scripts/ptsp-device.sh"
+SUBSYSTEM=="ide", ATTR{removable}=="1", RUN+="/etc/udev/scripts/ptsp-device.sh"
+
 # Legacy Floppy
-KERNEL=="fd[0-9]*",     RUN+="/etc/udev/scripts/ptsp-device.sh"
+KERNEL=="fd[0-9]*", RUN+="/etc/udev/scripts/ptsp-device.sh"
+
 GOTO="final_end"
 LABEL="add_end"
 
@@ -24,8 +27,10 @@ LABEL="add_end"
 # Only usb devices can be removed.  IDE and Floppy devices are "permanent"
 #
 
-ACTION!="remove",       GOTO="final_end"
-KERNEL=="sd[a-z]",      RUN+="/etc/udev/scripts/ptsp-device.sh"
+ACTION!="remove", GOTO="final_end"
+
+KERNEL=="sd[a-z]", RUN+="/etc/udev/scripts/ptsp-device.sh"
 KERNEL=="sd[a-z][0-9]*", RUN+="/etc/udev/scripts/ptsp-device.sh"
-KERNEL=="sr[0-9]",      RUN+="/etc/udev/scripts/ptsp-device.sh"
+KERNEL=="sr[0-9]", RUN+="/etc/udev/scripts/ptsp-device.sh"
+
 LABEL="final_end"
