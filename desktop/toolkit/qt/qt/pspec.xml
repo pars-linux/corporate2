@@ -13,7 +13,7 @@
         <IsA>library</IsA>
         <Summary>Qt toolkit version 4</Summary>
         <Description>Qt is a cross platform GUI toolkit.</Description>
-        <Archive sha1sum="a5796c8f468c8f59249e5c696f913864c979f411" type="targz">http://get.qt.nokia.com/qt/source/qt-everywhere-opensource-src-4.7.0.tar.gz</Archive>
+        <Archive sha1sum="fcf764d39d982c7f84703821582bd10c3192e341" type="targz">http://get.qt.nokia.com/qt/source/qt-everywhere-opensource-src-4.7.1.tar.gz</Archive>
         <BuildDependencies>
             <Dependency versionFrom="3.4.1">sqlite</Dependency>
             <Dependency>firebird-superserver</Dependency>
@@ -37,8 +37,6 @@
             -->
         </BuildDependencies>
         <Patches>
-            <Patch level="1">6da6b7099d4e0b49329793e4b90703ec3d868048.diff</Patch>
-
             <!-- Fedora Patches -->
             <Patch level="1">fedora/qt-all-opensource-src-4.4.0-rc1-as_IN-437440.patch</Patch>
             <Patch level="1">fedora/qt-x11-opensource-src-4.5.0-fix-qatomic-inline-asm.patch</Patch>
@@ -152,8 +150,8 @@
     <Package>
         <Name>qt-webkit</Name>
         <RuntimeDependencies>
+            <Dependency versionFrom="4.7.1">qt</Dependency>
             <Dependency>phonon</Dependency>
-            <Dependency versionFrom="4.7.0">qt</Dependency>
         </RuntimeDependencies>
         <Conflicts>
             <!-- We've split out qtwebkit into a seperate binary package in rev 74 -->
@@ -199,9 +197,10 @@
 
     <Package>
         <Name>qt-designer</Name>
+        <Icon>designer</Icon>
         <RuntimeDependencies>
-            <Dependency versionFrom="4.7.0">qt-webkit</Dependency>
-            <Dependency versionFrom="4.7.0">qt</Dependency>
+            <Dependency versionFrom="4.7.1">qt</Dependency>
+            <Dependency versionFrom="4.7.1">qt-webkit</Dependency>
         </RuntimeDependencies>
         <Replaces>
             <Package>qt4-designer</Package>
@@ -221,8 +220,9 @@
 
     <Package>
         <Name>qt-linguist</Name>
+        <Icon>linguist</Icon>
         <RuntimeDependencies>
-            <Dependency versionFrom="4.7.0">qt</Dependency>
+            <Dependency versionFrom="4.7.1">qt</Dependency>
         </RuntimeDependencies>
         <Replaces>
             <Package>qt4-linguist</Package>
@@ -241,15 +241,17 @@
     </Package>
 
     <Package>
-        <Name>qt-doc</Name>
+        <Name>qt-docs</Name>
+        <Icon>assistant</Icon>
+        <Summary>Development documents of Qt and Qt Assistant tool</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="4.7.0">qt</Dependency>
-            <!-- assistant uses QtWebKit -->
-            <Dependency versionFrom="4.7.0">qt-webkit</Dependency>
-            <Dependency versionFrom="4.7.0">qt-sql-sqlite</Dependency>
+            <Dependency versionFrom="4.7.1">qt</Dependency>
+            <Dependency versionFrom="4.7.1">qt-webkit</Dependency>
+            <Dependency versionFrom="4.7.1">qt-sql-sqlite</Dependency>
         </RuntimeDependencies>
         <Replaces>
             <Package>qt4-doc</Package>
+            <Package>qt-doc</Package>
         </Replaces>
         <Files>
             <Path fileType="executable">/usr/bin/assistant-qt4</Path>
@@ -280,8 +282,13 @@
 
     <Package>
         <Name>qt-demos</Name>
+        <Icon>qt4-logo</Icon>
         <RuntimeDependencies>
-            <Dependency versionFrom="4.7.0">qt</Dependency>
+            <Dependency versionFrom="4.7.1">qt</Dependency>
+            <Dependency versionFrom="4.7.1">qt-webkit</Dependency>
+            <Dependency versionFrom="4.7.1">qt-sql-sqlite</Dependency>
+            <Dependency>mesa</Dependency>
+            <Dependency>phonon</Dependency>
         </RuntimeDependencies>
         <Conflicts>
             <Package versionTo="4.5.3">qt-doc</Package>
@@ -302,7 +309,7 @@
     <Package>
         <Name>qt-sql-mysql</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="4.7.0">qt</Dependency>
+            <Dependency versionFrom="4.7.1">qt</Dependency>
             <Dependency>mysql-lib</Dependency>
         </RuntimeDependencies>
         <Replaces>
@@ -316,7 +323,7 @@
     <Package>
         <Name>qt-sql-postgresql</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="4.7.0">qt</Dependency>
+            <Dependency versionFrom="4.7.1">qt</Dependency>
             <Dependency>postgresql-lib</Dependency>
         </RuntimeDependencies>
         <Replaces>
@@ -330,7 +337,7 @@
     <Package>
         <Name>qt-sql-sqlite</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="4.7.0">qt</Dependency>
+            <Dependency versionFrom="4.7.1">qt</Dependency>
             <Dependency versionFrom="3.4.1">sqlite</Dependency>
         </RuntimeDependencies>
         <Replaces>
@@ -344,7 +351,7 @@
     <Package>
         <Name>qt-sql-odbc</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="4.7.0">qt</Dependency>
+            <Dependency versionFrom="4.7.1">qt</Dependency>
             <Dependency>unixODBC</Dependency>
         </RuntimeDependencies>
         <Replaces>
@@ -358,7 +365,7 @@
     <Package>
         <Name>qt-sql-ibase</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="4.7.0">qt</Dependency>
+            <Dependency versionFrom="4.7.1">qt</Dependency>
             <Dependency>firebird-client</Dependency>
             <Dependency>firebird-superserver</Dependency>
         </RuntimeDependencies>
@@ -371,6 +378,13 @@
     </Package>
 
     <History>
+        <Update release="83">
+            <Date>2010-11-10</Date>
+            <Version>4.7.1</Version>
+            <Comment>Version bump to 4.7.1</Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
         <Update release="82">
             <Date>2010-11-03</Date>
             <Version>4.7.0</Version>
