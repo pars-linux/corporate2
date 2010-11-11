@@ -104,7 +104,7 @@ esac
   
 logger "udev detected ${ACTION} of ${LTSP_DEVTYPE}"
 
-if [ "${LTS_DEVTYPE}" = "none" ]; then
+if [ "${LTSP_DEVTYPE}" = "none" ]; then
   exit 0
 fi
 
