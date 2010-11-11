@@ -14,11 +14,11 @@ def setup():
     shelltools.export("CFLAGS", '%s -DSYSLOGD_PIDNAME=\\\"syslogd.pid\\\"' % get.CFLAGS())
 
     autotools.configure("--disable-static \
-                         --disable-mysql \
-                         --disable-pgsql \
-                         --disable-gssapi-krb5 \
+                         --enable-mysql \
+                         --enable-pgsql \
+                         --enable-gnutls \
+                         --enable-gssapi-krb5 \
                          --disable-relp \
-                         --disable-gnutls \
                          --disable-testbench \
                          --sbindir=/sbin \
                          --enable-mail \
@@ -30,5 +30,13 @@ def build():
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+
+    pisitools.insinto("%s/%s" % (get.docDIR(), get.srcNAME()),
+                      "plugins/ommysql/createDB.sql",
+                      "createMySQLDB.pl")
+
+    pisitools.insinto("%s/%s" % (get.docDIR(), get.srcNAME()),
+                      "plugins/ompgsql/createDB.sql",
+                      "createPgSQLDB.pl")
 
     pisitools.dodoc("COPYING*", "README", "AUTHORS", "ChangeLog")

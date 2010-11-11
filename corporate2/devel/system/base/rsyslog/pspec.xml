@@ -14,7 +14,12 @@
         <Description>rsyslog is an enhanced multi-threaded syslogd supporting, among others, MySQL, syslog/tcp, RFC 3195, permitted sender lists, filtering on any message part, and fine grain output format control. It is quite compatible with stock sysklogd and can be used as a drop-in replacement.</Description>
         <Archive sha1sum="23e8c219d143a605210c51df947515f403f50e2a" type="targz">http://download.rsyslog.com/rsyslog/rsyslog-4.6.3.tar.gz</Archive>
         <BuildDependencies>
+            <Dependency>gnutls</Dependency>
+            <Dependency>mysql-lib</Dependency>
             <Dependency>zlib-devel</Dependency>
+            <Dependency>mit-kerberos</Dependency>
+            <Dependency>postgresql-lib</Dependency>
+            <!--<Dependency>mit-kerberos-devel</Dependency>-->
         </BuildDependencies>
         <Patches>
             <Patch level="1">rsyslog-4.6.3-unlimited-select.patch</Patch>
@@ -48,7 +53,67 @@
         </Provides>
     </Package>
 
+    <Package>
+        <Name>rsyslog-module-postgresql</Name>
+        <PartOf>util.admin</PartOf>
+        <Summary>PostgreSQL support for rsyslog</Summary>
+        <RuntimeDependencies>
+            <Dependency>postgresql-lib</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/rsyslog/ompgsql.so</Path>
+            <Path fileType="data">/usr/share/doc/rsyslog/createPgSQLDB.pl</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>rsyslog-module-mysql</Name>
+        <PartOf>util.admin</PartOf>
+        <Summary>MySQL support for rsyslog</Summary>
+        <RuntimeDependencies>
+            <Dependency>mysql-lib</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/rsyslog/ommysql.so</Path>
+            <Path fileType="data">/usr/share/doc/rsyslog/createMySQLDB.pl</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>rsyslog-module-gnutls</Name>
+        <PartOf>util.admin</PartOf>
+        <Summary>GnuTLS support for rsyslog</Summary>
+        <RuntimeDependencies>
+            <Dependency>gnutls</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/rsyslog/lmnsd_gtls.so</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>rsyslog-module-gssapi</Name>
+        <PartOf>util.admin</PartOf>
+        <Summary>GSSAPI authentication and encryption support for rsyslog</Summary>
+        <RuntimeDependencies>
+            <Dependency>mit-kerberos</Dependency>
+            <!--<Dependency>mit-kerberos-libs</Dependency>-->
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/rsyslog/lmgssutil.so</Path>
+            <Path fileType="library">/usr/lib/rsyslog/imgssapi.so</Path>
+            <Path fileType="library">/usr/lib/rsyslog/omgssapi.so</Path>
+        </Files>
+    </Package>
+
     <History>
+        <Update release="3">
+            <Date>2010-11-11</Date>
+            <Version>4.6.3</Version>
+            <Comment>Enable mysql,pgsql,gssapi and gnutls modules.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="2">
             <Date>2010-10-26</Date>
             <Version>4.6.3</Version>
