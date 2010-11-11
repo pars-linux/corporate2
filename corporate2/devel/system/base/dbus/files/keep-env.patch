@@ -1,0 +1,125 @@
+commit 6b388e08c6f3a55e06de084b9827b3dd5d576d92
+Author: Ozan Çağlayan <ozan@pardus.org.tr>
+Date:   Thu Nov 11 14:31:42 2010 +0200
+
+    activation-helper: Add possibility to keep environment
+    
+    If KeepEnv==True in dbus service desktop file, activation-launcher
+    can now keep the environment instead of clearing it.
+    
+    Signed-off-by: Ozan Çağlayan <ozan@pardus.org.tr>
+
+Index: dbus-1.2.24/bus/activation-helper.c
+===================================================================
+--- dbus-1.2.24.orig/bus/activation-helper.c
++++ dbus-1.2.24/bus/activation-helper.c
+@@ -142,7 +142,7 @@ out_all:
+ 
+ /* Cleares the environment, except for DBUS_VERBOSE and DBUS_STARTER_x */
+ static dbus_bool_t
+-clear_environment (DBusError *error)
++clear_environment (DBusError *error, unsigned int keep_env)
+ {
+   const char *debug_env = NULL;
+   const char *starter_env = NULL;
+@@ -157,7 +157,7 @@ clear_environment (DBusError *error)
+ 
+ #ifndef ACTIVATION_LAUNCHER_TEST
+   /* totally clear the environment */
+-  if (!_dbus_clearenv ())
++  if ((keep_env == 0) && !_dbus_clearenv ())
+     {
+       dbus_set_error (error, DBUS_ERROR_SPAWN_SETUP_FAILED,
+                       "could not clear environment\n");
+@@ -261,13 +261,16 @@ get_parameters_for_service (BusDesktopFi
+                             const char     *service_name,
+                             char          **exec,
+                             char          **user,
++                            unsigned int   *keep_env,
+                             DBusError      *error)
+ {
+   char *exec_tmp;
+   char *user_tmp;
++  char *keepenv_tmp;
+ 
+   exec_tmp = NULL;
+   user_tmp = NULL;
++  keepenv_tmp = NULL;
+ 
+   /* check the name of the service */
+   if (!check_service_name (desktop_file, service_name, error))
+@@ -295,6 +298,16 @@ get_parameters_for_service (BusDesktopFi
+       goto failed;
+     }
+ 
++  /* KeepEnv is not mandatory */
++  if (bus_desktop_file_get_raw (desktop_file,
++                                DBUS_SERVICE_SECTION,
++                                DBUS_SERVICE_KEEPENV,
++                                &keepenv_tmp))
++  {
++      if (strcmp(keepenv_tmp, "True") == 0)
++          *keep_env = 1;
++  }
++
+   /* only assign if all the checks passed */
+   *exec = exec_tmp;
+   *user = user_tmp;
+@@ -303,6 +316,7 @@ get_parameters_for_service (BusDesktopFi
+ failed:
+   dbus_free (exec_tmp);
+   dbus_free (user_tmp);
++  dbus_free (keepenv_tmp);
+   return FALSE;
+ }
+ 
+@@ -470,6 +484,7 @@ launch_bus_name (const char *bus_name, B
+ {
+   BusDesktopFile *desktop_file;
+   char *exec, *user;
++  unsigned int keep_env = 0;
+   dbus_bool_t retval;
+ 
+   exec = NULL;
+@@ -482,12 +497,17 @@ launch_bus_name (const char *bus_name, B
+     return FALSE;
+ 
+   /* get exec and user for service name */
+-  if (!get_parameters_for_service (desktop_file, bus_name, &exec, &user, error))
++  if (!get_parameters_for_service (desktop_file, bus_name, &exec, &user, &keep_env, error))
+     goto finish;
+ 
+   _dbus_verbose ("dbus-daemon-activation-helper: Name='%s'\n", bus_name);
+   _dbus_verbose ("dbus-daemon-activation-helper: Exec='%s'\n", exec);
+   _dbus_verbose ("dbus-daemon-activation-helper: User='%s'\n", user);
++  _dbus_verbose ("dbus-daemon-activation-helper: KeepEnv='%s'\n", (keep_env==1)?"True":"False");
++
++  /* clear the environment, apart from a few select settings */
++  if (!clear_environment (error, keep_env))
++    goto finish;
+ 
+   /* actually execute */
+   if (!exec_for_correct_user (exec, user, error))
+@@ -532,10 +552,6 @@ run_launch_helper (const char *bus_name,
+   parser = NULL;
+   retval = FALSE;
+ 
+-  /* clear the environment, apart from a few select settings */
+-  if (!clear_environment (error))
+-    goto error;
+-
+   /* check to see if we have a valid bus name */
+   if (!check_bus_name (bus_name, error))
+     goto error;
+Index: dbus-1.2.24/bus/desktop-file.h
+===================================================================
+--- dbus-1.2.24.orig/bus/desktop-file.h
++++ dbus-1.2.24/bus/desktop-file.h
+@@ -35,6 +35,7 @@
+ #define DBUS_SERVICE_EXEC     "Exec"
+ #define DBUS_SERVICE_USER     "User"
+ #define DBUS_SERVICE_GROUP    "Group"
++#define DBUS_SERVICE_KEEPENV  "KeepEnv"
+ 
+ typedef struct BusDesktopFile BusDesktopFile;
+ 
