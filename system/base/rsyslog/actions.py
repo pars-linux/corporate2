@@ -33,10 +33,10 @@ def install():
 
     pisitools.insinto("%s/%s" % (get.docDIR(), get.srcNAME()),
                       "plugins/ommysql/createDB.sql",
-                      "createMySQLDB.pl")
+                      "createMySQLDB.sql")
 
     pisitools.insinto("%s/%s" % (get.docDIR(), get.srcNAME()),
                       "plugins/ompgsql/createDB.sql",
-                      "createPgSQLDB.pl")
+                      "createPgSQLDB.sql")
 
     pisitools.dodoc("COPYING*", "README", "AUTHORS", "ChangeLog")
