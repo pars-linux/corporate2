@@ -9,5 +9,5 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
 
     # On first install...
     if not os.access("/var/lib/postgresql/data/base", os.F_OK):
-        os.system("/usr/bin/sudo -u postgres /usr/bin/initdb --pgdata /var/lib/postgresql/data")
+        os.system('/bin/su -s /bin/sh -p postgres -c "/usr/bin/initdb --pgdata /var/lib/postgresql/data"')
 
