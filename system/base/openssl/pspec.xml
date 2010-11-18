@@ -13,7 +13,7 @@
         <IsA>library</IsA>
         <Summary>Toolkit for SSL v2/v3 and TLS v1</Summary>
         <Description>OpenSSL is a cryptography toolkit implementing the Secure Sockets Layer (SSL v2/v3) and Transport Layer Security (TLS v1) network protocols and related cryptography standards required by them.</Description>
-        <Archive sha1sum="80c73afc7dca790cd26936cb392a4dfd14d4e4d7" type="targz">http://www.openssl.org/source/openssl-0.9.8o.tar.gz</Archive>
+        <Archive sha1sum="4ba43f4110432d7518c4f5d7be79077705ae7f16" type="targz">http://www.openssl.org/source/openssl-0.9.8p.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>zlib-devel</Dependency>
             <Dependency>perl</Dependency>
@@ -22,8 +22,6 @@
         <Patches>
             <Patch level="1">openssl-0.9.8i-tls-extensions.patch</Patch>
             <Patch level="1">openssl-0.9.8h-ldflags.patch</Patch>
-            <!-- Double-free corruption. http://www.mail-archive.com/openssl-dev@openssl.org/msg28043.html -->
-            <Patch level="4">CVE-2010-2939-double-free.patch</Patch>
         </Patches>
     </Source>
 
@@ -51,6 +49,31 @@
     </Package>
 
     <History>
+        <Update release="33" type="security">
+            <Date>2010-11-18</Date>
+            <Version>0.9.8p</Version>
+            <Comment>
+                  *) Fix extension code to avoid race conditions which can result in a buffer
+                     overrun vulnerability: resumed sessions must not be modified as they can
+                     be shared by multiple threads. CVE-2010-3864
+
+                  *) Fix for double free bug in ssl/s3_clnt.c CVE-2010-2939
+
+                  *) Don't reencode certificate when calculating signature: cache and use
+                     the original encoding instead. This makes signature verification of
+                     some broken encodings work correctly.
+
+                  *) ec2_GF2m_simple_mul bugfix: compute correct result if the output EC_POINT
+                     is also one of the inputs.
+
+                  *) Don't repeatedly append PBE algorithms to table if they already exist.
+                     Sort table on each new add. This effectively makes the table read only
+                     after all algorithms are added and subsequent calls to PKCS12_pbe_add
+                     etc are non-op
+            </Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
         <Update release="32">
             <Date>2010-10-26</Date>
             <Version>0.9.8o</Version>
