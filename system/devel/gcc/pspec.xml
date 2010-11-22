@@ -11,13 +11,20 @@
         <License>GPLv3+</License>
         <License>LGPLv3+</License>
         <IsA>app:console</IsA>
+        <IsA>library</IsA>
         <Summary>The GNU Compiler Collection, includes C, C++, Objective-C and Fortran compilers</Summary>
         <Description>The GNU Compiler Collection includes front ends for C, C++, Objective-C, Fortran, as well as libraries for these languages.</Description>
         <Archive sha1sum="a8034cd8abe38ff8439e42b78af5c9d534810af1" type="tarbz2">ftp://gcc.gnu.org/pub/gcc/releases/gcc-4.3.5/gcc-4.3.5.tar.bz2</Archive>
         <BuildDependencies>
+            <Dependency>binutils</Dependency>
+            <Dependency>bison</Dependency>
             <Dependency>gettext</Dependency>
+            <Dependency>ncurses</Dependency>
+            <Dependency>zlib</Dependency>
             <Dependency>gnuconfig</Dependency>
             <Dependency>patch</Dependency>
+            <Dependency>sed</Dependency>
+            <Dependency>texinfo</Dependency>
             <Dependency>gmp</Dependency>
             <Dependency versionFrom="1.1.4">zlib</Dependency>
             <Dependency versionFrom="1.875">bison</Dependency>
@@ -62,7 +69,9 @@
             <Patch>cpu-default-i486.dpatch</Patch>
             <Patch>gcc-ice-hack.dpatch</Patch>
             <Patch>gcc-ice-apport.dpatch</Patch>
+            <!-- ?
             <Patch>config-ml.dpatch</Patch>
+            -->
             <Patch level="1">fix-man-page-creation-gentoo-256608.diff</Patch>
 
             <!-- Some patches from Redhat gcc 4.3 branch -->
@@ -95,6 +104,11 @@
             <!-- Fix paths in 64bit -->
             <Patch level="1">pure64.patch</Patch>
 
+            <!-- Fix linker test of gfortran with m32 under x86_64 -->
+            <!-- not needed
+            <Patch level="1">libgfortran-GCC_NO_EXECUTABLES.patch</Patch>
+            -->
+
             <!-- Fix uClibc dynamic linker paths to suit our package's needs -->
             <Patch level="1">fix-uClibc-loader-paths.patch</Patch>
         </Patches>
@@ -102,51 +116,60 @@
 
     <Package>
         <Name>libgcc</Name>
+        <IsA>library</IsA>
         <PartOf>system.base</PartOf>
         <Summary>Contains a shared library of support routines used by GCC's runtime, and thus by every program on the system</Summary>
         <Files>
             <Path fileType="config">/etc</Path>
             <Path fileType="library">/usr/lib/libstdc++.so*</Path>
             <Path fileType="library">/usr/lib/libgcc_s.so*</Path>
+            <Path fileType="library">/usr/lib32/libstdc++.so*</Path>
+            <Path fileType="library">/usr/lib32/libgcc_s.so*</Path>
+            <Path fileType="library">/usr/share/gcc-*</Path>
+            <Path fileType="library">/usr/share/gdb</Path>
         </Files>
     </Package>
 
     <Package>
         <Name>libgomp</Name>
-        <Summary>Contains GCC shared support library which is needed for OpenMP 2.5 support</Summary>
+        <IsA>library</IsA>
+        <Summary>Contains GCC shared support library which is needed for OpenMP 2.5 support.</Summary>
         <Files>
             <!-- FIXME: remove static library on the next release -->
             <Path fileType="library">/usr/lib/libgomp*</Path>
+            <Path fileType="library">/usr/lib32/libgomp*</Path>
             <Path fileType="info">/usr/share/info/libgomp.info</Path>
         </Files>
     </Package>
 
     <Package>
         <Name>libgfortran</Name>
-        <Summary>Contains GCC shared support library for gfortran</Summary>
-        <Conflicts>
-            <Package releaseTo="48">gcc</Package>
-        </Conflicts>
+        <IsA>library</IsA>
+        <Summary>Contains GCC shared support library for gfortran.</Summary>
         <Files>
             <Path fileType="library">/usr/lib/libgfortran.so*</Path>
+            <Path fileType="library">/usr/lib32/libgfortran.so*</Path>
         </Files>
     </Package>
 
     <Package>
         <Name>libobjc</Name>
-        <Summary>Contains GCC shared support library for objc</Summary>
-        <Conflicts>
-            <Package releaseTo="48">gcc</Package>
-        </Conflicts>
+        <IsA>library</IsA>
+        <Summary>Contains GCC shared support library for objc.</Summary>
         <Files>
             <Path fileType="library">/usr/lib/libobjc.so*</Path>
+            <Path fileType="library">/usr/lib32/libobjc.so*</Path>
         </Files>
     </Package>
 
     <Package>
         <Name>gcc</Name>
         <RuntimeDependencies>
+            <Dependency>binutils</Dependency>
+            <Dependency>bison</Dependency>
             <Dependency>gettext</Dependency>
+            <Dependency>ncurses</Dependency>
+            <Dependency>zlib</Dependency>
             <Dependency>gmp</Dependency>
             <Dependency versionFrom="1.1.4">zlib</Dependency>
             <Dependency versionFrom="1.875">bison</Dependency>
@@ -158,6 +181,7 @@
             <Path fileType="executable">/lib</Path>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="library">/usr/lib</Path>
+            <Path fileType="library">/usr/lib32</Path>
             <Path fileType="library">/usr/libexec</Path>
             <Path fileType="header">/usr/include</Path>
             <Path fileType="man">/usr/share/man</Path>
@@ -170,6 +194,13 @@
     </Package>
 
     <History>
+        <Update release="55">
+            <Date>2010-10-26</Date>
+            <Version>4.3.5</Version>
+            <Comment>Enable multiarch support</Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
         <Update release="54">
             <Date>2010-10-26</Date>
             <Version>4.3.5</Version>

@@ -1,0 +1,50 @@
+diff -Nur gcc-4.3.5-old//libgfortran/configure gcc-4.3.5/libgfortran/configure
+--- gcc-4.3.5-old//libgfortran/configure	2010-10-30 19:41:49.359573708 +0300
++++ gcc-4.3.5/libgfortran/configure	2010-10-30 19:41:27.014575081 +0300
+@@ -3400,6 +3400,11 @@
+ LDFLAGS="$LDFLAGS -fPIC -shared -Wl,--version-script,./conftest.map"
+ 
+ if test x$gcc_no_link = xyes; then
++  # If we cannot link, we cannot build shared libraries, so do not use
++  # symbol versioning.
++  gfortran_use_symver=no
++else
++if test x$gcc_no_link = xyes; then
+   { { echo "$as_me:$LINENO: error: Link tests are not allowed after GCC_NO_EXECUTABLES." >&5
+ echo "$as_me: error: Link tests are not allowed after GCC_NO_EXECUTABLES." >&2;}
+    { (exit 1); exit 1; }; }
+@@ -3450,6 +3455,7 @@
+ fi
+ rm -f conftest.err conftest.$ac_objext \
+       conftest$ac_exeext conftest.$ac_ext
++fi
+ LDFLAGS="$save_LDFLAGS"
+ echo "$as_me:$LINENO: result: $gfortran_use_symver" >&5
+ echo "${ECHO_T}$gfortran_use_symver" >&6
+diff -Nur gcc-4.3.5-old//libgfortran/configure.ac gcc-4.3.5/libgfortran/configure.ac
+--- gcc-4.3.5-old//libgfortran/configure.ac	2010-10-30 19:41:49.349575275 +0300
++++ gcc-4.3.5/libgfortran/configure.ac	2010-10-30 19:43:24.171574976 +0300
+@@ -120,7 +120,7 @@
+ m4_rename([_AC_ARG_VAR_PRECIOUS],[real_PRECIOUS])
+ m4_define([_AC_ARG_VAR_PRECIOUS],[])
+ AC_PROG_CC
+-m4_rename([real_PRECIOUS],[_AC_ARG_VAR_PRECIOUS])
++m4_rename_force([real_PRECIOUS],[_AC_ARG_VAR_PRECIOUS])
+ 
+ # Add -Wall -fno-repack-arrays -fno-underscoring if we are using GCC.
+ if test "x$GCC" = "xyes"; then
+@@ -145,7 +145,13 @@
+ EOF
+ save_LDFLAGS="$LDFLAGS"
+ LDFLAGS="$LDFLAGS -fPIC -shared -Wl,--version-script,./conftest.map"
+-AC_TRY_LINK([int foo;],[],[gfortran_use_symver=yes],[gfortran_use_symver=no])
++if test x$gcc_no_link = xyes; then
++  # If we cannot link, we cannot build shared libraries, so do not use
++  # symbol versioning.
++  gfortran_use_symver=no
++else
++  AC_TRY_LINK([int foo;],[],[gfortran_use_symver=yes],[gfortran_use_symver=no])
++fi
+ LDFLAGS="$save_LDFLAGS"
+ AC_MSG_RESULT($gfortran_use_symver)
+ AM_CONDITIONAL(LIBGFOR_USE_SYMVER, [test "x$gfortran_use_symver" = xyes])

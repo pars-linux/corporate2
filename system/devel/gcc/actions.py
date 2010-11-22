@@ -10,18 +10,31 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-flags = "-march=%s -O2 -pipe -fomit-frame-pointer" % get.ARCH().replace("x86_64", "x86-64")
+# let's not break arch
+# cflags = "-march=%s -O2 -g -pipe -fomit-frame-pointer" % get.ARCH().replace("x86_64", "x86-64")
+cflags = "-O2 -g -pipe -fomit-frame-pointer"
+opt_multilib = "--enable-multilib" if get.ARCH() == "x86_64" else ""
 
 def exportFlags():
-    shelltools.export("CFLAGS", flags)
-    shelltools.export("CXXFLAGS", flags)
+    shelltools.export("CFLAGS", cflags)
+    shelltools.export("CXXFLAGS", cflags)
+    # shelltools.export("LDFLAGS", "")
 
+    # FIXME: this may not be necessary for biarch
     shelltools.export("CC", "gcc")
     shelltools.export("CXX", "g++")
     shelltools.export("LC_ALL", "en_US.UTF-8")
 
 def setup():
     exportFlags()
+    # Maintainer mode off, do not force recreation of generated files
+    # shelltools.system("contrib/gcc_update --touch")
+
+    #for i in ["libgfortran"]:
+    #    shelltools.cd(i)
+    #    autotools.autoreconf("-vfi")
+    #    shelltools.cd("..")
+
     shelltools.makedirs("build")
     shelltools.cd("build")
 
@@ -36,10 +49,10 @@ def setup():
                        --with-gxx-include-dir=/usr/include/c++ \
                        --build=%s \
                        --disable-libgcj \
-                       --disable-multilib \
                        --disable-nls \
                        --disable-mudflap \
                        --disable-libmudflap \
+                       --disable-libunwind-exceptions \
                        --enable-checking=release \
                        --enable-clocale=gnu \
                        --enable-__cxa_atexit \
@@ -51,22 +64,25 @@ def setup():
                        --disable-libssp \
                        --enable-threads=posix \
                        --without-included-gettext \
-                       --without-system-libunwind \
-                       --with-system-zlib \
+                       %s \
                        --with-tune=generic \
+                       --with-system-zlib \
+                       --disable-werror \
                        --with-pkgversion="Pardus Linux" \
-                       --with-bugurl=http://bugs.pardus.org.tr' % get.HOST())
+                       --with-bugurl=http://bugs.pardus.org.tr' % (get.HOST(), opt_multilib))
                        # FIXME: this is supposed to be detected automatically
                        #--enable-long-long \
+                       # --without-system-libunwind \ # leave it to compiler
+                       # --with-tune=generic \
 
 
 def build():
     exportFlags()
+
     shelltools.cd("build")
-    autotools.make('BOOT_CFLAGS="%s" profiledbootstrap' % flags)
+    autotools.make('BOOT_CFLAGS="%s" profiledbootstrap' % cflags)
 
 def install():
-    exportFlags()
     shelltools.cd("build")
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
