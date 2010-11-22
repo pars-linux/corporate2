@@ -25,10 +25,9 @@ def start():
         fail(MSG_NM_NOT_RUNNING)
 
     fstab = Fstab()
-    for entry in fstab:
-        if entry.is_remote_mount()
-
-
+    for entry in fstab.get_entries():
+        if entry.is_remote_mount():
+            run(entry.get_mount_command())
 
 @synchronized
 def stop():
@@ -37,13 +36,9 @@ def stop():
 @synchronized
 def ready():
     status = is_on()
-    remote_fs_exist = False
 
     fstab = Fstab()
-    for entry in fstab:
-        if entry.is_remote_mount():
-            remote_fs_exist = True
-            break
+    remote_fs_exist = fstab.contains_remote_mounts()
 
     # Will only run if there are any remote mounts in
     # fstab file.
@@ -53,6 +48,6 @@ def ready():
 
 def status():
     fstab = Fstab()
-    for entry in fstab:
+    for entry in fstab.get_entries():
         if entry.is_remote_mount() and entry.is_mounted():
             return True
