@@ -12,6 +12,7 @@ from pisi.actionsapi import get
 
 def setup():
     autotools.autoreconf("-vfi")
+    #Documentation is temporarily disabled (--without-tutorial) till (pardus #15184) is fixed.
     autotools.configure("--with-readline=gnu \
                          --enable-history-file \
                          --enable-rgip \
@@ -19,6 +20,7 @@ def setup():
                          --enable-iris \
                          --enable-thin-splines \
                          --with-x \
+                         --without-tutorial \
                          --x-includes=/usr/include/X11 \
                          --x-libraries=/usr/lib \
                          --with-linux-vga")
@@ -26,11 +28,12 @@ def setup():
 def build():
     autotools.make()
 
+    # Documentation is temporarily disabled till (pardus #15184) is fixed.
     # Docs
-    shelltools.cd("docs")
-    autotools.make("pdf")
-    shelltools.cd("../tutorial")
-    autotools.make("pdf")
+    #shelltools.cd("docs")
+    #autotools.make("pdf")
+    #shelltools.cd("../tutorial")
+    #autotools.make("pdf")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
@@ -41,7 +44,7 @@ def install():
     # Docs, Demo, Manual and Tutorial files
     pisitools.insinto("/usr/share/doc/%s/demo" % get.srcNAME(), "demo/*")
     pisitools.remove("/usr/share/doc/%s/demo/Makefile*" % get.srcNAME())
-    pisitools.insinto("/usr/share/doc/%s/manual" % get.srcNAME(), "docs/gnuplot.pdf")
-    pisitools.insinto("/usr/share/doc/%s/tutorial" % get.srcNAME(), "tutorial/*.pdf")
+    #pisitools.insinto("/usr/share/doc/%s/manual" % get.srcNAME(), "docs/gnuplot.pdf")
+    #pisitools.insinto("/usr/share/doc/%s/tutorial" % get.srcNAME(), "tutorial/*.pdf")
 
     pisitools.dodoc("BUGS", "ChangeLog", "FAQ.pdf", "NEWS", "README*", "TODO")
