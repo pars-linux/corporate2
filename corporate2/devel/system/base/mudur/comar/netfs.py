@@ -27,11 +27,15 @@ def start():
     fstab = Fstab()
     for entry in fstab.get_entries():
         if entry.is_remote_mount():
-            run(entry.get_mount_command())
+            entry.mount()
 
 @synchronized
 def stop():
     # Unmount all remote filesystems
+    fstab = Fstab()
+    for entry in fstab.get_entries():
+        if entry.is_remote_mount():
+            entry.unmount()
 
 @synchronized
 def ready():

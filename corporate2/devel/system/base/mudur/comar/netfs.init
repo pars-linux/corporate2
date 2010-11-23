@@ -1,0 +1,106 @@
+NFSFSTAB=$(LC_ALL=C awk '!/^#/ && $3 ~ /^nfs/ && $3 != "nfsd" && $4 !~ /noauto/ { print $2 }' /etc/fstab)
+CIFSFSTAB=$(LC_ALL=C awk '!/^#/ && $3 == "cifs" && $4 !~ /noauto/ { print $2 }' /etc/fstab)
+NCPFSTAB=$(LC_ALL=C awk '!/^#/ && $3 == "ncpfs" && $4 !~ /noauto/ { print $2 }' /etc/fstab)
+NETDEVFSTAB=$(LC_ALL=C awk '!/^#/ && $4 ~/_netdev/ && $4 !~ /noauto/ { print $1 }' /etc/fstab)
+
+NFSMTAB=$(LC_ALL=C awk '$3 ~ /^nfs/ && $3 != "nfsd" && $2 != "/" { print $2 }' /proc/mounts)
+CIFSMTAB=$(LC_ALL=C awk '$3 == "cifs" { print $2 }' /proc/mounts)
+NCPMTAB=$(LC_ALL=C awk '$3 == "ncpfs" { print $2 }' /proc/mounts)
+NETDEVMTAB=$(LC_ALL=C awk '$4 ~ /_netdev/ && $2 != "/" { print $2 }' /etc/mtab)
+
+# See how we were called.
+case "$1" in
+  start)
+        [ -n "$NFSFSTAB" ] && 
+	  {
+	    [ ! -f /var/lock/subsys/rpcbind ] && service rpcbind start
+	    action $"Mounting NFS filesystems: " mount -a -t nfs,nfs4
+	  }
+        [ -n "$CIFSFSTAB" ] && action $"Mounting CIFS filesystems: " mount -a -t cifs
+        [ -n "$NCPFSTAB" ] && action $"Mounting NCP filesystems: " mount -a -t ncpfs
+        [ -n "$NETDEVFSTAB" ] &&
+	  {
+	    if [ -f /etc/mdadm.conf ]; then
+		mdadm -A -s
+	    fi
+	    if [ -f /etc/multipath.conf ] && [ -x /sbin/multipath ]; then
+	    	modprobe dm-multipath >/dev/null 2>&1
+		/sbin/multipath -v 0
+		if [ -x /sbin/kpartx ]; then
+		       /sbin/dmsetup ls --target multipath --exec "/sbin/kpartx -a -p p"
+		fi
+	    fi
+	    if [ -x /sbin/lvm ]; then
+		if /sbin/lvm vgscan > /dev/null 2>&1 ; then
+		       action $"Setting up Logical Volume Management:" /sbin/lvm vgchange -a y
+		fi
+	    fi
+
+	    if [ -f /etc/crypttab ]; then
+	        init_crypto 1
+	    fi
+
+	    STRING=$"Checking network-attached filesystems"
+	    
+	    echo $STRING
+	    fsck -A -T -R -a -t opts=_netdev
+	    rc=$?
+	    
+	    if [ "$rc" -eq "0" ]; then
+	    	success "$STRING"
+		echo
+	    elif [ "$rc" -eq "1" ]; then
+	        passed "$STRING"
+	        echo
+	    fi
+	    
+	    if [ "$rc" -gt 1 ]; then
+		if [ -x /usr/bin/plymouth ] && /usr/bin/plymouth --ping ; then
+			/usr/bin/plymouth --hide-splash
+		fi
+		failure "$STRING"
+		tty >/dev/null 2>&1 || exit 1
+		echo
+		echo
+		echo $"*** An error occurred during the file system check."
+		echo $"*** Dropping you to a shell; the system will reboot"
+		echo $"*** when you leave the shell."
+		
+		str=$"(Repair filesystem)"
+		PS1="$str \# # "; export PS1
+		[ "$SELINUX" = "1" ] && disable_selinux
+		sulogin
+		
+		shutdown -r now
+	   fi
+	  }
+	touch /var/lock/subsys/netfs
+	action $"Mounting other filesystems: " mount -a -t nonfs,nfs4,cifs,ncpfs,gfs
+	;;
+
+
+  stop)
+        # Unmount loopback stuff first
+        [ "$EUID" != "0" ] && exit 4
+	__umount_loopback_loop
+  	if [ -n "$NETDEVMTAB" ]; then
+		__umount_loop '$4 ~ /_netdev/ && $2 != "/" {print $2}' \
+			/etc/mtab \
+			$"Unmounting network block filesystems: " \
+			$"Unmounting network block filesystems (retry): "
+	fi
+  	if [ -n "$NFSMTAB" ]; then
+		__umount_loop '$3 ~ /^nfs/ && $3 != "nfsd" && $2 != "/" {print $2}' \
+			/proc/mounts \
+			$"Unmounting NFS filesystems: " \
+			$"Unmounting NFS filesystems (retry): " \
+			"-f -l"
+	fi
+	[ -n "$CIFSMTAB" ] && action $"Unmounting CIFS filesystems: " umount -a -t cifs
+	[ -n "$NCPMTAB" ] && action $"Unmounting NCP filesystems: " umount -a -t ncp,ncpfs
+	rm -f /var/lock/subsys/netfs
+	;;
+
+
+
+
