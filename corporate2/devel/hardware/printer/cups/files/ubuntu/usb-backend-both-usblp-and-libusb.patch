@@ -1,8 +1,7 @@
-Index: cups-1.4.2/backend/Makefile
-===================================================================
---- cups-1.4.2.orig/backend/Makefile
-+++ cups-1.4.2/backend/Makefile
-@@ -267,7 +267,7 @@ usb:	usb.o ../cups/$(LIBCUPS) libbackend
+diff -urNad cups-1.4.3~/backend/Makefile cups-1.4.3/backend/Makefile
+--- cups-1.4.3~/backend/Makefile	2010-04-09 15:56:03.735720821 +0200
++++ cups-1.4.3/backend/Makefile	2010-04-09 15:56:04.335705387 +0200
+@@ -267,7 +267,7 @@
  	echo Linking $@...
  	$(CC) $(LDFLAGS) -o usb usb.o libbackend.a $(LIBUSB) \
  		$(BACKLIBS) $(LIBS)
@@ -11,11 +10,10 @@ Index: cups-1.4.2/backend/Makefile
  
  
  #
-Index: cups-1.4.2/backend/ieee1284.c
-===================================================================
---- cups-1.4.2.orig/backend/ieee1284.c
-+++ cups-1.4.2/backend/ieee1284.c
-@@ -275,6 +275,7 @@ backendGetDeviceID(
+diff -urNad cups-1.4.3~/backend/ieee1284.c cups-1.4.3/backend/ieee1284.c
+--- cups-1.4.3~/backend/ieee1284.c	2009-12-08 03:13:42.000000000 +0100
++++ cups-1.4.3/backend/ieee1284.c	2010-04-09 15:56:04.335705387 +0200
+@@ -255,6 +255,7 @@
      cups_option_t	*values;	/* Keys and values in device ID */
      const char		*mfg,		/* Manufacturer */
  			*mdl,		/* Model */
@@ -23,7 +21,7 @@ Index: cups-1.4.2/backend/ieee1284.c
  			*sern;		/* Serial number */
      char		temp[256],	/* Temporary manufacturer string */
  			*tempptr;	/* Pointer into temp string */
-@@ -305,10 +306,20 @@ backendGetDeviceID(
+@@ -285,10 +286,20 @@
      }
      else
      {
@@ -46,10 +44,9 @@ Index: cups-1.4.2/backend/ieee1284.c
  
        mfg = temp;
      }
-Index: cups-1.4.2/backend/usb-hybrid.c
-===================================================================
---- /dev/null
-+++ cups-1.4.2/backend/usb-hybrid.c
+diff -urNad cups-1.4.3~/backend/usb-hybrid.c cups-1.4.3/backend/usb-hybrid.c
+--- cups-1.4.3~/backend/usb-hybrid.c	1970-01-01 01:00:00.000000000 +0100
++++ cups-1.4.3/backend/usb-hybrid.c	2010-04-09 15:56:04.345707078 +0200
 @@ -0,0 +1,87 @@
 +/*
 + * "$Id: usb-hybrid.c 8807 2009-08-31 18:45:43Z mike $"
@@ -138,10 +135,9 @@ Index: cups-1.4.2/backend/usb-hybrid.c
 +/*
 + * End of "$Id: usb-hybrid.c 8807 2009-08-31 18:45:43Z mike $".
 + */
-Index: cups-1.4.2/backend/usb-libusb.c
-===================================================================
---- cups-1.4.2.orig/backend/usb-libusb.c
-+++ cups-1.4.2/backend/usb-libusb.c
+diff -urNad cups-1.4.3~/backend/usb-libusb.c cups-1.4.3/backend/usb-libusb.c
+--- cups-1.4.3~/backend/usb-libusb.c	2009-09-11 22:03:31.000000000 +0200
++++ cups-1.4.3/backend/usb-libusb.c	2010-04-09 15:56:04.345707078 +0200
 @@ -13,16 +13,16 @@
   *
   * Contents:
@@ -163,7 +159,7 @@ Index: cups-1.4.2/backend/usb-libusb.c
   */
  
  /*
-@@ -65,30 +65,30 @@ static int		list_cb(usb_printer_t *print
+@@ -65,30 +65,30 @@
  static char		*make_device_uri(usb_printer_t *printer,
  			                 const char *device_id,
  					 char *uri, size_t uri_size);
@@ -201,7 +197,7 @@ Index: cups-1.4.2/backend/usb-libusb.c
               const char *hostname,	/* I - Hostname/manufacturer */
               const char *resource,	/* I - Resource/modelname */
  	     char       *options,	/* I - Device options/serial number */
-@@ -105,19 +105,23 @@ print_device(const char *uri,		/* I - De
+@@ -105,19 +105,23 @@
    struct pollfd	pfds[2];		/* Poll descriptors */
  
  
@@ -227,7 +223,7 @@ Index: cups-1.4.2/backend/usb-libusb.c
  
   /*
    * If we are printing data from a print driver on stdin, ignore SIGTERM
-@@ -189,7 +193,7 @@ print_device(const char *uri,		/* I - De
+@@ -189,7 +193,7 @@
  
        if (pfds[1].revents & (POLLIN | POLLHUP))
        {
@@ -236,7 +232,7 @@ Index: cups-1.4.2/backend/usb-libusb.c
  	  pfds[1].events = 0;		/* Filter has gone away... */
  	else
            tbytes += bytes;
-@@ -359,7 +363,7 @@ find_device(usb_cb_t   cb,		/* I - Callb
+@@ -359,7 +363,7 @@
  	    printer.iface  = iface;
  	    printer.handle = NULL;
  
@@ -245,7 +241,7 @@ Index: cups-1.4.2/backend/usb-libusb.c
  	    {
  	      if (!get_device_id(&printer, device_id, sizeof(device_id)))
  	      {
-@@ -583,6 +587,14 @@ make_device_uri(
+@@ -583,6 +587,14 @@
      mfg = tempmfg;
    }
  
@@ -260,7 +256,7 @@ Index: cups-1.4.2/backend/usb-libusb.c
   /*
    * Generate the device URI from the manufacturer, model, serial number,
    * and interface number...
-@@ -611,11 +623,11 @@ make_device_uri(
+@@ -611,11 +623,11 @@
  
  
  /*
@@ -274,7 +270,7 @@ Index: cups-1.4.2/backend/usb-libusb.c
              int           verbose)	/* I - Update connecting-to-device state? */
  {
    int	number;				/* Configuration/interface/altset numbers */
-@@ -733,16 +745,73 @@ print_cb(usb_printer_t *printer,	/* I - 
+@@ -733,16 +745,73 @@
           const char    *device_id,	/* I - IEEE-1284 device ID */
           const void    *data)		/* I - User data (make, model, S/N) */
  {
@@ -351,10 +347,9 @@ Index: cups-1.4.2/backend/usb-libusb.c
          int           print_fd)		/* I - File to print */
  {
    ssize_t		bytes,		/* Bytes read/written */
-Index: cups-1.4.2/backend/usb-unix.c
-===================================================================
---- cups-1.4.2.orig/backend/usb-unix.c
-+++ cups-1.4.2/backend/usb-unix.c
+diff -urNad cups-1.4.3~/backend/usb-unix.c cups-1.4.3/backend/usb-unix.c
+--- cups-1.4.3~/backend/usb-unix.c	2009-12-08 03:13:42.000000000 +0100
++++ cups-1.4.3/backend/usb-unix.c	2010-04-09 15:56:30.799666933 +0200
 @@ -18,10 +18,10 @@
   *
   * Contents:
@@ -370,7 +365,7 @@ Index: cups-1.4.2/backend/usb-unix.c
   */
  
  /*
-@@ -40,17 +40,17 @@
+@@ -35,17 +35,17 @@
   * Local functions...
   */
  
@@ -392,16 +387,16 @@ Index: cups-1.4.2/backend/usb-unix.c
               const char *hostname,	/* I - Hostname/manufacturer */
               const char *resource,	/* I - Resource/modelname */
  	     char       *options,	/* I - Device options/serial number */
-@@ -133,7 +133,7 @@ print_device(const char *uri,		/* I - De
-     if (use_bc && !strncmp(fixed_uri, "usb:/dev/", 9))
-       use_bc = 0;
+@@ -102,7 +102,7 @@
+              strncasecmp(hostname, "Minolta", 7);
+ #endif /* __FreeBSD__ || __NetBSD__ || __OpenBSD__ || __DragonFly__ */
  
--    if ((device_fd = open_device(fixed_uri, &use_bc)) == -1)
-+    if ((device_fd = open_device_unix(fixed_uri, &use_bc)) == -1)
+-    if ((device_fd = open_device(uri, &use_bc)) == -1)
++    if ((device_fd = open_device_unix(uri, &use_bc)) == -1)
      {
        if (getenv("CLASS") != NULL)
        {
-@@ -163,6 +163,10 @@ print_device(const char *uri,		/* I - De
+@@ -132,6 +132,10 @@
  	              _("INFO: Printer busy; will retry in 10 seconds...\n"));
  	sleep(10);
        }
@@ -412,7 +407,7 @@ Index: cups-1.4.2/backend/usb-unix.c
        else if (errno == ENXIO || errno == EIO || errno == ENOENT ||
                 errno == ENODEV)
        {
-@@ -178,6 +182,7 @@ print_device(const char *uri,		/* I - De
+@@ -147,6 +151,7 @@
  			resource, strerror(errno));
  	return (CUPS_BACKEND_FAILED);
        }
@@ -420,7 +415,7 @@ Index: cups-1.4.2/backend/usb-unix.c
      }
    }
    while (device_fd < 0);
-@@ -221,7 +226,7 @@ print_device(const char *uri,		/* I - De
+@@ -190,7 +195,7 @@
      tbytes = backendRunLoop(print_fd, device_fd, -1, NULL, use_bc, 1, NULL);
  
  #else
@@ -429,7 +424,7 @@ Index: cups-1.4.2/backend/usb-unix.c
  #endif /* __sun */
  
      if (print_fd != 0 && tbytes >= 0)
-@@ -245,11 +250,11 @@ print_device(const char *uri,		/* I - De
+@@ -214,11 +219,11 @@
  
  
  /*
@@ -443,7 +438,7 @@ Index: cups-1.4.2/backend/usb-unix.c
  {
  #ifdef __linux
    int	i;				/* Looping var */
-@@ -351,11 +356,11 @@ list_devices(void)
+@@ -320,11 +325,11 @@
  
  
  /*
@@ -457,7 +452,7 @@ Index: cups-1.4.2/backend/usb-unix.c
              int        *use_bc)		/* O - Set to 0 for unidirectional */
  {
    int	fd;				/* File descriptor */
-@@ -395,9 +400,12 @@ open_device(const char *uri,		/* I - Dev
+@@ -357,9 +362,12 @@
      char	device[255],		/* Device filename */
  		device_id[1024],	/* Device ID string */
  		make_model[1024],	/* Make and model */
@@ -472,25 +467,7 @@ Index: cups-1.4.2/backend/usb-unix.c
     /*
      * Find the correct USB device...
      */
-@@ -478,10 +486,14 @@ open_device(const char *uri,		/* I - Dev
-       */
- 
-       if (busy)
--	_cupsLangPuts(stderr,
--	              _("INFO: Printer busy; will retry in 5 seconds...\n"));
-+      {
-+	    _cupsLangPuts(stderr,
-+	                _("INFO: Printer busy; will retry in 5 seconds...\n"));
- 
--      sleep(5);
-+        sleep(5);
-+      }
-+      else
-+          return -1;
-     }
-   }
- #elif defined(__sun) && defined(ECPPIOC_GETDEVID)
-@@ -534,7 +546,55 @@ open_device(const char *uri,		/* I - Dev
+@@ -407,7 +415,55 @@
  	  device_uri[0] = '\0';
          }
  
@@ -547,7 +524,23 @@ Index: cups-1.4.2/backend/usb-unix.c
  	{
  	 /*
  	  * Yes, return this file descriptor...
-@@ -602,13 +662,13 @@ open_device(const char *uri,		/* I - Dev
+@@ -433,10 +489,14 @@
+       */
+ 
+       if (busy)
++      {
+ 	_cupsLangPuts(stderr,
+ 	              _("INFO: Printer busy; will retry in 5 seconds...\n"));
+ 
+-      sleep(5);
++	sleep(5);
++      }
++      else
++	return -1;
+     }
+   }
+ #elif defined(__sun) && defined(ECPPIOC_GETDEVID)
+@@ -557,11 +617,11 @@
  
  
  /*
@@ -557,19 +550,14 @@ Index: cups-1.4.2/backend/usb-unix.c
  
  static int				/* O - 0 on success, -1 on error */
 -side_cb(int         print_fd,		/* I - Print file */
--        int         device_fd,		/* I - Device file */
--        int         snmp_fd,		/* I - SNMP socket (unused) */
 +side_cb_unix(int         print_fd,		/* I - Print file */
-+             int         device_fd,		/* I - Device file */
-+             int         snmp_fd,		/* I - SNMP socket (unused) */
+         int         device_fd,		/* I - Device file */
+         int         snmp_fd,		/* I - SNMP socket (unused) */
  	http_addr_t *addr,		/* I - Device address (unused) */
- 	int         use_bc)		/* I - Using back-channel? */
- {
-Index: cups-1.4.2/backend/usb.c
-===================================================================
---- cups-1.4.2.orig/backend/usb.c
-+++ cups-1.4.2/backend/usb.c
-@@ -56,7 +56,7 @@ int	print_device(const char *uri, const 
+diff -urNad cups-1.4.3~/backend/usb.c cups-1.4.3/backend/usb.c
+--- cups-1.4.3~/backend/usb.c	2008-06-24 03:28:36.000000000 +0200
++++ cups-1.4.3/backend/usb.c	2010-04-09 15:56:04.345707078 +0200
+@@ -56,7 +56,7 @@
   */
  
  #ifdef HAVE_USB_H
