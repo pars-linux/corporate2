@@ -1,0 +1,38 @@
+Change to the user's directory after dropping privileges, in case it is only
+accessible to the user (for example, if it's in NFS with root squashing).
+Incomplete - we probably need to do the same for rshd and ftpd.
+
+diff -up krb5-appl-1.0/bsd/login.c.login_chdir krb5-appl-1.0/bsd/login.c
+--- krb5-appl-1.0/bsd/login.c.login_chdir	2010-03-05 11:01:23.000000000 -0500
++++ krb5-appl-1.0/bsd/login.c	2010-03-05 11:01:23.000000000 -0500
+@@ -1115,13 +1115,8 @@ int main(argc, argv)
+     }
+ #endif /* USE_PAM */
+ 
+-    if (chdir(pwd->pw_dir) < 0) {
+-	printf("No directory %s!\n", pwd->pw_dir);
+-	if (chdir("/"))
+-	    exit(0);
+-	pwd->pw_dir = "/";
+-	printf("Logging in with home = \"/\".\n");
+-    }
++    if (chdir("/"))
++	exit(0);
+ 
+     /* nothing else left to fail -- really log in */
+     login_time = time(NULL);
+@@ -1293,6 +1288,14 @@ int main(argc, argv)
+ 	sleepexit(1);
+     }
+ 
++    if (chdir(pwd->pw_dir) < 0) {
++	printf("No directory %s!\n", pwd->pw_dir);
++	if (chdir("/"))
++	    exit(0);
++	pwd->pw_dir = "/";
++	printf("Logging in with home = \"/\".\n");
++    }
++
+     /*
+      * We are the user now.  Re-create the destroyed ccache and
+      * ticket file.
