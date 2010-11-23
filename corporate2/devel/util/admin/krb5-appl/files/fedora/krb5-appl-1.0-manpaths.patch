@@ -1,0 +1,107 @@
+Change the absolute paths included in the man pages so that the correct
+values can be dropped in by config.status.  After applying this patch,
+these files should be renamed to their ".in" counterparts, and then the
+configure scripts should be rebuilt.  Originally RT#6525
+
+diff -up krb5-appl-1.0/aclocal.m4.manpaths krb5-appl-1.0/aclocal.m4
+--- krb5-appl-1.0/aclocal.m4.manpaths	2010-03-05 10:55:58.000000000 -0500
++++ krb5-appl-1.0/aclocal.m4	2010-03-05 10:55:58.000000000 -0500
+@@ -565,3 +565,24 @@ AC_SUBST(PAM_LIBS)
+ AC_SUBST(PAM_MAN)
+ AC_SUBST(NON_PAM_MAN)
+ ])dnl
++AC_DEFUN(V5_AC_OUTPUT_MANPAGE,[
++mansysconfdir=$sysconfdir
++mansysconfdir=`eval echo $mansysconfdir | sed -e "s,NONE,$prefix,g"`
++mansysconfdir=`eval echo $mansysconfdir | sed -e "s,NONE,$ac_default_prefix,g"`
++mansbindir=$sbindir
++mansbindir=`eval echo $mansbindir | sed -e "s,NONE,$exec_prefix,g"`
++mansbindir=`eval echo $mansbindir | sed -e "s,NONE,$prefix,g"`
++mansbindir=`eval echo $mansbindir | sed -e "s,NONE,$ac_default_prefix,g"`
++manlocalstatedir=$localstatedir
++manlocalstatedir=`eval echo $manlocalstatedir | sed -e "s,NONE,$prefix,g"`
++manlocalstatedir=`eval echo $manlocalstatedir | sed -e "s,NONE,$ac_default_prefix,g"`
++manlibexecdir=$libexecdir
++manlibexecdir=`eval echo $manlibexecdir | sed -e "s,NONE,$exec_prefix,g"`
++manlibexecdir=`eval echo $manlibexecdir | sed -e "s,NONE,$prefix,g"`
++manlibexecdir=`eval echo $manlibexecdir | sed -e "s,NONE,$ac_default_prefix,g"`
++AC_SUBST(mansysconfdir)
++AC_SUBST(mansbindir)
++AC_SUBST(manlocalstatedir)
++AC_SUBST(manlibexecdir)
++AC_CONFIG_FILES($1)
++])
+diff -up krb5-appl-1.0/bsd/klogind.M.manpaths krb5-appl-1.0/bsd/klogind.M
+--- krb5-appl-1.0/bsd/klogind.M.manpaths	2008-12-15 15:29:01.000000000 -0500
++++ krb5-appl-1.0/bsd/klogind.M	2010-03-05 10:55:58.000000000 -0500
+@@ -27,7 +27,7 @@ server is invoked by \fIinetd(8)\fP when
+ the port indicated in /etc/inetd.conf.  A typical /etc/inetd.conf
+ configuration line for \fIklogind\fP might be:
+ 
+-klogin stream tcp nowait root /usr/cygnus/sbin/klogind klogind -e5c
++klogin stream tcp nowait root @mansbindir@/klogind klogind -e5c
+ 
+ When a service request is received, the following protocol is initiated:
+ 
+diff -up krb5-appl-1.0/bsd/kshd.M.manpaths krb5-appl-1.0/bsd/kshd.M
+--- krb5-appl-1.0/bsd/kshd.M.manpaths	2006-06-12 14:19:26.000000000 -0400
++++ krb5-appl-1.0/bsd/kshd.M	2010-03-05 10:55:58.000000000 -0500
+@@ -8,7 +8,7 @@
+ .SH NAME
+ kshd \- kerberized remote shell server
+ .SH SYNOPSIS
+-.B /usr/local/sbin/kshd 
++.B @mansbindir@/kshd 
+ [
+ .B \-kr45ec
+ ]
+@@ -30,7 +30,7 @@ server is invoked by \fIinetd(8c)\fP whe
+ on the port indicated in /etc/inetd.conf.  A typical /etc/inetd.conf
+ configuration line for \fIkrshd\fP might be:
+ 
+-kshell	stream	tcp	nowait	root	/usr/local/sbin/kshd	kshd -5c
++kshell	stream	tcp	nowait	root	@mansbindir@/kshd	kshd -5c
+ 
+ When a service request is received, the following protocol is initiated:
+ 
+diff -up krb5-appl-1.0/configure.ac.manpaths krb5-appl-1.0/configure.ac
+--- krb5-appl-1.0/configure.ac.manpaths	2010-03-05 10:55:58.000000000 -0500
++++ krb5-appl-1.0/configure.ac	2010-03-05 10:55:58.000000000 -0500
+@@ -412,6 +412,13 @@ else
+ fi
+ AC_SUBST(HAVE_RUNTEST)
+ 
++V5_AC_OUTPUT_MANPAGE([
++	gssftp/ftpd/ftpd.M
++	bsd/klogind.M
++	bsd/kshd.M
++	telnet/telnetd/telnetd.8
++])
++
+ V5_AC_OUTPUT_MAKEFILE(. bsd libmissing libpty
+                       gssftp gssftp/ftp gssftp/ftpd
+                       telnet telnet/libtelnet telnet/telnet telnet/telnetd
+diff -up krb5-appl-1.0/gssftp/ftpd/ftpd.M.manpaths krb5-appl-1.0/gssftp/ftpd/ftpd.M
+--- krb5-appl-1.0/gssftp/ftpd/ftpd.M.manpaths	2009-01-28 00:42:11.000000000 -0500
++++ krb5-appl-1.0/gssftp/ftpd/ftpd.M	2010-03-05 10:55:58.000000000 -0500
+@@ -35,7 +35,7 @@
+ .SH NAME
+ ftpd \- DARPA Internet File Transfer Protocol server
+ .SH SYNOPSIS
+-.B ftpd
++.B @mansbindir@/ftpd
+ [\fB\-A \fP|\fB -a\fP] [\fB\-C\fP] [\fB\-c\fP] [\fB\-d\fP] [\fB-E\fP]
+ [\fB\-l\fP] [\fB\-v\fP] [\fB\-T\fP \fImaxtimeout\fP] [\fB\-t\fP \fItimeout\fP]
+ [\fB\-p\fP \fIport\fP] [\fB\-U\fP \fIftpusers-file\fP] [\fB\-u\fP \fIumask\fP]
+diff -up krb5-appl-1.0/telnet/telnetd/telnetd.8.manpaths krb5-appl-1.0/telnet/telnetd/telnetd.8
+--- krb5-appl-1.0/telnet/telnetd/telnetd.8.manpaths	2004-11-15 16:25:41.000000000 -0500
++++ krb5-appl-1.0/telnet/telnetd/telnetd.8	2010-03-05 10:55:58.000000000 -0500
+@@ -37,7 +37,7 @@ telnetd \-
+ .SM DARPA TELNET
+ protocol server
+ .SH SYNOPSIS
+-.B /usr/libexec/telnetd
++.B @mansbindir@/telnetd
+ [\fB\-a\fP \fIauthmode\fP] [\fB\-B\fP] [\fB\-D\fP] [\fIdebugmode\fP]
+ [\fB\-e\fP] [\fB\-h\fP] [\fB\-I\fP\fIinitid\fP] [\fB\-l\fP]
+ [\fB\-k\fP] [\fB\-n\fP] [\fB\-r\fP\fIlowpty-highpty\fP] [\fB\-s\fP]

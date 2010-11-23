@@ -1,0 +1,1066 @@
+Modify krshd so that it performs PAM account and session management.  It
+must now always fork so that it can always clean up the session.  The
+PAM session is opened and credentials initialized after any forwarded
+credentials are stored to disk and before access to the user's home
+directory is attempted.  The default service name is "kshell" or
+"ekshell", depending on whether or not encryption is in use, to avoid a
+dependency or conflict on the plain rsh server's configuration file.  At
+run-time, krshd's behavior can be reset to the earlier, non-PAM behavior
+by setting "use_pam" to false in the [rshd] section of /etc/krb5.conf.
+
+Modify ftpd so that authentication with a plaintext password goes
+through PAM, and it performs PAM account and session management.  The
+PAM session is opened and credentials initialized after any forwarded
+credentials are stored to disk.  The default service name is "gssftp",
+mainly to avoid conflicts with other FTP servers' configuration files.
+At run-time, krshd's behavior can be reset to the earlier, non-PAM
+behavior by setting "use_pam" to false in the [ftpd] section of
+/etc/krb5.conf.
+
+Modify login so that instead of directly obtaining v5 credentials
+or running aklog, it calls PAM for authentication if strong
+authentication hasn't already been performed, so that it performs
+account management using PAM (prompting for a password change if need
+be), and that it performs session management.  The PAM session is opened
+and credentials initialized after any forwarded credentials are stored
+to disk.  The default service name is "login", because its configuration
+is pretty much always going to be there.  At run-time, login's behavior
+can be reset to the earlier, non-PAM behavior by setting "use_pam" to
+false in the [login] section of /etc/krb5.conf.
+
+When enabled, ftpd, krshd, and login.krb5 gain dependence on libpam.
+Originally filed as RT#5939.
+
+diff -up krb5-appl-1.0/aclocal.m4.pam krb5-appl-1.0/aclocal.m4
+--- krb5-appl-1.0/aclocal.m4.pam	2009-11-21 15:29:19.000000000 -0500
++++ krb5-appl-1.0/aclocal.m4	2010-03-05 10:48:50.000000000 -0500
+@@ -486,3 +486,82 @@ AC_DEFUN([KRB5_AC_LIBUTIL],
+   UTIL_LIB=-lutil])dnl
+ AC_SUBST(UTIL_LIB)
+ ])dnl
++dnl
++dnl Use PAM instead of local crypt() compare for checking local passwords,
++dnl and perform PAM account, session management, and password-changing where
++dnl appropriate.
++dnl 
++AC_DEFUN(KRB5_WITH_PAM,[
++AC_ARG_WITH(pam,[AC_HELP_STRING(--with-pam,[compile with PAM support])],
++	    withpam="$withval",withpam=auto)
++AC_ARG_WITH(pam-login-service,[AC_HELP_STRING(--with-login-service,[PAM service name for login ["login"]])],
++	    withloginpamservice="$withval",withloginpamservice=login)
++AC_ARG_WITH(pam-kshell-service,[AC_HELP_STRING(--with-kshell-service,[PAM service name for unencrypted rsh ["kshell"]])],
++	    withkshellpamservice="$withval",withkshellpamservice=kshell)
++AC_ARG_WITH(pam-ekshell-service,[AC_HELP_STRING(--with-ekshell-service,[PAM service name for encrypted rsh ["ekshell"]])],
++	    withekshellpamservice="$withval",withekshellpamservice=ekshell)
++AC_ARG_WITH(pam-ftp-service,[AC_HELP_STRING(--with-ftp-service,[PAM service name for ftpd ["gssftp"]])],
++	    withftppamservice="$withval",withftppamservice=gssftp)
++old_LIBS="$LIBS"
++if test "$withpam" != no ; then
++	AC_MSG_RESULT([checking for PAM...])
++	PAM_LIBS=
++
++	AC_CHECK_HEADERS(security/pam_appl.h)
++	if test "x$ac_cv_header_security_pam_appl_h" != xyes ; then
++		if test "$withpam" = auto ; then
++			AC_MSG_RESULT([Unable to locate security/pam_appl.h.])
++			withpam=no
++		else
++			AC_MSG_ERROR([Unable to locate security/pam_appl.h.])
++		fi
++	fi
++
++	LIBS=
++	unset ac_cv_func_pam_start
++	AC_CHECK_FUNCS(putenv pam_start)
++	if test "x$ac_cv_func_pam_start" = xno ; then
++		unset ac_cv_func_pam_start
++		AC_CHECK_LIB(dl,dlopen)
++		AC_CHECK_FUNCS(pam_start)
++		if test "x$ac_cv_func_pam_start" = xno ; then
++			AC_CHECK_LIB(pam,pam_start)
++			unset ac_cv_func_pam_start
++			unset ac_cv_func_pam_getenvlist
++			AC_CHECK_FUNCS(pam_start pam_getenvlist)
++			if test "x$ac_cv_func_pam_start" = xyes ; then
++				PAM_LIBS="$LIBS"
++			else
++				if test "$withpam" = auto ; then
++					AC_MSG_RESULT([Unable to locate libpam.])
++					withpam=no
++				else
++					AC_MSG_ERROR([Unable to locate libpam.])
++				fi
++			fi
++		fi
++	fi
++	if test "$withpam" != no ; then
++		AC_MSG_NOTICE([building with PAM support])
++		AC_DEFINE(USE_PAM,1,[Define if Kerberos-aware tools should support PAM])
++		AC_DEFINE_UNQUOTED(LOGIN_PAM_SERVICE,"$withloginpamservice",
++				   [Define to the name of the PAM service name to be used by login.])
++		AC_DEFINE_UNQUOTED(KSHELL_PAM_SERVICE,"$withkshellpamservice",
++				   [Define to the name of the PAM service name to be used by rshd for unencrypted sessions.])
++		AC_DEFINE_UNQUOTED(EKSHELL_PAM_SERVICE,"$withekshellpamservice",
++				   [Define to the name of the PAM service name to be used by rshd for encrypted sessions.])
++		AC_DEFINE_UNQUOTED(FTP_PAM_SERVICE,"$withftppamservice",
++				   [Define to the name of the PAM service name to be used by ftpd.])
++		PAM_LIBS="$LIBS"
++		NON_PAM_MAN=".\\\" "
++		PAM_MAN=
++	else
++		PAM_MAN=".\\\" "
++		NON_PAM_MAN=
++	fi
++fi
++LIBS="$old_LIBS"
++AC_SUBST(PAM_LIBS)
++AC_SUBST(PAM_MAN)
++AC_SUBST(NON_PAM_MAN)
++])dnl
+diff -up krb5-appl-1.0/bsd/krshd.c.pam krb5-appl-1.0/bsd/krshd.c
+--- krb5-appl-1.0/bsd/krshd.c.pam	2009-11-16 05:27:04.000000000 -0500
++++ krb5-appl-1.0/bsd/krshd.c	2010-03-05 10:48:50.000000000 -0500
+@@ -163,6 +163,10 @@ char copyright[] =
+ #include <arpa/nameser.h>
+ #endif
+ 
++#ifdef USE_PAM
++#include "pam.h"
++#endif
++
+ #ifndef MAXDNAME
+ #define MAXDNAME 256 /*per the rfc*/
+ #endif
+@@ -183,6 +187,7 @@ void fatal(int, const char *);
+ 
+ int require_encrypt = 0;
+ int do_encrypt = 0;
++int force_fork = 0;
+ int anyport = 0;
+ char *kprogdir = KPROGDIR;
+ int netf;
+@@ -1032,14 +1037,6 @@ void doit(f, fromp)
+     }
+ #endif /*CRAY*/
+     
+-    if (chdir(pwd->pw_dir) < 0) {
+-      if(chdir("/") < 0) {
+-      	error("No remote directory.\n");
+-	goto signout_please;
+-      }
+-	   pwd->pw_dir = "/";
+-    }
+-
+ #ifdef KERBEROS
+     /* krb5_kuserok returns 1 if OK */
+     if (!krb5_kuserok(bsd_context, client, locuser)){
+@@ -1069,11 +1066,51 @@ void doit(f, fromp)
+ 	goto signout_please;
+     }
+     
++#ifdef USE_PAM
++    if (appl_pam_enabled(bsd_context, "rshd")) {
++        if (appl_pam_acct_mgmt(do_encrypt ?
++			       EKSHELL_PAM_SERVICE :
++			       KSHELL_PAM_SERVICE,
++			       0,
++			       locuser,
++			       "",
++			       hostname,
++			       NULL,
++			       do_encrypt ?
++			       EKSHELL_PAM_SERVICE :
++			       KSHELL_PAM_SERVICE) != 0) {
++	    error("Login denied.\n");
++	    goto signout_please;
++        }
++        if (appl_pam_requires_chauthtok()) {
++	    error("Password change required, but not possible over rsh.\n");
++	    goto signout_please;
++        }
++        force_fork = 1;
++        appl_pam_set_forwarded_ccname(getenv("KRB5CCNAME"));
++        if (appl_pam_session_open() != 0) {
++	    error("Login failure.\n");
++	    goto signout_please;
++        }
++        if (appl_pam_cred_init()) {
++	    error("Login failure.\n");
++	    goto signout_please;
++        }
++    } else
++#endif
+     if (pwd->pw_uid && !access(NOLOGIN, F_OK)) {
+ 	error("Logins currently disabled.\n");
+ 	goto signout_please;
+     }
+     
++    if (chdir(pwd->pw_dir) < 0) {
++	if (chdir("/") < 0) {
++	    error("No remote directory.\n");
++	    goto signout_please;
++	}
++	pwd->pw_dir = "/";
++    }
++
+     /* Log access to account */
+     pwd = (struct passwd *) getpwnam(locuser);
+     if (pwd && (pwd->pw_uid == 0)) {
+@@ -1113,7 +1150,7 @@ void doit(f, fromp)
+     
+     (void) write(2, "", 1);
+     
+-    if (port||do_encrypt) {
++    if (port||do_encrypt||force_fork) {
+ 	if (port&&(pipe(pv) < 0)) {
+ 	    error("Can't make pipe.\n");
+ 	    goto signout_please;
+@@ -1418,6 +1455,15 @@ void doit(f, fromp)
+ 
+     environ = envinit;
+     
++#ifdef USE_PAM
++    if (appl_pam_enabled(bsd_context, "rshd")) {
++        if (appl_pam_setenv() != 0) {
++	    error("Login failure.\n");
++	    goto signout_please;
++        }
++    }
++#endif
++
+ #ifdef KERBEROS
+     /* To make Kerberos rcp work correctly, we must ensure that we
+        invoke Kerberos rcp on this end, not normal rcp, even if the
+diff -up krb5-appl-1.0/bsd/login.c.pam krb5-appl-1.0/bsd/login.c
+--- krb5-appl-1.0/bsd/login.c.pam	2009-11-21 15:29:19.000000000 -0500
++++ krb5-appl-1.0/bsd/login.c	2010-03-05 10:48:50.000000000 -0500
+@@ -148,6 +148,11 @@ typedef sigtype (*handler)();
+ #define KRB5_ENV_CCNAME "KRB5CCNAME"
+ #endif /* KRB5_GET_TICKETS */
+ 
++#ifdef USE_PAM
++#include "pam.h"
++int login_use_pam = 1;
++#endif
++
+ #ifndef __STDC__
+ #ifndef volatile
+ #define volatile
+@@ -293,6 +298,9 @@ static struct login_confs {
+     char *flagname;
+     int *flag;
+ } login_conf_set[] = {
++#ifdef USE_PAM
++    {USE_PAM_CONFIGURATION_KEYWORD, &login_use_pam},
++#endif
+ #ifdef KRB5_GET_TICKETS
+     {"krb5_get_tickets", &login_krb5_get_tickets},
+     {"krb_run_aklog", &login_krb_run_aklog},
+@@ -934,6 +942,21 @@ int main(argc, argv)
+ 	if (!unix_needs_passwd())
+ 	    break;
+ 
++#ifdef USE_PAM
++	if (login_use_pam) {
++	    if (appl_pam_authenticate(LOGIN_PAM_SERVICE, 1, username, "",
++				      hostname,
++				      NULL,
++				      ttyname(STDIN_FILENO)) == PAM_SUCCESS) {
++		break;
++	    } else {
++		/* the goto target label is in a different nesting scope, but
++		 * it's roughly where we want to land */
++		goto bad_login;
++	    }
++	}
++#endif
++
+ #ifdef KRB5_GET_TICKETS
+ 	if (login_krb5_get_tickets) {
+ 	    /* rename these to something more verbose */
+@@ -1021,6 +1044,24 @@ int main(argc, argv)
+     /* committed to login -- turn off timeout */
+     (void) alarm((u_int) 0);
+ 
++#ifdef USE_PAM
++    if (login_use_pam) {
++	if (appl_pam_acct_mgmt(LOGIN_PAM_SERVICE, 1, username, "",
++			       hostname, NULL, ttyname(STDIN_FILENO)) != 0) {
++	    printf("Login incorrect\n");
++	    sleepexit(1);
++	}
++	if (appl_pam_requires_chauthtok()) {
++	    if (appl_pam_chauthtok() != 0) {
++		printf("Failed to change password.\n");
++		sleepexit(1);
++	    }
++	}
++    } else {
++	/* the "else" here is the non-PAM behavior which continues until the
++	 * next ifdef USE_PAM block, as of this writing more or less
++	 * duplicating the work of pam_securetty and an OQUOTA check */
++#endif
+     /*
+      * If valid so far and root is logging in, see if root logins on
+      * this terminal are permitted.
+@@ -1061,6 +1102,21 @@ int main(argc, argv)
+ 	sleepexit(0);
+     }
+ #endif
++#ifdef USE_PAM
++    }
++#endif /* USE_PAM */
++
++#ifdef USE_PAM
++    if (login_use_pam) {
++	appl_pam_set_forwarded_ccname(getenv("KRB5CCNAME"));
++	if (appl_pam_session_open() != 0) {
++	    sleepexit(1);
++	}
++	if (appl_pam_cred_init() != 0) {
++	    sleepexit(1);
++	}
++    }
++#endif /* USE_PAM */
+ 
+     if (chdir(pwd->pw_dir) < 0) {
+ 	printf("No directory %s!\n", pwd->pw_dir);
+@@ -1343,6 +1399,11 @@ int main(argc, argv)
+     }
+ #endif /* KRB5_GET_TICKETS */
+ 
++#ifdef USE_PAM
++    if (login_use_pam)
++	appl_pam_setenv();
++#endif
++
+     if (tty[sizeof("tty")-1] == 'd')
+ 	syslog(LOG_INFO, "DIALUP %s, %s", tty, pwd->pw_name);
+     if (pwd->pw_uid == 0)
+diff -up krb5-appl-1.0/bsd/Makefile.in.pam krb5-appl-1.0/bsd/Makefile.in
+--- krb5-appl-1.0/bsd/Makefile.in.pam	2009-11-05 15:10:37.000000000 -0500
++++ krb5-appl-1.0/bsd/Makefile.in	2010-03-05 10:48:50.000000000 -0500
+@@ -3,11 +3,14 @@ BUILDTOP=$(REL)..
+ 
+ LOGINLIBS=@LOGINLIBS@
+ KRSHDLIBS=@KRSHDLIBS@
++PAMOBJS=pam.o
++PAM_LIBS=@PAM_LIBS@
+ 
+ SRCS= $(srcdir)/krcp.c $(srcdir)/krlogin.c $(srcdir)/krsh.c $(srcdir)/kcmd.c \
+ 	$(srcdir)/forward.c $(srcdir)/login.c $(srcdir)/krshd.c \
+ 	$(srcdir)/krlogind.c
+-OBJS= krcp.o krlogin.o krsh.o kcmd.o forward.o login.o krshd.o krlogind.o
++OBJS= krcp.o krlogin.o krsh.o kcmd.o forward.o login.o krshd.o krlogind.o \
++	$(PAMOBJS)
+ 
+ UCB_RLOGIN = @UCB_RLOGIN@
+ UCB_RSH = @UCB_RSH@
+@@ -50,8 +53,8 @@ install::
+ 	  ) || exit 1; \
+ 	done
+ 
+-kshd: krshd.o kcmd.o forward.o $(PTY_DEPLIB) $(MISSING_DEPLIB)
+-	$(CC_LINK) -o kshd krshd.o kcmd.o forward.o $(KRSHDLIBS) $(PTY_LIB) $(UTIL_LIB) $(MISSING_LIB) $(KRB5_BASE_LIBS) $(LIBS)
++kshd: krshd.o kcmd.o forward.o $(PAMOBJS) $(PTY_DEPLIB) $(MISSING_DEPLIB)
++	$(CC_LINK) -o kshd krshd.o kcmd.o forward.o $(PAMOBJS) $(KRSHDLIBS) $(PTY_LIB) $(UTIL_LIB) $(MISSING_LIB) $(KRB5_BASE_LIBS) $(PAM_LIBS) $(LIBS)
+ 
+ klogind: krlogind.o kcmd.o forward.o $(PTY_DEPLIB) $(MISSING_DEPLIB)
+ 	$(CC_LINK) -o klogind krlogind.o kcmd.o forward.o $(PTY_LIB) $(UTIL_LIB) $(MISSING_LIB) $(KRB5_BASE_LIBS) $(LIBS)
+@@ -68,8 +71,8 @@ install::
+ # No program name transformation is done with login.krb5 since it is directly
+ # referenced by klogind.
+ #
+-login.krb5: login.o $(PTY_DEPLIB) $(MISSING_DEPLIB)
+-	$(CC_LINK) -o login.krb5 login.o $(LOGINLIBS) $(PTY_LIB) $(KRB5_BASE_LIBS) $(MISSING_LIB) $(LIBS)
++login.krb5: login.o $(PAMOBJS) $(PTY_DEPLIB) $(MISSING_DEPLIB)
++	$(CC_LINK) -o login.krb5 login.o $(PAMOBJS) $(LOGINLIBS) $(PTY_LIB) $(KRB5_BASE_LIBS) $(MISSING_LIB) $(PAM_LIBS) $(LIBS)
+ 
+ install::
+ 	$(INSTALL_PROGRAM) login.krb5 $(DESTDIR)$(SERVER_BINDIR)/login.krb5
+diff -up krb5-appl-1.0/bsd/pam.c.pam krb5-appl-1.0/bsd/pam.c
+--- krb5-appl-1.0/bsd/pam.c.pam	2010-03-05 10:48:50.000000000 -0500
++++ krb5-appl-1.0/bsd/pam.c	2010-03-05 10:48:50.000000000 -0500
+@@ -0,0 +1,438 @@
++/*
++ * src/appl/bsd/pam.c
++ *
++ * Copyright 2007,2009,2010 Red Hat, Inc.
++ *
++ * All Rights Reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ *  Redistributions of source code must retain the above copyright notice, this
++ *  list of conditions and the following disclaimer.
++ *
++ *  Redistributions in binary form must reproduce the above copyright notice,
++ *  this list of conditions and the following disclaimer in the documentation
++ *  and/or other materials provided with the distribution.
++ *
++ *  Neither the name of Red Hat, Inc. nor the names of its contributors may be
++ *  used to endorse or promote products derived from this software without
++ *  specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ * 
++ * Convenience wrappers for using PAM.
++ */
++
++#include "autoconf.h"
++#ifdef USE_PAM
++#include <sys/types.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++#include <profile.h>
++#include "pam.h"
++
++#ifndef MAXPWSIZE
++#define MAXPWSIZE 128
++#endif
++
++#ifndef KRB5_ENV_CCNAME
++#define KRB5_ENV_CCNAME "KRB5CCNAME"
++#endif
++
++static int appl_pam_started;
++static pid_t appl_pam_starter = -1;
++static int appl_pam_session_opened;
++static int appl_pam_creds_initialized;
++static int appl_pam_pwchange_required;
++static pam_handle_t *appl_pamh;
++static struct pam_conv appl_pam_conv;
++static char *appl_pam_user;
++struct appl_pam_non_interactive_args {
++	const char *user;
++	const char *password;
++};
++
++int
++appl_pam_enabled(krb5_context context, const char *section)
++{
++	int enabled = 1;
++	profile_t profile = NULL;
++	if ((context != NULL) && (krb5_get_profile(context, &profile) == 0)) {
++		if (profile_get_boolean(profile,
++					section,
++					USE_PAM_CONFIGURATION_KEYWORD,
++					NULL,
++					enabled, &enabled) != 0) {
++			enabled = 1;
++		}
++	}
++	return enabled;
++}
++
++void
++appl_pam_cleanup(void)
++{
++	if (getpid() != appl_pam_starter) {
++		return;
++	}
++#ifdef DEBUG
++	printf("Called to clean up PAM.\n");
++#endif
++	if (appl_pam_creds_initialized) {
++#ifdef DEBUG
++		printf("Deleting PAM credentials.\n");
++#endif
++		pam_setcred(appl_pamh, PAM_DELETE_CRED);
++		appl_pam_creds_initialized = 0;
++	}
++	if (appl_pam_session_opened) {
++#ifdef DEBUG
++		printf("Closing PAM session.\n");
++#endif
++		pam_close_session(appl_pamh, 0);
++		appl_pam_session_opened = 0;
++	}
++	appl_pam_pwchange_required = 0;
++	if (appl_pam_started) {
++#ifdef DEBUG
++		printf("Shutting down PAM.\n");
++#endif
++		pam_end(appl_pamh, 0);
++		appl_pam_started = 0;
++		appl_pam_starter = -1;
++		free(appl_pam_user);
++		appl_pam_user = NULL;
++	}
++}
++static int
++appl_pam_interactive_converse(int num_msg, const struct pam_message **msg,
++			      struct pam_response **presp, void *appdata_ptr)
++{
++	const struct pam_message *message;
++	struct pam_response *resp;
++	int i, code;
++	char *pwstring, pwbuf[MAXPWSIZE];
++	unsigned int pwsize;
++	resp = malloc(sizeof(struct pam_response) * num_msg);
++	if (resp == NULL) {
++		return PAM_BUF_ERR;
++	}
++	memset(resp, 0, sizeof(struct pam_response) * num_msg);
++	code = PAM_SUCCESS;
++	for (i = 0; i < num_msg; i++) {
++		message = &(msg[0][i]); /* XXX */
++		message = msg[i]; /* XXX */
++		pwstring = NULL;
++		switch (message->msg_style) {
++		case PAM_TEXT_INFO:
++		case PAM_ERROR_MSG:
++			printf("[%s]\n", message->msg ? message->msg : "");
++			fflush(stdout);
++			resp[i].resp = NULL;
++			resp[i].resp_retcode = PAM_SUCCESS;
++			break;
++		case PAM_PROMPT_ECHO_ON:
++		case PAM_PROMPT_ECHO_OFF:
++			if (message->msg_style == PAM_PROMPT_ECHO_ON) {
++				if (fgets(pwbuf, sizeof(pwbuf),
++					  stdin) != NULL) {
++					pwbuf[strcspn(pwbuf, "\r\n")] = '\0';
++					pwstring = pwbuf;
++				}
++			} else {
++				pwstring = getpass(message->msg ?
++						   message->msg :
++						   "");
++			}
++			if ((pwstring != NULL) && (pwstring[0] != '\0')) {
++				pwsize = strlen(pwstring);
++				resp[i].resp = malloc(pwsize + 1);
++				if (resp[i].resp == NULL) {
++					resp[i].resp_retcode = PAM_BUF_ERR;
++				} else {
++					memcpy(resp[i].resp, pwstring, pwsize);
++					resp[i].resp[pwsize] = '\0';
++					resp[i].resp_retcode = PAM_SUCCESS;
++				}
++			} else {
++				resp[i].resp_retcode = PAM_CONV_ERR;
++				code = PAM_CONV_ERR;
++			}
++			break;
++		default:
++			break;
++		}
++	}
++	*presp = resp;
++	return code;
++}
++static int
++appl_pam_non_interactive_converse(int num_msg,
++				  const struct pam_message **msg,
++				  struct pam_response **presp,
++				  void *appdata_ptr)
++{
++	const struct pam_message *message;
++	struct pam_response *resp;
++	int i, code;
++	unsigned int pwsize;
++	struct appl_pam_non_interactive_args *args;
++	const char *pwstring;
++	resp = malloc(sizeof(struct pam_response) * num_msg);
++	if (resp == NULL) {
++		return PAM_BUF_ERR;
++	}
++	args = appdata_ptr;
++	memset(resp, 0, sizeof(struct pam_response) * num_msg);
++	code = PAM_SUCCESS;
++	for (i = 0; i < num_msg; i++) {
++		message = &((*msg)[i]);
++		message = msg[i];
++		pwstring = NULL;
++		switch (message->msg_style) {
++		case PAM_TEXT_INFO:
++		case PAM_ERROR_MSG:
++			break;
++		case PAM_PROMPT_ECHO_ON:
++		case PAM_PROMPT_ECHO_OFF:
++			if (message->msg_style == PAM_PROMPT_ECHO_ON) {
++				/* assume "user" */
++				pwstring = args->user;
++			} else {
++				/* assume "password" */
++				pwstring = args->password;
++			}
++			if ((pwstring != NULL) && (pwstring[0] != '\0')) {
++				pwsize = strlen(pwstring);
++				resp[i].resp = malloc(pwsize + 1);
++				if (resp[i].resp == NULL) {
++					resp[i].resp_retcode = PAM_BUF_ERR;
++				} else {
++					memcpy(resp[i].resp, pwstring, pwsize);
++					resp[i].resp[pwsize] = '\0';
++					resp[i].resp_retcode = PAM_SUCCESS;
++				}
++			} else {
++				resp[i].resp_retcode = PAM_CONV_ERR;
++				code = PAM_CONV_ERR;
++			}
++			break;
++		default:
++			break;
++		}
++	}
++	*presp = resp;
++	return code;
++}
++void
++appl_pam_set_forwarded_ccname(const char *ccname)
++{
++	char *ccname2;
++	if (appl_pam_started && (ccname != NULL) && (strlen(ccname) > 0)) {
++		ccname2 = malloc(strlen(KRB5_ENV_CCNAME) + strlen(ccname) + 2);
++		if (ccname2 != NULL) {
++#ifdef DEBUG
++			printf("Setting %s to \"%s\" in PAM environment.\n",
++			       KRB5_ENV_CCNAME, ccname);
++#endif
++			sprintf(ccname2, "%s=%s", KRB5_ENV_CCNAME, ccname);
++			pam_putenv(appl_pamh, ccname2);
++		}
++	}
++}
++static int
++appl_pam_start(const char *service, int interactive,
++	       const char *login_username,
++	       const char *non_interactive_password,
++	       const char *hostname,
++	       const char *ruser,
++	       const char *tty)
++{
++	static int exit_handler_registered;
++	static struct appl_pam_non_interactive_args args;
++	int ret = 0;
++	if (appl_pam_started &&
++	    (strcmp(login_username, appl_pam_user) != 0)) {
++		appl_pam_cleanup();
++		appl_pam_user = NULL;
++	}
++	if (!appl_pam_started) {
++#ifdef DEBUG
++		printf("Starting PAM up (service=\"%s\",user=\"%s\").\n",
++		       service, login_username);
++#endif
++		memset(&appl_pam_conv, 0, sizeof(appl_pam_conv));
++		appl_pam_conv.conv = interactive ?
++				     &appl_pam_interactive_converse :
++				     &appl_pam_non_interactive_converse;
++		memset(&args, 0, sizeof(args));
++		args.user = strdup(login_username);
++		args.password = non_interactive_password ?
++				strdup(non_interactive_password) :
++				NULL;
++		appl_pam_conv.appdata_ptr = &args;
++		ret = pam_start(service, login_username,
++				&appl_pam_conv, &appl_pamh);
++		if (ret == 0) {
++			if (hostname != NULL) {
++#ifdef DEBUG
++				printf("Setting PAM_RHOST to \"%s\".\n", hostname);
++#endif
++				pam_set_item(appl_pamh, PAM_RHOST, hostname);
++			}
++			if (ruser != NULL) {
++#ifdef DEBUG
++				printf("Setting PAM_RUSER to \"%s\".\n", ruser);
++#endif
++				pam_set_item(appl_pamh, PAM_RUSER, ruser);
++			}
++			if (tty != NULL) {
++#ifdef DEBUG
++				printf("Setting PAM_TTY to \"%s\".\n", tty);
++#endif
++				pam_set_item(appl_pamh, PAM_TTY, tty);
++			}
++			if (!exit_handler_registered &&
++			    (atexit(appl_pam_cleanup) != 0)) {
++				pam_end(appl_pamh, 0);
++				appl_pamh = NULL;
++				ret = -1;
++			} else {
++				appl_pam_started = 1;
++				appl_pam_starter = getpid();
++				appl_pam_user = strdup(login_username);
++				exit_handler_registered = 1;
++			}
++		}
++	}
++	return ret;
++}
++int
++appl_pam_authenticate(const char *service, int interactive,
++		      const char *login_username,
++		      const char *non_interactive_password,
++		      const char *hostname,
++		      const char *ruser,
++		      const char *tty)
++{
++	int ret;
++	ret = appl_pam_start(service, interactive, login_username,
++			     non_interactive_password, hostname, ruser, tty);
++	if (ret == 0) {
++		ret = pam_authenticate(appl_pamh, 0);
++	}
++	return ret;
++}
++int
++appl_pam_acct_mgmt(const char *service, int interactive,
++		   const char *login_username,
++		   const char *non_interactive_password,
++		   const char *hostname,
++		   const char *ruser,
++		   const char *tty)
++{
++	int ret;
++	appl_pam_pwchange_required = 0;
++	ret = appl_pam_start(service, interactive, login_username,
++			     non_interactive_password, hostname, ruser, tty);
++	if (ret == 0) {
++#ifdef DEBUG
++		printf("Calling pam_acct_mgmt().\n");
++#endif
++		ret = pam_acct_mgmt(appl_pamh, 0);
++		switch (ret) {
++		case PAM_IGNORE:
++			ret = 0;
++			break;
++		case PAM_NEW_AUTHTOK_REQD:
++			appl_pam_pwchange_required = 1;
++			ret = 0;
++			break;
++		default:
++			break;
++		}
++	}
++	return ret;
++}
++int
++appl_pam_requires_chauthtok(void)
++{
++	return appl_pam_pwchange_required;
++}
++int
++appl_pam_chauthtok(void)
++{
++	int ret = 0;
++	if (appl_pam_started) {
++#ifdef DEBUG
++		printf("Changing PAM expired authentication token.\n");
++#endif
++		ret = pam_chauthtok(appl_pamh, PAM_CHANGE_EXPIRED_AUTHTOK);
++	}
++	return ret;
++}
++int
++appl_pam_session_open(void)
++{
++	int ret = 0;
++	if (appl_pam_started) {
++#ifdef DEBUG
++		printf("Opening PAM session.\n");
++#endif
++		ret = pam_open_session(appl_pamh, 0);
++		if (ret == 0) {
++			appl_pam_session_opened = 1;
++		}
++	}
++	return ret;
++}
++int
++appl_pam_setenv(void)
++{
++	int ret = 0;
++#ifdef HAVE_PAM_GETENVLIST
++#ifdef HAVE_PUTENV
++	int i;
++	char **list;
++	if (appl_pam_started) {
++		list = pam_getenvlist(appl_pamh);
++		for (i = 0; ((list != NULL) && (list[i] != NULL)); i++) {
++#ifdef DEBUG
++			printf("Setting \"%s\" in environment.\n", list[i]);
++#endif
++			putenv(list[i]);
++		}
++	}
++#endif
++#endif
++	return ret;
++}
++int
++appl_pam_cred_init(void)
++{
++	int ret = 0;
++	if (appl_pam_started) {
++#ifdef DEBUG
++		printf("Initializing PAM credentials.\n");
++#endif
++		ret = pam_setcred(appl_pamh, PAM_ESTABLISH_CRED);
++		if (ret == 0) {
++			appl_pam_creds_initialized = 1;
++		}
++	}
++	return ret;
++}
++#endif
+diff -up krb5-appl-1.0/bsd/pam.h.pam krb5-appl-1.0/bsd/pam.h
+--- krb5-appl-1.0/bsd/pam.h.pam	2010-03-05 10:48:50.000000000 -0500
++++ krb5-appl-1.0/bsd/pam.h	2010-03-05 10:48:50.000000000 -0500
+@@ -0,0 +1,65 @@
++/*
++ * src/appl/bsd/pam.h
++ *
++ * Copyright 2007,2009 Red Hat, Inc.
++ *
++ * All Rights Reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ *  Redistributions of source code must retain the above copyright notice, this
++ *  list of conditions and the following disclaimer.
++ *
++ *  Redistributions in binary form must reproduce the above copyright notice,
++ *  this list of conditions and the following disclaimer in the documentation
++ *  and/or other materials provided with the distribution.
++ *
++ *  Neither the name of Red Hat, Inc. nor the names of its contributors may be
++ *  used to endorse or promote products derived from this software without
++ *  specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ * 
++ * Convenience wrappers for using PAM.
++ */
++
++#include <krb5.h>
++#ifdef HAVE_SECURITY_PAM_APPL_H
++#include <security/pam_appl.h>
++#endif
++
++#define USE_PAM_CONFIGURATION_KEYWORD "use_pam"
++
++#ifdef USE_PAM
++int appl_pam_enabled(krb5_context context, const char *section);
++int appl_pam_authenticate(const char *service, int interactive,
++			  const char *local_username,
++			  const char *non_interactive_password,
++			  const char *hostname,
++			  const char *ruser,
++			  const char *tty);
++int appl_pam_acct_mgmt(const char *service, int interactive,
++		       const char *local_username,
++		       const char *non_interactive_password,
++		       const char *hostname,
++		       const char *ruser,
++		       const char *tty);
++int appl_pam_requires_chauthtok(void);
++int appl_pam_chauthtok(void);
++void appl_pam_set_forwarded_ccname(const char *ccname);
++int appl_pam_session_open(void);
++int appl_pam_setenv(void);
++int appl_pam_cred_init(void);
++void appl_pam_cleanup(void);
++#endif
+diff -up krb5-appl-1.0/configure.ac.pam krb5-appl-1.0/configure.ac
+--- krb5-appl-1.0/configure.ac.pam	2009-11-21 16:46:39.000000000 -0500
++++ krb5-appl-1.0/configure.ac	2010-03-05 10:48:50.000000000 -0500
+@@ -156,6 +156,8 @@ AC_CHECK_FUNC(tgetent, ,
+               [AC_MSG_ERROR([Could not find tgetent; are you missing a curses/ncurses library?])])
+ LIBS="$old_LIBS"
+ 
++KRB5_WITH_PAM
++
+ # Make our operating system-specific security checks and definitions
+ # for libpty, login, and ftpd.  The following code decides what
+ # streams modules will be pushed onto a pty.  In particular, if
+diff -up krb5-appl-1.0/gssftp/ftpd/ftpd.c.pam krb5-appl-1.0/gssftp/ftpd/ftpd.c
+--- krb5-appl-1.0/gssftp/ftpd/ftpd.c.pam	2009-11-18 00:07:46.000000000 -0500
++++ krb5-appl-1.0/gssftp/ftpd/ftpd.c	2010-03-05 10:48:50.000000000 -0500
+@@ -69,6 +69,9 @@ static char sccsid[] = "@(#)ftpd.c	5.40 
+ #ifdef HAVE_SHADOW
+ #include <shadow.h>
+ #endif
++#ifdef USE_PAM
++#include "../../bsd/pam.h"
++#endif
+ #include <grp.h> 
+ #include <setjmp.h>
+ #ifndef POSIX_SETJMP
+@@ -743,6 +746,22 @@ user(name)
+ 				name);
+ 		}
+ #endif /* GSSAPI */
++#ifdef USE_PAM
++		if (appl_pam_enabled(kcontext, "ftpd")) {
++			if (appl_pam_acct_mgmt(FTP_PAM_SERVICE, 0,
++					       name, "",
++					       hostname,
++					       NULL,
++					       FTP_PAM_SERVICE) != 0) {
++					       reply(530, "Login incorrect.");
++				return;
++			}
++			if (appl_pam_requires_chauthtok()) {
++				reply(530, "Password change required.");
++				return;
++			}
++		}
++#endif
+ 
+ 		if (!authorized && authlevel == AUTHLEVEL_AUTHORIZE) {
+ 			strncat(buf, "; Access denied.",
+@@ -843,6 +862,10 @@ end_login()
+ 	(void) krb5_seteuid((uid_t)0);
+ 	if (logged_in)
+ 		pty_logwtmp(ttyline, "", "");
++#ifdef USE_PAM
++	if (appl_pam_enabled(kcontext, "ftpd"))
++		appl_pam_cleanup();
++#endif
+ 	if (have_creds) {
+ #ifdef GSSAPI
+ 		krb5_cc_destroy(kcontext, ccache);
+@@ -951,9 +974,19 @@ pass(passwd)
+ 		 *   kpass fails and the user has no local password
+ 		 *   kpass fails and the provided password doesn't match pw
+ 		 */
+-		if (pw == NULL || (!kpass(pw->pw_name, passwd) &&
+-				   (want_creds || !*pw->pw_passwd ||
+-				    strcmp(xpasswd, pw->pw_passwd)))) {
++		if ((pw == NULL) || (
++#ifdef USE_PAM
++		    appl_pam_enabled(kcontext, "ftpd") ?
++		    (appl_pam_authenticate(FTP_PAM_SERVICE, 0,
++					   pw->pw_name, passwd,
++					   hostname,
++					   NULL,
++					   FTP_PAM_SERVICE) != 0) :
++#endif
++		    (!kpass(pw->pw_name, passwd) &&
++		     (want_creds ||
++		      !*pw->pw_passwd ||
++		      strcmp(xpasswd, pw->pw_passwd))))) {
+ 			pw = NULL;
+ 			sleep(5);
+ 			if (++login_attempts >= 3) {
+@@ -970,6 +1003,23 @@ pass(passwd)
+ 	}
+ 	login_attempts = 0;		/* this time successful */
+ 
++#ifdef USE_PAM
++	if (appl_pam_enabled(kcontext, "ftpd")) {
++		if (appl_pam_acct_mgmt(FTP_PAM_SERVICE, 0,
++				       pw->pw_name, passwd,
++				       hostname,
++				       NULL,
++				       FTP_PAM_SERVICE) != 0) {
++			reply(530, "Login incorrect.");
++			return;
++		}
++		if (appl_pam_requires_chauthtok()) {
++			reply(530, "Password change required.");
++			return;
++		}
++	}
++#endif
++
+ 	login(passwd, 0);
+ 	return;
+ }
+@@ -985,6 +1035,18 @@ login(passwd, logincode)
+ 		chown(ccname, pw->pw_uid, pw->pw_gid);
+ #endif
+ 	}
++#ifdef USE_PAM
++	if (appl_pam_enabled(kcontext, "ftpd")) {
++		if (appl_pam_session_open() != 0) {
++			reply(550, "Can't open PAM session.");
++			goto bad;
++		}
++		if (appl_pam_cred_init() != 0) {
++			reply(550, "Can't establish PAM credentials.");
++			goto bad;
++		}
++	}
++#endif
+ 
+ 	(void) krb5_setegid((gid_t)pw->pw_gid);
+ 	(void) initgroups(pw->pw_name, pw->pw_gid);
+@@ -1966,6 +2028,10 @@ dologout(status)
+ 		krb5_cc_destroy(kcontext, ccache);
+ #endif
+ 	}
++#ifdef USE_PAM
++	if (appl_pam_enabled(kcontext, "ftpd"))
++		appl_pam_cleanup();
++#endif
+ 	/* beware of flushing buffers after a SIGPIPE */
+ 	_exit(status);
+ }
+diff -up krb5-appl-1.0/gssftp/ftpd/Makefile.in.pam krb5-appl-1.0/gssftp/ftpd/Makefile.in
+--- krb5-appl-1.0/gssftp/ftpd/Makefile.in.pam	2009-07-20 13:21:24.000000000 -0400
++++ krb5-appl-1.0/gssftp/ftpd/Makefile.in	2010-03-05 10:48:50.000000000 -0500
+@@ -6,22 +6,24 @@ PROG_LIBPATH=-L$(TOPLIBD)
+ PROG_RPATH=$(KRB5_LIBDIR)
+ 
+ FTPD_LIBS=@FTPD_LIBS@
++PAM_LIBS=@PAM_LIBS@
+ 
+ SRCS	= $(srcdir)/ftpd.c ftpcmd.c $(srcdir)/popen.c \
+ 	  $(srcdir)/vers.c \
+ 	  $(srcdir)/../ftp/glob.c \
+ 	  $(srcdir)/../ftp/radix.c \
+-	  $(srcdir)/../ftp/secure.c
++	  $(srcdir)/../ftp/secure.c \
++	  $(srcdir)/../../bsd/pam.c
+ 
+ OBJS	= ftpd.o ftpcmd.o glob.o popen.o vers.o radix.o \
+-	  secure.o
++	  secure.o pam.o
+ 
+ LOCALINCLUDES = -I$(srcdir)/.. -I$(srcdir)
+ 
+ all::	ftpd
+ 
+ ftpd:	$(OBJS) $(PTY_DEPLIB) $(MISSING_DEPLIB)
+-	$(CC_LINK) -o $@ $(OBJS) $(FTPD_LIBS) $(PTY_LIB) $(UTIL_LIB) $(MISSING_LIB) $(GSS_LIBS) $(LIBS)
++	$(CC_LINK) -o $@ $(OBJS) $(FTPD_LIBS) $(PTY_LIB) $(UTIL_LIB) $(MISSING_LIB) $(GSS_LIBS) $(PAM_LIBS) $(LIBS)
+ 
+ generate-files-mac: ftpcmd.c
+ 
+@@ -61,4 +63,7 @@ ftpcmd.o: ftpcmd.c
+ popen.o: $(srcdir)/popen.c
+ vers.o: $(srcdir)/vers.c
+ 
++pam.o: $(srcdir)/../../bsd/pam.c
++	$(CC) -c $(ALL_CFLAGS) $(srcdir)/../../bsd/pam.c
++
+ # NOPOSTFIX

@@ -1,0 +1,53 @@
+Start with only TERM defined in the environment, like NetKit rlogind does, and
+KRB5CCNAME, which we set ourselves.
+
+diff -up krb5-appl-1.0/bsd/krlogind.c.rlogind-environ krb5-appl-1.0/bsd/krlogind.c
+--- krb5-appl-1.0/bsd/krlogind.c.rlogind-environ	2009-11-21 15:29:19.000000000 -0500
++++ krb5-appl-1.0/bsd/krlogind.c	2010-03-05 11:07:34.000000000 -0500
+@@ -667,6 +667,9 @@ void doit(f, fromp)
+ #else
+ 	struct sgttyb b;
+ #endif /* POSIX_TERMIOS */
++	char environ_term[sizeof(term) + 6], environ_ccname[sizeof(environ_term)];
++	char *bare_environ[] = {environ_term, environ_ccname, NULL};
++
+ 	if ((retval = pty_open_slave(line, &t))) {
+ 	    fatal(f, pty_error_message(retval));
+ 	    exit(1);
+@@ -773,11 +776,15 @@ void doit(f, fromp)
+ /* use the vendors login, which has -p and -f. Tested on 
+  * AIX 4.1.4 and HPUX 10 
+  */
++    memset(environ_term, '\0', sizeof(environ_term));
++    memset(environ_ccname, '\0', sizeof(environ_ccname));
++    if (getenv("KRB5CCNAME") != NULL)
++      snprintf(environ_ccname, sizeof(environ_ccname) - 1, "KRB5CCNAME=%s", getenv("KRB5CCNAME"));
+     {
+         char *cp;
+-        if ((cp = strchr(term,'/')))
++        snprintf(environ_term, sizeof(environ_term) - 1, "TERM=%s", term);
++        if ((cp = strchr(environ_term,'/')))
+             *cp = '\0';
+-        setenv("TERM",term, 1);
+     }
+ 
+     retval = pty_make_sane_hostname((struct sockaddr *) fromp, maxhostlen,
+@@ -786,13 +793,13 @@ void doit(f, fromp)
+     if (retval)
+         fatalperror(f, "failed make_sane_hostname");
+     if (passwd_req)
+-        execl(login_program, "login", "-p", "-h", rhost_sane,
+-          lusername, (char *)NULL);
++        execle(login_program, "login", "-p", "-h", rhost_sane,
++          lusername, NULL, bare_environ);
+     else
+-        execl(login_program, "login", "-p", "-h", rhost_sane,
+-             "-f", lusername, (char *)NULL);
++        execle(login_program, "login", "-p", "-h", rhost_sane,
++             "-f", lusername, NULL, bare_environ);
+ #else /* USE_LOGIN_F */
+-	execl(login_program, "login", "-r", rhost_sane, (char *)NULL);
++	execle(login_program, "login", "-r", rhost_sane, NULL, bare_environ);
+ #endif /* USE_LOGIN_F */
+ 	syslog(LOG_ERR, "failed exec of %s: %s",
+ 	       login_program, error_message(errno));
