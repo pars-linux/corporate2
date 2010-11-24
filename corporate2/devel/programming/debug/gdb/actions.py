@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -13,11 +13,14 @@ from pisi.actionsapi import get
 WorkDir = "gdb-%s" % get.srcVERSION().replace("_", ".")
 
 def setup():
+    pisitools.dosed("config/override.m4", "2.64", "2.65")
+    autotools.autoreconf("-vfi")
     autotools.configure("--with-system-readline \
                          --with-separate-debug-dir=/usr/lib/debug \
                          --with-gdb-datadir=/usr/share/gdb \
                          --with-pythondir=/usr/lib/%s/site-packages \
                          --enable-tui \
+                         --disable-nls \
                          --disable-sim \
                          --disable-rpath \
                          --disable-werror \

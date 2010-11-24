@@ -18,11 +18,11 @@
 	gdb.base/watchpoint.c (global_ptr_ptr): New variable.
 	(func4): New testing code for GLOBAL_PTR_PTR.
 
-Index: gdb-6.8.50.20090803/gdb/breakpoint.c
+Index: gdb-7.0.50.20100115/gdb/breakpoint.c
 ===================================================================
---- gdb-6.8.50.20090803.orig/gdb/breakpoint.c	2009-08-04 06:29:47.000000000 +0200
-+++ gdb-6.8.50.20090803/gdb/breakpoint.c	2009-08-04 06:32:50.000000000 +0200
-@@ -823,7 +823,15 @@ is_hardware_watchpoint (struct breakpoin
+--- gdb-7.0.50.20100115.orig/gdb/breakpoint.c	2010-01-15 11:46:29.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/breakpoint.c	2010-01-15 11:49:49.000000000 +0100
+@@ -947,7 +947,15 @@ is_hardware_watchpoint (struct breakpoin
     If VAL_CHAIN is non-NULL, *VAL_CHAIN will be released from the
     value chain.  The caller must free the values individually.  If
     VAL_CHAIN is NULL, all generated values will be left on the value
@@ -39,8 +39,8 @@ Index: gdb-6.8.50.20090803/gdb/breakpoint.c
  
  static void
  fetch_watchpoint_value (struct expression *exp, struct value **valp,
-@@ -6301,7 +6309,7 @@ watch_command_1 (char *arg, int accessfl
-   struct symtab_and_line sal;
+@@ -7264,7 +7272,7 @@ watch_command_1 (char *arg, int accessfl
+   struct breakpoint *b, *scope_breakpoint = NULL;
    struct expression *exp;
    struct block *exp_valid_block;
 -  struct value *val, *mark;
@@ -48,7 +48,7 @@ Index: gdb-6.8.50.20090803/gdb/breakpoint.c
    struct frame_info *frame;
    char *exp_start = NULL;
    char *exp_end = NULL;
-@@ -6392,6 +6400,27 @@ watch_command_1 (char *arg, int accessfl
+@@ -7352,6 +7360,27 @@ watch_command_1 (char *arg, int accessfl
    exp_valid_block = innermost_block;
    mark = value_mark ();
    fetch_watchpoint_value (exp, &val, NULL, NULL);
@@ -76,11 +76,11 @@ Index: gdb-6.8.50.20090803/gdb/breakpoint.c
    if (val != NULL)
      release_value (val);
  
-Index: gdb-6.8.50.20090803/gdb/gdbtypes.h
+Index: gdb-7.0.50.20100115/gdb/gdbtypes.h
 ===================================================================
---- gdb-6.8.50.20090803.orig/gdb/gdbtypes.h	2009-08-04 06:31:58.000000000 +0200
-+++ gdb-6.8.50.20090803/gdb/gdbtypes.h	2009-08-04 06:32:50.000000000 +0200
-@@ -71,7 +71,22 @@ enum type_code
+--- gdb-7.0.50.20100115.orig/gdb/gdbtypes.h	2010-01-15 03:22:31.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/gdbtypes.h	2010-01-15 11:49:26.000000000 +0100
+@@ -72,7 +72,22 @@ enum type_code
      TYPE_CODE_UNION,		/* C union or Pascal variant part */
      TYPE_CODE_ENUM,		/* Enumeration type */
      TYPE_CODE_FLAGS,		/* Bit flags type */
@@ -104,11 +104,11 @@ Index: gdb-6.8.50.20090803/gdb/gdbtypes.h
      TYPE_CODE_INT,		/* Integer type */
  
      /* Floating type.  This is *NOT* a complex type.  Beware, there are parts
-Index: gdb-6.8.50.20090803/gdb/doc/gdb.texinfo
+Index: gdb-7.0.50.20100115/gdb/doc/gdb.texinfo
 ===================================================================
---- gdb-6.8.50.20090803.orig/gdb/doc/gdb.texinfo	2009-08-04 06:32:39.000000000 +0200
-+++ gdb-6.8.50.20090803/gdb/doc/gdb.texinfo	2009-08-04 06:32:50.000000000 +0200
-@@ -3517,6 +3517,18 @@ This command prints a list of watchpoint
+--- gdb-7.0.50.20100115.orig/gdb/doc/gdb.texinfo	2010-01-15 11:12:33.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/doc/gdb.texinfo	2010-01-15 11:49:26.000000000 +0100
+@@ -3723,6 +3723,18 @@ This command prints a list of watchpoint
  it is the same as @code{info break} (@pxref{Set Breaks}).
  @end table
  
@@ -127,10 +127,10 @@ Index: gdb-6.8.50.20090803/gdb/doc/gdb.texinfo
  @value{GDBN} sets a @dfn{hardware watchpoint} if possible.  Hardware
  watchpoints execute very quickly, and the debugger reports a change in
  value at the exact instruction where the change occurs.  If @value{GDBN}
-Index: gdb-6.8.50.20090803/gdb/testsuite/gdb.base/watchpoint.c
+Index: gdb-7.0.50.20100115/gdb/testsuite/gdb.base/watchpoint.c
 ===================================================================
---- gdb-6.8.50.20090803.orig/gdb/testsuite/gdb.base/watchpoint.c	2008-03-03 14:24:12.000000000 +0100
-+++ gdb-6.8.50.20090803/gdb/testsuite/gdb.base/watchpoint.c	2009-08-04 06:32:50.000000000 +0200
+--- gdb-7.0.50.20100115.orig/gdb/testsuite/gdb.base/watchpoint.c	2009-12-30 18:33:35.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/testsuite/gdb.base/watchpoint.c	2010-01-15 11:49:26.000000000 +0100
 @@ -40,6 +40,7 @@ struct foo struct1, struct2, *ptr1, *ptr
  int doread = 0;
  
@@ -139,7 +139,7 @@ Index: gdb-6.8.50.20090803/gdb/testsuite/gdb.base/watchpoint.c
  
  void marker1 ()
  {
-@@ -118,6 +119,10 @@ func4 ()
+@@ -119,6 +120,10 @@ func4 ()
    buf[0] = 3;
    global_ptr = buf;
    buf[0] = 7;
@@ -150,10 +150,10 @@ Index: gdb-6.8.50.20090803/gdb/testsuite/gdb.base/watchpoint.c
  }
  
  int main ()
-Index: gdb-6.8.50.20090803/gdb/testsuite/gdb.base/watchpoint.exp
+Index: gdb-7.0.50.20100115/gdb/testsuite/gdb.base/watchpoint.exp
 ===================================================================
---- gdb-6.8.50.20090803.orig/gdb/testsuite/gdb.base/watchpoint.exp	2009-01-03 06:58:03.000000000 +0100
-+++ gdb-6.8.50.20090803/gdb/testsuite/gdb.base/watchpoint.exp	2009-08-04 06:32:50.000000000 +0200
+--- gdb-7.0.50.20100115.orig/gdb/testsuite/gdb.base/watchpoint.exp	2010-01-01 08:32:01.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/testsuite/gdb.base/watchpoint.exp	2010-01-15 11:50:21.000000000 +0100
 @@ -641,7 +641,21 @@ proc test_watchpoint_and_breakpoint {} {
  	}
      }
@@ -216,10 +216,10 @@ Index: gdb-6.8.50.20090803/gdb/testsuite/gdb.base/watchpoint.exp
      }
  }
      
-@@ -842,6 +879,17 @@ if [initialize] then {
-     }
- 
+@@ -851,6 +888,17 @@ if [initialize] then {
      test_watchpoint_and_breakpoint
+ 
+     test_watchpoint_in_big_blob
 +
 +    # See above.
 +    if [istarget "mips-idt-*"] then {

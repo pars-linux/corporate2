@@ -3,11 +3,11 @@ Test GCORE on 32bit inferiors on 64bit platforms.
 UNSUPPORTED results are valid for `-m64' on 32bit targets.
 
 
-Index: gdb-6.8/gdb/testsuite/gdb.base/gcore.exp
+Index: gdb-7.0.50.20100203/gdb/testsuite/gdb.base/gcore.exp
 ===================================================================
---- gdb-6.8.orig/gdb/testsuite/gdb.base/gcore.exp	2008-01-01 23:53:19.000000000 +0100
-+++ gdb-6.8/gdb/testsuite/gdb.base/gcore.exp	2008-07-14 10:28:05.000000000 +0200
-@@ -30,9 +30,14 @@ set testfile "gcore"
+--- gdb-7.0.50.20100203.orig/gdb/testsuite/gdb.base/gcore.exp	2010-02-01 18:15:36.000000000 +0100
++++ gdb-7.0.50.20100203/gdb/testsuite/gdb.base/gcore.exp	2010-02-03 06:39:54.000000000 +0100
+@@ -28,9 +28,14 @@ set testfile "gcore"
  set srcfile  ${testfile}.c
  set binfile  ${objdir}/${subdir}/${testfile}
  
@@ -25,7 +25,7 @@ Index: gdb-6.8/gdb/testsuite/gdb.base/gcore.exp
  }
  
  # Start with a fresh gdb.
-@@ -47,23 +52,23 @@ send_gdb "help gcore\n"
+@@ -45,23 +50,23 @@ send_gdb "help gcore\n"
  gdb_expect {
      -re "Undefined command: .gcore.*$gdb_prompt $" {
  	# gcore command not supported -- nothing to test here.
@@ -56,16 +56,16 @@ Index: gdb-6.8/gdb/testsuite/gdb.base/gcore.exp
  }
  
  proc capture_command_output { command prefix } {
-@@ -77,7 +82,7 @@ proc capture_command_output { command pr
+@@ -69,7 +74,7 @@ proc capture_command_output { command pr
+     global expect_out
+ 
+     set output_string ""
+-    gdb_test_multiple "$command" "capture_command_output for $command" {
++    gdb_test_multiple "$command" "${prefix} capture_command_output for $command" {
+ 	-re "${command}\[\r\n\]+${prefix}(.*)\[\r\n\]+$gdb_prompt $" {
  	    set output_string $expect_out(1,string)
  	}
- 	default {
--	    fail "capture_command_output failed on $command."
-+	    fail "${prefix} capture_command_output failed on $command."
- 	}
-     }
-     return $output_string
-@@ -109,22 +114,22 @@ set escapedfilename [string_to_regexp ${
+@@ -103,22 +108,22 @@ set escapedfilename [string_to_regexp ${
  
  set core_supported 0
  gdb_test_multiple "gcore ${objdir}/${subdir}/gcore.test" \
@@ -92,7 +92,7 @@ Index: gdb-6.8/gdb/testsuite/gdb.base/gcore.exp
  }
  
  # Now restart gdb and load the corefile.
-@@ -136,31 +141,31 @@ gdb_load ${binfile}
+@@ -130,31 +135,31 @@ gdb_load ${binfile}
  send_gdb "core ${objdir}/${subdir}/gcore.test\n"
  gdb_expect {
      -re ".* is not a core dump:.*$gdb_prompt $" {
@@ -133,7 +133,7 @@ Index: gdb-6.8/gdb/testsuite/gdb.base/gcore.exp
      ".*\[\r\n\]+#0 .* terminal_func \\(\\) at "
      ".*\[\r\n\]+#1 .* array_func \\(\\) at "
      ".*\[\r\n\]+#2 .* factorial_func \\(value=1\\) at "
-@@ -174,61 +179,64 @@ gdb_expect_list "where in corefile" ".*$
+@@ -168,61 +173,64 @@ gdb_expect_list "where in corefile" ".*$
  
  set post_corefile_regs [capture_command_output "info registers" ""]
  if ![string compare $pre_corefile_regs $post_corefile_regs] then {

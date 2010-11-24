@@ -19,30 +19,21 @@ Proposed upstream but never committed upstream.
         (source_command): Update documentation.  Check permissions if
         FROM_TTY is -1.
 
-Index: gdb-6.8.50.20090226/gdb/cli/cli-cmds.c
+Index: gdb-7.0.50.20100121/gdb/cli/cli-cmds.c
 ===================================================================
---- gdb-6.8.50.20090226.orig/gdb/cli/cli-cmds.c	2009-02-27 00:04:32.000000000 +0100
-+++ gdb-6.8.50.20090226/gdb/cli/cli-cmds.c	2009-02-28 07:17:49.000000000 +0100
-@@ -36,6 +36,7 @@
+--- gdb-7.0.50.20100121.orig/gdb/cli/cli-cmds.c	2010-01-18 07:25:22.000000000 +0100
++++ gdb-7.0.50.20100121/gdb/cli/cli-cmds.c	2010-01-21 15:12:28.000000000 +0100
+@@ -38,6 +38,7 @@
  #include "objfiles.h"
  #include "source.h"
  #include "disasm.h"
 +#include "gdb_stat.h"
+ extern void disconnect_or_stop_tracing (int from_tty);
  
  #include "ui-out.h"
- 
-@@ -466,7 +467,7 @@ source_script (char *file, int from_tty)
- 
-   if (fd == -1)
-     {
--      if (from_tty)
-+      if (from_tty > 0)
- 	perror_with_name (file);
-       else
- 	{
-@@ -475,6 +476,29 @@ source_script (char *file, int from_tty)
- 	}
-     }
+@@ -488,6 +489,29 @@ find_and_open_script (int from_tty, char
+ 	      file, O_RDONLY, &full_pathname);
+   make_cleanup (xfree, full_pathname);
  
 +#ifdef HAVE_GETUID
 +  if (from_tty == -1)
@@ -62,15 +53,24 @@ Index: gdb-6.8.50.20090226/gdb/cli/cli-cmds.c
 +	  warning (_("not using untrusted file \"%s\""), file);
 +	  close (fd);
 +	  do_cleanups (old_cleanups);
-+	  return;
++	  return 0;
 +	}
 +    }
 +#endif
 +
-   is_python = source_python;
-   if (strlen (file) > 3 && !strcmp (&file[strlen (file) - 3], ".py"))
-     is_python = 1;
-@@ -486,6 +510,7 @@ source_script (char *file, int from_tty)
+   /* Use the full path name, if it is found.  */
+   if (full_pathname != NULL && fd != -1)
+     {
+@@ -496,7 +520,7 @@ find_and_open_script (int from_tty, char
+ 
+   if (fd == -1)
+     {
+-      if (from_tty)
++      if (from_tty > 0)
+ 	perror_with_name (file);
+       else
+ 	{
+@@ -554,6 +578,7 @@ source_script (char *file, int from_tty)
    else
      script_from_file (stream, file);
  
@@ -78,10 +78,10 @@ Index: gdb-6.8.50.20090226/gdb/cli/cli-cmds.c
    do_cleanups (old_cleanups);
  }
  
-Index: gdb-6.8.50.20090226/gdb/testsuite/gdb.base/gdbinit.exp
+Index: gdb-7.0.50.20100121/gdb/testsuite/gdb.base/gdbinit.exp
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ gdb-6.8.50.20090226/gdb/testsuite/gdb.base/gdbinit.exp	2009-02-28 07:15:57.000000000 +0100
++++ gdb-7.0.50.20100121/gdb/testsuite/gdb.base/gdbinit.exp	2010-01-21 15:11:18.000000000 +0100
 @@ -0,0 +1,98 @@
 +#   Copyright 2005
 +#   Free Software Foundation, Inc.
@@ -181,17 +181,17 @@ Index: gdb-6.8.50.20090226/gdb/testsuite/gdb.base/gdbinit.exp
 +}
 +
 +remote_exec build "rm .gdbinit"
-Index: gdb-6.8.50.20090226/gdb/testsuite/gdb.base/gdbinit.sample
+Index: gdb-7.0.50.20100121/gdb/testsuite/gdb.base/gdbinit.sample
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ gdb-6.8.50.20090226/gdb/testsuite/gdb.base/gdbinit.sample	2009-02-28 07:15:57.000000000 +0100
++++ gdb-7.0.50.20100121/gdb/testsuite/gdb.base/gdbinit.sample	2010-01-21 15:11:18.000000000 +0100
 @@ -0,0 +1 @@
 +echo "\nin gdbinit"
-Index: gdb-6.8.50.20090226/gdb/main.c
+Index: gdb-7.0.50.20100121/gdb/main.c
 ===================================================================
---- gdb-6.8.50.20090226.orig/gdb/main.c	2009-02-27 00:04:32.000000000 +0100
-+++ gdb-6.8.50.20090226/gdb/main.c	2009-02-28 07:15:57.000000000 +0100
-@@ -855,7 +855,7 @@ Excess command line arguments ignored. (
+--- gdb-7.0.50.20100121.orig/gdb/main.c	2010-01-21 15:11:09.000000000 +0100
++++ gdb-7.0.50.20100121/gdb/main.c	2010-01-21 15:11:18.000000000 +0100
+@@ -818,7 +818,7 @@ Excess command line arguments ignored. (
       debugging or what directory you are in.  */
  
    if (home_gdbinit && !inhibit_gdbinit)
@@ -200,7 +200,7 @@ Index: gdb-6.8.50.20090226/gdb/main.c
  
    /* Now perform all the actions indicated by the arguments.  */
    if (cdarg != NULL)
-@@ -924,7 +924,7 @@ Can't attach to process and specify a co
+@@ -887,7 +887,7 @@ Can't attach to process and specify a co
    /* Read the .gdbinit file in the current directory, *if* it isn't
       the same as the $HOME/.gdbinit file (it should exist, also).  */
    if (local_gdbinit && !inhibit_gdbinit)

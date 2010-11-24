@@ -1,7 +1,7 @@
-Index: gdb-6.8.50.20090909/gdb/event-top.c
+Index: gdb-7.0.50.20100115/gdb/event-top.c
 ===================================================================
---- gdb-6.8.50.20090909.orig/gdb/event-top.c	2009-09-09 20:05:48.000000000 +0200
-+++ gdb-6.8.50.20090909/gdb/event-top.c	2009-09-09 20:08:04.000000000 +0200
+--- gdb-7.0.50.20100115.orig/gdb/event-top.c	2010-01-01 08:31:31.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/event-top.c	2010-01-15 11:45:20.000000000 +0100
 @@ -33,6 +33,7 @@
  #include "cli/cli-script.h"     /* for reset_command_nest_depth */
  #include "main.h"
@@ -28,27 +28,19 @@ Index: gdb-6.8.50.20090909/gdb/event-top.c
    /* Each interpreter has its own rules on displaying the command
       prompt.  */
    if (!current_interp_display_prompt_p ())
-Index: gdb-6.8.50.20090909/gdb/symfile.c
+Index: gdb-7.0.50.20100115/gdb/elfread.c
 ===================================================================
---- gdb-6.8.50.20090909.orig/gdb/symfile.c	2009-09-09 20:08:04.000000000 +0200
-+++ gdb-6.8.50.20090909/gdb/symfile.c	2009-09-09 20:08:04.000000000 +0200
-@@ -57,6 +57,7 @@
- #include "solib.h"
- #include "remote.h"
- #include "libbfd.h"
+--- gdb-7.0.50.20100115.orig/gdb/elfread.c	2010-01-15 11:43:30.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/elfread.c	2010-01-15 11:45:34.000000000 +0100
+@@ -40,6 +40,7 @@
+ #include "gdbcore.h"
+ #include "gdbcmd.h"
+ #include "observer.h"
 +#include "elf/external.h"
  
- #include <sys/types.h>
- #include <fcntl.h>
-@@ -65,6 +66,7 @@
- #include <ctype.h>
- #include <time.h>
- #include <sys/time.h>
-+#include <sys/param.h>
+ extern void _initialize_elfread (void);
  
- 
- int (*deprecated_ui_load_progress_hook) (const char *section, unsigned long num);
-@@ -1673,8 +1675,352 @@ build_id_to_filename (struct build_id *b
+@@ -1119,8 +1120,353 @@ build_id_to_filename (struct build_id *b
    return retval;
  }
  
@@ -258,7 +250,8 @@ Index: gdb-6.8.50.20090909/gdb/symfile.c
 +
 +	  /* Base package name for `debuginfo-install'.  We do not use the
 +	     `yum' command directly as the line
-+		 yum --enablerepo='*-debuginfo' install NAME-debuginfo.ARCH
++		 yum --disablerepo='*' --enablerepo='*-debuginfo' \
++		     install NAME-debuginfo.ARCH
 +	     would be more complicated than just:
 +		 debuginfo-install NAME-VERSION-RELEASE.ARCH
 +	     Do not supply the rpm base name (derived from .src.rpm name) as
@@ -398,11 +391,11 @@ Index: gdb-6.8.50.20090909/gdb/symfile.c
 +
  /* This MISSING_FILEPAIR_HASH tracker is used only for the duplicite messages
 -     Try to install the hash file ...
-+     yum --enablerepo='*-debuginfo' install ...
++     yum --disablerepo='*' --enablerepo='*-debuginfo' install ...
     avoidance.  */
  
  struct missing_filepair
-@@ -1728,11 +2074,17 @@ missing_filepair_change (void)
+@@ -1174,11 +1520,17 @@ missing_filepair_change (void)
        /* All their memory came just from missing_filepair_OBSTACK.  */
        missing_filepair_hash = NULL;
      }
@@ -420,7 +413,7 @@ Index: gdb-6.8.50.20090909/gdb/symfile.c
    missing_filepair_change ();
  }
  
-@@ -1799,14 +2151,33 @@ debug_print_missing (const char *binary,
+@@ -1245,14 +1597,34 @@ debug_print_missing (const char *binary,
  
    *slot = missing_filepair;
  
@@ -456,16 +449,17 @@ Index: gdb-6.8.50.20090909/gdb/symfile.c
 +			    _("Missing separate debuginfo for %s\n"), binary);
 +        if (debug != NULL)
 +	  fprintf_unfiltered (gdb_stdlog, _("Try: %s %s\n"),
-+			      "yum --enablerepo='*-debuginfo' install", debug);
++			      "yum --disablerepo='*' --enablerepo='*-debuginfo'"
++			      " install", debug);
 +      }
  }
  
  static char *
-Index: gdb-6.8.50.20090909/gdb/symfile.h
+Index: gdb-7.0.50.20100115/gdb/symfile.h
 ===================================================================
---- gdb-6.8.50.20090909.orig/gdb/symfile.h	2009-09-09 20:08:04.000000000 +0200
-+++ gdb-6.8.50.20090909/gdb/symfile.h	2009-09-09 20:08:04.000000000 +0200
-@@ -387,6 +387,7 @@ extern struct build_id *build_id_addr_ge
+--- gdb-7.0.50.20100115.orig/gdb/symfile.h	2010-01-15 11:12:33.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/symfile.h	2010-01-15 11:45:20.000000000 +0100
+@@ -398,6 +398,7 @@ extern struct build_id *build_id_addr_ge
  extern char *build_id_to_filename (struct build_id *build_id,
  				   char **link_return, int add_debug_suffix);
  extern void debug_print_missing (const char *binary, const char *debug);
@@ -473,10 +467,10 @@ Index: gdb-6.8.50.20090909/gdb/symfile.h
  
  /* From dwarf2read.c */
  
-Index: gdb-6.8.50.20090909/gdb/testsuite/lib/gdb.exp
+Index: gdb-7.0.50.20100115/gdb/testsuite/lib/gdb.exp
 ===================================================================
---- gdb-6.8.50.20090909.orig/gdb/testsuite/lib/gdb.exp	2009-09-09 20:08:04.000000000 +0200
-+++ gdb-6.8.50.20090909/gdb/testsuite/lib/gdb.exp	2009-09-09 20:08:04.000000000 +0200
+--- gdb-7.0.50.20100115.orig/gdb/testsuite/lib/gdb.exp	2010-01-15 11:12:33.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/testsuite/lib/gdb.exp	2010-01-15 11:45:20.000000000 +0100
 @@ -1248,7 +1248,7 @@ proc default_gdb_start { } {
  	    warning "Couldn't set the width to 0."
  	}
@@ -486,10 +480,10 @@ Index: gdb-6.8.50.20090909/gdb/testsuite/lib/gdb.exp
      send_gdb "set build-id-verbose 0\n"
      gdb_expect 10 {
  	-re "$gdb_prompt $" {
-Index: gdb-6.8.50.20090909/gdb/testsuite/lib/mi-support.exp
+Index: gdb-7.0.50.20100115/gdb/testsuite/lib/mi-support.exp
 ===================================================================
---- gdb-6.8.50.20090909.orig/gdb/testsuite/lib/mi-support.exp	2009-09-09 20:08:04.000000000 +0200
-+++ gdb-6.8.50.20090909/gdb/testsuite/lib/mi-support.exp	2009-09-09 20:08:04.000000000 +0200
+--- gdb-7.0.50.20100115.orig/gdb/testsuite/lib/mi-support.exp	2010-01-15 11:12:33.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/testsuite/lib/mi-support.exp	2010-01-15 11:45:20.000000000 +0100
 @@ -221,7 +221,7 @@ proc default_mi_gdb_start { args } {
  	    }
      	}
@@ -499,10 +493,10 @@ Index: gdb-6.8.50.20090909/gdb/testsuite/lib/mi-support.exp
      send_gdb "190-gdb-set build-id-verbose 0\n"
      gdb_expect 10 {
  	-re ".*190-gdb-set build-id-verbose 0\r\n190\\\^done\r\n$mi_gdb_prompt$" {
-Index: gdb-6.8.50.20090909/gdb/tui/tui-interp.c
+Index: gdb-7.0.50.20100115/gdb/tui/tui-interp.c
 ===================================================================
---- gdb-6.8.50.20090909.orig/gdb/tui/tui-interp.c	2009-09-09 20:05:48.000000000 +0200
-+++ gdb-6.8.50.20090909/gdb/tui/tui-interp.c	2009-09-09 20:08:04.000000000 +0200
+--- gdb-7.0.50.20100115.orig/gdb/tui/tui-interp.c	2010-01-01 08:32:07.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/tui/tui-interp.c	2010-01-15 11:45:20.000000000 +0100
 @@ -30,6 +30,7 @@
  #include "tui/tui.h"
  #include "tui/tui-io.h"
@@ -520,10 +514,10 @@ Index: gdb-6.8.50.20090909/gdb/tui/tui-interp.c
        /* Tell readline what the prompt to display is and what function
           it will need to call after a whole line is read. This also
           displays the first prompt.  */
-Index: gdb-6.8.50.20090909/gdb/aclocal.m4
+Index: gdb-7.0.50.20100115/gdb/aclocal.m4
 ===================================================================
---- gdb-6.8.50.20090909.orig/gdb/aclocal.m4	2009-09-09 20:05:48.000000000 +0200
-+++ gdb-6.8.50.20090909/gdb/aclocal.m4	2009-09-09 20:09:32.000000000 +0200
+--- gdb-7.0.50.20100115.orig/gdb/aclocal.m4	2009-11-11 05:42:39.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/aclocal.m4	2010-01-15 11:45:20.000000000 +0100
 @@ -19,6 +19,162 @@ You have another version of autoconf.  I
  If you have problems, you may need to regenerate the build system entirely.
  To do so, use the procedure documented by the package, typically `autoreconf'.])])
@@ -687,10 +681,10 @@ Index: gdb-6.8.50.20090909/gdb/aclocal.m4
  # Copyright (C) 2002, 2003, 2005, 2006, 2007, 2008  Free Software Foundation, Inc.
  #
  # This file is free software; the Free Software Foundation
-Index: gdb-6.8.50.20090909/gdb/config.in
+Index: gdb-7.0.50.20100115/gdb/config.in
 ===================================================================
---- gdb-6.8.50.20090909.orig/gdb/config.in	2009-09-09 20:08:04.000000000 +0200
-+++ gdb-6.8.50.20090909/gdb/config.in	2009-09-09 20:08:04.000000000 +0200
+--- gdb-7.0.50.20100115.orig/gdb/config.in	2010-01-15 03:22:31.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/config.in	2010-01-15 11:45:20.000000000 +0100
 @@ -42,6 +42,9 @@
  /* Define to BFD's default target vector. */
  #undef DEFAULT_BFD_VEC
@@ -711,10 +705,10 @@ Index: gdb-6.8.50.20090909/gdb/config.in
  /* Define if libunwind library is being used. */
  #undef HAVE_LIBUNWIND
  
-Index: gdb-6.8.50.20090909/gdb/configure
+Index: gdb-7.0.50.20100115/gdb/configure
 ===================================================================
---- gdb-6.8.50.20090909.orig/gdb/configure	2009-09-09 20:08:04.000000000 +0200
-+++ gdb-6.8.50.20090909/gdb/configure	2009-09-09 20:09:35.000000000 +0200
+--- gdb-7.0.50.20100115.orig/gdb/configure	2010-01-15 03:22:31.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/configure	2010-01-15 11:45:20.000000000 +0100
 @@ -676,6 +676,9 @@ REPORT_BUGS_TO
  PKGVERSION
  TARGET_OBS
@@ -725,7 +719,7 @@ Index: gdb-6.8.50.20090909/gdb/configure
  pythondir
  GDB_DATADIR_PATH
  GDB_DATADIR
-@@ -886,6 +889,7 @@ with_separate_debug_dir
+@@ -888,6 +891,7 @@ with_separate_debug_dir
  with_gdb_datadir
  with_relocated_sources
  with_pythondir
@@ -733,7 +727,7 @@ Index: gdb-6.8.50.20090909/gdb/configure
  enable_targets
  enable_64_bit_bfd
  enable_gdbcli
-@@ -925,6 +929,9 @@ LDFLAGS
+@@ -928,6 +932,9 @@ LDFLAGS
  LIBS
  CPPFLAGS
  CPP
@@ -743,7 +737,7 @@ Index: gdb-6.8.50.20090909/gdb/configure
  YACC
  YFLAGS
  XMKMF'
-@@ -1588,6 +1595,8 @@ Optional Packages:
+@@ -1593,6 +1600,8 @@ Optional Packages:
                            [DATADIR/gdb]
    --with-pythondir        install Python data files in this path
                            [DATADIR/gdb/python]
@@ -752,7 +746,7 @@ Index: gdb-6.8.50.20090909/gdb/configure
    --with-libunwind        use libunwind frame unwinding support
    --with-curses           use the curses library instead of the termcap
                            library
-@@ -1621,6 +1630,9 @@ Some influential environment variables:
+@@ -1627,6 +1636,9 @@ Some influential environment variables:
    CPPFLAGS    C/C++/Objective C preprocessor flags, e.g. -I<include dir> if
                you have headers in a nonstandard directory <include dir>
    CPP         C preprocessor
@@ -762,7 +756,7 @@ Index: gdb-6.8.50.20090909/gdb/configure
    YACC        The `Yet Another C Compiler' implementation to use. Defaults to
                the first program found out of: `bison -y', `byacc', `yacc'.
    YFLAGS      The list of arguments that will be passed by default to $YACC.
-@@ -6675,6 +6687,486 @@ _ACEOF
+@@ -6760,6 +6772,486 @@ else
  fi
  
  
@@ -931,7 +925,7 @@ Index: gdb-6.8.50.20090909/gdb/configure
 +    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 +/* end confdefs.h.  */
 +
-+/* Duplicate here the declarations to verify they match "symfile.c".  */
++/* Duplicate here the declarations to verify they match "elfread.c".  */
 +#include <rpm/rpmlib.h>
 +#include <rpm/rpmts.h>
 +#include <rpm/rpmdb.h>
@@ -1185,7 +1179,7 @@ Index: gdb-6.8.50.20090909/gdb/configure
 +    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 +/* end confdefs.h.  */
 +
-+/* Duplicate here the declarations to verify they match "symfile.c".  */
++/* Duplicate here the declarations to verify they match "elfread.c".  */
 +#include <rpm/rpmlib.h>
 +#include <rpm/rpmts.h>
 +#include <rpm/rpmdb.h>
@@ -1249,7 +1243,7 @@ Index: gdb-6.8.50.20090909/gdb/configure
  
  
  
-@@ -9721,265 +10213,25 @@ $as_echo "#define STDC_HEADERS 1" >>conf
+@@ -10043,265 +10535,25 @@ $as_echo "#define STDC_HEADERS 1" >>conf
  
  fi
  
@@ -1525,11 +1519,11 @@ Index: gdb-6.8.50.20090909/gdb/configure
  
  fi
  
-Index: gdb-6.8.50.20090909/gdb/configure.ac
+Index: gdb-7.0.50.20100115/gdb/configure.ac
 ===================================================================
---- gdb-6.8.50.20090909.orig/gdb/configure.ac	2009-09-09 20:08:04.000000000 +0200
-+++ gdb-6.8.50.20090909/gdb/configure.ac	2009-09-09 20:08:04.000000000 +0200
-@@ -151,6 +151,199 @@ else
+--- gdb-7.0.50.20100115.orig/gdb/configure.ac	2010-01-15 03:22:31.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/configure.ac	2010-01-15 11:45:20.000000000 +0100
+@@ -152,6 +152,199 @@ else
  fi
  AC_SUBST(pythondir)
  
@@ -1662,7 +1656,7 @@ Index: gdb-6.8.50.20090909/gdb/configure.ac
 +    save_CFLAGS="$CFLAGS"
 +    CFLAGS="$CFLAGS -Werror"
 +    AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
-+/* Duplicate here the declarations to verify they match "symfile.c".  */
++/* Duplicate here the declarations to verify they match "elfread.c".  */
 +#include <rpm/rpmlib.h>
 +#include <rpm/rpmts.h>
 +#include <rpm/rpmdb.h>
@@ -1729,17 +1723,17 @@ Index: gdb-6.8.50.20090909/gdb/configure.ac
  
  AC_CONFIG_SUBDIRS(doc testsuite)
  
-Index: gdb-6.8.50.20090909/gdb/acinclude.m4
+Index: gdb-7.0.50.20100115/gdb/acinclude.m4
 ===================================================================
---- gdb-6.8.50.20090909.orig/gdb/acinclude.m4	2009-09-09 20:05:48.000000000 +0200
-+++ gdb-6.8.50.20090909/gdb/acinclude.m4	2009-09-09 20:08:04.000000000 +0200
+--- gdb-7.0.50.20100115.orig/gdb/acinclude.m4	2010-01-08 08:16:43.000000000 +0100
++++ gdb-7.0.50.20100115/gdb/acinclude.m4	2010-01-15 11:45:20.000000000 +0100
 @@ -1,3 +1,5 @@
 +# serial 1
 +
  dnl written by Rob Savoye <rob@cygnus.com> for Cygnus Support
  dnl major rewriting for Tcl 7.5 by Don Libes <libes@nist.gov>
  
-@@ -79,8 +81,6 @@ AC_MSG_RESULT(yes)
+@@ -81,8 +83,6 @@ AC_MSG_RESULT(yes)
  # Foundation, Inc., 51 Franklin Street, Fifth Floor,
  # Boston, MA 02110-1301, USA.
  
