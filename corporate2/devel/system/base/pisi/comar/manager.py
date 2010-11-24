@@ -189,12 +189,12 @@ def setRepoActivities(repos=None):
 
 @privileged
 def setRepositories(repos=None):
+    oldRepos = pisi.db.repodb.RepoDB().list_repos(only_active=False)
+
+    for repo in oldRepos:
+        pisi.api.remove_repo(repo)
+
     if repos:
-        oldRepos = pisi.db.repodb.RepoDB().list_repos(only_active=False)
-
-        for repo in oldRepos:
-            pisi.api.remove_repo(repo)
-
         for repo in repos:
             pisi.api.add_repo(repo[0], repo[1])
 
