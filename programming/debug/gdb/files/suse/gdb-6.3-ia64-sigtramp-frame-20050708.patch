@@ -13,11 +13,11 @@
 	Port to gdb-6.8.50.20081128, follow the upstream change:
 	http://sourceware.org/cgi-bin/cvsweb.cgi/src/gdb/ia64-tdep.c.diff?cvsroot=src&r1=1.176&r2=1.177
 
-Index: gdb-6.8.50.20090818/gdb/ia64-tdep.c
+Index: gdb-6.8.50.20081128/gdb/ia64-tdep.c
 ===================================================================
---- gdb-6.8.50.20090818.orig/gdb/ia64-tdep.c	2009-07-30 18:29:53.000000000 +0200
-+++ gdb-6.8.50.20090818/gdb/ia64-tdep.c	2009-08-24 17:03:11.000000000 +0200
-@@ -2153,6 +2153,94 @@ ia64_sigtramp_frame_prev_register (struc
+--- gdb-6.8.50.20081128.orig/gdb/ia64-tdep.c	2008-11-26 06:27:48.000000000 +0100
++++ gdb-6.8.50.20081128/gdb/ia64-tdep.c	2008-12-02 19:04:32.000000000 +0100
+@@ -2107,6 +2107,94 @@ ia64_sigtramp_frame_prev_register (struc
        return frame_unwind_got_constant (this_frame, regnum, pc);
      }
  
@@ -29,7 +29,7 @@ Index: gdb-6.8.50.20090818/gdb/ia64-tdep.c
 +      ULONGEST unatN_val;
 +      ULONGEST unat;
 +      read_memory (cache->saved_regs[IA64_UNAT_REGNUM], (char *) &unat,
-+		   register_size (gdbarch, IA64_UNAT_REGNUM));
++		   register_size (target_gdbarch, IA64_UNAT_REGNUM));
 +      unatN_val = (unat & (1LL << (regnum - IA64_NAT0_REGNUM))) != 0;
 +      return frame_unwind_got_constant (this_frame, regnum, unatN_val);
 +    }
@@ -45,9 +45,9 @@ Index: gdb-6.8.50.20090818/gdb/ia64-tdep.c
 +      CORE_ADDR gr_addr = 0, nat_addr = 0;
 +
 +      read_memory (cache->saved_regs[IA64_BSP_REGNUM], (char *) &bsp,
-+		   register_size (gdbarch, IA64_BSP_REGNUM));
++		   register_size (target_gdbarch, IA64_BSP_REGNUM));
 +      read_memory (cache->saved_regs[IA64_CFM_REGNUM], (char *) &cfm,
-+		   register_size (gdbarch, IA64_CFM_REGNUM));
++		   register_size (target_gdbarch, IA64_CFM_REGNUM));
 +
 +      /* The bsp points at the end of the register frame so we
 +	 subtract the size of frame from it to get start of register frame.  */
@@ -71,10 +71,10 @@ Index: gdb-6.8.50.20090818/gdb/ia64-tdep.c
 +	      nat_addr = cache->saved_regs[IA64_RNAT_REGNUM];
 +	      if (nat_addr != 0)
 +		read_memory (nat_addr, (char *) &nat_collection,
-+			     register_size (gdbarch, IA64_RNAT_REGNUM));
++			     register_size (target_gdbarch, IA64_RNAT_REGNUM));
 +	    }
 +	  else
-+	    nat_collection = read_memory_integer (nat_addr, 8, byte_order);
++	    nat_collection = read_memory_integer (nat_addr, 8, BFD_ENDIAN_LITTLE);
 +	  if (nat_addr != 0)
 +	    {
 +	      nat_bit = (gr_addr >> 3) & 0x3f;
@@ -97,9 +97,9 @@ Index: gdb-6.8.50.20090818/gdb/ia64-tdep.c
 +      ULONGEST bof;
 +
 +      read_memory (cache->saved_regs[IA64_BSP_REGNUM], (char *) &bsp,
-+		   register_size (gdbarch, IA64_BSP_REGNUM));
++		   register_size (target_gdbarch, IA64_BSP_REGNUM));
 +      read_memory (cache->saved_regs[IA64_CFM_REGNUM], (char *) &cfm,
-+		   register_size (gdbarch, IA64_CFM_REGNUM));
++		   register_size (target_gdbarch, IA64_CFM_REGNUM));
 +
 +      /* The bsp points at the end of the register frame so we
 +	 subtract the size of frame from it to get beginning of frame.  */
@@ -112,7 +112,7 @@ Index: gdb-6.8.50.20090818/gdb/ia64-tdep.c
    else if ((regnum >= IA64_GR32_REGNUM && regnum <= IA64_GR127_REGNUM)
             || (regnum >= V32_REGNUM && regnum <= V127_REGNUM))
      {
-@@ -2167,7 +2255,42 @@ ia64_sigtramp_frame_prev_register (struc
+@@ -2121,7 +2209,42 @@ ia64_sigtramp_frame_prev_register (struc
        return frame_unwind_got_constant (this_frame, regnum, 0);
      }
  
@@ -133,9 +133,9 @@ Index: gdb-6.8.50.20090818/gdb/ia64-tdep.c
 +	  ULONGEST cfm;
 +	  ULONGEST prN_val;
 +	  read_memory (pr_addr, (char *) &pr,
-+		       register_size (gdbarch, IA64_PR_REGNUM));
++		       register_size (target_gdbarch, IA64_PR_REGNUM));
 +	  read_memory (cache->saved_regs[IA64_CFM_REGNUM], (char *) &cfm,
-+		       register_size (gdbarch, IA64_CFM_REGNUM));
++		       register_size (target_gdbarch, IA64_CFM_REGNUM));
 +
 +	  /* Get the register rename base for this frame and adjust the
 +	   * register name to take rotation into account. */

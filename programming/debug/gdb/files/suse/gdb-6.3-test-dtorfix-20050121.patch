@@ -129,7 +129,7 @@ Index: gdb/testsuite/ChangeLog
 +}
 --- gdb-6.3/gdb/testsuite/gdb.cp/constructortest.exp.fix	Fri Jan 21 17:07:02 2005
 +++ gdb-6.3/gdb/testsuite/gdb.cp/constructortest.exp	Fri Jan 21 17:05:29 2005
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,137 @@
 +# This testcase is part of GDB, the GNU debugger.
 +
 +# Copyright 2005, 2007 Free Software Foundation, Inc.
@@ -179,8 +179,9 @@ Index: gdb/testsuite/ChangeLog
 +    gdb_suppress_tests
 +}
 +
-+# Break on the various forms of the A::A constructor
-+gdb_test "break A\:\:A" "Breakpoint 2 at .* \\(2 locations\\)" "breaking on A::A"
++# Break on the various forms of the A::A constructor.
++# " (2 locations)" is displayed depending on G++ version.
++gdb_test "break A\:\:A" "Breakpoint 2 at .*" "breaking on A::A"
 +        
 +# Verify that we break for the A constructor two times
 +# Once for new A and once for new B
@@ -206,7 +207,8 @@ Index: gdb/testsuite/ChangeLog
 +gdb_test "break 'A::A()'" "" "break in constructor A 2"
 +gdb_continue_to_breakpoint "First line A"
 +set second_line [gdb_get_line_number "Second line A"]
-+gdb_test "break $second_line" "Breakpoint .*, line $second_line. \\(2 locations\\)" "break by line in constructor"
++# " (2 locations)" is displayed depending on G++ version.
++gdb_test "break $second_line" "Breakpoint .*, line $second_line\\..*" "break by line in constructor"
 +gdb_continue_to_breakpoint "Second line A"
 +gdb_test "bt" "#0.*A.*#1.*main.*" "Verify in in-charge A::A second line"
 +gdb_continue_to_breakpoint "Second line A"
@@ -217,7 +219,8 @@ Index: gdb/testsuite/ChangeLog
 +gdb_test "break 'A::~A()'" "" "break in constructor ~A 2"
 +gdb_continue_to_breakpoint "First line ~A"
 +set second_line_dtor [gdb_get_line_number "Second line ~A"]
-+gdb_test "break $second_line_dtor" "Breakpoint .*, line $second_line_dtor. \\(2 locations\\)" "break by line in destructor"
++# " (2 locations)" is displayed depending on G++ version.
++gdb_test "break $second_line_dtor" "Breakpoint .*, line $second_line_dtor\\..*" "break by line in destructor"
 +gdb_continue_to_breakpoint "Second line ~A"
 +gdb_test "bt" "#0.*A.*#1.*main.*" "Verify in in-charge A::~A second line"
 +# FIXME: Analyse this case better.
@@ -232,8 +235,11 @@ Index: gdb/testsuite/ChangeLog
 +gdb_load ${binfile}
 +runto_main
 +
++set first_line_dtor [gdb_get_line_number "First line ~C"]
++set define_line_dtor [gdb_get_line_number "Destructor C"]
 +# Break on the various forms of the C::~C destructor
-+gdb_test "break C\:\:~C" "Breakpoint .* \\(3 locations\\)" "breaking on C::~C"
++# " ([23] locations)" is displayed depending on G++ version.
++gdb_test "break C\:\:~C" "Breakpoint .*, line ($define_line_dtor|$define_line_dtor)\\..*" "breaking on C::~C"
 +gdb_continue_to_breakpoint "First line ~C"
 +
 +# Verify that we can break by line number in a destructor and find
@@ -242,8 +248,8 @@ Index: gdb/testsuite/ChangeLog
 +gdb_load ${binfile}
 +delete_breakpoints
 +
-+set first_line_dtor [gdb_get_line_number "First line ~C"]
-+gdb_test "break $first_line_dtor" "Breakpoint .*, line $first_line_dtor. \\(3 locations\\)" "break by line in destructor"
++# " (3 locations)" is displayed depending on G++ version.
++gdb_test "break $first_line_dtor" "Breakpoint .*, line $first_line_dtor\\..*" "break by line in destructor"
 +
 +# Run to `main' where we begin our tests.
 +# Set the breakpoints first to test PIE multiple-PC BREAKPOINT_RE_SET.
