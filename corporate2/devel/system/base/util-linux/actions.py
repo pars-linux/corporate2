@@ -19,6 +19,10 @@ def setup():
     shelltools.export("AUTOPOINT", "/bin/true")
 
     autotools.autoreconf("-fi")
+
+    # Extra fedora switches:
+    # --enable-login-utils will enable some utilities we ship in shadow
+    # --enable-kill will enable the kill utility we ship in coreutils
     autotools.configure('--bindir=/bin \
                          --sbindir=/sbin \
                          --enable-partx \
