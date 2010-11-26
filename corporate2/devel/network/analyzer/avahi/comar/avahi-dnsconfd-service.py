@@ -23,7 +23,7 @@ def stop():
 @synchronized
 def reload():
     stopService(command=DAEMON,
-                signal=signal.SIGHUP)
+                signalno=signal.SIGHUP)
 
 def status():
     return isServiceRunning(pidfile=PIDFILE)
