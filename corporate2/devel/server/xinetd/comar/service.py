@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from comar.service import *
-import signal
 
 serviceType = "server"
 serviceDesc = _({"en": "eXtended InterNET Services Daemon",
@@ -24,7 +23,7 @@ def stop():
 
 def reload():
     stopService(command="/usr/sbin/xinetd",
-                signal=signal.SIGHUP)
+                signalno=signal.SIGHUP)
 
 def status():
     return isServiceRunning(PIDFILE)
