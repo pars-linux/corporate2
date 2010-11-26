@@ -4,6 +4,7 @@ from comar.service import *
 serviceType = "local"
 serviceDesc = _({"en": "ACPI Daemon",
                  "tr": "ACPI Servisi"})
+
 serviceDefault = "on"
 
 @synchronized
@@ -26,7 +27,7 @@ def ready():
 def reload():
     import signal
     stopService(command="/usr/sbin/acpid",
-                signal=signal.SIGHUP)
+                signalno=signal.SIGHUP)
 
 def status():
     return isServiceRunning(command="/usr/sbin/acpid")
