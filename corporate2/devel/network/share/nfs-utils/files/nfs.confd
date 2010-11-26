@@ -1,27 +1,66 @@
 # /etc/conf.d/nfs
 
-# If you wish to set the port numbers for lockd,
-# please see /etc/sysctl.conf
+# nfs-common options
+####################
+#
+# If you do not set values for the NEED_ options, they will be attempted
+# autodetected; this should be sufficient for most people. Valid alternatives
+# for the NEED_ options are "yes" and "no".
 
-# Number of servers to be started up by default
+# Options for rpc.statd.
+#   Should rpc.statd listen on a specific port? This is especially useful
+#   when you have a port-based firewall. To use a fixed port, set this
+#   this variable to a statd argument like: "--port 4000 --outgoing-port 4001".
+#   For more information, see rpc.statd(8)
+STATD_OPTIONS=
+
+# TCP port rpc.lockd should listen on.
+LOCKD_TCPPORT=
+# UDP port rpc.lockd should listen on.
+LOCKD_UDPPORT=
+
+# Do you want to start the idmapd daemon? It is only needed for NFSv4.
+NEED_IDMAPD=yes
+
+# Options for rpc.idmapd
+RPCIDMAPD_OPTIONS=
+
+# Do you want to start the gssd daemon? It is required for Kerberos mounts.
+# NFS service scripts detect NFS Kerberos mounts in /etc/fstab and starts gssd
+# daemon even if this option is set to "no".  This option force enables gssd
+# daemon.
+NEED_GSSD=
+
+# Options for rpc.gssd
+RPCGSSD_OPTIONS=
+
+# nfs-server options
+####################
+
+# Options for rpc.nfsd.
+RPCNFSD_OPTIONS=
+
+# Number of servers to start up
 RPCNFSDCOUNT=8
 
-# Options to pass to rpc.mountd
-# ex. RPCMOUNTDOPTS="-p 32767
-RPCMOUNTDOPTS=""
+# Options for rpc.mountd.
+# If you have a port-based firewall, you might want to set up
+# a fixed port here using the --port option. For more information, 
+# see rpc.mountd(8)
+RPCMOUNTD_OPTIONS=
 
-# Options to pass to rpc.statd
-# ex. RPCSTATDOPTS="-p 32765 -o 32766"
-RPCSTATDOPTS=""
+# Do you want to start the svcgssd daemon? It is only required for Kerberos
+# exports. Valid alternatives are "yes" and "no"; the default is "no".
+NEED_SVCGSSD=
 
-# Options to pass to rpc.idmapd
-RPCIDMAPDOPTS=""
+# Options for rpc.svcgssd.
+RPCSVCGSSD_OPTIONS=
 
-# Options to pass to rpc.gssd
-RPCGSSDOPTS=""
+# Do you want to start the quotad daemon? It is required for remote quotas.
+# NFS service scripts detect the mount option "quota" in any mount entry and
+# starts quotad daemon even if this option is set to "no". This option force
+# enables quotad daemon if the 'quota' package is installed.
+NEED_QUOTAD=
 
-# Options to pass to rpc.svcgssd
-RPCSVCGSSDOPTS=""
-
-# Timeout (in seconds) for exportfs
-EXPORTFSTIMEOUT=30
+# Options for rpc.quotad
+RPCRQUOTAD_OPTIONS=

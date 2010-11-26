@@ -13,31 +13,42 @@
         <IsA>app:console</IsA>
         <Summary>NFS client and server</Summary>
         <Description>Contains NFS (Network File System) client and server. It is possible to mount a network resource as a file system using the NFS protocol.</Description>
-        <Archive sha1sum="63c0ed078f231a65e3e29a21da094ad2326a0294" type="tarbz2">mirrors://sourceforge/nfs/nfs-utils-1.1.6.tar.bz2</Archive>
+        <Archive sha1sum="da70a29191b07056d71b6e427a87d5cfd8628523" type="tarbz2">mirrors://sourceforge/nfs/1.2.3/nfs-utils-1.2.3.tar.bz2</Archive>
         <BuildDependencies>
-            <Dependency versionFrom="6">portmap</Dependency>
+            <Dependency>rpcbind</Dependency>
             <Dependency versionFrom="0.20">libnfsidmap</Dependency>
             <Dependency versionFrom="1.3d">libevent</Dependency>
+            <Dependency>libcap</Dependency>
+            <Dependency>libtirpc</Dependency>
+            <Dependency>mit-kerberos-devel</Dependency>
+            <Dependency>libgssglue-devel</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">nfs-utils-1.1.4-mtab-sym.patch</Patch>
-            <Patch level="1">nfs-utils-1.1.4-no-exec.patch</Patch>
+            <Patch level="1">nfs-utils-1.2.4-rc1.patch</Patch>
+            <Patch level="1">nfs-utils-1.2.3-export-manpage.patch</Patch>
+            <Patch level="1">nfs-utils-1.2.1-statdpath-man.patch</Patch>
+            <Patch level="1">nfs-utils-1.2.2-statdpath.patch</Patch>
+            <Patch level="1">nfs-utils-1.2.1-exp-subtree-warn-off.patch</Patch>
+            <Patch level="1">nfs-utils-1.2.3-sm-notify-res_init.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>nfs-utils</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="6">portmap</Dependency>
+            <Dependency>rpcbind</Dependency>
             <Dependency versionFrom="0.20">libnfsidmap</Dependency>
             <Dependency versionFrom="1.3d">libevent</Dependency>
+            <Dependency>libcap</Dependency>
+            <Dependency>libtirpc</Dependency>
+            <Dependency>mit-kerberos-libs</Dependency>
+            <Dependency>libgssglue</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="config">/etc</Path>
+            <Path fileType="header">/usr/include</Path>
             <Path fileType="executable">/usr/sbin</Path>
             <Path fileType="executable">/sbin</Path>
-            <Path fileType="header">/usr/include</Path>
-            <Path fileType="config">/etc</Path>
             <Path fileType="library">/var/lib</Path>
             <Path fileType="man">/usr/share/man</Path>
             <Path fileType="doc">/usr/share/doc</Path>
@@ -46,13 +57,22 @@
             <AdditionalFile owner="root" permission="0644" target="/etc/exports">exports</AdditionalFile>
             <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/nfs">nfs.confd</AdditionalFile>
             <AdditionalFile owner="root" permission="0644" target="/etc/idmapd.conf">idmapd.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/gssapi_mech.conf">gssapi_mech.conf</AdditionalFile>
         </AdditionalFiles>
         <Provides>
-            <COMAR script="service.py">System.Service</COMAR>
+            <COMAR script="nfs-common.py" name="nfs_common">System.Service</COMAR>
+            <COMAR script="nfs-server.py" name="nfs_server">System.Service</COMAR>
         </Provides>
     </Package>
 
     <History>
+        <Update release="20">
+            <Date>2010-11-03</Date>
+            <Version>1.2.3</Version>
+            <Comment>Version bump.</Comment>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
         <Update release="19">
             <Date>2010-10-29</Date>
             <Version>1.1.6</Version>
