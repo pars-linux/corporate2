@@ -39,7 +39,7 @@ def stop():
 
 def reload():
     stopService(command=command,
-                signal=signal.SIGHUP)
+                signalno=signal.SIGHUP)
 
 def status():
     return isServiceRunning(pidfile)
