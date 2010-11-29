@@ -30,7 +30,7 @@ GSSD_PIDFILE = "/var/run/rpc.gssd.pid"
 def need_gssd():
     fstab = fstabutils.Fstab()
     for entry in fstab.get_entries():
-        if "nfs" in  entry.get_fs_vfstype():
+        if is_nfs():
             if "sec=krb" in entry.get_fs_mntopts():
                 return True
 
