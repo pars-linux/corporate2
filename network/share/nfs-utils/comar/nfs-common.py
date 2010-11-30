@@ -48,8 +48,13 @@ def start():
         run("/sbin/sysctl -w fs.nfs.nlm_udpport=%s" % LOCKD_UDPPORT)
 
     # rpc.statd is first
+    RPCSTATD_OPTIONS = config.get("RPCSTATD_OPTIONS", "")
+    STATD_PORT = config.get("STATD_PORT")
+    if STATD_PORT:
+        RPCSTATD_OPTIONS += " -p %s" % STATD_PORT
+
     startService(command="/sbin/rpc.statd",
-                 args="%s" % config.get("RPCSTATD_OPTIONS"),
+                 args="%s" % RPCSTATD_OPTIONS,
                  donotify=True,
                  pidfile=STATD_PIDFILE)
 
@@ -66,7 +71,7 @@ def start():
             run("/bin/mount -t rpc_pipefs rpc_pipefs %s" % PIPEFS_MOUNTPOINT)
 
         startService(command="/usr/sbin/rpc.idmapd",
-                     args="-f %s" % config.get("RPCIDMAPD_OPTIONS"),
+                     args="-f %s" % config.get("RPCIDMAPD_OPTIONS", ""),
                      donotify=True,
                      detach=True,
                      makepid=True,
@@ -77,7 +82,7 @@ def start():
                 fail(ERR_INSMOD % "rpcsec_gss_krb5")
 
             startService(command="/usr/sbin/rpc.gssd",
-                         args="-f %s" % config.get("RPCGSSD_OPTIONS"),
+                         args="-f %s" % config.get("RPCGSSD_OPTIONS", ""),
                          donotify=True,
                          detach=True,
                          makepid=True,
