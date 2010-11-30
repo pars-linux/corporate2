@@ -79,8 +79,6 @@ def start():
     if MOUNTD_PORT:
         RPCMOUNTD_OPTIONS += " -p %s" % MOUNTD_PORT
 
-    # There is a reason why i use "run" method instead of startService. Spank COMAR!!!
-    #run("/usr/sbin/rpc.mountd %s" % RPCMOUNTD_OPTIONS)
     startService(command="/usr/sbin/rpc.mountd",
                  args="-F %s" % RPCMOUNTD_OPTIONS,
                  donotify=True,
