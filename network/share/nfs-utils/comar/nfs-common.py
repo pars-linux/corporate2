@@ -26,7 +26,6 @@ GSSD_PIDFILE = "/var/run/rpc.gssd.pid"
 # Parse the fstab file and determine whether we need gssd or not by searching
 # mount option sec=krb* in nfs mount entries.
 # If none, nfs conf.d file decides if it's needed.
-
 def need_gssd():
     fstab = fstabutils.Fstab()
     for entry in fstab.get_entries():
@@ -58,7 +57,7 @@ def start():
                  donotify=True,
                  pidfile=STATD_PIDFILE)
 
-    if config.get("NEED_IDMAPD") == "yes" or (config.get("NEED_GSSD") == "yes" or need_gssd()):
+    if config.get("NEED_IDMAPD", "yes") == "yes" or (config.get("NEED_GSSD", "no") == "yes" or need_gssd()):
         if run("/sbin/modprobe -q nfs"):
             fail(ERR_INSMOD % "nfs")
 
@@ -77,7 +76,7 @@ def start():
                      makepid=True,
                      pidfile=IDMAPD_PIDFILE)
 
-        if config.get("NEED_GSSD") == "yes" or need_gssd():
+        if config.get("NEED_GSSD", "no") == "yes" or need_gssd():
             if run("/sbin/modprobe -q rpcsec_gss_krb5"):
                 fail(ERR_INSMOD % "rpcsec_gss_krb5")
 
@@ -112,8 +111,8 @@ def stop():
 
 def status():
     result = isServiceRunning(STATD_PIDFILE)
-    if config.get("NEED_IDMAPD") == "yes":
+    if config.get("NEED_IDMAPD", "yes") == "yes":
         result = result and isServiceRunning(IDMAPD_PIDFILE)
-    if config.get("NEED_GSSD") == "yes" or need_gssd():
+    if config.get("NEED_GSSD", "no") == "yes" or need_gssd():
         result = result and isServiceRunning(GSSD_PIDFILE)
     return result

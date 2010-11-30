@@ -49,7 +49,7 @@ def start():
                  args="%s %s" % (config.get("RPCNFSD_OPTIONS", ""), config.get("RPCNFSDCOUNT", "8")),
                  donotify=True)
 
-    if config.get("NEED_SVCGSSD") == "yes":
+    if config.get("NEED_SVCGSSD", "no") == "yes":
         startService(command="/usr/sbin/rpc.svcgssd",
                      args="-f %s" % config.get("RPCSVCGSSD_OPTIONS", ""),
                      donotify=True,
@@ -58,7 +58,7 @@ def start():
                      pidfile=SVCGSSD_PIDFILE)
 
     # Start rpc.rquotad daemon here if its available
-    if (config.get("NEED_QUOTAD") == "yes" or need_quotad()) and os.path.exists(RQUOTAD_PATH):
+    if (config.get("NEED_QUOTAD", "no") == "yes" or need_quotad()) and os.path.exists(RQUOTAD_PATH):
         RPCRQUOTAD_OPTIONS = config.get("RPCRQUOTAD_OPTIONS", "")
         RQUOTAD_PORT = config.get("RQUOTAD_PORT")
         if RQUOTAD_PORT:
@@ -125,8 +125,8 @@ def reload():
 def status():
     # ugly way of learning if the daemon is up and running.
     result = not run("/sbin/pidof nfsd") and isServiceRunning(MOUNTD_PIDFILE)
-    if config.get("NEED_SVCGSSD") == "yes":
+    if config.get("NEED_SVCGSSD", "no") == "yes":
         result = result and isServiceRunning(SVCGSSD_PIDFILE)
-    if (config.get("NEED_QUOTAD") == "yes" or need_quotad()) and os.path.exists(RQUOTAD_PATH):
+    if (config.get("NEED_QUOTAD", "no") == "yes" or need_quotad()) and os.path.exists(RQUOTAD_PATH):
         result = result and isServiceRunning(RQUOTAD_PIDFILE)
     return result
