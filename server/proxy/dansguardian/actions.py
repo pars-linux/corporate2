@@ -21,9 +21,8 @@ def setup():
                          --enable-trickledm \
                          --enable-ntlm \
                          --enable-email \
-                         --with-proxyuser=clamav \
-                         --with-proxygroup=clamav")
-     # why clamav instead of dansguardian? ^^^^^^
+                         --with-proxyuser=dansguardian \
+                         --with-proxygroup=dansguardian")
 
 def build():
     autotools.make()
