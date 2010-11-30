@@ -18,9 +18,9 @@ PROCNFSD_MOUNTPOINT = "/proc/fs/nfsd"
 RQUOTAD_PATH = "/usr/sbin/rpc.rquotad"
 
 IDMAPD_PIDFILE = "/var/run/rpc.idmapd.pid"
-MOUNTD_PIDFILE = "/var/run/rpc.mountd.pid"
 SVCGSSD_PIDFILE = "/var/run/rpc.svcgssd.pid"
 RQUOTAD_PIDFILE = "/var/run/rpc.rquotad.pid"
+MOUNTD_PIDFILE = "/var/run/rpc.mountd.pid"
 
 # Parse the fstab file and determine whether we need quotad or not by searching
 # mount option quota in any mount entry.
@@ -44,13 +44,14 @@ def start():
 
     run("/usr/sbin/exportfs -r")
 
+    # If RPCNFSDCOUNT is not explicitly defined in confd, use default one, 8 threads.
     startService(command="/usr/sbin/rpc.nfsd",
-                 args="%s %s" % (config.get("RPCNFSD_OPTIONS"), config.get("RPCNFSDCOUNT")),
+                 args="%s %s" % (config.get("RPCNFSD_OPTIONS", ""), config.get("RPCNFSDCOUNT", "8")),
                  donotify=True)
 
     if config.get("NEED_SVCGSSD") == "yes":
         startService(command="/usr/sbin/rpc.svcgssd",
-                     args="-f %s" % config.get("RPCSVCGSSD_OPTIONS"),
+                     args="-f %s" % config.get("RPCSVCGSSD_OPTIONS", ""),
                      donotify=True,
                      detach=True,
                      makepid=True,
@@ -58,8 +59,12 @@ def start():
 
     # Start rpc.rquotad daemon here if its available
     if (config.get("NEED_QUOTAD") == "yes" or need_quotad()) and os.path.exists(RQUOTAD_PATH):
+        RPCRQUOTAD_OPTIONS = config.get("RPCRQUOTAD_OPTIONS", "")
+        RQUOTAD_PORT = config.get("RQUOTAD_PORT")
+        if RQUOTAD_PORT:
+            RPCRQUOTAD_OPTIONS += " -p %s" % RQUOTAD_PORT
         startService(command=RQUOTAD_PATH,
-                     args="-F %s" % config.get("RPCRQUOTAD_OPTIONS"),
+                     args="-F %s" % RPCRQUOTAD_OPTIONS,
                      donotify=True,
                      detach=True,
                      makepid=True,
@@ -69,8 +74,15 @@ def start():
     if os.path.exists(IDMAPD_PIDFILE):
         os.kill(int(file(IDMAPD_PIDFILE).read().strip()), signal.SIGHUP)
 
+    RPCMOUNTD_OPTIONS = config.get("RPCMOUNTD_OPTIONS", "")
+    MOUNTD_PORT = config.get("MOUNTD_PORT")
+    if MOUNTD_PORT:
+        RPCMOUNTD_OPTIONS += " -p %s" % MOUNTD_PORT
+
+    # There is a reason why i use "run" method instead of startService. Spank COMAR!!!
+    #run("/usr/sbin/rpc.mountd %s" % RPCMOUNTD_OPTIONS)
     startService(command="/usr/sbin/rpc.mountd",
-                 args="-F %s" % (config.get("RPCMOUNTD_OPTIONS")),
+                 args="-F %s" % RPCMOUNTD_OPTIONS,
                  donotify=True,
                  detach=True,
                  makepid=True,
@@ -81,8 +93,14 @@ def stop():
     stopService(pidfile=MOUNTD_PIDFILE,
                 donotify=True)
 
+    if os.path.exists(MOUNTD_PIDFILE):
+        os.unlink(MOUNTD_PIDFILE)
+
     stopService(pidfile=SVCGSSD_PIDFILE,
                 donotify=True)
+
+    if os.path.exists(SVCGSSD_PIDFILE):
+        os.unlink(SVCGSSD_PIDFILE)
 
     stopService(pidfile=RQUOTAD_PIDFILE,
                 donotify=True)
@@ -106,7 +124,7 @@ def reload():
 
 def status():
     # ugly way of learning if the daemon is up and running.
-    result = not run("/sbin/pidof nfsd")
+    result = not run("/sbin/pidof nfsd") and isServiceRunning(MOUNTD_PIDFILE)
     if config.get("NEED_SVCGSSD") == "yes":
         result = result and isServiceRunning(SVCGSSD_PIDFILE)
     if (config.get("NEED_QUOTAD") == "yes" or need_quotad()) and os.path.exists(RQUOTAD_PATH):
