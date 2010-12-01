@@ -25,11 +25,17 @@ def getMinorVersion():
 
 def setup():
     shelltools.export("CFLAGS", "%s -O3" % get.CFLAGS())
+
+    # force using shared gpac
+    pisitools.dosed("configure", "-lgpac_static", "-lgpac")
+
+    # these disables are here to prevent circular deps, especially with ffmpeg
     autotools.rawConfigure("--prefix=/usr \
                             --enable-pic \
-                            --disable-avs-input \
-                            --disable-ffms-input \
-                            --disable-lavf-input \
+                            --disable-avs \
+                            --disable-ffms \
+                            --disable-swscale \
+                            --disable-lavf \
                             --enable-shared")
 
 def build():
@@ -38,8 +44,8 @@ def build():
 def install():
     autotools.install()
 
-    verMINOR = getMinorVersion()
-    pisitools.dosym("libx264.so.%s.%s" % (verMAJOR, verMINOR), "/usr/lib/libx264.so.%s" % verMAJOR)
+    #verMINOR = getMinorVersion()
+    #pisitools.dosym("libx264.so.%s.%s" % (verMAJOR, verMINOR), "/usr/lib/libx264.so.%s" % verMAJOR)
 
     # No static libs
     pisitools.remove("/usr/lib/libx264.a")
