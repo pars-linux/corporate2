@@ -35,13 +35,10 @@ def setup():
 
 def build():
     pisitools.dosed("Makefile", "^CC = .*$", "CC = %s" % get.CC())
-    autotools.make("all doc gitweb/gitweb.cgi")
+    autotools.make("all gitweb/gitweb.cgi")
 
 def install():
-    autotools.rawInstall("install-doc")
-
-    # Emacs stuff
-    pisitools.insinto("/usr/share/emacs/site-lisp", "contrib/emacs/*.el")
+    autotools.rawInstall("install")
 
     # Install bash completion
     pisitools.insinto("/etc/bash_completion.d", "contrib/completion/git-completion.bash", "git")
@@ -56,3 +53,4 @@ def install():
 
     # Some docs
     pisitools.dodoc("README", "COPYING", "Documentation/SubmittingPatches")
+
