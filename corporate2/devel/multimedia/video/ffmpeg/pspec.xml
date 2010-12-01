@@ -12,7 +12,8 @@
         <IsA>app:console</IsA>
         <Summary>A command-line tool to record, convert and stream audio and video</Summary>
         <Description>FFmpeg is a complete solution to record, convert and stream audio and video.</Description>
-        <Archive sha1sum="8afa3659e4a863e4d5e44b3e158b1d91023312f6" type="targz">http://cekirdek.pardus.org.tr/~onur/distfiles/ffmpeg-25499.tar.gz</Archive>
+        <Archive sha1sum="04a3372c40423bdfd1c4295b31b683ee3e6c34a9" type="targz">http://cekirdek.pardus.org.tr/~onur/distfiles/ffmpeg-25853.tar.gz</Archive>
+        <Archive sha1sum="e551f7fb9160a2f75b61256d47e429fb925af377" type="targz" target="ffmpeg">http://cekirdek.pardus.org.tr/~onur/distfiles/libavfilter-5943.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>faac</Dependency>
             <Dependency>imlib2</Dependency>
@@ -22,7 +23,7 @@
             <Dependency>libraw1394</Dependency>
             <Dependency>libvorbis</Dependency>
             <Dependency>texi2html</Dependency>
-            <Dependency releaseFrom="29">x264</Dependency>
+            <Dependency releaseFrom="32">x264</Dependency>
             <Dependency>xvid</Dependency>
             <Dependency>libtheora</Dependency>
             <Dependency versionFrom="1.0.13">gsm</Dependency>
@@ -47,10 +48,17 @@
             <Patch level="1">print-cpucaps.patch</Patch>
             <Patch level="1">fix_pthread.patch</Patch>
             <Patch level="1">remove_vfw_bframe_warning.patch</Patch>
+            <!-- no need for now
             <Patch>x264_revert.patch</Patch>
+            -->
 
             <!-- fixes bug #13255 guess we should keep it for 32bit arch for a while -->
             <Patch level="1">disable_wma_simd.patch</Patch>
+
+            <!-- libavfilter soc patches -->
+            <Patch>00_configure.diff</Patch>
+            <Patch>01_build.diff</Patch>
+            <Patch>03_doc_filters.diff</Patch>
         </Patches>
     </Source>
 
@@ -64,7 +72,7 @@
             <Dependency>libsdl</Dependency>
             <Dependency>libraw1394</Dependency>
             <Dependency>libvorbis</Dependency>
-            <Dependency releaseFrom="29">x264</Dependency>
+            <Dependency releaseFrom="32">x264</Dependency>
             <Dependency>xvid</Dependency>
             <Dependency>libtheora</Dependency>
             <Dependency versionFrom="1.0.13">gsm</Dependency>
@@ -92,6 +100,38 @@
     </Package>
 
     <History>
+        <Update release="89">
+            <Date>2010-11-30</Date>
+            <Version>0.6.1_20101130</Version>
+            <Comment>
+                Bump snapshot to 25853, avfilter additions to 5943
+                Force enable freetype usage for some filters
+                Depend on latest x264
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="88">
+            <Date>2010-11-16</Date>
+            <Version>0.6.1_20101103</Version>
+            <Comment>
+                Bump snapshot to 25659
+                Force enable freetype usage for some filters
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        <Update release="87">
+            <Date>2010-11-03</Date>
+            <Version>0.6.1_20101103</Version>
+            <Comment>
+                Bump snapshot to 25659
+                Depend on new x264
+                Add avfilters from soc
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
         <Update release="86">
             <Date>2010-10-26</Date>
             <Version>0.6.0_20101016</Version>
