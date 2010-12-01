@@ -220,7 +220,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
                 (132, "tomcat", "Tomcat", "/var/lib/tomcat", "/bin/false", "", ["tomcat"], [], []),
                 (133, "ups", "UPS", "/var/lib/nut", "/bin/false", "", ["ups", "dialout", "tty", "pnp"], [], []),
                 (134, "partimag", "Partimage", "/dev/null", "/bin/false", "", ["partimag"], [], []),
-                (135, "radiusd", "Freeradius", "/dev/null", "/bin/false", "", ["radiusd"], [], []),
+                (135, "radiusd", "Freeradius", "/dev/null", "/sbin/nologin", "", ["radiusd"], [], []),
                 (136, "oprofile", "oprofile", "/dev/null", "/bin/false", "", ["oprofile"], [], []),
                 (137, "mediatomb", "mediatomb", "/dev/null", "/bin/false", "", ["mediatomb"], [], []),
                 (138, "pulse", "PulseAudio System Daemon", "/var/run/pulse", "/bin/false", "", ["pulse", "pulse-access", "pulse-rt", "audio"], [], []),
