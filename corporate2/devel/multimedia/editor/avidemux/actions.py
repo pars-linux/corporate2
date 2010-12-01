@@ -13,6 +13,7 @@ WorkDir = 'avidemux_%s' % get.srcVERSION()
 SourceDir = '%s/%s' % (get.workDIR(), WorkDir)
 
 shelltools.export("HOME", "%s" % get.workDIR())
+shelltools.export("CXXFLAGS", "%s -D__STDC_CONSTANT_MACROS" % get.CXXFLAGS())
 
 def setup():
     shelltools.makedirs("build")
@@ -37,6 +38,9 @@ def install():
 
     shelltools.cd("../../")
     pisitools.insinto("/usr/share/pixmaps", "avidemux_icon.png", "avidemux.png")
+
+    # remove windows exe and dll files
+    pisitools.removeDir("/usr/share/ADM_addons")
 
     pisitools.dodoc("COPYING", "AUTHORS")
     pisitools.doman("man/*")
