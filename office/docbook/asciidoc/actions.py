@@ -1,38 +1,28 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2006-2009 TUBITAK/UEKAE
+# Copyright 2006-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-from pisi.actionsapi import get
+from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import shelltools
+from pisi.actionsapi import get
+
+def setup():
+    autotools.configure()
+
+def build():
+    autotools.make()
 
 def install():
-    # Executable
-    pisitools.dodir("/usr/bin")
-    shelltools.copy("asciidoc.py","%s/usr/bin/asciidoc" % get.installDIR())
+    autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    # Config
-    pisitools.dodir("/etc/asciidoc")
-    shelltools.copy("*.conf","%s/etc/asciidoc/" % get.installDIR())
+    # Move data files and create symlinks for asciidoc to work
+    for d in ("dblatex", "docbook-xsl", "images", "javascripts", "stylesheets"):
+        pisitools.domove("/etc/asciidoc/%s" % d, "/usr/share/asciidoc")
+        pisitools.dosym("/usr/share/asciidoc/%s" % d, "/etc/asciidoc/%s" % d)
 
-    # Shared files
-    pisitools.dodir("/usr/share/asciidoc")
-    for dir in ["doc","docbook-xsl","examples","filters","images","stylesheets"]:
-        shelltools.copy("%s" % dir ,"%s/usr/share/asciidoc/%s" % (get.installDIR(),dir))
+    # Python module
+    pisitools.insinto("/usr/lib/%s/site-packages" % get.curPYTHON(), "asciidocapi.py")
 
-    # Filters
-    for filter in ["code-filter.conf","code-filter.py"]:
-        pisitools.dosym("/usr/share/asciidoc/filters/%s" % filter, "/etc/asciidoc/filters/%s" % filter)
-
-    # Stylesheets
-    pisitools.dodir("/etc/asciidoc/stylesheets")
-    shelltools.copy("stylesheets/*.css","%s/etc/asciidoc/stylesheets/" % get.installDIR())
-
-    # Documentation
-    pisitools.dohtml("doc/*html")
-    pisitools.doman("doc/asciidoc.1")
-    pisitools.dodoc("BUGS","CHANGELOG","COPYING","README", "docbook-xsl/asciidoc-docbook-xsl.txt")
-    pisitools.removeDir("/usr/share/asciidoc/doc/")
+    pisitools.dodoc("BUGS", "CHANGELOG", "COPYING", "README", "docbook-xsl/asciidoc-docbook-xsl.txt")
