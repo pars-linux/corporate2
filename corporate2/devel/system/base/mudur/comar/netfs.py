@@ -27,6 +27,10 @@ def start():
     fstab = Fstab()
     for entry in fstab.get_entries():
         if entry.is_remote_mount():
+            if entry.is_nfs():
+                # Start rpcbind if fs is nfs|nfs4
+                start_dependencies(["rpcbind"])
+            # Mount it
             entry.mount()
 
 @synchronized
