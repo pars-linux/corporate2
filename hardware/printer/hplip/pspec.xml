@@ -8,12 +8,18 @@
             <Name>Ozan Çağlayan</Name>
             <Email>ozan@pardus.org.tr</Email>
         </Packager>
-        <License>GPLv2</License>
+        <License>GPLv2+</License>
+        <License>MIT</License>
         <Summary>HP Linux Imaging and Printing System</Summary>
         <Description>HP Linux Imaging and Printing (HPLIP) System includes printer and scanner drivers and related service tools.</Description>
-        <Archive sha1sum="4e6e534983311af6991245e99814a44d857cda8d" type="targz">mirrors://sourceforge/hplip/hplip-3.10.5.tar.gz</Archive>
+        <Archive sha1sum="5e145eafefbc5122bbe98345f2984fc0a55e5787" type="targz">mirrors://sourceforge/hplip/hplip-3.10.9.tar.gz</Archive>
         <AdditionalFiles>
-            <AdditionalFile target="deviceids.patch">fedora/hplip-deviceIDs-ppd.patch</AdditionalFile>
+            <!-- PPD patcher -->
+            <AdditionalFile permission="0755" target="patch-ppds">patch-ppds.sh</AdditionalFile>
+
+            <!-- PPD patches -->
+            <AdditionalFile target="ppd-patches/001-hplip-deviceIDs-ppd.patch">fedora/hplip-deviceIDs-ppd.patch</AdditionalFile>
+            <AdditionalFile target="ppd-patches/002-hplip-ppd-ImageableArea.patch">fedora/hplip-ppd-ImageableArea.patch</AdditionalFile>
         </AdditionalFiles>
         <BuildDependencies>
             <Dependency>net-snmp</Dependency>
@@ -22,21 +28,6 @@
             <Dependency versionFrom="1.4.2">cups</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">detect-pardus-distro.patch</Patch>
-            <Patch level="1">desktop-i18n.patch</Patch>
-            <Patch level="1">fix-polkit-directory.patch</Patch>
-            <Patch level="1">fix-udev-rules-path.patch</Patch>
-
-            <!-- Suppress module warnings when the command is run as root -->
-            <Patch level="1">suppress-module-warnings.patch</Patch>
-
-            <!-- Consume session parameter from systray as it avoids startup -->
-            <Patch level="1">hp-systray-consume-session-param.patch</Patch>
-
-            <!-- Remove udev rules after plugin installation -->
-            <!--<Patch level="1">dont-create-udev-rules-after-plugin-installation.patch</Patch>-->
-
-
             <!-- Fedora patches -->
 
             <!-- The pstotiff filter is rubbish so replace it -->
@@ -63,17 +54,26 @@
             <!-- Retry when connecting to device fails -->
             <Patch level="1">fedora/hplip-retry-open.patch</Patch>
 
+            <!-- Mark SNMP quirks in PPD for HP OfficeJet Pro 8500 -->
+            <Patch level="1">fedora/hplip-snmp-quirks.patch</Patch>
+
             <!-- Fixed hp-setup traceback when discovery page is skipped -->
             <Patch level="1">fedora/hplip-discovery-method.patch</Patch>
 
-            <!-- Give up trying to print a job to a reconnected device -->
-            <Patch level="1">fedora/hplip-device-reconnected.patch</Patch>
+            <!--  Fixed bogus low ink warnings from hpijs driver -->
+            <Patch level="1">fedora/hplip-hpijs-marker-supply.patch</Patch>
 
             <!-- Clear old printer-state-reasons we used to manage -->
             <Patch level="1">fedora/hplip-clear-old-state-reasons.patch</Patch>
 
+            <!-- Fix python shebang -->
+            <Patch level="1">fedora/hplip-env-python.patch</Patch>
+
             <!-- Avoid busy loops in hpcups when backend has exited -->
             <Patch level="1">fedora/hplip-hpcups-sigpipe.patch</Patch>
+
+            <!-- Use correct fax PPD name for Qt3 UI -->
+            <Patch level="1">fedora/hplip-fax-ppd.patch</Patch>
 
             <!-- Fixed Device ID parsing code in hpijs's dj9xxvip.c -->
             <Patch level="1">fedora/hplip-bad-low-ink-warning.patch</Patch>
@@ -89,6 +89,48 @@
 
             <!-- Prevent segfault in cupsext when opening PPD file -->
             <Patch level="1">fedora/hplip-openPPD.patch</Patch>
+
+            <!-- Fix ImageableArea for LaserJet 8150/9000 -->
+            <!-- UNPACKEDPATCH 2 -->
+
+            <!-- Increase timeouts for curl, wget, ping for high latency networks -->
+            <Patch level="1">fedora/hplip-network-timeout.patch</Patch>
+
+            <!-- utils.addgroup() was returning string instead of array -->
+            <Patch level="1">fedora/hplip-addgroup.patch</Patch>
+
+            <!-- Fixed traceback on error condition in device.py -->
+            <Patch level="1">fedora/hplip-raw_deviceID-traceback.patch</Patch>
+
+            <!-- Avoid UnicodeDecodeError in printsettingstoolbox.py -->
+            <Patch level="1">fedora/hplip-UnicodeDecodeError.patch</Patch>
+
+            <!-- Don't emit SIGNALs in ui4.setupdialog.SetupDialog the PyQt3 way -->
+            <Patch level="1">fedora/hplip-emit-SIGNAL.patch</Patch>
+
+            <!-- Prevent hp-fab traceback when run as root -->
+            <Patch level="1">fedora/hplip-fab-root-crash.patch</Patch>
+
+            <!-- Call cupsSetUser in cupsext's addPrinter method before connecting so
+                 that we can get an authentication callback -->
+            <Patch level="1">fedora/hplip-addprinter.patch</Patch>
+
+
+            <!-- Pardus patches -->
+            <Patch level="1">pardus/add-pardus-support.patch</Patch>
+            <Patch level="1">pardus/desktop-i18n.patch</Patch>
+            <Patch level="1">pardus/fix-polkit-directory.patch</Patch>
+            <Patch level="1">pardus/fix-udev-rules-path.patch</Patch>
+
+            <!-- Suppress module warnings when the command is run as root -->
+            <Patch level="1">pardus/suppress-module-warnings.patch</Patch>
+
+            <!-- Consume session parameter from systray as it avoids startup -->
+            <Patch level="1">pardus/hp-systray-consume-session-param.patch</Patch>
+
+            <!-- Remove udev rules after plugin installation -->
+            <!--<Patch level="1">pardus/dont-create-udev-rules-after-plugin-installation.patch</Patch>-->
+
         </Patches>
     </Source>
 
@@ -99,13 +141,13 @@
         <IsA>driver</IsA>
         <RuntimeDependencies>
             <Dependency>net-snmp</Dependency>
-            <Dependency>reportlab</Dependency>
             <Dependency>foomatic-db</Dependency>
             <Dependency>sane-backends</Dependency>
             <Dependency versionFrom="1.4.2">cups</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="config">/etc</Path>
+            <Path fileType="data">/etc/sane.d/dll.d</Path>
+            <Path fileType="config">/etc/hp/hplip.conf</Path>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="data">/var/lib</Path>
@@ -118,6 +160,7 @@
         </Files>
         <AdditionalFiles>
             <AdditionalFile owner="root" permission="0755" target="/usr/bin/hpcups-update-ppds">fedora/hpcups-update-ppds.sh</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/sane.d/dll.d/hpaio">hpaio</AdditionalFile>
         </AdditionalFiles>
         <Provides>
             <COMAR script="package.py">System.Package</COMAR>
@@ -130,7 +173,8 @@
         <IsA>app:gui</IsA>
         <Summary>A set of useful utilities written in Qt for managing HP devices</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.10.5">hplip</Dependency>
+            <Dependency versionFrom="3.10.9">hplip</Dependency>
+            <Dependency>reportlab</Dependency> <!-- python-reportlab in 2011 -->
             <Dependency>PyQt</Dependency>
         </RuntimeDependencies>
         <Files>
@@ -153,7 +197,7 @@
         <IsA>data:doc</IsA>
         <Summary>Documentation files for HPLIP</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.10.5">hplip</Dependency>
+            <Dependency versionFrom="3.10.9">hplip</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="doc">/usr/share/doc</Path>
@@ -161,6 +205,13 @@
     </Package>
 
     <History>
+        <Update release="45">
+            <Date>2010-12-02</Date>
+            <Version>3.10.9</Version>
+            <Comment>Version bump to 3.10.9</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="44">
             <Date>2010-11-03</Date>
             <Version>3.10.5</Version>

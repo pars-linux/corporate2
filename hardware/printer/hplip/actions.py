@@ -11,40 +11,31 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 import os
-import gzip
-
-def mygunzip(_file):
-    r_file = gzip.GzipFile(_file, "r")
-    write_file = _file.replace(".gz", "")
-    w_file = open(write_file, "w")
-    w_file.write(r_file.read())
-    w_file.close()
-    r_file.close()
-    os.unlink(_file)
 
 def setup():
-    pisitools.dosed("hpssd.py", "/usr/bin/env python", "/usr/bin/python")
+    # Patch compressed PPDs
+    for patch in sorted(os.listdir("ppd-patches")):
+        shelltools.system("./patch-ppds ppd-patches/%s" % patch)
 
     for f in ("NEWS", "INSTALL", "README", "AUTHORS", "ChangeLog"):
         shelltools.touch(f)
 
-    # These are barely the defaults except:
-    # --enable-pp-build (default=no)
-    # --enable-foomatic-drv-install (default=no) (respected by Fedora, enabled by Ubuntu)
-    autotools.autoreconf("-if")
+    autotools.autoreconf("-fi")
 
     # Strip duplex constraints from hpcups
     pisitools.dosed("prnt/drv/hpcups.drv.in", "(UIConstraints.* \*Duplex)", "//\\1")
 
+    # These are barely the defaults except:
+    # --enable-foomatic-drv-install (default=no) (respected by Fedora, enabled by Ubuntu)
     autotools.configure("--with-cupsbackenddir=/usr/lib/cups/backend \
                          --with-drvdir=/usr/share/cups/drv \
                          --with-hpppddir=/usr/share/cups/model/hplip \
                          --with-docdir=/usr/share/doc/hplip \
-                         --enable-qt4 \
                          --disable-qt3 \
+                         --disable-policykit \
+                         --enable-qt4 \
                          --enable-hpijs-install \
                          --enable-udev-acl-rules \
-                         --enable-policykit \
                          --enable-pp-build \
                          --enable-doc-build \
                          --enable-fax-build \
@@ -68,25 +59,7 @@ def build():
     autotools.make()
 
 def install():
-    autotools.rawInstall("DESTDIR=%s -j1\
-                          ppddir=/usr/share/cups/model/hplip" % get.installDIR())
-
-    # Uncompress ppd files for a better lzma compression (~1.5MB with level -9)
-    for ppd in shelltools.ls("%s/usr/share/cups/model/hplip" % get.installDIR()):
-        if ppd.endswith(".gz"):
-            mygunzip("%s/usr/share/cups/model/hplip/%s" % (get.installDIR(), ppd))
-
-    # Add Device ID for
-    # HP LaserJet 1200
-    # HP LaserJet 1320 series
-    # HP LaserJet 2300
-    # HP LaserJet P2015 Series
-    # HP LaserJet 4250
-    # HP Color LaserJet 2605dn
-    # HP Color LaserJet 3800
-    # HP Color LaserJet 2840
-
-    shelltools.system("patch -d %s/usr/share/cups/model/hplip -p3 < %s/%s/deviceids.patch" % (get.installDIR(), get.workDIR(), get.srcDIR()))
+    autotools.rawInstall("DESTDIR=%s ppddir=/usr/share/cups/model/hplip" % get.installDIR())
 
     # Create a compatibility symlink for foomatic-rip-hplip
     pisitools.dosym("/usr/lib/cups/filter/foomatic-rip", "/usr/lib/cups/filter/foomatic-rip-hplip")
@@ -104,6 +77,10 @@ def install():
     # This notifies user through libnotify when the printer requires a firmware
     # Should port it to KNotify if possible, argh.
     pisitools.remove("/lib/udev/rules.d/56-hpmud_support.rules")
+
+    # The systray applet doesn't work properly (displays icon as a
+    # window), so don't ship the launcher yet.
+    pisitools.removeDir("/etc/xdg/")
 
     # --disable-doc-build used. It doesn't go to the true directory.
     pisitools.dohtml("doc/*")
