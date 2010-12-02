@@ -16,3 +16,5 @@ def install():
     pisitools.dodir("/etc/mudur/services/enabled")
     pisitools.dodir("/etc/mudur/services/disabled")
     pisitools.dodir("/etc/mudur/services/conditional")
+
+    pisitools.remove("/bin/network")
