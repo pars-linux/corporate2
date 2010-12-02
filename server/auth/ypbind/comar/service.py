@@ -10,8 +10,6 @@ MSG_ERR_NONISDOMAIN = _({"en": 'NISDOMAIN is not set. You can set it via "domain
                          })
 
 PIDFILE = "/var/run/ypbind.pid"
-YPCONF = "/etc/yp.conf"
-
 
 @synchronized
 def start():
