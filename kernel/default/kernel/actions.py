@@ -21,7 +21,7 @@ def build():
     kerneltools.build(debugSymbols=False)
 
 def install():
-    kerneltools.install()
+    kerneltools.install(installFirmwares=False)
 
     # Dump kernel version into /etc/kernel/
     kerneltools.dumpVersion()
