@@ -11,6 +11,9 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 def setup():
+    shelltools.move("../dovecot-1.2-managesieve-0.11.12", "managesieve")
+    shelltools.move("../dovecot-1.2-sieve-0.1.18", "sieve")
+
     pisitools.dosed("doc/mkcert.sh", "dovecot-openssl.cnf", "/etc/dovecot/ssl/openssl.cnf")
     autotools.configure("--sysconfdir=/etc/dovecot \
                          --localstatedir=/var \
