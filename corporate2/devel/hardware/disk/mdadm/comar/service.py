@@ -5,9 +5,8 @@ serviceDesc = _({"en": "RAID monitor daemon",
                  "tr": "RAID izleme servisi"})
 serviceConf = "mdadm"
 
-MSG_ERR_STRTSRVC = {"en": "Couldn't start service.Please edit mdadm.conf file.",
-                    "tr": "Servis başlatılamadı.Lütfen mdadm.conf dosyasını düzenleyiniz.",
-                   }
+MSG_ERR_STRTSRVC = _({"en": "Couldn't start service.Please edit mdadm.conf file.",
+                      "tr": "Servis başlatılamadı.Lütfen mdadm.conf dosyasını düzenleyiniz."})
 
 def check():
     try:
