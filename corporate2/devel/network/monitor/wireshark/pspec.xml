@@ -11,23 +11,28 @@
         <License>GPLv2</License>
         <Icon>wireshark</Icon>
         <IsA>app:gui</IsA>
-        <Summary>A commercial-quality network protocol analyzer</Summary>
-        <Description>Wireshark is a commercial-quality network protocol analyzer useful to investigate packets on the network.</Description>
-        <Archive sha1sum="e8a09c1cf432e88ec444afe7886bd2bfd56cfaa6" type="targz">http://www.wireshark.org/download/src/wireshark-1.2.9.tar.gz</Archive>
+        <Summary>A commercial-quality network traffic analyzer</Summary>
+        <Description>Wireshark is a commercial-quality network traffic analyzer useful to investigate packets on the network.</Description>
+        <Archive sha1sum="03eb2bcd1de93fd0b45d6f1346e97d5f03a47c3e" type="tarbz2">http://media-2.cacetech.com/wireshark/src/wireshark-1.4.2.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>gnutls</Dependency>
             <Dependency>libcap</Dependency>
             <Dependency>libpcap</Dependency>
             <Dependency>net-snmp</Dependency>
             <Dependency>mit-kerberos-devel</Dependency>
+            <Dependency>lua</Dependency>
+            <Dependency>portaudio</Dependency>
+            <Dependency>libsmi</Dependency>
             <Dependency versionFrom="2.18.5">gtk2</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch>wireshark-except-double-free.diff</Patch>
-            <Patch level="1">wireshark-1.1.2--as-needed.patch</Patch>
-            <Patch level="1">wireshark-1.1.2-nfs41-backchnl-decode.patch</Patch>
-            <Patch>wireshark-1.0.5-text2pcap-protos.patch</Patch>
-            <Patch>wireshark-desktop.patch</Patch>
+            <!--<Patch level="1">as-needed.patch</Patch>-->
+            <Patch level="1">wireshark-nfsv4-opts.patch</Patch>
+            <Patch level="1">wireshark-1.2.4-enable_lua.patch</Patch>
+            <Patch level="1">wireshark-libtool-pie.patch</Patch>
+            <Patch level="1">wireshark-1.4.0-doc-path.patch</Patch>
+            <Patch level="1">wireshark-1.4.2-group-msg.patch</Patch>
+            <!--<Patch>wireshark-desktop.patch</Patch>-->
         </Patches>
     </Source>
 
@@ -43,9 +48,13 @@
             <Dependency>net-snmp</Dependency>
             <Dependency>xdg-utils</Dependency>
             <Dependency>mit-kerberos-libs</Dependency>
+            <Dependency>lua</Dependency>
+            <Dependency>portaudio</Dependency>
+            <Dependency>libsmi</Dependency>
             <Dependency versionFrom="2.18.5">gtk2</Dependency>
         </RuntimeDependencies>
         <Files>
+            <Path fileType="data">/etc/pam.d</Path>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="man">/usr/share/man</Path>
@@ -54,8 +63,26 @@
             <Path fileType="data">/usr/share/applications</Path>
             <Path fileType="data">/usr/share/wireshark</Path>
         </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/pam.d/wireshark">wireshark.pam</AdditionalFile>
+        </AdditionalFiles>
+        <Provides>
+            <COMAR script="package.py">System.Package</COMAR>
+        </Provides>
     </Package>
     <History>
+        <Update release="39">
+            <Date>2010-12-06</Date>
+            <Version>1.4.2</Version>
+            <Comment>
+                * Version bump, fix CVE-2010-{4300,4301} (#15379),
+                * Do no run wireshark as root, see: https://blog.wireshark.org/2010/02/running-wireshark-as-you
+                * Remove xdg-su from desktop file, use capabilities instead,
+                * Add missing libsmi dependency (#14739).
+            </Comment>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
         <Update release="38">
             <Date>2010-11-23</Date>
             <Version>1.2.9</Version>
