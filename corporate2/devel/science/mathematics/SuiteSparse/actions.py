@@ -11,6 +11,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 
 WorkDir="SuiteSparse"
+curVer = get.srcVERSION()
 
 def build():
     shelltools.makedirs("dist")
@@ -30,8 +31,7 @@ def install():
 
     for lib in ["CXSparse", "CSparse", "KLU", "COLAMD", "CCOLAMD", "LDL", "UMFPACK", "CHOLMOD",
                 "AMD", "CAMD", "BTF"]:
-
-        pisitools.dolib_so("%s/Lib/lib%s.so.3.4.0" % (lib, lib.lower()))
-        pisitools.dosym("/usr/lib/lib%s.so.3.4.0" % lib.lower(), "/usr/lib/lib%s.so" % lib.lower())
+        pisitools.dolib_so("%s/Lib/lib%s.so.%s" % (lib, lib.lower(), curVer))
+        pisitools.dosym("/usr/lib/lib%s.so.%s" % (lib.lower(), curVer), "/usr/lib/lib%s.so" % lib.lower())
 
     pisitools.dodoc("README.txt")
