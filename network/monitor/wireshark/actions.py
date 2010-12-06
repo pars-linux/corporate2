@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -14,26 +13,17 @@ def setup():
     shelltools.export("CFLAGS","%s -fstack-protector-all" % get.CFLAGS())
 
     autotools.autoreconf("-fi")
-    autotools.configure("--enable-user-local=no \
-                         --disable-usr-local \
-                         --disable-static \
-                         --enable-gtk2 \
-                         --enable-ipv6 \
-                         --enable-zlib \
-                         --with-adns \
+    autotools.configure("--enable-ipv6 \
+                         --enable-lua \
+                         --with-libsmi \
                          --with-gnu-ld \
-                         --with-krb5 \
-                         --with-net-snmp \
-                         --with-pcap \
-                         --with-pcre \
                          --with-pic \
+                         --with-adns=no \
                          --with-ssl \
-                         --enable-warnings-as-errors=no \
-                         --without-portaudio \
+                         --with-libcap \
+                         --disable-warnings-as-errors \
+                         --with-python \
                          --with-plugins=/usr/lib/wireshark/plugins")
-                         # --disable-warnings-as-errors \
-
-
 
 def build():
     autotools.make()
