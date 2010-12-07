@@ -71,6 +71,11 @@ def setup():
     for d in ["apr","apr-util","pcre"]:
         shelltools.unlinkDir("srclib/%s" % d)
 
+    # this fixes segfaults, remember omit-frame-pointer will be default soon
+    if get.ARCH() == "i686":
+        shelltools.export("CFLAGS", "%s -fno-omit-frame-pointer" % get.CFLAGS())
+    shelltools.export("LDFLAGS", "-Wl,-z,relro,-z,now")
+
     autotools.rawConfigure('--with-mpm=prefork \
                             --enable-layout=Pardus \
                             --with-ssl=/usr \
