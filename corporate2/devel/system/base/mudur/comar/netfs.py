@@ -3,11 +3,12 @@
 
 from comar.service import *
 import os
+import time
 
 from pardus.fstabutils import Fstab
 
 serviceType = "local"
-serviceDefault = "conditional"
+serviceDefault = "off"
 serviceDesc = _({"en": "Remote Filesystem Mounter",
                  "tr": "Uzak Dosyasistemi Bağlayıcı"})
 
@@ -23,6 +24,9 @@ def start():
     if run("/usr/bin/nm-online -x") != 0:
         # NM is not running
         fail(MSG_NM_NOT_RUNNING)
+
+    # Wait for network to settle
+    time.sleep(5)
 
     fstab = Fstab()
     for entry in fstab.get_entries():
@@ -40,19 +44,6 @@ def stop():
     for entry in fstab.get_entries():
         if entry.is_remote_mount():
             entry.unmount()
-
-@synchronized
-def ready():
-    status = is_on()
-
-    fstab = Fstab()
-    remote_fs_exist = fstab.contains_remote_mounts()
-
-    # Will only run if there are any remote mounts in
-    # fstab file.
-    if status == "on" or (status == "conditional" and \
-            remote_fs_exist):
-        start()
 
 def status():
     fstab = Fstab()
