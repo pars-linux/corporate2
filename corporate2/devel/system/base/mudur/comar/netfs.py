@@ -29,7 +29,7 @@ def start():
         if entry.is_remote_mount():
             if entry.is_nfs():
                 # Start rpcbind if fs is nfs|nfs4
-                start_dependencies(["rpcbind"])
+                startDependencies("rpcbind")
             # Mount it
             entry.mount()
 
