@@ -14,6 +14,7 @@ LOGO_FILE = "/usr/share/pixmaps/plymouth-pardus.png"
 THEMEPATH = "/usr/share/plymouth/themes"
 
 def setup():
+    shelltools.move("themes/plymouth-theme-pardus", "themes/pardus")
     autotools.autoreconf("-fis")
 
     # The end-start colors seems to be used by the two-step plugin
