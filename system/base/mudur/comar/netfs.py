@@ -20,12 +20,9 @@ MSG_NM_NOT_RUNNING = _({"en": "NetworkManager service is not running",
 @synchronized
 def start():
     # Mount all remote filesystems
-    if run("/usr/bin/nm-online -x") != 0:
+    if run("/usr/bin/nm-online -q -t 10") != 0:
         # NM is not running
         fail(MSG_NM_NOT_RUNNING)
-
-    # Wait for network to settle
-    time.sleep(5)
 
     fstab = Fstab()
     for entry in fstab.get_entries():
