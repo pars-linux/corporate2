@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright 2008-2010 TUBITAK/UEKAE
@@ -8,9 +9,11 @@ from pisi.actionsapi import pythonmodules
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-#WorkDir = "yali-master_20100722"
 def setup():
-    repo_uri = "http://packages.pardus.org.tr/pardus/corporate2/stable/%s/pisi-index.xml.xz" % get.ARCH()
+    if get.ARCH() == "i686":
+        repo_uri = "http://packages.pardus.org.tr/pardus/2011/stable/i686/pisi-index.xml.xz"
+    else:
+        repo_uri = "http://packages.pardus.org.tr/pardus/2011/stable/x86_64/pisi-index.xml.xz"
 
     pisitools.dosed("yali/constants.py", "@REPO_URI@", repo_uri)
 
