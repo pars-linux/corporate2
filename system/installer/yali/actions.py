@@ -11,9 +11,9 @@ from pisi.actionsapi import get
 
 def setup():
     if get.ARCH() == "i686":
-        repo_uri = "http://packages.pardus.org.tr/pardus/2011/stable/i686/pisi-index.xml.xz"
+        repo_uri = "http://packages.pardus.org.tr/pardus/corporate2/stable/i686/pisi-index.xml.xz"
     else:
-        repo_uri = "http://packages.pardus.org.tr/pardus/2011/stable/x86_64/pisi-index.xml.xz"
+        repo_uri = "http://packages.pardus.org.tr/pardus/corporate2/stable/x86_64/pisi-index.xml.xz"
 
     pisitools.dosed("yali/constants.py", "@REPO_URI@", repo_uri)
 
