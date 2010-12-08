@@ -51,4 +51,7 @@ if __name__ == "__main__":
     if not link.Xorg.Display["zorg"].ready(boot, timeout=5*60):
         env["XORGCONFIG"] = safe_xorg_conf
 
+    if desktop_file.get("X-Pardus-PlymouthTransition") != "true":
+        os.system("test -x /bin/plymouth && /bin/plymouth --ping && /bin/plymouth quit")
+
     os.execl(dm_path, dm_path, "-nodaemon")
