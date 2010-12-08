@@ -21,7 +21,6 @@
             <Dependency>cpio</Dependency>
             <Dependency>unifdef</Dependency>
             <Dependency>diffutils</Dependency>
-            <Dependency>bootsplash</Dependency>
         </BuildDependencies>
         <Patches>
             <!-- Fix x86 MCE malfunctioning (#11923) -->
@@ -43,6 +42,10 @@
             <!-- drivers/net/eql: prevent reading uninitialized memory (#14345) -->
             <!-- drivers/net/cxgb3: prevent reading uninitialized memory (#14342) -->
             <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.26.bz2</Patch>
+
+            <!-- add setns syscall for lxc
+            <Patch level="1">0001-nsfd-v5.patch</Patch>
+            -->
 
             <!-- cgroup: Provide /sys/fs/cgroup mount point -->
             <Patch level="1">kernel/linux-2.6-cgroup-provide-sysfs-mountpoint.patch</Patch>
@@ -297,12 +300,6 @@
             <!-- libata: libata-acpi: missing _SDD is not an error -->
             <Patch level="1">suse/libata-missing-_SDD-is-not-an-error.patch</Patch>
 
-            <!-- Bootsplash for current kernel -->
-            <Patch level="1">suse/bootsplash.patch</Patch>
-
-            <!-- bootsplash: Make it work with KMS -->
-            <Patch level="1">suse/cleanup-and-make-boot-splash-work-with-KMS.patch</Patch>
-
             <!-- SCSI driver for HP Smart Array controllers, a replacement for cciss
             <Patch level="1">suse/scsi-driver-for-hp-smart-array.patch</Patch>-->
 
@@ -401,15 +398,17 @@
     </Package>
 
     <History>
-        <!--
         <Update release="149">
             <Date>2010-12-02</Date>
             <Version>2.6.32.26</Version>
-            <Comment>Don't call mkinitramfs explicitly.</Comment>
+            <Comment>
+                - Don't call mkinitramfs explicitly,
+                - Disable bootsplash,
+                - Enable NFS4.1 and FSCACHE.
+            </Comment>
             <Name>Ozan Çağlayan</Name>
             <Email>ozan@pardus.org.tr</Email>
         </Update>
-        -->
         <Update release="148">
             <Date>2010-12-02</Date>
             <Version>2.6.32.26</Version>
