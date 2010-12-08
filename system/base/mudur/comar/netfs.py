@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from comar.service import *
-import os
 import time
 
 from pardus.fstabutils import Fstab
