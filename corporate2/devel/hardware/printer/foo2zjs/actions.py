@@ -16,6 +16,7 @@ def setup():
 
     # Use ATTR instead of SYSFS
     pisitools.dosed("hplj10xx.rules", "SYSFS{", "ATTR{")
+    pisitools.dosed("hplj10xx.rules", "BUS==", "SUBSYSTEMS==")
 
     # Remove these. They are supported well by Splix.
     shelltools.unlink("foomatic-db/printer/Xerox-Phaser_6110.xml")
