@@ -11,7 +11,7 @@ def setup():
     autotools.autoreconf("-vif")
     autotools.configure("--disable-static \
                          --disable-specs \
-                         --with-xcb")
+                         --without-xmlto")
 
 def build():
     autotools.make()
