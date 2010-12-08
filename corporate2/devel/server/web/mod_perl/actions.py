@@ -7,12 +7,13 @@
 
 from pisi.actionsapi import perlmodules
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
+shelltools.export("CFLAGS", "%s -fpic" % get.CFLAGS())
+
 def setup():
-    perlmodules.configure("MP_TRACE=0 \
-                           MP_DEBUG=0 \
-                           MP_USE_DSO=1 \
+    perlmodules.configure("MP_APR_CONFIG=/usr/bin/apr-1-config \
                            MP_APXS=/usr/sbin/apxs")
 
 def build():
