@@ -16,7 +16,10 @@ WorkDir="%s-%s" % (get.srcNAME(), get.srcVERSION().replace("_", "-").upper())
 BINDDIR="/var/named"
 CHROOT="%s/chroot" % BINDDIR
 
+shelltools.export("CPPFLAGS", "%s -DDIG_SIGCHASE" % get.CXXFLAGS())
+
 def setup():
+    shelltools.makedirs("%s/%s/m4" % (get.workDIR(), WorkDir))
     # Fix PATHs in manpages
     pisitools.dosed("bin/named/named.8", "/etc/named.conf", "/etc/bind/named.conf")
     pisitools.dosed("bin/check/named-checkconf.8", "/etc/named.conf", "/etc/bind/named.conf")
@@ -26,9 +29,10 @@ def setup():
     # Adjust version
     pisitools.dosed("version", "^RELEASEVER=.*$", "RELEASEVER=Pardus-Corporate-2")
 
+
     libtools.libtoolize("-cf")
     autotools.aclocal("-I m4")
-    autotools.autoreconf("-fi")
+    autotools.autoreconf("-vfi")
 
     autotools.configure("--localstatedir=/var \
                          --sysconfdir=/etc/bind \
@@ -38,6 +42,10 @@ def setup():
                          --with-randomdev=/dev/urandom \
                          --enable-linux-caps \
                          --enable-threads \
+                         --enable-exportlib \
+                         --with-export-libdir=/usr/lib \
+                         --with-export-includedir=/usr/include \
+                         --includedir=/usr/include/bind9 \
                          --enable-ipv6 \
                          --enable-largefile \
                          --disable-static")
