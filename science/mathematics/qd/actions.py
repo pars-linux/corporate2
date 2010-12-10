@@ -10,13 +10,11 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
+    autotools.autoreconf("-vfi")
     autotools.configure()
 
 def build():
     autotools.make()
-
-def check():
-    autotools.make("check")
 
 def install():
     autotools.install()
