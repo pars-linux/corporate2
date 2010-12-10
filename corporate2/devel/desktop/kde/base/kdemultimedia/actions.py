@@ -32,10 +32,13 @@ def setup():
                    --with-musicbrainz")
 
 def build():
-    kde.make("-j1")
+    kde.make()
 
 def install():
     kde.install()
+
+    shelltools.copy("%s/usr/kde/3.5/share/applications/kde/kmix.desktop" % get.installDIR(),
+                   "%s/usr/kde/3.5/share/autostart/kmix_autostart.desktop" % get.installDIR())
 
     # DO_NOT_COMPILE doesn't cover docs
     pisitools.removeDir("/usr/kde/3.5/share/doc/HTML/en/artsbuilder/")
