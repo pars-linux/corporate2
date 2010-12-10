@@ -13,9 +13,9 @@ def setup():
     autotools.configure("--with-qt=/usr/qt/4")
 
 def build():
-    autotools.make("CXX=%s CXXFLAGS='%s'" % (get.CXX(), get.CXXFLAGS()))
+    autotools.make("-j1 CXX=%s CXXFLAGS='%s'" % (get.CXX(), get.CXXFLAGS()))
 
 def install():
-    autotools.install("-j1")
+    autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     pisitools.dodoc("AUTHORS", "ChangeLog", "README", "TODO", "TRANSLATORS")
