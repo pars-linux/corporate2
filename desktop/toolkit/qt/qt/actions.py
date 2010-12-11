@@ -76,6 +76,7 @@ def install():
 
     #Remove phonon, we use KDE's phonon but we have to build Qt with Phonon support for webkit and some other stuff
     pisitools.remove("%s/lib/libphonon*" % qtbase)
+    pisitools.remove("%s/plugins/phonon_backend/libphonon*" % qtbase)
     pisitools.removeDir("%s/include/phonon" % qtbase)
     pisitools.removeDir("/usr/share/kde4")
     pisitools.remove("%s/lib/pkgconfig/phonon*" % qtbase)
