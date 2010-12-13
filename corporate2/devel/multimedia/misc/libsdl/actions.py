@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2008 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -15,7 +15,11 @@ WorkDir = "SDL-%s" % get.srcVERSION()
 docdir = "%s/%s" % (get.docDIR(), get.srcNAME())
 
 def setup():
-    pisitools.dosed("autogen.sh", "aclocal-1.9", "aclocal")
+    shelltools.export("CFLAGS", "%s -fPIC -O3" % get.CFLAGS())
+    shelltools.export("CXXFLAGS", "%s -fPIC -O3" % get.CXXFLAGS())
+
+    # for libtool version matching
+    shelltools.copy("/usr/share/aclocal/ltversion.m4", "acinclude/")
     shelltools.system("./autogen.sh")
 
     libtools.libtoolize("--force --copy")
