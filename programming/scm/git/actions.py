@@ -38,7 +38,7 @@ def build():
     autotools.make("all gitweb/gitweb.cgi")
 
 def install():
-    autotools.rawInstall("install")
+    autotools.rawInstall("install install-man")
 
     # Install bash completion
     pisitools.insinto("/etc/bash_completion.d", "contrib/completion/git-completion.bash", "git")
