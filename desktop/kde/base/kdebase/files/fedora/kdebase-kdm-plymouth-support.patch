@@ -1,0 +1,168 @@
+Index: kdebase-3.5.10/kdm/backend/dm.c
+===================================================================
+--- kdebase-3.5.10.orig/kdm/backend/dm.c
++++ kdebase-3.5.10/kdm/backend/dm.c
+@@ -1242,6 +1242,83 @@ GetBusyVTs( void )
+ 	return active_vts;
+ }
+ 
++static int
++get_active_vt (void)
++{
++        int console_fd;
++        struct vt_stat console_state = { 0 };
++        console_fd = open ("/dev/tty0", O_RDONLY | O_NOCTTY);
++        if (console_fd < 0) {
++                goto out;
++        }
++        if (ioctl (console_fd, VT_GETSTATE, &console_state) < 0) {
++                goto out;
++        }
++out:
++        if (console_fd >= 0) {
++                close (console_fd);
++        }
++        return console_state.v_active;
++}
++
++static int
++plymouth_is_running (void)
++{
++        int status;
++        status = system ("/bin/plymouth --ping");
++
++        return WIFEXITED (status) && WEXITSTATUS (status) == 0;
++}
++
++static int
++plymouth_has_active_vt (void)
++{
++        int status;
++        status = system ("/bin/plymouth --has-active-vt");
++
++        return WIFEXITED (status) && WEXITSTATUS (status) == 0;
++}
++
++static int
++plymouth_prepare_for_transition (void)
++{
++        int status;
++        status = system ("/bin/plymouth deactivate");
++
++        return WIFEXITED (status) && WEXITSTATUS (status) == 0;
++}
++
++int
++plymouth_quit_with_transition (void)
++{
++        int status;
++        status = system ("/bin/plymouth quit --retain-splash");
++
++        return WIFEXITED (status) && WEXITSTATUS (status) == 0;
++}
++
++static int
++plymouth_quit_without_transition (void)
++{
++        int status;
++        status = system ("/bin/plymouth quit");
++
++        return WIFEXITED (status) && WEXITSTATUS (status) == 0;
++}
++
++static int
++triggered_to_force_display_on_active_vt (void)
++{
++   int should_force_display_on_active_vt;
++   should_force_display_on_active_vt=open("/var/spool/gdm/force-display-on-active-vt", O_RDONLY);
++   if ( should_force_display_on_active_vt >= 0 )
++       close(should_force_display_on_active_vt);
++   unlink("/var/spool/gdm/force-display-on-active-vt");
++   return should_force_display_on_active_vt;
++}
++
++
++
+ static void
+ AllocateVT( struct display *d )
+ {
+@@ -1251,6 +1328,42 @@ AllocateVT( struct display *d )
+ 	if ((d->displayType & d_location) == dLocal &&
+ 	    d->status == notRunning && !d->serverVT && d->reqSrvVT >= 0)
+ 	{
++		/* check for plymouth using old/deprecated method first */
++		if ( triggered_to_force_display_on_active_vt() >= 0 ) {
++			int vt;
++			vt = get_active_vt();
++			if (vt > 0) {
++				d->serverVT = vt;
++				return;
++			}
++		}
++
++		/* check for plymouth using newer methods */
++		d->plymouth_is_running = plymouth_is_running ();
++		if (d->plymouth_is_running) {
++			/* call plymouth deactivate */
++			plymouth_prepare_for_transition ();
++			if (plymouth_has_active_vt ()) {
++				/* plymouth was displaying a splash screen and has
++				 * terminated leaving it on screen
++				 */
++				int vt;
++				vt = get_active_vt ();
++				if (vt > 0) {
++					/* start the X server on the active vt */
++					d->serverVT = vt;
++					return;
++				}
++			}
++			else {
++				/* plymouth might have been running but did not display
++				 * a splash screen.
++				 */
++				/* call plymouth quit and start the X server as usual */
++				d->plymouth_is_running = !plymouth_quit_without_transition ();
++			}
++		}
++
+ 		if (d->reqSrvVT && d->reqSrvVT < 16)
+ 			d->serverVT = d->reqSrvVT;
+ 		else {
+Index: kdebase-3.5.10/kdm/backend/dm.h
+===================================================================
+--- kdebase-3.5.10.orig/kdm/backend/dm.h
++++ kdebase-3.5.10/kdm/backend/dm.h
+@@ -283,6 +283,7 @@ struct display {
+ 	Xauth **authorizations;     /* authorization data */
+ 	int authNum;                /* number of authorizations */
+ 	char *authFile;             /* file to store authorization in */
++	int plymouth_is_running;    /* Plymouth's status */
+ };
+ 
+ typedef struct {
+@@ -378,6 +379,8 @@ int AnyDisplaysLeft( void );
+ void ForEachDisplay( void (*f)( struct display * ) );
+ #ifdef HAVE_VTS
+ void ForEachDisplayRev( void (*f)( struct display * ) );
++/* function for plymouth */
++int plymouth_quit_with_transition (void);
+ #endif
+ void RemoveDisplay( struct display *old );
+ struct display
+Index: kdebase-3.5.10/kdm/backend/server.c
+===================================================================
+--- kdebase-3.5.10.orig/kdm/backend/server.c
++++ kdebase-3.5.10/kdm/backend/server.c
+@@ -136,6 +136,11 @@ StartServerSuccess()
+ 	struct display *d = startingServer;
+ 	d->serverStatus = ignore;
+ 	serverTimeout = TO_INF;
++	if (d->plymouth_is_running) {
++		Debug( "Quitting Plymouth with transition\n" );
++		d->plymouth_is_running = !plymouth_quit_with_transition ();
++		Debug ("Is Plymouth still running? %s\n", d->plymouth_is_running ? "yes" : "no");
++	}
+ 	Debug( "X server ready, starting session\n" );
+ 	StartDisplayP2( d );
+ }
