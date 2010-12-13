@@ -12,16 +12,15 @@ from pisi.actionsapi import libtools
 from pisi.actionsapi import get
 
 WorkDir = "SDL_gfx-%s" % get.srcVERSION()
-mmx = "--enable-mmx" if get.ARCH() == "i686" else "--disable-mmx"
 
 def setup():
     pisitools.dosed("configure.in", "-O")
-    shelltools.unlink("acinclude.m4")
+    shelltools.makedirs("m4")
 
-    autotools.autoreconf("-fi")
+    autotools.autoreconf("-vfi")
     autotools.configure("--disable-dependency-tracking \
-                         %s \
-                         --disable-static" % mmx)
+                         --enable-mmx \
+                         --disable-static")
 
 def build():
     autotools.make()
