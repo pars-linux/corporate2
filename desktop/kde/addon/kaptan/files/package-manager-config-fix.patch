@@ -1,0 +1,35 @@
+Index: src/screens/ScrPackage.py
+===================================================================
+--- src/screens/ScrPackage.py	(revision 33955)
++++ src/screens/ScrPackage.py	(revision 33957)
+@@ -75,13 +75,24 @@
+             self.updateInterval.setEnabled(False)
+ 
+     def applySettings(self):
+-        config = KConfig("package-managerrc")
+-        config.setGroup("General")
+-        config.writeEntry("SystemTray", self.showTray.isChecked())
+-        config.writeEntry("UpdateCheck", self.checkUpdate.isChecked())
+-        config.writeEntry("UpdateCheckInterval", self.updateInterval.value() * 60)
+-        config.sync()
++        import ConfigParser
++        import os
+ 
++        config = ConfigParser.ConfigParser()
++
++        # for case insensitive parser
++        config.optionxform = str
++
++        config_file = os.path.expanduser('~/.config/Pardus/Package-Manager.conf')
++        config.read(config_file)
++
++        config.set("General", "SystemTray", str(self.showTray.isChecked()).lower())
++        config.set("General", "UpdateCheck", str(self.checkUpdate.isChecked()).lower())
++        config.set("General", "UpdateCheckInterval", self.updateInterval.value() * 60)
++
++        with open(config_file, 'w') as configfile:
++            config.write(configfile)
++
+         if self.showTray.isChecked():
+             proc = KProcess()
+             proc << locate("exe", "package-manager")
