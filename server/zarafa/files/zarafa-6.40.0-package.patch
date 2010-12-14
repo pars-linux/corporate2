@@ -1,0 +1,61 @@
+Patch by Robert Scheck <robert@fedoraproject.org> for zarafa >= 6.40.0, which only
+removes the paths from autoconf/automake related files, that don't exist in the OSS
+version of Zarafa. Having these paths not removed causes autoreconf to fail, but a
+re-run of autoreconf is needed in order to get the rpaths completely out of all the
+libraries and binaries built during the make process.
+
+--- zarafa-6.40.0/src/configure.ac			2010-05-31 15:45:19.000000000 +0200
++++ zarafa-6.40.0/src/configure.ac.package		2010-06-06 02:48:22.000000000 +0200
+@@ -772,19 +772,6 @@
+ 		version
+ 		specialbuild
+ ])
+-dnl non-oss files
+-if test -d `dirname $0`/licensed; then
+-AC_CONFIG_FILES([
+-		liblicense/Makefile
+-		licensed/Makefile
+-		ECtools/zarafa-backup/Makefile
+-		ECtools/zarafa-backup/helpers/Makefile
+-		ECtools/zarafa-report/Makefile
+-		ECtools/libarchiver/Makefile
+-		ECtools/zarafa-archiver/Makefile
+-		debian/zarafa.install
+-])
+-fi
+ 
+ AC_OUTPUT
+ 
+--- zarafa-6.40.0/src/Makefile.am			2010-05-31 15:45:19.000000000 +0200
++++ zarafa-6.40.0/src/Makefile.am.package		2010-06-06 02:51:29.000000000 +0200
+@@ -1,9 +1,5 @@
+ AUTOMAKE_OPTIONS = 1.9 foreign
+ 
+-if ! OSS_ONLY
+-PROSUBS = liblicense licensed
+-endif
+-
+ SUBDIRS = common libfreebusy zarafa-libsync mapi4linux $(PROSUBS) provider libicalmapi inetmapi php-ext spooler gateway caldav ECtools installer po doc
+ 
+ if WITH_PERL
+@@ -17,10 +13,6 @@
+ common/ecversion.h: versionheader.sh
+ 	sh ${top_srcdir}/versionheader.sh > common/ecversion.h
+ 
+-if ! OSS_ONLY
+-CLEANFILES=common/ecversion.h
+-endif
+-
+ dist-hook:
+ 	find $(distdir) -type d -name .svn -exec rm -rf {} \; 2>/dev/null || true
+ if OSS_ONLY
+--- zarafa-6.40.0/src/ECtools/Makefile.am		2010-05-31 15:45:18.000000000 +0200
++++ zarafa-6.40.0/src/ECtools/Makefile.am.package	2010-06-06 02:48:37.000000000 +0200
+@@ -1,7 +1,3 @@
+-if ! OSS_ONLY
+-PROSUBS = zarafa-backup zarafa-report libarchiver zarafa-archiver 
+-endif
+-
+ if WITH_TESTTOOLS
+ TESTSUBS = ECTestTools
+ endif
