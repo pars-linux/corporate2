@@ -13,10 +13,10 @@ WorkDir = "glib-%s" % get.srcVERSION()
 
 def setup():
     autotools.autoconf()
-    autotools.configure("--with-threads=posix \
-                         --disable-gtk-doc \
+    autotools.configure("--disable-gtk-doc \
                          --with-pcre=system \
                          --disable-fam \
+                         --disable-systemtap \
                          --disable-static")
 
     pisitools.dosed("libtool", " -shared ", " -Wl,--as-needed -shared ")
@@ -25,7 +25,7 @@ def build():
     autotools.make()
 
 def check():
-    autotools.make("check")
+    autotools.make("LC_ALL=C test")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
