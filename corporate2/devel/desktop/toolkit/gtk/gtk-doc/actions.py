@@ -8,7 +8,7 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 
 def setup():
-    autotools.configure("--disable-static")
+    autotools.configure("--disable-static --disable-scrollkeeper")
 
 def build():
     autotools.make()
@@ -16,4 +16,4 @@ def build():
 def install():
     autotools.install()
 
-    pisitools.dodoc("AUTHORS", "MAINTAINERS", "ChangeLog", "README", "COPYIN*", "NEWS", "TODO")
+    pisitools.dodoc("AUTHORS", "MAINTAINERS", "ChangeLog", "README", "NEWS", "TODO")

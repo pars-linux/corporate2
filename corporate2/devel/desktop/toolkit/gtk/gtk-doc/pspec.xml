@@ -9,28 +9,28 @@
             <Email>gkmngrgn@gmail.com</Email>
         </Packager>
         <License>GPLv3</License>
+        <License>FDL-1.1</License>
         <IsA>app:console</IsA>
         <Summary>GTK+ API documentation generator</Summary>
         <Description>Gtk-Doc is typically used to document the public API of GTK+ and GNOME libraries, but it can also be used to document application code.</Description>
-        <Archive sha1sum="8c6b157e594072aaf598bc7e68562ec02e50b651" type="tarbz2">mirrors://gnome/gtk-doc/1.13/gtk-doc-1.13.tar.bz2</Archive>
+        <Archive sha1sum="fc1c593e8107cbe33451e3e938ca14b59104e999" type="tarbz2">mirrors://gnome/gtk-doc/1.15/gtk-doc-1.15.tar.bz2</Archive>
         <BuildDependencies>
-            <Dependency>openjade</Dependency>
             <Dependency>rarian</Dependency>
-            <Dependency>gnome-doc-utils</Dependency>
+            <Dependency>openjade</Dependency>
+            <Dependency>docbook-xsl</Dependency>
+            <Dependency>sgml-common</Dependency>
             <Dependency>docbook-xml4_3</Dependency>
-            <!-- <Dependency>dblatex</Dependency> -->
+            <Dependency>gnome-doc-utils</Dependency>
         </BuildDependencies>
-        <Patches>
-            <Patch level="1">gtk-doc-b39bb84dfb5f16c8b2977105bd5876b7b8d58a11.patch</Patch>
-        </Patches>
     </Source>
 
     <Package>
         <Name>gtk-doc</Name>
         <RuntimeDependencies>
             <Dependency>rarian</Dependency>
-            <Dependency>gnome-doc-utils</Dependency>
+            <Dependency>sgml-common</Dependency>
             <Dependency>docbook-xml4_3</Dependency>
+            <Dependency>gnome-doc-utils</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
@@ -40,8 +40,51 @@
             <Path fileType="data">/var/lib</Path>
         </Files>
     </Package>
-
     <History>
+        <Update release="4">
+            <Date>2010-12-14</Date>
+            <Version>1.15</Version>
+            <Comment>
+                * Version bump:
+                    - Support for multiple DOC_SOURCE_DIR directories
+                    - gtk-doc fails to recognize (scope ...) and (skip) annotations
+                    - Append &quot; _struct &quot; prefix to every struct name
+                    - sane support for per-page images
+                    - checks fail
+                    - parameter descriptions with annotations truncated at first \n
+                    - add short description to index entries
+                    - gtk-doc fails to parse unions
+                    - gets confused by multiline typedef
+                    - undocumented enum values are not reported
+                    - secondly running gtkdoc-mkdb will generate DOCTYPE missing XML files
+                    - $(DOC_MODULE)-overrides.txt is required by &quot; make dist &quot;·
+                    - Section_Id always embeds a trailing newline
+                    - Fix the use of gtkdocize --flavour option
+                    - gtkdoc-fixxref broken link warning is broken for functions
+                    - Syntax error in gtkdoc-mkman
+                    - Check for syntax errors in the test suite
+                    - put class structs to the generated section file
+                    - Many build failures with gtk-doc 1.13
+                    - Add &quot; Since &quot; and &quot; Deprecated &quot; tag to function example
+                    - Add &lt; keycap &gt; and &lt; keycombo &gt; example
+                    - Some documentation improvements
+                    - Added more info to &quot; Documenting symbols &quot; sectio
+                    - Env var equivalent to --flavour=no-tmpl
+                    - XInclude error while gnerating documentation
+                    - gtk-doc does not support long double as returned value type
+                    - Execute system() calls in subshells to ease debugging
+                    - [All-langs] [gtk-doc] Translated *.po files not available within ~/po directory
+                    - sort interface implementers
+                    - Self-test failure in git as of 2010-02-17: FAIL: gobject.sh
+                    - Patch to make GTK-DOC notice functions/variables with 'signed' prototypes
+                    - gtk-doc produces invalid DocBook markup if the SECTION ends with a tag that cannot be nested inside &lt; para &gt;
+                * Fix license information.
+                * Remove unrequired patch.
+                * Split development files.
+            </Comment>
+            <Name>Gökmen Görgen</Name>
+            <Email>gkmngrgn@gmail.com</Email>
+        </Update>
         <Update release="3">
             <Date>2010-11-02</Date>
             <Version>1.13</Version>
