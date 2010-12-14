@@ -21,8 +21,10 @@ def setup():
     kde.make("-f admin/Makefile.common")
 
     kde.configure('--with-distribution="Pardus" \
-                   --disable-libfam \
                    --enable-inotify \
+                   --enable-cups \
+                   --enable-dnssd \
+                   --enable-gcc-hidden-visibility \
                    --with-libart \
                    --with-libidn \
                    --with-utempter \
@@ -32,11 +34,9 @@ def setup():
                    --with-gssapi \
                    --with-openexr \
                    --with-jasper \
-                   --enable-cups \
-                   --enable-dnssd \
-                   --enable-gcc-hidden-visibility \
                    --with-aspell \
                    --with-acl \
+                   --disable-libfam \
                    --without-lua \
                    --without-hspell')
 
