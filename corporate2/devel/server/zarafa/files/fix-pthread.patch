@@ -1,0 +1,44 @@
+Index: zarafa-6.40.2/src/configure.ac
+===================================================================
+--- zarafa-6.40.2.orig/src/configure.ac
++++ zarafa-6.40.2/src/configure.ac
+@@ -405,7 +405,7 @@ if test "x$CLUCENE_INCLUDE_PREFIX" != "x
+    CPPFLAGS="$CPPFLAGS -I$CLUCENE_INCLUDE_PREFIX"
+ fi
+ # force add pthread in lucene test
+-CXXFLAGS="$CXXFLAGS -pthread"
++CXXFLAGS="$CXXFLAGS -lpthread"
+ if test -e "${CLUCENE_LIB_PREFIX}/libclucene.a"; then
+ AC_CHECK_LIB(clucene, [open],
+   [ CLUCENE_LIBS="${CLUCENE_LIB_PREFIX}/libclucene.a"
+@@ -555,7 +555,7 @@ libs_keep=$LIBS
+ AC_CHECK_LIB([pthread], [pthread_create],, AC_MSG_ERROR([required library libpthread missing or unusable]))
+ LIBS=$libs_keep
+ # because it seems this is better... (gnu c/c++ only?)
+-CXXFLAGS="$CXXFLAGS -pthread"
++CXXFLAGS="$CXXFLAGS -lpthread"
+ 
+ # Only specific links with uuid and dl, clients only with crypto and ssl for ssl connections
+ libs_keep=$LIBS
+Index: zarafa-6.40.2/src/ltmain.sh
+===================================================================
+--- zarafa-6.40.2.orig/src/ltmain.sh
++++ zarafa-6.40.2/src/ltmain.sh
+@@ -1647,7 +1647,7 @@ EOF
+ 	continue
+ 	;;
+ 
+-     -mt|-mthreads|-kthread|-Kthread|-pthread|-pthreads|--thread-safe|-threads)
++     -mt|-mthreads|-kthread|-Kthread|-lpthread|-pthreads|--thread-safe|-threads)
+ 	compiler_flags="$compiler_flags $arg"
+ 	compile_command="$compile_command $arg"
+ 	finalize_command="$finalize_command $arg"
+@@ -2150,7 +2150,7 @@ EOF
+ 	lib=
+ 	found=no
+ 	case $deplib in
+-	-mt|-mthreads|-kthread|-Kthread|-pthread|-pthreads|--thread-safe|-threads)
++	-mt|-mthreads|-kthread|-Kthread|-lpthread|-pthreads|--thread-safe|-threads)
+ 	  if test "$linkmode,$pass" = "prog,link"; then
+ 	    compile_deplibs="$deplib $compile_deplibs"
+ 	    finalize_deplibs="$deplib $finalize_deplibs"

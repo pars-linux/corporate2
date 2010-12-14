@@ -1,0 +1,316 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>zarafa</Name>
+        <Homepage>http://www.zarafa.com</Homepage>
+        <Packager>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Packager>
+        <License>AGPLv3</License>
+        <Summary>Zarafa Outlook Sharing and Open Source Collaboration</Summary>
+        <Description>Zarafa Outlook Sharing is a Microsoft Exchange replacement. The Open Source Collaboration provides an integration with your existing Linux mail server, native mobile phone support by ActiveSync compatibility and a webaccess with 'LooknFeel' similar to Outlook using Ajax. Including an IMAP4 and a POP3 gateway as well as an iCal/CalDAV gateway, Zarafa can combine the usability with the stability and flexibility of a Linux server.</Description>
+        <Archive sha1sum="1d4c0ef2bac112882fa57bb30e444904d78567b4" type="targz">http://cekirdek.pardus.org.tr/~ibrahim/dist/zcp-source-6.40.4-24200.tgz</Archive>
+        <BuildDependencies>
+            <Dependency>clucene</Dependency>
+            <Dependency>libvmime</Dependency>
+            <Dependency>libical</Dependency>
+            <Dependency>php-cli</Dependency>
+            <Dependency>mysql-lib</Dependency>
+            <Dependency>mit-kerberos-devel</Dependency>
+            <Dependency>openldap-client</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">fix-zarafaserver-uuid-linkage.patch</Patch>
+            <Patch level="1">fix-zarafastats-uuid-linkage.patch</Patch>
+            <Patch level="1">zarafa-6.40.0-package.patch</Patch>
+            <Patch level="1">zarafa-6.40.4-archiver.patch</Patch>
+            <Patch level="1">fix-pthread.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>libmapi</Name>
+        <IsA>library</IsA>
+        <PartOf>network.library</PartOf>
+        <Summary>MAPI implementation and library by Zarafa</Summary>
+        <RuntimeDependencies>
+            <Dependency>libical</Dependency>
+            <Dependency>libvmime</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libicalmapi*</Path>
+            <Path fileType="library">/usr/lib/libinetmapi*</Path>
+            <Path fileType="library">/usr/lib/libmapi*</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>php-mapi</Name>
+        <IsA>library</IsA>
+        <PartOf>programming.language.php</PartOf>
+        <Summary>The PHP MAPI extension by Zarafa</Summary>
+        <RuntimeDependencies>
+            <Dependency release="1">libmapi</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/php/ext/zarafa.ini</Path>
+            <Path fileType="library">/usr/lib/php/modules/mapi.so</Path>
+            <Path fileType="data">/usr/share/php/mapi</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>perl-MAPI</Name>
+        <IsA>library</IsA>
+        <PartOf>programming.language.perl</PartOf>
+        <Summary>The Perl MAPI extension by Zarafa</Summary>
+        <RuntimeDependencies>
+            <Dependency release="1">libmapi</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/perl*/vendor_perl/*/*/auto/MAPI/MAPI.so</Path>
+            <Path fileType="library">/usr/lib/perl*/vendor_perl/*/*/MAPI.pm</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>zarafa-common</Name>
+        <IsA>library</IsA>
+        <Summary>Common Zarafa files and directories</Summary>
+        <Files>
+            <Path fileType="config">/etc</Path>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="data">/usr/share/zarafa</Path>
+            <Path fileType="data">/usr/share/php</Path>
+            <Path fileType="data">/var/lib/zarafa</Path>
+            <Path fileType="data">/var/log/zarafa</Path>
+            <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/logrotate.d/zarafa">zarafa.logrotate</AdditionalFile>
+        </AdditionalFiles>
+        <Provides>
+            <COMAR script="package.py">System.Package</COMAR>
+        </Provides>
+    </Package>
+
+    <Package>
+        <Name>zarafa-utils</Name>
+        <IsA>app:console</IsA>
+        <Summary>Zarafa utilities for administration and management</Summary>
+        <RuntimeDependencies>
+            <Dependency release="1">libmapi</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/usr/bin/zarafa-admin</Path>
+            <Path fileType="executable">/usr/bin/zarafa-cfgchecker</Path>
+            <Path fileType="executable">/usr/bin/zarafa-fsck</Path>
+            <Path fileType="executable">/usr/bin/zarafa-passwd</Path>
+            <Path fileType="executable">/usr/bin/zarafa-stats</Path>
+            <Path fileType="executable">/usr/share/zarafa/db-calc-storesize</Path>
+            <Path fileType="executable">/usr/share/zarafa/db-convert-attachments-to-files</Path>
+            <Path fileType="executable">/usr/share/zarafa/ssl-certificates.sh</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>zarafa-server</Name>
+        <IsA>service</IsA>
+        <Summary>The main Zarafa Server service</Summary>
+        <RuntimeDependencies>
+            <Dependency>mit-kerberos-libs</Dependency>
+            <Dependency>mysql-lib</Dependency>
+            <Dependency>openldap-client</Dependency>
+            <Dependency release="1">zarafa-common</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/zarafa/ldap*</Path>
+            <Path fileType="config">/etc/zarafa/server.cfg</Path>
+            <Path fileType="config">/etc/zarafa/unix.cfg</Path>
+            <Path fileType="config">/etc/zarafa/userscripts</Path>
+            <Path fileType="executable">/usr/bin/zarafa-server</Path>
+            <Path fileType="library">/usr/lib/zarafa/dbplugin.so</Path>
+            <Path fileType="library">/usr/lib/zarafa/ldapplugin.so</Path>
+            <Path fileType="library">/usr/lib/zarafa/unixplugin.so</Path>
+            <Path fileType="localedata">/usr/share/locale</Path>
+            <Path fileType="executable">/usr/share/zarafa/db-upgrade-objectsid-to-objectguid.pl</Path>
+            <Path fileType="executable">/usr/share/zarafa/ldap-switch-sendas.pl</Path>
+            <Path fileType="data">/usr/share/zarafa/userscripts</Path>
+        </Files>
+        <Provides>
+            <COMAR script="zarafa-server.py" name="zarafa_server">System.Service</COMAR>
+        </Provides>
+    </Package>
+
+    <Package>
+        <Name>zarafa-client</Name>
+        <IsA>library</IsA>
+        <PartOf>server.library</PartOf>
+        <Summary>The Zarafa Client library</Summary>
+        <RuntimeDependencies>
+            <Dependency release="1">libmapi</Dependency>
+            <Dependency release="1">zarafa-common</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libzarafaclient.so</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>zarafa-devel</Name>
+        <Summary>Development files for several Zarafa libraries</Summary>
+        <RuntimeDependencies>
+            <Dependency>libvmime</Dependency>
+            <Dependency release="1">libmapi</Dependency>
+            <Dependency release="1">zarafa-common</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
+            <Path fileType="data">/usr/lib/*.a</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>zarafa-dagent</Name>
+        <IsA>service</IsA>
+        <Summary>The Zarafa Delivery Agent</Summary>
+        <RuntimeDependencies>
+            <Dependency release="1">libmapi</Dependency>
+            <Dependency release="1">zarafa-common</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/zarafa/autorespond</Path>
+            <Path fileType="config">/etc/zarafa/dagent.cfg</Path>
+            <Path fileType="executable">/usr/bin/zarafa-autorespond</Path>
+            <Path fileType="executable">/usr/bin/zarafa-dagent</Path>
+        </Files>
+        <Provides>
+            <COMAR script="zarafa-dagent.py" name="zarafa_dagent">System.Service</COMAR>
+        </Provides>
+    </Package>
+
+    <Package>
+        <Name>zarafa-gateway</Name>
+        <IsA>service</IsA>
+        <Summary>The Zarafa POP3/IMAP Gateway service</Summary>
+        <RuntimeDependencies>
+            <Dependency release="1">libmapi</Dependency>
+            <Dependency release="1">zarafa-common</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/zarafa/gateway.cfg</Path>
+            <Path fileType="executable">/usr/bin/zarafa-gateway</Path>
+        </Files>
+        <Provides>
+            <COMAR script="zarafa-gateway.py" name="zarafa_gateway">System.Service</COMAR>
+        </Provides>
+    </Package>
+
+    <Package>
+        <Name>zarafa-ical</Name>
+        <IsA>service</IsA>
+        <Summary>The Zarafa iCal/CalDAV gateway</Summary>
+        <RuntimeDependencies>
+            <Dependency release="1">libmapi</Dependency>
+            <Dependency release="1">zarafa-common</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/zarafa/ical.cfg</Path>
+            <Path fileType="executable">/usr/bin/zarafa-ical</Path>
+        </Files>
+        <Provides>
+            <COMAR script="zarafa-ical.py" name="zarafa_ical">System.Service</COMAR>
+        </Provides>
+    </Package>
+
+    <Package>
+        <Name>zarafa-indexer</Name>
+        <IsA>service</IsA>
+        <Summary>The Zarafa Indexing service</Summary>
+        <RuntimeDependencies>
+            <Dependency>clucene</Dependency>
+            <Dependency release="1">libmapi</Dependency>
+            <Dependency release="1">zarafa-common</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/zarafa/indexer.cfg</Path>
+            <Path fileType="config">/etc/zarafa/indexerscripts</Path>
+            <Path fileType="executable">/usr/bin/zarafa-indexer</Path>
+            <Path fileType="executable">/usr/share/zarafa/indexerscripts</Path>
+        </Files>
+        <Provides>
+            <COMAR script="zarafa-indexer.py" name="zarafa_indexer">System.Service</COMAR>
+        </Provides>
+    </Package>
+
+    <Package>
+        <Name>zarafa-monitor</Name>
+        <IsA>service</IsA>
+        <Summary>The Zarafa Monitoring service</Summary>
+        <RuntimeDependencies>
+            <Dependency release="1">libmapi</Dependency>
+            <Dependency release="1">zarafa-common</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/zarafa/monitor.cfg</Path>
+            <Path fileType="config">/etc/zarafa/quotamail</Path>
+            <Path fileType="executable">/usr/bin/zarafa-monitor</Path>
+        </Files>
+        <Provides>
+            <COMAR script="zarafa-monitor.py" name="zarafa_monitor">System.Service</COMAR>
+        </Provides>
+    </Package>
+
+    <Package>
+        <Name>zarafa-spooler</Name>
+        <IsA>service</IsA>
+        <Summary>The Zarafa Spooler service</Summary>
+        <RuntimeDependencies>
+            <Dependency release="1">libmapi</Dependency>
+            <Dependency release="1">zarafa-common</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/zarafa/spooler.cfg</Path>
+            <Path fileType="executable">/usr/bin/zarafa-spooler</Path>
+        </Files>
+        <Provides>
+            <COMAR script="zarafa-spooler.py" name="zarafa_spooler">System.Service</COMAR>
+        </Provides>
+    </Package>
+
+    <Package>
+        <Name>zarafa-webaccess</Name>
+        <IsA>data</IsA>
+        <Summary>Zarafa Webaccess featuring a 'Look and Feel' similar to Outlook</Summary>
+        <RuntimeDependencies>
+            <Dependency>php-cli</Dependency>
+            <Dependency>apache</Dependency>
+            <Dependency release="1">php-mapi</Dependency>
+            <Dependency release="1">zarafa-common</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/apache2/conf.d</Path>
+            <Path fileType="config">/etc/zarafa/webaccess/config.php</Path>
+            <Path fileType="data">/var/lib/zarafa-webaccess</Path>
+            <Path fileType="doc">/usr/share/zarafa-webaccess</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/apache2/conf.d/zarafa-webaccess.conf">zarafa-webaccess.conf</AdditionalFile>
+        </AdditionalFiles>
+    </Package>
+
+    <History>
+        <Update release="1">
+            <Date>2010-09-18</Date>
+            <Version>6.40.4</Version>
+            <Comment>First release.</Comment>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
