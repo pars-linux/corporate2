@@ -12,37 +12,125 @@
         <IsA>library</IsA>
         <Summary>PDF rendering library</Summary>
         <Description>poppler is a PDF rendering library based on xpdf.</Description>
-        <Archive sha1sum="306507e0fbf47736b456218618f043a216c263ef" type="targz">http://poppler.freedesktop.org/poppler-0.12.4.tar.gz</Archive>
+        <Archive sha1sum="e23b115e4ebc06c937318688b06a7c6b3319a00a" type="targz">http://poppler.freedesktop.org/poppler-0.14.5.tar.gz</Archive>
         <BuildDependencies>
-            <Dependency releaseFrom="7">openjpeg</Dependency>
+            <Dependency>qt3</Dependency>
+            <Dependency>lcms</Dependency>
+            <Dependency>jpeg</Dependency>
+            <Dependency>libpng</Dependency>
+            <Dependency>openjpeg</Dependency>
+            <Dependency>qt-devel</Dependency>
+            <Dependency>freetype</Dependency>
             <Dependency>fontconfig</Dependency>
+            <Dependency>gdk-pixbuf</Dependency>
+            <Dependency versionFrom="1.10.0">cairo</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">poppler-0.12.1-objstream.patch</Patch>
-            <Patch level="1">poppler-0.12.3-downscale.patch</Patch>
-            <Patch level="1">poppler-0.12.3-actualize-fcconfig.patch</Patch>
-            <Patch level="1">poppler-0.12.3-rotated-downscale.patch</Patch>
+            <Patch level="1">poppler-0.12.4-annot-appearance.patch</Patch>
+            <Patch level="1">poppler-0.14.5-check-numbers.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>poppler</Name>
         <RuntimeDependencies>
+            <Dependency>lcms</Dependency>
+            <Dependency>jpeg</Dependency>
+            <Dependency>libpng</Dependency>
             <Dependency>openjpeg</Dependency>
+            <Dependency>freetype</Dependency>
             <Dependency>fontconfig</Dependency>
             <Dependency>poppler-data</Dependency>
+            <Dependency versionFrom="1.10.0">cairo</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>poppler-utils</Name>
+        <Summary>Command line utilities for converting PDF files</Summary>
+        <RuntimeDependencies>
+            <Dependency release="current">poppler</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
-            <Path fileType="library">/usr/lib</Path>
-            <Path fileType="header">/usr/include</Path>
-            <Path fileType="data">/usr/lib/pkgconfig</Path>
-            <Path fileType="doc">/usr/share/doc</Path>
-            <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="man">/usr/share/man/man1</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>poppler-qt3</Name>
+        <Summary>Qt3 wrapper for poppler</Summary>
+        <RuntimeDependencies>
+            <Dependency>qt3</Dependency>
+            <Dependency release="current">poppler</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libpoppler-qt.so*</Path>
+            <Path fileType="data">/usr/lib/pkgconfig/poppler-qt.pc</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>poppler-qt</Name>
+        <Summary>Qt wrapper for poppler</Summary>
+        <RuntimeDependencies>
+            <Dependency>qt</Dependency>
+            <Dependency release="current">poppler</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libpoppler-qt4.so*</Path>
+            <Path fileType="data">/usr/lib/pkgconfig/poppler-qt4.pc</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>poppler-cpp</Name>
+        <Summary>Pure C++ wrapper for poppler</Summary>
+        <RuntimeDependencies>
+            <Dependency release="current">poppler</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libpoppler-cpp.so*</Path>
+            <Path fileType="library">/usr/lib/pkgconfig/poppler-cpp.pc</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>poppler-glib</Name>
+        <Summary>Glib wrapper for poppler</Summary>
+        <RuntimeDependencies>
+            <Dependency>gtk2</Dependency>
+            <Dependency>cairo</Dependency>
+            <Dependency>gdk-pixbuf</Dependency>
+            <Dependency release="current">poppler</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="library">/usr/lib/libpoppler-glib.so*</Path>
+            <Path fileType="library">/usr/lib/pkgconfig/poppler-glib.pc</Path>
+            <Path fileType="library">/usr/lib/pkgconfig/poppler-cairo.pc</Path>
         </Files>
     </Package>
 
     <History>
+        <Update release="34" type="security">
+            <Date>2010-12-15</Date>
+            <Version>0.14.5</Version>
+            <Comment>
+                - Version bump,
+                - Fix security vulnerabilities (CVE-2010-3702, CVE-2010-3703, CVE-2010-3704) (#15110).
+            </Comment>
+            <Requires>
+                <Action>reverseDependencyUpdate</Action>
+            </Requires>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="33">
             <Date>2010-11-01</Date>
             <Version>0.12.4</Version>
