@@ -17,7 +17,6 @@ def setup():
     autotools.configure("--with-pam-module-dir=/lib/security/ \
                          --with-os-type=Pardus \
                          --enable-examples \
-                         --localstatedir=/var \
                          --libexecdir=/usr/libexec/polkit-1 \
                          --disable-introspection \
                          --disable-man-pages \
