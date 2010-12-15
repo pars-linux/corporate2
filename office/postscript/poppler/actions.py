@@ -5,18 +5,22 @@
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
+shelltools.export("HOME", get.workDIR())
+
 def setup():
+    autotools.autoreconf("-fi")
     autotools.configure("--disable-static \
-                         --enable-xpdf-headers \
-                         --disable-cairo-output \
-                         --disable-poppler-qt \
-                         --disable-poppler-qt4 \
-                         --disable-poppler-glib \
+                         --disable-gtk-doc-html \
                          --disable-zlib \
+                         --enable-poppler-qt \
+                         --enable-poppler-qt4 \
+                         --enable-cairo-output \
+                         --enable-xpdf-headers \
                          --enable-libjpeg \
                          --enable-libopenjpeg")
 
@@ -26,4 +30,5 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
+    pisitools.removeDir("/usr/share/gtk-doc")
     pisitools.dodoc("README", "AUTHORS", "ChangeLog", "NEWS", "README-XPDF", "TODO")
