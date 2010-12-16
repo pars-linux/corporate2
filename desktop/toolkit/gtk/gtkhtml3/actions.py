@@ -11,7 +11,8 @@ from pisi.actionsapi import get
 
 def setup():
     autotools.autoreconf("-fi")
-    autotools.configure("--disable-static")
+    autotools.configure("--disable-static \
+                         --disable-deprecated-warning-flags")
 
 def build():
     autotools.make()
