@@ -186,9 +186,9 @@ if [ "${ACTION}" = "add" ]; then
   else
     # utf8 option needed for unicode characters
     if [ "$ID_FS_TYPE" == "vfat" ]; then
-	OPTIONS="rw,utf8,noatime,shortname=mixed,quiet"
+	OPTIONS="rw,utf8,noatime,shortname=mixed,quiet,sync"
     else
-	OPTIONS="rw,noatime"
+	OPTIONS="rw,noatime,sync"
     fi
     echo "${DEVNAME} ${MOUNTDIR} auto ${OPTIONS} 0 0" \
       > /tmp/fstab.d/${MOUNTPOINT}
