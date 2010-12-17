@@ -9,7 +9,7 @@ from pisi.actionsapi import cmaketools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = "libindi"
+WorkDir = "libindi-%s" % get.srcVERSION()
 
 def setup():
     cmaketools.configure("-DBUILD_ROOT=%s" % get.installDIR())
@@ -19,5 +19,4 @@ def build():
 
 def install():
     cmaketools.rawInstall("DESTDIR=%s" % get.installDIR())
-
     pisitools.dodoc("AUTHORS", "ChangeLog", "COPYING.LIB", "NEWS", "README*", "TODO")
