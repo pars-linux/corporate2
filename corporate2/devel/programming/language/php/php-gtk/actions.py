@@ -41,4 +41,5 @@ def build():
 def install():
     autotools.rawInstall("INSTALL_ROOT=%s" % get.installDIR())
 
+    pisitools.dosym("../../ext/60-php-gtk.ini", "/etc/php/cli/ext/60-php-gtk.ini")
     pisitools.dodoc("AUTHORS", "COPYING.LIB", "NEWS", "README*", "TODO2")

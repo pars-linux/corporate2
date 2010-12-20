@@ -16,9 +16,7 @@
         <BuildDependencies>
             <Dependency>gd</Dependency>
             <Dependency>apache</Dependency>
-            <Dependency>libxml2</Dependency>
             <Dependency>postfix</Dependency>
-            <Dependency>libxslt</Dependency>
             <Dependency>mysql-lib</Dependency>
             <Dependency>libmcrypt</Dependency>
             <Dependency>postgresql-server</Dependency>
@@ -36,36 +34,53 @@
     </Source>
 
     <Package>
-        <Name>php-common</Name>
-        <Summary>Common config files for PHP</Summary>
-        <Files>
-            <Path fileType="config">/etc/php</Path>
-        </Files>
-    </Package>
-
-    <Package>
         <Name>php-cli</Name>
         <RuntimeDependencies>
             <Dependency>gd</Dependency>
-            <Dependency>libxml2</Dependency>
-            <Dependency>libxslt</Dependency>
             <Dependency>mysql-lib</Dependency>
             <Dependency>libmcrypt</Dependency>
             <Dependency>php-common</Dependency>
             <Dependency>postgresql-lib</Dependency>
             <Dependency>mit-kerberos-libs</Dependency>
+            <Dependency>openldap-client</Dependency>
         </RuntimeDependencies>
         <Files>
+            <Path fileType="config">/etc/php/cli</Path>
             <Path fileType="executable">/usr/bin</Path>
-            <Path fileType="library">/usr/lib</Path>
-            <Path fileType="header">/usr/include</Path>
-            <Path fileType="config">/etc</Path>
             <Path fileType="man">/usr/share/man</Path>
-            <Path fileType="data">/usr/share/php5</Path>
         </Files>
         <AdditionalFiles>
             <AdditionalFile target="/usr/bin/go-pear" permission="0755" owner="root">go-pear</AdditionalFile>
         </AdditionalFiles>
+    </Package>
+
+    <Package>
+        <Name>php-common</Name>
+        <Summary>Common config files for PHP</Summary>
+        <Conflicts>
+            <Package releaseTo="81">php-cli</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="library">/usr/lib/php/modules</Path>
+            <Path fileType="data">/usr/share/php5</Path>
+            <Path fileType="data">/etc/php/ext</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>php-devel</Name>
+        <Summary>Development files for PHP</Summary>
+        <RuntimeDependencies>
+            <Dependency version="current">php-common</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/usr/bin/php-config</Path>
+            <Path fileType="executable">/usr/bin/phpize</Path>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="library">/usr/lib/php/build</Path>
+            <Path fileType="man">/usr/share/man/man1/php-config*</Path>
+            <Path fileType="man">/usr/share/man/man1/phpize*</Path>
+        </Files>
     </Package>
 
     <Package>
@@ -74,8 +89,6 @@
         <RuntimeDependencies>
             <Dependency>gd</Dependency>
             <Dependency>apache</Dependency>
-            <Dependency>libxml2</Dependency>
-            <Dependency>libxslt</Dependency>
             <Dependency>libmcrypt</Dependency>
             <Dependency>mysql-lib</Dependency>
             <Dependency>php-common</Dependency>
@@ -87,6 +100,7 @@
         <Files>
             <Path fileType="library">/usr/lib/apache2/modules/libphp5.so</Path>
             <Path fileType="config">/etc/apache2</Path>
+            <Path fileType="config">/etc/php/apache2</Path>
         </Files>
         <AdditionalFiles>
             <AdditionalFile target="/etc/apache2/modules.d/70_mod_php5.conf" permission="0644" owner="root">70_mod_php5.conf</AdditionalFile>
@@ -97,6 +111,17 @@
     </Package>
 
     <History>
+        <Update release="82">
+            <Date>2010-12-20</Date>
+            <Version>5.2.14</Version>
+            <Comment>
+                - Split devel package
+                - Split cli and mod_php config file locations
+                - Fixed dependencies
+            </Comment>
+            <Name>Erdem Bayer</Name>
+            <Email>ebayer@bayer.gen.tr</Email>
+        </Update>
         <Update release="81">
             <Date>2010-11-23</Date>
             <Version>5.2.14</Version>
