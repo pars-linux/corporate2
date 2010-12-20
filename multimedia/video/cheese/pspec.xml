@@ -12,23 +12,25 @@
         <Icon>cheese</Icon>
         <Summary>Webcam application</Summary>
         <Description>Cheese is a webcam application that uses your webcam to take photos and videos, apply fancy special effects and share fun with others.</Description>
-        <Archive sha1sum="a5ee0deb7cf84f6873ea38e5dd0d411b19afd549" type="targz">mirrors://gnome/cheese/2.28/cheese-2.28.1.tar.gz</Archive>
+        <Archive sha1sum="400fd1c2ae79ed212efd7bcd14c46d535823162b" type="targz">mirrors://gnome/cheese/2.32/cheese-2.32.0.tar.gz</Archive>
         <BuildDependencies>
-            <Dependency>gnome-desktop</Dependency>
             <Dependency>gtk2</Dependency>
-            <Dependency>hal</Dependency>
-            <Dependency>evolution-data-server</Dependency>
             <Dependency>cairo</Dependency>
-            <Dependency>gstreamer</Dependency>
-            <Dependency>librsvg</Dependency>
             <Dependency>gconf</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>gtk-doc</Dependency>
+            <Dependency>librsvg</Dependency>
+            <Dependency>gstreamer</Dependency>
+            <Dependency>gdk-pixbuf</Dependency>
             <Dependency>docbook-xml4_3</Dependency>
+            <Dependency>libcanberra-gtk</Dependency>
             <Dependency>gst-plugins-base</Dependency>
+            <Dependency versionFrom="2.32.1">gnome-desktop</Dependency>
+            <Dependency versionFrom="2.32.1">evolution-data-server</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">tr.diff</Patch>
+            <Patch level="1">fix-underlinking.patch</Patch>
         </Patches>
     </Source>
 
@@ -36,38 +38,53 @@
         <Name>cheese</Name>
         <IsA>app:gui</IsA>
         <RuntimeDependencies>
-            <Dependency>gnome-desktop</Dependency>
             <Dependency>gtk2</Dependency>
-            <Dependency>hal</Dependency>
-            <Dependency>evolution-data-server</Dependency>
-            <Dependency>cairo</Dependency>
-            <Dependency>gstreamer</Dependency>
-            <Dependency>librsvg</Dependency>
-            <Dependency>gconf</Dependency>
             <Dependency>pango</Dependency>
-            <Dependency>docbook-xml4_3</Dependency>
+            <Dependency>cairo</Dependency>
+            <Dependency>gconf</Dependency>
+            <Dependency>librsvg</Dependency>
+            <Dependency>gstreamer</Dependency>
+            <Dependency>gdk-pixbuf</Dependency>
+            <Dependency>libcanberra-gtk</Dependency>
             <Dependency>gst-plugins-base</Dependency>
+            <Dependency versionFrom="2.32.1">gnome-desktop</Dependency>
+            <Dependency versionFrom="2.32.1">evolution-data-server</Dependency>
         </RuntimeDependencies>
+        <Replaces>
+            <Package>cheese-docs</Package>
+        </Replaces>
         <Files>
             <Path fileType="config">/etc</Path>
+            <Path fileType="library">/usr/lib</Path>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="executable">/usr/libexec</Path>
             <Path fileType="localedata">/usr/share/locale</Path>
             <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="doc">/usr/share/gnome/help</Path>
             <Path fileType="data">/usr/share</Path>
         </Files>
     </Package>
 
     <Package>
-        <Name>cheese-docs</Name>
-        <IsA>data:doc</IsA>
-        <Summary>Help files and API documents for cheese library</Summary>
+        <Name>cheese-devel</Name>
+        <Summary>Development files for cheese</Summary>
+        <RuntimeDependencies>
+            <Dependency release="current">cheese</Dependency>
+        </RuntimeDependencies>
         <Files>
-            <Path fileType="doc">/usr/share/gnome/help</Path>
+            <Path fileType="header">/usr/include</Path>
+            <Path fileType="data">/usr/lib/pkgconfig</Path>
         </Files>
     </Package>
 
     <History>
+        <Update release="4">
+            <Date>2010-12-20</Date>
+            <Version>2.32.0</Version>
+            <Comment>Version bump</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="3">
             <Date>2010-10-26</Date>
             <Version>2.28.1</Version>
