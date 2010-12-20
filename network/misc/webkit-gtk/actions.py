@@ -25,7 +25,6 @@ def setup():
                          --with-font-backend=pango \
                          --with-unicode-backend=icu \
                          --enable-filters \
-                         --enable-gnomekeyring \
                          --enable-gtk-doc")
 
     pisitools.dosed("libtool", " -shared ", " -Wl,--as-needed -shared ")
