@@ -29,9 +29,6 @@ def check():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    # These were explicitly not installed in udev-125, so I remove them.
-    pisitools.remove("/lib/udev/rules.d/79-fstab_import.rules")
-
     # create needed directories
     for d in ("", "net", "pts", "shm", "hugepages"):
         pisitools.dodir("/lib/udev/devices/%s" % d)
