@@ -306,9 +306,6 @@ def isLabelRecord(device):
 
 def addEntry(device, path, fsType, options):
     path_own = False
-    # If the path value already exist in fstab, cut the operation
-    if path in listPaths():
-            fail(_(FAIL_PATH_ALREADY_EXIST) % path)
     if device in listEntries():
         old_path, old_fsType, old_options = getEntry(device)
         # Do not change root
@@ -318,6 +315,9 @@ def addEntry(device, path, fsType, options):
         if old_path == path:
             path_own = True
     else:
+        # If the path value already exist in fstab, cut the operation
+        if path in listPaths():
+                fail(_(FAIL_PATH_ALREADY_EXIST) % path)
         old_path = None
         if not createPath(device, path):
             # Can't create new path
@@ -356,17 +356,16 @@ def addEntry(device, path, fsType, options):
     # if the partition is not mounted anywhere, try to create a path
     # and mount there.
     if not path_own:
+        if not createPath(device, path):
+            # Can't create new path
+            fail(_(FAIL_PATH) % path)
         if not device in [x[0] for x in getMounted()]:
-            if not createPath(device, path):
-                # Can't create new path
-                fail(_(FAIL_PATH) % path)
-            else:
-                # Mount device
-                try:
-                    mount(device, path)
-                except:
-                    removeEntry(device, silent=True)
-                    raise
+            # Mount device
+            try:
+                mount(device, path)
+            except:
+                removeEntry(device, silent=True)
+                raise
 
 def getEntry(device):
     entries = parseFstab(FSTAB)
