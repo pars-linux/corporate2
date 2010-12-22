@@ -10,8 +10,6 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = "acpica-unix-%s" % get.srcVERSION().split('_')[-1]
-
 def build():
     shelltools.export("CFLAGS", "%s -fno-strict-aliasing" % get.CFLAGS())
     pisitools.dosed("tools/acpiexec/Makefile", "CFLAGS\+= -Wall -g", "CFLAGS+= -Wall")
