@@ -1,0 +1,33 @@
+From 1f60ba99ec057be9ad8b6044afb10bef3a740be2 Mon Sep 17 00:00:00 2001
+From: Mete Alpaslan <mete@pardus.org.tr>
+Date: Thu, 23 Dec 2010 23:46:51 +0200
+Subject: [PATCH 4/6] Needs disabling /lib/udev/rules.d/65-md-incremental.rules
+
+This rules adding/removing a single device an array as appropriate but
+we doesnt needs activating any raid array or raid member partition.This
+distrups correlating between raid arrays and members.
+
+* Creating /dev/.in_sysinit is needed before udev has started.
+
+BUG:COMMENT:14637
+---
+ yali/storage/__init__.py |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/yali/storage/__init__.py b/yali/storage/__init__.py
+index ef8222a..d8998a6 100644
+--- a/yali/storage/__init__.py
++++ b/yali/storage/__init__.py
+@@ -26,6 +26,9 @@ class StorageError(yali.Error):
+ 
+ def initialize(storage, intf):
+     storage.shutdown()
++    # touch /dev/.in_sysinit so that /lib/udev/rules.d/65-md-incremental.rules
++    # does not mess with any mdraid sets
++    open("/dev/.in_sysinit", "w")
+     udev_trigger(subsystem="block", action="change")
+     intf.resetInitializeDisk()
+     intf.resetReinitInconsistentLVM()
+-- 
+1.7.3.4
+
