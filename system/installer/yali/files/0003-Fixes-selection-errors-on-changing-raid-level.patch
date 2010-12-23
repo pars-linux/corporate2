@@ -1,0 +1,26 @@
+From ffc225766a2c72e0a456c9c25fd69f192af260b2 Mon Sep 17 00:00:00 2001
+From: Mete Alpaslan <mete@pardus.org.tr>
+Date: Thu, 23 Dec 2010 23:45:11 +0200
+Subject: [PATCH 3/6] Fixes selection errors on changing raid level
+
+BUG:FIXED:15763
+---
+ yali/gui/raid_gui.py |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/yali/gui/raid_gui.py b/yali/gui/raid_gui.py
+index 440a9ba..fd63b1d 100644
+--- a/yali/gui/raid_gui.py
++++ b/yali/gui/raid_gui.py
+@@ -274,7 +274,7 @@ class RaidWidget(QWidget, Ui_RaidWidget):
+     def raidLevelChanged(self, index):
+         raidlevel = self.raidLevels.itemData(index).toInt()[0]
+         availraidparts = self.parent.storage.unusedRaidMembers(array=self.origrequest)
+-        maxspares = raid.get_raid_max_spares(raidlevel, availraidparts)
++        maxspares = raid.get_raid_max_spares(raidlevel, len(availraidparts))
+ 
+         if maxspares > 0 and not raid.isRaid(raid.RAID0, raidlevel):
+            value = self.spareSpin.value()
+-- 
+1.7.3.4
+
