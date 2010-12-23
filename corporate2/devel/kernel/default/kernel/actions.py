@@ -11,36 +11,31 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-#WorkDir = "linux-2.6.32"
-NoStrip = ["/"]
+NoStrip = ["/lib", "/boot"]
+
+# NOTE: Bump this on ABI/Config changes
+abiVersion = "150"
 
 def setup():
-    kerneltools.configure()
+    kerneltools.configure(abiVersion)
 
 def build():
     kerneltools.build(debugSymbols=False)
 
 def install():
-    kerneltools.install(installFirmwares=False)
-
-    # Dump kernel version into /etc/kernel/
-    kerneltools.dumpVersion()
+    kerneltools.install()
 
     # Install kernel headers needed for out-of-tree module compilation
-    # You can provide a list of extra directories from which to grab *.h files.
-    kerneltools.installHeaders(extra=["drivers/media/dvb/dvb-core",
-                                      "drivers/media/dvb/frontends",
-                                      "drivers/media/video"])
+    kerneltools.installHeaders()
 
     # Drop /usr/include/scsi directory as it's shipped within glibc
     kerneltools.installLibcHeaders(excludes=["scsi"])
 
-    # Install kernel source
-    kerneltools.installSource()
-
-    # Clean module-init-tools related stuff
-    kerneltools.cleanModuleFiles()
+    # Generate some module lists to use within mkinitramfs
+    shelltools.system("./generate-module-list %s/lib/modules/%s" % (get.installDIR(), kerneltools.__getSuffix()))
 
     # Build and install the new 'perf' tool
-    autotools.make("V=1 -C tools/perf perf")
+    # When bumping major version build man files and put them into files/man
+    autotools.make("V=1 -C tools/perf perf LDFLAGS='%s'" % get.LDFLAGS())
     pisitools.insinto("/usr/bin", "tools/perf/perf", "perf.%s-%s" % (get.srcNAME(), get.srcVERSION()))
+
