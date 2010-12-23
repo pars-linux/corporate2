@@ -18,7 +18,8 @@ UpstreamVersion = None
 BaseVersion = None
 #FIXME: This method fails if you use --install like methods, make this a seperate function
 
-WorkDir = "ooo-build-%s" % get.srcVERSION()
+#WorkDir = "ooo-build-%s" % get.srcVERSION()
+WorkDir = "ooo-build-3.2.1.3"
 
 # NoStrip variable will also be extended in setup method because, we need some version sstrings from configure.in file which will be used in NoStrip directories.
 NoStrip = []
