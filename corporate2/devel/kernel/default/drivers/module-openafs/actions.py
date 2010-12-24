@@ -23,4 +23,4 @@ def build():
 
 def install():
     for m in ("libafs.ko", "afspag.ko"):
-        pisitools.insinto("/lib/modules/%s/kernel/extra/openafs" % KDIR, "src/libafs/MODLOAD-%s-SP/%s" % (KDIR, m))
+        pisitools.insinto("/lib/modules/%s/kernel/extra/openafs" % KDIR, "src/libafs/MODLOAD-%s-MP/%s" % (KDIR, m))
