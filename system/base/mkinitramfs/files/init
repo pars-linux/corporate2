@@ -68,11 +68,6 @@ resume_from_hibernate() {
     fi
 }
 
-deactivate_raid_incremental() {
-    info "Deactivating Incremental Raid probing"
-    touch /dev/.in_sysinit
-}
-
 ##################
 # Device probers #
 ##################
@@ -539,7 +534,7 @@ fi
 [ "${INIT}" == "" ] && INIT="/sbin/init";
 
 # This stops /lib/udev/rules.d/65-md-incremental.rules from medling with mdraid sets.
-[ "${RAID_INCREMENTAL}" -eq "0" ] && deactivate_raid_incremental
+[ "${RAID_INCREMENTAL}" -eq "0" ] && touch /dev/.in_sysinit
 
 # Move mounts instead of umount/mount
 mount --move /dev /newroot/dev
