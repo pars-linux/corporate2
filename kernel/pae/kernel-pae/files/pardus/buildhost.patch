@@ -1,20 +1,19 @@
 Instead of the real build host and user name, use "buildfarm.pardus.org.tr"
 and "pardus".
 
-Index: linux-2.6.32/scripts/mkcompile_h
+Index: linux-2.6.34/scripts/mkcompile_h
 ===================================================================
---- linux-2.6.32.orig/scripts/mkcompile_h
-+++ linux-2.6.32/scripts/mkcompile_h
-@@ -64,21 +64,10 @@ UTS_TRUNCATE="cut -b -$UTS_LEN"
+--- linux-2.6.34.orig/scripts/mkcompile_h
++++ linux-2.6.34/scripts/mkcompile_h
+@@ -64,19 +64,9 @@ UTS_TRUNCATE="cut -b -$UTS_LEN"
    echo \#define UTS_VERSION \"`echo $UTS_VERSION | $UTS_TRUNCATE`\"
  
    echo \#define LINUX_COMPILE_TIME \"`date +%T`\"
 -  echo \#define LINUX_COMPILE_BY \"`whoami`\"
 -  echo \#define LINUX_COMPILE_HOST \"`hostname | $UTS_TRUNCATE`\"
 -
--  if [ -x /bin/dnsdomainname ]; then
--    domain=`dnsdomainname 2> /dev/null`
--  elif [ -x /bin/domainname ]; then
+-  domain=`dnsdomainname 2> /dev/null`
+-  if [ -z "$domain" ]; then
 -    domain=`domainname 2> /dev/null`
 -  fi
 -
@@ -23,10 +22,9 @@ Index: linux-2.6.32/scripts/mkcompile_h
 -  else
 -    echo \#define LINUX_COMPILE_DOMAIN
 -  fi
- 
 +  echo \#define LINUX_COMPILE_BY \"pardus\"
 +  echo \#define LINUX_COMPILE_HOST \"buildfarm\"
 +  echo \#define LINUX_COMPILE_DOMAIN \"pardus.org.tr\"
+ 
    echo \#define LINUX_COMPILER \"`$CC -v 2>&1 | tail -n 1`\"
  ) > .tmpcompile
- 

@@ -13,9 +13,10 @@
         <IsA>kernel</IsA>
         <Summary>The Linux kernel (the core of the Linux operating system) for Pardus Linux</Summary>
         <Description>kernel-pae contains the Linux kernel, the core of any Linux operating system. The kernel handles the basic functions of the operating system: memory allocation, process allocation, device input and output, etc. PAE enabled kernel has the ability to use the physical memory beyond 4GB.</Description>
-        <Archive sha1sum="410b4fc818023bfef60064e973ff0ab46d3bfb19" type="tarbz2">http://www.kernel.org/pub/linux/kernel/v2.6/linux-2.6.32.tar.bz2</Archive>
+        <Archive sha1sum="4cb1fbfbeedcd658ca37739679c65dfaa136bf4e" type="tarbz2">http://www.kernel.org/pub/linux/kernel/v2.6/linux-2.6.35.tar.bz2</Archive>
         <AdditionalFiles>
             <AdditionalFile target="configs/kernel-i686-config">pardus/configs/kernel-i686-config</AdditionalFile>
+            <AdditionalFile permission="0755" target="generate-module-list">pardus/generate-module-list</AdditionalFile>
         </AdditionalFiles>
         <BuildDependencies>
             <Dependency>cpio</Dependency>
@@ -23,191 +24,55 @@
             <Dependency>diffutils</Dependency>
         </BuildDependencies>
         <Patches>
-            <!-- Fix x86 MCE malfunctioning (#11923) -->
-            <!-- Bluetooth: Fix potential bad memory access with sysfs files (CVE-2010-1084) (#12627) -->
-            <!-- NFS: Fix an Oops when truncating a file (CVE-2010-1087) (#12635) -->
-            <!-- dvb-core: Fix DoS bug in ULE decapsulation code (CVE-2010-1086) (#12631) -->
-            <!-- tty: release_one_tty() forgets to put pids (CVE-2010-1162) (#12774) -->
-            <!-- oom: fix the unsafe usage of badness() in proc_oom_score() (CVE-2010-1488) (#12778) -->
-            <!-- gfs2: Fix permissions checking for setflags ioctl() (CVE-2010-1641) (#13291) -->
-            <!-- btrfs: prevent users from setting ACLs on files they do not own (CVE-2010-2071) (#13492) -->
-            <!-- sctp: crash due to malformed SCTPChunkInit packet (CVE-2010-1173) (#12914) -->
-            <!-- KEYS: find_keyring_by_name() can gain access to a freed keyring (#12915)  -->
-            <!-- xfs: prevent swapext from operating on write-only files (CVE-2010-2226) (#13530) -->
-            <!-- ext4: fix integer overflow in ext4_ext_get_blocks() (CVE-2010-3015) (#14032) -->
-            <!-- can: add limit for nframes and clean up signed/unsigned variables (CVE-2010-2959) (#14088) -->
-            <!-- wireless: fix 64K kernel heap content leak via ioctl (CVE-2010-2955) (#14198) -->
-            <!-- dev/sequencer open failure is not handled correctly (CVE-2010-3080) (#14324) -->
-            <!-- drivers/net/usb/hso.c: prevent reading uninitialized memory (#14348) -->
-            <!-- drivers/net/eql: prevent reading uninitialized memory (#14345) -->
-            <!-- drivers/net/cxgb3: prevent reading uninitialized memory (#14342) -->
-            <Patch level="1" compressionType="bz2">kernel/patch-2.6.32.26.bz2</Patch>
+            <!-- kernel.org LONGTERM patch -->
+            <Patch level="1" compressionType="bz2">kernel/patch-2.6.35.10.bz2</Patch>
 
-            <!-- add setns syscall for lxc
-            <Patch level="1">0001-nsfd-v5.patch</Patch>
-            -->
 
-            <!-- cgroup: Provide /sys/fs/cgroup mount point -->
-            <Patch level="1">kernel/linux-2.6-cgroup-provide-sysfs-mountpoint.patch</Patch>
+            <!-- Add Apparmor support -->
+            <Patch level="1">kernel/apparmor-v2.6+v2.4-compat-for-2.6.35.patch</Patch>
+
 
             <!-- Security patches -->
-
-            <!-- Fix pktcdvd ioctl dev_minor range check (CVE-2010-3437) (#14653) -->
-            <Patch level="1">kernel/linux-2.6.git-252a52aa4fa22a668f019e55b3aac3ff71ec1c29.patch</Patch>
-
-            <!-- hvc_console: Fix race between hvc_close and hvc_remove (CVE-2010-2653) (#14656) -->
-            <Patch level="1">kernel/linux-2.6.git-e74d098c66543d0731de62eb747ccd5b636a6f4c.patch</Patch>
 
             <!-- tcp: Increase TCP_MAXSEG socket option minimum (CVE-2010-4165) (#15278) -->
             <Patch level="1">kernel/linux-2.6.git-7a1abd08d52fdeddb3e9a5a33f2f15cc6a5674d2.patch</Patch>
 
-            <!-- net sched: fix some kernel memory leaks (CVE-2010-2942)(#14082) -->
+            <!-- net sched: fix some kernel memory leaks (CVE-2010-2942) (#14082) -->
             <Patch level="1">kernel/net-2.6.git-1c40be12f7d8ca1d387510d39787b12e512a7ce8.patch</Patch>
 
+            <!-- Fix heap contents leak from ETHTOOL_GRXCLSRLALL (CVE-2010-3861) (#15670) -->
+            <Patch level="1">kernel/linux-2.6.git-ae6df5f96a51818d6376da5307d773baeece4014.patch</Patch>
 
-            <!-- Squashfs-lzma support (There's a cleaner patch for this in LKML) -->
-            <Patch level="1">squashfs/squashfs-devel-add-lzma-support.patch</Patch>
+            <!-- Fix af_unix: limit unix_tot_inflight (CVE-2010-4249) (#15693) -->
+            <Patch level="1">kernel/net-2.6.git-9915672d41273f5b77f1b3c29b391ffb7732b84b.patch</Patch>
 
-            <!-- Add TuxOnIce 3.2-rc2 support -->
-            <Patch level="1" compressionType="bz2">tuxonice/tuxonice-3.2-rc2-for-2.6.32.patch.bz2</Patch>
+            <!-- sys_semctl: fix kernel stack leakage (CVE-2010-4083) (#15480) -->
+            <Patch level="1">kernel/linux-2.6.git-982f7c2b2e6a28f8f266e075d92e19c0dd4c6e56.patch</Patch>
 
-
-            <!-- Moblin patches -->
-
-            <!-- fastboot: retry mounting / if it fails first time -->
-            <Patch level="1">fastboot/linux-2.6.29-retry-root-mount.patch</Patch>
-
-            <!-- fastboot: try mounting / before all devices  (the mouse) are
-            done probing. This saves several seconds of boot time. -->
-            <Patch level="1">fastboot/linux-2.6.29-dont-wait-for-mouse.patch</Patch>
-
-            <!-- fastboot: Move kms after SATA in drivers/Makefile -->
-            <Patch level="1">fastboot/0005-Ordering-kms-after-sata-in-drivers-Makefile.patch</Patch>
+            <!-- sctp: Fix out-of-bounds reading in sctp_asoc_get_hmac() (CVE-2010-3705) (#15383) -->
+            <Patch level="1">kernel/net-2.6.git-51e97a12bef19b7e43199fc153cf9bd5f2140362.patch</Patch>
 
 
-            <!-- Subset of Fedora Kernel Patches -->
 
-            <!-- WMI fixes and autoloading support -->
-            <Patch level="1">fedora/linux-2.6-autoload-wmi.patch</Patch>
-            <Patch level="1">fedora/wmi-check-find_guid-return-value-to-prevent-oops.patch</Patch>
-            <Patch level="1">fedora/wmi-survive-bios-with-duplicate-guids.patch</Patch>
+            <!-- Upstream patches -->
 
-            <!-- patches from Intel to address intermittent firmware failures with iwlagn -->
-            <Patch level="1">fedora/iwlwifi-reset-card-during-probe.patch</Patch>
-            <Patch level="1">fedora/iwlwifi_-add-function-to-reset_tune-radio-if-needed.patch</Patch>
-            <Patch level="1">fedora/iwlwifi_-Logic-to-control-how-frequent-radio-should-be-reset-if-needed.patch</Patch>
-            <Patch level="1">fedora/iwlwifi_-Tune-radio-to-prevent-unexpected-behavior.patch</Patch>
-            <Patch level="1">fedora/iwlwifi_-multiple-force-reset-mode.patch</Patch>
-            <Patch level="1">fedora/iwlwifi_-Adjusting-PLCP-error-threshold-for-1000-NIC.patch</Patch>
-            <Patch level="1">fedora/iwlwifi_-separated-time-check-for-different-type-of-force-reset.patch</Patch>
-            <Patch level="1">fedora/iwlwifi_-add-internal-short-scan-support-for-3945.patch</Patch>
-            <Patch level="1">fedora/iwlwifi_-Recover-TX-flow-stall-due-to-stuck-queue.patch</Patch>
-            <Patch level="1">fedora/iwlwifi_-move-plcp-check-to-separated-function.patch</Patch>
-            <Patch level="1">fedora/iwlwifi_-Recover-TX-flow-failure.patch</Patch>
-            <Patch level="1">fedora/iwlwifi_-code-cleanup-for-connectivity-recovery.patch</Patch>
-            <Patch level="1">fedora/iwlwifi_-iwl_good_ack_health-only-apply-to-AGN-device.patch</Patch>
-            <Patch level="1">fedora/iwlwifi-fix-scan-races.patch</Patch>
-            <Patch level="1">fedora/iwlwifi-fix-internal-scan-race.patch</Patch>
-            <Patch level="1">fedora/iwlwifi-recover_from_tx_stall.patch</Patch>
-            <Patch level="1">fedora/iwlwifi-manage-QoS-by-mac-stack.patch</Patch>
-            <Patch level="1">fedora/mac80211-explicitly-disable-enable-QoS.patch</Patch>
-
-            <!-- Enable support for kworld ub435-q and 340u usb atsc tuners -->
-            <Patch level="1">fedora/linux-2.6-v4l-dvb-add-kworld-a340-support.patch</Patch>
-            <Patch level="1">fedora/linux-2.6-v4l-dvb-add-lgdt3304-support.patch</Patch>
-
-            <!-- hid: add multi-input quirk for eGalax Touchcontroller -->
-            <Patch level="1">fedora/linux-2.6-input-hid-quirk-egalax.patch</Patch>
-
-            <!-- Add EC path for Thinkpad X100 -->
-            <Patch level="1">fedora/thinkpad-acpi-add-x100e.patch</Patch>
-
-            <!-- thinkpad_acpi: Fix backlight control on some recent Thinkpads -->
-            <Patch level="1">fedora/thinkpad-acpi-fix-backlight.patch</Patch>
-
-            <!-- acpi: ACPI embedded controller fixes from Fedora 13 -->
-            <Patch level="1">fedora/acpi-ec-add-delay-before-write.patch</Patch>
-
-            <!-- b43: Rewrite DMA Tx status handling sanity checks -->
-            <Patch level="1">fedora/linux-2.6-b43_-Rewrite-DMA-Tx-status-handling-sanity-checks.patch</Patch>
-
-            <!-- Add LIRC support -->
-            <Patch level="1">fedora/lirc-2.6.32.patch</Patch>
-
-            <!-- Use UTF-8 by default on VFAT -->
-            <Patch level="1">fedora/linux-2.6-defaults-fat-utf8.patch</Patch>
-
-            <!-- input: The input layer spews crap no-one cares about -->
-            <Patch level="1">fedora/linux-2.6-input-kill-stupid-messages.patch</Patch>
-
-            <Patch level="1">fedora/linux-2.6-dell-laptop-rfkill-fix.patch</Patch>
-
-            <!-- phylib: Support phy module autoloading -->
-            <Patch level="1">fedora/linux-2.6-phylib-autoload.patch</Patch>
-
-            <!-- pci: disable message signaled interrupts  -->
-            <Patch level="1">fedora/linux-2.6-defaults-pci_no_msi.patch</Patch>
-
-            <!-- Silence some useless messages that still get printed with 'quiet' -->
-            <Patch level="1">fedora/linux-2.6-silence-noise.patch</Patch>
-
-            <!-- Allow to use 480600 baud on 16C950 UARTs -->
-            <Patch level="1">fedora/linux-2.6-serial-460800.patch</Patch>
-
-            <!-- ia64 ata quirk -->
-            <Patch level="1">fedora/linux-2.6-ata-quirk.patch</Patch>
-            <Patch level="1">fedora/linux-2.6-e1000-ich9.patch</Patch>
-
-            <!-- Disable prism54 in favor of p54pci -->
-            <Patch level="1">fedora/prism54-remove-pci-dev-table.patch</Patch>
-
-            <!-- nfs: Fixed hang during NFS installs -->
-            <Patch level="1">fedora/linux-2.6-nfs4-callback-hidden.patch</Patch>
-
-            <!-- input: Support for keys that toggle all rfkill state -->
-            <Patch level="1">fedora/linux-2.6-rfkill-all.patch</Patch>
-
-            <!-- hdpvr: Enable IR -->
-            <Patch level="1">fedora/hdpvr-ir-enable.patch</Patch>
-
-            <!-- Add Broadcom CrystalHD video decoder driver from 2.6.34 staging -->
-            <Patch level="1">fedora/crystalhd-2.6.34-staging.patch</Patch>
-
-            <!-- hid: Add AppleIR lirc driver -->
-            <Patch level="1">fedora/add-appleir-usb-driver.patch</Patch>
+            <!-- cgroup: Provide /sys/fs/cgroup mount point -->
+            <Patch level="1">kernel/linux-2.6-cgroup-provide-sysfs-mountpoint.patch</Patch>
 
 
-            <!-- DRM patches -->
-            <Patch level="1">drm/add-list_sort.patch</Patch>
-            <Patch level="1">drm/i2c-algo-bit-Add-pre-and-post-xfer-hooks.patch</Patch>
-            <Patch level="1">drm/2.6.34-base.patch</Patch>
-            <Patch level="1">drm/2.6.34.patch</Patch>
-
-            <Patch level="1">drm/vga-switcheroo-fixes.patch</Patch>
-            <!--
-            <Patch level="1">drm/i915-edp-fixes.patch</Patch>
-            -->
-            <Patch level="1">drm/drm-disable-encoder-rather-than-dpms-off-in-drm_crtc.patch</Patch>
-            <Patch level="1">drm/drm-nouveau-fix-race-condition-when-under-memory-pre.patch</Patch>
-            <Patch level="1">drm/drm-nouveau-don-t-execute-INIT_GPIO-unless-we-re-rea.patch</Patch>
-            <Patch level="1">drm/nouveau-fixes.patch</Patch>
-
-            <Patch level="1">drm/fedora/drm_nouveau_ucode.patch</Patch>
-
-            <Patch level="1">drm/fedora/linux-2.6-acpi-video-export-edid.patch</Patch>
-
-            <Patch level="1">drm/fedora/drm-nouveau-nva3-noaccel.patch</Patch>
-            <Patch level="1">drm/fedora/drm-nouveau-nv50-crtc-update-delay.patch</Patch>
-            <Patch level="1">drm/fedora/drm-intel-big-hammer.patch</Patch>
-            <Patch level="1">drm/fedora/drm-intel-make-lvds-work.patch</Patch>
-            <Patch level="1">drm/fedora/linux-2.6-intel-iommu-igfx.patch</Patch>
-            <Patch level="1">drm/fedora/drm-intel-gen5-dither.patch</Patch>
-
-            <!-- Use the same resolution when switching from vesafb to KMS -->
-            <Patch level="1">drm/pardus/kms-use-vesafb-mode.patch</Patch>
+            <!-- LXC Patches -->
+            <Patch level="1">lxc/0001-nsfd-v5.patch</Patch>
 
 
-            <!-- Subset of Ubuntu Kernel Patches -->
+            <!-- TUXONICE support patches -->
+            <Patch level="1" compressionType="bz2">tuxonice/tuxonice-3.2-rc2-for-2.6.35.patch.bz2</Patch>
+
+
+            <!-- UnionFS patches -->
+            <Patch level="1" compressionType="gz">unionfs/unionfs-2.5.7_for_2.6.35.8.diff.gz</Patch>
+
+
+            <!-- Ubuntu Kernel Patches -->
 
             <!-- Restore VT fonts on switch -->
             <Patch level="1">ubuntu/ubuntu-intrepid.git-0e1f6f9df557fe4c7d5523275c25c166ee15efb5.patch</Patch>
@@ -224,9 +89,281 @@
             <Patch level="1">ubuntu/0005-UBUNTU-SAUCE-Correctly-blacklist-Thinkpad-r40e-in-AC.patch</Patch>
             <Patch level="1">ubuntu/0006-UBUNTU-SAUCE-ipw2200-Enable-LED-by-default.patch</Patch>
 
-            <!-- Add Apparmor support -->
-            <Patch level="1">ubuntu/apparmor/apparmor.diff</Patch>
-            <Patch level="1">ubuntu/apparmor/security-default-lsm.diff</Patch>
+            <!-- Fedora Kernel Patches -->
+
+            <!-- This patch adds a "make nonint_oldconfig" which is non-interactive and
+                 also gives a list of missing options at the end. Useful for automated
+                 builds (as used in the buildsystem) -->
+            <Patch level="1">fedora/linux-2.6-build-nonintconfig.patch</Patch>
+
+            <!-- Revert upstream things if any -->
+            <Patch level="1" reverse="true">fedora/linux-2.6-upstream-reverts.patch</Patch>
+
+            <!-- Exec shield patches -->
+            <Patch level="1">fedora/linux-2.6-i386-nx-emulation.patch</Patch>
+            <Patch level="1">fedora/linux-2.6-32bit-mmap-exec-randomization.patch</Patch>
+
+
+            <!-- ext4: Always journal quota file modifications -->
+            <Patch level="1">fedora/fs-call-security_d_instantiate-in-d_obtain_alias.patch</Patch>
+
+            <!-- btrfs fixes -->
+            <Patch level="1">fedora/btrfs-fix-error-handling-in-btrfs_get_sub.patch</Patch>
+            <Patch level="1">fedora/btrfs-setup-blank-root-and-fs_info-for-mount-time.patch</Patch>
+            <Patch level="1">fedora/btrfs-fix-race-between-btrfs_get_sb-and-unmount.patch</Patch>
+
+            <!-- Disable XHCI by default -->
+            <Patch level="1">fedora/disable-xhci-by-default.patch</Patch>
+
+            <!-- ACPI fixes -->
+            <Patch level="1">fedora/acpi-ec-add-delay-before-write.patch</Patch>
+            <Patch level="1">fedora/acpi-update-battery-information-on-notification-0x81.patch</Patch>
+
+            <!-- PNP: log PNP resources, as we do for PCI -->
+            <Patch level="1">fedora/pnp-log-pnp-resources-as-we-do-for-pci.patch</Patch>
+
+            <!-- PCI fixes -->
+
+            <!-- Make default state of PCI MSI a config option  -->
+            <Patch level="1">fedora/linux-2.6-defaults-pci_no_msi.patch</Patch>
+
+            <!-- Make default state of PCI CRS a config option -->
+            <Patch level="1">fedora/linux-2.6-defaults-pci_use_crs.patch</Patch>
+
+            <!-- enable ASPM by default on hardware we expect to work -->
+            <Patch level="1">fedora/linux-2.6-defaults-aspm.patch</Patch>
+
+            <!-- disable aspm if acpi doesn't provide an _OSC method -->
+            <Patch level="1">fedora/pci-acpi-disable-aspm-if-no-osc.patch</Patch>
+
+            <!-- allow drivers to disable aspm at load time -->
+            <Patch level="1">fedora/pci-aspm-dont-enable-too-early.patch</Patch>
+
+            <!-- PCI: Disable ASPM if BIOS asks us to -->
+            <Patch level="1">fedora/pci-disable-aspm-if-bios-asks-us-to.patch</Patch>
+
+            <!-- Misc fixes -->
+
+            <!-- input: The input layer spews crap no-one cares about -->
+            <Patch level="1">fedora/linux-2.6-input-kill-stupid-messages.patch</Patch>
+
+            <!-- Drop MODULE_ALIAS pcspkr -->
+            <Patch level="1">fedora/linux-2.6.30-no-pcspkr-modalias.patch</Patch>
+
+            <!-- stop floppy.ko from autoloading during udev -->
+            <Patch level="1">fedora/die-floppy-die.patch</Patch>
+
+            <!-- Hack e1000e to work on Montevina SDV -->
+            <Patch level="1">fedora/linux-2.6-e1000-ich9-montevina.patch</Patch>
+
+            <!-- Make fbcon not show the penguins with 'quiet' -->
+            <Patch level="1">fedora/linux-2.6-silence-fbcon-logo.patch</Patch>
+
+            <!-- thinkpad_acpi: Fix backlight control on some recent Thinkpads -->
+            <Patch level="1">fedora/thinkpad-acpi-fix-backlight.patch</Patch>
+
+            <!-- Allow to use 480600 baud on 16C950 UARTs -->
+            <Patch level="1">fedora/linux-2.6-serial-460800.patch</Patch>
+
+            <!-- Silence some useless messages that still get printed with 'quiet' -->
+            <Patch level="1">fedora/linux-2.6-silence-noise.patch</Patch>
+
+            <!-- DRM & GFX patches -->
+
+            <Patch level="1">fedora/drm-polling-fixes.patch</Patch>
+            <Patch level="1">fedora/drm-edid-invalid.patch</Patch>
+            <Patch level="1">fedora/drm-simplify-i2c-config.patch</Patch>
+            <Patch level="1">fedora/drm-sil164-module.patch</Patch>
+            <Patch level="1">fedora/drm-i2c-ch7006-fix.patch</Patch>
+            <Patch level="1">fedora/drm-ttm-fix.patch</Patch>
+            <Patch level="1">fedora/drm-nouveau-updates.patch</Patch>
+            <Patch level="1">fedora/drm-nouveau-race-fix.patch</Patch>
+            <Patch level="1">fedora/drm-nouveau-nva3-noaccel.patch</Patch>
+            <Patch level="1">fedora/drm-nouveau-nv86-bug.patch</Patch>
+            <Patch level="1">fedora/drm-nouveau-nv50-crtc-update-delay.patch</Patch>
+            <Patch level="1">fedora/drm-nouveau-connector-fix.patch</Patch>
+            <Patch level="1">fedora/drm-nouveau-imac-g4.patch</Patch>
+            <Patch level="1">fedora/drm-nouveau-evo-hang.patch</Patch>
+            <Patch level="1">fedora/drm-nouveau-nvaf-grclass.patch</Patch>
+            <Patch level="1">fedora/drm-intel-big-hammer.patch</Patch>
+            <Patch level="1">fedora/drm-intel-make-lvds-work.patch</Patch>
+            <Patch level="1">fedora/drm-i915-disable-sr-polling.patch</Patch>
+            <Patch level="1">fedora/linux-2.6-intel-iommu-igfx.patch</Patch>
+            <Patch level="1">fedora/drm-ttm-fix-two-race-conditions-fix-busy-codepaths.patch</Patch>
+            <Patch level="1">fedora/drm-radeon-r600-cs-checker-fixes.patch</Patch>
+            <Patch level="1">fedora/efifb-add-more-models.patch</Patch>
+            <Patch level="1">fedora/efifb-check-that-the-base-addr-is-plausible-on-pci-systems.patch</Patch>
+
+            <!-- hdpvr: Enable IR -->
+            <Patch level="1">fedora/hdpvr-ir-enable.patch</Patch>
+
+            <!-- V4L/DVB Updates (Patches may be empty) -->
+            <!-- dvb/mantis: Enable driver auto-loading (#14647) -->
+            <Patch level="1">fedora/linux-2.6-v4l-dvb-update.patch</Patch>
+            <Patch level="1">fedora/linux-2.6-v4l-dvb-fixes.patch</Patch>
+            <Patch level="1">fedora/linux-2.6-v4l-dvb-experimental.patch</Patch>
+            <Patch level="1">fedora/flexcop-fix-xlate_proc_name-warning.patch</Patch>
+
+            <!-- Fix DMA bug on via-velocity -->
+            <Patch level="1">fedora/linux-2.6-via-velocity-dma-fix.patch</Patch>
+
+            <!-- silence another rcu_reference warning -->
+            <Patch level="1">fedora/linux-2.6-rcu-netpoll.patch</Patch>
+
+            <!-- Patches headed upstream -->
+            <Patch level="1">fedora/disable-i8042-check-on-apple-mac.patch</Patch>
+            <Patch level="1">fedora/add-appleir-usb-driver.patch</Patch>
+            <Patch level="1">fedora/hid-support-tivo-slide-remote.patch</Patch>
+            <Patch level="1">fedora/neuter_intel_microcode_load.patch</Patch>
+            <Patch level="1">fedora/only-use-alpha2-regulatory-information-from-country-IE.patch</Patch>
+            <Patch level="1">fedora/kprobes-x86-fix-kprobes-to-skip-prefixes-correctly.patch</Patch>
+            <Patch level="1">fedora/fix-rcu_deref_check-warning.patch</Patch>
+            <Patch level="1">fedora/linux-2.6-cgroups-rcu.patch</Patch>
+
+            <!-- Scheduler fixes -->
+            <Patch level="1">fedora/sched-05-avoid-side-effect-of-tickless-idle-on-update_cpu_load.patch</Patch>
+            <Patch level="1">fedora/sched-10-change-nohz-idle-load-balancing-logic-to-push-model.patch</Patch>
+            <Patch level="1">fedora/sched-15-update-rq-clock-for-nohz-balanced-cpus.patch</Patch>
+            <Patch level="1">fedora/sched-20-fix-rq-clock-synchronization-when-migrating-tasks.patch</Patch>
+            <Patch level="1">fedora/sched-25-move-sched_avg_update-to-update_cpu_load.patch</Patch>
+            <Patch level="1">fedora/sched-30-sched-fix-nohz-balance-kick.patch</Patch>
+            <Patch level="1">fedora/sched-35-increment-cache_nice_tries-only-on-periodic-lb.patch</Patch>
+            <Patch level="1">fedora/sched-cure-more-NO_HZ-load-average-woes.patch</Patch>
+
+            <!-- Bluetooth: Add more Apple IDs for bluetooth stack -->
+            <Patch level="1">fedora/btusb-macbookpro-7-1.patch</Patch>
+            <Patch level="1">fedora/btusb-macbookpro-6-2.patch</Patch>
+            <Patch level="1">fedora/add-macbookair3-ids.patch</Patch>
+
+            <!-- device-mapper: Allow setting of UUID via rename if not already set -->
+            <Patch level="1">fedora/dm-allow-setting-of-uuid-via-rename-if-not-already-set.patch</Patch>
+
+            <!-- dmar: disable if ricoh multifunction detected -->
+            <Patch level="1">fedora/dmar-disable-when-ricoh-multifunction.patch</Patch>
+
+            <!-- ima: provide a toggle to disable it entirely -->
+            <Patch level="1">fedora/ima-allow-it-to-be-completely-disabled-and-default-off.patch</Patch>
+
+            <!-- sdhci: 8-bit data transfer width support -->
+            <Patch level="1">fedora/sdhci-8-bit-data-transfer-width-support.patch</Patch>
+
+            <!-- mmc: make sdhci work with ricoh mmc controller -->
+            <Patch level="1">fedora/mmc-make-sdhci-work-with-ricoh-mmc-controller.patch</Patch>
+
+            <!-- mmc: add ricoh e822 pci id -->
+            <Patch level="1">fedora/mmc-add-ricoh-e822-pci-id.patch</Patch>
+
+            <!-- Autodetect itpm devices -->
+            <Patch level="1">fedora/tpm-autodetect-itpm-devices.patch</Patch>
+
+            <!-- Fix TPM timeouts on boot -->
+            <Patch level="1">fedora/tpm-fix-stall-on-boot.patch</Patch>
+
+            <!-- Fix invalid selector in fs/gs causes kernel panic (CVE-2010-3698) (#15576) -->
+            <Patch level="1">fedora/kvm-fix-fs-gs-reload-oops-with-invalid-ldt.patch</Patch>
+
+            <!-- Fix gcc 4.5.1 miscompiling drivers/char/i8k.c -->
+            <Patch level="1">fedora/fix-i8k-inline-asm.patch</Patch>
+
+            <!-- 'inet_diag.c' Netlink Message Denial of Service Vulnerability (CVE-2010-3880) (#15687) -->
+            <Patch level="1">fedora/inet_diag-make-sure-we-run-the-same-bytecode-we-audited.patch</Patch>
+            <Patch level="1">fedora/netlink-make-nlmsg_find_attr-take-a-const-ptr.patch</Patch>
+
+            <!-- posix-cpu-timers: workaround to suppress the problems with mt exec -->
+            <Patch level="1">fedora/posix-cpu-timers-workaround-to-suppress-problems-with-mt-exec.patch</Patch>
+
+            <!-- Improve signal reporting -->
+            <Patch level="1">fedora/rtl8180-improve-signal-reporting-for-rtl8185-hardware.patch</Patch>
+            <Patch level="1">fedora/rtl8180-improve-signal-reporting-for-actual-rtl8180-hardware.patch</Patch>
+
+            <!-- Fix CVE-2010-4077, CVE-2010-4075 (#15610, #15616) -->
+            <Patch level="1">fedora/tty-make-tiocgicount-a-handler.patch</Patch>
+            <Patch level="1">fedora/tty-icount-changeover-for-other-main-devices.patch</Patch>
+
+            <!--  backport some fixes for kswapd from mmotm -->
+            <Patch level="1">fedora/mm-page-allocator-adjust-the-per-cpu-counter-threshold-when-memory-is-low.patch</Patch>
+            <Patch level="1">fedora/mm-vmstat-use-a-single-setter-function-and-callback-for-adjusting-percpu-thresholds.patch</Patch>
+
+            <!-- orinoco: initialise priv->hw before assigning the interrupt -->
+            <Patch level="1">fedora/orinoco-initialise-priv_hw-before-assigning-the-interrupt.patch</Patch>
+
+            <!-- Enhance AF_PACKET -->
+            <Patch level="1">fedora/net-AF_PACKET-vmalloc.patch</Patch>
+
+            <!-- Use UTF-8 by default on VFAT -->
+            <Patch level="1">fedora/linux-2.6-defaults-fat-utf8.patch</Patch>
+
+
+
+            <!-- Moblin/Meego patches -->
+
+            <!-- fastboot: retry mounting / if it fails first time -->
+            <Patch level="1">meego/linux-2.6.29-retry-root-mount.patch</Patch>
+
+            <!-- fastboot: try mounting / before all devices  (the mouse) are
+            done probing. This saves several seconds of boot time. -->
+            <Patch level="1">meego/linux-2.6.29-dont-wait-for-mouse.patch</Patch>
+
+            <!-- fastboot: Move kms after SATA in drivers/Makefile -->
+            <Patch level="1">meego/0005-Ordering-kms-after-sata-in-drivers-Makefile.patch</Patch>
+
+            <!-- and several other ones about powertop, usb autosuspend, etc. -->
+            <Patch level="1">meego/linux-2.6-usb-uvc-autosuspend.patch</Patch>
+            <Patch level="1">meego/linux-2.6-usb-bt-autosuspend.patch</Patch>
+            <Patch level="1">meego/linux-2.6.29-silence-acer-message.patch</Patch>
+            <Patch level="1">meego/linux-2.6.33-vfs-tracepoints.patch</Patch>
+            <Patch level="1">meego/linux-2.6.33-ahci-alpm-accounting.patch</Patch>
+            <Patch level="1">meego/linux-2.6.33-rt2860-1-2.patch</Patch>
+            <Patch level="1">meego/linux-2.6.33-rt2860-2-2.patch</Patch>
+            <Patch level="1">meego/linux-2.6.34-rt2860-no-debug.patch</Patch>
+            <Patch level="1">meego/linux-2.6.35-rc4-annotate-device-pm.patch</Patch>
+            <!-- These seems a little bit risky
+            <Patch level="1">meego/linux-2.6.35-slab-timer.patch</Patch>
+            <Patch level="1">meego/linux-2.6.35-intel-idle.patch</Patch>
+            <Patch level="1">meego/linux-2.6.36-wl1251-fix-trigger-scan-timeout-usage.patch</Patch>
+            <Patch level="1">meego/linux-2.6.36-wl1271-add-platform_data.patch</Patch>
+            <Patch level="1">meego/linux-2.6.36-wl1251-Use-MODULE_ALIAS-macro-at-correct-postion-for.patch</Patch>
+            -->
+
+
+            <!-- Pardus patches -->
+
+            <!-- Use the same resolution when switching from vesafb to KMS -->
+            <!--<Patch level="1">drm/pardus/kms-use-vesafb-mode.patch</Patch>-->
+
+            <!-- Fix linking of perf tool -->
+            <Patch level="1">pardus/fix-perf-linking.patch</Patch>
+
+            <!-- Use buildfarm.pardus.org.tr and pardus for /proc/version -->
+            <Patch level="1">pardus/buildhost.patch</Patch>
+
+            <!-- Pardus Logo Enhancements -->
+            <Patch level="1">pardus/logo.patch</Patch>
+            <Patch level="1">pardus/logo-vga16.patch</Patch>
+            <Patch level="1">pardus/logo-mono.patch</Patch>
+
+            <!-- Fallback to vesa 640x480x16 on undefined video mode number (Fixes #7117)-->
+            <Patch level="1">pardus/vesa_fallback_on_fail.patch</Patch>
+
+            <!-- hid-apple: Invert Fn+F* behaviour on apple keyboards -->
+            <Patch level="1">pardus/invert-hidapple-fnkey-behaviour.patch</Patch>
+
+            <!-- acpi: video: Add Acer 5710 to BQC quirk table (#10615) -->
+            <Patch level="1">pardus/0399-ACPI-video-DMI-workaround-Acer-5710.patch</Patch>
+
+            <!-- p54usb: Drop duplicate USB ID -->
+            <Patch level="1">pardus/drop-duplicate-usbid-in-p54usb.patch</Patch>
+
+            <!-- Drop a PCI_ID from zc0301 webcam driver -->
+            <Patch level="1">pardus/zc0301-remove-spca-conflicts.patch</Patch>
+
+            <!-- Patch lmpcm_usb driver into the kernel -->
+            <Patch level="1">pardus/linux-2.6-add-lmpcm_usb-driver.patch</Patch>
+
+            <!-- Add RF kill switch drivers for Fujitsu Amilo M7400 and M7440
+                 http://fsam7440.sourceforge.net
+                 http://www.zwobble.de -->
+            <Patch level="1">pardus/linux-2.6-add-fujitsu-amilo-74xx-rfkill-drivers.patch</Patch>
 
 
             <!-- Subset of OpenSuSE Kernel Patches -->
@@ -261,30 +398,13 @@
             <!-- Make ext3 mount default to barrier=1 -->
             <Patch level="1">suse/ext3-barrier-default.patch</Patch>
 
-            <!-- Change default delay time for usb-storage devices -->
-            <Patch level="1">suse/usb-storage-disable-delay.patch</Patch>
-
-            <!-- NFS4ACL for ext3 -->
+            <!-- NFS4ACL for ext3
             <Patch level="1">suse/parser-match_string.patch</Patch>
             <Patch level="1">suse/fs-may_iops.diff</Patch>
             <Patch level="1">suse/fs-knows-MAY_APPEND.diff</Patch>
             <Patch level="1">suse/nfs4acl-common.diff</Patch>
             <Patch level="1">suse/nfs4acl-ext3.diff</Patch>
             <Patch level="1">suse/nfs4acl-ai.diff</Patch>
-
-            <!-- sky2: Add 88E8059 support to sky2 -->
-            <Patch level="1">suse/sky2-88E8059-support.patch</Patch>
-
-            <!-- sky2: More fixes -->
-            <Patch level="1">suse/sky2-optima-tcp-offload-fix.patch</Patch>
-            <Patch level="1">suse/sky2-add-register-definitions.patch</Patch>
-            <Patch level="1">suse/sky2-optima-fix-pci-cfg.patch</Patch>
-
-            <!-- Broadcom PHY fixes -->
-            <Patch level="1">suse/phy-broadcom-bug-fixes-for-sp1.patch</Patch>
-
-            <!-- tg3: Update to 3.104
-            <Patch level="1">suse/tg3-update-version-to-3.104.patch</Patch>
             -->
 
             <!-- fastboot stuff -->
@@ -294,78 +414,14 @@
             <!-- mouse: Add more touch screen device IDs -->
             <Patch level="1">suse/linux-2.6.29-touchkit.patch</Patch>
 
-            <!-- libata: ata_piix: detect and clear spurious IRQs -->
-            <Patch level="1">suse/libata-ata_piix-clear-spurious-IRQ.patch</Patch>
-
-            <!-- libata: libata-acpi: missing _SDD is not an error -->
-            <Patch level="1">suse/libata-missing-_SDD-is-not-an-error.patch</Patch>
-
-            <!-- SCSI driver for HP Smart Array controllers, a replacement for cciss
-            <Patch level="1">suse/scsi-driver-for-hp-smart-array.patch</Patch>-->
-
             <!-- Disable NCQ for Acer Aspire 3810T -->
             <Patch level="1">suse/libata-ahci-aspire-3810t-noncq.patch</Patch>
 
             <!-- Add new serial Wacom device IDs -->
             <Patch level="1">suse/serial-8250-add-new-wacom-devices.patch</Patch>
 
-
-            <!-- Pardus patches & specific changes -->
-
-            <!-- alps: Fix sync losing problems (http://lkml.org/lkml/diff/2008/12/8/182/) (#10069) -->
-            <!--<Patch level="1">pardus/alps-fix-sync-lose-problem.patch</Patch>-->
-
-            <!-- FIXME (update from HEAD): dvb/mantis: Backport mantis/hopper and related frontends from v4l-dvb.git (#8177)
-            <Patch level="1">pardus/linux-2.6-v4l-backport-mantis-hopper-dvb-drivers.patch</Patch>
-            -->
-
-            <!-- acpi: video: Add Acer 5710 to BQC quirk table (#10615) -->
-            <Patch level="1">pardus/0399-ACPI-video-DMI-workaround-Acer-5710.patch</Patch>
-
-            <!-- p54usb: Drop duplicate USB ID -->
-            <Patch level="1">pardus/drop-duplicate-usbid-in-p54usb.patch</Patch>
-
-            <!-- rt2870: Add Zyxel NWD-270N usb id (#12751) -->
-            <Patch level="1">pardus/rt2870sta-add-zyxel-nwd270n-usbid.patch</Patch>
-
-            <!-- atkbd: Add forced release quirk for Samsung R510 -->
-            <Patch level="1">pardus/add-forced-release-quirk-samsung-r510.patch</Patch>
-
-            <!-- Drop a PCI_ID from zc0301 webcam driver -->
-            <Patch level="1">pardus/zc0301-remove-spca-conflicts.patch</Patch>
-
-            <!-- hid-apple: Invert Fn+F? behaviour on apple keyboards -->
-            <Patch level="1">pardus/invert-hidapple-fnkey-behaviour.patch</Patch>
-
-            <!-- Patch lmpcm_usb driver into the kernel -->
-            <Patch>pardus/linux-2.6-add-lmpcm_usb-driver.patch</Patch>
-
-            <!-- Patch acerhk driver into the kernel -->
-            <Patch>pardus/linux-2.6-add-acerhk-driver.patch</Patch>
-
-            <!-- Add RF kill switch drivers for Fujitsu Amilo M7400 and M7440
-                 http://fsam7440.sourceforge.net
-                 http://www.zwobble.de -->
-            <Patch level="1">pardus/linux-2.6-add-fujitsu-amilo-74xx-rfkill-drivers.patch</Patch>
-
-            <!-- Use buildfarm.pardus.org.tr and pardus for /proc/version -->
-            <Patch level="1">pardus/buildhost.patch</Patch>
-
-            <!-- Pardus Logo Enhancements -->
-            <Patch level="1">pardus/logo.patch</Patch>
-            <Patch level="1">pardus/logo-vga16.patch</Patch>
-            <Patch level="1">pardus/logo-mono.patch</Patch>
-
-            <!-- Remove 2 PCI ID from tulip driver as they work with dmfe (Fixes #4216)
-                 Seems fixed with 2.6.32.16
-            <Patch level="1">pardus/tulip_patch.patch</Patch>
-            -->
-
-            <!-- Fallback to vesa 640x480x16 on undefined video mode number (Fixes #7117)-->
-            <Patch level="1">pardus/vesa_fallback_on_fail.patch</Patch>
-
-            <!-- AuFS-2 patch -->
-            <Patch level="1">aufs/aufs2-31-20091003.patch</Patch>
+            <![CDATA[
+            ]]>
         </Patches>
     </Source>
 
@@ -376,11 +432,16 @@
             <Dependency releaseFrom="68">mkinitramfs</Dependency>
         </RuntimeDependencies>
         <Replaces>
+            <Package>module-pae-lenovo-sl-laptop</Package>
             <Package>module-pae-lirc</Package>
+            <Package>module-pae-uvcvideo</Package>
+            <Package>module-pae-omnibook</Package>
+            <Package>module-pae-gspca</Package>
         </Replaces>
         <Files>
             <Path fileType="executable" permanent="true">/boot</Path>
             <Path fileType="library" permanent="true">/lib/modules</Path>
+            <Path fileType="data" permanent="true">/lib/modules/*/modules.*</Path>
             <Path fileType="data">/etc/kernel</Path>
         </Files>
         <Provides>
@@ -398,6 +459,23 @@
     </Package>
 
     <History>
+        <Update release="150">
+            <Date>2010-12-21</Date>
+            <Version>2.6.35.10</Version>
+            <Comment>
+                - Switch to the 2.6.35 longterm branch,
+                - Refactor old the patches,
+                - Add UnionFS support instead of AuFS,
+                - Add setns() syscall support for LXC namespaces,
+                - Replace kernel-doc with kernel-docs,
+                - Auto-load mantis DVB drivers (#14647),
+                - Generate modules.* files for mkinitramfs usage,
+                - Replace gspca, uvc and omnibook modules.
+            </Comment>
+            <Type package="kernel">security</Type>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="149">
             <Date>2010-12-02</Date>
             <Version>2.6.32.26</Version>
