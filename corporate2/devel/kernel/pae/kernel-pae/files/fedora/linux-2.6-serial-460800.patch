@@ -1,11 +1,7 @@
-http://marc.theaimsgroup.com/?l=linux-kernel&m=112687270832687&w=2
-https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=126403
-http://lkml.org/lkml/2006/8/2/208
-
-Index: linux-2.6.32/drivers/serial/8250.c
-===================================================================
---- linux-2.6.32.orig/drivers/serial/8250.c
-+++ linux-2.6.32/drivers/serial/8250.c
+diff --git a/drivers/serial/8250.c b/drivers/serial/8250.c
+index 2209620..659c1bb 100644
+--- a/drivers/serial/8250.c
++++ b/drivers/serial/8250.c
 @@ -7,6 +7,9 @@
   *
   *  Copyright (C) 2001 Russell King.
@@ -16,7 +12,7 @@ Index: linux-2.6.32/drivers/serial/8250.c
   * This program is free software; you can redistribute it and/or modify
   * it under the terms of the GNU General Public License as published by
   * the Free Software Foundation; either version 2 of the License, or
-@@ -2227,6 +2230,14 @@ static unsigned int serial8250_get_divis
+@@ -2227,6 +2230,14 @@ static unsigned int serial8250_get_divisor(struct uart_port *port, unsigned int
  	else if ((port->flags & UPF_MAGIC_MULTIPLIER) &&
  		 baud == (port->uartclk/8))
  		quot = 0x8002;
@@ -31,7 +27,7 @@ Index: linux-2.6.32/drivers/serial/8250.c
  	else
  		quot = uart_get_divisor(port, baud);
  
-@@ -2240,7 +2251,7 @@ serial8250_set_termios(struct uart_port 
+@@ -2240,7 +2251,7 @@ serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
  	struct uart_8250_port *up = (struct uart_8250_port *)port;
  	unsigned char cval, fcr = 0;
  	unsigned long flags;
@@ -40,7 +36,7 @@ Index: linux-2.6.32/drivers/serial/8250.c
  
  	switch (termios->c_cflag & CSIZE) {
  	case CS5:
-@@ -2272,9 +2283,10 @@ serial8250_set_termios(struct uart_port 
+@@ -2272,9 +2283,10 @@ serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
  	/*
  	 * Ask the core to calculate the divisor for us.
  	 */
@@ -52,7 +48,7 @@ Index: linux-2.6.32/drivers/serial/8250.c
  	quot = serial8250_get_divisor(port, baud);
  
  	/*
-@@ -2311,6 +2323,19 @@ serial8250_set_termios(struct uart_port 
+@@ -2311,6 +2323,19 @@ serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
  	spin_lock_irqsave(&up->port.lock, flags);
  
  	/*
