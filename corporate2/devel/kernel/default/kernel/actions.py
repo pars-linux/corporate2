@@ -29,7 +29,7 @@ def install():
     kerneltools.installHeaders()
 
     # Drop /usr/include/scsi directory as it's shipped within glibc
-    kerneltools.installLibcHeaders(excludes=["scsi"])
+    kerneltools.installLibcHeaders()
 
     # Generate some module lists to use within mkinitramfs
     shelltools.system("./generate-module-list %s/lib/modules/%s" % (get.installDIR(), kerneltools.__getSuffix()))
