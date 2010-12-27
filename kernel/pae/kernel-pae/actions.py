@@ -34,13 +34,5 @@ def install():
     # Install kernel headers needed for out-of-tree module compilation
     kerneltools.installHeaders()
 
-    # Create source symlink in /lib/modules
-    kerneltools.installSource(onlySymlink=True)
-
     # Generate some module lists to use within mkinitramfs
     shelltools.system("./generate-module-list %s/lib/modules/%s" % (get.installDIR(), kerneltools.__getSuffix()))
-
-    # Build and install the new 'perf' tool
-    # When bumping major version build man files and put them into files/man
-    autotools.make("V=1 -C tools/perf perf LDFLAGS='%s'" % get.LDFLAGS())
-    pisitools.insinto("/usr/bin", "tools/perf/perf", "perf.%s-%s" % (get.srcNAME(), get.srcVERSION()))
