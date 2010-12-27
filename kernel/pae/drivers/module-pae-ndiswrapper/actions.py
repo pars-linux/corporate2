@@ -23,4 +23,3 @@ def install():
 
     pisitools.removeDir("/usr")
     pisitools.removeDir("/sbin")
-    pisitools.remove("/lib/modules/%s/modules.*" % KDIR)
