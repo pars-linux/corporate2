@@ -10,15 +10,13 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-SNAPSHOT="20100418"
-
-def setup():
-    pisitools.dosed("usb-modeswitch-data-%s/Makefile" % SNAPSHOT, "^install: .*$", "install: files-install")
+SNAPSHOT="20101222"
 
 def build():
-    autotools.make("CC='%s' CFLAGS='%s -lusb'" % (get.CC(), get.CFLAGS()))
+    autotools.make("CC='%s' CFLAGS='%s'" % (get.CC(), get.CFLAGS()))
 
 def install():
     autotools.rawInstall("DESTDIR='%s'" % get.installDIR())
     autotools.rawInstall("-C usb-modeswitch-data-%s DESTDIR='%s'" % (SNAPSHOT, get.installDIR()))
+
     pisitools.dodoc("README*", "COPYING")
