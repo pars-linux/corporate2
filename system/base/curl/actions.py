@@ -10,20 +10,24 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
+    # fedora: --enable-ldaps, --with-gssapi
+    # --without-ssl, --with-nss
     autotools.configure("--disable-static \
                          --disable-ldap \
-                         --enable-ipv6 \
                          --with-ssl \
+                         --with-libidn \
                          --with-libssh2 \
-                         --enable-http \
                          --enable-ftp \
-                         --enable-gopher \
+                         --enable-ipv6 \
+                         --enable-http \
                          --enable-file \
                          --enable-dict \
                          --enable-manual \
+                         --enable-gopher \
                          --enable-telnet \
-                         --enable-nonblocking \
                          --enable-largefile \
+                         --enable-nonblocking \
+                         --enable-threaded-resolver \
                          --with-ca-bundle=/etc/ssl/certs/ca-bundle.crt")
 
 def build():
