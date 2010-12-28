@@ -13,24 +13,39 @@
         <IsA>app:console</IsA>
         <Summary>A Client that groks URLs</Summary>
         <Description>curl is a command line tool for transferring data with URL syntax, supporting various protocols.</Description>
-        <Archive sha1sum="bc3ba6d83069ef1f13d320f29b26f1c63f6056b3" type="tarbz2">http://curl.haxx.se/download/curl-7.20.1.tar.bz2</Archive>
+        <Archive sha1sum="24a551e3653b91f883638a6ecec1582ae3022f9f" type="tarbz2">http://curl.haxx.se/download/curl-7.21.3.tar.bz2</Archive>
         <BuildDependencies>
-            <Dependency versionFrom="0.9.8">openssl</Dependency>
+            <Dependency>openssl</Dependency>
             <Dependency>zlib-devel</Dependency>
             <Dependency>libidn-devel</Dependency>
             <Dependency>libssh2-devel</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">fix-anonymous-ftp-login.patch</Patch>
+
+            <!-- Avoid buffer overflow report from glibc with FORTIFY_SOURCE -->
+            <Patch level="1">fedora/0005-curl-7.21.3-tftpd-buffer-overflow.patch</Patch>
+
+            <!-- prevent configure script from discarding -g in CFLAGS -->
+            <Patch level="1">fedora/0102-curl-7.21.2-debug.patch</Patch>
+
+            <!-- use localhost6 instead of ip6-localhost in the curl test-suite -->
+            <Patch level="1">fedora/0104-curl-7.19.7-localhost6.patch</Patch>
+
+            <!-- disable valgrind for certain test-cases (libssh2 problem) -->
+            <Patch level="1">fedora/0106-curl-7.21.0-libssh2-valgrind.patch</Patch>
+
+            <!-- exclude test1112 from the test suite -->
+            <Patch level="1">fedora/0105-curl-7.21.3-disable-test1112.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>curl</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="0.9.8">openssl</Dependency>
             <Dependency>zlib</Dependency>
             <Dependency>libidn</Dependency>
+            <Dependency>openssl</Dependency>
             <Dependency>libssh2</Dependency>
         </RuntimeDependencies>
         <Files>
@@ -44,6 +59,13 @@
     </Package>
 
     <History>
+        <Update release="21">
+            <Date>2010-12-28</Date>
+            <Version>7.21.3</Version>
+            <Comment>Version bump</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="20">
             <Date>2010-10-26</Date>
             <Version>7.20.1</Version>
