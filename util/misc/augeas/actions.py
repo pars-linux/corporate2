@@ -10,7 +10,6 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
-    pisitools.dosed("doc/Makefile.in", "\/vimfiles", "/vim72")
     autotools.configure("--disable-static")
 
 def build():
