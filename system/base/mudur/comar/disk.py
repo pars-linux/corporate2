@@ -352,7 +352,6 @@ def addEntry(device, path, fsType, options):
     # and mount there.
     if not path_own:
         if not createPath(device, path):
-            removeEntry(device, silent=True)
             # Can't create new path
             addit = False
             fail(_(FAIL_PATH) % path)
