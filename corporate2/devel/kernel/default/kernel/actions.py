@@ -13,14 +13,14 @@ from pisi.actionsapi import get
 
 NoStrip = ["/lib", "/boot"]
 
-# NOTE: Bump this on ABI/Config changes
-abiVersion = "150"
-
 def setup():
-    kerneltools.configure(abiVersion)
+    kerneltools.configure()
 
 def build():
     kerneltools.build(debugSymbols=False)
+
+    # When bumping major version build man files and put them into files/man
+    autotools.make("V=1 -C tools/perf perf LDFLAGS='%s'" % get.LDFLAGS())
 
 def install():
     kerneltools.install()
@@ -28,14 +28,10 @@ def install():
     # Install kernel headers needed for out-of-tree module compilation
     kerneltools.installHeaders()
 
-    # Drop /usr/include/scsi directory as it's shipped within glibc
     kerneltools.installLibcHeaders()
 
     # Generate some module lists to use within mkinitramfs
     shelltools.system("./generate-module-list %s/lib/modules/%s" % (get.installDIR(), kerneltools.__getSuffix()))
 
-    # Build and install the new 'perf' tool
-    # When bumping major version build man files and put them into files/man
-    autotools.make("V=1 -C tools/perf perf LDFLAGS='%s'" % get.LDFLAGS())
+    # Install the perf tool
     pisitools.insinto("/usr/bin", "tools/perf/perf", "perf.%s-%s" % (get.srcNAME(), get.srcVERSION()))
-
