@@ -51,7 +51,8 @@ def modules_config():
               'ext-filter', 'file-cache', 'headers', 'imagemap', 'include', 'info',
               'log_config', 'logio', 'mem-cache', 'mime', 'mime-magic', 'negotiation',
               'proxy', 'proxy-connect','proxy-ftp', 'proxy-http', 'rewrite', 'setenvif',
-              'speling', 'status', 'unique-id', 'userdir', 'usertrack', 'vhost-alias']
+              'speling', 'status', 'unique-id', 'userdir', 'usertrack', 'vhost-alias',
+              'authnz_ldap', 'auth_ldap', 'ldap']
 
     conf = ""
 
