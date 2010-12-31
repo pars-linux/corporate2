@@ -32,6 +32,7 @@ def setup():
                          --disable-postgres \
                          --disable-java \
                          --disable-sql \
+                         --with-ldap \
                          --with-devrandom=/dev/urandom \
                          --with-dblib=gdbm")
 
