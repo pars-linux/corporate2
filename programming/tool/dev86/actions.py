@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2007 TUBITAK/UEKAE
+# Copyright 2007-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -9,14 +9,16 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir="dev86-%s" % get.srcVERSION()
-
 def build():
-    if get.ARCH() == "x86_64":
-        pisitools.dosed("makefile.in", "alt-libs elksemu", "alt-libs")
-        pisitools.dosed("makefile.in", "install-lib install-emu", "install-lib")
+    for com in [ "bcc86", "unproto", "copt", "as86", "ld86",
+                 "-C cpp", "-C ar", "-C ld" ]:
+        make_opts = { 'cflags' : get.CFLAGS(),
+                      'com'    : com }
 
-    autotools.make("-j1 < /dev/null")
+        autotools.make('%(com)s CFLAGS="%(cflags)s -D_POSIX_SOURCE" -j1' % make_opts)
+
+    # ncc does not support gcc optflags
+    autotools.make('-j1')
 
 def install():
     for binary in ["bin/*","cpp/bcc-cpp","bcc/bcc-cc1"]:
