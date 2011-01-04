@@ -13,6 +13,9 @@
         <Summary>The Cyrus SASL (Simple Authentication and Security Layer)</Summary>
         <Description>cyrus-sasl is the Simple Authentication and Security Layer, a method for adding authentication support to connection-based protocols. To use SASL, a protocol includes a command for identifying and authenticating a user to a server and for optionally negotiating protection of subsequent protocol interactions.</Description>
         <Archive sha1sum="d23454ab12054714ab97d229c86cb934ce63fbb1" type="targz">ftp://ftp.andrew.cmu.edu/pub/cyrus-mail/cyrus-sasl-2.1.22.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>mit-kerberos-devel</Dependency>
+        </BuildDependencies>
         <Patches>
             <Patch>pardus.patch</Patch>
 
@@ -48,6 +51,9 @@
 
     <Package>
         <Name>cyrus-sasl</Name>
+        <RuntimeDependencies>
+            <Dependency>mit-kerberos-libs</Dependency>
+        </RuntimeDependencies>
         <Files>
             <Path fileType="config">/etc</Path>
             <Path fileType="executable">/usr/sbin</Path>
@@ -69,6 +75,17 @@
     </Package>
 
     <History>
+        <Update release="15">
+            <Date>2011-01-04</Date>
+            <Version>2.1.22</Version>
+            <Comment>
+                * Enable gss-api
+                * Disable building with ldap support
+                * Remove database flags as they are not builded anyway
+            </Comment>
+            <Name>Erdem Bayer</Name>
+            <Email>ebayer@bayer.gen.tr</Email>
+        </Update>
         <Update release="14">
             <Date>2010-12-31</Date>
             <Version>2.1.22</Version>

@@ -25,14 +25,9 @@ def setup():
                          --disable-static \
                          --with-openssl \
                          --with-pam \
-                         --disable-gssapi \
-                         --without-mysql \
-                         --disable-mysql \
-                         --without-pgsql \
-                         --disable-postgres \
+                         --enable-gssapi \
                          --disable-java \
                          --disable-sql \
-                         --with-ldap \
                          --with-devrandom=/dev/urandom \
                          --with-dblib=gdbm")
 
