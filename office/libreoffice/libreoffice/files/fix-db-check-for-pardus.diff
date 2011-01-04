@@ -20,10 +20,10 @@ diff -Naur patches-orig/dev300/fix-db-check-for-pardus.diff patches/dev300/fix-d
 +     save_LIBS="$LIBS"
 +     for dbver in '' -5.1 5.1 -5.0 5.0 -5 5 -4.8 4.8 -4.7 4.7 -4 4; do
 +-        AC_CHECK_LIB(db$dbver, db_create, [ DB_LIB="db$dbver"; DB_CPPLIB="db_cxx$dbver"; LIBS="-ldb$dbver $LIBS"; break ])
-++        AC_CHECK_LIB(db$dbver, db_create_4008, [ DB_LIB="db$dbver"; DB_CPPLIB="db_cxx$dbver"; LIBS="-ldb$dbver $LIBS"; break ])
+++        AC_CHECK_LIB(db$dbver, db_create_4006, [ DB_LIB="db$dbver"; DB_CPPLIB="db_cxx$dbver"; LIBS="-ldb$dbver $LIBS"; break ])
 +     done
 +-    AC_CHECK_FUNC(db_create, [], [ AC_MSG_ERROR([db not installed or functional]) ])
-++    AC_CHECK_FUNC(db_create_4008, [], [ AC_MSG_ERROR([db not installed or functional]) ])
+++    AC_CHECK_FUNC(db_create_4006, [], [ AC_MSG_ERROR([db not installed or functional]) ])
 +     LIBS="$save_LIBS"
 +     SCPDEFS="$SCPDEFS -DSYSTEM_DB"
 + else
