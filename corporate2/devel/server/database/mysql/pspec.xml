@@ -9,40 +9,48 @@
             <Email>ibrahim@pardus.org.tr</Email>
         </Packager>
         <License>GPLv2</License>
-        <IsA>service</IsA>
         <Summary>A fast, multi-threaded, multi-user SQL database server</Summary>
         <Description>MySQL is a multithreaded, multi-user, robust SQL Database Management System (DBMS).</Description>
-        <Archive sha1sum="5ed4a3c12662b0329df870f4dcebea6903e94265" type="targz">http://mysql.mirror.iweb.ca/Downloads/MySQL-5.1/mysql-5.1.52.tar.gz</Archive>
+        <Archive sha1sum="6a37776c021bbb046677cf8a3da0136a2875e660" type="targz">http://cekirdek.pardus.org.tr/~ibrahim/dist/mysql-5.5.8-nodocs.tar.gz</Archive>
         <BuildDependencies>
-            <Dependency>ed</Dependency>
+            <Dependency>libaio</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">mysql-ssl-multilib.patch</Patch>
             <Patch level="1">mysql-errno.patch</Patch>
-            <Patch level="1">mysql-testing.patch</Patch>
+            <Patch level="1">mysql-strmov.patch</Patch>
             <Patch level="1">mysql-install-test.patch</Patch>
+
             <!-- this is not forgotten, it is left just for reference
             <Patch level="1">mysql-stack.patch</Patch>
             -->
-            <Patch level="1">mysql-stack-guard.patch</Patch>
-            <Patch level="1">mysql-plugin-bug.patch</Patch>
-            <Patch level="1">mysql-setschedparam.patch</Patch>
-            <Patch level="1">mysql-no-docs.patch</Patch>
-            <Patch level="1">mysql-strmov.patch</Patch>
-            <Patch level="1">mysql-cve-2008-7247.patch</Patch>
+
             <Patch level="1">mysql-expired-certs.patch</Patch>
-            <Patch level="1">mysql-missing-string-code.patch</Patch>
-            <Patch level="1">mysql-lowercase-bug.patch</Patch>
+            <Patch level="1">mysql-stack-guard.patch</Patch>
             <Patch level="1">mysql-chain-certs.patch</Patch>
+
+            <!--<Patch level="1">mysql-versioning.patch</Patch>-->
+            <!--<Patch level="1">mysql-dubious-exports.patch</Patch>-->
+
+            <Patch level="1">mysql-disable-test.patch</Patch>
+            <Patch level="1">fix-my_print_defaults-path.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
-        <Name>mysql-lib</Name>
+        <Name>mysql-libs</Name>
+        <IsA>library</IsA>
+        <Summary>The shared libraries required for MySQL clients</Summary>
+        <RuntimeDependencies>
+            <Dependency>libaio</Dependency>
+        </RuntimeDependencies>
+        <Replaces>
+            <Package>mysql-lib</Package>
+        </Replaces>
         <Files>
             <Path fileType="executable">/usr/bin/mysql_config</Path>
             <Path fileType="header">/usr/include</Path>
             <Path fileType="library">/usr/lib</Path>
+            <Path fileType="data">/usr/share/aclocal</Path>
             <Path fileType="data">/usr/share/mysql/charsets</Path>
             <Path fileType="data">/usr/share/mysql/czech</Path>
             <Path fileType="data">/usr/share/mysql/danish</Path>
@@ -73,8 +81,11 @@
 
     <Package>
         <Name>mysql-client</Name>
+        <IsA>app:console</IsA>
+        <Summary>Client tools of MySQL</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="5.1.51">mysql-lib</Dependency>
+            <Dependency release="current">mysql-libs</Dependency>
+            <Dependency>libaio</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin</Path>
@@ -83,9 +94,12 @@
 
     <Package>
         <Name>mysql-server</Name>
+        <IsA>service</IsA>
+        <Summary>A fast, multi-threaded, multi-user SQL database server</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="5.1.51">mysql-lib</Dependency>
-            <Dependency versionFrom="5.1.51">mysql-client</Dependency>
+            <Dependency>libaio</Dependency>
+            <Dependency release="current">mysql-libs</Dependency>
+            <Dependency release="current">mysql-client</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="config">/etc</Path>
@@ -106,20 +120,14 @@
             <Path fileType="executable">/usr/bin/mysql_waitpid</Path>
             <Path fileType="executable">/usr/bin/mysqlbinlog</Path>
             <Path fileType="executable">/usr/bin/pack_isam</Path>
-            <Path fileType="data">/usr/share/mysql/binary-configure</Path>
-            <Path fileType="data">/usr/share/mysql/fill_help_tables.sql</Path>
-            <Path fileType="data">/usr/share/mysql/mysqld_multi.server</Path>
-            <Path fileType="data">/usr/share/mysql/mysql_fix_privilege_tables.sql</Path>
-            <Path fileType="data">/usr/share/mysql/mysql_system_tables_data.sql</Path>
-            <Path fileType="data">/usr/share/mysql/mysql_system_tables.sql</Path>
-            <Path fileType="data">/usr/share/mysql/mysql_test_data_timezone.sql</Path>
-            <Path fileType="data">/usr/share/mysql/ndb-config-2-node.ini</Path>
+            <Path fileType="data">/usr/share/mysql</Path>
             <Path fileType="info">/usr/share/info</Path>
             <Path fileType="data">/var</Path>
             <Path fileType="doc">/usr/share/doc</Path>
         </Files>
         <AdditionalFiles>
             <AdditionalFile owner="root" permission="0644" target="/etc/mysql/my.cnf">my.cnf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/ld.so.conf.d/22-mysql.conf">22-mysql.conf</AdditionalFile>
         </AdditionalFiles>
         <Provides>
              <COMAR script="package.py">System.Package</COMAR>
@@ -129,12 +137,48 @@
 
     <Package>
         <Name>mysql-man-pages</Name>
+        <IsA>data:doc</IsA>
+        <Summary>Man pages distributed with MySQL</Summary>
         <Files>
             <Path fileType="man">/usr/share/man</Path>
         </Files>
     </Package>
 
+    <Package>
+        <Name>mysql-bench</Name>
+        <IsA>data</IsA>
+        <Summary>MySQL benchmark scripts and data</Summary>
+        <RuntimeDependencies>
+            <Dependency release="current">mysql-server</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="data">/usr/share/sql-bench</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>mysql-test</Name>
+        <IsA>data</IsA>
+        <Summary>The test suite distributed with MySQL</Summary>
+        <RuntimeDependencies>
+            <Dependency release="current">mysql-server</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="data">/usr/share/mysql-test</Path>
+        </Files>
+    </Package>
+
     <History>
+        <Update release="58">
+            <Date>2010-12-27</Date>
+            <Version>5.5.8</Version>
+            <Comment>Major version bump, rename mysql-lib to mysql-libs to conform package-naming-guideline.</Comment>
+            <Requires>
+                <Action>reverseDependencyUpdate</Action>
+            </Requires>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
         <Update release="57">
             <Date>2010-12-07</Date>
             <Version>5.1.52</Version>

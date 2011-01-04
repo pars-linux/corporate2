@@ -8,9 +8,9 @@ mysqld.cc; is it important to fix any of the others?
 Filed upstream at http://bugs.mysql.com/bug.php?id=35019
 
 
-diff -Naur mysql-5.1.30.orig/sql/mysqld.cc mysql-5.1.30/sql/mysqld.cc
---- mysql-5.1.30.orig/sql/mysqld.cc	2008-11-14 11:37:13.000000000 -0500
-+++ mysql-5.1.30/sql/mysqld.cc	2009-01-13 12:08:35.000000000 -0500
+diff -Naur mysql-5.5.8.orig/sql/mysqld.cc mysql-5.5.8/sql/mysqld.cc
+--- mysql-5.5.8.orig/sql/mysqld.cc	2010-12-03 12:58:26.000000000 -0500
++++ mysql-5.5.8/sql/mysqld.cc	2010-12-20 22:01:08.939186906 -0500
 @@ -2602,6 +2602,70 @@
  }
  
@@ -82,10 +82,10 @@ diff -Naur mysql-5.1.30.orig/sql/mysqld.cc mysql-5.1.30/sql/mysqld.cc
  static void start_signal_handler(void)
  {
    int error;
-@@ -2614,15 +2678,7 @@
+@@ -2612,15 +2676,7 @@
+ #if !defined(HAVE_DEC_3_2_THREADS)
+   pthread_attr_setscope(&thr_attr,PTHREAD_SCOPE_SYSTEM);
    (void) pthread_attr_setdetachstate(&thr_attr,PTHREAD_CREATE_DETACHED);
-   if (!(opt_specialflag & SPECIAL_NO_PRIOR))
-     my_pthread_attr_setprio(&thr_attr,INTERRUPT_PRIOR);
 -#if defined(__ia64__) || defined(__ia64)
 -  /*
 -    Peculiar things with ia64 platforms - it seems we only have half the
@@ -98,11 +98,11 @@ diff -Naur mysql-5.1.30.orig/sql/mysqld.cc mysql-5.1.30/sql/mysqld.cc
 +  (void) my_setstacksize(&thr_attr,my_thread_stack_size);
  #endif
  
-   (void) pthread_mutex_lock(&LOCK_thread_count);
-@@ -4176,40 +4232,12 @@
+   mysql_mutex_lock(&LOCK_thread_count);
+@@ -4361,36 +4417,8 @@
+     unireg_abort(1);				// Will do exit
+ 
    init_signals();
-   if (!(opt_specialflag & SPECIAL_NO_PRIOR))
-     my_pthread_setprio(pthread_self(),CONNECT_PRIOR);
 -#if defined(__ia64__) || defined(__ia64)
 -  /*
 -    Peculiar things with ia64 platforms - it seems we only have half the
@@ -112,7 +112,7 @@ diff -Naur mysql-5.1.30.orig/sql/mysqld.cc mysql-5.1.30/sql/mysqld.cc
 -#else
 -  pthread_attr_setstacksize(&connection_attrib,my_thread_stack_size);
 -#endif
--#ifdef HAVE_PTHREAD_ATTR_GETSTACKSIZE
+ #ifdef HAVE_PTHREAD_ATTR_GETSTACKSIZE
 -  {
 -    /* Retrieve used stack size;  Needed for checking stack overflows */
 -    size_t stack_size= 0;
@@ -133,12 +133,6 @@ diff -Naur mysql-5.1.30.orig/sql/mysqld.cc mysql-5.1.30/sql/mysqld.cc
 -#endif
 -    }
 -  }
--#endif
-+
- #ifdef __NETWARE__
-   /* Increasing stacksize of threads on NetWare */
-   pthread_attr_setstacksize(&connection_attrib, NW_THD_STACKSIZE);
-+#else
 +  my_thread_stack_size = my_setstacksize(&connection_attrib,my_thread_stack_size);
  #endif
  
