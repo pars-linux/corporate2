@@ -1,0 +1,26 @@
+Index: xine-lib-1.1.19/src/demuxers/demux_ac3.c
+===================================================================
+--- xine-lib-1.1.19.orig/src/demuxers/demux_ac3.c
++++ xine-lib-1.1.19/src/demuxers/demux_ac3.c
+@@ -146,7 +146,7 @@ static int open_ac3_file(demux_ac3_t *th
+ 						 blocksize);
+     this->input->seek(this->input, 0, SEEK_SET);
+ 
+-    if (!buf)
++    if (!buf || buf->size == 0)
+       return 0;
+ 
+     peak = alloca(peak_size = buf->size);
+Index: xine-lib-1.1.19/src/demuxers/demux_dts.c
+===================================================================
+--- xine-lib-1.1.19.orig/src/demuxers/demux_dts.c
++++ xine-lib-1.1.19/src/demuxers/demux_dts.c
+@@ -96,7 +96,7 @@ static int open_dts_file(demux_dts_t *th
+ 						 blocksize);
+     this->input->seek(this->input, 0, SEEK_SET);
+ 
+-    if (!buf)
++    if (!buf || buf->size == 0)
+       return 0;
+ 
+     peak = alloca(peak_size = buf->size);
