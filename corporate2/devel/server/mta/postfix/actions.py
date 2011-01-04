@@ -16,7 +16,7 @@ def setup():
 def build():
     cc_args = "-DHAS_PCRE -DHAS_MYSQL -I/usr/include/mysql -DHAS_PGSQL -I/usr/include/postgresql \
                -DUSE_TLS -DUSE_SASL_AUTH -DUSE_CYRUS_SASL -I/usr/include/sasl -DHAS_LDAP -fPIC"
-    cc_libs = "-pie -Wl,-z,relro -Wl,-z,now -L/usr/lib -lpcre -lcrypt -lpthread -lpam -lssl -lcrypto -lsasl2 -lmysqlclient -lpq -lm -lz -lldap -llber"
+    cc_libs = "-pie -Wl,-z,relro -Wl,-z,now -L/usr/lib -lpcre -lcrypt -lpthread -lpam -lssl -lcrypto -lsasl2 -lpq -lm -lz -lldap -llber -L/usr/lib/mysql -lmysqlclient"
 
     # Default paths
     pisitools.dosed("src/global/mail_params.h", \
