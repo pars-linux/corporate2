@@ -67,6 +67,7 @@ def setup():
                             -I/usr/include/mysql/ \
                             -I/usr/include/postgresql \
                             -I/usr/include/postgresql/server \
+                            -L/usr/lib/mysql/ \
                             -no-sql-odbc \
                             -release \
                             -no-g++-exceptions \
