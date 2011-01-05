@@ -13,20 +13,22 @@ from pisi.actionsapi import get
 def setup():
     autotools.configure("--with-python \
                          --with-perl \
-                         --include=/usr/include/postgresql \
-                         --with-includes=/usr/include/libxml2/ \
+                         --include=/usr/include \
                          --with-tcl \
                          --with-krb5 \
+                         --with-gssapi \
+                         --with-ldap \
                          --with-openssl \
-                         --enable-nls \
                          --with-pam \
+                         --disable-rpath \
+                         --enable-thread-safety \
+                         --enable-nls \
                          --enable-integer-datetimes \
                          --enable-thread-safety \
-                         --enable-depend \
                          --host=%s \
+                         --datadir=/usr/share/pgsql \
                          --libdir=/usr/lib \
-                         --disable-rpath \
-                         --with-docdir=/usr/share/doc/postgresql" % get.CHOST())
+                         --with-docdir=/usr/share/doc/pgsql" % get.CHOST())
 
 def build():
     if get.LDFLAGS():
@@ -34,48 +36,16 @@ def build():
     else:
         ld = "-j1 LD=%s" % get.LD()
 
-    autotools.make(ld)
-
-    shelltools.cd("contrib")
-    autotools.make(ld)
-    shelltools.cd("..")
-
-    shelltools.cd("contrib/xml2")
-    autotools.make(ld)
-    shelltools.cd("../..")
-
-    shelltools.cd("src/interfaces/libpq")
-    autotools.make(ld)
-    shelltools.cd("../../..")
-
-    shelltools.cd("doc")
-    autotools.make(ld)
-    shelltools.cd("..")
+    autotools.make("%s world" % ld)
 
 def install():
-    autotools.rawInstall("DESTDIR=%s LIBDIR=%s/usr/lib" % (get.installDIR(), get.installDIR()))
-
-    shelltools.cd("contrib")
-    autotools.rawInstall("DESTDIR=%s LIBDIR=%s/usr/lib" % (get.installDIR(), get.installDIR()))
-    shelltools.cd("..")
-
-    shelltools.cd("contrib/xml2")
-    autotools.rawInstall("DESTDIR=%s LIBDIR=%s/usr/lib" % (get.installDIR(), get.installDIR()))
-    shelltools.cd("../..")
-
-    shelltools.cd("src/interfaces/libpq")
-    autotools.rawInstall("DESTDIR=%s LIBDIR=%s/usr/lib" % (get.installDIR(), get.installDIR()))
-    shelltools.cd("../../..")
-
-    shelltools.cd("doc")
-    autotools.rawInstall("DESTDIR=%s LIBDIR=%s/usr/lib" % (get.installDIR(), get.installDIR()))
-    shelltools.cd("..")
+    autotools.rawInstall("DESTDIR=%s LIBDIR=%s/usr/lib install-world" % (get.installDIR(), get.installDIR()))
 
     # No static libs
     pisitools.remove("/usr/lib/*.a")
 
-    pisitools.dodoc("README", "HISTORY", "COPYRIGHT")
-    pisitools.dodoc("doc/README.*", "doc/TODO", "doc/bug.template")
-    pisitools.dodir("/var/lib/postgresql")
-    pisitools.dodir("/var/lib/postgresql/data")
-    pisitools.dodir("/var/lib/postgresql/backups")
+    pisitools.dodir("/var/lib/pgsql")
+    pisitools.dodir("/var/lib/pgsql/data")
+    pisitools.dodir("/var/lib/pgsql/backups")
+
+    pisitools.dodoc("README", "HISTORY", "COPYRIGHT", "doc/README.*", "doc/TODO", "doc/bug.template")

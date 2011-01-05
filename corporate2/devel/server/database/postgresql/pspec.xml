@@ -9,45 +9,49 @@
             <Email>ibrahim@pardus.org.tr</Email>
         </Packager>
         <License>GPLv2</License>
-        <IsA>service</IsA>
         <Summary>A powerful, open source relational database system</Summary>
-        <Description>PostgreSQL is a powerful, open source relational database system</Description>
-        <Archive sha1sum="6e6213c3a93b86c2a6eda1e76fd73881e48af09b" type="tarbz2">http://wwwmaster.postgresql.org/redir/53/h/source/v8.4.5/postgresql-8.4.5.tar.bz2</Archive>
+        <Description>PostgreSQL is an advanced Object-Relational database management system (DBMS) that supports almost all SQL constructs (including transactions, sub-selects and user-defined types and functions).</Description>
+        <Archive sha1sum="42a9518a2f11fa1d09a23bc628b00e992d3bcf4a" type="tarbz2">http://wwwmaster.postgresql.org/redir/414/h/source/v9.0.2/postgresql-9.0.2.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>tcl</Dependency>
-            <Dependency>openssl</Dependency>
-            <Dependency>libxml2</Dependency>
-            <Dependency>libxslt</Dependency>
             <Dependency>mit-kerberos-devel</Dependency>
         </BuildDependencies>
+        <Patches>
+            <Patch level="1">postgresql-perl-rpath.patch</Patch>
+            <Patch level="1">postgresql-logging.patch</Patch>
+            <Patch level="1">postgresql-upgrade-fixes.patch</Patch>
+            <Patch level="1">rpm-pgsql.patch</Patch>
+        </Patches>
     </Source>
 
     <Package>
-        <Name>postgresql-lib</Name>
+        <Name>postgresql-libs</Name>
         <IsA>library</IsA>
         <Summary>Essential shared libraries for any PostgreSQL client program or interface</Summary>
         <RuntimeDependencies>
-            <Dependency>openssl</Dependency>
-            <Dependency>libxml2</Dependency>
-            <Dependency>libxslt</Dependency>
             <Dependency>mit-kerberos-libs</Dependency>
+            <Dependency>openldap-client</Dependency>
         </RuntimeDependencies>
+        <Replaces>
+            <Package>postgresql-lib</Package>
+        </Replaces>
         <Files>
-            <Path fileType="library">/usr/lib</Path>
             <Path fileType="header">/usr/include</Path>
-            <Path fileType="data">/usr/share/postgresql</Path>
             <Path fileType="executable">/usr/bin/pg_config</Path>
+            <Path fileType="library">/usr/lib</Path>
         </Files>
     </Package>
 
     <Package>
-        <Name>postgresql-doc</Name>
+        <Name>postgresql-docs</Name>
         <IsA>data:doc</IsA>
         <Summary>Postgresql documents</Summary>
-        <Description>Additional documentation for PostgreSQL</Description>
         <RuntimeDependencies>
-            <Dependency versionFrom="8.4">postgresql-lib</Dependency>
+            <Dependency releaseFrom="current">postgresql-libs</Dependency>
         </RuntimeDependencies>
+        <Replaces>
+            <Package>postgresql-doc</Package>
+        </Replaces>
         <Files>
             <Path fileType="doc">/usr/share/doc</Path>
         </Files>
@@ -56,22 +60,23 @@
     <Package>
         <Name>postgresql-server</Name>
         <IsA>service</IsA>
+        <Summary>A powerful, open source relational database system</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="8.4">postgresql-lib</Dependency>
-            <Dependency>libxml2</Dependency>
-            <Dependency>libxslt</Dependency>
+            <Dependency releaseFrom="current">postgresql-libs</Dependency>
             <Dependency>mit-kerberos-libs</Dependency>
+            <Dependency>openldap-client</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="config">/etc</Path>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="localedata">/usr/share/locale</Path>
-            <Path fileType="data">/usr/share/postgresql/contrib</Path>
-            <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="data">/usr/share/pgsql</Path>
             <Path fileType="data">/var/lib</Path>
+            <Path fileType="man">/usr/share/man</Path>
         </Files>
         <AdditionalFiles>
             <AdditionalFile target="/etc/conf.d/postgresql" owner="root" permission="0644">postgresql.conf-8</AdditionalFile>
+            <AdditionalFile target="/etc/pam.d/postgresql" owner="root" permission="0644">postgresql.pam</AdditionalFile>
         </AdditionalFiles>
         <Provides>
              <COMAR script="package.py">System.Package</COMAR>
@@ -81,22 +86,31 @@
 
     <Package>
         <Name>postgresql-pl</Name>
+        <IsA>library</IsA>
+        <Summary>The procedural languages for PostgreSQL</Summary>
         <RuntimeDependencies>
-            <Dependency versionFrom="8.4">postgresql-lib</Dependency>
+            <Dependency releaseFrom="current">postgresql-libs</Dependency>
             <Dependency>tcl</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/usr/bin/pltcl_listmod</Path>
             <Path fileType="executable">/usr/bin/pltcl_loadmod</Path>
             <Path fileType="executable">/usr/bin/pltcl_delmod</Path>
-            <Path fileType="library">/usr/lib/postgresql/plperl.so</Path>
-            <Path fileType="library">/usr/lib/postgresql/plpython.so</Path>
-            <Path fileType="library">/usr/lib/postgresql/pltcl.so</Path>
-            <Path fileType="data">/usr/share/postgresql/unknown.pltcl</Path>
+            <Path fileType="library">/usr/lib/pgsql/plperl.so</Path>
+            <Path fileType="library">/usr/lib/pgsql/plpython.so</Path>
+            <Path fileType="library">/usr/lib/pgsql/pltcl.so</Path>
+            <Path fileType="data">/usr/share/pgsql/unknown.pltcl</Path>
         </Files>
     </Package>
 
     <History>
+        <Update release="31">
+            <Date>2011-01-05</Date>
+            <Version>9.0.2</Version>
+            <Comment>Version bump, rename lib and doc packages as libs and docs to conform package naming guideline.</Comment>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
         <Update release="30">
             <Date>2010-11-23</Date>
             <Version>8.4.5</Version>

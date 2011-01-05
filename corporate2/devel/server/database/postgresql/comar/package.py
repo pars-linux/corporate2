@@ -3,11 +3,10 @@
 import os
 
 def postInstall(fromVersion, fromRelease, toVersion, toRelease):
-    os.system("/bin/chown -R postgres:postgres /var/lib/postgresql")
-    os.system("/bin/chmod -R 0700 /var/lib/postgresql/data")
-    os.system("/bin/chmod -R 0700 /var/lib/postgresql/backups")
+    os.system("/bin/chown -R postgres:postgres /var/lib/pgsql")
+    os.system("/bin/chmod -R 0700 /var/lib/pgsql/data")
+    os.system("/bin/chmod -R 0700 /var/lib/pgsql/backups")
 
     # On first install...
-    if not os.access("/var/lib/postgresql/data/base", os.F_OK):
-        os.system('/bin/su postgres -s /bin/sh -p -c "/usr/bin/initdb --pgdata /var/lib/postgresql/data"')
-
+    if not os.path.exists("/var/lib/pgsql/data/base"):
+        os.system('/bin/su postgres -s /bin/sh -p -c "/usr/bin/initdb --pgdata /var/lib/pgsql/data"')
