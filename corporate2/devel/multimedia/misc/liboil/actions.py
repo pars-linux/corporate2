@@ -7,9 +7,11 @@
 
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 def setup():
+    shelltools.export("CFLAGS", "%s -O2" % get.CFLAGS())
     autotools.configure("--disable-static \
                          --disable-gtk-doc")
 
