@@ -1,0 +1,111 @@
+Index: kdebase-3.5.10/kcontrol/componentchooser/componentchooser.cpp
+===================================================================
+--- kdebase-3.5.10.orig/kcontrol/componentchooser/componentchooser.cpp
++++ kdebase-3.5.10/kcontrol/componentchooser/componentchooser.cpp
+@@ -204,7 +204,6 @@ void CfgEmailClient::save(KConfig *)
+ 
+ 	kapp->dcopClient()->emitDCOPSignal("KDE_emailSettingsChanged()", QByteArray());
+ 
+-
+         // Update Firefox's prefs too
+         QDir dir;
+         QFile prefs;
+@@ -404,6 +403,17 @@ void CfgBrowser::save(KConfig *) {
+ 	config->sync();
+ 	delete config;
+ 
++	// Change gconf database too
++	GConfClient *gclient;
++	GConfValue gvalue;
++	g_type_init();
++	gclient = gconf_client_get_default();
++
++	gconf_value_set_string(&gvalue, exec.ascii());
++
++	gconf_client_set(gclient, "/desktop/gnome/url-handlers/http/command", gvalue, NULL);
++	gconf_client_set(gclient, "/desktop/gnome/url-handlers/https/command", gvalue, NULL);
++
+ 	KIPC::sendMessageAll(KIPC::SettingsChanged);
+ 
+ 	emit changed(false);
+Index: kdebase-3.5.10/kcontrol/componentchooser/componentchooser.h
+===================================================================
+--- kdebase-3.5.10.orig/kcontrol/componentchooser/componentchooser.h
++++ kdebase-3.5.10/kcontrol/componentchooser/componentchooser.h
+@@ -26,6 +26,8 @@
+ 
+ #include <kservice.h>
+ 
++#include <gconf/gconf-client.h>
++
+ class QListBoxItem;
+ class KEMailSettings;
+ class KConfig;
+Index: kdebase-3.5.10/kcontrol/componentchooser/componentservices/kcm_browser.desktop
+===================================================================
+--- kdebase-3.5.10.orig/kcontrol/componentchooser/componentservices/kcm_browser.desktop
++++ kdebase-3.5.10/kcontrol/componentchooser/componentservices/kcm_browser.desktop
+@@ -139,7 +139,7 @@ Comment[sv]=Här kan du anpassa förvald
+ Comment[ta]=இந்த சேவை உங்களுடைய முன்னிருந்த மின் அஞ்சல்உறுப்பினர  வடிவமைத்துக்கொள்ள அனுமதிக்கிறது. மின்அஞ்சல் உறுப்பினர் பயன்பாடுதேவைப்படுகிற எல்லா கேடிஇபயன்பாடுகளும் இந்த அமைப்பைநிறுவவேண்டும்.
+ Comment[tg]=Ин сервиси коргири пешфарзи почтаи электроникиатонро танзим мекунед. Тамоми нармафзорҳои KDE ки ниёз ба дастраси ба коргири почтаи электроникӣ доранд аз ин танзимоти табии хоҳанд кард.
+ Comment[th]=คุณสามารถปรับแต่งเว็บบราวเซอร์ปริยายของคุณได้ที่นี่ แอพพลิเคชั่นของ KDE ทุกตัว ที่คุณสามารถเลือก hyperlink ได้จะทำตามค่าที่ตั้งนี้
+-Comment[tr]=Burada öntanımlı web tarayıcınızı yapılandırabilrsiniz. Tüm KDE uygulamalarında bulunan bağlantılar bu seçenek kullanılarak açılacaktır.
++Comment[tr]=Burada öntanımlı web tarayıcınızı değiştirebilirsiniz. Tüm masaüstü uygulamalarında bulunan bağlantılar bu uygulama ile açılacaktır.
+ Comment[tt]=Monda töp gizgeçeñne köyläp bula. Hiperlink saylanğan çaqta bar KDE-yazılımnar da bu köyläwlärne qullanırğa tieş.
+ Comment[uk]=Тут можна вказати ваш типовий навігатор Тенет. Всі програми KDE, які підтримують роботу з гіперпосиланнями повинні використовувати це налаштування.
+ Comment[vi]=Dịch vụ này cho phép bạn cấu hình trình duyệt mạng mặc định. Tất cả các chương trình của KDE có chứa liên kết mạng sẽ cần một trình duyệt dựa vào thiết lập này.
+Index: kdebase-3.5.10/kcontrol/componentchooser/componentservices/kcm_kemail.desktop
+===================================================================
+--- kdebase-3.5.10.orig/kcontrol/componentchooser/componentservices/kcm_kemail.desktop
++++ kdebase-3.5.10/kcontrol/componentchooser/componentservices/kcm_kemail.desktop
+@@ -143,7 +143,7 @@ Comment[sv]=Den här tjänsten låter di
+ Comment[ta]=இந்த சேவை உங்களுடைய முன்னிருந்த மின் அஞ்சல் உறுப்பினரை வடிவமைத்துக் கொள்ள அனுமதிக்கிறது. மின் அஞ்சல் உறுப்பினர் பயன்பாடு தேவைப்படுகிற எல்லா கேடிஇ பயன்பாடுகளும் இந்த அமைப்பை நிறுவவேண்டும்.
+ Comment[tg]= Ин сервиси коргири пешфарзи почтаи электроникиатонро танзим мекунед. Тамоми нармафзорҳои KDE ки ниёз ба дастраси ба коргири почтаи электроникӣ доранд аз ин танзимоти табии хоҳанд кард.
+ Comment[th]=บริการนี้จะอนุญาตให้คุณตั้งโปรแกรมรับส่งอีเมลปริยายของคุณ แอพพลิเคชั่นของ KDE ทุกตัวซึ่งจำเป็นต้องใช้งานโปรแกรมรับส่งอีเมล จะทำตาม ค่าที่ตั้งนี้
+-Comment[tr]=Bu servis öntanımlı e-posta istemcinizi seçmenize yardımcı olur.
++Comment[tr]=Burada öntanımlı e-posta istemcinizi değiştirebilirsiniz. Tüm uygulamalar e-posta istemci olarak bu seçeneği kullanacaktır.
+ Comment[tt]=Monda töp email-klienteñne köyläp bula. Email belän eşlägän çaqta bar KDE-yazılımnar da bu köyläwlärne qullanırğa tieş.
+ Comment[uk]=Ця служба дозволяє вам налаштувати ваш типовий клієнт електронної пошти. Всі програми KDE, яким потрібен доступ до клієнта ел. пошти повинні користуватися цими параметрами.
+ Comment[uz]=Bu xizmat andoza xat-xabar klientingizni moslash uchun imkoniyat yaratadi. Xat-xabar klienti kerak boʻlgan hamma KDE dasturlari shu moslamadan foydalanishi kerak.
+Index: kdebase-3.5.10/kcontrol/componentchooser/componentservices/kcm_terminal.desktop
+===================================================================
+--- kdebase-3.5.10.orig/kcontrol/componentchooser/componentservices/kcm_terminal.desktop
++++ kdebase-3.5.10/kcontrol/componentchooser/componentservices/kcm_terminal.desktop
+@@ -68,7 +68,7 @@ Name[ta]=கடைசி போட்ட
+ Name[te]=టెర్మినల్ ఎములేటర్
+ Name[tg]=Эмулятори поёна
+ Name[th]=โปรแกรมจำลองเทอร์มินัล
+-Name[tr]=Uçbirim Emülasyonu
++Name[tr]=Terminal Emülatörü
+ Name[tt]=Terminal Emulatorı
+ Name[uk]=Емуляція терміналу
+ Name[uz]=Terminal emulyatori
+@@ -142,7 +142,7 @@ Comment[sv]=Den här tjänsten låter di
+ Comment[ta]=இந்த சேவை உங்களுடைய முன்னிருந்த கடைசி போட்டியாளர வடிவமைத்துக் கொள்ள அனுமதிக்கிறது. கடைசி போட்டியாளர் பயன்பாடு தேவைப்படுகிற எல்லா கேடிஇ பயன்பாடுகளும் இந்த அமைப்பை நிறுவவேண்டும்.
+ Comment[tg]= Ин сервис ба шумо иҷозат медиҳад эмулятори поёнаи пешфарзатонро танзим кунед. Тамоми нармафзорҳои KDE ки ба эмулятори поёна ниёз доранд ба ин танзимот эҳтиром хоҳанд гузошт.
+ Comment[th]=บริการนี้จะอนุญาตให้คุณปรับแต่งโปรแกรมจำลองเทอร์มินัลของคุณ แอพพลิเคชั่นของ KDE ทุกตัวที่เรียกใช้งานโปรแกรมจำลองเทอร์มินัลจะทำตาม ค่าที่ตั้งนี้
+-Comment[tr]=Bu servis öntanımlı terminal emülatörünü seçmenize yardımcı olur.
++Comment[tr]=Burada öntanımlı terminal emülatörünü değiştirebilirsiniz. Terminale erişmek isteyen tüm uygulamalar bu seçeneği kullanacaktır.
+ Comment[tt]=Monda töp terminal emulatorıñnı köyläp bula. Terminal emulatorın çaqıru kiräk bulğan çaqta bar KDE-yazılımnar da bu köyläwlärne qullanırğa tieş.
+ Comment[uk]=Ця служба дає змогу вказати ваш типовий емулятор термінала. Всі програми KDE, яким потрібен доступ до емулятора термінала повинні використовувати це налаштування.
+ Comment[uz]=Bu xizmat andoza terminal emulyatoringizni moslash uchun imkoniyat yaratadi. Terminal emulyatori kerak boʻlgan hamma KDE dasturlari shu moslamadan foydalanishi kerak.
+Index: kdebase-3.5.10/kcontrol/componentchooser/Makefile.am
+===================================================================
+--- kdebase-3.5.10.orig/kcontrol/componentchooser/Makefile.am
++++ kdebase-3.5.10/kcontrol/componentchooser/Makefile.am
+@@ -1,5 +1,5 @@
+ SUBDIRS= . componentservices
+-AM_CPPFLAGS  = -I../ -I$(top_srcdir)/kio -I$(top_srcdir) $(all_includes)
++AM_CPPFLAGS  = -I../ -I$(top_srcdir)/kio -I$(top_srcdir) $(all_includes) `pkg-config --cflags gconf-2.0`
+ 
+ METASOURCES = AUTO 
+ 
+@@ -7,7 +7,7 @@ kde_module_LTLIBRARIES = kcm_componentch
+ 
+ kcm_componentchooser_la_SOURCES = componentchooser_ui.ui componentconfig_ui.ui emailclientconfig_ui.ui terminalemulatorconfig_ui.ui browserconfig_ui.ui componentchooser.cpp kcm_componentchooser.cpp
+ kcm_componentchooser_la_LDFLAGS = $(all_libraries) -module -avoid-version -no-undefined
+-kcm_componentchooser_la_LIBADD =  $(LIB_KIO)
++kcm_componentchooser_la_LIBADD =  $(LIB_KIO) `pkg-config --libs gconf-2.0`
+ 
+ xdg_apps_DATA = componentchooser.desktop
+ 
