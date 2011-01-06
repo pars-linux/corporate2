@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008-2009 TUBITAK/UEKAE
+# Copyright 2008-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -17,15 +17,14 @@ def setup():
     cmaketools.configure(sourceDir="..")
 
 def build():
-    shelltools.cd("build")
-    cmaketools.make()
+    cmaketools.make("-C build")
+    cmaketools.make("-C build doc")
 
 def install():
-    shelltools.cd("build")
-    cmaketools.rawInstall("DESTDIR=%s" % get.installDIR())
-    shelltools.cd("..")
-
-    pisitools.remove("/usr/bin/lit2epub")
-
     pisitools.dodoc("README", "TODO", "LICENSE")
 
+    shelltools.cd("build")
+    cmaketools.rawInstall("DESTDIR=%s" % get.installDIR())
+    pisitools.dohtml("doc/html/*")
+
+    pisitools.remove("/usr/bin/lit2epub")
