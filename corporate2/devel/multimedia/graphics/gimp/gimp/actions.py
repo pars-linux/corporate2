@@ -5,7 +5,6 @@
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-from pisi.actionsapi import pythonmodules
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
@@ -15,19 +14,27 @@ def setup():
     autotools.autoreconf("-fi")
     autotools.configure("--without-webkit \
                          --disable-gtk-doc \
-                         --disable-default-binary \
                          --disable-altivec \
+                         --enable-gimp-remote \
                          --enable-python \
                          --enable-mmx \
                          --enable-sse \
-                         --enable-gimp-remote \
+                         --enable-mp \
+                         --with-linux-input \
+                         --with-gnomevfs \
+                         --with-poppler \
                          --with-libjpeg \
                          --with-libexif \
                          --with-librsvg \
+                         --with-libtiff \
+                         --with-libmng \
+                         --with-libpng \
+                         --with-webkit \
                          --with-lcms \
-                         --with-poppler \
-                         --with-x \
-                         --with-aa")
+                         --with-alsa \
+                         --with-dbus \
+                         --with-aa \
+                         --with-x")
 
     # Add illustrator and other mime types
     pisitools.dosed("desktop/gimp.desktop.in", "^MimeType=application/postscript;application/pdf;(.*)$",
@@ -35,19 +42,9 @@ def setup():
 
 
 def build():
-    autotools.make("-j1")
+    autotools.make()
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    pisitools.dosym("gimp-remote-2.6", "/usr/bin/gimp-remote")
-    pisitools.dosym("gimp-console-2.6", "/usr/bin/gimp-console")
-    pisitools.dosym("gimp-2.6", "/usr/bin/gimp")
-
-    pythonmodules.fixCompiledPy("/usr/lib/gimp/2.0/")
-
     pisitools.dodoc("AUTHORS", "ChangeLog*", "HACKING", "NEWS", "README", "INSTALL", "LICENSE")
-
-    pisitools.dodir("/usr/share/doc/gimp-i18n")
-    pisitools.insinto("/usr/share/doc/gimp-i18n", "README.i18n")
-
