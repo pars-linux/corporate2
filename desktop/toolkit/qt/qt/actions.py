@@ -53,7 +53,6 @@ def setup():
                             -plugin-sql-ibase \
                             -I/usr/include/mysql/ \
                             -I/usr/include/firebird/ \
-                            -I/usr/include/postgresql/server/ \
                             -release \
                             -no-separate-debug-info \
                             -phonon \
