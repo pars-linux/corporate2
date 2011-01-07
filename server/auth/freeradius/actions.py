@@ -23,7 +23,7 @@ def setup():
                          --with-gnu-ld \
                          --with-threads \
                          --with-threads-pool \
-                         --with-rlm-sql_postgresql-include-dir=/usr/include/postgresql \
+                         --with-rlm-sql_postgresql-include-dir=/usr/include/pgsql \
                          --with-rlm-sql_postgresql-lib-dir=/usr/lib \
                          --with-rlm-sql_mysql-include-dir=/usr/include/mysql \
                          --with-rlm-sql_mysql-lib-dir=/usr/lib/mysql \
