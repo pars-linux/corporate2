@@ -1,0 +1,334 @@
+'\" t
+.\"     Title: crypttab
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 2010-12-29
+.\"    Manual: cryptsetup manual
+.\"    Source: cryptsetup 1.2.0
+.\"  Language: English
+.\"
+.TH "CRYPTTAB" "5" "2010\-12\-29" "cryptsetup 1\&.2\&.0" "cryptsetup manual"
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+crypttab \- static information about encrypted filesystems
+.SH "DESCRIPTION"
+.sp
+The file /etc/crypttab contains descriptive information about encrypted filesystems\&. crypttab is only read by programs (e\&.g\&. \fBcryptdisks_start\fR and \fBcryptdisks_stop\fR), and not written; it is the duty of the system administrator to properly create and maintain this file\&. Each filesystem is described on a separate line; fields on each line are separated by tabs or spaces\&. Lines starting with \(lq#\(rq are comments, empty lines are ignored\&. The order of records in crypttab is important because the init scripts sequentially iterate through crypttab doing their thing\&.
+.sp
+The first field, \fItarget\fR, describes the mapped device name\&. It must be a plain filename without any directory components\&. A mapped device which encrypts/decrypts data to/from the \fIsource device\fR will be created at /dev/mapper/target by \fBcryptsetup\fR\&.
+.sp
+The second field, \fIsource device\fR, describes either the block special device or file (which will be automatically mounted as a loop device) that should hold the encrypted data\&.
+.sp
+The third field, \fIkey file\fR, describes the file to use as a key for decrypting the data of the \fIsource device\fR\&. Note that the \fIentire\fR key file will be used as the passphase; the passphase must \fInot\fR be followed by a newline character\&.
+.sp
+It can also be a device name (e\&.g\&. /dev/urandom), note however that LUKS requires a persistent key and therefore does \fInot\fR support random data keys\&.
+.sp
+If the \fIkey file\fR is the string \(lqnone\(rq, a passphrase will be read interactively from the console\&. In this case, the options precheck, check, checkargs and tries may be useful\&.
+.sp
+The fourth field, \fIoptions\fR, describes the cryptsetup options associated with the encryption process\&. At minimum, the field should contain either the string \fIluks\fR or the \fIcipher\fR, \fIhash\fR and \fIsize\fR options\&.
+.sp
+Options are in the format: \fIkey\fR=\fIvalue\fR [,\fIkey\fR=\fIvalue\fR \&...]\&. The supported options are described below\&.
+.sp
+Note that all four fields are mandatory and that a missing field will lead to unspecified behaviour\&.
+.SH "OPTIONS"
+.PP
+\fIcipher\fR=<cipher>
+.RS 4
+Encryption algorithm\&. See
+\fBcryptsetup \-c\fR\&.
+.RE
+.PP
+\fIsize\fR=<size>
+.RS 4
+Encryption key size\&. See
+\fBcryptsetup \-s\fR\&.
+.RE
+.PP
+\fIhash\fR=<hash>
+.RS 4
+Hash algorithm\&. See
+\fBcryptsetup \-h\fR\&.
+.RE
+.PP
+\fIoffset\fR=<offset>
+.RS 4
+Start offset\&. Uses
+\fBcryptsetup \-o\fR\&.
+.RE
+.PP
+\fIskip\fR=<skip>
+.RS 4
+Skip sectors at the beginning\&. Uses
+\fBcryptsetup \-p\fR\&.
+.RE
+.PP
+\fIverify\fR
+.RS 4
+Verify password\&. Uses
+\fBcryptsetup \-y\fR\&.
+.RE
+.PP
+\fIreadonly\fR
+.RS 4
+The backing device is read\-only (eg: a dvd)\&.
+.RE
+.PP
+\fIluks\fR
+.RS 4
+Use device with luks extensions\&.
+.RE
+.PP
+\fIswap\fR
+.RS 4
+Run
+\fBmkswap\fR
+on the created device\&.
+.RE
+.PP
+\fItmp\fR=<tmpfs>
+.RS 4
+Run
+\fBmkfs\fR
+with filesystem type <tmpfs> on the created device\&. Default is ext2\&.
+.RE
+.PP
+\fIprecheck\fR=<precheck>
+.RS 4
+Check the content of the source device by a suitable program; if the check fails, the device is not created\&. If a program is provided as an argument, it is run, giving the source device as argument\&. Cryptdisks/cryptroot searches for the given progam in
+/lib/cryptsetup/checks/
+first, but full path to program is supported as well\&.
+.sp
+Prechecks aren\'t invoked for LUKS devices, as these are checked with isLUKS anyway\&. Default for plain dm\-crypt devices is set in
+/etc/default/cryptdisks, or
+un_blkid
+otherwise\&. Set to
+/bin/true
+in order to disable precheck for plain dm\-crypt device\&.
+.RE
+.PP
+\fIcheck\fR=<check>
+.RS 4
+Check the content of the target device by a suitable program; if the check fails, the device is removed\&. If a program is provided as an argument, it is run, giving the decrypted volume (target device) as first argument, and the value of the checkargs option as second argument\&. Cryptdisks/cryptroot searches for the given program in
+/lib/cryptsetup/checks/
+first, but full path to program is supported as well\&.
+.sp
+Default is set in
+/etc/default/cryptdisks
+(blkid)\&.
+.RE
+.PP
+\fIcheckargs\fR=<arguments>
+.RS 4
+Give <arguments> as the second argument to the check script\&. See the CHECKSCRIPTS section for more information\&.
+.RE
+.PP
+\fItries\fR=<num>
+.RS 4
+The input of the passphrase is tried <num> times in case of failure\&. If you want to disable retries, pass
+\(lqtries=1\(rq\&. Default is 3\&. For the root device,
+\(lqtries=0\(rq
+enables infinitive retries due to a special case in the initramfs scripts\&.
+.RE
+.PP
+\fInoearly\fR
+.RS 4
+The cryptsetup init scripts are invoked twice during the boot process \- once before lvm, evms, raid, etc\&. are started and once again after that\&. Sometimes you need to start your encrypted disks in a special order\&. With this option the device is ignored during the first invokation of the cryptsetup init scripts\&.
+.RE
+.PP
+\fInoauto\fR
+.RS 4
+Entirely ignore the device at the boot process\&. It\'s still possible to map the device manually using cryptdisks_start\&.
+.RE
+.PP
+\fIloud\fR
+.RS 4
+Be loud\&. Print warnings if a device does not exist\&. This option overwrites the option
+\fIquiet\fR\&.
+.RE
+.PP
+\fIquiet\fR
+.RS 4
+Be quiet\&. Don\'t print warnings if a device does not exist\&. This option overwrites the option
+\fIloud\fR\&.
+.RE
+.PP
+\fIkeyscript\fR=<path>
+.RS 4
+The executable at the indicated path is executed with the
+\fIkey file\fR
+from the third field of the crypttab as its only argument and the output is used as the key\&. This also works with encrypted root filesystems via initramfs if the executable is self\-contained (i\&.e\&. an executable which does not rely on any external program which is not present in the initramfs environment)\&.
+.sp
+All fields of the appropriate crypttab entry are available to the keyscript as exported environment variables:
+.PP
+CRYPTTAB_NAME
+.RS 4
+The target name
+.RE
+.PP
+CRYPTTAB_SOURCE
+.RS 4
+The source device
+.RE
+.PP
+CRYPTTAB_KEY
+.RS 4
+The key file
+.RE
+.PP
+CRYPTTAB_OPTIONS
+.RS 4
+A list of exported crypttab options
+.RE
+.PP
+CRYPTTAB_OPTION_<option>
+.RS 4
+The value of the appropriate crypttab option, with value set to \'yes\' in case the option is merely a flag\&.
+.RE
+.sp
+.RE
+.SH "CHECKSCRIPTS"
+.PP
+\fIblkid\fR
+.RS 4
+Checks for any known filesystem\&. Supports a filesystem type as argument via <checkargs>:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+no checkargs \- succeeds if any valid filesystem is found on the device\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+"none" \- succeeds if no valid filesystem is found on the device\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+"ext3" [or another filesystem type like xfs, swap, crypto_LUKS, \&.\&.\&.] \- succeeds if ext3 filesystem is found on the device\&.
+.RE
+.RE
+.PP
+\fIun_blkid\fR
+.RS 4
+Checks for no known filesystem\&. Supports a filesystem type as argument via <checkargs>:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+no checkargs \- succeeds if no valid filesystem is found on the device\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+"ext3" [or another filesystem type like xfs, swap, crypto_LUKS, \&.\&.\&.] \- succeeds if no ext3 filesystem is found on the device\&.
+.RE
+.RE
+.SH "EXAMPLES"
+.PP
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# Encrypted swap device
+cswap /dev/sda6 /dev/urandom swap
+    
+# Encrypted luks disk with interactive password
+cdisk0 /dev/hda1 none luks
+    
+# Encrypted ext2 disk with interactive password
+# \- retry 5 times if the check fails
+cdisk1 /dev/sda2 none checkargs=ext2,tries=5
+
+# Encrypted disk with interactive password
+# \- use a nondefault check script
+# \- no retries
+cdisk2 /dev/hdc1 none check=customscript,tries=1
+
+# Encrypted disk with interactive password
+# \- twofish as the cipher
+cdisk3 /dev/sda3 none cipher=twofish
+   
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "ENVIRONMENT"
+.PP
+\fICRYPTDISKS_ENABLE\fR
+.RS 4
+Set to
+\fIyes\fR
+to run cryptdisks initscripts at startup\&. Set to
+\fIno\fR
+to disable cryptdisks initscripts\&. Default is
+\fIyes\fR\&.
+.RE
+.PP
+\fICRYPTDISKS_MOUNT\fR
+.RS 4
+Specifies the mountpoints that are mounted before cryptdisks is invoked\&. Takes mountpoints configured in /etc/fstab as arguments\&. Separate mountpoints by space\&. This is useful for keys on removable devices, such as cdrom, usbstick, flashcard, etc\&. Default is unset\&.
+.RE
+.PP
+\fICRYPTDISKS_CHECK\fR
+.RS 4
+Specifies the default checkscript to be run against the target device, after cryptdisks has been invoked\&. The target device is passed as the first and only argument to the checkscript\&. Takes effect if the
+\fIcheck\fR
+option is given in crypttab with no value\&. See documentation for
+\fIcheck\fR
+option above for more information\&.
+.RE
+.PP
+\fICRYPTDISKS_PRECHECK\fR
+.RS 4
+Specifies the default checkscript to be run against the source dm\-crypt device, before cryptdisks has been invoked\&. The source device is given as the first and only argument to the checkscript\&. Takes effect if the
+\fIprecheck\fR
+option is given in crypttab with no value\&. See documentation for
+\fIprecheck\fR
+option above for more information\&.
+.RE
+.SH "SEE ALSO"
+\fBcryptsetup\fR(8), \fBcryptdisks_start\fR(8), \fBcryptdisks_stop\fR(8)
+.SH "AUTHOR"
+.sp
+This manual page was originally written by Bastian Kleineidam calvin@debian\&.org for the Debian distribution of cryptsetup\&. It has been further improved by Michael Gebetsroither michael\&.geb@gmx\&.at, Jonas Meurer jonas@freesources\&.org and David Härdeman david@hardeman\&.nu\&.
