@@ -8,7 +8,7 @@
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-WorkDir = "."
+WorkDir = get.ARCH()
 
 def install():
     pisitools.dodir("/opt")
