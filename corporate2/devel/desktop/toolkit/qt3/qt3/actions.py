@@ -65,8 +65,8 @@ def setup():
                             -plugin-sql-mysql \
                             -plugin-sql-psql \
                             -I/usr/include/mysql/ \
-                            -I/usr/include/postgresql \
-                            -I/usr/include/postgresql/server \
+                            -I/usr/include/pgsql \
+                            -I/usr/include/pgsql/server \
                             -L/usr/lib/mysql/ \
                             -no-sql-odbc \
                             -release \
