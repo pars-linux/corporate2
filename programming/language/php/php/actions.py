@@ -57,8 +57,7 @@ def setup():
     shelltools.export("NO_INTERACTION", "1")
     shelltools.export("EXTENSION_DIR", "/usr/lib/php/modules")
 
-    pisitools.dosed("configure.in", "PHP_UNAME=.*", 'PHP_UNAME="Pardus Linux 2009"')
-    pisitools.dosed("ext/pgsql/config.m4", "include/postgresql", " include/postgresql/pgsql")
+    pisitools.dosed("configure.in", "PHP_UNAME=.*", get.lsbINFO()["DISTRIB_DESCRIPTION"])
 
     # Don't touch apache.conf
     for i in pisitools.ls("sapi/*/config.m4"):
