@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2008 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -14,7 +14,7 @@ def setup():
     pisitools.dosed("src/util/sys_defs.h", "hash:\/etc\/aliases", "hash:/etc/mail/aliases")
 
 def build():
-    cc_args = "-DHAS_PCRE -DHAS_MYSQL -I/usr/include/mysql -DHAS_PGSQL -I/usr/include/postgresql \
+    cc_args = "-DHAS_PCRE -DHAS_MYSQL -I/usr/include/mysql -DHAS_PGSQL -I/usr/include/pgsql \
                -DUSE_TLS -DUSE_SASL_AUTH -DUSE_CYRUS_SASL -I/usr/include/sasl -DHAS_LDAP -fPIC"
     cc_libs = "-pie -Wl,-z,relro -Wl,-z,now -L/usr/lib -lpcre -lcrypt -lpthread -lpam -lssl -lcrypto -lsasl2 -lpq -lm -lz -lldap -llber -L/usr/lib/mysql -lmysqlclient"
 
@@ -36,9 +36,9 @@ def build():
                     "#define NATIVE_DAEMON_DIR \"/usr/lib/postfix\"")
 
     autotools.make('CC=%s \
-                    OPT="%s" \
+                    OPT="%s %s" \
                     CCARGS="%s" \
-                    AUXLIBS="%s" makefiles' % (get.CC(), get.CFLAGS(), cc_args, cc_libs))
+                    AUXLIBS="%s" makefiles' % (get.CC(), get.CFLAGS(), get.LDFLAGS(), cc_args, cc_libs))
 
     autotools.make()
 
