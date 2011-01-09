@@ -7,7 +7,6 @@
 
 from pisi.actionsapi import pythonmodules
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 WorkDir = "Sphinx-%s" % get.srcVERSION()
@@ -23,9 +22,8 @@ def install():
         load_grammar('%s/usr/lib/%s/site-packages/sphinx/pycode/Grammar.txt')\"" %(get.installDIR(), get.curPYTHON(),  ) )
 
     # create sphinx documentation using itself
-    shelltools.system("python sphinx-build.py doc doc/_build/html")
+    pythonmodules.run("sphinx-build.py doc doc/_build/html")
     pisitools.dohtml("doc/_build/html/*")
 
-    pisitools.doman("doc/sphinx-build.1","doc/sphinx-quickstart.1")
     pisitools.dodoc("EXAMPLES", "CHANGES")
 
