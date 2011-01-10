@@ -80,6 +80,12 @@ def install():
 
     pisitools.dosym("/usr/lib/nsbrowser/plugins", "/usr/lib/chromium-browser/plugins")
 
+    # Chromium looks for these in its folder
+    # See media_posix.cc and base_paths_linux.cc
+    for lib in ["libavcodec.so.52" , "libavformat.so.52", "libavutil.so.50"]:
+        shelltools.sym("/usr/lib/%s" % lib, "%s/usr/lib/chromium-browser/%s" % (get.installDIR(), lib))
+
+
     shelltools.cd("../..")
     for size in ["16", "22", "24", "32", "48", "64", "128", "256"]:
         pisitools.insinto("/usr/share/icons/hicolor/%sx%s/apps" %(size, size), "chrome/app/theme/chromium/product_logo_%s.png" % size, "chromium-browser.png")
