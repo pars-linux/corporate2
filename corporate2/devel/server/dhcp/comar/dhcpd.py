@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from comar.service import *
-import time
 
 serviceType = "server"
 serviceDesc = _({"en": "DHCP Daemon",
