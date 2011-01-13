@@ -13,7 +13,9 @@ shelltools.export("HOME", get.workDIR())
 
 def setup():
     autotools.autoreconf("-fiv")
-    autotools.configure("--disable-static")
+    autotools.configure("--disable-static \
+                         --enable-installed-examples \
+                         --enable-vala-bindings")
 
 def build():
     autotools.make()
