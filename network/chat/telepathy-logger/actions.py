@@ -11,8 +11,7 @@ from pisi.actionsapi import get
 def setup():
     autotools.autoreconf("-vfi")
     autotools.configure("--disable-static \
-                         --enable-shared \
-                         --with-gconf-schema-file-dir=/etc/gconf/schemas")
+                         --enable-shared")
 
 def build():
     autotools.make("-j1")
