@@ -40,6 +40,7 @@ def setup():
                          --with-storage-disk \
                          --with-storage-lvm \
                          --without-vbox \
+                         --without-vmware \
                          --without-esx \
                          --without-storage-iscsi \
                          --without-hal \
@@ -55,13 +56,14 @@ def setup():
 def build():
     autotools.make("V=1")
 
-def check():
-    # Disable broken tests
-    for test in ("daemon-conf",):
-        shelltools.unlink("tests/%s" % test)
-        shelltools.echo("tests/%s" % test, "#!/bin/sh\nexit 0\n")
-        shelltools.chmod("tests/%s" % test, 0755)
-    autotools.make("check")
+#def check():
+#    # Disable broken tests
+#    for test in ("daemon-conf",):
+#        shelltools.unlink("tests/%s" % test)
+#        shelltools.echo("tests/%s" % test, "#!/bin/sh\nexit 0\n")
+#        shelltools.chmod("tests/%s" % test, 0755)
+#        autotools.make("check")
+
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
