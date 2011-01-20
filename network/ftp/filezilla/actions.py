@@ -15,7 +15,8 @@ def setup():
     autotools.configure("--disable-static \
                          --with-wx-config=/usr/bin/wx-config \
                          --disable-manualupdatecheck \
-                         --disable-autoupdatecheck")
+                         --disable-autoupdatecheck \
+                         --with-tinyxml=builtin")
 
 def build():
     autotools.make()
