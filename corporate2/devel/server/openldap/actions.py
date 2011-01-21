@@ -46,12 +46,12 @@ def setup():
                          --enable-lmpasswd \
                          --enable-spasswd \
                          --enable-slapi \
-                         --enable-dynlist \
-                         --enable-accesslog \
-                         --enable-auditlog \
-                         --enable-memberof \
-                         --enable-refint \
-                         --enable-syncprov \
+                         --enable-dynlist=mod \
+                         --enable-accesslog=mod \
+                         --enable-auditlog=mod \
+                         --enable-memberof=mod \
+                         --enable-refint=mod \
+                         --enable-syncprov=mod \
                          --enable-proxycache \
                          --enable-perl \
                          --enable-syslog \
