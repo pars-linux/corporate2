@@ -43,10 +43,14 @@
         <RuntimeDependencies>
             <Dependency>libaio</Dependency>
         </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="58">mysql-server</Package>
+        </Conflicts>
         <Replaces>
             <Package>mysql-lib</Package>
         </Replaces>
         <Files>
+            <Path fileType="config">/etc/ld.so.conf.d</Path>
             <Path fileType="executable">/usr/bin/mysql_config</Path>
             <Path fileType="header">/usr/include</Path>
             <Path fileType="library">/usr/lib</Path>
@@ -77,6 +81,9 @@
             <Path fileType="data">/usr/share/mysql/ukrainian</Path>
             <Path fileType="data">/usr/share/mysql/errmsg.txt</Path>
         </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/ld.so.conf.d/22-mysql.conf">22-mysql.conf</AdditionalFile>
+        </AdditionalFiles>
     </Package>
 
     <Package>
@@ -127,7 +134,6 @@
         </Files>
         <AdditionalFiles>
             <AdditionalFile owner="root" permission="0644" target="/etc/mysql/my.cnf">my.cnf</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/etc/ld.so.conf.d/22-mysql.conf">22-mysql.conf</AdditionalFile>
         </AdditionalFiles>
         <Provides>
              <COMAR script="package.py">System.Package</COMAR>
@@ -169,6 +175,13 @@
     </Package>
 
     <History>
+        <Update release="59">
+            <Date>2011-01-24</Date>
+            <Version>5.5.8</Version>
+            <Comment>Move the conf file, which holds the mysql library path, to mysql-libs package (#16356).</Comment>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
         <Update release="58">
             <Date>2010-12-27</Date>
             <Version>5.5.8</Version>
