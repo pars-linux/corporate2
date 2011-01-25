@@ -167,6 +167,10 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
                 (166, "polipo"),
                 (167, "nginx"),
                 (168, "ntop"),
+                # Systemtap groups
+                (169, "stap-server"),
+                (170, "stapdev"),
+                (171, "stapusr"),
                 # COMAR profile groups
                 (200, "pnp"),
                 (201, "removable"),
@@ -245,6 +249,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
                 (166, "nginx", "nginx user", "/etc/nginx", "/sbin/nologin", "", ["nginx"], [], []),
                 (167, "ntop", "ntop user", "/var/lib/ntop", "/sbin/nologin", "", ["ntop"], [], []),
                 (168, "dansguardian", "DansGuardian web content filter", "/usr/share/dansguardian", "/sbin/nologin", "", ["dansguardian"], [], []),
+                (169, "stap-server", "Systemtap Compile Server", "/var/lib/stap-server", "/sbin/nologin", "", ["stap-server"], [], []),
                 (200, "pnp", "PnP", "/dev/null", "/bin/false", "", ["pnp"], [], []),
                 (201, "zarafa", "Zarafa Service Account", "/var/lib/zarafa", "/sbin/nologin", "", ["zarafa"], [], []),
                 (250, "mpd", "Music Player Daemon", "/var/lib/mpd", "/bin/false", "", ["audio", "pulse", "pulse-access", "pulse-rt"], [], []),
