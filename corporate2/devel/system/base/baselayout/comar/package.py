@@ -73,6 +73,23 @@ def migrateUsers():
         # setUser(uid, realname, homedir, shell, passwd, groups)
         hav("setUser", user, "", "", "", "", group)
 
+def zemberek_hack():
+    import glob
+
+    def do_hack(f):
+        import re
+
+        if os.path.exists(f):
+            postContent = open(f).read()
+            pattern = re.compile('oxt"\)\[0\]$', re.M)
+            postContent = re.sub(pattern, 'oxt")', postContent)
+            postContent = re.sub("raise Exception", "print", postContent)
+            postFile = open(f, 'w')
+            postFile.write(postContent)
+
+    scripts = glob.glob("/var/db/comar3/scripts/System.Package/*openoffice*")
+    for s in scripts:
+        do_hack(s)
 
 ### COMAR methods
 
@@ -294,3 +311,5 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     # Save user defined DNS
     if not os.access("/etc/resolv.default.conf", os.R_OK):
         os.system("cp /etc/resolv.conf /etc/resolv.default.conf")
+
+    zemberek_hack()
