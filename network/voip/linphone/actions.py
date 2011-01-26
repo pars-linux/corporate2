@@ -14,6 +14,9 @@ shelltools.export("CFLAGS", get.CFLAGS().replace("-D_FORTIFY_SOURCE=2", ""))
 
 def setup():
     autotools.autoreconf("-vfi")
+    shelltools.cd("mediastreamer2")
+    autotools.autoreconf("-vfi")
+    shelltools.cd("..")
     autotools.configure("--enable-shared \
                          --disable-static \
                          --enable-external-ortp \
