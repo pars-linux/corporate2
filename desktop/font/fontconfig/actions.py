@@ -17,7 +17,6 @@ def setup():
                          --disable-docs \
                          --x-includes=/usr/include \
                          --x-libraries=/usr/lib \
-                         --localstatedir=/var \
                          --with-cache-dir=/var/cache/fontconfig \
                          --with-default-fonts=/usr/share/fonts \
                          --with-add-fonts=/usr/local/share/fonts")
