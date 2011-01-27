@@ -4,5 +4,13 @@
 # (Linux Kernel >=2.6.27), possible workaround.
 # http://share.skype.com/sites/garage/2010/01/skype_21_beta_2_aka_talking_sc.html
 
-LD_PRELOAD=/usr/lib/libv4l/v4l1compat.so /usr/bin/skype.bin
+ARCH=`uname -m`
+
+if [ $ARCH == "x86_64" ]; then
+    libdir=/usr/lib32/libv4l
+else
+    libdir=/usr/lib/libv4l
+fi
+
+LD_PRELOAD=$libdir/v4l1compat.so /usr/bin/skype.bin
 
