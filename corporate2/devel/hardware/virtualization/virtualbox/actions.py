@@ -22,25 +22,29 @@ def setup():
     shelltools.echo("vbox.cfg", "INSTALL_DIR=%s" % VBoxLibDir)
 
     # TODO: Enable web service when we have soapcpp2
-    autotools.rawConfigure("--disable-kmods \
+    autotools.rawConfigure("--disable-java \
+                            --disable-kmods \
+                            --disable-docs \
                             --enable-hardening \
+                            --ose \
+                            --with-qt-dir=/usr/qt/4 \
                             --with-gcc=%s \
-                            --with-g++=%s \
-                            --with-qt-dir=/usr/qt/4" % (get.CC(), get.CXX()))
+                            --with-g++=%s" % (get.CC(), get.CXX()))
 
 def build():
-    shelltools.system("source env.sh && kmk")
+    shelltools.system("source %s/env.sh && kmk" % get.curDIR())
 
 def install():
     pisitools.insinto("/etc/vbox", "vbox.cfg")
     pisitools.insinto("/etc/X11/Xsession.d", "src/VBox/Additions/x11/Installer/98vboxadd-xclient", "98-vboxclient.sh")
     pisitools.insinto("/usr/share/X11/pci", "src/VBox/Additions/x11/Installer/vboxvideo.ids")
-    pisitools.insinto("/usr/share/hal/fdi/policy/20thirdparty", "src/VBox/Additions/linux/installer/90-vboxguest.fdi")
+    pisitools.insinto("/usr/share/X11/xorg.conf.d", "src/VBox/Additions/x11/Installer/50-vboxmouse.conf")
 
-    shelltools.cd("out/linux.x86/release/bin")
+    arch = "amd64" if get.ARCH() == "x86_64" else "x86"
+    shelltools.cd("out/linux.%s/release/bin" % arch)
 
-    exclude = ("additions", "nls", "scm", "sdk", "src", "SUP", "vboxkeyboard",
-               "VBox.sh", "VBoxSysInfo.sh", "VBoxTunctl", "testcase", "tst", "xpidl")
+    exclude = ("additions", "icons", "nls", "scm", "sdk", "src", "SUP", "vboxkeyboard",
+               "VBox.sh", "VBoxSysInfo.sh", "VBoxCreateUSBNode.sh", "VBoxTunctl", "testcase", "tst", "xpidl")
 
     for _file in shelltools.ls("."):
         if _file.startswith(exclude):
@@ -60,9 +64,15 @@ def install():
     for link in apps:
         pisitools.dosym("../share/virtualbox/VBox.sh", "/usr/bin/%s" % link)
 
-    # Desktop file and icon
+    # Desktop file, mimetype file for xml and icon
     pisitools.domove("%s/*.desktop" % VBoxLibDir, "/usr/share/applications")
     pisitools.domove("%s/*.png" % VBoxLibDir, "/usr/share/pixmaps")
+    pisitools.domove("%s/*.xml" % VBoxLibDir, "/usr/share/mime/packages")
+
+    # Mimetypes icons
+    for size in ["16", "20", "24", "32", "48", "64", "72", "96", "128", "256"]:
+        pisitools.insinto("/usr/share/icons/hicolor/%sx%s/mimetypes" % (size, size),
+                          "icons/%sx%s/*.png" % (size, size))
 
     # Guest additions
     pisitools.dobin("additions/VBoxClient")
