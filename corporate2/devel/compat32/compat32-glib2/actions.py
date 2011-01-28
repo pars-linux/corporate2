@@ -20,6 +20,7 @@ def setup():
     autotools.configure("--libdir=/usr/lib32 \
                          --disable-gtk-doc \
                          --with-pcre=system \
+                         --disable-dtrace \
                          --disable-fam \
                          --disable-systemtap \
                          --disable-static")
