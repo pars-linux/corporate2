@@ -6,7 +6,14 @@
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import get
+
 NoStrip = ["/"]
+
+# Use dynamic skype in i686, static in x86_64
+WorkDir = "%s%s-%s" % (get.srcNAME(),
+                       "_static" if get.ARCH() == "x86_64" else "",
+                       get.srcVERSION())
 
 def install():
     for data in ["avatars", "lang", "sounds"]:
