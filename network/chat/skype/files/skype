@@ -12,5 +12,9 @@ else
     libdir=/usr/lib/libv4l
 fi
 
-LD_PRELOAD=$libdir/v4l1compat.so /usr/bin/skype.bin
-
+v4lcompat=$libdir/v4l1compat.so
+if [ -e $v4lcompat ]; then
+    LD_PRELOAD=$v4lcompat /usr/bin/skype.bin
+else
+    /usr/bin/skype.bin
+fi
