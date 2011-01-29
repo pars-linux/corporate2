@@ -10,7 +10,9 @@
         </Packager>
         <License>LGPLv2</License>
         <License>GPLv2</License>
+        <License>BSD</License>
         <IsA>app:console</IsA>
+        <IsA>library</IsA>
         <Summary>A networked sound server with an advanced plugin system</Summary>
         <Description>pulseaudio is a sound server for POSIX and Win32 systems. It allows you to do advanced operations on your sound data as it passes between your application and your hardware.</Description>
         <Archive sha1sum="f5fc14d7a62ae9f9ee9745026e3f13f4c130140a" type="targz">http://0pointer.de/lennart/projects/pulseaudio/pulseaudio-0.9.22.tar.gz</Archive>
@@ -34,26 +36,33 @@
             <Dependency>jack-audio-connection-kit</Dependency>
         </BuildDependencies>
         <Patches>
+            <!-- Upstream patches -->
+            <Patch level="1">stable-queue/0101-rescue-streams-Fix-segfault-in-some-conditions.patch</Patch>
+            <Patch level="1">stable-queue/0106-module-loopback-Prevent-an-infinite-loop-when-rate-a.patch</Patch>
+            <Patch level="1">stable-queue/0108-core-Fix-variable-has_whined-value-bug.patch</Patch>
+            <Patch level="1">stable-queue/0109-Fix-return-value-of-pa_sndfile_format_from_string.patch</Patch>
+            <Patch level="1">stable-queue/0111-Fix-typos.patch</Patch>
+            <Patch level="1">stable-queue/0112-fix-bug-about-get-source-output-status.patch</Patch>
+            <Patch level="1">stable-queue/0118-ratelimit-fix-log-levels-of-log-suppression-messages.patch</Patch>
+            <Patch level="1">stable-queue/0119-tunnel-Fix-automatic-names-when-source-sink_name-arg.patch</Patch>
+            <Patch level="1">stable-queue/0120-Core-Fix-incorrect-check-of-return-value.patch</Patch>
+
             <!-- Mandriva patches -->
 
-            <!-- Hack start-pulseaudio-x11 script to check /etc/conf.d/pulseaudio -->
-            <Patch level="1">mandriva/0500-Customise-startup-so-we-can-easily-disable-PA.patch</Patch>
-            <Patch level="1">mandriva/0501-Some-customisations-to-esdcompat-in-order-to-adhere-.patch</Patch>
             <!-- Change default resampling method to speex-float-0 for reducing
             high CPU load of Pulseaudio: https://qa.mandriva.com/show_bug.cgi?id=36084 -->
             <Patch level="1">mandriva/0502-Change-the-default-resample-method-to-speex-fixed-0-.patch</Patch>
 
             <Patch level="1">mandriva/0503-start-PA-earlier-in-GNOME-Mdv-bug-47594.patch</Patch>
-            <Patch level="1">mandriva/0504-Apply-startup-customisation-to-new-KDE-module.patch</Patch>
             <Patch level="1">mandriva/0505-Mute-IEC958-Optical-Raw-for-AudigyX.patch</Patch>
 
             <!-- Pardus patches -->
             <Patch level="1">pardus/change-default-buffering-fragments.patch</Patch>
 
-            <!-- Change default buffering and lazy load KDE3 theme sounds -->
+            <!-- Change default buffering and lazy load KDE theme sounds -->
             <Patch level="1">pardus/load-sample-dir-lazy.patch</Patch>
 
-            <!-- Disable flat volumes -->
+            <!-- Disable flat volumes (in Corporate 2) -->
             <Patch level="1">pardus/daemon-conf-disable-flat-volumes.patch</Patch>
         </Patches>
     </Source>
@@ -103,8 +112,28 @@
             <Path fileType="executable">/usr/libexec/pulse/proximity-helper</Path>
         </Files>
         <AdditionalFiles>
+            <!--
             <AdditionalFile owner="root" permission="0755" target="/usr/lib/pm-utils/sleep.d/02PulseAudio">pardus/02PulseAudio</AdditionalFile>
+            -->
             <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/pulseaudio">pardus/pulseaudio.conf</AdditionalFile>
+
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/scalable/apps/pulseaudio.svg">mandriva/pulseaudio.svg</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/scalable/devices/audio-backend-pulseaudio.svg">mandriva/pulseaudio.svg</AdditionalFile>
+
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/16x16/apps/pulseaudio.png">mandriva/pulseaudio16.png</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/22x22/apps/pulseaudio.png">mandriva/pulseaudio22.png</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/32x32/apps/pulseaudio.png">mandriva/pulseaudio32.png</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/48x48/apps/pulseaudio.png">mandriva/pulseaudio48.png</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/64x64/apps/pulseaudio.png">mandriva/pulseaudio64.png</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/128x128/apps/pulseaudio.png">mandriva/pulseaudio128.png</AdditionalFile>
+
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/16x16/devices/audio-backend-pulseaudio.png">mandriva/pulseaudio16.png</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/22x22/devices/audio-backend-pulseaudio.png">mandriva/pulseaudio22.png</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/32x32/devices/audio-backend-pulseaudio.png">mandriva/pulseaudio32.png</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/48x48/devices/audio-backend-pulseaudio.png">mandriva/pulseaudio48.png</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/64x64/devices/audio-backend-pulseaudio.png">mandriva/pulseaudio64.png</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/icons/hicolor/128x128/devices/audio-backend-pulseaudio.png">mandriva/pulseaudio128.png</AdditionalFile>
+
         </AdditionalFiles>
         <Provides>
             <!-- For ownerships and permissions -->
@@ -120,7 +149,7 @@
             <Dependency>gconf</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="library">/usr/lib/pulse-0.9.21/modules/module-gconf.so</Path>
+            <Path fileType="library">/usr/lib/pulse-0.9.22/modules/module-gconf.so</Path>
             <Path fileType="executable">/usr/libexec/pulse/gconf-helper</Path>
         </Files>
     </Package>
@@ -133,21 +162,23 @@
             <Dependency>jack-audio-connection-kit</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="library">/usr/lib/pulse-0.9.21/modules/module-jack-sink.so</Path>
-            <Path fileType="library">/usr/lib/pulse-0.9.21/modules/module-jack-source.so</Path>
+            <Path fileType="library">/usr/lib/pulse-0.9.22/modules/module-jack-sink.so</Path>
+            <Path fileType="library">/usr/lib/pulse-0.9.22/modules/module-jack-source.so</Path>
         </Files>
     </Package>
 
     <History>
-        <!--
         <Update release="23">
-            <Date>2010-11-26</Date>
+            <Date>2011-01-29</Date>
             <Version>0.9.22</Version>
-            <Comment>Version bump</Comment>
+            <Comment>
+                - Version bump,
+                - Disable some Mandriva patches,
+                - Add latest stable-queue patches.
+            </Comment>
             <Name>Ozan Çağlayan</Name>
             <Email>ozan@pardus.org.tr</Email>
         </Update>
-        -->
         <Update release="22">
             <Date>2010-10-26</Date>
             <Version>0.9.21</Version>
