@@ -13,7 +13,11 @@ from pisi.actionsapi import get
 def build():
     shelltools.cd("wpa_supplicant")
 
-    autotools.make()
+    #Enable syslog output
+    cflags = get.CFLAGS() + " -DCONFIG_DEBUG_SYSLOG"
+    shelltools.export("CFLAGS", cflags)
+
+    autotools.make("V=1")
     autotools.make("QTDIR=%s wpa_gui" % get.qtDIR())
     autotools.make("eapol_test")
 
@@ -28,8 +32,8 @@ def install():
     pisitools.dodir("/var/run/wpa_supplicant")
 
     # Install dbus files
-    pisitools.insinto("/usr/share/dbus-1/system-services", "dbus-wpa_supplicant.service", "fi.epitest.hostap.WPASupplicant.service")
-    pisitools.insinto("/etc/dbus-1/system.d", "dbus-wpa_supplicant.conf", "wpa_supplicant.conf")
+    pisitools.insinto("/usr/share/dbus-1/system-services", "dbus/*.service")
+    pisitools.insinto("/etc/dbus-1/system.d", "dbus/dbus-wpa_supplicant.conf", "wpa_supplicant.conf")
 
     pisitools.doman("doc/docbook/*.5")
     pisitools.doman("doc/docbook/*.8")
