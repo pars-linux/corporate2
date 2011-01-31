@@ -1,0 +1,111 @@
+--- ksvg.orig/core/KSVGReader.cc	2005-10-10 16:56:46.000000000 +0200
++++ ksvg/core/KSVGReader.cc	2007-07-26 20:59:42.000000000 +0200
+@@ -106,7 +106,9 @@
+ 	DOM::Node *m_currentNode;
+ 	DOM::Node m_parentNode;
+ 
+-	bool m_noRendering, m_progressive;
++        bool m_noRendering, m_progressive;
++
++  	QXmlAttributes *m_attrs;
+ };
+ 
+ }
+@@ -166,11 +168,12 @@
+ 	m_rootNode = 0;
+ 	m_currentNode = 0;
+ 	m_noRendering = false;
++	m_attrs = new QXmlAttributes();	
+ 
+ 	KSimpleConfig config("ksvgpluginrc");
+ 	config.setGroup("Rendering");
+ 	m_progressive = config.readBoolEntry("ProgressiveRendering", true);
+-
++	
+ 	if(Helper::self()->canvas())
+ 		Helper::self()->canvas()->setImmediateUpdate(m_progressive);
+ 
+@@ -221,6 +224,13 @@
+ 	SVGElementImpl *newElement = 0;
+ 	SVGSVGElementImpl *svg = 0;
+ 
++	for(int i = 0; i < attrs.length(); i++)
++	{
++	  QString qname = attrs.qName(i);
++	  if (qname.find("xmlns", FALSE) != -1)       
++	      m_attrs->append(qname, attrs.uri(i), attrs.localName(i), attrs.value(i));
++	}
++
+ 	if(qName == "svg")
+ 	{
+ 		DOM::Element impl = static_cast<DOM::Document *>(Helper::self()->doc())->createElementNS(namespaceURI, qName);
+@@ -278,6 +288,52 @@
+ 			return false;
+ 		}
+ 
++		if (attrs.length() > 0) {
++		    QString name = qName;
++		    bool found = false;
++		    if (name.find(':') != -1) {
++		        name = ((name.simplifyWhiteSpace()).remove(' ')).section( ':', 0, 0 );
++			if (name.startsWith("xml", FALSE))
++			{    
++			    found = true;
++			} else {
++			    for (int i = 0; i < m_attrs->length(); i++)
++			    {
++			        if (m_attrs->localName(i) == name)
++				    found = true;
++			    }
++			}
++			if (!found){
++			    Helper::self()->setErrorDescription("Broken SVG file! XML namespace prefix '" + 
++								name + "' was not declared");
++			    return false;
++			}
++		    }
++
++		    for (int k = 0; k < attrs.length(); k++)		  
++		    {
++		        name = attrs.qName(k);
++			if (name.find(':') != -1) {
++			    name = ((name.simplifyWhiteSpace()).remove(' ')).section( ':', 0, 0 );
++			    if (name.startsWith("xml", FALSE))
++			    {    
++			        found = true;
++			    } else {
++			        for (int i = 0; i < m_attrs->length(); i++)		  
++				{
++				    if (m_attrs->localName(i) == name)
++				        found = true;
++				}
++			    }
++			    if (!found){
++			        Helper::self()->setErrorDescription("Broken SVG file! XML namespace prefix '" + 
++								    name + "' was not declared");
++				return false;
++			    }	
++			}
++		    }
++		}
++		
+ 		DOM::Element impl = static_cast<DOM::Document *>(Helper::self()->doc())->createElementNS(namespaceURI, qName);
+ 		newElement = SVGDocumentImpl::createElement(qName, impl, Helper::self()->doc());
+ 
+@@ -403,7 +459,7 @@
+ 
+ 	m_parentNode = m_currentNode->parentNode();	// this is needed since otherwise we get temporary vars
+ 	m_currentNode = &m_parentNode;
+-	
++
+ 	return true;
+ }
+ 
+@@ -451,6 +507,7 @@
+ 	d->canvas = canvas;
+ 
+ 	d->reader = new QXmlSimpleReader();
++	d->reader->setFeature("http://xml.org/sax/features/namespace-prefixes", TRUE);
+ 	d->inputHandler = new InputHandler();
+ 
+ 	Helper::self(this);
