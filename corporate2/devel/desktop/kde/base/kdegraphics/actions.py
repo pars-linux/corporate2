@@ -21,6 +21,13 @@ def setup():
     kde.make("-f admin/Makefile.common")
 
     shelltools.export("DO_NOT_COMPILE", "kpovmodeler kmrml kview")
+
+    # New fribidi do not have fribidi-config, make it use pkg-config instead
+    # Caution: This is needed to enable KSVG support
+    shelltools.export("FRIBIDI_CONFIG", "pkg-config fribidi")
+    pisitools.dosed("ksvg/impl/libs/libtext2path/src/Converter.cpp", "fribidi_types.h", "fribidi-types.h")
+    pisitools.dosed("ksvg/plugin/backends/Makefile.am", "agg", "") #disable agg backend, TODO: KSVG AGG backend needs to be ported to new AGG
+
     kde.configure("--with-poppler \
                    --with-kamera")
 
