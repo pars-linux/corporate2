@@ -10,8 +10,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-#WorkDir = "%s-%s" % (get.srcNAME()[5:], get.srcVERSION())
-WorkDir = "%s-0.9502" % get.srcNAME()[5:]
+WorkDir = "%s-0.9504" % get.srcNAME()[5:]
 
 def setup():
     perlmodules.configure()
