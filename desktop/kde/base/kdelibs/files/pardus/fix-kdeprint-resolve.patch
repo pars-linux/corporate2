@@ -1,0 +1,20 @@
+Index: kdelibs-3.5.10/kdeprint/management/networkscanner.cpp
+===================================================================
+--- kdelibs-3.5.10.orig/kdeprint/management/networkscanner.cpp
++++ kdelibs-3.5.10/kdeprint/management/networkscanner.cpp
+@@ -77,9 +77,13 @@ QString NetworkScanner::NetworkScannerPr
+ 		buf[sizeof(buf)-1] = '\0';
+ 	QPtrList<KAddressInfo>	infos = KExtendedSocket::lookup(buf, QString::null);
+ 	infos.setAutoDelete(true);
+-	if (infos.count() > 0)
++	KAddressInfo *kaddr;
++	for (kaddr = infos.first(); kaddr; kaddr = infos.next())
+ 	{
+-		QString	IPstr = infos.first()->address()->nodeName();
++		QString IPstr = kaddr->address()->nodeName();
++		// Skip localhosts
++		if (IPstr == "::1" || IPstr == "127.0.0.1")
++			continue;
+ 		int	p = IPstr.findRev('.');
+ 		IPstr.truncate(p);
+ 		return IPstr;
