@@ -1,28 +1,24 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 TUBITAK/UEKAE
+# Copyright 2008-2011 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 def build():
-    # Enable process accounting
-    pisitools.dosed("script/bootchartd.conf", "^PROCESS_ACCOUNTING.*$", "PROCESS_ACCOUNTING=\"yes\"")
-    shelltools.system("ant")
+    autotools.make("CFLAGS='%s'" % get.CFLAGS())
 
 def install():
-    pisitools.insinto("/usr/share/java", "bootchart.jar")
+    autotools.rawInstall("DESTDIR=%s \
+                          PY_LIBDIR=/usr/lib/%s \
+                          NO_PYTHON_COMPILE=1" % (get.installDIR(), get.curPYTHON()))
 
-    pisitools.dodir("/sbin")
-    pisitools.dodir("/etc")
+    pisitools.dosym("pybootchartgui", "/usr/bin/bootchart")
 
-    pisitools.dobin("script/bootchartd", "/sbin")
-    pisitools.insinto("/etc", "script/bootchartd.conf")
-
-    pisitools.dodoc("TODO", "COPYING", "README", "README.logger", "ChangeLog")
+    pisitools.dodoc("COPYING", "README*")
 
