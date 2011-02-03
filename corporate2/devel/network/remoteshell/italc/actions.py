@@ -17,7 +17,7 @@ def setup():
                          --enable-static=no")
 
 def build():
-    autotools.make()
+    autotools.make("-j1")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
