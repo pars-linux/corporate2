@@ -6,13 +6,10 @@
 
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
-from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-WorkDir = "embryo-1.0.0.beta"
-
 def setup():
-    autotools.autoreconf("-fi")
+    autotools.autoreconf("-vfi")
     autotools.configure("--disable-static")
 
 def build():
