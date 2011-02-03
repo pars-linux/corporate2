@@ -13,7 +13,7 @@ shelltools.export("HOME", get.workDIR())
 
 def setup():
     #for i in ["libprojectm", "qxt", "qtiocompressor"]:
-    for i in ["libprojectm", "qxt"]:
+    for i in ["libprojectm", "qxt", "libechonest"]:
         shelltools.unlinkDir("3rdparty/%s" % (i))
 
     # Upstream supports only gstreamer engine, other engines are unstable and lacking features.
