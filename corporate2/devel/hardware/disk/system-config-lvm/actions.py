@@ -19,4 +19,4 @@ def install():
     autotools.install()
     pisitools.removeDir("/usr/bin")
     pisitools.removeDir("/etc/security")
-
+    pisitools.removeDir("/etc/pam.d")
