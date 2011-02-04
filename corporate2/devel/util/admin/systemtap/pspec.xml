@@ -8,11 +8,11 @@
             <Name>Ozan Çağlayan</Name>
             <Email>ozan@pardus.org.tr</Email>
         </Packager>
-        <License>GPLv2</License>
+        <License>GPLv2+</License>
         <IsA>app:console</IsA>
         <Summary>Instrumentation System</Summary>
         <Description>systemtap is an instrumentation system for systems running Linux 2.6. Developers can write instrumentation to collect data on the operation of the system.</Description>
-        <Archive sha1sum="ab68acef6b2c6dd8a19f3486c98b7aee0502d517" type="targz">ftp://sourceware.org/pub/systemtap/releases/systemtap-1.3.tar.gz</Archive>
+        <Archive sha1sum="d22184031c69e6844b34a874d573b0f8ac8f450f" type="targz">http://cekirdek.pardus.org.tr/~ozan/dist/sources/systemtap-1.4.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>nss</Dependency>
             <Dependency>nspr</Dependency>
@@ -24,11 +24,12 @@
             <Dependency>libsigc++</Dependency>
             <Dependency>libglademm</Dependency>
             <Dependency>ghostscript</Dependency>
-            <Dependency>texlive-latex</Dependency>
+            <Dependency>avahi-devel</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">stap-report-pisi-support.patch</Patch>
-            <!--<Patch level="1">links_sandbox.patch</Patch>-->
+            <Patch level="1">fix-nss-path.patch</Patch>
+            <Patch level="1">sdt-regtable.patch</Patch>
         </Patches>
     </Source>
 
@@ -36,20 +37,29 @@
         <Name>systemtap</Name>
         <RuntimeDependencies>
             <Dependency>nss</Dependency>
+            <Dependency>nspr</Dependency>
+            <!-- stap-gen-cert uses mkpasswd from whois -->
             <Dependency>whois</Dependency>
             <Dependency>elfutils</Dependency>
+            <Dependency>avahi-libs</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="executable">/usr/bin/*</Path>
             <Path fileType="executable">/usr/libexec/systemtap</Path>
-            <Path fileType="config">/etc/systemtap</Path>
-            <Path fileType="header">/usr/include</Path>
+            <Path fileType="config">/etc</Path>
+            <Path fileType="data">/etc/logrotate.d</Path>
             <Path fileType="man">/usr/share/man</Path>
             <Path fileType="doc">/usr/share/doc</Path>
             <Path fileType="data">/var/run/systemtap</Path>
+            <Path fileType="data">/var/run/stap-server</Path>
+            <Path fileType="data">/var/log/stap-server</Path>
             <Path fileType="data">/var/cache/systemtap</Path>
-            <Path fileType="data">/usr/share/systemtap</Path>
+            <Path fileType="data">/usr/share/systemtap/runtime</Path>
+            <Path fileType="data">/usr/share/systemtap/tapset</Path>
         </Files>
+        <Provides>
+            <COMAR script="package.py">System.Package</COMAR>
+        </Provides>
     </Package>
 
     <Package>
@@ -60,18 +70,48 @@
             <Dependency>glibmm</Dependency>
             <Dependency>cairomm</Dependency>
             <Dependency>libsigc++</Dependency>
-            <Dependency>systemtap</Dependency>
             <Dependency>libglademm</Dependency>
+            <Dependency release="current">systemtap</Dependency>
         </RuntimeDependencies>
         <Conflicts>
             <Package releaseTo="7">systemtap</Package>
         </Conflicts>
         <Files>
             <Path fileType="executable">/usr/bin/stapgraph</Path>
+            <Path fileType="data">/usr/share/systemtap/*.glade</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>systemtap-testsuite</Name>
+        <Summary>Testsuite allows testing of the entire SystemTap toolchain without having to rebuild from sources</Summary>
+        <RuntimeDependencies>
+            <Dependency release="current">systemtap</Dependency>
+            <Dependency release="current">systemtap-sdt-devel</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="data">/usr/share/systemtap/testsuite</Path>
+        </Files>
+    </Package>
+
+    <Package>
+        <Name>systemtap-sdt-devel</Name>
+        <Summary>Static probe support tools</Summary>
+        <Files>
+            <Path fileType="executable">/usr/bin/dtrace</Path>
+            <Path fileType="header">/usr/include</Path>
         </Files>
     </Package>
 
     <History>
+        <Update release="13">
+            <Date>2011-01-24</Date>
+            <Version>1.4</Version>
+            <Comment>Version bump to fix CVE-2010-4170, CVE-2010-4171 (#15544).</Comment>
+            <Type package="systemtap">security</Type>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="12">
             <Date>2010-10-31</Date>
             <Version>1.3</Version>
