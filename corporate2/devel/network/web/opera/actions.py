@@ -24,3 +24,5 @@ def install():
     shelltools.system("./install --prefix /usr --repackage %s/usr" % get.installDIR())
 
     pisitools.insinto("/usr/lib/opera/plugins/", "libflashplayer.so")
+    # Remove kde4 related opera shared object.
+    pisitools.remove("/usr/lib/opera/liboperakde4.so")
