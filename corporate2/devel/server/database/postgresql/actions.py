@@ -27,8 +27,7 @@ def setup():
                          --enable-thread-safety \
                          --host=%s \
                          --datadir=/usr/share/pgsql \
-                         --libdir=/usr/lib \
-                         --with-docdir=/usr/share/doc/pgsql" % get.CHOST())
+                         --libdir=/usr/lib" % get.CHOST())
 
 def build():
     if get.LDFLAGS():
