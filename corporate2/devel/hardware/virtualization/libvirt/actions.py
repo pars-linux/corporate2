@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2009-2010 TUBITAK/UEKAE
+# Copyright (C) 2009-2011 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -15,8 +15,7 @@ def setup():
     shelltools.export("AUTOPOINT", "true")
     autotools.autoreconf("-vfi")
 
-    autotools.configure("--localstatedir=/var \
-                         --with-init-script=none \
+    autotools.configure("--with-init-script=none \
                          --with-remote-pid-file=/var/run/libvirtd.pid \
                          --with-qemu-user=qemu \
                          --with-qemu-group=qemu \
