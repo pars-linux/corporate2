@@ -1,0 +1,45 @@
+Index: src/ui_elements.py
+===================================================================
+--- src/ui_elements.py  (revision 35916)
++++ src/ui_elements.py  (working copy)
+@@ -34,6 +34,7 @@
+         self.viewport().setPaletteBackgroundColor(KGlobalSettings.baseColor())
+         self.entries = []
+         self.currentEntry = None
++        self.parent = parent
+
+     def clear(self):
+         for e in self.entries:
+@@ -116,6 +117,7 @@
+             self.parent.currentEntry.checkbox.setChecked(True)
+             self.checkbox.setChecked(False)
+             return
++        self.parent.parent.checkSaved.setChecked(False)
+         self.parent.currentEntry = self
+
+     def slotDefaultReleased(self):
+@@ -123,7 +125,8 @@
+         if old == self:
+             self.checkbox.setChecked(True)
+             return
+-        self.parent.currentEntry.checkbox.setChecked(False)
++        if self.parent.currentEntry:
++            self.parent.currentEntry.checkbox.setChecked(False)
+         self.editWidget.parent.backend.setOption(self.editWidget.parent.package, "default", str(self.index), async = self.setDefaultHandler)
+
+     def slotEdit(self):
+Index: src/bm_mainview.py
+===================================================================
+--- src/bm_mainview.py  (revision 35916)
++++ src/bm_mainview.py  (working copy)
+@@ -535,8 +535,7 @@
+         for key, value in options.iteritems():
+             self.options[key] = value
+         # Default entry
+-        if self.options["default"] == "saved":
+-            self.widgetEntries.checkSaved.setChecked(True)
++        self.widgetEntries.checkSaved.setChecked(self.options["default"] == "saved")
+         # Timeout
+         timeout = int(self.options["timeout"])
+         self.widgetEntries.setTimeoutSlot(False)
+
