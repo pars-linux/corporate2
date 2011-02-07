@@ -14,9 +14,9 @@
         <Description>kernel contains the Linux kernel, the core of any Linux operating system. The kernel handles the basic functions of the operating system: memory allocation, process allocation, device input and output, etc.</Description>
         <Archive sha1sum="4cb1fbfbeedcd658ca37739679c65dfaa136bf4e" type="tarbz2">http://www.kernel.org/pub/linux/kernel/v2.6/linux-2.6.35.tar.bz2</Archive>
         <AdditionalFiles>
-            <AdditionalFile target="configs/kernel-i686-config">pardus/configs/kernel-i686-config</AdditionalFile>
-            <AdditionalFile target="configs/kernel-x86_64-config">pardus/configs/kernel-x86_64-config</AdditionalFile>
-            <AdditionalFile permission="0755" target="generate-module-list">pardus/generate-module-list</AdditionalFile>
+            <AdditionalFile target="configs/kernel-i686-config">configs/kernel-i686-config</AdditionalFile>
+            <AdditionalFile target="configs/kernel-x86_64-config">configs/kernel-x86_64-config</AdditionalFile>
+            <AdditionalFile permission="0755" target="generate-module-list">scripts/generate-module-list</AdditionalFile>
         </AdditionalFiles>
         <BuildDependencies>
             <Dependency>cpio</Dependency>
@@ -26,6 +26,9 @@
         </BuildDependencies>
         <Patches>
             <!-- kernel.org LONGTERM patch -->
+            <!-- tcp: Increase TCP_MAXSEG socket option minimum (CVE-2010-4165) (#15278) -->
+            <!-- Fix af_unix: limit unix_tot_inflight (CVE-2010-4249) (#15693) -->
+            <!-- mmap: install_special_mapping skips security_file_mmap check (CVE-2010-4346) (#15789) -->
             <Patch level="1" compressionType="bz2">patches/mainline/patch-2.6.35.11.bz2</Patch>
 
 
@@ -35,27 +38,17 @@
 
             <!-- Security patches -->
 
-            <!-- tcp: Increase TCP_MAXSEG socket option minimum (CVE-2010-4165) (#15278) -->
-            <Patch level="1">patches/mainline/linux-2.6.git-7a1abd08d52fdeddb3e9a5a33f2f15cc6a5674d2.patch</Patch>
-
             <!-- net sched: fix some kernel memory leaks (CVE-2010-2942) (#14082) -->
             <Patch level="1">patches/mainline/net-2.6.git-1c40be12f7d8ca1d387510d39787b12e512a7ce8.patch</Patch>
 
             <!-- Fix heap contents leak from ETHTOOL_GRXCLSRLALL (CVE-2010-3861) (#15670) -->
             <Patch level="1">patches/mainline/linux-2.6.git-ae6df5f96a51818d6376da5307d773baeece4014.patch</Patch>
 
-            <!-- Fix af_unix: limit unix_tot_inflight (CVE-2010-4249) (#15693) -->
-            <Patch level="1">patches/mainline/net-2.6.git-9915672d41273f5b77f1b3c29b391ffb7732b84b.patch</Patch>
-
             <!-- sys_semctl: fix kernel stack leakage (CVE-2010-4083) (#15480) -->
             <Patch level="1">patches/mainline/linux-2.6.git-982f7c2b2e6a28f8f266e075d92e19c0dd4c6e56.patch</Patch>
 
             <!-- sctp: Fix out-of-bounds reading in sctp_asoc_get_hmac() (CVE-2010-3705) (#15383) -->
             <Patch level="1">patches/mainline/net-2.6.git-51e97a12bef19b7e43199fc153cf9bd5f2140362.patch</Patch>
-
-            <!-- mmap: install_special_mapping skips security_file_mmap check (CVE-2010-4346) (#15789) -->
-            <Patch level="1">patches/mainline/linux-2.6.git-462e635e5b73ba9a4c03913b77138cd57ce4b050.patch</Patch>
-
 
 
             <!-- Upstream patches -->
@@ -209,22 +202,22 @@
             <Patch level="1">patches/fedora/efifb-add-more-models.patch</Patch>
             <Patch level="1">patches/fedora/efifb-check-that-the-base-addr-is-plausible-on-pci-systems.patch</Patch>
 
+            <!-- Backport of upstream vzalloc functions, used by the v4l/dvb bits -->
+            <Patch level="1">patches/fedora/linux-2.6-vzalloc.patch</Patch>
+
+            <!-- V4L/DVB Updates (Patches may be empty) -->
+            <!-- dvb/mantis: Enable driver auto-loading (#14647) -->
+            <Patch level="1">patches/fedora/linux-2.6-v4l-dvb-update.patch</Patch>
+            <Patch level="1">patches/fedora/linux-2.6-v4l-dvb-fixes.patch</Patch>
+            <Patch level="1">patches/fedora/linux-2.6-v4l-dvb-experimental.patch</Patch>
+
             <!-- one-off non-upstream patch, since ir-keytable doesn't work yet -->
             <Patch level="1">patches/fedora/imon-default-proto-modparam.patch</Patch>
 
             <!-- FIXME -->
             <Patch level="1">patches/fedora/linux-2.6-v4l-dvb-build-lirc.patch</Patch>
 
-            <!-- V4L/DVB Updates (Patches may be empty) -->
-            <!-- dvb/mantis: Enable driver auto-loading (#14647) -->
             <Patch level="1">patches/fedora/linux-2.6-v4l-dvb-backport-reverts.patch</Patch>
-            <Patch level="1">patches/fedora/linux-2.6-v4l-dvb-update.patch</Patch>
-            <Patch level="1">patches/fedora/linux-2.6-v4l-dvb-fixes.patch</Patch>
-            <Patch level="1">patches/fedora/linux-2.6-v4l-dvb-experimental.patch</Patch>
-
-            <!-- Backport of upstream vzalloc functions, used by the v4l/dvb bits -->
-            <Patch level="1">patches/fedora/linux-2.6-vzalloc.patch</Patch>
-
             <Patch level="1">patches/fedora/flexcop-fix-xlate_proc_name-warning.patch</Patch>
 
             <!-- Fix DMA bug on via-velocity -->
@@ -312,7 +305,7 @@
             <Patch level="1">patches/fedora/e1000e-cleanup-e1000_sw_lcd_config_ich8lan.patch</Patch>
             <Patch level="1">patches/fedora/e1000e-82566DC-fails-to-get-link.patch</Patch>
 
-            <!-- (CVE-2010-4668) -->
+            <!-- check for proper length of iov entries earlier in blk_rq_map_user_iov() (CVE-2010-4668) (#16219) -->
             <Patch level="1">patches/fedora/block-check-for-proper-length-of-iov-entries-earlier-in-blk_rq_map_user_iov.patch</Patch>
 
             <Patch level="1">patches/fedora/hostap_cs-fix-sleeping-function-called-from-invalid-context.patch</Patch>
@@ -524,30 +517,30 @@
             <Path fileType="man">/usr/share/man/man1/perf*</Path>
         </Files>
         <AdditionalFiles>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-annotate.1">man/perf-annotate.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-help.1">man/perf-help.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-list.1">man/perf-list.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-record.1">man/perf-record.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-report.1">man/perf-report.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-sched.1">man/perf-sched.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-stat.1">man/perf-stat.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-timechart.1">man/perf-timechart.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-top.1">man/perf-top.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-trace.1">man/perf-trace.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf.1">man/perf.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-archive.1">man/perf-archive.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-bench.1">man/perf-bench.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-buildid-cache.1">man/perf-buildid-cache.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-buildid-list.1">man/perf-buildid-list.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-diff.1">man/perf-diff.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-inject.1">man/perf-inject.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-kmem.1">man/perf-kmem.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-kvm.1">man/perf-kvm.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-lock.1">man/perf-lock.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-probe.1">man/perf-probe.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-test.1">man/perf-test.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-trace-perl.1">man/perf-trace-perl.1</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-trace-python.1">man/perf-trace-python.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-annotate.1">perf/perf-annotate.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-help.1">perf/perf-help.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-list.1">perf/perf-list.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-record.1">perf/perf-record.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-report.1">perf/perf-report.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-sched.1">perf/perf-sched.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-stat.1">perf/perf-stat.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-timechart.1">perf/perf-timechart.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-top.1">perf/perf-top.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-trace.1">perf/perf-trace.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf.1">perf/perf.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-archive.1">perf/perf-archive.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-bench.1">perf/perf-bench.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-buildid-cache.1">perf/perf-buildid-cache.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-buildid-list.1">perf/perf-buildid-list.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-diff.1">perf/perf-diff.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-inject.1">perf/perf-inject.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-kmem.1">perf/perf-kmem.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-kvm.1">perf/perf-kvm.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-lock.1">perf/perf-lock.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-probe.1">perf/perf-probe.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-test.1">perf/perf-test.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-trace-perl.1">perf/perf-trace-perl.1</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man1/perf-trace-python.1">perf/perf-trace-python.1</AdditionalFile>
         </AdditionalFiles>
     </Package>
 
@@ -558,7 +551,11 @@
             <Comment>
                 - Bump to 2.6.35.11,
                 - Refactor package,
+                - Add more patches from Fedora,
+                - Possible fix for iwlagn lockups (#16163),
+                - check for proper length of iov entries earlier in blk_rq_map_user_iov() (CVE-2010-4668) (#16219),
             </Comment>
+            <Type package="kernel">security</Type>
             <Name>Ozan Çağlayan</Name>
             <Email>ozan@pardus.org.tr</Email>
         </Update>
@@ -567,7 +564,7 @@
             <Version>2.6.35.10</Version>
             <Comment>
                 - Switch to the 2.6.35 longterm branch,
-                - Refactor old the patches,
+                - Refactor old patches,
                 - Add UnionFS support instead of AuFS,
                 - Add setns() syscall support for LXC namespaces,
                 - Replace kernel-doc with kernel-docs,
