@@ -110,21 +110,27 @@
             <Patch level="1">patches/fedora/linux-2.6-i386-nx-emulation.patch</Patch>
             <Patch level="1">patches/fedora/linux-2.6-32bit-mmap-exec-randomization.patch</Patch>
 
+            <Patch level="1">patches/fedora/fs-call-security_d_instantiate-in-d_obtain_alias.patch</Patch>
 
             <!-- ext4: Always journal quota file modifications -->
-            <Patch level="1">patches/fedora/fs-call-security_d_instantiate-in-d_obtain_alias.patch</Patch>
+            <Patch level="1">patches/fedora/ext4-always-journal-quota-file-modifications.patch</Patch>
 
             <!-- btrfs fixes -->
             <Patch level="1">patches/fedora/btrfs-fix-error-handling-in-btrfs_get_sub.patch</Patch>
             <Patch level="1">patches/fedora/btrfs-setup-blank-root-and-fs_info-for-mount-time.patch</Patch>
             <Patch level="1">patches/fedora/btrfs-fix-race-between-btrfs_get_sb-and-unmount.patch</Patch>
+            <Patch level="1">patches/fedora/btrfs-fix-typo-in-fallocate-to-make-it-honor-actual-size.patch</Patch>
 
             <!-- Disable XHCI by default -->
             <Patch level="1">patches/fedora/disable-xhci-by-default.patch</Patch>
 
             <!-- ACPI fixes -->
+            <Patch level="1">patches/fedora/linux-2.6-defaults-acpi-video.patch</Patch>
+            <Patch level="1">patches/fedora/linux-2.6-acpi-video-dos.patch</Patch>
             <Patch level="1">patches/fedora/acpi-ec-add-delay-before-write.patch</Patch>
+            <Patch level="1">patches/fedora/linux-2.6-acpi-debug-infinite-loop.patch</Patch>
             <Patch level="1">patches/fedora/acpi-update-battery-information-on-notification-0x81.patch</Patch>
+            <Patch level="1">patches/fedora/linux-2.6-defaults-no-pm-async.patch</Patch>
 
             <!-- PNP: log PNP resources, as we do for PCI -->
             <Patch level="1">patches/fedora/pnp-log-pnp-resources-as-we-do-for-pci.patch</Patch>
@@ -160,12 +166,6 @@
             <!-- stop floppy.ko from autoloading during udev -->
             <Patch level="1">patches/fedora/die-floppy-die.patch</Patch>
 
-            <!-- Hack e1000e to work on Montevina SDV -->
-            <Patch level="1">patches/fedora/linux-2.6-e1000-ich9-montevina.patch</Patch>
-
-            <!-- Make fbcon not show the penguins with 'quiet' -->
-            <Patch level="1">patches/fedora/linux-2.6-silence-fbcon-logo.patch</Patch>
-
             <!-- thinkpad_acpi: Fix backlight control on some recent Thinkpads -->
             <Patch level="1">patches/fedora/thinkpad-acpi-fix-backlight.patch</Patch>
 
@@ -174,6 +174,12 @@
 
             <!-- Silence some useless messages that still get printed with 'quiet' -->
             <Patch level="1">patches/fedora/linux-2.6-silence-noise.patch</Patch>
+
+            <!-- Make fbcon not show the penguins with 'quiet' -->
+            <Patch level="1">patches/fedora/linux-2.6-silence-fbcon-logo.patch</Patch>
+
+            <!-- Hack e1000e to work on Montevina SDV -->
+            <Patch level="1">patches/fedora/linux-2.6-e1000-ich9-montevina.patch</Patch>
 
             <!-- DRM & GFX patches -->
 
@@ -198,17 +204,27 @@
             <Patch level="1">patches/fedora/linux-2.6-intel-iommu-igfx.patch</Patch>
             <Patch level="1">patches/fedora/drm-ttm-fix-two-race-conditions-fix-busy-codepaths.patch</Patch>
             <Patch level="1">patches/fedora/drm-radeon-r600-cs-checker-fixes.patch</Patch>
+
+            <!-- EFI patches -->
             <Patch level="1">patches/fedora/efifb-add-more-models.patch</Patch>
             <Patch level="1">patches/fedora/efifb-check-that-the-base-addr-is-plausible-on-pci-systems.patch</Patch>
 
-            <!-- hdpvr: Enable IR -->
-            <Patch level="1">patches/fedora/hdpvr-ir-enable.patch</Patch>
+            <!-- one-off non-upstream patch, since ir-keytable doesn't work yet -->
+            <Patch level="1">patches/fedora/imon-default-proto-modparam.patch</Patch>
+
+            <!-- FIXME -->
+            <Patch level="1">patches/fedora/linux-2.6-v4l-dvb-build-lirc.patch</Patch>
 
             <!-- V4L/DVB Updates (Patches may be empty) -->
             <!-- dvb/mantis: Enable driver auto-loading (#14647) -->
+            <Patch level="1">patches/fedora/linux-2.6-v4l-dvb-backport-reverts.patch</Patch>
             <Patch level="1">patches/fedora/linux-2.6-v4l-dvb-update.patch</Patch>
             <Patch level="1">patches/fedora/linux-2.6-v4l-dvb-fixes.patch</Patch>
             <Patch level="1">patches/fedora/linux-2.6-v4l-dvb-experimental.patch</Patch>
+
+            <!-- Backport of upstream vzalloc functions, used by the v4l/dvb bits -->
+            <Patch level="1">patches/fedora/linux-2.6-vzalloc.patch</Patch>
+
             <Patch level="1">patches/fedora/flexcop-fix-xlate_proc_name-warning.patch</Patch>
 
             <!-- Fix DMA bug on via-velocity -->
@@ -235,7 +251,6 @@
             <Patch level="1">patches/fedora/sched-25-move-sched_avg_update-to-update_cpu_load.patch</Patch>
             <Patch level="1">patches/fedora/sched-30-sched-fix-nohz-balance-kick.patch</Patch>
             <Patch level="1">patches/fedora/sched-35-increment-cache_nice_tries-only-on-periodic-lb.patch</Patch>
-            <Patch level="1">patches/fedora/sched-cure-more-NO_HZ-load-average-woes.patch</Patch>
 
             <!-- Bluetooth: Add more Apple IDs for bluetooth stack -->
             <Patch level="1">patches/fedora/btusb-macbookpro-7-1.patch</Patch>
@@ -276,9 +291,6 @@
             <Patch level="1">patches/fedora/inet_diag-make-sure-we-run-the-same-bytecode-we-audited.patch</Patch>
             <Patch level="1">patches/fedora/netlink-make-nlmsg_find_attr-take-a-const-ptr.patch</Patch>
 
-            <!-- posix-cpu-timers: workaround to suppress the problems with mt exec -->
-            <Patch level="1">patches/fedora/posix-cpu-timers-workaround-to-suppress-problems-with-mt-exec.patch</Patch>
-
             <!-- Improve signal reporting -->
             <Patch level="1">patches/fedora/rtl8180-improve-signal-reporting-for-rtl8185-hardware.patch</Patch>
             <Patch level="1">patches/fedora/rtl8180-improve-signal-reporting-for-actual-rtl8180-hardware.patch</Patch>
@@ -296,6 +308,15 @@
 
             <!-- Enhance AF_PACKET -->
             <Patch level="1">patches/fedora/net-AF_PACKET-vmalloc.patch</Patch>
+
+            <Patch level="1">patches/fedora/e1000e-cleanup-e1000_sw_lcd_config_ich8lan.patch</Patch>
+            <Patch level="1">patches/fedora/e1000e-82566DC-fails-to-get-link.patch</Patch>
+
+            <!-- (CVE-2010-4668) -->
+            <Patch level="1">patches/fedora/block-check-for-proper-length-of-iov-entries-earlier-in-blk_rq_map_user_iov.patch</Patch>
+
+            <Patch level="1">patches/fedora/hostap_cs-fix-sleeping-function-called-from-invalid-context.patch</Patch>
+            <Patch level="1">patches/fedora/sunrpc-kernel-panic-when-mount-nfsv4.patch</Patch>
 
             <!-- Use UTF-8 by default on VFAT -->
             <Patch level="1">patches/fedora/linux-2.6-defaults-fat-utf8.patch</Patch>
@@ -401,15 +422,6 @@
 
             <!-- Make ext3 mount default to barrier=1 -->
             <Patch level="1">patches/suse/ext3-barrier-default.patch</Patch>
-
-            <!-- NFS4ACL for ext3
-            <Patch level="1">patches/suse/parser-match_string.patch</Patch>
-            <Patch level="1">patches/suse/fs-may_iops.diff</Patch>
-            <Patch level="1">patches/suse/fs-knows-MAY_APPEND.diff</Patch>
-            <Patch level="1">patches/suse/nfs4acl-common.diff</Patch>
-            <Patch level="1">patches/suse/nfs4acl-ext3.diff</Patch>
-            <Patch level="1">patches/suse/nfs4acl-ai.diff</Patch>
-            -->
 
             <!-- fastboot stuff -->
             <Patch level="1">patches/suse/linux-2.6.29-enable-async-by-default.patch</Patch>
