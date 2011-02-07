@@ -1,713 +1,437 @@
-commit 587f0d5d6d44e3529028bf197d424f866fb2411d
-Author: Mauro Carvalho Chehab <mchehab@infradead.org>
-Date:   Wed Dec 15 18:45:42 2010 -0300
+All IR fixups take from:
 
-    [media] bttv: fix mutex use before init (BZ#24602)
-    
-    Fix a regression where bttv driver causes oopses when loading, since it
-    were using some non-initialized mutexes. While it would be possible to
-    fix the issue, there are some other lock troubles, like to the presence of
-    lock code at free_btres_lock().
-    
-    It is possible to fix, but the better is to just use the core-assisted
-    locking schema. This way, V4L2 core will serialize access to all
-    ioctl's/open/close/mmap/read/poll operations, avoiding to have two
-    processes accessing the hardware at the same time. Also, as there's just
-    one lock, instead of 3, there's no risk of dead locks.
-    
-    The net result is a cleaner code, with just one lock.
-    
-    Reported-by: Dan Carpenter <error27@gmail.com>
-    Reported-by: Brandon Philips<brandon@ifup.org>
-    Reported-by: Chris Clayton <chris2553@googlemail.com>
-    Reported-by: Torsten Kaiser <just.for.lkml@googlemail.com>
-    Tested-by: Chris Clayton <chris2553@googlemail.com>
-    Tested-by: Torsten Kaiser <just.for.lkml@googlemail.com>
-    Signed-off-by: Mauro Carvalho Chehab <mchehab@redhat.com>
+http://git.kernel.org/?p=linux/kernel/git/jarod/linux-2.6-ir.git;a=shortlog;h=refs/heads/staging
 
-diff --git a/drivers/media/video/bt8xx/bttv-driver.c b/drivers/media/video/bt8xx/bttv-driver.c
-index 3da6e80..c14b819 100644
---- a/drivers/media/video/bt8xx/bttv-driver.c
-+++ b/drivers/media/video/bt8xx/bttv-driver.c
-@@ -855,7 +855,6 @@ int check_alloc_btres_lock(struct bttv *btv, struct bttv_fh *fh, int bit)
- 		xbits |= RESOURCE_VIDEO_READ | RESOURCE_VIDEO_STREAM;
+Should be in v4l/dvb/rc soon...
+
+
+commit db7e4498b17d9b52c8fddf828bad54454ab130ec
+Author: Jarod Wilson <jarod@redhat.com>
+Date:   Thu Jan 27 13:08:35 2011 -0500
+
+    rc/streamzap: fix reporting response times
+    
+    The streamzap driver has relatively low sampling resolution, and any
+    delays in reporting events seem to cause some minor problems for the
+    likes of irw when using the lirc bridge driver, resulting in a single
+    keypress registering as multiple independent ones, rather than as a
+    single press with repeats. If we call ir_raw_event_handle() more
+    frequently and reset the rawir kfifo at end-of-signal, the behavior
+    improves quite a bit.
+    
+    Signed-off-by: Jarod Wilson <jarod@redhat.com>
+
+commit 583602a0c6cab187b2f3b4c90509bbe2b85f5d51
+Author: Jarod Wilson <jarod@redhat.com>
+Date:   Mon Jan 24 22:06:32 2011 -0500
+
+    mceusb: really fix remaining keybounce issues
+    
+    Make sure rawir struct is zeroed out before populating it for each
+    ir_raw_event_store_with_filter() call, and when we see a trailing 0x80
+    packet (end-of-data), issue an ir_raw_event_reset() call.
+    
+    Signed-off-by: Jarod Wilson <jarod@redhat.com>
+
+commit 8b07e7fe2fa1c763a8f08a179917fdf1a43b479d
+Author: Jarod Wilson <jarod@redhat.com>
+Date:   Thu Jan 20 16:31:18 2011 -0500
+
+    ir-kbd-i2c: improve remote behavior with z8 behind usb
+    
+    Add the same "are you ready?" i2c_master_send() poll command to
+    get_key_haup_xvr found in lirc_zilog, which is apparently seen in
+    the Windows driver for the PVR-150 w/a z8. This stabilizes what is
+    received from both the HD-PVR and HVR-1950, even with their polling
+    intervals at the default of 100, thus the removal of the custom
+    260ms polling_interval in pvrusb2-i2c-core.c.
+    
+    Acked-by: Andy Walls <awalls@md.metrocast.net>
+    Acked-by: Mike Isely <isely@isely.net>
+    Signed-off-by: Jarod Wilson <jarod@redhat.com>
+
+commit aedf7d79cdeaf97d3efc7d667eeb94689bbc6e7d
+Author: Jarod Wilson <jarod@redhat.com>
+Date:   Wed Jan 19 16:49:19 2011 -0500
+
+    lirc_zilog: z8 on usb doesn't like back-to-back i2c_master_send
+    
+    Both the HD-PVR and HVR-1950, driven by the hdpvr and pvrusb2 drivers
+    respectively, have a zilog z8 chip exposed via i2c. These are both
+    usb-connected devices, and on both of them, back-to-back i2c_master_send
+    calls that work fine with a z8 on a pci card fail with a -EIO, as the
+    chip isn't yet ready from the prior command. To cope with that, add a
+    delay and retry loop where necessary.
+    
+    Acked-by: Andy Walls <awalls@md.metrocast.net>
+    Signed-off-by: Jarod Wilson <jarod@redhat.com>
+
+t 2b197149441796e694721db984db9e5ca4656856
+Author: Jarod Wilson <jarod@redhat.com>
+Date:   Wed Jan 19 16:10:14 2011 -0500
+
+    hdpvr: fix up i2c device registration
+    
+    We have to actually call i2c_new_device() once for each of the rx and tx
+    addresses. Also improve error-handling and device remove i2c cleanup.
+    
+    Reviewed-by: Andy Walls <awalls@md.metrocast.net>
+    Signed-off-by: Jarod Wilson <jarod@redhat.com>
+
+commit f2a6849f005fc0da0528ada0c3c79c7572db2898
+Author: Jarod Wilson <jarod@redhat.com>
+Date:   Tue Jan 18 00:33:08 2011 -0500
+
+    rc/ir-lirc-codec: add back debug spew
+    
+    Some occasionally useful debug spew disappeared as part of a feature
+    update a while back, and I'm finding myself in need of it again to help
+    diagnose some issues.
+    
+    Signed-off-by: Jarod Wilson <jarod@redhat.com>
+
+commit 20285f04106a578f6202ba043e0044df614aee05
+Author: Jarod Wilson <jarod@redhat.com>
+Date:   Tue Jan 18 00:27:45 2011 -0500
+
+    rc/mce: add mappings for missing keys
+    
+    Per http://mediacenterguides.com/book/export/html/31 and investigation
+    by Erin, we were missing these last three mappings to complete the mce
+    key table. Lets remedy that.
+    
+    Reported-by: Erin Simonds <fisslefink@gmail.com>
+    Signed-off-by: Jarod Wilson <jarod@redhat.com>
+
+
+
+diff --git a/drivers/media/rc/ir-lirc-codec.c b/drivers/media/rc/ir-lirc-codec.c
+index f011c5d..1c5cc65 100644
+--- a/drivers/media/rc/ir-lirc-codec.c
++++ b/drivers/media/rc/ir-lirc-codec.c
+@@ -1,4 +1,4 @@
+-/* ir-lirc-codec.c - ir-core to classic lirc interface bridge
++/* ir-lirc-codec.c - rc-core to classic lirc interface bridge
+  *
+  * Copyright (C) 2010 by Jarod Wilson <jarod@redhat.com>
+  *
+@@ -47,6 +47,7 @@ static int ir_lirc_decode(struct rc_dev *dev, struct ir_raw_event ev)
+ 	/* Carrier reports */
+ 	if (ev.carrier_report) {
+ 		sample = LIRC_FREQUENCY(ev.carrier);
++		IR_dprintk(2, "carrier report (freq: %d)\n", sample);
  
- 	/* is it free? */
--	mutex_lock(&btv->lock);
- 	if (btv->resources & xbits) {
- 		/* no, someone else uses it */
- 		goto fail;
-@@ -885,11 +884,9 @@ int check_alloc_btres_lock(struct bttv *btv, struct bttv_fh *fh, int bit)
- 	/* it's free, grab it */
- 	fh->resources  |= bit;
- 	btv->resources |= bit;
--	mutex_unlock(&btv->lock);
- 	return 1;
+ 	/* Packet end */
+ 	} else if (ev.timeout) {
+@@ -62,6 +63,7 @@ static int ir_lirc_decode(struct rc_dev *dev, struct ir_raw_event ev)
+ 			return 0;
  
-  fail:
--	mutex_unlock(&btv->lock);
- 	return 0;
- }
+ 		sample = LIRC_TIMEOUT(ev.duration / 1000);
++		IR_dprintk(2, "timeout report (duration: %d)\n", sample);
  
-@@ -941,7 +938,6 @@ void free_btres_lock(struct bttv *btv, struct bttv_fh *fh, int bits)
- 		/* trying to free ressources not allocated by us ... */
- 		printk("bttv: BUG! (btres)\n");
- 	}
--	mutex_lock(&btv->lock);
- 	fh->resources  &= ~bits;
- 	btv->resources &= ~bits;
- 
-@@ -952,8 +948,6 @@ void free_btres_lock(struct bttv *btv, struct bttv_fh *fh, int bits)
- 
- 	if (0 == (bits & VBI_RESOURCES))
- 		disclaim_vbi_lines(btv);
--
--	mutex_unlock(&btv->lock);
- }
- 
- /* ----------------------------------------------------------------------- */
-@@ -1714,28 +1708,20 @@ static int bttv_prepare_buffer(struct videobuf_queue *q,struct bttv *btv,
- 
- 		/* Make sure tvnorm and vbi_end remain consistent
- 		   until we're done. */
--		mutex_lock(&btv->lock);
- 
- 		norm = btv->tvnorm;
- 
- 		/* In this mode capturing always starts at defrect.top
- 		   (default VDELAY), ignoring cropping parameters. */
- 		if (btv->vbi_end > bttv_tvnorms[norm].cropcap.defrect.top) {
--			mutex_unlock(&btv->lock);
- 			return -EINVAL;
- 		}
- 
--		mutex_unlock(&btv->lock);
--
- 		c.rect = bttv_tvnorms[norm].cropcap.defrect;
+ 	/* Normal sample */
  	} else {
--		mutex_lock(&btv->lock);
--
- 		norm = btv->tvnorm;
- 		c = btv->crop[!!fh->do_crop];
+@@ -85,6 +87,8 @@ static int ir_lirc_decode(struct rc_dev *dev, struct ir_raw_event ev)
  
--		mutex_unlock(&btv->lock);
--
- 		if (width < c.min_scaled_width ||
- 		    width > c.max_scaled_width ||
- 		    height < c.min_scaled_height)
-@@ -1859,7 +1845,6 @@ static int bttv_s_std(struct file *file, void *priv, v4l2_std_id *id)
- 	unsigned int i;
- 	int err;
+ 		sample = ev.pulse ? LIRC_PULSE(ev.duration / 1000) :
+ 					LIRC_SPACE(ev.duration / 1000);
++		IR_dprintk(2, "delivering %uus %s to lirc_dev\n",
++			   TO_US(ev.duration), TO_STR(ev.pulse));
+ 	}
  
--	mutex_lock(&btv->lock);
- 	err = v4l2_prio_check(&btv->prio, fh->prio);
- 	if (err)
- 		goto err;
-@@ -1875,7 +1860,6 @@ static int bttv_s_std(struct file *file, void *priv, v4l2_std_id *id)
- 	set_tvnorm(btv, i);
+ 	lirc_buffer_write(dev->raw->lirc.drv->rbuf,
+diff --git a/drivers/media/rc/keymaps/rc-rc6-mce.c b/drivers/media/rc/keymaps/rc-rc6-mce.c
+index 3bf3337..2f5dc06 100644
+--- a/drivers/media/rc/keymaps/rc-rc6-mce.c
++++ b/drivers/media/rc/keymaps/rc-rc6-mce.c
+@@ -3,6 +3,9 @@
+  *
+  * Copyright (c) 2010 by Jarod Wilson <jarod@redhat.com>
+  *
++ * See http://mediacenterguides.com/book/export/html/31 for details on
++ * key mappings.
++ *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2 of the License, or
+@@ -60,6 +63,9 @@ static struct rc_map_table rc6_mce[] = {
+ 	{ 0x800f0426, KEY_EPG },		/* Guide */
+ 	{ 0x800f0427, KEY_ZOOM },		/* Aspect */
  
- err:
--	mutex_unlock(&btv->lock);
++	{ 0x800f0432, KEY_MODE },		/* Visualization */
++	{ 0x800f0433, KEY_PRESENTATION },	/* Slide Show */
++	{ 0x800f0434, KEY_EJECTCD },
+ 	{ 0x800f043a, KEY_BRIGHTNESSUP },
  
- 	return err;
- }
-@@ -1899,7 +1883,6 @@ static int bttv_enum_input(struct file *file, void *priv,
- 	struct bttv *btv = fh->btv;
- 	int rc = 0;
- 
--	mutex_lock(&btv->lock);
- 	if (i->index >= bttv_tvcards[btv->c.type].video_inputs) {
- 		rc = -EINVAL;
- 		goto err;
-@@ -1929,7 +1912,6 @@ static int bttv_enum_input(struct file *file, void *priv,
- 	i->std = BTTV_NORMS;
- 
- err:
--	mutex_unlock(&btv->lock);
- 
- 	return rc;
- }
-@@ -1939,9 +1921,7 @@ static int bttv_g_input(struct file *file, void *priv, unsigned int *i)
- 	struct bttv_fh *fh = priv;
- 	struct bttv *btv = fh->btv;
- 
--	mutex_lock(&btv->lock);
- 	*i = btv->input;
--	mutex_unlock(&btv->lock);
- 
- 	return 0;
- }
-@@ -1953,7 +1933,6 @@ static int bttv_s_input(struct file *file, void *priv, unsigned int i)
- 
- 	int err;
- 
--	mutex_lock(&btv->lock);
- 	err = v4l2_prio_check(&btv->prio, fh->prio);
- 	if (unlikely(err))
- 		goto err;
-@@ -1966,7 +1945,6 @@ static int bttv_s_input(struct file *file, void *priv, unsigned int i)
- 	set_input(btv, i, btv->tvnorm);
- 
- err:
--	mutex_unlock(&btv->lock);
- 	return 0;
- }
- 
-@@ -1980,7 +1958,6 @@ static int bttv_s_tuner(struct file *file, void *priv,
- 	if (unlikely(0 != t->index))
- 		return -EINVAL;
- 
--	mutex_lock(&btv->lock);
- 	if (unlikely(btv->tuner_type == TUNER_ABSENT)) {
- 		err = -EINVAL;
- 		goto err;
-@@ -1996,7 +1973,6 @@ static int bttv_s_tuner(struct file *file, void *priv,
- 		btv->audio_mode_gpio(btv, t, 1);
- 
- err:
--	mutex_unlock(&btv->lock);
- 
- 	return 0;
- }
-@@ -2007,10 +1983,8 @@ static int bttv_g_frequency(struct file *file, void *priv,
- 	struct bttv_fh *fh  = priv;
- 	struct bttv *btv = fh->btv;
- 
--	mutex_lock(&btv->lock);
- 	f->type = btv->radio_user ? V4L2_TUNER_RADIO : V4L2_TUNER_ANALOG_TV;
- 	f->frequency = btv->freq;
--	mutex_unlock(&btv->lock);
- 
- 	return 0;
- }
-@@ -2025,7 +1999,6 @@ static int bttv_s_frequency(struct file *file, void *priv,
- 	if (unlikely(f->tuner != 0))
- 		return -EINVAL;
- 
--	mutex_lock(&btv->lock);
- 	err = v4l2_prio_check(&btv->prio, fh->prio);
- 	if (unlikely(err))
- 		goto err;
-@@ -2040,7 +2013,6 @@ static int bttv_s_frequency(struct file *file, void *priv,
- 	if (btv->has_matchbox && btv->radio_user)
- 		tea5757_set_freq(btv, btv->freq);
- err:
--	mutex_unlock(&btv->lock);
- 
- 	return 0;
- }
-@@ -2173,7 +2145,6 @@ limit_scaled_size_lock       (struct bttv_fh *               fh,
- 
- 	/* Make sure tvnorm, vbi_end and the current cropping parameters
- 	   remain consistent until we're done. */
--	mutex_lock(&btv->lock);
- 
- 	b = &bttv_tvnorms[btv->tvnorm].cropcap.bounds;
- 
-@@ -2251,7 +2222,6 @@ limit_scaled_size_lock       (struct bttv_fh *               fh,
- 	rc = 0; /* success */
- 
-  fail:
--	mutex_unlock(&btv->lock);
- 
- 	return rc;
- }
-@@ -2283,9 +2253,7 @@ verify_window_lock		(struct bttv_fh *               fh,
- 	if (V4L2_FIELD_ANY == field) {
- 		__s32 height2;
- 
--		mutex_lock(&fh->btv->lock);
- 		height2 = fh->btv->crop[!!fh->do_crop].rect.height >> 1;
--		mutex_unlock(&fh->btv->lock);
- 		field = (win->w.height > height2)
- 			? V4L2_FIELD_INTERLACED
- 			: V4L2_FIELD_TOP;
-@@ -2361,7 +2329,6 @@ static int setup_window_lock(struct bttv_fh *fh, struct bttv *btv,
+ 	{ 0x800f0446, KEY_TV },
+diff --git a/drivers/media/rc/mceusb.c b/drivers/media/rc/mceusb.c
+index 079353e..cf763fb 100644
+--- a/drivers/media/rc/mceusb.c
++++ b/drivers/media/rc/mceusb.c
+@@ -855,6 +855,7 @@ static void mceusb_process_ir_data(struct mceusb_dev *ir, int buf_len)
+ 			break;
+ 		case PARSE_IRDATA:
+ 			ir->rem--;
++			init_ir_raw_event(&rawir);
+ 			rawir.pulse = ((ir->buf_in[i] & MCE_PULSE_BIT) != 0);
+ 			rawir.duration = (ir->buf_in[i] & MCE_PULSE_MASK)
+ 					 * MS_TO_US(MCE_TIME_UNIT);
+@@ -883,6 +884,8 @@ static void mceusb_process_ir_data(struct mceusb_dev *ir, int buf_len)
+ 					     i, ir->rem + 1, false);
+ 			if (ir->rem)
+ 				ir->parser_state = PARSE_IRDATA;
++			else
++				ir_raw_event_reset(ir->rc);
+ 			break;
  		}
- 	}
  
--	mutex_lock(&fh->cap.vb_lock);
- 	/* clip against screen */
- 	if (NULL != btv->fbuf.base)
- 		n = btcx_screen_clips(btv->fbuf.fmt.width, btv->fbuf.fmt.height,
-@@ -2413,7 +2380,6 @@ static int setup_window_lock(struct bttv_fh *fh, struct bttv *btv,
- 		bttv_overlay_risc(btv, &fh->ov, fh->ovfmt, new);
- 		retval = bttv_switch_overlay(btv,fh,new);
- 	}
--	mutex_unlock(&fh->cap.vb_lock);
- 	return retval;
- }
- 
-@@ -2527,9 +2493,7 @@ static int bttv_try_fmt_vid_cap(struct file *file, void *priv,
- 	if (V4L2_FIELD_ANY == field) {
- 		__s32 height2;
- 
--		mutex_lock(&btv->lock);
- 		height2 = btv->crop[!!fh->do_crop].rect.height >> 1;
--		mutex_unlock(&btv->lock);
- 		field = (f->fmt.pix.height > height2)
- 			? V4L2_FIELD_INTERLACED
- 			: V4L2_FIELD_BOTTOM;
-@@ -2615,7 +2579,6 @@ static int bttv_s_fmt_vid_cap(struct file *file, void *priv,
- 	fmt = format_by_fourcc(f->fmt.pix.pixelformat);
- 
- 	/* update our state informations */
--	mutex_lock(&fh->cap.vb_lock);
- 	fh->fmt              = fmt;
- 	fh->cap.field        = f->fmt.pix.field;
- 	fh->cap.last         = V4L2_FIELD_NONE;
-@@ -2624,7 +2587,6 @@ static int bttv_s_fmt_vid_cap(struct file *file, void *priv,
- 	btv->init.fmt        = fmt;
- 	btv->init.width      = f->fmt.pix.width;
- 	btv->init.height     = f->fmt.pix.height;
--	mutex_unlock(&fh->cap.vb_lock);
- 
- 	return 0;
- }
-@@ -2650,11 +2612,9 @@ static int vidiocgmbuf(struct file *file, void *priv, struct video_mbuf *mbuf)
- 	unsigned int i;
- 	struct bttv_fh *fh = priv;
- 
--	mutex_lock(&fh->cap.vb_lock);
- 	retval = __videobuf_mmap_setup(&fh->cap, gbuffers, gbufsize,
- 				     V4L2_MEMORY_MMAP);
+diff --git a/drivers/media/video/hdpvr/hdpvr-core.c b/drivers/media/video/hdpvr/hdpvr-core.c
+index a6572e5..a27d93b 100644
+--- a/drivers/media/video/hdpvr/hdpvr-core.c
++++ b/drivers/media/video/hdpvr/hdpvr-core.c
+@@ -283,6 +283,7 @@ static int hdpvr_probe(struct usb_interface *interface,
+ 	struct hdpvr_device *dev;
+ 	struct usb_host_interface *iface_desc;
+ 	struct usb_endpoint_descriptor *endpoint;
++	struct i2c_client *client;
+ 	size_t buffer_size;
+ 	int i;
+ 	int retval = -ENOMEM;
+@@ -381,13 +382,21 @@ static int hdpvr_probe(struct usb_interface *interface,
+ #if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
+ 	retval = hdpvr_register_i2c_adapter(dev);
  	if (retval < 0) {
--		mutex_unlock(&fh->cap.vb_lock);
- 		return retval;
+-		v4l2_err(&dev->v4l2_dev, "registering i2c adapter failed\n");
++		v4l2_err(&dev->v4l2_dev, "i2c adapter register failed\n");
+ 		goto error;
  	}
  
-@@ -2666,7 +2626,6 @@ static int vidiocgmbuf(struct file *file, void *priv, struct video_mbuf *mbuf)
- 	for (i = 0; i < gbuffers; i++)
- 		mbuf->offsets[i] = i * gbufsize;
- 
--	mutex_unlock(&fh->cap.vb_lock);
- 	return 0;
- }
+-	retval = hdpvr_register_i2c_ir(dev);
+-	if (retval < 0)
+-		v4l2_err(&dev->v4l2_dev, "registering i2c IR devices failed\n");
++	client = hdpvr_register_ir_rx_i2c(dev);
++	if (!client) {
++		v4l2_err(&dev->v4l2_dev, "i2c IR RX device register failed\n");
++		goto reg_fail;
++	}
++
++	client = hdpvr_register_ir_tx_i2c(dev);
++	if (!client) {
++		v4l2_err(&dev->v4l2_dev, "i2c IR TX device register failed\n");
++		goto reg_fail;
++	}
  #endif
-@@ -2776,10 +2735,8 @@ static int bttv_overlay(struct file *file, void *f, unsigned int on)
- 	int retval = 0;
  
- 	if (on) {
--		mutex_lock(&fh->cap.vb_lock);
- 		/* verify args */
- 		if (unlikely(!btv->fbuf.base)) {
--			mutex_unlock(&fh->cap.vb_lock);
- 			return -EINVAL;
- 		}
- 		if (unlikely(!fh->ov.setup_ok)) {
-@@ -2788,13 +2745,11 @@ static int bttv_overlay(struct file *file, void *f, unsigned int on)
- 		}
- 		if (retval)
- 			return retval;
--		mutex_unlock(&fh->cap.vb_lock);
- 	}
- 
- 	if (!check_alloc_btres_lock(btv, fh, RESOURCE_OVERLAY))
- 		return -EBUSY;
- 
--	mutex_lock(&fh->cap.vb_lock);
- 	if (on) {
- 		fh->ov.tvnorm = btv->tvnorm;
- 		new = videobuf_sg_alloc(sizeof(*new));
-@@ -2806,7 +2761,6 @@ static int bttv_overlay(struct file *file, void *f, unsigned int on)
- 
- 	/* switch over */
- 	retval = bttv_switch_overlay(btv, fh, new);
--	mutex_unlock(&fh->cap.vb_lock);
- 	return retval;
- }
- 
-@@ -2845,7 +2799,6 @@ static int bttv_s_fbuf(struct file *file, void *f,
- 	}
- 
- 	/* ok, accept it */
--	mutex_lock(&fh->cap.vb_lock);
- 	btv->fbuf.base       = fb->base;
- 	btv->fbuf.fmt.width  = fb->fmt.width;
- 	btv->fbuf.fmt.height = fb->fmt.height;
-@@ -2877,7 +2830,6 @@ static int bttv_s_fbuf(struct file *file, void *f,
- 			retval = bttv_switch_overlay(btv, fh, new);
- 		}
- 	}
--	mutex_unlock(&fh->cap.vb_lock);
- 	return retval;
- }
- 
-@@ -2956,7 +2908,6 @@ static int bttv_queryctrl(struct file *file, void *priv,
- 	     c->id >= V4L2_CID_PRIVATE_LASTP1))
- 		return -EINVAL;
- 
--	mutex_lock(&btv->lock);
- 	if (!btv->volume_gpio && (c->id == V4L2_CID_AUDIO_VOLUME))
- 		*c = no_ctl;
- 	else {
-@@ -2964,7 +2915,6 @@ static int bttv_queryctrl(struct file *file, void *priv,
- 
- 		*c = (NULL != ctrl) ? *ctrl : no_ctl;
- 	}
--	mutex_unlock(&btv->lock);
- 
+ 	/* let the user know what node this device is now attached to */
+@@ -395,6 +404,10 @@ static int hdpvr_probe(struct usb_interface *interface,
+ 		  video_device_node_name(dev->video_dev));
  	return 0;
- }
-@@ -2975,10 +2925,8 @@ static int bttv_g_parm(struct file *file, void *f,
- 	struct bttv_fh *fh = f;
- 	struct bttv *btv = fh->btv;
  
--	mutex_lock(&btv->lock);
- 	v4l2_video_std_frame_period(bttv_tvnorms[btv->tvnorm].v4l2_id,
- 				    &parm->parm.capture.timeperframe);
--	mutex_unlock(&btv->lock);
- 
- 	return 0;
- }
-@@ -2994,7 +2942,6 @@ static int bttv_g_tuner(struct file *file, void *priv,
- 	if (0 != t->index)
- 		return -EINVAL;
- 
--	mutex_lock(&btv->lock);
- 	t->rxsubchans = V4L2_TUNER_SUB_MONO;
- 	bttv_call_all(btv, tuner, g_tuner, t);
- 	strcpy(t->name, "Television");
-@@ -3006,7 +2953,6 @@ static int bttv_g_tuner(struct file *file, void *priv,
- 	if (btv->audio_mode_gpio)
- 		btv->audio_mode_gpio(btv, t, 0);
- 
--	mutex_unlock(&btv->lock);
- 	return 0;
- }
- 
-@@ -3015,9 +2961,7 @@ static int bttv_g_priority(struct file *file, void *f, enum v4l2_priority *p)
- 	struct bttv_fh *fh = f;
- 	struct bttv *btv = fh->btv;
- 
--	mutex_lock(&btv->lock);
- 	*p = v4l2_prio_max(&btv->prio);
--	mutex_unlock(&btv->lock);
- 
- 	return 0;
- }
-@@ -3029,9 +2973,7 @@ static int bttv_s_priority(struct file *file, void *f,
- 	struct bttv *btv = fh->btv;
- 	int	rc;
- 
--	mutex_lock(&btv->lock);
- 	rc = v4l2_prio_change(&btv->prio, &fh->prio, prio);
--	mutex_unlock(&btv->lock);
- 
- 	return rc;
- }
-@@ -3046,9 +2988,7 @@ static int bttv_cropcap(struct file *file, void *priv,
- 	    cap->type != V4L2_BUF_TYPE_VIDEO_OVERLAY)
- 		return -EINVAL;
- 
--	mutex_lock(&btv->lock);
- 	*cap = bttv_tvnorms[btv->tvnorm].cropcap;
--	mutex_unlock(&btv->lock);
- 
- 	return 0;
- }
-@@ -3066,9 +3006,7 @@ static int bttv_g_crop(struct file *file, void *f, struct v4l2_crop *crop)
- 	   inconsistent with fh->width or fh->height and apps
- 	   do not expect a change here. */
- 
--	mutex_lock(&btv->lock);
- 	crop->c = btv->crop[!!fh->do_crop].rect;
--	mutex_unlock(&btv->lock);
- 
- 	return 0;
- }
-@@ -3092,17 +3030,14 @@ static int bttv_s_crop(struct file *file, void *f, struct v4l2_crop *crop)
- 	/* Make sure tvnorm, vbi_end and the current cropping
- 	   parameters remain consistent until we're done. Note
- 	   read() may change vbi_end in check_alloc_btres_lock(). */
--	mutex_lock(&btv->lock);
- 	retval = v4l2_prio_check(&btv->prio, fh->prio);
- 	if (0 != retval) {
--		mutex_unlock(&btv->lock);
- 		return retval;
- 	}
- 
- 	retval = -EBUSY;
- 
- 	if (locked_btres(fh->btv, VIDEO_RESOURCES)) {
--		mutex_unlock(&btv->lock);
- 		return retval;
- 	}
- 
-@@ -3114,7 +3049,6 @@ static int bttv_s_crop(struct file *file, void *f, struct v4l2_crop *crop)
- 
- 	b_top = max(b->top, btv->vbi_end);
- 	if (b_top + 32 >= b_bottom) {
--		mutex_unlock(&btv->lock);
- 		return retval;
- 	}
- 
-@@ -3137,12 +3071,8 @@ static int bttv_s_crop(struct file *file, void *f, struct v4l2_crop *crop)
- 
- 	btv->crop[1] = c;
- 
--	mutex_unlock(&btv->lock);
--
- 	fh->do_crop = 1;
- 
--	mutex_lock(&fh->cap.vb_lock);
--
- 	if (fh->width < c.min_scaled_width) {
- 		fh->width = c.min_scaled_width;
- 		btv->init.width = c.min_scaled_width;
-@@ -3159,8 +3089,6 @@ static int bttv_s_crop(struct file *file, void *f, struct v4l2_crop *crop)
- 		btv->init.height = c.max_scaled_height;
- 	}
- 
--	mutex_unlock(&fh->cap.vb_lock);
--
- 	return 0;
- }
- 
-@@ -3228,7 +3156,6 @@ static unsigned int bttv_poll(struct file *file, poll_table *wait)
- 		return videobuf_poll_stream(file, &fh->vbi, wait);
- 	}
- 
--	mutex_lock(&fh->cap.vb_lock);
- 	if (check_btres(fh,RESOURCE_VIDEO_STREAM)) {
- 		/* streaming capture */
- 		if (list_empty(&fh->cap.stream))
-@@ -3263,7 +3190,6 @@ static unsigned int bttv_poll(struct file *file, poll_table *wait)
- 	else
- 		rc = 0;
- err:
--	mutex_unlock(&fh->cap.vb_lock);
- 	return rc;
- }
- 
-@@ -3303,14 +3229,11 @@ static int bttv_open(struct file *file)
- 	 * Let's first copy btv->init at fh, holding cap.vb_lock, and then work
- 	 * with the rest of init, holding btv->lock.
- 	 */
--	mutex_lock(&fh->cap.vb_lock);
- 	*fh = btv->init;
--	mutex_unlock(&fh->cap.vb_lock);
- 
- 	fh->type = type;
- 	fh->ov.setup_ok = 0;
- 
--	mutex_lock(&btv->lock);
- 	v4l2_prio_open(&btv->prio, &fh->prio);
- 
- 	videobuf_queue_sg_init(&fh->cap, &bttv_video_qops,
-@@ -3318,13 +3241,13 @@ static int bttv_open(struct file *file)
- 			    V4L2_BUF_TYPE_VIDEO_CAPTURE,
- 			    V4L2_FIELD_INTERLACED,
- 			    sizeof(struct bttv_buffer),
--			    fh, NULL);
-+			    fh, &btv->lock);
- 	videobuf_queue_sg_init(&fh->vbi, &bttv_vbi_qops,
- 			    &btv->c.pci->dev, &btv->s_lock,
- 			    V4L2_BUF_TYPE_VBI_CAPTURE,
- 			    V4L2_FIELD_SEQ_TB,
- 			    sizeof(struct bttv_buffer),
--			    fh, NULL);
-+			    fh, &btv->lock);
- 	set_tvnorm(btv,btv->tvnorm);
- 	set_input(btv, btv->input, btv->tvnorm);
- 
-@@ -3347,7 +3270,6 @@ static int bttv_open(struct file *file)
- 	bttv_vbi_fmt_reset(&fh->vbi_fmt, btv->tvnorm);
- 
- 	bttv_field_count(btv);
--	mutex_unlock(&btv->lock);
- 	return 0;
- }
- 
-@@ -3356,7 +3278,6 @@ static int bttv_release(struct file *file)
- 	struct bttv_fh *fh = file->private_data;
- 	struct bttv *btv = fh->btv;
- 
--	mutex_lock(&btv->lock);
- 	/* turn off overlay */
- 	if (check_btres(fh, RESOURCE_OVERLAY))
- 		bttv_switch_overlay(btv,fh,NULL);
-@@ -3386,10 +3307,8 @@ static int bttv_release(struct file *file)
- 	 * videobuf uses cap.vb_lock - we should avoid holding btv->lock,
- 	 * otherwise we may have dead lock conditions
- 	 */
--	mutex_unlock(&btv->lock);
- 	videobuf_mmap_free(&fh->cap);
- 	videobuf_mmap_free(&fh->vbi);
--	mutex_lock(&btv->lock);
- 	v4l2_prio_close(&btv->prio, fh->prio);
- 	file->private_data = NULL;
- 	kfree(fh);
-@@ -3399,7 +3318,6 @@ static int bttv_release(struct file *file)
- 
- 	if (!btv->users)
- 		audio_mute(btv, 1);
--	mutex_unlock(&btv->lock);
- 
- 	return 0;
- }
-@@ -3503,11 +3421,8 @@ static int radio_open(struct file *file)
- 	if (unlikely(!fh))
- 		return -ENOMEM;
- 	file->private_data = fh;
--	mutex_lock(&fh->cap.vb_lock);
- 	*fh = btv->init;
--	mutex_unlock(&fh->cap.vb_lock);
- 
--	mutex_lock(&btv->lock);
- 	v4l2_prio_open(&btv->prio, &fh->prio);
- 
- 	btv->radio_user++;
-@@ -3515,7 +3430,6 @@ static int radio_open(struct file *file)
- 	bttv_call_all(btv, tuner, s_radio);
- 	audio_input(btv,TVAUDIO_INPUT_RADIO);
- 
--	mutex_unlock(&btv->lock);
- 	return 0;
- }
- 
-@@ -3525,7 +3439,6 @@ static int radio_release(struct file *file)
- 	struct bttv *btv = fh->btv;
- 	struct rds_command cmd;
- 
--	mutex_lock(&btv->lock);
- 	v4l2_prio_close(&btv->prio, fh->prio);
- 	file->private_data = NULL;
- 	kfree(fh);
-@@ -3533,7 +3446,6 @@ static int radio_release(struct file *file)
- 	btv->radio_user--;
- 
- 	bttv_call_all(btv, core, ioctl, RDS_CMD_CLOSE, &cmd);
--	mutex_unlock(&btv->lock);
- 
- 	return 0;
- }
-@@ -3562,7 +3474,6 @@ static int radio_g_tuner(struct file *file, void *priv, struct v4l2_tuner *t)
- 		return -EINVAL;
- 	if (0 != t->index)
- 		return -EINVAL;
--	mutex_lock(&btv->lock);
- 	strcpy(t->name, "Radio");
- 	t->type = V4L2_TUNER_RADIO;
- 
-@@ -3571,8 +3482,6 @@ static int radio_g_tuner(struct file *file, void *priv, struct v4l2_tuner *t)
- 	if (btv->audio_mode_gpio)
- 		btv->audio_mode_gpio(btv, t, 0);
- 
--	mutex_unlock(&btv->lock);
--
- 	return 0;
- }
- 
-@@ -3693,7 +3602,7 @@ static const struct v4l2_file_operations radio_fops =
- 	.open	  = radio_open,
- 	.read     = radio_read,
- 	.release  = radio_release,
--	.ioctl	  = video_ioctl2,
-+	.unlocked_ioctl = video_ioctl2,
- 	.poll     = radio_poll,
- };
- 
-
-
-commit 692e42df12e8427219958468301f3d03ca5f0f0d
-Author: Brandon Philips <brandon@ifup.org>
-Date:   Fri Dec 17 12:58:22 2010 -0300
-
-    [media] bttv: remove unneeded locking comments
-    
-    After Mauro's "bttv: Fix locking issues due to BKL removal code" there
-    are a number of comments that are no longer needed about lock ordering.
-    Remove them.
-    
-    Signed-off-by: Brandon Philips <bphilips@suse.de>
-    Signed-off-by: Mauro Carvalho Chehab <mchehab@redhat.com>
-
-diff --git a/drivers/media/video/bt8xx/bttv-driver.c b/drivers/media/video/bt8xx/bttv-driver.c
-index c14b819..e071b62 100644
---- a/drivers/media/video/bt8xx/bttv-driver.c
-+++ b/drivers/media/video/bt8xx/bttv-driver.c
-@@ -2359,13 +2359,6 @@ static int setup_window_lock(struct bttv_fh *fh, struct bttv *btv,
- 	fh->ov.field    = win->field;
- 	fh->ov.setup_ok = 1;
- 
--	/*
--	 * FIXME: btv is protected by btv->lock mutex, while btv->init
--	 *	  is protected by fh->cap.vb_lock. This seems to open the
--	 *	  possibility for some race situations. Maybe the better would
--	 *	  be to unify those locks or to use another way to store the
--	 *	  init values that will be consumed by videobuf callbacks
--	 */
- 	btv->init.ov.w.width   = win->w.width;
- 	btv->init.ov.w.height  = win->w.height;
- 	btv->init.ov.field     = win->field;
-@@ -3220,15 +3213,6 @@ static int bttv_open(struct file *file)
- 		return -ENOMEM;
- 	file->private_data = fh;
- 
--	/*
--	 * btv is protected by btv->lock mutex, while btv->init and other
--	 * streaming vars are protected by fh->cap.vb_lock. We need to take
--	 * care of both locks to avoid troubles. However, vb_lock is used also
--	 * inside videobuf, without calling buf->lock. So, it is a very bad
--	 * idea to hold both locks at the same time.
--	 * Let's first copy btv->init at fh, holding cap.vb_lock, and then work
--	 * with the rest of init, holding btv->lock.
--	 */
- 	*fh = btv->init;
- 
- 	fh->type = type;
-@@ -3303,10 +3287,6 @@ static int bttv_release(struct file *file)
- 
- 	/* free stuff */
- 
--	/*
--	 * videobuf uses cap.vb_lock - we should avoid holding btv->lock,
--	 * otherwise we may have dead lock conditions
--	 */
- 	videobuf_mmap_free(&fh->cap);
- 	videobuf_mmap_free(&fh->vbi);
- 	v4l2_prio_close(&btv->prio, fh->prio);
-
-
-Initial attempt at possible resolution to the ene_ir probe failure. It was possible
-for the io region and irq valid checks to fail, sending us to the error handling
-paths before calling request_region and request_irq, but with hw_io and irq set to
-zero, which are valid possibilities, and thus we'd call free_irq and/or release_region
-when we shouldn't, thus things go kaboom... Upstream author may sort this out in a
-slightly different manner, but it'll prevent the same problem.
-
---jarod
-
-Index: linux-2.6.35.x86_64/drivers/media/rc/ene_ir.c
-===================================================================
---- linux-2.6.35.x86_64.orig/drivers/media/rc/ene_ir.c
-+++ linux-2.6.35.x86_64/drivers/media/rc/ene_ir.c
-@@ -1004,6 +1004,10 @@ static int ene_probe(struct pnp_dev *pnp
- 	/* validate resources */
- 	error = -ENODEV;
- 
-+	/* init these to -1, as 0 is valid for both */
-+	dev->hw_io = -1;
-+	dev->irq = -1;
-+
- 	if (!pnp_port_valid(pnp_dev, 0) ||
- 	    pnp_port_len(pnp_dev, 0) < ENE_IO_SIZE)
- 		goto error;
-@@ -1076,6 +1076,8 @@ static int ene_probe(struct pnp_dev *pnp
- 		rdev->input_name = "ENE eHome Infrared Remote Transceiver";
- 	}
- 
-+	dev->rdev = rdev;
-+
- 	ene_rx_setup_hw_buffer(dev);
- 	ene_setup_default_settings(dev);
- 	ene_setup_hw_settings(dev);
-@@ -1087,7 +1089,6 @@ static int ene_probe(struct pnp_dev *pnp
- 	if (error < 0)
- 		goto error;
- 
--	dev->rdev = rdev;
- 	ene_notice("driver has been succesfully loaded");
- 	return 0;
++reg_fail:
++#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
++	i2c_del_adapter(&dev->i2c_adapter);
++#endif
  error:
+ 	if (dev) {
+ 		/* Destroy single thread */
+@@ -424,6 +437,9 @@ static void hdpvr_disconnect(struct usb_interface *interface)
+ 	mutex_lock(&dev->io_mutex);
+ 	hdpvr_cancel_queue(dev);
+ 	mutex_unlock(&dev->io_mutex);
++#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
++	i2c_del_adapter(&dev->i2c_adapter);
++#endif
+ 	video_unregister_device(dev->video_dev);
+ 	atomic_dec(&dev_nr);
+ }
+diff --git a/drivers/media/video/hdpvr/hdpvr-i2c.c b/drivers/media/video/hdpvr/hdpvr-i2c.c
+index 89b71fa..e53fa55 100644
+--- a/drivers/media/video/hdpvr/hdpvr-i2c.c
++++ b/drivers/media/video/hdpvr/hdpvr-i2c.c
+@@ -31,26 +31,34 @@
+ #define Z8F0811_IR_RX_I2C_ADDR	0x71
+ 
+ 
+-static struct i2c_board_info hdpvr_i2c_board_info = {
+-	I2C_BOARD_INFO("ir_tx_z8f0811_hdpvr", Z8F0811_IR_TX_I2C_ADDR),
+-	I2C_BOARD_INFO("ir_rx_z8f0811_hdpvr", Z8F0811_IR_RX_I2C_ADDR),
+-};
++struct i2c_client *hdpvr_register_ir_tx_i2c(struct hdpvr_device *dev)
++{
++	struct IR_i2c_init_data *init_data = &dev->ir_i2c_init_data;
++	struct i2c_board_info hdpvr_ir_tx_i2c_board_info = {
++		I2C_BOARD_INFO("ir_tx_z8f0811_hdpvr", Z8F0811_IR_TX_I2C_ADDR),
++	};
++
++	init_data->name = "HD-PVR";
++	hdpvr_ir_tx_i2c_board_info.platform_data = init_data;
+ 
+-int hdpvr_register_i2c_ir(struct hdpvr_device *dev)
++	return i2c_new_device(&dev->i2c_adapter, &hdpvr_ir_tx_i2c_board_info);
++}
++
++struct i2c_client *hdpvr_register_ir_rx_i2c(struct hdpvr_device *dev)
+ {
+-	struct i2c_client *c;
+ 	struct IR_i2c_init_data *init_data = &dev->ir_i2c_init_data;
++	struct i2c_board_info hdpvr_ir_rx_i2c_board_info = {
++		I2C_BOARD_INFO("ir_rx_z8f0811_hdpvr", Z8F0811_IR_RX_I2C_ADDR),
++	};
+ 
+ 	/* Our default information for ir-kbd-i2c.c to use */
+ 	init_data->ir_codes = RC_MAP_HAUPPAUGE_NEW;
+ 	init_data->internal_get_key_func = IR_KBD_GET_KEY_HAUP_XVR;
+ 	init_data->type = RC_TYPE_RC5;
+-	init_data->name = "HD PVR";
+-	hdpvr_i2c_board_info.platform_data = init_data;
+-
+-	c = i2c_new_device(&dev->i2c_adapter, &hdpvr_i2c_board_info);
++	init_data->name = "HD-PVR";
++	hdpvr_ir_rx_i2c_board_info.platform_data = init_data;
+ 
+-	return (c == NULL) ? -ENODEV : 0;
++	return i2c_new_device(&dev->i2c_adapter, &hdpvr_ir_rx_i2c_board_info);
+ }
+ 
+ static int hdpvr_i2c_read(struct hdpvr_device *dev, int bus,
+diff --git a/drivers/media/video/hdpvr/hdpvr.h b/drivers/media/video/hdpvr/hdpvr.h
+index ee74e3b..072f23c 100644
+--- a/drivers/media/video/hdpvr/hdpvr.h
++++ b/drivers/media/video/hdpvr/hdpvr.h
+@@ -313,7 +313,8 @@ int hdpvr_cancel_queue(struct hdpvr_device *dev);
+ /* i2c adapter registration */
+ int hdpvr_register_i2c_adapter(struct hdpvr_device *dev);
+ 
+-int hdpvr_register_i2c_ir(struct hdpvr_device *dev);
++struct i2c_client *hdpvr_register_ir_rx_i2c(struct hdpvr_device *dev);
++struct i2c_client *hdpvr_register_ir_tx_i2c(struct hdpvr_device *dev);
+ 
+ /*========================================================================*/
+ /* buffer management */
+diff --git a/drivers/media/video/ir-kbd-i2c.c b/drivers/media/video/ir-kbd-i2c.c
+index d2b20ad..a221ad6 100644
+--- a/drivers/media/video/ir-kbd-i2c.c
++++ b/drivers/media/video/ir-kbd-i2c.c
+@@ -128,6 +128,19 @@ static int get_key_haup(struct IR_i2c *ir, u32 *ir_key, u32 *ir_raw)
+ 
+ static int get_key_haup_xvr(struct IR_i2c *ir, u32 *ir_key, u32 *ir_raw)
+ {
++	int ret;
++	unsigned char buf[1] = { 0 };
++
++	/*
++	 * This is the same apparent "are you ready?" poll command observed
++	 * watching Windows driver traffic and implemented in lirc_zilog. With
++	 * this added, we get far saner remote behavior with z8 chips on usb
++	 * connected devices, even with the default polling interval of 100ms.
++	 */
++	ret = i2c_master_send(ir->c, buf, 1);
++	if (ret != 1)
++		return (ret < 0) ? ret : -EINVAL;
++
+ 	return get_key_haup_common (ir, ir_key, ir_raw, 6, 3);
+ }
+ 
+diff --git a/drivers/media/video/pvrusb2/pvrusb2-i2c-core.c b/drivers/media/video/pvrusb2/pvrusb2-i2c-core.c
+index ccc8849..451ecd4 100644
+--- a/drivers/media/video/pvrusb2/pvrusb2-i2c-core.c
++++ b/drivers/media/video/pvrusb2/pvrusb2-i2c-core.c
+@@ -597,7 +597,6 @@ static void pvr2_i2c_register_ir(struct pvr2_hdw *hdw)
+ 		init_data->internal_get_key_func = IR_KBD_GET_KEY_HAUP_XVR;
+ 		init_data->type                  = RC_TYPE_RC5;
+ 		init_data->name                  = hdw->hdw_desc->description;
+-		init_data->polling_interval      = 260; /* ms From lirc_zilog */
+ 		/* IR Receiver */
+ 		info.addr          = 0x71;
+ 		info.platform_data = init_data;
+diff --git a/drivers/staging/lirc/lirc_zilog.c b/drivers/staging/lirc/lirc_zilog.c
+index 3fe5f41..0aad0d7 100644
+--- a/drivers/staging/lirc/lirc_zilog.c
++++ b/drivers/staging/lirc/lirc_zilog.c
+@@ -495,7 +495,7 @@ static int send_data_block(struct IR_tx *tx, unsigned char *data_block)
+ /* send boot data to the IR TX device */
+ static int send_boot_data(struct IR_tx *tx)
+ {
+-	int ret;
++	int ret, i;
+ 	unsigned char buf[4];
+ 
+ 	/* send the boot block */
+@@ -503,7 +503,7 @@ static int send_boot_data(struct IR_tx *tx)
+ 	if (ret != 0)
+ 		return ret;
+ 
+-	/* kick it off? */
++	/* Hit the go button to activate the new boot data */
+ 	buf[0] = 0x00;
+ 	buf[1] = 0x20;
+ 	ret = i2c_master_send(tx->c, buf, 2);
+@@ -511,7 +511,19 @@ static int send_boot_data(struct IR_tx *tx)
+ 		zilog_error("i2c_master_send failed with %d\n", ret);
+ 		return ret < 0 ? ret : -EFAULT;
+ 	}
+-	ret = i2c_master_send(tx->c, buf, 1);
++
++	/*
++	 * Wait for zilog to settle after hitting go post boot block upload.
++	 * Without this delay, the HD-PVR and HVR-1950 both return an -EIO
++	 * upon attempting to get firmware revision, and tx probe thus fails.
++	 */
++	for (i = 0; i < 10; i++) {
++		ret = i2c_master_send(tx->c, buf, 1);
++		if (ret == 1)
++			break;
++		udelay(100);
++	}
++
+ 	if (ret != 1) {
+ 		zilog_error("i2c_master_send failed with %d\n", ret);
+ 		return ret < 0 ? ret : -EFAULT;
+@@ -523,8 +535,8 @@ static int send_boot_data(struct IR_tx *tx)
+ 		zilog_error("i2c_master_recv failed with %d\n", ret);
+ 		return 0;
+ 	}
+-	if (buf[0] != 0x80) {
+-		zilog_error("unexpected IR TX response: %02x\n", buf[0]);
++	if ((buf[0] != 0x80) && (buf[0] != 0xa0)) {
++		zilog_error("unexpected IR TX init response: %02x\n", buf[0]);
+ 		return 0;
+ 	}
+ 	zilog_notify("Zilog/Hauppauge IR blaster firmware version "
+@@ -827,7 +839,15 @@ static int send_code(struct IR_tx *tx, unsigned int code, unsigned int key)
+ 		zilog_error("i2c_master_send failed with %d\n", ret);
+ 		return ret < 0 ? ret : -EFAULT;
+ 	}
+-	ret = i2c_master_send(tx->c, buf, 1);
++
++	/* Give the z8 a moment to process data block */
++	for (i = 0; i < 10; i++) {
++		ret = i2c_master_send(tx->c, buf, 1);
++		if (ret == 1)
++			break;
++		udelay(100);
++	}
++
+ 	if (ret != 1) {
+ 		zilog_error("i2c_master_send failed with %d\n", ret);
+ 		return ret < 0 ? ret : -EFAULT;
+diff --git a/drivers/media/rc/streamzap.c b/drivers/media/rc/streamzap.c
+index d9b6b48..e435d94 100644
+--- a/drivers/media/rc/streamzap.c
++++ b/drivers/media/rc/streamzap.c
+@@ -273,6 +273,7 @@ static void streamzap_callback(struct urb *urb)
+ 				if (sz->timeout_enabled)
+ 					sz_push(sz, rawir);
+ 				ir_raw_event_handle(sz->rdev);
++				ir_raw_event_reset(sz->rdev);
+ 			} else {
+ 				sz_push_full_space(sz, sz->buf_in[i]);
+ 			}
+@@ -290,6 +291,7 @@ static void streamzap_callback(struct urb *urb)
+ 		}
+ 	}
+ 
++	ir_raw_event_handle(sz->rdev);
+ 	usb_submit_urb(urb, GFP_ATOMIC);
+ 
+ 	return;
