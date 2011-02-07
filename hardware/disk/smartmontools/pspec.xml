@@ -8,11 +8,15 @@
             <Name>Burak Çalışkan</Name>
             <Email>burakclskn@gmail.com</Email>
         </Packager>
-        <License>GPLv2</License>
+        <License>GPLv2+</License>
         <IsA>app:console</IsA>
         <Summary>Programs to control and monitor storage systems using the Self-Monitoring</Summary>
         <Description>The smartmontools package contains two utility programs (smartctl and smartd) to control and monitor storage systems using the Self-Monitoring, Analysis and Reporting Technology System (SMART) built into most modern ATA and SCSI hard disks.</Description>
-        <Archive sha1sum="90e36f46af7a35336c63868176aa71deef4c9e66" type="targz">mirrors://sourceforge/smartmontools/smartmontools-5.38.tar.gz</Archive>
+        <Archive sha1sum="08a86a939a2e2cd85d2c88c09188d494f06ce050" type="targz">mirrors://sourceforge/smartmontools/smartmontools-5.40.tar.gz</Archive>
+        <Patches>
+            <Patch level="1">smartmontools-5.38-defaultconf.patch</Patch>
+            <Patch level="1">smartmontools-5.40-megaraid.patch</Patch>
+        </Patches>
     </Source>
 
     <Package>
@@ -22,13 +26,24 @@
             <Path fileType="executable">/usr/sbin</Path>
             <Path fileType="doc">/usr/share/doc</Path>
             <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="man">/usr/share/smartmontools</Path>
         </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/conf.d/smartd">smartmontools.sysconf</AdditionalFile>
+        </AdditionalFiles>
        <Provides>
-           <COMAR script="service.py">System.Service</COMAR>
+           <COMAR script="service.py" name="smartd">System.Service</COMAR>
         </Provides>
     </Package>
 
     <History>
+        <Update release="8">
+            <Date>2011-02-07</Date>
+            <Version>5.40</Version>
+            <Comment>Version bump</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="7">
             <Date>2010-10-27</Date>
             <Version>5.38</Version>

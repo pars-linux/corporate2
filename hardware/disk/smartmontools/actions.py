@@ -1,24 +1,28 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*- 
 #
-# Copyright 2005 TUBITAK/UEKAE
+# Copyright 2005-2011 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import autotools
+from pisi.actionsapi import get
 
 def setup():
-    autotools.configure()
+    shelltools.touch("ChangeLog")
+    autotools.autoreconf("-fi")
+    autotools.configure("--with-libcap-ng=yes")
 
 def build():
-    autotools.make()
+    autotools.make("CXXFLAGS='%s -fpie'" % get.CXXFLAGS())
 
 def install():
-    pisitools.dosbin("smartd")
-    pisitools.dosbin("smartctl")
+    autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    pisitools.doman("smartd.8", "smartctl.8", "smartd.conf.5")
-    pisitools.dodoc("AUTHORS","NEWS","README","WARNINGS","smartd.conf")
+    #pisitools.insinto("/etc/", "smartd.conf")
 
-    pisitools.insinto("/etc/", "smartd.conf")
+    pisitools.removeDir("/etc/rc.d")
+
+    pisitools.dodoc("AUTHORS", "NEWS", "README", "WARNINGS", "smartd.conf")
