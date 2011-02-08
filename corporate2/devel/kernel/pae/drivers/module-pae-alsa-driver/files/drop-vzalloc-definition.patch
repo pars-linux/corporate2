@@ -1,0 +1,23 @@
+Index: alsa-driver-1.0.24/include/adriver.h
+===================================================================
+--- alsa-driver-1.0.24.orig/include/adriver.h
++++ alsa-driver-1.0.24/include/adriver.h
+@@ -1922,18 +1922,6 @@ static inline int hex_to_bin(char c)
+ }
+ #endif
+ 
+-/* vzalloc() wrapper */
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
+-#include <linux/vmalloc.h>
+-static inline void *vzalloc(unsigned long size)
+-{
+-	void *p = vmalloc(size);
+-	if (p)
+-		memset(p, 0, size);
+-	return p;
+-}
+-#endif
+-
+ /* flush_delayed_work_sync() wrapper */
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
+ #include <linux/workqueue.h>
