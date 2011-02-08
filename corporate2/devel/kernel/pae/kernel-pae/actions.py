@@ -20,7 +20,7 @@ def setup():
     pisitools.dosed(".config", "CONFIG_HIGHMEM64G is not set", "CONFIG_HIGHMEM4G is not set")
     pisitools.dosed(".config", "CONFIG_HIGHMEM4G=y", "CONFIG_HIGHMEM64G=y")
 
-    kerneltools.updateKConfig()
+    autotools.make("allyesconfig")
 
 def build():
     kerneltools.build(debugSymbols=False)
