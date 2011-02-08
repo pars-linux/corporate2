@@ -1,0 +1,167 @@
+From 2ecb8f3570ecc608ab0649ae970b0f43f08bf7c2 Mon Sep 17 00:00:00 2001
+From: Sebastien Busson <sebastienx.busson@intel.com>
+Date: Fri, 29 Oct 2010 10:12:32 +0200
+Subject: [PATCH 4/6] wl1271 : add platform_data
+
+Set CONFIG_WL12XX_PLATFORM_DATA to yes for mrst.c file to set informations to the wl12xx driver.
+Modified the Makefile to generate a kernel built-in with the wireless modules from compat-wireless.
+
+Signed-off-by: Sebastien Busson <sebastienx.busson@intel.com>
+---
+ drivers/net/wireless/wl12xx/Kconfig                |    5 ++-
+ drivers/net/wireless/wl12xx/Makefile               |    2 +
+ drivers/net/wireless/wl12xx/wl12xx_platform_data.c |   53 ++++++++++++++++++++
+ include/linux/wl12xx.h                             |   51 +++++++++++++++++++
+ 4 files changed, 110 insertions(+), 1 deletions(-)
+ create mode 100644 drivers/net/wireless/wl12xx/wl12xx_platform_data.c
+ create mode 100644 include/linux/wl12xx.h
+
+diff --git a/drivers/net/wireless/wl12xx/Kconfig b/drivers/net/wireless/wl12xx/Kconfig
+index 337fc7b..75c32cb 100644
+--- a/drivers/net/wireless/wl12xx/Kconfig
++++ b/drivers/net/wireless/wl12xx/Kconfig
+@@ -1,6 +1,6 @@
+ menuconfig WL12XX
+ 	tristate "TI wl12xx driver support"
+-	depends on MAC80211 && EXPERIMENTAL
++	depends on EXPERIMENTAL
+ 	---help---
+ 	  This will enable TI wl12xx driver support. The drivers make
+ 	  use of the mac80211 stack.
+@@ -74,4 +74,7 @@ config WL1271_SDIO
+ 	  If you choose to build a module, it'll be called
+ 	  wl1271_sdio. Say N if unsure.
+ 
++config WL12XX_PLATFORM_DATA
++	bool "TI platform data support"
++
+ 
+diff --git a/drivers/net/wireless/wl12xx/Makefile b/drivers/net/wireless/wl12xx/Makefile
+index 27ddd2b..cb9c1ca 100644
+--- a/drivers/net/wireless/wl12xx/Makefile
++++ b/drivers/net/wireless/wl12xx/Makefile
+@@ -16,3 +16,5 @@ wl1271-$(CONFIG_NL80211_TESTMODE)	+= wl1271_testmode.o
+ obj-$(CONFIG_WL1271)	+= wl1271.o
+ obj-$(CONFIG_WL1271_SPI)	+= wl1271_spi.o
+ obj-$(CONFIG_WL1271_SDIO)	+= wl1271_sdio.o
++# small builtin driver bit
++obj-$(CONFIG_WL12XX_PLATFORM_DATA)	+= wl12xx_platform_data.o
+diff --git a/drivers/net/wireless/wl12xx/wl12xx_platform_data.c b/drivers/net/wireless/wl12xx/wl12xx_platform_data.c
+new file mode 100644
+index 0000000..96529df
+--- /dev/null
++++ b/drivers/net/wireless/wl12xx/wl12xx_platform_data.c
+@@ -0,0 +1,53 @@
++/*
++ * This file is part of wl1271
++ *
++ * Copyright (C) 2009-2010 Nokia Corporation
++ *
++ * Contact: Luciano Coelho <luciano.coelho@nokia.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/err.h>
++#include <linux/wl12xx.h>
++#include "wl1271.h"
++
++static const struct wl12xx_platform_data *platform_data;
++
++int __init wl12xx_set_platform_data(const struct wl12xx_platform_data *data)
++{
++	wl1271_notice("wl12xx_set_platform_data");
++	if (platform_data)
++		return -EBUSY;
++	if (!data)
++		return -EINVAL;
++
++	platform_data = kmemdup(data, sizeof(*data), GFP_KERNEL);
++	if (!platform_data)
++		return -ENOMEM;
++
++	return 0;
++}
++const struct wl12xx_platform_data *wl12xx_get_platform_data(void)
++{
++	wl1271_notice("wl12xx_get_platform_data");
++	if (!platform_data)
++		return ERR_PTR(-ENODEV);
++
++	return platform_data;
++}
++EXPORT_SYMBOL(wl12xx_get_platform_data);
+diff --git a/include/linux/wl12xx.h b/include/linux/wl12xx.h
+new file mode 100644
+index 0000000..4f902e1
+--- /dev/null
++++ b/include/linux/wl12xx.h
+@@ -0,0 +1,51 @@
++/*
++ * This file is part of wl12xx
++ *
++ * Copyright (C) 2009 Nokia Corporation
++ *
++ * Contact: Luciano Coelho <luciano.coelho@nokia.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ *
++ */
++
++#ifndef _LINUX_WL12XX_H
++#define _LINUX_WL12XX_H
++
++struct wl12xx_platform_data {
++	void (*set_power)(bool enable);
++	/* SDIO only: IRQ number if WLAN_IRQ line is used, 0 for SDIO IRQs */
++	int irq;
++	bool use_eeprom;
++	int board_ref_clock;
++};
++
++#ifdef CONFIG_WL12XX_PLATFORM_DATA
++
++int wl12xx_set_platform_data(const struct wl12xx_platform_data *data);
++
++#else
++
++static inline
++int wl12xx_set_platform_data(const struct wl12xx_platform_data *data)
++{
++	return -ENOSYS;
++}
++
++#endif
++
++const struct wl12xx_platform_data *wl12xx_get_platform_data(void);
++
++#endif
+-- 
+1.6.2.2
+

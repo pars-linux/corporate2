@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2010 TUBITAK/UEKAE
+# Copyright 2005-2011 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -13,11 +13,8 @@ from pisi.actionsapi import get
 
 NoStrip = ["/lib", "/boot"]
 
-# NOTE: Bump this on ABI/Config changes
-abiVersion = "150"
-
 def setup():
-    kerneltools.configure(abiVersion)
+    kerneltools.configure()
 
     # Enable PAE and update kernel configuration
     pisitools.dosed(".config", "CONFIG_HIGHMEM64G is not set", "CONFIG_HIGHMEM4G is not set")
