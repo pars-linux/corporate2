@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2010 TUBITAK/UEKAE
+# Copyright 2005-2011 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -29,18 +29,19 @@ def setup():
                          --with-sequencer=yes \
                          --with-card-options=all \
                          --disable-verbose-printk \
+                         --enable-dynamic-minors \
                          --with-cards=all" % KDIR)
 
     # Needed for V4L stuff
-    shelltools.sym("%s/alsa-driver/include/config.h" % get.workDIR(), "%s/alsa-driver/sound/include/config.h" % get.workDIR())
-    shelltools.sym("%s/alsa-driver/include/config1.h" % get.workDIR(), "%s/alsa-driver/sound/include/config1.h" % get.workDIR())
+    shelltools.sym("../../include/config.h", "sound/include/config.h")
+    shelltools.sym("../../include/config1.h", "sound/include/config1.h")
 
 def build():
     autotools.make()
 
     # Build v4l drivers
     shelltools.copy("Module.symvers", "v4l/")
-    autotools.make("-C /lib/modules/%s/build M=%s/v4l V=1 modules" % (KDIR, get.curDIR()))
+    autotools.make("-C /lib/modules/%s/build M=%s/v4l modules" % (KDIR, get.curDIR()))
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR(), "install-modules")

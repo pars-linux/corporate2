@@ -13,9 +13,9 @@
         <IsA>driver</IsA>
         <Summary>Advanced Linux Sound Architecture kernel modules</Summary>
         <Description>The Advanced Linux Sound Architecture (ALSA) provides audio and MIDI functionality to the Linux operating system. ALSA has significant features like efficient support for all types of audio interfaces, fully modularized sound drivers, SMP and thread-safe design, user space library and support for the older OSS API.</Description>
-        <Archive sha1sum="5b98976f21bcd49a81aea066f69be82e59b659c5" type="tarbz2">http://kernel.org/pub/linux/kernel/people/tiwai/snapshot/alsa-driver-20110102.tar.bz2</Archive>
+        <Archive sha1sum="df82fc3d5e2a9248f0214a87ad31a9825bcab9bc" type="tarbz2">ftp://ftp.alsa-project.org/pub/driver/alsa-driver-1.0.24.tar.bz2</Archive>
         <BuildDependencies>
-            <Dependency release="150">kernel-module-headers</Dependency>
+            <Dependency version="2.6.35.11">kernel-module-headers</Dependency>
         </BuildDependencies>
         <Patches>
             <!-- Assign the USB audio devices to secondary slots as default, solves some problems mentioned in bugzilla -->
@@ -39,6 +39,9 @@
             <!-- Preallocate 4MB DMA buffer for hda_intel -->
             <Patch level="1">sound-alsa-hda_intel-prealloc-4mb-dmabuffer.patch</Patch>
 
+            <!-- We already got this in kernel with a Fedora patch -->
+            <Patch level="1">drop-vzalloc-definition.patch</Patch>
+
             <!-- Patch v4l TV ALSA drivers
                  Run: sh files/prepare-v4l-alsa-patch.sh /var/pisi/kernel-2.6.x-y/work/linux-2.6.x when
                  switching to a new stable kernel.
@@ -50,12 +53,9 @@
     <Package>
         <Name>module-alsa-driver</Name>
         <RuntimeDependencies>
-            <Dependency release="150">kernel</Dependency>
+            <Dependency version="2.6.35.11">kernel</Dependency>
             <Dependency>module-alsa-driver-userspace</Dependency>
         </RuntimeDependencies>
-        <Replaces>
-            <Package>alsa-driver</Package>
-        </Replaces>
         <Files>
             <Path fileType="library" permanent="true">/lib/modules</Path>
         </Files>
@@ -64,10 +64,6 @@
     <Package>
         <Name>module-alsa-driver-userspace</Name>
         <Summary>Userspace rules and documentations for alsa-driver kernel module</Summary>
-        <Conflicts>
-            <Package releaseTo="46">module-alsa-driver</Package>
-            <Package releaseTo="37">alsa-utils</Package>
-        </Conflicts>
         <Files>
             <Path fileType="doc">/usr/share/doc</Path>
             <Path fileType="executable">/usr/bin/alsa-info</Path>
@@ -83,6 +79,13 @@
     </Package>
 
     <History>
+        <Update release="67">
+            <Date>2011-02-08</Date>
+            <Version>1.0.24</Version>
+            <Comment>Version bump.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="66">
             <Date>2011-01-05</Date>
             <Version>1.0.23_20110102</Version>
