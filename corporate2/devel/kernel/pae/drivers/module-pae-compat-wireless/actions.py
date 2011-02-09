@@ -26,5 +26,3 @@ def build():
 
 def install():
     autotools.install("KLIB=/lib/modules/%s KMODPATH_ARG='INSTALL_MOD_PATH=%s' DEPMOD=/bin/true" % (KDIR, get.installDIR()))
-
-    pisitools.dodoc("COPYRIGHT", "README")
