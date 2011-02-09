@@ -22,5 +22,5 @@ def install():
     autotools.rawInstall("DESTDIR=%s DEPMOD=/bin/true" % get.installDIR())
 
     pisitools.removeDir("/usr")
-    pisitools.removeDir("/lib/udev")
+    pisitools.removeDir("/etc")
 
