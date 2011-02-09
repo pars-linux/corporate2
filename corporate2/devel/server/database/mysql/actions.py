@@ -41,7 +41,7 @@ def setup():
                           -DINSTALL_SUPPORTFILESDIR=share/mysql \
                           -DINSTALL_DOCREADMEDIR=share/mysql \
                           -DMYSQL_DATADIR=/var/lib/mysql \
-                          -DMYSQL_UNIX_ADDR=/var/lib/mysql/mysql.sock \
+                          -DMYSQL_UNIX_ADDR=/var/run/mysqld/mysqld.sock \
                           -DENABLED_LOCAL_INFILE=ON \
                           -DENABLE_DTRACE=OFF \
                           -DWITH_EMBEDDED_SERVER=ON \
