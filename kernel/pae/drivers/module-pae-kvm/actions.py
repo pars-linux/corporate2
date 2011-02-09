@@ -13,13 +13,6 @@ from pisi.actionsapi import get
 WorkDir="kvm-kmod-%s" % get.srcVERSION()
 
 def setup():
-    # Fix PREFIX
-    pisitools.dosed("Makefile", "^PREFIX =.*$", "PREFIX = /usr")
-    pisitools.dosed("Makefile", "etc\/udev", "lib\/udev")
-
-    # GROUP conversion here (kvm->virt)
-    pisitools.dosed("scripts/65-kvm.rules", "GROUP=\"kvm\"", "GROUP=\"virt\"")
-
     autotools.rawConfigure("--kerneldir=/lib/modules/%s/build" % kerneltools.getKernelVersion())
 
 def build():
@@ -27,3 +20,7 @@ def build():
 
 def install():
     autotools.rawInstall("DESTDIR=%s DEPMOD=/bin/true" % get.installDIR())
+
+    pisitools.removeDir("/usr")
+    pisitools.removeDir("/lib/udev")
+
