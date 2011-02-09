@@ -6,9 +6,14 @@
 
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import shelltools
+from pisi.actionsapi import get
 
 def setup():
     autotools.autoreconf("-vif")
+
+    shelltools.export("PLUGIN_CFLAGS" , "%s/plugin/include" % get.srcDIR())
+
     autotools.configure("--disable-static")
 
 def build():
@@ -17,4 +22,5 @@ def build():
 def install():
     autotools.install()
 
+    pisitools.domove("/usr/lib/*.so" ,"/usr/lib/browser-plugins")
     pisitools.dodoc("COPYING", "ChangeLog", "README")
