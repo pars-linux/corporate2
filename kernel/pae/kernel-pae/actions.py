@@ -17,10 +17,9 @@ def setup():
     kerneltools.configure()
 
     # Enable PAE and update kernel configuration
-    pisitools.dosed(".config", "CONFIG_HIGHMEM64G is not set", "CONFIG_HIGHMEM4G is not set")
-    pisitools.dosed(".config", "CONFIG_HIGHMEM4G=y", "CONFIG_HIGHMEM64G=y")
-
-    autotools.make("allyesconfig")
+    # pisitools.dosed(".config", "CONFIG_HIGHMEM64G is not set", "CONFIG_HIGHMEM4G is not set")
+    # pisitools.dosed(".config", "CONFIG_HIGHMEM4G=y", "CONFIG_HIGHMEM64G=y")
+    # autotools.make("oldconfig")
 
 def build():
     kerneltools.build(debugSymbols=False)
