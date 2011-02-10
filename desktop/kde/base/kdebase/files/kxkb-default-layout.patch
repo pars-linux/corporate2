@@ -1,72 +1,187 @@
-Index: kxkb/kxkbconfig.cpp
+Index: kdebase-3.5.10/kxkb/kxkbconfig.cpp
 ===================================================================
---- kxkb/kxkbconfig.cpp	(revision 608060)
-+++ kxkb/kxkbconfig.cpp	(working copy)
-@@ -14,6 +14,7 @@
- #include <qregexp.h>
- #include <qstringlist.h>
- #include <qdict.h>
-+#include <qfile.h>
- 
- #include <kconfig.h>
- #include <kdebug.h>
-@@ -33,12 +34,32 @@
- LayoutUnit KxkbConfig::getDefaultLayout()
- {
- 	if( m_layouts.size() == 0 )
--		return DEFAULT_LAYOUT_UNIT;
--	
-+          {
-+            QString line,layout;
-+            QFile file("/etc/X11/xorg.conf");
-+
-+            if ( file.open( IO_ReadOnly ) ) {
-+              QTextStream stream( &file );
-+              while (!stream.atEnd()) {
-+                line = stream.readLine();
-+                if (line.contains("XkbLayout"))
-+                  {
-+                    layout = line.section("\"",3);
-+                    break;
-+                  }
-+              }
-+            }
-+
-+            if (!layout.isEmpty())
-+              return LayoutUnit(layout, "");
-+            else
-+              return DEFAULT_LAYOUT_UNIT;
-+          }
-+
- 	return m_layouts[0];
- }
- 
--bool KxkbConfig::load(int loadMode) 
-+bool KxkbConfig::load(int loadMode)
- {
- 	KConfig *config = new KConfig("kxkbrc", true, false);
- 	config->setGroup("Layout");
-@@ -62,19 +83,18 @@
- 
- 	m_model = config->readEntry("Model", DEFAULT_MODEL);
- 	kdDebug() << "Model: " << m_model << endl;
--	
-+
- 	QStringList layoutList;
+--- kdebase-3.5.10.orig/kxkb/kxkbconfig.cpp
++++ kdebase-3.5.10/kxkb/kxkbconfig.cpp
+@@ -67,10 +67,8 @@ bool KxkbConfig::load(int loadMode)
  	if( config->hasKey("LayoutList") ) {
  		layoutList = config->readListEntry("LayoutList");
  	}
- 	else { // old config
+-	else { // old config
 -		QString mainLayout = config->readEntry("Layout", DEFAULT_LAYOUT_UNIT.toPair());
-+                QString mainLayout = config->readEntry("Layout", getDefaultLayout().toPair());
- 		layoutList = config->readListEntry("Additional");
-+        layoutList.prepend("us");
- 		layoutList.prepend(mainLayout);
+-		layoutList = config->readListEntry("Additional");
+-		layoutList.prepend(mainLayout);
++	else {
++		layoutList = getCurrentLayouts();
  	}
--	if( layoutList.count() == 0 )
--		layoutList.append("us");
--	
+ 	if( layoutList.count() == 0 )
+ 		layoutList.append("us");
+@@ -257,6 +255,38 @@ void KxkbConfig::setDefaults()
+ 	m_stickySwitchingDepth = 2;
+ }
+ 
++QStringList KxkbConfig::getCurrentLayouts()
++{
++	XkbConfig xkbConfig;
++	QStringList layouts;
++	if( X11Helper::getGroupNames(qt_xdisplay(), &xkbConfig, X11Helper::LAYOUTS_ONLY) ) {
++		for(int i=0; i<xkbConfig.layouts.size(); i++) {
++			QString layout(xkbConfig.layouts[i]);
++			QString variant;
++			if( i<xkbConfig.variants.size() && ! xkbConfig.variants[i].isEmpty() ) {
++				variant = xkbConfig.variants[i];
++			}
++			layouts << LayoutUnit(layout, variant).toPair();
++		}
++		// if there are layouts with same map name add numbers to display name
++//		for(int i=0; i<layouts.length(); i++) {
++//			int n=1;
++//			for(int j=i+1; j<layouts.length(); j++) {
++//				if( layouts[i].layout == layouts[j].layout && layouts[i].getRawDisplayName().isEmpty() ) {
++//					layouts[i].setDisplayName( addNum(layouts[i].layout, 1) );
++//					layouts[j].setDisplayName( addNum(layouts[j].layout, ++n) );
++//					qDebug() << "Adding" << 1 << "to" << layouts[i].toString();
++//					qDebug() << "Adding" << n << "to" << layouts[j].toString();
++//				}
++//			}
++//		}
++	}
++	else {
++		kdDebug() << "Failed to get layout groups from X server" << endl;
++	}
++	return layouts;
++}
 +
- 	m_layouts.clear();
- 	for(QStringList::ConstIterator it = layoutList.begin(); it != layoutList.end() ; ++it) {
- 		m_layouts.append( LayoutUnit(*it) );
+ QStringList KxkbConfig::getLayoutStringList(/*bool compact*/)
+ {
+ 	QStringList layoutList;
+Index: kdebase-3.5.10/kxkb/kxkbconfig.h
+===================================================================
+--- kdebase-3.5.10.orig/kxkb/kxkbconfig.h
++++ kdebase-3.5.10/kxkb/kxkbconfig.h
+@@ -110,6 +110,7 @@ public:
+ 	void save();
+ 	void setDefaults();
+ 	
++	static QStringList getCurrentLayouts();
+ 	QStringList getLayoutStringList(/*bool compact*/);
+ 	static QString getDefaultDisplayName(const QString& code_);
+ 	static QString getDefaultDisplayName(const LayoutUnit& layoutUnit, bool single=false);
+Index: kdebase-3.5.10/kxkb/x11helper.cpp
+===================================================================
+--- kdebase-3.5.10.orig/kxkb/x11helper.cpp
++++ kdebase-3.5.10/kxkb/x11helper.cpp
+@@ -318,3 +318,84 @@ bool X11Helper::areSingleGroupsSupported
+ {
+ 	return true; //TODO:
+ }
++
++bool X11Helper::getGroupNames(Display* display, XkbConfig* xkbConfig, FetchType fetchType)
++{
++	static const char* OPTIONS_SEPARATOR = ",";
++
++	Atom real_prop_type;
++	int fmt;
++	unsigned long nitems, extra_bytes;
++	char *prop_data = NULL;
++	Status ret;
++
++	Atom rules_atom = XInternAtom(display, _XKB_RF_NAMES_PROP_ATOM, False);
++
++	/* no such atom! */
++	if (rules_atom == None) {       /* property cannot exist */
++		kdDebug() << "Failed to fetch layouts from server:" << "could not find the atom" << _XKB_RF_NAMES_PROP_ATOM << endl;
++		return false;
++	}
++
++	ret = XGetWindowProperty(display,
++			DefaultRootWindow(display),
++			rules_atom, 0L, _XKB_RF_NAMES_PROP_MAXLEN,
++			False, XA_STRING, &real_prop_type, &fmt,
++			&nitems, &extra_bytes,
++			(unsigned char **) (void *) &prop_data);
++
++	/* property not found! */
++	if (ret != Success) {
++		kdDebug() << "Failed to fetch layouts from server:" << "Could not get the property" << endl;
++		return false;
++	}
++
++	/* has to be array of strings */
++	if ((extra_bytes > 0) || (real_prop_type != XA_STRING) || (fmt != 8)) {
++		if (prop_data)
++			XFree(prop_data);
++		kdDebug() << "Failed to fetch layouts from server:" << "Wrong property format" << endl;
++		return false;
++	}
++
++//	qDebug() << "prop_data:" << nitems << prop_data;
++	QStringList names;
++	for(char* p=prop_data; p-prop_data < (long)nitems && p != NULL; p += strlen(p)+1) {
++		names.append( p );
++//		qDebug() << " " << p;
++	}
++
++	if( names.count() < 4 ) { //{ rules, model, layouts, variants, options }
++		XFree(prop_data);
++		return false;
++	}
++
++	if( fetchType == ALL || fetchType == LAYOUTS_ONLY ) {
++		QStringList layouts = QStringList::split(OPTIONS_SEPARATOR, names[2]);
++		QStringList variants = QStringList::split(OPTIONS_SEPARATOR, names[3]);
++
++		for(int ii=0; ii<layouts.count(); ii++) {
++			xkbConfig->layouts << (layouts[ii] != NULL ? layouts[ii] : "");
++			xkbConfig->variants << (ii < variants.count() && variants[ii] != NULL ? variants[ii] : "");
++		}
++		kdDebug() << "Fetched layout groups from X server:"
++				<< "\tlayouts:" << xkbConfig->layouts
++				<< "\tvariants:" << xkbConfig->variants << endl;
++	}
++
++	if( fetchType == ALL || fetchType == MODEL_ONLY ) {
++		xkbConfig->keyboardModel = (names[1] != NULL ? names[1] : "");
++		kdDebug() << "Fetched keyboard model from X server:" << xkbConfig->keyboardModel << endl;
++	}
++
++	if( fetchType == ALL ) {
++		if( names.count() >= 5 ) {
++			QString options = (names[4] != NULL ? names[4] : "");
++			xkbConfig->options = QStringList::split(OPTIONS_SEPARATOR, options);
++			kdDebug() << "Fetched xkbOptions from X server:" << options << endl;
++		}
++	}
++
++	XFree(prop_data);
++	return true;
++}
+Index: kdebase-3.5.10/kxkb/x11helper.h
+===================================================================
+--- kdebase-3.5.10.orig/kxkb/x11helper.h
++++ kdebase-3.5.10/kxkb/x11helper.h
+@@ -16,6 +16,15 @@ struct OldLayouts {
+ 	QStringList nonLatinLayouts;
+ };
+ 
++struct XkbConfig {
++	QString keyboardModel;
++	QStringList layouts;
++	QStringList variants;
++	QStringList options;
++
++	bool isValid() { return ! layouts.empty(); }
++};
++
+ class X11Helper
+ {
+ 	static bool m_layoutsClean;
+@@ -36,6 +45,9 @@ public:
+ 	
+ 	static bool areLayoutsClean() { return m_layoutsClean; }
+ 	static bool areSingleGroupsSupported();
++
++	enum FetchType { ALL, LAYOUTS_ONLY, MODEL_ONLY };
++	static bool getGroupNames(Display* dpy, XkbConfig* xkbConfig, FetchType fetchType);
+ };
+ 
+ #endif /*X11HELPER_H_*/
