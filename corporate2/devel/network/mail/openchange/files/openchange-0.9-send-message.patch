@@ -1,0 +1,61 @@
+diff -up openchange-0.9-COCHRANE/libmapi/IMessage.c.send-message openchange-0.9-COCHRANE/libmapi/IMessage.c
+--- openchange-0.9-COCHRANE/libmapi/IMessage.c.send-message	2009-12-24 14:11:15.000000000 +0100
++++ openchange-0.9-COCHRANE/libmapi/IMessage.c	2011-02-01 09:20:27.532718002 +0100
+@@ -728,9 +728,8 @@ _PUBLIC_ enum MAPISTATUS ModifyRecipient
+ 	 * append here property tags that can be fetched with
+ 	 * ResolveNames but shouldn't be included in ModifyRecipients rows
+ 	 */
+-	request.properties = get_MAPITAGS_SRow(mem_ctx, &SRowSet->aRow[0]);
+-	count = SRowSet->aRow[0].cValues - 1;
+- 	request.prop_count = MAPITAGS_delete_entries(request.properties, count, 17,
++	request.properties = get_MAPITAGS_SRow(mem_ctx, &SRowSet->aRow[0], &count);
++ 	request.prop_count = MAPITAGS_delete_entries(request.properties, count, 19,
+ 						     PR_ENTRYID,
+ 						     PR_DISPLAY_NAME,
+ 						     PR_DISPLAY_NAME_UNICODE,
+@@ -747,7 +746,9 @@ _PUBLIC_ enum MAPISTATUS ModifyRecipient
+ 						     PR_ADDRTYPE_UNICODE,
+ 						     PR_ADDRTYPE_ERROR,
+ 						     PR_SEND_INTERNET_ENCODING,
+-						     PR_SEND_INTERNET_ENCODING_ERROR);
++						     PR_SEND_INTERNET_ENCODING_ERROR,
++						     PR_SEND_RICH_INFO,
++						     PR_SEND_RICH_INFO_ERROR);
+ 	size += request.prop_count * sizeof(uint32_t);
+ 	request.cValues = SRowSet->cRows;
+ 	size += sizeof(uint16_t);
+diff -up openchange-0.9-COCHRANE/libmapi/property.c.send-message openchange-0.9-COCHRANE/libmapi/property.c
+--- openchange-0.9-COCHRANE/libmapi/property.c.send-message	2011-02-01 09:20:27.197718022 +0100
++++ openchange-0.9-COCHRANE/libmapi/property.c	2011-02-01 09:20:27.479717995 +0100
+@@ -184,7 +184,9 @@ _PUBLIC_ const void *get_SPropValue_SRow
+   Create a MAPITAGS array from a SRow entry
+  */
+ 
+-enum MAPITAGS *get_MAPITAGS_SRow(TALLOC_CTX *mem_ctx, struct SRow *aRow)
++enum MAPITAGS *get_MAPITAGS_SRow(TALLOC_CTX *mem_ctx, 
++				 struct SRow *aRow, 
++				 uint32_t *actual_count)
+ {
+ 	enum MAPITAGS	*mapitags;
+ 	uint32_t	count, idx;
+@@ -198,6 +200,8 @@ enum MAPITAGS *get_MAPITAGS_SRow(TALLOC_
+ 		}
+ 	}
+ 	mapitags[idx] = 0;
++	*actual_count = idx;
++
+ 	return mapitags;
+ }
+ 
+diff -up openchange-0.9-COCHRANE/libmapi/proto_private.h.send-message openchange-0.9-COCHRANE/libmapi/proto_private.h
+--- openchange-0.9-COCHRANE/libmapi/proto_private.h.send-message	2009-12-24 14:33:01.000000000 +0100
++++ openchange-0.9-COCHRANE/libmapi/proto_private.h	2011-02-01 09:21:16.768717997 +0100
+@@ -89,7 +89,7 @@ enum MAPISTATUS mapi_object_bookmark_fin
+ 
+ /* The following definitions come from libmapi/property.c  */
+ 
+-enum MAPITAGS *get_MAPITAGS_SRow(TALLOC_CTX *, struct SRow *);
++enum MAPITAGS *get_MAPITAGS_SRow(TALLOC_CTX *, struct SRow *, uint32_t *);
+ uint32_t MAPITAGS_delete_entries(enum MAPITAGS *, uint32_t, uint32_t, ...);
+ 
+ /* The following definitions come from libmapi/IABContainer.c  */

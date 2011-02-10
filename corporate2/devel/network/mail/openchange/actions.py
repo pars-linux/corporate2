@@ -19,8 +19,10 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    libs = ["libmapi", "libmapiadmin", "libmapiproxy", "libmapiserver", "libmapistore", "libocpf"]
+    # zarafa's libmapi conflicts with this
+    pisitools.dosym("libmapi-openchange.so.0.9", "/usr/lib/libmapi-openchange.so.0")
 
+    libs = ["libmapiadmin", "libmapiproxy", "libmapiserver", "libmapistore", "libocpf"]
     for i in libs:
         pisitools.dosym("%s.so.0.9" % i, "/usr/lib/%s.so.0" % i)
 
