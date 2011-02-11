@@ -1,0 +1,37 @@
+diff -Nur qt-x11-free-3.3.8b-old//src/kernel/qjpegio.cpp qt-x11-free-3.3.8b/src/kernel/qjpegio.cpp
+--- qt-x11-free-3.3.8b-old//src/kernel/qjpegio.cpp	2011-02-10 21:46:06.903000404 +0200
++++ qt-x11-free-3.3.8b/src/kernel/qjpegio.cpp	2011-02-10 21:46:18.113000419 +0200
+@@ -291,6 +291,15 @@
+ 			    out[sWidth * i / cinfo.output_width] = qRgb( in[0], in[1], in[2] );
+ 			    in += 3;
+ 			}
++		    } else if ( cinfo.out_color_space == JCS_CMYK ) {
++
++			uchar *in = inLines[0];
++			QRgb *out = (QRgb*)outLines[outputLine];
++			for (uint i=0; i<cinfo.output_width; i++ ) {
++				int k = in[3];
++				out[sWidth * i / cinfo.output_width] = qRgb(k * in[0] / 255, k * in[1] / 255, k * in[2] / 255);
++				in += 4;
++			}
+ 		    } else {
+ // ### Need to test the case where the jpeg is grayscale, need some black and white jpegs to test
+ // this code. (also only scales down and probably won't scale to a larger size)
+@@ -338,6 +347,17 @@
+ 			    out[i] = qRgb(in[0], in[1], in[2]);
+ 			}
+ 		    }
++		} else if (cinfo.out_color_space == JCS_CMYK) {
++		    for (uint j=0; j<cinfo.output_height; j++) {
++			uchar *in = image.scanLine(j) + cinfo.output_width * 4;
++			QRgb *out = (QRgb*)image.scanLine(j);
++
++			for (uint i=cinfo.output_width; i--; ) {
++				int k = in[3];
++			    in-=4;
++			    out[i] = qRgb(k * in[0] / 255, k * in[1] / 255, k * in[2] / 255);
++			}
++		    }
+ 		}
+ 	    }
+         }
