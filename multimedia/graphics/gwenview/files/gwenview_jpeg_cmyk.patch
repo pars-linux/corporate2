@@ -1,0 +1,53 @@
+diff -Nur gwenview-1.4.2-old//src/gvcore/jpegformattype.cpp gwenview-1.4.2/src/gvcore/jpegformattype.cpp
+--- gwenview-1.4.2-old//src/gvcore/jpegformattype.cpp	2011-02-10 20:06:16.126000400 +0200
++++ gwenview-1.4.2/src/gvcore/jpegformattype.cpp	2011-02-10 21:25:39.376000404 +0200
+@@ -308,6 +308,10 @@
+ 			mDecompress.out_color_space = JCS_RGB;
+ 		}
+ 
++		if (mDecompress.jpeg_color_space == JCS_YCCK) {
++			mDecompress.out_color_space = JCS_CMYK;
++		}
++
+ 		mDecompress.do_fancy_upsampling = true;
+ 		mDecompress.do_block_smoothing = false;
+ 		mDecompress.quantize_colors = false;
+@@ -395,6 +399,17 @@
+ 					out[i] = qRgb(in[0], in[1], in[2]);
+ 				}
+ 			}
++		} else if (mDecompress.out_color_space == JCS_CMYK ) {
++			for (int j=oldoutput_scanline; j<oldoutput_scanline+completed_scanlines; j++) {
++				uchar *in = image.scanLine(j) + mDecompress.output_width * 4;
++				QRgb *out = (QRgb*)image.scanLine(j);
++
++				for (uint i=mDecompress.output_width; i--; ) {
++					in-=4;
++					int k = in[3];
++					out[i] = out[i] = qRgb(k * in[0] / 255, k * in[1] / 255, k * in[2] / 255);
++				}
++			}
+ 		}
+ 
+ 		if(consumer && completed_scanlines) {
+diff -Nur gwenview-1.4.2-old//src/gvcore/thumbnailloadjob.cpp gwenview-1.4.2/src/gvcore/thumbnailloadjob.cpp
+--- gwenview-1.4.2-old//src/gvcore/thumbnailloadjob.cpp	2011-02-10 20:06:16.118000401 +0200
++++ gwenview-1.4.2/src/gvcore/thumbnailloadjob.cpp	2011-02-10 21:13:21.164000403 +0200
+@@ -302,6 +302,17 @@
+ 				out[i] = qRgb(in[0], in[1], in[2]);
+ 			}
+ 		}
++	} else if (cinfo.out_color_space == JCS_CMYK ) {
++		for (uint j=0; j<cinfo.output_height; j++) {
++			uchar *in = mImage.scanLine(j) + cinfo.output_width*4;
++			QRgb *out = (QRgb*)( mImage.scanLine(j) );
++
++			for (uint i=cinfo.output_width; i--; ) {
++				in-=4;
++				int k = in[3];
++				out[i] = qRgb(k * in[0] / 255, k * in[1] / 255, k * in[2] / 255);
++			}
++		}
+ 	}
+ 
+ 	int newMax = QMAX(cinfo.output_width, cinfo.output_height);
