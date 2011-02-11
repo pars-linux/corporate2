@@ -15,15 +15,14 @@ def setup():
     shelltools.export("LDFLAGS", "%s -pie -Wl,-z,relro,-z,now"  % get.LDFLAGS())
 
     autotools.configure("--enable-symcryptrun \
-                         --disable-rpath \
-                         --disable-scdaemon \
-                         --disable-photo-viewers")
+                         --disable-rpath")
 
 def build():
     autotools.make("-j1")
+    autotools.make("-C doc html")
 
-    shelltools.cd("doc")
-    autotools.make("html")
+def check():
+    autotools.make("check")
 
 def install():
     autotools.rawInstall('DESTDIR=%s libexecdir="/usr/libexec"' % get.installDIR())
@@ -36,6 +35,3 @@ def install():
     pisitools.dohtml("doc/*")
     pisitools.dohtml("doc/gnupg.html/*")
     pisitools.dodoc("ChangeLog", "NEWS", "README", "THANKS", "TODO")
-
-def check():
-    autotools.make("check")
