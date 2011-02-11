@@ -1,0 +1,31 @@
+diff -Nur kdelibs-3.5.10-old//khtml/misc/loader_jpeg.cpp kdelibs-3.5.10/khtml/misc/loader_jpeg.cpp
+--- kdelibs-3.5.10-old//khtml/misc/loader_jpeg.cpp	2011-02-10 20:06:06.825000400 +0200
++++ kdelibs-3.5.10/khtml/misc/loader_jpeg.cpp	2011-02-10 20:33:04.817000347 +0200
+@@ -347,6 +347,9 @@
+         if ( cinfo.jpeg_color_space == JCS_YCbCr )
+             cinfo.out_color_space = JCS_RGB;
+ 
++        if ( cinfo.jpeg_color_space == JCS_YCCK )
++            cinfo.out_color_space = JCS_CMYK;
++
+         cinfo.do_fancy_upsampling = true;
+         cinfo.do_block_smoothing = false;
+         cinfo.quantize_colors = false;
+@@ -434,6 +437,17 @@
+ 		    out[i] = qRgb(in[0], in[1], in[2]);
+ 		}
+ 	    }
++	} else if (cinfo.out_color_space == JCS_CMYK ) {
++	    for (int j=oldoutput_scanline; j<oldoutput_scanline+completed_scanlines; j++) {
++		uchar *in = image.scanLine(j) + cinfo.output_width * 4;
++		QRgb *out = (QRgb*)image.scanLine(j);
++
++		for (uint i=cinfo.output_width; i--; ) {
++		    in-=4;
++			int k = in[3];
++		    out[i] = qRgb(k * in[0] / 255, k * in[1] / 255, k * in[2] / 255);
++		}
++	    }
+ 	}
+ 
+         if(consumer && completed_scanlines)
