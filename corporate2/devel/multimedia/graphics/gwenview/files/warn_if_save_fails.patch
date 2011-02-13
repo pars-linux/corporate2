@@ -1,0 +1,21 @@
+diff -Nur gwenview-1.4.2-old//src/gvcore/document.cpp gwenview-1.4.2/src/gvcore/document.cpp
+--- gwenview-1.4.2-old//src/gvcore/document.cpp	2011-02-12 19:31:46.785000060 +0200
++++ gwenview-1.4.2/src/gvcore/document.cpp	2011-02-12 19:54:26.971000068 +0200
+@@ -538,11 +538,14 @@
+ 		KStdGuiItem::save(), KStdGuiItem::discard(), CONFIG_SAVE_AUTOMATICALLY);		
+ 
+ 	if (result == KMessageBox::Yes) {
+-		saveInternal(url(), d->mImageFormat);	
++		QString smsg = saveInternal(url(), d->mImageFormat);
++		if (!smsg.isNull()) {
++			KMessageBox::error(dialogParentWidget(), smsg);
++		}
+ 		// If it can't be saved it's useless to leave it as modified
+-		// since user is closing this image and changing to another one
++		// since user is closing this image and changing to another one,
++		// which will also corrupt the next images modified flag
+ 		d->mModified=false;
+-		//FIXME it should be nice to tell the user it failed
+ 	} else {
+ 		d->mModified=false;
+ 	}
