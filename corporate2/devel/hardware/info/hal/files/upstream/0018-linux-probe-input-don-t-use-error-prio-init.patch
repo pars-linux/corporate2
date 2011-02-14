@@ -1,7 +1,7 @@
 From dcb2829b8eff61463b0869614ddb07b1c86cecaa Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
-Date: Wed, 30 Dec 2009 11:42:52 +0000
-Subject: linux/probe-input: don't use error prio init
+Date: Wed, 30 Dec 2009 12:42:52 +0100
+Subject: [PATCH 18/45] linux/probe-input: don't use error prio init
 
 it may happen in the out: case that LIBHAL_FREE_DBUS_ERROR (&error) is
 called before the error structure is initialized via
@@ -27,6 +27,9 @@ makes the segfault go away on my machine.
 Signed-off-by: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
 Signed-off-by: Martin Pitt <martin.pitt@ubuntu.com>
 ---
+ hald/linux/probing/probe-input.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
 diff --git a/hald/linux/probing/probe-input.c b/hald/linux/probing/probe-input.c
 index 94e9929..cad47d3 100644
 --- a/hald/linux/probing/probe-input.c
@@ -47,5 +50,6 @@ index 94e9929..cad47d3 100644
  	if ((ctx = libhal_ctx_init_direct (&error)) == NULL)
  		goto out;
  
---
-cgit v0.8.3-6-g21f6
+-- 
+1.7.2.1
+
