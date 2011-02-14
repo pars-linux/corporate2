@@ -1,7 +1,7 @@
 From baa61a879985d63f549854518ef14efd40e62e8c Mon Sep 17 00:00:00 2001
 From: Peter Jones <pjones@redhat.com>
-Date: Wed, 24 Feb 2010 16:19:28 +0000
-Subject: Make sure dbus_error_init() is called before LIBHAL_FREE_DBUS_ERROR()
+Date: Wed, 24 Feb 2010 11:19:28 -0500
+Subject: [PATCH 28/45] Make sure dbus_error_init() is called before LIBHAL_FREE_DBUS_ERROR()
 
 If dbus_error_init() is not called before LIBHAL_FREE_DBUS_ERROR() is
 called on that error, then it is uninitialized and may segfault.  This
@@ -10,6 +10,16 @@ means that dbus_error_init() must be called before any "goto out" if
 
 Signed-off-by: Martin Pitt <martin.pitt@ubuntu.com>
 ---
+ hald/linux/probing/probe-hiddev.c        |    3 ++-
+ hald/linux/probing/probe-ieee1394-unit.c |    3 ++-
+ hald/linux/probing/probe-net-bluetooth.c |    4 ++--
+ hald/linux/probing/probe-printer.c       |    3 ++-
+ hald/linux/probing/probe-smbios.c        |    3 ++-
+ hald/linux/probing/probe-storage.c       |    3 ++-
+ hald/linux/probing/probe-video4linux.c   |    3 ++-
+ hald/linux/probing/probe-volume.c        |    3 ++-
+ 8 files changed, 16 insertions(+), 9 deletions(-)
+
 diff --git a/hald/linux/probing/probe-hiddev.c b/hald/linux/probing/probe-hiddev.c
 index 45d2084..bffc040 100644
 --- a/hald/linux/probing/probe-hiddev.c
@@ -176,5 +186,6 @@ index 0de1b91..7268fff 100644
  	if ((ctx = libhal_ctx_init_direct (&error)) == NULL)
  		goto out;
  
---
-cgit v0.8.3-6-g21f6
+-- 
+1.7.2.1
+

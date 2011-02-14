@@ -12,8 +12,10 @@ from pisi.actionsapi import get
 
 def setup():
     autotools.autoreconf("-fi")
+    # NOTE: The acpi stuff should be disabled once we have full upower
+    # support. The disk stuffs (umount-helper, eject) should be disabled
+    # once we have full udisks support.
     autotools.configure("--exec-prefix=/usr \
-                         --localstatedir=/var \
                          --disable-static \
                          --disable-docbook-docs \
                          --disable-gtk-doc \
@@ -26,6 +28,7 @@ def setup():
                          --disable-parted \
                          --disable-sonypic \
                          --without-keymaps \
+                         --without-usb-csr \
                          --without-dell-backlight \
                          --without-deprecated-keys \
                          --enable-acpi-acpid \
@@ -47,13 +50,13 @@ def build():
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
-    pisitools.removeDir("/usr/share/gtk-doc")
-
     # Needed for hal's new cache infrastructure
     pisitools.dodir("/var/cache/hald")
 
     # Fix permissions of HAL directories
     for d in ["cache", "run"]:
         shelltools.chmod("%s/var/%s/hald" % (get.installDIR(), d), mode=0700)
+
+    pisitools.removeDir("/usr/share/gtk-doc")
 
     pisitools.dodoc("AUTHORS", "COPYING", "NEWS", "README", "HACKING")
