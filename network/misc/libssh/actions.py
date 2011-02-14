@@ -20,7 +20,7 @@ def setup():
 def build():
     shelltools.cd("build")
     cmaketools.make()
-    cmaketools.make("doc")
+    #cmaketools.make("doc")
 
 def install():
     shelltools.cd("build")
