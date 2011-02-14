@@ -14,7 +14,7 @@
         <Summary>Graphical Boot Animation and Logger</Summary>
         <Description>plymouth provides an attractive graphical boot animation in place of the text messages that normally get shown. Text messages are instead redirected to a log file for viewing after boot.</Description>
         <Archive sha1sum="0997b9a714226357d3b16ec270666391192170aa" type="tarbz2">http://cekirdek.pardus.org.tr/~ozan/dist/sources/plymouth-0.8.3_20101125.tar.bz2</Archive>
-        <Archive sha1sum="6a405e11f0ce6a82c52c7f2afeb94c8aed86dac0" type="tarbz2" target="plymouth-0.8.3_20101125/themes">http://cekirdek.pardus.org.tr/~ozan/dist/sources/plymouth-theme-pardus.tar.bz2</Archive>
+        <Archive sha1sum="dc6aacd7750698d12b59ff6183073721c35cdc7d" type="tarbz2" target="plymouth-0.8.3_20101125/themes">http://cekirdek.pardus.org.tr/~ozan/dist/sources/plymouth-theme-pardus-corporate2.tar.bz2</Archive>
         <AdditionalFiles>
             <AdditionalFile permission="0755" target="generate-flist">pardus/generate-flist.py</AdditionalFile>
         </AdditionalFiles>
@@ -34,11 +34,7 @@
             <Patch level="1">pardus/disable-source-code-tracing.patch</Patch>
             <Patch level="1">pardus/adapt-theme-script.patch</Patch>
             <Patch level="1">pardus/add-pardus-theme.patch</Patch>
-
-            <!-- uClibc patches -->
-            <Patch level="1">mandriva/plymouth-0.7.2-add-missing-header.patch</Patch>
-            <Patch level="1">mandriva/plymouth-0.7.2-library-link-order.patch</Patch>
-            <Patch level="1">mandriva/plymouth-0.7.2-less-greedy-usr_lib-substitution.patch</Patch>
+            <!--<Patch level="1">pardus/implement-suspend-modes.patch</Patch>-->
 
             <!-- Disable nouveau drm renderer as it causes hangs when starting X server -->
             <Patch level="1">disable-nouveau-drm-renderer.patch</Patch>
@@ -53,7 +49,8 @@
             <Dependency>libdrm-intel</Dependency>
             <Dependency>libdrm-radeon</Dependency>
             <Dependency>libdrm-nouveau</Dependency>
-            <Dependency>plymouth-core-libs</Dependency>
+            <Dependency releaseFrom="84">mkinitramfs</Dependency>
+            <Dependency release="current">plymouth-core-libs</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="executable">/bin</Path>
@@ -101,7 +98,7 @@
         <Summary>Plymouth graphics libraries</Summary>
         <Description>plymouth-graphics-libs contains the libply-splash-graphics library used by graphics Plymouth splashes.</Description>
         <RuntimeDependencies>
-            <Dependency>plymouth-core-libs</Dependency>
+            <Dependency release="current">plymouth-core-libs</Dependency>
             <Dependency>libpng</Dependency>
         </RuntimeDependencies>
         <Files>
@@ -112,6 +109,9 @@
     <Package>
         <Name>plymouth-devel</Name>
         <Summary>Development headers and files for plymouth</Summary>
+        <RuntimeDependencies>
+            <Dependency release="current">plymouth</Dependency>
+        </RuntimeDependencies>
         <Files>
             <Path fileType="header">/usr/include</Path>
             <Path fileType="data">/usr/lib/pkgconfig</Path>
@@ -122,9 +122,8 @@
         <Name>plymouth-renderer-x11</Name>
         <Summary>An X11 renderer for debugging purposes</Summary>
         <RuntimeDependencies>
-            <Dependency>plymouth-core-libs</Dependency>
+            <Dependency release="current">plymouth-core-libs</Dependency>
             <Dependency>cairo</Dependency>
-            <Dependency>glib2</Dependency>
             <Dependency>gtk2</Dependency>
         </RuntimeDependencies>
         <Files>
@@ -137,6 +136,7 @@
         <Summary>Plymouth related utilities</Summary>
         <Description>plymouth-utils contains utilities that integrate with Plymouth including a boot log viewing application.</Description>
         <RuntimeDependencies>
+            <Dependency>pango</Dependency>
             <Dependency>gtk2</Dependency>
         </RuntimeDependencies>
         <Files>
@@ -151,7 +151,7 @@
         <RuntimeDependencies>
             <Dependency>cairo</Dependency>
             <Dependency>pango</Dependency>
-            <Dependency>plymouth-core-libs</Dependency>
+            <Dependency release="current">plymouth-core-libs</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="library">/usr/lib/plymouth/label.so</Path>
@@ -163,7 +163,7 @@
         <Summary>Plymouth Fade-Throbber plugin</Summary>
         <Description>plymouth-plugin-fade-throbber contains the "Fade-In" boot splash plugin for Plymouth. It features a centered image that fades in and out while other images pulsate around during system boot up.</Description>
         <RuntimeDependencies>
-            <Dependency>plymouth-graphics-libs</Dependency>
+            <Dependency release="current">plymouth-graphics-libs</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="library">/usr/lib/plymouth/fade-throbber.so</Path>
@@ -187,8 +187,8 @@
         <Summary>Plymouth Throbgress plugin</Summary>
         <Description>plymouth-plugin-throbgress contains the "throbgress" boot splash plugin for Plymouth. It features a centered logo and animated spinner that spins repeatedly while a progress bar advances at the bottom of the screen.</Description>
         <RuntimeDependencies>
-            <Dependency>plymouth-plugin-label</Dependency>
-            <Dependency>plymouth-graphics-libs</Dependency>
+            <Dependency release="current">plymouth-plugin-label</Dependency>
+            <Dependency release="current">plymouth-graphics-libs</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="library">/usr/lib/plymouth/throbgress.so</Path>
@@ -200,7 +200,7 @@
         <Summary>Plymouth Spinfinity theme</Summary>
         <Description>plymouth-theme-spinfinity contains the "Spinfinity" boot splash theme for Plymouth. It features a centered logo and animated spinner that spins in the shape of an infinity sign.</Description>
         <RuntimeDependencies>
-            <Dependency>plymouth-plugin-throbgress</Dependency>
+            <Dependency release="current">plymouth-plugin-throbgress</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="data">/usr/share/plymouth/themes/spinfinity</Path>
@@ -212,8 +212,8 @@
         <Summary>Plymouth space-flares plugin</Summary>
         <Description>plymouth-plugin-space-flares contains the "space-flares" boot splash plugin for Plymouth. It features a corner image with animated flares.</Description>
         <RuntimeDependencies>
-            <Dependency>plymouth-plugin-label</Dependency>
-            <Dependency>plymouth-graphics-libs</Dependency>
+            <Dependency release="current">plymouth-plugin-label</Dependency>
+            <Dependency release="current">plymouth-graphics-libs</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="library">/usr/lib/plymouth/space-flares.so</Path>
@@ -225,7 +225,7 @@
         <Summary>Plymouth Solar theme</Summary>
         <Description>plymouth-theme-solar contains the "Solar" boot splash theme for Plymouth. It features a blue flamed sun with animated solar flares.</Description>
         <RuntimeDependencies>
-            <Dependency>plymouth-plugin-space-flares</Dependency>
+            <Dependency release="current">plymouth-plugin-space-flares</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="data">/usr/share/plymouth/themes/solar</Path>
@@ -237,8 +237,8 @@
         <Summary>Plymouth Two-Step plugin</Summary>
         <Description>plymouth-plugin-two-step contains the "two-step" boot splash plugin for Plymouth. It features a two phased boot process that starts with a progressing animation synced to boot time and finishes with a short, fast one-shot animation.</Description>
         <RuntimeDependencies>
-            <Dependency>plymouth-plugin-label</Dependency>
-            <Dependency>plymouth-graphics-libs</Dependency>
+            <Dependency release="current">plymouth-plugin-label</Dependency>
+            <Dependency release="current">plymouth-graphics-libs</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="library">/usr/lib/plymouth/two-step.so</Path>
@@ -250,7 +250,7 @@
         <Summary>Plymouth Charge plugin</Summary>
         <Description>plymouth-theme-charge This package contains the "charge" boot splash theme for Plymouth. It features the shadowy hull of a Fedora logo charge up and and finally burst into full form.</Description>
         <RuntimeDependencies>
-            <Dependency>plymouth-plugin-two-step</Dependency>
+            <Dependency release="current">plymouth-plugin-two-step</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="data">/usr/share/plymouth/themes/charge</Path>
@@ -262,7 +262,7 @@
         <Summary>Plymouth script plugin</Summary>
         <Description>plymouth-plugin-script contains "script" boot splash plugin for Plymouth. It features an extensible, scriptable boot splash language that simplifies the process of designing custom boot splash themes.</Description>
         <RuntimeDependencies>
-            <Dependency>plymouth-graphics-libs</Dependency>
+            <Dependency release="current">plymouth-graphics-libs</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="library">/usr/lib/plymouth/script.so</Path>
@@ -274,7 +274,7 @@
         <Summary>Plymouth Script theme</Summary>
         <Description>plymouth-theme-script contains the "script" boot splash theme for Plymouth. It it is a simple example theme the uses the "script" plugin.</Description>
         <RuntimeDependencies>
-            <Dependency>plymouth-plugin-script</Dependency>
+            <Dependency release="current">plymouth-plugin-script</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="data">/usr/share/plymouth/themes/script</Path>
@@ -286,7 +286,7 @@
         <Summary>Plymouth Pardus theme</Summary>
         <Description>plymouth-theme-pardus contains a simple but elegant boot theme for Pardus.</Description>
         <RuntimeDependencies>
-            <Dependency>plymouth-plugin-script</Dependency>
+            <Dependency release="current">plymouth-plugin-script</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="data">/usr/share/plymouth/themes/pardus</Path>
@@ -304,6 +304,41 @@
     -->
 
     <History>
+        <Update release="15">
+            <Date>2011-01-20</Date>
+            <Version>0.8.3_20101125</Version>
+            <Comment>Update theme to its final version.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="14">
+            <Date>2011-01-18</Date>
+            <Version>0.8.3_20101125</Version>
+            <Comment>Fix lzo2 soname in initramfs file list.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="13">
+            <Date>2011-01-17</Date>
+            <Version>0.8.3_20101125</Version>
+            <Comment>Update theme</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="12">
+            <Date>2011-01-14</Date>
+            <Version>0.8.3_20101125</Version>
+            <Comment>Add lzo2 to file list for suspend.</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
+        <Update release="11">
+            <Date>2011-01-14</Date>
+            <Version>0.8.3_20101125</Version>
+            <Comment>Fix dependencies, drop buggy mandriva patch</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="10">
             <Date>2010-12-08</Date>
             <Version>0.8.3_20101125</Version>

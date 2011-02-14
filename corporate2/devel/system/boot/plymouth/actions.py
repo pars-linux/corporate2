@@ -14,11 +14,10 @@ LOGO_FILE = "/usr/share/pixmaps/plymouth-pardus.png"
 THEMEPATH = "/usr/share/plymouth/themes"
 
 def setup():
-    shelltools.move("themes/plymouth-theme-pardus", "themes/pardus")
     autotools.autoreconf("-fis")
 
     # The end-start colors seems to be used by the two-step plugin
-    autotools.configure("--disable-tracing \
+    autotools.configure("--enable-tracing \
                          --with-logo=%s \
                          --with-release-file=/etc/pardus-release \
                          --with-background-color=0x000000 \
@@ -47,9 +46,6 @@ def install():
 
     # Remove glow theme as it's premature
     pisitools.removeDir("/usr/share/plymouth/themes/glow")
-
-    # Remove fedora scripts
-    pisitools.remove("/usr/libexec/plymouth/*")
 
     # Generate initramfs filelist
     #shelltools.system("./generate-flist %s" % get.installDIR())
