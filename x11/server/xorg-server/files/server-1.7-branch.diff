@@ -1,0 +1,2003 @@
+diff --git a/Xext/sync.c b/Xext/sync.c
+index 667f8ab..48dea6f 100644
+--- a/Xext/sync.c
++++ b/Xext/sync.c
+@@ -67,6 +67,7 @@ PERFORMANCE OF THIS SOFTWARE.
+ #include "opaque.h"
+ #include <X11/extensions/syncproto.h>
+ #include "syncsrv.h"
++#include "protocol-versions.h"
+ 
+ #include <stdio.h>
+ #if !defined(WIN32)
+@@ -1140,8 +1141,8 @@ ProcSyncInitialize(ClientPtr client)
+     memset(&rep, 0, sizeof(xSyncInitializeReply));
+     rep.type = X_Reply;
+     rep.sequenceNumber = client->sequence;
+-    rep.majorVersion = SYNC_MAJOR_VERSION;
+-    rep.minorVersion = SYNC_MINOR_VERSION;
++    rep.majorVersion = SERVER_SYNC_MAJOR_VERSION;
++    rep.minorVersion = SERVER_SYNC_MINOR_VERSION;
+     rep.length = 0;
+ 
+     if (client->swapped)
+diff --git a/Xext/xace.c b/Xext/xace.c
+index bf0e98f..414eb4a 100644
+--- a/Xext/xace.c
++++ b/Xext/xace.c
+@@ -87,7 +87,18 @@ void XaceHookAuditEnd(ClientPtr ptr, int result)
+  */
+ int XaceHook(int hook, ...)
+ {
+-    pointer calldata;	/* data passed to callback */
++    union {
++	XaceResourceAccessRec res;
++	XaceDeviceAccessRec dev;
++	XaceSendAccessRec send;
++	XaceReceiveAccessRec recv;
++	XaceClientAccessRec client;
++	XaceExtAccessRec ext;
++	XaceServerAccessRec server;
++	XaceScreenAccessRec screen;
++	XaceAuthAvailRec auth;
++	XaceKeyAvailRec key;
++    } u;
+     int *prv = NULL;	/* points to return value from callback */
+     va_list ap;		/* argument list */
+     va_start(ap, hook);
+@@ -99,117 +110,86 @@ int XaceHook(int hook, ...)
+      */
+     switch (hook)
+     {
+-	case XACE_RESOURCE_ACCESS: {
+-	    XaceResourceAccessRec rec;
+-	    rec.client = va_arg(ap, ClientPtr);
+-	    rec.id = va_arg(ap, XID);
+-	    rec.rtype = va_arg(ap, RESTYPE);
+-	    rec.res = va_arg(ap, pointer);
+-	    rec.ptype = va_arg(ap, RESTYPE);
+-	    rec.parent = va_arg(ap, pointer);
+-	    rec.access_mode = va_arg(ap, Mask);
+-	    rec.status = Success; /* default allow */
+-	    calldata = &rec;
+-	    prv = &rec.status;
++	case XACE_RESOURCE_ACCESS:
++	    u.res.client = va_arg(ap, ClientPtr);
++	    u.res.id = va_arg(ap, XID);
++	    u.res.rtype = va_arg(ap, RESTYPE);
++	    u.res.res = va_arg(ap, pointer);
++	    u.res.ptype = va_arg(ap, RESTYPE);
++	    u.res.parent = va_arg(ap, pointer);
++	    u.res.access_mode = va_arg(ap, Mask);
++	    u.res.status = Success; /* default allow */
++	    prv = &u.res.status;
+ 	    break;
+-	}
+-	case XACE_DEVICE_ACCESS: {
+-	    XaceDeviceAccessRec rec;
+-	    rec.client = va_arg(ap, ClientPtr);
+-	    rec.dev = va_arg(ap, DeviceIntPtr);
+-	    rec.access_mode = va_arg(ap, Mask);
+-	    rec.status = Success; /* default allow */
+-	    calldata = &rec;
+-	    prv = &rec.status;
++	case XACE_DEVICE_ACCESS:
++	    u.dev.client = va_arg(ap, ClientPtr);
++	    u.dev.dev = va_arg(ap, DeviceIntPtr);
++	    u.dev.access_mode = va_arg(ap, Mask);
++	    u.dev.status = Success; /* default allow */
++	    prv = &u.dev.status;
+ 	    break;
+-	}
+-	case XACE_SEND_ACCESS: {
+-	    XaceSendAccessRec rec;
+-	    rec.client = va_arg(ap, ClientPtr);
+-	    rec.dev = va_arg(ap, DeviceIntPtr);
+-	    rec.pWin = va_arg(ap, WindowPtr);
+-	    rec.events = va_arg(ap, xEventPtr);
+-	    rec.count = va_arg(ap, int);
+-	    rec.status = Success; /* default allow */
+-	    calldata = &rec;
+-	    prv = &rec.status;
++	case XACE_SEND_ACCESS:
++	    u.send.client = va_arg(ap, ClientPtr);
++	    u.send.dev = va_arg(ap, DeviceIntPtr);
++	    u.send.pWin = va_arg(ap, WindowPtr);
++	    u.send.events = va_arg(ap, xEventPtr);
++	    u.send.count = va_arg(ap, int);
++	    u.send.status = Success; /* default allow */
++	    prv = &u.send.status;
+ 	    break;
+-	}
+-	case XACE_RECEIVE_ACCESS: {
+-	    XaceReceiveAccessRec rec;
+-	    rec.client = va_arg(ap, ClientPtr);
+-	    rec.pWin = va_arg(ap, WindowPtr);
+-	    rec.events = va_arg(ap, xEventPtr);
+-	    rec.count = va_arg(ap, int);
+-	    rec.status = Success; /* default allow */
+-	    calldata = &rec;
+-	    prv = &rec.status;
++	case XACE_RECEIVE_ACCESS:
++	    u.recv.client = va_arg(ap, ClientPtr);
++	    u.recv.pWin = va_arg(ap, WindowPtr);
++	    u.recv.events = va_arg(ap, xEventPtr);
++	    u.recv.count = va_arg(ap, int);
++	    u.recv.status = Success; /* default allow */
++	    prv = &u.recv.status;
+ 	    break;
+-	}
+-	case XACE_CLIENT_ACCESS: {
+-	    XaceClientAccessRec rec;
+-	    rec.client = va_arg(ap, ClientPtr);
+-	    rec.target = va_arg(ap, ClientPtr);
+-	    rec.access_mode = va_arg(ap, Mask);
+-	    rec.status = Success; /* default allow */
+-	    calldata = &rec;
+-	    prv = &rec.status;
++	case XACE_CLIENT_ACCESS:
++	    u.client.client = va_arg(ap, ClientPtr);
++	    u.client.target = va_arg(ap, ClientPtr);
++	    u.client.access_mode = va_arg(ap, Mask);
++	    u.client.status = Success; /* default allow */
++	    prv = &u.client.status;
+ 	    break;
+-	}
+-	case XACE_EXT_ACCESS: {
+-	    XaceExtAccessRec rec;
+-	    rec.client = va_arg(ap, ClientPtr);
+-	    rec.ext = va_arg(ap, ExtensionEntry*);
+-	    rec.access_mode = DixGetAttrAccess;
+-	    rec.status = Success; /* default allow */
+-	    calldata = &rec;
+-	    prv = &rec.status;
++	case XACE_EXT_ACCESS:
++	    u.ext.client = va_arg(ap, ClientPtr);
++	    u.ext.ext = va_arg(ap, ExtensionEntry*);
++	    u.ext.access_mode = DixGetAttrAccess;
++	    u.ext.status = Success; /* default allow */
++	    prv = &u.ext.status;
+ 	    break;
+-	}
+-	case XACE_SERVER_ACCESS: {
+-	    XaceServerAccessRec rec;
+-	    rec.client = va_arg(ap, ClientPtr);
+-	    rec.access_mode = va_arg(ap, Mask);
+-	    rec.status = Success; /* default allow */
+-	    calldata = &rec;
+-	    prv = &rec.status;
++	case XACE_SERVER_ACCESS:
++	    u.server.client = va_arg(ap, ClientPtr);
++	    u.server.access_mode = va_arg(ap, Mask);
++	    u.server.status = Success; /* default allow */
++	    prv = &u.server.status;
+ 	    break;
+-	}
+ 	case XACE_SCREEN_ACCESS:
+-	case XACE_SCREENSAVER_ACCESS: {
+-	    XaceScreenAccessRec rec;
+-	    rec.client = va_arg(ap, ClientPtr);
+-	    rec.screen = va_arg(ap, ScreenPtr);
+-	    rec.access_mode = va_arg(ap, Mask);
+-	    rec.status = Success; /* default allow */
+-	    calldata = &rec;
+-	    prv = &rec.status;
++	case XACE_SCREENSAVER_ACCESS:
++	    u.screen.client = va_arg(ap, ClientPtr);
++	    u.screen.screen = va_arg(ap, ScreenPtr);
++	    u.screen.access_mode = va_arg(ap, Mask);
++	    u.screen.status = Success; /* default allow */
++	    prv = &u.screen.status;
+ 	    break;
+-	}
+-	case XACE_AUTH_AVAIL: {
+-	    XaceAuthAvailRec rec;
+-	    rec.client = va_arg(ap, ClientPtr);
+-	    rec.authId = va_arg(ap, XID);
+-	    calldata = &rec;
++	case XACE_AUTH_AVAIL:
++	    u.auth.client = va_arg(ap, ClientPtr);
++	    u.auth.authId = va_arg(ap, XID);
+ 	    break;
+-	}
+-	case XACE_KEY_AVAIL: {
+-	    XaceKeyAvailRec rec;
+-	    rec.event = va_arg(ap, xEventPtr);
+-	    rec.keybd = va_arg(ap, DeviceIntPtr);
+-	    rec.count = va_arg(ap, int);
+-	    calldata = &rec;
++	case XACE_KEY_AVAIL:
++	    u.key.event = va_arg(ap, xEventPtr);
++	    u.key.keybd = va_arg(ap, DeviceIntPtr);
++	    u.key.count = va_arg(ap, int);
+ 	    break;
+-	}
+-	default: {
++	default:
+ 	    va_end(ap);
+ 	    return 0;	/* unimplemented hook number */
+-	}
+     }
+     va_end(ap);
+  
+     /* call callbacks and return result, if any. */
+-    CallCallbacks(&XaceHooks[hook], calldata);
++    CallCallbacks(&XaceHooks[hook], &u);
+     return prv ? *prv : Success;
+ }
+ 
+diff --git a/Xi/exevents.c b/Xi/exevents.c
+index e680f6f..566b0ef 100644
+--- a/Xi/exevents.c
++++ b/Xi/exevents.c
+@@ -196,16 +196,12 @@ void
+ CopyKeyClass(DeviceIntPtr device, DeviceIntPtr master)
+ {
+     KeyClassPtr mk = master->key;
+-    KeyClassPtr dk = device->key;
+-    int i;
+ 
+     if (device == master)
+         return;
+ 
+     mk->sourceid = device->id;
+ 
+-    for (i = 0; i < 8; i++)
+-        mk->modifierKeyCount[i] = dk->modifierKeyCount[i];
+ 
+     if (!XkbCopyDeviceKeymap(master, device))
+         FatalError("Couldn't pivot keymap from device to core!\n");
+diff --git a/Xi/extinit.c b/Xi/extinit.c
+index 0c12919..daa79f6 100644
+--- a/Xi/extinit.c
++++ b/Xi/extinit.c
+@@ -1123,7 +1123,6 @@ RestoreExtensionEvents(void)
+ static void
+ IResetProc(ExtensionEntry * unused)
+ {
+-
+     ReplySwapVector[IReqCode] = ReplyNotSwappd;
+     EventSwapVector[DeviceValuator] = NotImplemented;
+     EventSwapVector[DeviceKeyPress] = NotImplemented;
+@@ -1302,6 +1301,8 @@ XInputExtensionInit(void)
+ 
+ 	inputInfo.all_devices = &xi_all_devices;
+ 	inputInfo.all_master_devices = &xi_all_master_devices;
++
++	XIResetProperties();
+     } else {
+ 	FatalError("IExtensionInit: AddExtensions failed\n");
+     }
+diff --git a/Xi/xiproperty.c b/Xi/xiproperty.c
+index ea66c54..2482171 100644
+--- a/Xi/xiproperty.c
++++ b/Xi/xiproperty.c
+@@ -392,6 +392,15 @@ XIGetKnownProperty(char *name)
+     return 0;
+ }
+ 
++void
++XIResetProperties(void)
++{
++    int i;
++
++    for (i = 0; i < (sizeof(dev_properties)/sizeof(struct dev_properties)); i++)
++        dev_properties[i].type = None;
++}
++
+ /**
+  * Convert the given property's value(s) into @nelem_return integer values and
+  * store them in @buf_return. If @nelem_return is larger than the number of
+diff --git a/Xi/xiproperty.h b/Xi/xiproperty.h
+index 69b41fa..d8b8863 100644
+--- a/Xi/xiproperty.h
++++ b/Xi/xiproperty.h
+@@ -62,4 +62,7 @@ void SRepXIListProperties(ClientPtr client, int size,
+                           xXIListPropertiesReply *rep);
+ void SRepXIGetProperty(ClientPtr client, int size,
+                        xXIGetPropertyReply *rep);
++
++void XIResetProperties(void);
++
+ #endif /* XIPROPERTY_H */
+diff --git a/dix/devices.c b/dix/devices.c
+index 87b6dc7..1037e42 100644
+--- a/dix/devices.c
++++ b/dix/devices.c
+@@ -1956,7 +1956,7 @@ ProcChangeKeyboardControl (ClientPtr client)
+     keyboard = PickKeyboard(client);
+ 
+     for (pDev = inputInfo.devices; pDev; pDev = pDev->next) {
+-        if ((pDev == keyboard || (!IsMaster(keyboard) && pDev->u.master == keyboard)) &&
++        if ((pDev == keyboard || (!IsMaster(pDev) && pDev->u.master == keyboard)) &&
+             pDev->kbdfeed && pDev->kbdfeed->CtrlProc) {
+             ret = XaceHook(XACE_DEVICE_ACCESS, client, pDev, DixManageAccess);
+ 	    if (ret != Success)
+@@ -1965,7 +1965,7 @@ ProcChangeKeyboardControl (ClientPtr client)
+     }
+ 
+     for (pDev = inputInfo.devices; pDev; pDev = pDev->next) {
+-        if ((pDev == keyboard || (!IsMaster(keyboard) && pDev->u.master == keyboard)) &&
++        if ((pDev == keyboard || (!IsMaster(pDev) && pDev->u.master == keyboard)) &&
+             pDev->kbdfeed && pDev->kbdfeed->CtrlProc) {
+             ret = DoChangeKeyboardControl(client, pDev, vlist, vmask);
+             if (ret != Success)
+diff --git a/dix/events.c b/dix/events.c
+index 44c4624..9d35b22 100644
+--- a/dix/events.c
++++ b/dix/events.c
+@@ -3440,7 +3440,6 @@ CheckPassiveGrabsOnWindow(
+     {
+ 	DeviceIntPtr	gdev;
+ 	XkbSrvInfoPtr	xkbi = NULL;
+-	Mask		mask = 0;
+ 
+ 	gdev= grab->modifierDevice;
+         if (grab->grabtype == GRABTYPE_CORE)
+@@ -3555,9 +3554,6 @@ CheckPassiveGrabsOnWindow(
+                 }
+                 xE = &core;
+                 count = 1;
+-                mask = grab->eventMask;
+-                if (grab->ownerEvents)
+-                    mask |= pWin->eventMask;
+             } else if (match & XI2_MATCH)
+             {
+                 rc = EventToXI2((InternalEvent*)event, &xE);
+@@ -3569,34 +3565,6 @@ CheckPassiveGrabsOnWindow(
+                     continue;
+                 }
+                 count = 1;
+-
+-                /* FIXME: EventToXI2 returns NULL for enter events, so
+-                 * dereferencing the event is bad. Internal event types are
+-                 * aligned with core events, so the else clause is valid.
+-                 * long-term we should use internal events for enter/focus
+-                 * as well */
+-                if (xE)
+-                    mask = grab->xi2mask[device->id][((xGenericEvent*)xE)->evtype/8];
+-                else if (event->type == XI_Enter || event->type == XI_FocusIn)
+-                    mask = grab->xi2mask[device->id][event->type/8];
+-
+-                if (grab->ownerEvents && wOtherInputMasks(grab->window))
+-                {
+-                    InputClientsPtr icp =
+-                        wOtherInputMasks(grab->window)->inputClients;
+-
+-                    while(icp)
+-                    {
+-                        if (rClient(icp) == rClient(grab))
+-                        {
+-                            int evtype = (xE) ? ((xGenericEvent*)xE)->evtype : event->type;
+-                            mask |= icp->xi2mask[device->id][evtype/8];
+-                            break;
+-                        }
+-
+-                        icp = icp->next;
+-                    }
+-                }
+             } else
+             {
+                 rc = EventToXI((InternalEvent*)event, &xE, &count);
+@@ -3607,23 +3575,6 @@ CheckPassiveGrabsOnWindow(
+                                 "(%d, %d).\n", device->name, event->type, rc);
+                     continue;
+                 }
+-                mask = grab->eventMask;
+-                if (grab->ownerEvents && wOtherInputMasks(grab->window))
+-                {
+-                    InputClientsPtr icp =
+-                        wOtherInputMasks(grab->window)->inputClients;
+-
+-                    while(icp)
+-                    {
+-                        if (rClient(icp) == rClient(grab))
+-                        {
+-                            mask |= icp->mask[device->id];
+-                            break;
+-                        }
+-
+-                        icp = icp->next;
+-                    }
+-                }
+             }
+ 
+ 	    (*grabinfo->ActivateGrab)(device, grab, currentTime, TRUE);
+@@ -3632,7 +3583,8 @@ CheckPassiveGrabsOnWindow(
+             {
+                 FixUpEventFromWindow(device, xE, grab->window, None, TRUE);
+ 
+-                TryClientEvents(rClient(grab), device, xE, count, mask,
++                TryClientEvents(rClient(grab), device, xE, count,
++                                       GetEventFilter(device, xE),
+                                        GetEventFilter(device, xE), grab);
+             }
+ 
+diff --git a/dix/getevents.c b/dix/getevents.c
+index 82bb77b..531595e 100644
+--- a/dix/getevents.c
++++ b/dix/getevents.c
+@@ -177,7 +177,7 @@ set_valuators(DeviceIntPtr dev, DeviceEvent* event, int first_valuator,
+     }
+ 
+     memcpy(&event->valuators.data[first_valuator],
+-           valuators, num_valuators * sizeof(uint32_t));
++           valuators, num_valuators * sizeof(int32_t));
+ 
+ }
+ 
+diff --git a/dix/main.c b/dix/main.c
+index f96245a..df6963f 100644
+--- a/dix/main.c
++++ b/dix/main.c
+@@ -159,9 +159,7 @@ int main(int argc, char *argv[], char *envp[])
+ 	ScreenSaverBlanking = defaultScreenSaverBlanking;
+ 	ScreenSaverAllowExposures = defaultScreenSaverAllowExposures;
+ #ifdef DPMSExtension
+-	DPMSStandbyTime = DEFAULT_SCREEN_SAVER_TIME;
+-	DPMSSuspendTime = DEFAULT_SCREEN_SAVER_TIME;
+-	DPMSOffTime = DEFAULT_SCREEN_SAVER_TIME;
++	DPMSStandbyTime = DPMSSuspendTime = DPMSOffTime = ScreenSaverTime;
+ 	DPMSEnabled = TRUE;
+ 	DPMSPowerLevel = 0;
+ #endif
+diff --git a/doc/Xserver.man.pre b/doc/Xserver.man.pre
+index 6154191..d225c26 100644
+--- a/doc/Xserver.man.pre
++++ b/doc/Xserver.man.pre
+@@ -100,12 +100,12 @@ specifies a file which contains a collection of authorization records used
+ to authenticate access.  See also the \fIxdm\fP(1) and 
+ \fIXsecurity\fP(__miscmansuffix__) manual pages.
+ .TP 8
+-.B \-bs
+-disables backing store support on all screens.
+-.TP 8
+ .B \-br
+ sets the default root window to solid black instead of the standard root weave
+-pattern.
++pattern.   This is the default unless -retro or -wr is specified.
++.TP 8
++.B \-bs
++disables backing store support on all screens.
+ .TP 8
+ .B \-c
+ turns off key-click.
+@@ -117,17 +117,6 @@ sets key-click volume (allowable range: 0-100).
+ sets the visual class for the root window of color screens.
+ The class numbers are as specified in the X protocol.
+ Not obeyed by all servers.
+-.ig
+-.TP 8
+-.B \-config \fIfilename\fP
+-reads more options from the given file.  Options in the file may be separated
+-by newlines if desired.  If a '#' character appears on a line, all characters
+-between it and the next newline are ignored, providing a simple commenting
+-facility.  The \fB\-config\fP option itself may appear in the file.
+-.BR NOTE :
+-This option is disabled when the Xserver is run with an effective uid
+-different from the user's real uid.
+-..
+ .TP 8
+ .B \-core
+ causes the server to generate a core dump on fatal errors.
+@@ -184,6 +173,9 @@ sets the maximum big request to
+ .I size
+ MB.
+ .TP 8
++.B \-nocursor
++disable the display of the pointer cursor.
++.TP 8
+ .B \-nolisten \fItrans-type\fP
+ disables a transport type.  For example, TCP/IP connections can be disabled
+ with
+@@ -584,11 +576,11 @@ Security: \fIXsecurity\fP(__miscmansuffix__), \fIxauth\fP(1), \fIXau\fP(1),
+ Starting the server: \fIstartx\fP(1), \fIxdm\fP(1), \fIxinit\fP(1)
+ .PP
+ Controlling the server once started: \fIxset\fP(1), \fIxsetroot\fP(1),
+-\fIxhost\fP(1)
++\fIxhost\fP(1), \fIxinput\fP(1), \fIxrandr\fP(1)
+ .PP
+ Server-specific man pages:
+ \fIXorg\fP(1), \fIXdmx\fP(1), \fIXephyr\fP(1), \fIXnest\fP(1),
+-\fIXvfb\fP(1), \fIXDarwin\fP(1), \fIXWin\fP(1).
++\fIXvfb\fP(1), \fIXquartz\fP(1), \fIXWin\fP(1).
+ .PP
+ Server internal documentation:
+ .I "Definition of the Porting Layer for the X v11 Sample Server"
+diff --git a/exa/exa_accel.c b/exa/exa_accel.c
+index d4eae89..76012d3 100644
+--- a/exa/exa_accel.c
++++ b/exa/exa_accel.c
+@@ -1049,6 +1049,8 @@ exaFillRegionSolid (DrawablePtr	pDrawable, RegionPtr pRegion, Pixel pixel,
+ 		*(CARD16*)pExaPixmap->sys_ptr = pixel;
+ 		break;
+ 	    case 8:
++	    case 4:
++	    case 1:
+ 		*(CARD8*)pExaPixmap->sys_ptr = pixel;
+ 	    }
+ 
+diff --git a/exa/exa_classic.c b/exa/exa_classic.c
+index 12f3987..28cc421 100644
+--- a/exa/exa_classic.c
++++ b/exa/exa_classic.c
+@@ -256,9 +256,10 @@ exaPixmapIsOffscreen_classic(PixmapPtr pPixmap)
+     Bool ret;
+ 
+     if (pExaScr->info->PixmapIsOffscreen) {
++	void* old_ptr = pPixmap->devPrivate.ptr;
+ 	pPixmap->devPrivate.ptr = ExaGetPixmapAddress(pPixmap);
+ 	ret = pExaScr->info->PixmapIsOffscreen(pPixmap);
+-	pPixmap->devPrivate.ptr = NULL;
++	pPixmap->devPrivate.ptr = old_ptr;
+     } else
+ 	ret = (pExaPixmap->offscreen && pExaPixmap->fb_ptr);
+ 
+diff --git a/exa/exa_unaccel.c b/exa/exa_unaccel.c
+index 9bc765a..fa8e791 100644
+--- a/exa/exa_unaccel.c
++++ b/exa/exa_unaccel.c
+@@ -525,6 +525,8 @@ exaGetPixmapFirstPixel (PixmapPtr pPixmap)
+ 	    return pixel;
+ 	}
+     case 8:
++    case 4:
++    case 1:
+ 	{
+ 	    CARD8 pixel;
+ 
+diff --git a/fb/fbbits.h b/fb/fbbits.h
+index 44991f1..b8af785 100644
+--- a/fb/fbbits.h
++++ b/fb/fbbits.h
+@@ -25,7 +25,7 @@
+  * underlying datatypes instead of masks
+  */
+ 
+-#define isClipped(c,ul,lr)  ((((c) - (ul)) | ((lr) - (c))) & 0x80008000)
++#define isClipped(c,ul,lr)  (((c) | ((c) - (ul)) | ((lr) - (c))) & 0x80008000)
+ 
+ #ifdef HAVE_DIX_CONFIG_H
+ #include <dix-config.h>
+diff --git a/glx/glxdri.c b/glx/glxdri.c
+index 6122653..06681fa 100644
+--- a/glx/glxdri.c
++++ b/glx/glxdri.c
+@@ -863,12 +863,21 @@ static const char dri_driver_path[] = DRI_DRIVER_PATH;
+ static Bool
+ glxDRIEnterVT (int index, int flags)
+ {
++    ScrnInfoPtr scrn = xf86Screens[index];
++    Bool	ret;
+     __GLXDRIscreen *screen = (__GLXDRIscreen *) 
+ 	glxGetScreen(screenInfo.screens[index]);
+ 
+     LogMessage(X_INFO, "AIGLX: Resuming AIGLX clients after VT switch\n");
+ 
+-    if (!(*screen->enterVT) (index, flags))
++    scrn->EnterVT = screen->enterVT;
++
++    ret = scrn->EnterVT (index, flags);
++
++    screen->enterVT = scrn->EnterVT;
++    scrn->EnterVT = glxDRIEnterVT;
++
++    if (!ret)
+ 	return FALSE;
+     
+     glxResumeClients();
+@@ -879,6 +888,7 @@ glxDRIEnterVT (int index, int flags)
+ static void
+ glxDRILeaveVT (int index, int flags)
+ {
++    ScrnInfoPtr scrn = xf86Screens[index];
+     __GLXDRIscreen *screen = (__GLXDRIscreen *)
+ 	glxGetScreen(screenInfo.screens[index]);
+ 
+@@ -886,7 +896,10 @@ glxDRILeaveVT (int index, int flags)
+ 
+     glxSuspendClients();
+ 
+-    return (*screen->leaveVT) (index, flags);
++    scrn->LeaveVT = screen->leaveVT;
++    (*screen->leaveVT) (index, flags);
++    screen->leaveVT = scrn->LeaveVT;
++    scrn->LeaveVT = glxDRILeaveVT;
+ }
+ 
+ static void
+diff --git a/glx/glxdri2.c b/glx/glxdri2.c
+index ed7fb4c..249df79 100644
+--- a/glx/glxdri2.c
++++ b/glx/glxdri2.c
+@@ -512,12 +512,21 @@ static const char dri_driver_path[] = DRI_DRIVER_PATH;
+ static Bool
+ glxDRIEnterVT (int index, int flags)
+ {
++    ScrnInfoPtr scrn = xf86Screens[index];
++    Bool	ret;
+     __GLXDRIscreen *screen = (__GLXDRIscreen *) 
+ 	glxGetScreen(screenInfo.screens[index]);
+ 
+     LogMessage(X_INFO, "AIGLX: Resuming AIGLX clients after VT switch\n");
+ 
+-    if (!(*screen->enterVT) (index, flags))
++    scrn->EnterVT = screen->enterVT;
++
++    ret = scrn->EnterVT (index, flags);
++
++    screen->enterVT = scrn->EnterVT;
++    scrn->EnterVT = glxDRIEnterVT;
++
++    if (!ret)
+ 	return FALSE;
+     
+     glxResumeClients();
+@@ -528,6 +537,7 @@ glxDRIEnterVT (int index, int flags)
+ static void
+ glxDRILeaveVT (int index, int flags)
+ {
++    ScrnInfoPtr scrn = xf86Screens[index];
+     __GLXDRIscreen *screen = (__GLXDRIscreen *)
+ 	glxGetScreen(screenInfo.screens[index]);
+ 
+@@ -535,7 +545,10 @@ glxDRILeaveVT (int index, int flags)
+ 
+     glxSuspendClients();
+ 
+-    return (*screen->leaveVT) (index, flags);
++    scrn->LeaveVT = screen->leaveVT;
++    (*screen->leaveVT) (index, flags);
++    screen->leaveVT = scrn->LeaveVT;
++    scrn->LeaveVT = glxDRILeaveVT;
+ }
+ 
+ static void
+diff --git a/hw/dmx/glxProxy/glxcmds.c b/hw/dmx/glxProxy/glxcmds.c
+index 31fd431..d790b71 100644
+--- a/hw/dmx/glxProxy/glxcmds.c
++++ b/hw/dmx/glxProxy/glxcmds.c
+@@ -1536,7 +1536,7 @@ int __glXGetVisualConfigs(__GLXclientState *cl, GLbyte *pc)
+     int i, p;
+ 
+     screen = req->screen;
+-    if (screen > screenInfo.numScreens) {
++    if (screen >= screenInfo.numScreens) {
+ 	/* The client library must send a valid screen number. */
+ 	client->errorValue = screen;
+ 	return BadValue;
+@@ -2685,7 +2685,7 @@ int __glXGetFBConfigs(__GLXclientState *cl, GLbyte *pc)
+     int numFBConfigs, i, p;
+     __GLXscreenInfo *pGlxScreen;
+ 
+-    if (screen > screenInfo.numScreens) {
++    if (screen >= screenInfo.numScreens) {
+ 	/* The client library must send a valid screen number. */
+ 	client->errorValue = screen;
+ 	return BadValue;
+@@ -3106,7 +3106,7 @@ int __glXCreatePbuffer(__GLXclientState *cl, GLbyte *pc)
+    /*
+     ** Look up screen and FBConfig.
+     */
+-    if (screen > screenInfo.numScreens) {
++    if (screen >= screenInfo.numScreens) {
+         /* The client library must send a valid screen number. */
+         client->errorValue = screen;
+         return BadValue;
+diff --git a/hw/dmx/glxProxy/glxcmdsswap.c b/hw/dmx/glxProxy/glxcmdsswap.c
+index b3720f6..780ca42 100644
+--- a/hw/dmx/glxProxy/glxcmdsswap.c
++++ b/hw/dmx/glxProxy/glxcmdsswap.c
+@@ -251,7 +251,7 @@ int __glXSwapGetVisualConfigs(__GLXclientState *cl, GLbyte *pc)
+ 
+     __GLX_SWAP_INT(&req->screen);
+     screen = req->screen;
+-    if (screen > screenInfo.numScreens) {
++    if (screen >= screenInfo.numScreens) {
+ 	/* The client library must send a valid screen number. */
+ 	client->errorValue = screen;
+ 	return BadValue;
+diff --git a/hw/kdrive/ephyr/ephyrdriext.c b/hw/kdrive/ephyr/ephyrdriext.c
+index 231b098..9f38908 100644
+--- a/hw/kdrive/ephyr/ephyrdriext.c
++++ b/hw/kdrive/ephyr/ephyrdriext.c
+@@ -470,7 +470,7 @@ EphyrDuplicateVisual (unsigned int a_screen,
+     int i=0 ;
+ 
+     EPHYR_LOG ("enter\n") ; 
+-    if (a_screen > screenInfo.numScreens) {
++    if (a_screen >= screenInfo.numScreens) {
+         EPHYR_LOG_ERROR ("bad screen number\n") ;
+         goto out;
+     }
+diff --git a/hw/xfree86/common/xf86DGA.c b/hw/xfree86/common/xf86DGA.c
+index 804fd37..5d8addb 100644
+--- a/hw/xfree86/common/xf86DGA.c
++++ b/hw/xfree86/common/xf86DGA.c
+@@ -1088,13 +1088,15 @@ DGAProcessPointerEvent (ScreenPtr pScreen, DGAEvent *event, DeviceIntPtr mouse)
+     ButtonClassPtr  butc = mouse->button;
+     DGAScreenPtr    pScreenPriv = DGA_GET_SCREEN_PRIV(pScreen);
+     DeviceEvent     ev;
++    DeviceIntPtr    master = GetMaster(mouse, MASTER_KEYBOARD);
+ 
+     memset(&ev, 0, sizeof(ev));
+     ev.header = ET_Internal;
+     ev.length = sizeof(ev);
+     ev.type = event->subtype;
+     ev.corestate  = butc->state;
+-    ev.corestate |= XkbStateFieldFromRec(&GetPairedDevice(mouse)->key->xkbInfo->state);
++    if (master && master->key)
++        ev.corestate |= XkbStateFieldFromRec(&master->key->xkbInfo->state);
+ 
+     UpdateDeviceState(mouse, &ev);
+ 
+diff --git a/hw/xfree86/common/xf86Helper.c b/hw/xfree86/common/xf86Helper.c
+index 1cc1526..512b39e 100644
+--- a/hw/xfree86/common/xf86Helper.c
++++ b/hw/xfree86/common/xf86Helper.c
+@@ -1447,6 +1447,13 @@ xf86MatchDevice(const char *drivername, GDevPtr **sectlist)
+     if (xf86DoConfigure && xf86DoConfigurePass1) return 1;
+ 
+     /*
++     * This can happen when running Xorg -showopts and a module like ati
++     * or vmware tries to load its submodules when xf86ConfigLayout is empty
++     */
++    if (!xf86ConfigLayout.screens)
++	return 0;
++
++    /*
+      * This is a very important function that matches the device sections
+      * as they show up in the config file with the drivers that the server
+      * loads at run time.
+diff --git a/hw/xfree86/common/xf86RandR.c b/hw/xfree86/common/xf86RandR.c
+index 02dcc34..d4beb2c 100644
+--- a/hw/xfree86/common/xf86RandR.c
++++ b/hw/xfree86/common/xf86RandR.c
+@@ -163,7 +163,7 @@ xf86RandRSetMode (ScreenPtr	    pScreen,
+     WindowPtr		pRoot = WindowTable[pScreen->myNum];
+     Bool		ret = TRUE;
+ 
+-    if (pRoot)
++    if (pRoot && scrp->vtSema)
+ 	(*scrp->EnableDisableFBAccess) (pScreen->myNum, FALSE);
+     if (useVirtual)
+     {
+@@ -229,7 +229,7 @@ xf86RandRSetMode (ScreenPtr	    pScreen,
+      */
+     xf86SetViewport (pScreen, pScreen->width, pScreen->height);
+     xf86SetViewport (pScreen, 0, 0);
+-    if (pRoot)
++    if (pRoot && scrp->vtSema)
+ 	(*scrp->EnableDisableFBAccess) (pScreen->myNum, TRUE);
+     return ret;
+ }
+diff --git a/hw/xfree86/common/xf86VGAarbiter.c b/hw/xfree86/common/xf86VGAarbiter.c
+index cd45cd1..2696e96 100644
+--- a/hw/xfree86/common/xf86VGAarbiter.c
++++ b/hw/xfree86/common/xf86VGAarbiter.c
+@@ -530,12 +530,16 @@ static Bool
+ VGAarbiterEnterVT(int index, int flags)
+ {
+     Bool val;
++    ScrnInfoPtr pScrn = xf86Screens[index];
+     ScreenPtr pScreen = screenInfo.screens[index];
+     VGAarbiterScreenPtr pScreenPriv = (VGAarbiterScreenPtr)dixLookupPrivate(
+         &pScreen->devPrivates, VGAarbiterScreenKey);
+ 
+     VGAGet();
+-    val = (*pScreenPriv->EnterVT)(index, flags);
++    pScrn->EnterVT = pScreenPriv->EnterVT;
++    val = (*pScrn->EnterVT)(index, flags);
++    pScreenPriv->EnterVT = pScrn->EnterVT;
++    pScrn->EnterVT = VGAarbiterEnterVT;
+     VGAPut();
+     return val;
+ }
+@@ -543,12 +547,16 @@ VGAarbiterEnterVT(int index, int flags)
+ static void
+ VGAarbiterLeaveVT(int index, int flags)
+ {
++    ScrnInfoPtr pScrn = xf86Screens[index];
+     ScreenPtr pScreen = screenInfo.screens[index];
+     VGAarbiterScreenPtr pScreenPriv = (VGAarbiterScreenPtr)dixLookupPrivate(
+         &pScreen->devPrivates, VGAarbiterScreenKey);
+ 
+     VGAGet();
++    pScrn->LeaveVT = pScreenPriv->LeaveVT;
+     (*pScreenPriv->LeaveVT)(index, flags);
++    pScreenPriv->LeaveVT = pScrn->LeaveVT;
++    pScrn->LeaveVT = VGAarbiterLeaveVT;
+     VGAPut();
+ }
+ 
+diff --git a/hw/xfree86/common/xf86cmap.c b/hw/xfree86/common/xf86cmap.c
+index f60d96e..b5cff9c 100644
+--- a/hw/xfree86/common/xf86cmap.c
++++ b/hw/xfree86/common/xf86cmap.c
+@@ -456,11 +456,17 @@ CMapInstallColormap(ColormapPtr pmap)
+ static Bool 
+ CMapEnterVT(int index, int flags)
+ {
++    ScrnInfoPtr pScrn = xf86Screens[index];
+     ScreenPtr pScreen = screenInfo.screens[index];
++    Bool ret;
+     CMapScreenPtr pScreenPriv = (CMapScreenPtr)dixLookupPrivate(
+ 	&pScreen->devPrivates, CMapScreenKey);
+ 
+-    if((*pScreenPriv->EnterVT)(index, flags)) {
++    pScrn->EnterVT = pScreenPriv->EnterVT;
++    ret = (*pScreenPriv->EnterVT)(index, flags);
++    pScreenPriv->EnterVT = pScrn->EnterVT;
++    pScrn->EnterVT = CMapEnterVT;
++    if(ret) {
+ 	if(miInstalledMaps[index])
+ 	    CMapReinstallMap(miInstalledMaps[index]);
+ 	return TRUE;
+diff --git a/hw/xfree86/common/xf86xv.c b/hw/xfree86/common/xf86xv.c
+index 8221659..d263b63 100644
+--- a/hw/xfree86/common/xf86xv.c
++++ b/hw/xfree86/common/xf86xv.c
+@@ -1225,11 +1225,15 @@ xf86XVQueryAdaptors(
+ static Bool
+ xf86XVEnterVT(int index, int flags)
+ {
++    ScrnInfoPtr pScrn = xf86Screens[index];
+     ScreenPtr pScreen = screenInfo.screens[index];
+     XF86XVScreenPtr ScreenPriv = GET_XF86XV_SCREEN(pScreen);
+     Bool ret;
+ 
++    pScrn->EnterVT = ScreenPriv->EnterVT;
+     ret = (*ScreenPriv->EnterVT)(index, flags);
++    ScreenPriv->EnterVT = pScrn->EnterVT;
++    pScrn->EnterVT = xf86XVEnterVT;
+ 
+     if(ret) WalkTree(pScreen, xf86XVReputAllVideo, 0);
+ 
+@@ -1239,6 +1243,7 @@ xf86XVEnterVT(int index, int flags)
+ static void
+ xf86XVLeaveVT(int index, int flags)
+ {
++    ScrnInfoPtr pScrn = xf86Screens[index];
+     ScreenPtr pScreen = screenInfo.screens[index];
+     XvScreenPtr pxvs = GET_XV_SCREEN(pScreen);
+     XF86XVScreenPtr ScreenPriv = GET_XF86XV_SCREEN(pScreen);
+@@ -1270,7 +1275,10 @@ xf86XVLeaveVT(int index, int flags)
+ 	}
+     }
+ 
++    pScrn->LeaveVT = ScreenPriv->LeaveVT;
+     (*ScreenPriv->LeaveVT)(index, flags);
++    ScreenPriv->LeaveVT = pScrn->LeaveVT;
++    pScrn->LeaveVT = xf86XVLeaveVT;
+ }
+ 
+ static void
+diff --git a/hw/xfree86/ddc/ddc.c b/hw/xfree86/ddc/ddc.c
+index 6fad9fb..df46689 100644
+--- a/hw/xfree86/ddc/ddc.c
++++ b/hw/xfree86/ddc/ddc.c
+@@ -311,10 +311,6 @@ DDC2Init(int scrnIndex, I2CBusPtr pBus)
+     dev = DDC2MakeDevice(pBus, 0x00A0, "ddc2");
+     if (xf86I2CProbeAddress(pBus, 0x0060))
+ 	DDC2MakeDevice(pBus, 0x0060, "E-EDID segment register");
+-    if (xf86I2CProbeAddress(pBus, 0x0062))
+-	DDC2MakeDevice(pBus, 0x0062, "EDID EEPROM interface");
+-    if (xf86I2CProbeAddress(pBus, 0x006E))
+-	DDC2MakeDevice(pBus, 0x006E, "DDC control interface");
+ 
+     return dev;
+ }
+diff --git a/hw/xfree86/ddc/interpret_edid.c b/hw/xfree86/ddc/interpret_edid.c
+index 12a5254..f48ed52 100644
+--- a/hw/xfree86/ddc/interpret_edid.c
++++ b/hw/xfree86/ddc/interpret_edid.c
+@@ -385,7 +385,7 @@ get_monitor_ranges(Uchar *c, struct monitor_ranges *r)
+     r->max_h = MAX_H;
+     r->max_clock = 0;
+     if(MAX_CLOCK != 0xff) /* is specified? */
+-	r->max_clock = MAX_CLOCK * 10;
++	r->max_clock = MAX_CLOCK * 10 + 5;
+     if (HAVE_2ND_GTF) {
+ 	r->gtf_2nd_f = F_2ND_GTF;
+ 	r->gtf_2nd_c = C_2ND_GTF;
+diff --git a/hw/xfree86/dixmods/extmod/xf86dga2.c b/hw/xfree86/dixmods/extmod/xf86dga2.c
+index 5367bcc..3742c2b 100644
+--- a/hw/xfree86/dixmods/extmod/xf86dga2.c
++++ b/hw/xfree86/dixmods/extmod/xf86dga2.c
+@@ -139,7 +139,7 @@ ProcXDGAOpenFramebuffer(ClientPtr client)
+     char *deviceName;
+     int nameSize;
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     if (!DGAAvailable(stuff->screen))
+@@ -173,7 +173,7 @@ ProcXDGACloseFramebuffer(ClientPtr client)
+ {
+     REQUEST(xXDGACloseFramebufferReq);
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     if (!DGAAvailable(stuff->screen))
+@@ -195,7 +195,7 @@ ProcXDGAQueryModes(ClientPtr client)
+     xXDGAModeInfo info;
+     XDGAModePtr mode;
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     REQUEST_SIZE_MATCH(xXDGAQueryModesReq);
+@@ -313,7 +313,7 @@ ProcXDGASetMode(ClientPtr client)
+     PixmapPtr pPix;
+     int size;
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     REQUEST_SIZE_MATCH(xXDGASetModeReq);
+@@ -402,7 +402,7 @@ ProcXDGASetViewport(ClientPtr client)
+ {
+     REQUEST(xXDGASetViewportReq);
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     if(DGAClients[stuff->screen] != client)
+@@ -422,7 +422,7 @@ ProcXDGAInstallColormap(ClientPtr client)
+     int rc;
+     REQUEST(xXDGAInstallColormapReq);
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     if(DGAClients[stuff->screen] != client)
+@@ -448,7 +448,7 @@ ProcXDGASelectInput(ClientPtr client)
+ {
+     REQUEST(xXDGASelectInputReq);
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     if(DGAClients[stuff->screen] != client)
+@@ -468,7 +468,7 @@ ProcXDGAFillRectangle(ClientPtr client)
+ {
+     REQUEST(xXDGAFillRectangleReq);
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     if(DGAClients[stuff->screen] != client)
+@@ -488,7 +488,7 @@ ProcXDGACopyArea(ClientPtr client)
+ {
+     REQUEST(xXDGACopyAreaReq);
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     if(DGAClients[stuff->screen] != client)
+@@ -509,7 +509,7 @@ ProcXDGACopyTransparentArea(ClientPtr client)
+ {
+     REQUEST(xXDGACopyTransparentAreaReq);
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     if(DGAClients[stuff->screen] != client)
+@@ -531,7 +531,7 @@ ProcXDGAGetViewportStatus(ClientPtr client)
+     REQUEST(xXDGAGetViewportStatusReq);
+     xXDGAGetViewportStatusReply rep;
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     if(DGAClients[stuff->screen] != client)
+@@ -554,7 +554,7 @@ ProcXDGASync(ClientPtr client)
+     REQUEST(xXDGASyncReq);
+     xXDGASyncReply rep;
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     if(DGAClients[stuff->screen] != client)
+@@ -599,7 +599,7 @@ ProcXDGAChangePixmapMode(ClientPtr client)
+     xXDGAChangePixmapModeReply rep;
+     int x, y;
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     if(DGAClients[stuff->screen] != client)
+@@ -630,7 +630,7 @@ ProcXDGACreateColormap(ClientPtr client)
+     REQUEST(xXDGACreateColormapReq);
+     int result;
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+         return BadValue;
+ 
+     if(DGAClients[stuff->screen] != client)
+@@ -677,7 +677,7 @@ ProcXF86DGAGetVideoLL(ClientPtr client)
+     int num, offset, flags;
+     char *name;
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+ 	return BadValue;
+ 
+     REQUEST_SIZE_MATCH(xXF86DGAGetVideoLLReq);
+@@ -715,7 +715,7 @@ ProcXF86DGADirectVideo(ClientPtr client)
+     XDGAModeRec mode;
+     REQUEST(xXF86DGADirectVideoReq);
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+ 	return BadValue;
+ 
+     REQUEST_SIZE_MATCH(xXF86DGADirectVideoReq);
+@@ -769,7 +769,7 @@ ProcXF86DGAGetViewPortSize(ClientPtr client)
+     REQUEST(xXF86DGAGetViewPortSizeReq);
+     xXF86DGAGetViewPortSizeReply rep;
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+ 	return BadValue;
+ 
+     REQUEST_SIZE_MATCH(xXF86DGAGetViewPortSizeReq);
+@@ -797,7 +797,7 @@ ProcXF86DGASetViewPort(ClientPtr client)
+ {
+     REQUEST(xXF86DGASetViewPortReq);
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+ 	return BadValue;
+ 
+     if (DGAClients[stuff->screen] != client)
+@@ -824,7 +824,7 @@ ProcXF86DGAGetVidPage(ClientPtr client)
+     REQUEST(xXF86DGAGetVidPageReq);
+     xXF86DGAGetVidPageReply rep;
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+ 	return BadValue;
+ 
+     REQUEST_SIZE_MATCH(xXF86DGAGetVidPageReq);
+@@ -843,7 +843,7 @@ ProcXF86DGASetVidPage(ClientPtr client)
+ {
+     REQUEST(xXF86DGASetVidPageReq);
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+ 	return BadValue;
+ 
+     REQUEST_SIZE_MATCH(xXF86DGASetVidPageReq);
+@@ -861,7 +861,7 @@ ProcXF86DGAInstallColormap(ClientPtr client)
+     int rc;
+     REQUEST(xXF86DGAInstallColormapReq);
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+ 	return BadValue;
+ 
+     if (DGAClients[stuff->screen] != client)
+@@ -888,7 +888,7 @@ ProcXF86DGAQueryDirectVideo(ClientPtr client)
+     REQUEST(xXF86DGAQueryDirectVideoReq);
+     xXF86DGAQueryDirectVideoReply rep;
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+ 	return BadValue;
+ 
+     REQUEST_SIZE_MATCH(xXF86DGAQueryDirectVideoReq);
+@@ -910,7 +910,7 @@ ProcXF86DGAViewPortChanged(ClientPtr client)
+     REQUEST(xXF86DGAViewPortChangedReq);
+     xXF86DGAViewPortChangedReply rep;
+ 
+-    if (stuff->screen > screenInfo.numScreens)
++    if (stuff->screen >= screenInfo.numScreens)
+ 	return BadValue;
+ 
+     if (DGAClients[stuff->screen] != client)
+diff --git a/hw/xfree86/modes/xf86Crtc.c b/hw/xfree86/modes/xf86Crtc.c
+index 334fad4..0b077d0 100644
+--- a/hw/xfree86/modes/xf86Crtc.c
++++ b/hw/xfree86/modes/xf86Crtc.c
+@@ -756,6 +756,8 @@ xf86CrtcCloseScreen (int index, ScreenPtr screen)
+ 
+ 	crtc->randr_crtc = NULL;
+     }
++    xf86RandR12CloseScreen (screen);
++
+     return screen->CloseScreen (index, screen);
+ }
+ 
+@@ -1041,8 +1043,8 @@ xf86DefaultScreenLimits (ScrnInfoPtr scrn, int *widthp, int *heightp,
+ 
+ 	if (crtc->enabled)
+ 	{
+-	    crtc_width = crtc->x + xf86ModeWidth (&crtc->desiredMode, crtc->desiredRotation);
+-	    crtc_height = crtc->y + xf86ModeHeight (&crtc->desiredMode, crtc->desiredRotation);
++	    crtc_width = crtc->desiredX + xf86ModeWidth (&crtc->desiredMode, crtc->desiredRotation);
++	    crtc_height = crtc->desiredY + xf86ModeHeight (&crtc->desiredMode, crtc->desiredRotation);
+ 	}
+ 	if (!canGrow) {
+ 	    for (o = 0; o < config->num_output; o++)
+diff --git a/hw/xfree86/modes/xf86Cursors.c b/hw/xfree86/modes/xf86Cursors.c
+index 385848b..f7250f4 100644
+--- a/hw/xfree86/modes/xf86Cursors.c
++++ b/hw/xfree86/modes/xf86Cursors.c
+@@ -327,10 +327,13 @@ xf86_crtc_set_cursor_position (xf86CrtcPtr crtc, int x, int y)
+ 						  xf86CursorScreenKey);
+ 	struct pict_f_vector   v;
+ 
+-	v.v[0] = x + ScreenPriv->HotX; v.v[1] = y + ScreenPriv->HotY; v.v[2] = 1;
++	v.v[0] = (x + ScreenPriv->HotX) + 0.5;
++	v.v[1] = (y + ScreenPriv->HotY) + 0.5;
++	v.v[2] = 1;
+ 	pixman_f_transform_point (&crtc->f_framebuffer_to_crtc, &v);
+-	x = floor (v.v[0] + 0.5);
+-	y = floor (v.v[1] + 0.5);
++	/* cursor will have 0.5 added to it already so floor is sufficent */
++	x = floor (v.v[0]);
++	y = floor (v.v[1]);
+ 	/*
+ 	 * Transform position of cursor upper left corner
+ 	 */
+@@ -611,7 +614,7 @@ xf86_reload_cursors (ScreenPtr screen)
+     cursor_screen_priv = dixLookupPrivate(&screen->devPrivates,
+ 					  xf86CursorScreenKey);
+     /* return if HW cursor is inactive, to avoid displaying two cursors */
+-    if (!cursor_screen_priv->isUp)
++    if (!cursor_screen_priv || !cursor_screen_priv->isUp)
+ 	return;
+ 
+     scrn = xf86Screens[screen->myNum];
+diff --git a/hw/xfree86/modes/xf86EdidModes.c b/hw/xfree86/modes/xf86EdidModes.c
+index b057d7d..50e1bfd 100644
+--- a/hw/xfree86/modes/xf86EdidModes.c
++++ b/hw/xfree86/modes/xf86EdidModes.c
+@@ -170,6 +170,11 @@ static Bool quirk_detailed_v_in_cm (int scrnIndex, xf86MonPtr DDC)
+ 	DDC->vendor.prod_id == 0x2a00)
+ 	return TRUE;
+ 
++    /* Bug #28414: HP Compaq NC8430 LP154W01-TLA8 */
++    if (memcmp (DDC->vendor.name, "LPL", 4) == 0 &&
++	DDC->vendor.prod_id == 5750)
++	return TRUE;
++
+     /* Bug #21750: Samsung Syncmaster 2333HD */
+     if (memcmp (DDC->vendor.name, "SAM", 4) == 0 &&
+ 	DDC->vendor.prod_id == 1157)
+diff --git a/hw/xfree86/modes/xf86Modes.c b/hw/xfree86/modes/xf86Modes.c
+index 862a473..a107001 100644
+--- a/hw/xfree86/modes/xf86Modes.c
++++ b/hw/xfree86/modes/xf86Modes.c
+@@ -362,15 +362,32 @@ xf86ValidateModesSize(ScrnInfoPtr pScrn, DisplayModePtr modeList,
+ {
+     DisplayModePtr mode;
+ 
+-    for (mode = modeList; mode != NULL; mode = mode->next) {
+-	if (maxPitch > 0 && mode->HDisplay > maxPitch)
+-	    mode->status = MODE_BAD_WIDTH;
+-
+-	if (maxX > 0 && mode->HDisplay > maxX)
+-	    mode->status = MODE_VIRTUAL_X;
++    if (maxPitch <= 0)
++	    maxPitch = MAXINT;
++    if (maxX <= 0)
++	    maxX = MAXINT;
++    if (maxY <= 0)
++	    maxY = MAXINT;
+ 
+-	if (maxY > 0 && mode->VDisplay > maxY)
+-	    mode->status = MODE_VIRTUAL_Y;
++    for (mode = modeList; mode != NULL; mode = mode->next) {
++	if ((xf86ModeWidth(mode, RR_Rotate_0) > maxPitch ||
++	     xf86ModeWidth(mode, RR_Rotate_0) > maxX ||
++	     xf86ModeHeight(mode, RR_Rotate_0) > maxY) &&
++	    (xf86ModeWidth(mode, RR_Rotate_90) > maxPitch ||
++	     xf86ModeWidth(mode, RR_Rotate_90) > maxX ||
++	     xf86ModeHeight(mode, RR_Rotate_90) > maxY)) {
++	    if (xf86ModeWidth(mode, RR_Rotate_0) > maxPitch ||
++		xf86ModeWidth(mode, RR_Rotate_90) > maxPitch)
++		mode->status = MODE_BAD_WIDTH;
++
++	    if (xf86ModeWidth(mode, RR_Rotate_0) > maxX ||
++		xf86ModeWidth(mode, RR_Rotate_90) > maxX)
++		mode->status = MODE_VIRTUAL_X;
++
++	    if (xf86ModeHeight(mode, RR_Rotate_0) > maxY ||
++		xf86ModeHeight(mode, RR_Rotate_90) > maxY)
++		mode->status = MODE_VIRTUAL_Y;
++	}
+ 
+ 	if (mode->next == modeList)
+ 	    break;
+diff --git a/hw/xfree86/modes/xf86RandR12.c b/hw/xfree86/modes/xf86RandR12.c
+index 7ba09b6..52eba24 100644
+--- a/hw/xfree86/modes/xf86RandR12.c
++++ b/hw/xfree86/modes/xf86RandR12.c
+@@ -927,6 +927,24 @@ xf86RandR12Init (ScreenPtr pScreen)
+ }
+ 
+ void
++xf86RandR12CloseScreen (ScreenPtr pScreen)
++{
++    XF86RandRInfoPtr	randrp;
++
++#if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(7,0,0,0,0)
++    if (xf86RandR12Key == NULL)
++	return;
++#endif
++
++    randrp = XF86RANDRINFO(pScreen);
++#if RANDR_12_INTERFACE
++    xf86Screens[pScreen->myNum]->EnterVT = randrp->orig_EnterVT;
++#endif
++
++    free(randrp);
++}
++
++void
+ xf86RandR12SetRotations (ScreenPtr pScreen, Rotation rotations)
+ {
+     XF86RandRInfoPtr	randrp;
+@@ -1754,13 +1772,25 @@ static Bool
+ xf86RandR12EnterVT (int screen_index, int flags)
+ {
+     ScreenPtr        pScreen = screenInfo.screens[screen_index];
++    ScrnInfoPtr	     pScrn = xf86Screens[screen_index];
+     XF86RandRInfoPtr randrp  = XF86RANDRINFO(pScreen);
++    rrScrPrivPtr     rp = rrGetScrPriv(pScreen);
++    Bool	     ret;
+ 
+     if (randrp->orig_EnterVT) {
+-	if (!randrp->orig_EnterVT (screen_index, flags))
++	pScrn->EnterVT = randrp->orig_EnterVT;
++	ret = pScrn->EnterVT (screen_index, flags);
++	randrp->orig_EnterVT = pScrn->EnterVT;
++	pScrn->EnterVT = xf86RandR12EnterVT;
++	if (!ret)
+ 	    return FALSE;
+     }
+ 
++    /* reload gamma */
++    int i;
++    for (i = 0; i < rp->numCrtcs; i++)
++	xf86RandR12CrtcSetGamma(pScreen, rp->crtcs[i]);
++
+     return RRGetInfo (pScreen, TRUE); /* force a re-probe of outputs and notify clients about changes */
+ }
+ 
+@@ -1770,6 +1800,7 @@ xf86RandR12Init12 (ScreenPtr pScreen)
+     ScrnInfoPtr		pScrn = xf86Screens[pScreen->myNum];
+     rrScrPrivPtr	rp = rrGetScrPriv(pScreen);
+     XF86RandRInfoPtr	randrp  = XF86RANDRINFO(pScreen);
++    int i;
+ 
+     rp->rrGetInfo = xf86RandR12GetInfo12;
+     rp->rrScreenSetSize = xf86RandR12ScreenSetSize;
+@@ -1799,6 +1830,9 @@ xf86RandR12Init12 (ScreenPtr pScreen)
+      */
+     if (!xf86RandR12SetInfo12 (pScreen))
+ 	return FALSE;
++    for (i = 0; i < rp->numCrtcs; i++) {
++	xf86RandR12CrtcGetGamma(pScreen, rp->crtcs[i]);
++    }
+     return TRUE;
+ }
+ 
+diff --git a/hw/xfree86/modes/xf86RandR12.h b/hw/xfree86/modes/xf86RandR12.h
+index c8d9918..0c586be 100644
+--- a/hw/xfree86/modes/xf86RandR12.h
++++ b/hw/xfree86/modes/xf86RandR12.h
+@@ -30,6 +30,7 @@
+ 
+ extern _X_EXPORT Bool xf86RandR12CreateScreenResources (ScreenPtr pScreen);
+ extern _X_EXPORT Bool xf86RandR12Init(ScreenPtr pScreen);
++extern _X_EXPORT void xf86RandR12CloseScreen(ScreenPtr pScreen);
+ extern _X_EXPORT void xf86RandR12SetRotations (ScreenPtr pScreen, Rotation rotation);
+ extern _X_EXPORT void xf86RandR12SetTransformSupport (ScreenPtr pScreen, Bool transforms);
+ extern _X_EXPORT Bool xf86RandR12SetConfig(ScreenPtr pScreen, Rotation rotation, int rate,
+diff --git a/hw/xfree86/parser/Input.c b/hw/xfree86/parser/Input.c
+index 4e3c04e..953215b 100644
+--- a/hw/xfree86/parser/Input.c
++++ b/hw/xfree86/parser/Input.c
+@@ -59,6 +59,7 @@
+ #include <xorg-config.h>
+ #endif
+ 
++#include "os.h"
+ #include "xf86Parser.h"
+ #include "xf86tokens.h"
+ #include "Configint.h"
+@@ -102,8 +103,10 @@ xf86parseInputSection (void)
+ 		case DRIVER:
+ 			if (xf86getSubToken (&(ptr->inp_comment)) != STRING)
+ 				Error (QUOTE_MSG, "Driver");
+-                        if (strcmp(val.str, "keyboard") == 0)
+-                            ptr->inp_driver = "kbd";
++                        if (strcmp(val.str, "keyboard") == 0) {
++                            ptr->inp_driver = strdup("kbd");
++                            free(val.str);
++                        }
+                         else
+ 			    ptr->inp_driver = val.str;
+ 			break;
+diff --git a/hw/xfree86/shadowfb/shadow.c b/hw/xfree86/shadowfb/shadow.c
+index 9c9aa0d..eb6a8c7 100644
+--- a/hw/xfree86/shadowfb/shadow.c
++++ b/hw/xfree86/shadowfb/shadow.c
+@@ -223,9 +223,14 @@ static Bool
+ ShadowEnterVT(int index, int flags)
+ {
+     ScrnInfoPtr pScrn = xf86Screens[index];
++    Bool ret;
+     ShadowScreenPtr pPriv = GET_SCREEN_PRIVATE(pScrn->pScreen);
+ 
+-    if((*pPriv->EnterVT)(index, flags)) {
++    pScrn->EnterVT = pPriv->EnterVT;
++    ret = (*pPriv->EnterVT)(index, flags);
++    pPriv->EnterVT = pScrn->EnterVT;
++    pScrn->EnterVT = ShadowEnterVT;
++    if(ret) {
+ 	pPriv->vtSema = TRUE;
+         return TRUE;
+     }
+@@ -236,11 +241,15 @@ ShadowEnterVT(int index, int flags)
+ static void
+ ShadowLeaveVT(int index, int flags)
+ {
++    ScrnInfoPtr pScrn = xf86Screens[index];
+     ShadowScreenPtr pPriv = GET_SCREEN_PRIVATE(xf86Screens[index]->pScreen);
+ 
+     pPriv->vtSema = FALSE;
+ 
++    pScrn->LeaveVT = pPriv->LeaveVT;
+     (*pPriv->LeaveVT)(index, flags);
++    pPriv->LeaveVT = pScrn->LeaveVT;
++    pScrn->LeaveVT = ShadowLeaveVT;
+ }
+ 
+ /**********************************************************/
+diff --git a/hw/xfree86/x86emu/ops.c b/hw/xfree86/x86emu/ops.c
+index 21a0347..5d3cac1 100644
+--- a/hw/xfree86/x86emu/ops.c
++++ b/hw/xfree86/x86emu/ops.c
+@@ -7065,15 +7065,20 @@ Handles opcode 0x9a
+ ****************************************************************************/
+ static void x86emuOp_call_far_IMM(u8 X86EMU_UNUSED(op1))
+ {
+-    u16 farseg, faroff;
++    u32 farseg, faroff;
+ 
+     START_OF_INSTR();
+-	DECODE_PRINTF("CALL\t");
++    DECODE_PRINTF("CALL\t");
++    if (M.x86.mode & SYSMODE_PREFIX_DATA) {
++	faroff = fetch_long_imm();
++	farseg = fetch_word_imm();
++    } else {
+ 	faroff = fetch_word_imm();
+ 	farseg = fetch_word_imm();
+-	DECODE_PRINTF2("%04x:", farseg);
+-	DECODE_PRINTF2("%04x\n", faroff);
+-	CALL_TRACE(M.x86.saved_cs, M.x86.saved_ip, farseg, faroff, "FAR ");
++    }
++    DECODE_PRINTF2("%04x:", farseg);
++    DECODE_PRINTF2("%04x\n", faroff);
++    CALL_TRACE(M.x86.saved_cs, M.x86.saved_ip, farseg, faroff, "FAR ");
+ 
+     /* XXX
+      * 
+@@ -7084,8 +7089,12 @@ static void x86emuOp_call_far_IMM(u8 X86EMU_UNUSED(op1))
+     TRACE_AND_STEP();
+     push_word(M.x86.R_CS);
+     M.x86.R_CS = farseg;
+-    push_word(M.x86.R_IP);
+-    M.x86.R_IP = faroff;
++    if (M.x86.mode & SYSMODE_PREFIX_DATA) {
++	push_long(M.x86.R_EIP);
++    } else {
++	push_word(M.x86.R_IP);
++    }
++    M.x86.R_EIP = faroff & 0xffff;
+     DECODE_CLEAR_SEGOVR();
+     END_OF_INSTR();
+ }
+@@ -9670,17 +9679,30 @@ Handles opcode 0xe8
+ ****************************************************************************/
+ static void x86emuOp_call_near_IMM(u8 X86EMU_UNUSED(op1))
+ {
+-    s16 ip;
++    s16 ip16;
++    s32 ip32;
+ 
+     START_OF_INSTR();
+-	DECODE_PRINTF("CALL\t");
+-	ip = (s16) fetch_word_imm();
+-	ip += (s16) M.x86.R_IP;    /* CHECK SIGN */
+-	DECODE_PRINTF2("%04x\n", (u16)ip);
+-	CALL_TRACE(M.x86.saved_cs, M.x86.saved_ip, M.x86.R_CS, ip, "");
++    DECODE_PRINTF("CALL\t");
++    if (M.x86.mode & SYSMODE_PREFIX_DATA) {
++	ip32 = (s32) fetch_long_imm();
++	ip32 += (s16) M.x86.R_IP;    /* CHECK SIGN */
++	DECODE_PRINTF2("%04x\n", (u16)ip32);
++	CALL_TRACE(M.x86.saved_cs, M.x86.saved_ip, M.x86.R_CS, ip32, "");
++    } else {
++	ip16 = (s16) fetch_word_imm();
++	ip16 += (s16) M.x86.R_IP;    /* CHECK SIGN */
++	DECODE_PRINTF2("%04x\n", (u16)ip16);
++	CALL_TRACE(M.x86.saved_cs, M.x86.saved_ip, M.x86.R_CS, ip16, "");
++    }
+     TRACE_AND_STEP();
+-    push_word(M.x86.R_IP);
+-    M.x86.R_IP = ip;
++    if (M.x86.mode & SYSMODE_PREFIX_DATA) {
++	push_long(M.x86.R_EIP);
++	M.x86.R_EIP = ip32 & 0xffff;
++    } else {
++	push_word(M.x86.R_IP);
++	M.x86.R_EIP = ip16;
++    }
+     DECODE_CLEAR_SEGOVR();
+     END_OF_INSTR();
+ }
+@@ -9691,15 +9713,23 @@ Handles opcode 0xe9
+ ****************************************************************************/
+ static void x86emuOp_jump_near_IMM(u8 X86EMU_UNUSED(op1))
+ {
+-    int ip;
++    u32 ip;
+ 
+     START_OF_INSTR();
+     DECODE_PRINTF("JMP\t");
+-    ip = (s16)fetch_word_imm();
+-    ip += (s16)M.x86.R_IP;
+-    DECODE_PRINTF2("%04x\n", (u16)ip);
+-    TRACE_AND_STEP();
+-    M.x86.R_IP = (u16)ip;
++    if (M.x86.mode & SYSMODE_PREFIX_DATA) {
++	ip = (u32)fetch_long_imm();
++	ip += (u32)M.x86.R_EIP;
++	DECODE_PRINTF2("%08x\n", (u32)ip);
++	TRACE_AND_STEP();
++	M.x86.R_EIP = (u32)ip;
++    } else {
++	ip = (s16)fetch_word_imm();
++	ip += (s16)M.x86.R_IP;
++	DECODE_PRINTF2("%04x\n", (u16)ip);
++	TRACE_AND_STEP();
++	M.x86.R_IP = (u16)ip;
++    }
+     DECODE_CLEAR_SEGOVR();
+     END_OF_INSTR();
+ }
+@@ -9710,16 +9740,21 @@ Handles opcode 0xea
+ ****************************************************************************/
+ static void x86emuOp_jump_far_IMM(u8 X86EMU_UNUSED(op1))
+ {
+-    u16 cs, ip;
++    u16 cs;
++    u32 ip;
+ 
+     START_OF_INSTR();
+     DECODE_PRINTF("JMP\tFAR ");
+-    ip = fetch_word_imm();
++    if (M.x86.mode & SYSMODE_PREFIX_DATA) {
++	ip = fetch_long_imm();
++    } else {
++	ip = fetch_word_imm();
++    }
+     cs = fetch_word_imm();
+     DECODE_PRINTF2("%04x:", cs);
+     DECODE_PRINTF2("%04x\n", ip);
+     TRACE_AND_STEP();
+-    M.x86.R_IP = ip;
++    M.x86.R_EIP = ip & 0xffff;
+     M.x86.R_CS = cs;
+     DECODE_CLEAR_SEGOVR();
+     END_OF_INSTR();
+diff --git a/hw/xfree86/xaa/xaaInit.c b/hw/xfree86/xaa/xaaInit.c
+index 2ce2d90..965c8ed 100644
+--- a/hw/xfree86/xaa/xaaInit.c
++++ b/hw/xfree86/xaa/xaaInit.c
+@@ -511,16 +511,23 @@ XAAChangeWindowAttributes (WindowPtr pWin, unsigned long mask)
+ static Bool 
+ XAAEnterVT(int index, int flags)
+ {
++    ScrnInfoPtr pScrn = xf86Screens[index];
++    Bool ret;
+     ScreenPtr pScreen = screenInfo.screens[index];
+     XAAScreenPtr pScreenPriv = 
+ 	(XAAScreenPtr)dixLookupPrivate(&pScreen->devPrivates, XAAScreenKey);
+ 
+-    return((*pScreenPriv->EnterVT)(index, flags));
++    pScrn->EnterVT = pScreenPriv->EnterVT;
++    ret = ((*pScreenPriv->EnterVT)(index, flags));
++    pScreenPriv->EnterVT = pScrn->EnterVT;
++    pScrn->EnterVT = XAAEnterVT;
++    return ret;
+ }
+ 
+ static void 
+ XAALeaveVT(int index, int flags)
+ {
++    ScrnInfoPtr pScrn = xf86Screens[index];
+     ScreenPtr pScreen = screenInfo.screens[index];
+     XAAScreenPtr pScreenPriv = 
+ 	(XAAScreenPtr)dixLookupPrivate(&pScreen->devPrivates, XAAScreenKey);
+@@ -531,7 +538,10 @@ XAALeaveVT(int index, int flags)
+         infoRec->NeedToSync = FALSE;
+     }
+ 
++    pScrn->LeaveVT = pScreenPriv->LeaveVT;
+     (*pScreenPriv->LeaveVT)(index, flags);
++    pScreenPriv->LeaveVT = pScrn->LeaveVT;
++    pScrn->LeaveVT = XAALeaveVT;
+ }
+ 
+ typedef struct {
+diff --git a/hw/xquartz/X11Application.m b/hw/xquartz/X11Application.m
+index c9a0d66..805ed99 100644
+--- a/hw/xquartz/X11Application.m
++++ b/hw/xquartz/X11Application.m
+@@ -1030,20 +1030,32 @@ static inline int ensure_flag(int flags, int device_independent, int device_depe
+     if(isMouseOrTabletEvent) {
+         static NSPoint lastpt;
+         NSWindow *window = [e window];
+-        NSRect screen = [[[NSScreen screens] objectAtIndex:0] frame];;
+-
++        NSRect screen = [[[NSScreen screens] objectAtIndex:0] frame];
++	    BOOL hasUntrustedPointerDelta;
++        
++        // NSEvents for tablets are not consistent wrt deltaXY between events, so we cannot rely on that
++        // Thus tablets will be subject to the warp-pointer bug worked around by the delta, but tablets
++        // are not normally used in cases where that bug would present itself, so this is a fair tradeoff
++        // <rdar://problem/7111003> deltaX and deltaY are incorrect for NSMouseMoved, NSTabletPointEventSubtype
++        // http://xquartz.macosforge.org/trac/ticket/288
++        hasUntrustedPointerDelta = isTabletEvent;
++        
++        // The deltaXY for middle click events also appear erroneous after fast user switching
++        // <rdar://problem/7979468> deltaX and deltaY are incorrect for NSOtherMouseDown and NSOtherMouseUp after FUS
++        // http://xquartz.macosforge.org/trac/ticket/389
++        hasUntrustedPointerDelta = hasUntrustedPointerDelta || [e type] == NSOtherMouseDown || [e type] == NSOtherMouseUp;
++
++        // The deltaXY for scroll events correspond to the scroll delta, not the pointer delta
++        // <rdar://problem/7989690> deltaXY for wheel events are being sent as mouse movement
++        hasUntrustedPointerDelta = hasUntrustedPointerDelta || [e type] == NSScrollWheel;
++        
+         if (window != nil)	{
+             NSRect frame = [window frame];
+             location = [e locationInWindow];
+             location.x += frame.origin.x;
+             location.y += frame.origin.y;
+             lastpt = location;
+-        } else if(isTabletEvent) {
+-            // NSEvents for tablets are not consistent wrt deltaXY between events, so we cannot rely on that
+-            // Thus tablets will be subject to the warp-pointer bug worked around by the delta, but tablets
+-            // are not normally used in cases where that bug would present itself, so this is a fair tradeoff
+-            // <rdar://problem/7111003> deltaX and deltaY are incorrect for NSMouseMoved, NSTabletPointEventSubtype
+-            // http://xquartz.macosforge.org/trac/ticket/288
++        } else if(hasUntrustedPointerDelta) {
+             location = [e locationInWindow];
+             lastpt = location;
+         } else {
+diff --git a/hw/xquartz/bundle/Makefile.am b/hw/xquartz/bundle/Makefile.am
+index f8b96d8..c4d77c0 100644
+--- a/hw/xquartz/bundle/Makefile.am
++++ b/hw/xquartz/bundle/Makefile.am
+@@ -28,6 +28,10 @@ EXTRA_DIST = \
+ 	Info.plist.cpp \
+ 	PkgInfo \
+ 	$(resource_DATA) \
++	Resources/ar.lproj/InfoPlist.strings \
++	Resources/ar.lproj/Localizable.strings \
++	Resources/ar.lproj/main.nib/designable.nib \
++	Resources/ar.lproj/main.nib/keyedobjects.nib \
+ 	Resources/da.lproj/InfoPlist.strings \
+ 	Resources/da.lproj/Localizable.strings \
+ 	Resources/da.lproj/main.nib/keyedobjects.nib \
+diff --git a/include/eventstr.h b/include/eventstr.h
+index 79685c1..377cceb 100644
+--- a/include/eventstr.h
++++ b/include/eventstr.h
+@@ -91,15 +91,15 @@ struct _DeviceEvent
+         uint32_t button;  /**< Button number */
+         uint32_t key;     /**< Key code */
+     } detail;
+-    uint16_t root_x;      /**< Pos relative to root window in integral data */
++    int16_t root_x;       /**< Pos relative to root window in integral data */
+     float root_x_frac;    /**< Pos relative to root window in frac part */
+-    uint16_t root_y;      /**< Pos relative to root window in integral part */
++    int16_t root_y;       /**< Pos relative to root window in integral part */
+     float root_y_frac;    /**< Pos relative to root window in frac part */
+     uint8_t    buttons[(MAX_BUTTONS + 7)/8]; /**< Button mask */
+     struct {
+         uint8_t  mask[(MAX_VALUATORS + 7)/8]; /**< Valuator mask */
+         uint8_t  mode[(MAX_VALUATORS + 7)/8]; /**< Valuator mode (Abs or Rel)*/
+-        uint32_t data[MAX_VALUATORS];         /**< Valuator data */
++        int32_t  data[MAX_VALUATORS];         /**< Valuator data */
+         int32_t  data_frac[MAX_VALUATORS];    /**< Fractional part for data */
+     } valuators;
+     struct {
+diff --git a/include/protocol-versions.h b/include/protocol-versions.h
+index da9770c..f623b3c 100644
+--- a/include/protocol-versions.h
++++ b/include/protocol-versions.h
+@@ -99,6 +99,10 @@
+ #define SERVER_SHM_MAJOR_VERSION		1
+ #define SERVER_SHM_MINOR_VERSION		1
+ 
++/* Sync */
++#define SERVER_SYNC_MAJOR_VERSION		3
++#define SERVER_SYNC_MINOR_VERSION		0
++
+ /* Windows WM */
+ #define SERVER_WINDOWSWM_MAJOR_VERSION		1
+ #define SERVER_WINDOWSWM_MINOR_VERSION		0
+diff --git a/mi/mieq.c b/mi/mieq.c
+index 9b6d0c9..97f4afc 100644
+--- a/mi/mieq.c
++++ b/mi/mieq.c
+@@ -320,6 +320,7 @@ CopyGetMasterEvent(DeviceIntPtr sdev,
+ {
+     DeviceIntPtr mdev;
+     int len = original->any.length;
++    int type = original->any.type;
+ 
+     CHECKEVENT(original);
+ 
+@@ -327,7 +328,12 @@ CopyGetMasterEvent(DeviceIntPtr sdev,
+     if (!sdev || !sdev->u.master)
+         return NULL;
+ 
+-    switch(original->any.type)
++#if XFreeXDGA
++    if (type == ET_DGAEvent)
++        type = original->dga_event.subtype;
++#endif
++
++    switch(type)
+     {
+         case ET_KeyPress:
+         case ET_KeyRelease:
+diff --git a/os/access.c b/os/access.c
+index 74c340a..859f32e 100644
+--- a/os/access.c
++++ b/os/access.c
+@@ -765,7 +765,8 @@ DefineSelf (int fd)
+ 	    continue;
+ #endif /* DNETCONN */
+ 	len = sizeof(*(ifr->ifa_addr));
+-	family = ConvertAddr(ifr->ifa_addr, &len, (pointer *)&addr);
++	family = ConvertAddr((struct sockaddr *) ifr->ifa_addr, &len,
++			     (pointer *)&addr);
+ 	if (family == -1 || family == FamilyLocal) 
+ 	    continue;
+ #if defined(IPv6) && defined(AF_INET6)
+@@ -789,7 +790,6 @@ DefineSelf (int fd)
+ 	}
+ #ifdef XDMCP
+ 	{
+-	    struct sockaddr broad_addr;
+ 	    /*
+ 	     * If this isn't an Internet Address, don't register it.
+ 	     */
+@@ -835,11 +835,10 @@ DefineSelf (int fd)
+ 	    if ((ifr->ifa_flags & IFF_BROADCAST) &&
+ 		(ifr->ifa_flags & IFF_UP) &&
+                 ifr->ifa_broadaddr)
+-		broad_addr = *ifr->ifa_broadaddr;
++		XdmcpRegisterBroadcastAddress(
++		    (struct sockaddr_in *) ifr->ifa_broadaddr);
+ 	    else
+ 		continue;
+-	    XdmcpRegisterBroadcastAddress((struct sockaddr_in *)
+-					  &broad_addr);
+ 	}
+ #endif /* XDMCP */
+ 		
+@@ -1124,6 +1123,11 @@ Bool LocalClient(ClientPtr client)
+     pointer		addr;
+     register HOST	*host;
+ 
++    if (!client->osPrivate)
++        return FALSE;
++    if (!((OsCommPtr)client->osPrivate)->trans_conn)
++        return FALSE;
++
+     if (!_XSERVTransGetPeerAddr (((OsCommPtr)client->osPrivate)->trans_conn,
+ 	&notused, &alen, &from))
+     {
+diff --git a/os/io.c b/os/io.c
+index 64b64ae..923509a 100644
+--- a/os/io.c
++++ b/os/io.c
+@@ -251,7 +251,14 @@ ReadRequestFromClient(ClientPtr client)
+     need_header = FALSE;
+     move_header = FALSE;
+     gotnow = oci->bufcnt + oci->buffer - oci->bufptr;
+-    if (gotnow < sizeof(xReq))
++
++    if (oci->ignoreBytes > 0) {
++	if (oci->ignoreBytes > oci->size)
++	    needed = oci->size;
++	else
++	    needed = oci->ignoreBytes;
++    }
++    else if (gotnow < sizeof(xReq))
+     {
+ 	/* We don't have an entire xReq yet.  Can't tell how big
+ 	 * the request will be until we get the whole xReq.
+@@ -294,8 +301,13 @@ ReadRequestFromClient(ClientPtr client)
+ 	if (needed > maxBigRequestSize << 2)
+ 	{
+ 	    /* request is too big for us to handle */
+-	    YieldControlDeath();
+-	    return -1;
++	    /*
++	     * Mark the rest of it as needing to be ignored, and then return
++	     * the full size.  Dispatch() will turn it into a BadLength error.
++	     */
++	    oci->ignoreBytes = needed - gotnow;
++	    oci->lenLastReq = gotnow;
++	    return needed;
+ 	}
+ 	if ((gotnow == 0) ||
+ 	    ((oci->bufptr - oci->buffer + needed) > oci->size))
+@@ -400,6 +412,14 @@ ReadRequestFromClient(ClientPtr client)
+     }
+     oci->lenLastReq = needed;
+ 
++    /* If there are bytes to ignore, ignore them now. */
++
++    if (oci->ignoreBytes > 0) {
++	assert(needed == oci->ignoreBytes || needed == oci->size);
++	oci->ignoreBytes -= gotnow;
++	needed = gotnow = 0;
++    }
++
+     /*
+      *  Check to see if client has at least one whole request in the
+      *  buffer beyond the request we're returning to the caller.
+@@ -1024,6 +1044,7 @@ AllocateInputBuffer(void)
+     oci->bufptr = oci->buffer;
+     oci->bufcnt = 0;
+     oci->lenLastReq = 0;
++    oci->ignoreBytes = 0;
+     return oci;
+ }
+ 
+diff --git a/os/osdep.h b/os/osdep.h
+index 3d75bba..a0411ec 100644
+--- a/os/osdep.h
++++ b/os/osdep.h
+@@ -124,6 +124,7 @@ typedef struct _connectionInput {
+     int  bufcnt;                /* count of bytes in buffer */
+     int lenLastReq;
+     int size;
++    unsigned int ignoreBytes;   /* bytes to ignore before the next request */
+ } ConnectionInput, *ConnectionInputPtr;
+ 
+ typedef struct _connectionOutput {
+diff --git a/randr/rrtransform.c b/randr/rrtransform.c
+index 06f6298..53de3b8 100644
+--- a/randr/rrtransform.c
++++ b/randr/rrtransform.c
+@@ -185,21 +185,21 @@ RRTransformCompute (int			    x,
+ 	    break;
+ 	case RR_Rotate_90:
+ 	    f_rot_cos = 0;	    f_rot_sin = 1;
+-	    f_rot_dx  = height-1;   f_rot_dy  = 0;
++	    f_rot_dx  = height;	    f_rot_dy  = 0;
+ 	    rot_cos = F ( 0);	    rot_sin = F ( 1);
+-	    rot_dx =  F (height-1); rot_dy  = F (0);
++	    rot_dx =  F ( height);  rot_dy  = F (0);
+ 	    break;
+ 	case RR_Rotate_180:
+ 	    f_rot_cos = -1;	    f_rot_sin = 0;
+-	    f_rot_dx  = width - 1;  f_rot_dy  = height - 1;
++	    f_rot_dx  = width;	    f_rot_dy  = height;
+ 	    rot_cos = F (-1);	    rot_sin = F ( 0);
+-	    rot_dx  = F (width-1);  rot_dy  = F ( height-1);
++	    rot_dx  = F (width);   rot_dy  = F ( height);
+ 	    break;
+ 	case RR_Rotate_270:
+ 	    f_rot_cos = 0;	    f_rot_sin = -1;
+-	    f_rot_dx  = 0;	    f_rot_dy  = width-1;
++	    f_rot_dx  = 0;	    f_rot_dy  = width;
+ 	    rot_cos = F ( 0);	    rot_sin = F (-1);
+-	    rot_dx  = F ( 0);	    rot_dy  = F ( width-1);
++	    rot_dx  = F ( 0);	    rot_dy  = F ( width);
+ 	    break;
+ 	}
+ 	
+@@ -222,11 +222,11 @@ RRTransformCompute (int			    x,
+ 	    f_scale_x = -1;
+ 	    scale_x = F(-1);
+ 	    if (rotation & (RR_Rotate_0|RR_Rotate_180)) {
+-		f_scale_dx = width-1;
+-		scale_dx = F(width-1);
++		f_scale_dx = width;
++		scale_dx = F(width);
+ 	    } else {
+-		f_scale_dx = height-1;
+-		scale_dx = F(height-1);
++		f_scale_dx = height;
++		scale_dx = F(height);
+ 	    }
+ 	}
+ 	if (rotation & RR_Reflect_Y)
+@@ -234,11 +234,11 @@ RRTransformCompute (int			    x,
+ 	    f_scale_y = -1;
+ 	    scale_y = F(-1);
+ 	    if (rotation & (RR_Rotate_0|RR_Rotate_180)) {
+-		f_scale_dy = height-1;
+-		scale_dy = F(height-1);
++		f_scale_dy = height;
++		scale_dy = F(height);
+ 	    } else {
+-		f_scale_dy = width-1;
+-		scale_dy = F(width-1);
++		f_scale_dy = width;
++		scale_dy = F(width);
+ 	    }
+ 	}
+ 	
+diff --git a/render/render.c b/render/render.c
+index 3f7edf7..405f7db 100644
+--- a/render/render.c
++++ b/render/render.c
+@@ -1085,6 +1085,14 @@ ProcRenderAddGlyphs (ClientPtr client)
+     gi = (xGlyphInfo *) (gids + nglyphs);
+     bits = (CARD8 *) (gi + nglyphs);
+     remain -= (sizeof (CARD32) + sizeof (xGlyphInfo)) * nglyphs;
++
++    /* protect against bad nglyphs */
++    if (gi < stuff || gi > ((CARD32 *)stuff + client->req_len) ||
++        bits < stuff || bits > ((CARD32 *)stuff + client->req_len)) {
++        err = BadLength;
++        goto bail;
++    }
++
+     for (i = 0; i < nglyphs; i++)
+     {
+ 	size_t padded_width;
+@@ -2557,8 +2565,8 @@ static void swapStops(void *stuff, int num)
+     }
+     colors = (CARD16 *)(stops);
+     for (i = 0; i < 4*num; ++i) {
+-        swaps(stops, n);
+-        ++stops;
++        swaps(colors, n);
++        ++colors;
+     }
+ }
+ 
+diff --git a/xkb/xkbUtils.c b/xkb/xkbUtils.c
+index 30ec438..fe093a4 100644
+--- a/xkb/xkbUtils.c
++++ b/xkb/xkbUtils.c
+@@ -1601,6 +1601,7 @@ _XkbCopyGeom(XkbDescPtr src, XkbDescPtr dst)
+                 else {
+                     dcolor->spec = xstrdup(scolor->spec);
+                 }
++                dcolor->pixel = scolor->pixel;
+             }
+ 
+             dst->geom->num_colors = dst->geom->sz_colors;
+@@ -1672,6 +1673,8 @@ _XkbCopyGeom(XkbDescPtr src, XkbDescPtr dst)
+ 
+                             memcpy(doutline->points, soutline->points,
+                                    soutline->num_points * sizeof(XkbPointRec));
++
++                            doutline->corner_radius = soutline->corner_radius;
+                         }
+ 
+                         doutline->num_points = soutline->num_points;
+@@ -1681,6 +1684,36 @@ _XkbCopyGeom(XkbDescPtr src, XkbDescPtr dst)
+ 
+                 dshape->num_outlines = sshape->num_outlines;
+                 dshape->sz_outlines = sshape->num_outlines;
++                dshape->name = sshape->name;
++                dshape->bounds = sshape->bounds;
++
++                dshape->approx = NULL;
++                if (sshape->approx && sshape->num_outlines > 0) {
++
++                    const ptrdiff_t approx_idx =
++                            sshape->approx - sshape->outlines;
++
++                    if (approx_idx < dshape->num_outlines) {
++                            dshape->approx = dshape->outlines + approx_idx;
++                    } else {
++                            LogMessage(X_WARNING, "XKB: approx outline "
++                                            "index is out of range\n");
++                    }
++                }
++
++                dshape->primary = NULL;
++                if (sshape->primary && sshape->num_outlines > 0) {
++
++                    const ptrdiff_t primary_idx =
++                            sshape->primary - sshape->outlines;
++
++                    if (primary_idx < dshape->num_outlines) {
++                            dshape->primary = dshape->outlines + primary_idx;
++                    } else {
++                            LogMessage(X_WARNING, "XKB: primary outline "
++                                            "index is out of range\n");
++                    }
++                }
+             }
+ 
+             dst->geom->num_shapes = src->geom->num_shapes;
+@@ -1784,6 +1817,10 @@ _XkbCopyGeom(XkbDescPtr src, XkbDescPtr dst)
+                     }
+                     drow->num_keys = srow->num_keys;
+                     drow->sz_keys = srow->num_keys;
++                    drow->top = srow->top;
++                    drow->left = srow->left;
++                    drow->vertical = srow->vertical;
++                    drow->bounds = srow->bounds;
+                 }
+ 
+                 if (ssection->num_doodads) {
+@@ -1802,6 +1839,7 @@ _XkbCopyGeom(XkbDescPtr src, XkbDescPtr dst)
+                       ddoodad = dsection->doodads;
+                      k < ssection->num_doodads;
+                      k++, sdoodad++, ddoodad++) {
++                    memcpy(ddoodad , sdoodad, sizeof(XkbDoodadRec));
+                     if (sdoodad->any.type == XkbTextDoodad) {
+                         if (sdoodad->text.text)
+                             ddoodad->text.text =
+@@ -1815,7 +1853,6 @@ _XkbCopyGeom(XkbDescPtr src, XkbDescPtr dst)
+                             ddoodad->logo.logo_name =
+                              xstrdup(sdoodad->logo.logo_name);
+                     }
+-                    ddoodad->any.type = sdoodad->any.type;
+                 }
+                 dsection->overlays = NULL;
+                 dsection->sz_overlays = 0;
+@@ -1880,7 +1917,7 @@ _XkbCopyGeom(XkbDescPtr src, XkbDescPtr dst)
+                   ddoodad = dst->geom->doodads;
+                  i < src->geom->num_doodads;
+                  i++, sdoodad++, ddoodad++) {
+-                ddoodad->any.type = sdoodad->any.type;
++                memcpy(ddoodad , sdoodad, sizeof(XkbDoodadRec));
+                 if (sdoodad->any.type == XkbTextDoodad) {
+                     if (sdoodad->text.text)
+                         ddoodad->text.text = xstrdup(sdoodad->text.text);
+@@ -1940,7 +1977,7 @@ _XkbCopyGeom(XkbDescPtr src, XkbDescPtr dst)
+         /* font */
+         if (src->geom->label_font) {
+             if (!dst->geom->label_font) {
+-                tmp = xalloc(strlen(src->geom->label_font));
++                tmp = xalloc(strlen(src->geom->label_font) + 1);
+                 if (!tmp)
+                     return FALSE;
+                 dst->geom->label_font = tmp;
+@@ -1948,7 +1985,7 @@ _XkbCopyGeom(XkbDescPtr src, XkbDescPtr dst)
+             else if (strlen(src->geom->label_font) !=
+                 strlen(dst->geom->label_font)) {
+                 tmp = xrealloc(dst->geom->label_font,
+-                               strlen(src->geom->label_font));
++                               strlen(src->geom->label_font) + 1);
+                 if (!tmp)
+                     return FALSE;
+                 dst->geom->label_font = tmp;
