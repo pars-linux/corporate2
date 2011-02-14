@@ -15,6 +15,8 @@ import random
 import shutil
 import hashlib
 
+import libuser
+
 from string import ascii_letters, digits
 from pardus.fileutils import FileLock
 
@@ -164,6 +166,8 @@ uid_maximum = 65000
 
 #
 
+admin = libuser.admin()
+
 def setFace(uid, homedir):
     files = []
     for directory in FACES:
@@ -219,228 +223,78 @@ class Group:
             s += "\n %s" % name
         return s
 
-
-class Database:
-    passwd_path = "/etc/passwd"
-    shadow_path = "/etc/shadow"
-    group_path = "/etc/group"
-    lock_path = "/etc/.pwd.lock"
-
-    def __init__(self, for_read=False):
-        self.lock = FileLock(self.lock_path)
-        self.lock.lock(shared=for_read)
-
-        self.users = {}
-        self.users_by_name = {}
-        self.groups = {}
-        self.groups_by_name = {}
-
-        for line in file(self.passwd_path):
-            if line != "" and line != "\n":
-                parts = line.rstrip("\n").split(":")
-                user = User()
-                user.name = parts[0]
-                user.uid = int(parts[2])
-                user.gid = int(parts[3])
-                user.realname = parts[4]
-                user.homedir = parts[5]
-                user.shell = parts[6]
-                self.users[user.uid] = user
-                self.users_by_name[user.name] = user
-
-        for line in file(self.shadow_path):
-            if line != "" and line != "\n":
-                parts = line.rstrip("\n").split(":")
-                if self.users_by_name.has_key(parts[0]):
-                    user = self.users_by_name[parts[0]]
-                    user.password = parts[1]
-                    user.pwrest = parts[2:]
-
-        for line in file(self.group_path):
-            if line != "" and line != "\n":
-                parts = line.rstrip("\n").split(":")
-                group = Group()
-                group.name = parts[0]
-                group.gid = int(parts[2])
-                group.members = parts[3].split(",")
-                if "" in group.members:
-                    group.members.remove("")
-                self.groups[group.gid] = group
-                self.groups_by_name[group.name] = group
-
-    def sync(self):
-        lines = []
-        keys = self.users.keys()
-        keys.sort()
-        for uid in keys:
-            user = self.users[uid]
-            lines.append("%s:x:%d:%d:%s:%s:%s\n" % (
-                user.name, uid, user.gid,
-                user.realname, user.homedir, user.shell
-            ))
-        f = file(self.passwd_path, "w")
-        f.writelines(lines)
-        f.close()
-
-        lines = []
-        keys = self.users.keys()
-        keys.sort()
-        for uid in keys:
-            user = self.users[uid]
-            if user.password:
-                lines.append("%s:%s:%s\n" % (
-                    user.name,
-                    user.password,
-                    ":".join(user.pwrest)
-                ))
-            else:
-                lines.append("%s::13094:0:99999:7:::\n" % user.name)
-        f = file(self.shadow_path, "w")
-        f.writelines(lines)
-        f.close()
-
-        lines = []
-        keys = self.groups.keys()
-        keys.sort()
-        for gid in keys:
-            group = self.groups[gid]
-            lines.append("%s:x:%s:%s\n" % (group.name, gid, ",".join(group.members)))
-        f = file(self.group_path, "w")
-        f.writelines(lines)
-        f.close()
-
-    def set_groups(self, name, grouplist):
-        for gid in self.groups.keys():
-            g = self.groups[gid]
-            if name in g.members:
-                if not g.name in grouplist:
-                    g.members.remove(name)
-            else:
-                if g.name in grouplist:
-                    g.members.append(name)
-
-    def next_uid(self):
-        for i in range(uid_minimum, uid_maximum):
-            if not self.users.has_key(i):
-                return i
-
-    def next_gid(self):
-        for i in range(uid_minimum, uid_maximum):
-            if not self.groups.has_key(i):
-                return i
-
-
-def setup_home(uid, gid, path):
-    if not os.path.exists(path):
-        # Copy skeleton home dir
-        os.system('/bin/cp -r %s "%s"' % ('/etc/skel', path))
-        # Set a random face icon
-        faces = glob.glob("/usr/kde/3.5/share/apps/kdm/pics/users/*.png")
-        if len(faces) > 0:
-            facepath = os.path.join(path, '.face.icon')
-            os.system('/bin/cp --remove-destination "%s" "%s"' % (random.choice(faces), facepath))
-            os.chmod(facepath, 0644)
-        # Set ownerships
-        os.system('/bin/chown -R %d:%d "%s"' % (uid, gid, path))
-
-    # Make sure at least top of the home dir's permissions are correct
-    os.system('/bin/chown %d:%d "%s"' % (uid, gid, path))
-    os.chmod(path, 0711)
-
-
 # methods
 
 def userList():
-    def format(dict, uid):
-        item = dict[uid]
-        return (item.uid, item.name, item.realname)
-    db = Database(for_read=True)
-    return map(lambda x: format(db.users, x), db.users)
+    user_list = []
+    users = admin.enumerateUsersFull()
+    for user in users:
+        user_list.append((int(user[libuser.UIDNUMBER][0]), user[libuser.USERNAME][0], user[libuser.GECOS][0]))
+    return user_list
+
 
 def userInfo(uid):
-    uid = int(uid)
-    db = Database(for_read=True)
-    if db.users.has_key(uid):
-        u = db.users[uid]
-        groups = []
-        for item in db.groups.keys():
-            if u.name in db.groups[item].members:
-                groups.append(db.groups[item].name)
-        grp = db.groups.get(u.gid, None)
-        if grp:
-            if grp.name in groups:
-                groups.remove(grp.name)
-            groups.insert(0, grp.name)
-        ret = (
-            u.name,
-            u.realname,
-            u.gid,
-            u.homedir,
-            u.shell,
+    user = admin.lookupUserById(uid)
+    if user:
+        groups = admin.enumerateGroupsByUser(user.get(libuser.USERNAME)[0])
+        main = admin.lookupGroupById(user.get(libuser.GIDNUMBER)[0])
+        mainGroupName = main.get(libuser.GROUPNAME)[0]
+        if mainGroupName in groups:
+            groups.remove(mainGroupName)
+            groups.insert(0, mainGroupName)
+        ret=(
+            user.get(libuser.USERNAME)[0],
+            user.get(libuser.GECOS)[0],
+            int(user.get(libuser.GIDNUMBER)[0]),
+            user.get(libuser.HOMEDIRECTORY)[0],
+            user.get(libuser.LOGINSHELL)[0],
             groups,
-        )
-        return ret
+            )
     else:
         fail(_(no_user_msg))
 
+    return ret
+
+
 def addUser(uid, name, realname, homedir, shell, password, groups, grants, blocks):
-    if not realname:
-        realname = ""
-    if not homedir:
-        homedir = "/home/" + name
-    if not shell:
-        shell = "/bin/bash"
-    if not groups:
-        groups = ["nogroup"]
-    for item in groups:
-        checkGroupName(item)
     checkName(name)
-    checkRealName(realname)
-    if password:
-        checkPassword(password, (name, realname))
+    usrCtrl = admin.lookupUserByName(name)
+    if usrCtrl:
+        fail(_(used_username_msg))
 
-    db = Database()
+    new_user = admin.initUser(name)
 
-    if uid == -1:
-        uid = db.next_uid()
-    else:
+    if not uid == -1:
         try:
-            uid = int(uid)
             if uid < 0 or uid > 65536:
                 raise
         except:
             fail(_(invalid_userid_msg))
-        if db.users.has_key(uid):
+        usrCtrl = admin.lookupUserById(uid)
+        if usrCtrl:
             fail(_(used_userid_msg))
-
-    if db.users_by_name.has_key(name):
-        fail(_(used_username_msg))
-
-    # First group in the list is the user's main group
-    g = db.groups_by_name.get(groups[0], None)
-    if not g:
-        fail(_(no_group_msg))
-    gid = g.gid
-
-    u = User()
-    u.uid = uid
-    u.gid = gid
-    u.name = name
-    u.realname = realname
-    u.homedir = homedir
-    u.shell = shell
+        new_user.set(libuser.UIDNUMBER, uid)
+    if realname:
+        checkRealName(realname)
+        new_user.set(libuser.GECOS, realname)
+    if homedir:
+        new_user.set(libuser.HOMEDIRECTORY, homedir)
+    if shell:
+        new_user.set(libuser.LOGINSHELL, shell)
     if password:
-        u.password = shadowCrypt(password)
+        checkPassword(password, (name, realname))
+        new_user.set(libuser.SHADOWPASSWORD, shadowCrypt(password))
+    if groups:
+        for item in groups:
+            checkGroupName(item)
+            gr = admin.lookupGroupByName(item)
+            if gr:
+                addUserToGroup(new_user, gr)
+        # First group in the list is the user's main group
+        g = admin.lookupGroupByName(groups[0])
+        new_user.set(libuser.GIDNUMBER, g.get(libuser.GIDNUMBER))
     else:
-        u.password = "*"
-    u.pwrest = [ "13094", "0", "99999", "7", "", "", "" ]
-    db.users[uid] = u
-    db.set_groups(name, groups)
-    # No need to setup a real home dir for daemons
-    if uid >= 1000 or homedir.startswith("/home/"):
-        setup_home(uid, gid, homedir)
-        setFace(uid, homedir)
-    db.sync()
+        fail(_(no_group_msg))
 
     for grant in grants:
         if grant != "":
@@ -449,98 +303,113 @@ def addUser(uid, name, realname, homedir, shell, password, groups, grants, block
         if block != "":
             blockAuthorization(uid, block)
 
-    return uid
+    try:
+        admin.addUser(new_user, True, False)
+    except Exception, e:
+        print e
+
+    return int(new_user[libuser.UIDNUMBER][0])
+
+def addUserToGroup(user, group):
+    members = group.get(libuser.MEMBERNAME)
+    if not members:
+        members = []
+    members.append(user.get(libuser.USERNAME)[0])
+    group.set(libuser.MEMBERNAME, members)
+    admin.modifyGroup(group)
 
 def setUser(uid, realname, homedir, shell, password, groups):
-    uid = int(uid)
-
-    db = Database()
-    u = db.users.get(uid, None)
-    if u:
+    user = admin.lookupUserById(uid)
+    print groups
+    if user:
+        username = user.get(libuser.USERNAME)[0]
         if realname:
             checkRealName(realname)
-            u.realname = realname
+            user.set(libuser.GECOS, realname)
         if homedir:
-            u.homedir = homedir
+            user.set(libuser.HOMEDIRECTORY, homedir)
         if shell:
-            u.shell = shell
+            user.set(libuser.LOGINSHELL, shell)
         if password:
-            checkPassword(password, (u.name, u.realname, realname))
-            u.password = shadowCrypt(password)
+            checkPassword(password, (username, user.get(libuser.GECOS)[0], realname))
+            user.set(libuser.SHADOWPASSWORD, shadowCrypt(password))
         if groups:
             # FIXME: check main group
+            for old in admin.enumerateGroupsByUser(username):
+                if old not in groups:
+                    deleteUserFromGroup(user, admin.lookupGroupByName(old))
+
             for item in groups:
                 checkGroupName(item)
-            db.set_groups(u.name, groups)
-        db.sync()
+                gr = admin.lookupGroupByName(item)
+                if username not in admin.enumerateGroupsByUser(username):
+                    addUserToGroup(user, gr)
+
+            # First group in the list is the user's main group
+            g = admin.lookupGroupByName(groups[0])
+            user.set(libuser.GIDNUMBER, g.get(libuser.GIDNUMBER))
+
+        admin.modifyUser(user)
     else:
         fail(_(no_user_msg))
 
-def deleteUser(uid, deletefiles):
-    uid = int(uid)
 
+def deleteUser(uid, deletefiles):
     if uid == 0:
         fail(_(delete_root_msg))
-
-    db = Database()
-    u = db.users.get(uid, None)
-    if u:
+    user = admin.lookupUserById(int(uid))
+    if user:
         #delete authorizations of user
         try:
             polkit.auth_revoke_all(uid)
         except:
             pass
+        for gr in admin.enumerateGroupsByUser(user.get(libuser.USERNAME)[0]):
+            group = admin.lookupGroupByName(gr)
+            deleteUserFromGroup(user, group)
 
-        home = u.homedir[:]
-        db.set_groups(u.name, [])
-        del db.users[uid]
-        db.sync()
-        if deletefiles:
-            os.system('/bin/rm -rf "%s"' % home)
+        admin.deleteUser(user, deletefiles, False)
+    else:
+        fail(_(no_user_msg))
 
+def deleteUserFromGroup(user, group):
+    members = group.get(libuser.MEMBERNAME)
+    if members:
+        members.remove(user.get(libuser.USERNAME)[0])
+        group.set(libuser.MEMBERNAME, members)
+        admin.modifyGroup(group)
 
 def groupList():
-    def format(dict, gid):
-        item = dict[gid]
-        return (item.gid, item.name)
-    db = Database(for_read=True)
-    return map(lambda x: format(db.groups, x), db.groups)
+    group_list=[]
+    groups = admin.enumerateGroupsFull()
+    for group in groups:
+        group_list.append((int(group[libuser.GIDNUMBER][0]), group[libuser.GROUPNAME][0]))
+    return group_list
+
 
 def addGroup(gid, name):
-    checkGroupName(name)
+    new_group = admin.initGroup(name)
 
-    db = Database()
-    if gid == -1:
-        gid = db.next_gid()
-    else:
-        try:
-            gid = int(gid)
-            if gid < 0 or gid > 65536:
-                raise
-        except:
+    if not gid == -1:
+        if gid < 0 or gid > 65536:
             fail(_(invalid_groupid_msg))
-        if db.groups.has_key(gid):
+        if admin.lookupGroupById(gid):
             fail(_(used_groupid_msg))
+        new_group[libuser.GIDNUMBER] = gid
 
-    if db.groups_by_name.has_key(name):
+    if admin.lookupGroupByName(name):
         fail(_(used_groupname_msg))
 
-    g = Group()
-    g.gid = gid
-    g.name = name
-    g.members = []
-    db.groups[gid] = g
-    db.sync()
+    admin.addGroup(new_group)
 
-    return gid
+    return int(new_group[libuser.GIDNUMBER][0])
 
 def deleteGroup(gid):
-    gid = int(gid)
-
-    db = Database()
-    if db.groups.has_key(gid):
-        del db.groups[gid]
-        db.sync()
+    group = admin.lookupGroupById(gid)
+    if group:
+        admin.deleteGroup(group)
+    else:
+        fail(_(invalid_groupid_msg))
 
 
 #
@@ -627,6 +496,36 @@ def listUserAuthorizations(uid):
         action_info = polkit.action_info(action['action_id'])
         auths.append((action['action_id'], action['scope'], action_info['description'], action_info['policy_active'], action['negative']))
     return auths
+
+def listUserAuthorizationsByCategory(uid, name):
+    actions = polkit.auth_list_uid(int(uid))
+    auths = []
+    names = name.split('|')
+    for action in actions:
+        nameExist = False
+        for nm in names:
+            if action['action_id'].startswith(nm):
+                nameExist = True
+                break
+        if nameExist:
+            action_info = polkit.action_info(action['action_id'])
+            auths.append((action['action_id'], action['scope'], action_info['description'], action_info['policy_active'], action['negative']))
+    return auths
+
+def getNegativeValue(uid, aid):
+    """
+     -1 : nothing found
+      0 : blocked
+      1 : granted
+    """
+    actions = polkit.auth_list_uid(int(uid))
+    for action in actions:
+        if aid == action['action_id']:
+            if action['negative']:
+                return 0
+            else:
+                return 1
+    return -1
 
 #
 # Grant authorization to user
