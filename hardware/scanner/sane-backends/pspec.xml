@@ -14,13 +14,12 @@
         <IsA>library</IsA>
         <Summary>Scanner access software</Summary>
         <Description>Scanner Access Now Easy (SANE) is a universal scanner interface. The SANE application programming interface provides standardized access to any raster image scanner hardware.</Description>
-        <Archive sha1sum="3b4d2ecde8be404bb44269771cf5dc6e4c10b086" type="targz">ftp://ftp.sane-project.org/pub/sane/sane-backends-1.0.20/sane-backends-1.0.20.tar.gz</Archive>
+        <Archive sha1sum="4a2789ea9dae1ece090d016abd14b0f2450d9bdb" type="targz">ftp://ftp.sane-project.org/pub/sane/sane-backends-1.0.21/sane-backends-1.0.21.tar.gz</Archive>
         <BuildDependencies>
-            <Dependency>texlive-latexextra</Dependency>
+            <Dependency>avahi-devel</Dependency>
             <Dependency>libieee1284</Dependency>
             <Dependency>libgphoto2</Dependency>
             <Dependency>libv4l</Dependency>
-            <Dependency>avahi</Dependency>
         </BuildDependencies>
         <Patches>
             <!-- fixes too small arrays in backend/niash.c -->
@@ -29,36 +28,17 @@
             <!-- canon backend do scanner auto-recognition -->
             <Patch>canon-backend-autoprobing.patch</Patch>
 
-            <!-- Fix Canon LiDE 50 regression -->
-            <Patch level="1">Always-send-registers-before-trying-to-acquire-line.patch</Patch>
-
-            <!-- Avoid light check on Fujitsu ScanPartner 620C -->
-            <Patch level="1">0001-Avision-backend-Mark-FCPA-620C-with-AV_LIGHT_CHECK_B.patch</Patch>
-
-            <Patch level="1">sane-backends-1.0.20-rpath.patch</Patch>
-            <Patch level="1">sane-backends-1.0.20-pkgconfig.patch</Patch>
+            <Patch level="1">sane-backends-1.0.21-pkgconfig.patch</Patch>
             <Patch level="1">sane-backends-1.0.20-open-macro.patch</Patch>
-            <Patch level="1">sane-backends-1.0.20-udev.patch</Patch>
-            <Patch level="1">sane-backends-1.0.20-man-utf8.patch</Patch>
+            <Patch level="1">sane-backends-1.0.21-udev.patch</Patch>
+            <Patch level="1">sane-backends-1.0.21-man-encoding.patch</Patch>
             <Patch level="1">sane-backends-1.0.20-lockdir.patch</Patch>
-            <Patch level="1">sane-backends-1.0.20-epson-expression800.patch</Patch>
+            <Patch level="1">sane-backends-1.0.21-epson-expression800.patch</Patch>
 
             <!-- Suse fixes from post 1.0.20 -->
 
-            <!-- Fix a possible for loop overflow -->
-            <Patch level="1">suse/fix-hp3900_config.c.patch</Patch>
-
-            <!-- Fix option sizes in backend/hp3900_sane.c to fix possible frontend crashes -->
-            <Patch level="1">suse/fix-hp3900_sane-string-option-sizes.diff</Patch>
-
-            <!--Add a missing call to free() in backend/lexmark_low.c -->
-            <Patch level="1">suse/fix-lexmark_low-memory-leak.patch</Patch>
-
             <!-- Fix undefined 'foo = ++foo modulo bar' operations -->
             <Patch level="1">suse/fix-mustek_pp_ccd300.c.patch</Patch>
-
-            <!-- Backport post 1.0.20 xerox_mfp changes for newer Samsung printers -->
-            <Patch level="1">suse/sane-backends-1.0.20-xerox_mfp.diff</Patch>
 
             <!-- Link with avahi libraries -->
             <Patch level="1">link-with-avahi.patch</Patch>
@@ -70,8 +50,8 @@
         <RuntimeDependencies>
             <Dependency>libieee1284</Dependency>
             <Dependency>libgphoto2</Dependency>
+            <Dependency>avahi-libs</Dependency>
             <Dependency>libv4l</Dependency>
-            <Dependency>avahi</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="data">/etc/sane.d/dll.d</Path>
@@ -94,12 +74,16 @@
             <AdditionalFile owner="root" permission="0644" target="/usr/share/pixmaps/sane.png">sane.png</AdditionalFile>
             <AdditionalFile owner="root" permission="0644" target="/etc/env.d/30sane">30sane</AdditionalFile>
         </AdditionalFiles>
-        <Provides>
-            <COMAR script="package.py">System.Package</COMAR>
-        </Provides>
    </Package>
 
    <History>
+        <Update release="18">
+            <Date>2011-02-14</Date>
+            <Version>1.0.21</Version>
+            <Comment>Merge bump to 1.0.21</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="17">
             <Date>2010-10-27</Date>
             <Version>1.0.20</Version>
