@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008-2009 TUBITAK/UEKAE
+# Copyright 2008-2011 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/copyleft/gpl.txt.
 
@@ -15,9 +15,9 @@ conf = {"destdir": get.installDIR()}
 
 def setup():
     shelltools.system("./configure.sh \
-                       --prefix=%(destdir)s/usr \
-                       --mandir=%(destdir)s/usr/share/man \
-                       --filterdir=%(destdir)s/usr/share/magicfilter/filters" % conf)
+                       --prefix=/usr \
+                       --mandir=/usr/share/man \
+                       --filterdir=/usr/share/magicfilter/filters" % conf)
 
     pisitools.dosed("filters/*.def", "#! @MAGICFILTER@", "#!/usr/bin/magicfilter")
     pisitools.dosed("Makefile", "commoninstall: textonly cfmagic", "commoninstall: textonly")
