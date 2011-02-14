@@ -10,10 +10,10 @@ Signed-off-by: Dave Airlie <airlied@redhat.com>
  hw/xfree86/modes/xf86Crtc.c |   66 ++++++++++++++++++++++++++++++------------
  1 files changed, 47 insertions(+), 19 deletions(-)
 
-diff --git a/hw/xfree86/modes/xf86Crtc.c b/hw/xfree86/modes/xf86Crtc.c
-index 571ffd0..99082ec 100644
---- a/hw/xfree86/modes/xf86Crtc.c
-+++ b/hw/xfree86/modes/xf86Crtc.c
+Index: xorg-server-1.7.7/hw/xfree86/modes/xf86Crtc.c
+===================================================================
+--- xorg-server-1.7.7.orig/hw/xfree86/modes/xf86Crtc.c
++++ xorg-server-1.7.7/hw/xfree86/modes/xf86Crtc.c
 @@ -48,6 +48,8 @@
  
  #include "xf86xv.h"
@@ -23,7 +23,7 @@ index 571ffd0..99082ec 100644
  /*
   * Initialize xf86CrtcConfig structure
   */
-@@ -1946,7 +1948,7 @@ xf86SetScrnInfoModes (ScrnInfoPtr scrn)
+@@ -1915,7 +1917,7 @@ xf86SetScrnInfoModes (ScrnInfoPtr scrn)
  #endif
  }
  
@@ -32,7 +32,7 @@ index 571ffd0..99082ec 100644
  xf86CollectEnabledOutputs(ScrnInfoPtr scrn, xf86CrtcConfigPtr config,
  			  Bool *enabled)
  {
-@@ -1961,8 +1963,10 @@ xf86CollectEnabledOutputs(ScrnInfoPtr scrn, xf86CrtcConfigPtr config,
+@@ -1930,8 +1932,10 @@ xf86CollectEnabledOutputs(ScrnInfoPtr sc
  		   "No outputs definitely connected, trying again...\n");
  
  	for (o = 0; o < config->num_output; o++)
@@ -44,7 +44,7 @@ index 571ffd0..99082ec 100644
  }
  
  static Bool
-@@ -2409,6 +2413,8 @@ xf86InitialConfiguration (ScrnInfoPtr scrn, Bool canGrow)
+@@ -2331,6 +2335,8 @@ xf86InitialConfiguration (ScrnInfoPtr sc
      Bool		*enabled;
      int			width, height;
      int			i = scrn->scrnIndex;
@@ -53,48 +53,24 @@ index 571ffd0..99082ec 100644
  
      /* Set up the device options */
      config->options = xnfalloc (sizeof (xf86DeviceOptions));
-@@ -2433,20 +2439,26 @@ xf86InitialConfiguration (ScrnInfoPtr scrn, Bool canGrow)
+@@ -2355,9 +2361,13 @@ xf86InitialConfiguration (ScrnInfoPtr sc
      modes = xnfcalloc (config->num_output, sizeof (DisplayModePtr));
      enabled = xnfcalloc (config->num_output, sizeof (Bool));
      
 -    xf86CollectEnabledOutputs(scrn, config, enabled);
 -
 -    if (xf86TargetUserpref(scrn, config, modes, enabled, width, height))
--	xf86DrvMsg(i, X_INFO, "Using user preference for initial modes\n");
--    else if (xf86TargetRightOf(scrn, config, modes, enabled, width, height))
--	xf86DrvMsg(i, X_INFO, "Using spanning desktop for initial modes\n");
--    else if (xf86TargetPreferred(scrn, config, modes, enabled, width, height))
--	xf86DrvMsg(i, X_INFO, "Using exact sizes for initial modes\n");
--    else if (xf86TargetAspect(scrn, config, modes, enabled, width, height))
--	xf86DrvMsg(i, X_INFO, "Using fuzzy aspect match for initial modes\n");
--    else if (xf86TargetFallback(scrn, config, modes, enabled, width, height))
--	xf86DrvMsg(i, X_INFO, "Using sloppy heuristic for initial modes\n");
--    else
--	xf86DrvMsg(i, X_WARNING, "Unable to find initial modes\n");
 +    ret = xf86CollectEnabledOutputs(scrn, config, enabled);
 +    if (ret == FALSE && canGrow) {
 +	xf86DrvMsg(i, X_WARNING, "Unable to find connected outputs - setting %dx%d initial framebuffer\n",
 +		   NO_OUTPUT_DEFAULT_WIDTH, NO_OUTPUT_DEFAULT_HEIGHT);
 +	have_outputs = FALSE;
 +    }
-+    else {
-+	if (xf86TargetUserpref(scrn, config, modes, enabled, width, height))
-+	    xf86DrvMsg(i, X_INFO, "Using user preference for initial modes\n");
-+	else if (xf86TargetRightOf(scrn, config, modes, enabled, width, height))
-+	    xf86DrvMsg(i, X_INFO, "Using spanning desktop for initial modes\n");
-+	else if (xf86TargetPreferred(scrn, config, modes, enabled, width, height))
-+	    xf86DrvMsg(i, X_INFO, "Using exact sizes for initial modes\n");
-+	else if (xf86TargetAspect(scrn, config, modes, enabled, width, height))
-+	    xf86DrvMsg(i, X_INFO, "Using fuzzy aspect match for initial modes\n");
-+	else if (xf86TargetFallback(scrn, config, modes, enabled, width, height))
-+	    xf86DrvMsg(i, X_INFO, "Using sloppy heuristic for initial modes\n");
-+	else
-+	    xf86DrvMsg(i, X_WARNING, "Unable to find initial modes\n");
-+    }
- 
-     for (o = -1; nextEnabledOutput(config, enabled, &o); ) {
- 	if (!modes[o])
-@@ -2479,7 +2491,7 @@ xf86InitialConfiguration (ScrnInfoPtr scrn, Bool canGrow)
++    else if (xf86TargetUserpref(scrn, config, modes, enabled, width, height))
+ 	xf86DrvMsg(i, X_INFO, "Using user preference for initial modes\n");
+     else if (xf86TargetPreferred(scrn, config, modes, enabled, width, height))
+ 	xf86DrvMsg(i, X_INFO, "Using exact sizes for initial modes\n");
+@@ -2397,7 +2407,7 @@ xf86InitialConfiguration (ScrnInfoPtr sc
      /*
       * Assign CRTCs to fit output configuration
       */
@@ -103,7 +79,7 @@ index 571ffd0..99082ec 100644
      {
  	xfree (crtcs);
  	xfree (modes);
-@@ -2541,6 +2553,13 @@ xf86InitialConfiguration (ScrnInfoPtr scrn, Bool canGrow)
+@@ -2459,6 +2469,13 @@ xf86InitialConfiguration (ScrnInfoPtr sc
  	 */
  	xf86DefaultScreenLimits (scrn, &width, &height, canGrow);
      
@@ -117,7 +93,7 @@ index 571ffd0..99082ec 100644
  	scrn->display->virtualX = width;
  	scrn->display->virtualY = height;
      }
-@@ -2566,8 +2585,17 @@ xf86InitialConfiguration (ScrnInfoPtr scrn, Bool canGrow)
+@@ -2484,8 +2501,17 @@ xf86InitialConfiguration (ScrnInfoPtr sc
  			      width, height);
      }
  
@@ -137,6 +113,3 @@ index 571ffd0..99082ec 100644
      
      xfree (crtcs);
      xfree (modes);
--- 
-1.7.0.1
-
