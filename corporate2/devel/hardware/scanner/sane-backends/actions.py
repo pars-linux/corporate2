@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2005-2009 TUBITAK/UEKAE
+# Copyright 2005-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -23,6 +23,7 @@ def setup():
                          --enable-libusb \
                          --disable-rpath \
                          --disable-locking \
+                         --disable-latex \
                          --with-docdir=/usr/share/doc/%s \
                          --with-gphoto2" % get.srcNAME())
 def build():
@@ -33,9 +34,6 @@ def install():
 
     # Install udev rule
     pisitools.insinto("/lib/udev/rules.d", "tools/udev/libsane.rules", "65-libsane.rules")
-
-    # we add hplip backend here not to let it turn into newconfig all the time
-    shelltools.echo("%s/etc/sane.d/dll.conf" % get.installDIR(), "\n# Added for hplip backends\nhpaio\n")
 
     # Add epson epkowa and brother2 backends also
     shelltools.echo("%s/etc/sane.d/dll.conf" % get.installDIR(),
