@@ -229,6 +229,8 @@ def userList():
     user_list = []
     users = admin.enumerateUsersFull()
     for user in users:
+        if libuser.UIDNUMBER not in dict(user):
+            continue
         user_list.append((int(user[libuser.UIDNUMBER][0]), user[libuser.USERNAME][0], user[libuser.GECOS][0]))
     return user_list
 
