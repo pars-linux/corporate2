@@ -22,7 +22,7 @@ def setup():
     shelltools.export("DO_NOT_COMPILE", "ksirc wifi lanbrowsing")
 
     kde.configure("--with-slp \
-                   --with-wifi \
+                   --without-wifi \
                    --disable-sametime-plugin \
                    --without-xmms \
                    --without-external-libgadu")
