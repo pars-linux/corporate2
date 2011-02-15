@@ -17,7 +17,7 @@ def setup():
                          --enable-devel \
                          --enable-libipq \
                          --enable-shared \
-                         --enable-static")
+                         --disable-static")
 
 def build():
     autotools.make("V=1")
