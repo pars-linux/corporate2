@@ -14,7 +14,7 @@ def setup():
                          --bindir=%s/bin" % get.installDIR())
 
 def build():
-    autotools.make("LDFLAGS=%s" % get.LDFLAGS())
+    autotools.make('LDFLAGS="%s"' % get.LDFLAGS())
 
 def install():
     autotools.install()
