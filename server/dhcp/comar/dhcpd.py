@@ -16,10 +16,14 @@ TIMEOUT = config.get("TIMEOUT", 5)
 
 @synchronized
 def start():
-    startDependencies("NetworkManager")
-    if run("/usr/bin/nm-online -q -t %s" % TIMEOUT) != 0:
-        # NM is not running
-        fail(MSG_NM_NOT_RUNNING)
+    # Make NM optional
+    try:
+        startDependencies("NetworkManager")
+        if run("/usr/bin/nm-online -q -t %s" % TIMEOUT) != 0:
+            # NM is not running
+            fail(MSG_NM_NOT_RUNNING)
+    except:
+        pass
 
     startService(command="/usr/sbin/dhcpd",
                  args="-cf %s %s %s" % (config.get("DHCPD_CONF", "/etc/dhcp/dhcpd.conf"), config.get("DHCPD_ARGS", ""), config.get("INTERFACES", "")),
