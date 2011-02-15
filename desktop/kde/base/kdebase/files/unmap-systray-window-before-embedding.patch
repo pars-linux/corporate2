@@ -1,0 +1,15 @@
+Index: kdebase-3.5.10/kicker/applets/systemtray/systemtrayapplet.cpp
+===================================================================
+--- kdebase-3.5.10.orig/kicker/applets/systemtray/systemtrayapplet.cpp
++++ kdebase-3.5.10/kicker/applets/systemtray/systemtrayapplet.cpp
+@@ -477,6 +477,10 @@ void SystemTrayApplet::embedWindow( WId
+     }
+     else
+     {
++        /* Hack to fix hangs when restarting kicker while a GTK application is embedded in system tray */
++        XUnmapWindow(qt_xdisplay(), w);
++        XSync(qt_xdisplay(), false);
++
+         emb->embed(w);
+     }
+ 
