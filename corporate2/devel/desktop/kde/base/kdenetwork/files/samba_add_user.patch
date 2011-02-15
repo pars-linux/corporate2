@@ -1,0 +1,37 @@
+diff -Nur kdenetwork-3.5.10-old//filesharing/advanced/kcm_sambaconf/smbpasswdfile.cpp kdenetwork-3.5.10/filesharing/advanced/kcm_sambaconf/smbpasswdfile.cpp
+--- kdenetwork-3.5.10-old//filesharing/advanced/kcm_sambaconf/smbpasswdfile.cpp	2011-02-15 20:30:42.354000034 +0200
++++ kdenetwork-3.5.10/filesharing/advanced/kcm_sambaconf/smbpasswdfile.cpp	2011-02-15 22:34:03.370000094 +0200
+@@ -137,17 +137,30 @@
+ bool SmbPasswdFile::addUser(const SambaUser & user,const QString & password)
+ {
+   KProcess p;
+-  p << "smbpasswd" << "-a" << user.name;
+-
+-  p << password;
++  p << "smbpasswd" << "-s" << "-a" << user.name;
+ 
+   connect( &p, SIGNAL(receivedStdout(KProcess*,char*,int)),
+            this, SLOT(smbpasswdStdOutReceived(KProcess*,char*,int)));
+ 
+   _smbpasswdOutput = "";
+ 
++  QString pw = password;
++  pw.append("\n");
++
+   bool result = p.start(KProcess::Block,KProcess::Stdout);
+ 
++  // smbpasswd only accepts passwords from stdin for a while, yet
++  // running a shell / system() is risky as in security
++  // and since kde 3.5 does not have proper subprocess handling
++  // that does not require to double the code size we have to go
++  // back to stupid timeout hack
++
++  p.wait(1);
++  p.writeStdin(pw.latin1(), pw.length());
++  p.wait(1);
++  p.writeStdin(pw.latin1(), pw.length());
++  p.wait(1);
++
+   if (result)
+   {
+     kdDebug(5009) << _smbpasswdOutput << endl;
