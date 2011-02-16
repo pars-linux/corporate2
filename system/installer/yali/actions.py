@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008-2010 TUBITAK/UEKAE
+# Copyright 2008-2011 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -10,11 +10,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
 def setup():
-    if get.ARCH() == "i686":
-        repo_uri = "http://packages.pardus.org.tr/pardus/corporate2/stable/i686/pisi-index.xml.xz"
-    else:
-        repo_uri = "http://packages.pardus.org.tr/pardus/corporate2/stable/x86_64/pisi-index.xml.xz"
-
+    repo_uri = "http://packages.pardus.org.tr/pardus/kurumsal2/stable/%s/pisi-index.xml.xz" % get.ARCH()
     pisitools.dosed("yali/constants.py", "@REPO_URI@", repo_uri)
 
 def build():
