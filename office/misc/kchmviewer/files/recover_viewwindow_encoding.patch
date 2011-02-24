@@ -1,0 +1,21 @@
+diff -Nur kchmviewer-3.1-old//src/kde/kchmviewwindow_khtmlpart.cpp kchmviewer-3.1/src/kde/kchmviewwindow_khtmlpart.cpp
+--- kchmviewer-3.1-old//src/kde/kchmviewwindow_khtmlpart.cpp	2011-02-24 15:50:15.016000517 +0200
++++ kchmviewer-3.1/src/kde/kchmviewwindow_khtmlpart.cpp	2011-02-24 15:54:59.616999547 +0200
+@@ -60,6 +60,9 @@
+ 
+ bool KCHMViewWindow_KHTMLPart::openPage (const QString& url)
+ {
++	// backup current encoding and restore after KHTMLpart call, or we are stuck with wrongly encoded paths
++	QString viewwindowEncoding = encoding();
++
+ 	// Set or change the encoding
+ 	if ( m_currentEncoding != ::mainWindow->chmFile()->currentEncoding() )
+ 	{
+@@ -70,6 +73,7 @@
+ 	QString fullurl = "ms-its:" + ::mainWindow->getOpenedFileName() + "::" + url;
+ 	openURL ( KURL(fullurl) );
+ 	
++	setEncoding( viewwindowEncoding, TRUE);
+ 	return true;
+ }
+ 
