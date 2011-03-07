@@ -1,0 +1,40 @@
+commit 8c012a676db185e07b6c0f0507b496335ba2ab6c
+Author: Colin Guthrie <cguthrie@mandriva.org>
+Date:   Thu Mar 3 09:37:16 2011 +0000
+
+    conf: Make system.pa use udev-detect and not hal-detect.
+    
+    Also fix a left over reference to HAL in default.pa
+
+diff --git a/src/daemon/default.pa.in b/src/daemon/default.pa.in
+index ace0f09..32ba582 100755
+--- a/src/daemon/default.pa.in
++++ b/src/daemon/default.pa.in
+@@ -39,7 +39,7 @@ load-module module-card-restore
+ load-module module-augment-properties
+ 
+ ### Load audio drivers statically (it's probably better to not load
+-### these drivers manually, but instead use module-hal-detect --
++### these drivers manually, but instead use module-udev-detect --
+ ### see below -- for doing this automatically)
+ #load-module module-alsa-sink
+ #load-module module-alsa-source device=hw:1,0
+diff --git a/src/daemon/system.pa.in b/src/daemon/system.pa.in
+index 0ca32bd..aaefd1d 100755
+--- a/src/daemon/system.pa.in
++++ b/src/daemon/system.pa.in
+@@ -20,11 +20,11 @@
+ # mode.
+ 
+ ### Automatically load driver modules depending on the hardware available
+-.ifexists module-hal-detect@PA_SOEXT@
+-load-module module-hal-detect
++.ifexists module-udev-detect@PA_SOEXT@
++load-module module-udev-detect
+ .else
+ ### Alternatively use the static hardware detection module (for systems that
+-### lack HAL support)
++### lack udev support)
+ load-module module-detect
+ .endif
+ 
