@@ -33,7 +33,6 @@ def build():
 
     autotools.make()
 
-    #TODO: Add hu locale here, and include it in new tarball
     locales = ["be", "ca", "de", "es-AR", "es-ES", "fr", "it", "nl", "pl", "pt-BR", "sv-SE", "tr"]
 
     for locale in locales:
