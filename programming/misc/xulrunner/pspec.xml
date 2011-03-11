@@ -12,30 +12,27 @@
         <IsA>library</IsA>
         <Summary>XUL Runtime for Gecko Applications</Summary>
         <Description>xulrunner provides the XUL Runtime environment for Gecko applications.</Description>
-        <Archive sha1sum="097062fe4a6395b41c21add48894fbdff67e5ae0" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/mozilla-1.9.2.9.tar.lzma</Archive>
+        <Archive sha1sum="5236ee6fc6fac4c0bae9f086e05b85ed964d3dba" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/mozilla-FIREFOX_3_6_14_RELEASE.tar.lzma</Archive>
         <AdditionalFiles>
             <AdditionalFile target="20-xulrunner.conf" permission="0644">ld.so.conf</AdditionalFile>
         </AdditionalFiles>
         <BuildDependencies>
             <Dependency versionFrom="3.12.6.0">nss</Dependency>
+            <Dependency versionFrom="4.8.6">nspr</Dependency>
             <Dependency versionFrom="3.7.3">sqlite</Dependency>
             <Dependency versionFrom="1.8.8">cairo</Dependency>
-            <Dependency versionFrom="4.8.6">nspr</Dependency>
-            <Dependency versionFrom="2.18.5">gtk2</Dependency>
             <Dependency>pango</Dependency>
             <Dependency>libIDL</Dependency>
+            <Dependency versionFrom="2.18.5">gtk2</Dependency>
+            <Dependency>mit-kerberos-devel</Dependency>
             <Dependency>hunspell</Dependency>
+            <Dependency>startup-notification</Dependency>
             <Dependency>gnome-vfs</Dependency>
             <Dependency>libgnomeui</Dependency>
-            <Dependency>mit-kerberos-devel</Dependency>
-            <Dependency>startup-notification</Dependency>
             <Dependency versionFrom="0.4.0">libproxy</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="1">3.6.9-3.6.11.diff</Patch>
-            <Patch level="1">3.6.11-3.6.12.diff</Patch>
-            <Patch level="1">3.6.12-3.6.13.diff</Patch>
-
+            <Patch level="1">3.6.14-3.6.15.diff</Patch>
             <Patch level="1">xulrunner-version.patch</Patch>
 
             <!-- SuSe patches -->
@@ -54,6 +51,8 @@
             <Patch>pardus/xulrunner-mozconfig.patch</Patch>
             <Patch>pardus/pardus-nsplugin-path.patch</Patch>
             <Patch level="1">pardus/change-kmozillahelper-directory.diff</Patch>
+
+            <Patch level="1">pardus/add-dbus-glib-library-linkage.diff</Patch>
         </Patches>
     </Source>
 
@@ -105,6 +104,25 @@
     </Package>
 
     <History>
+        <Update release="43" type="security">
+            <Date>2011-03-11</Date>
+            <Version>1.9.2.15</Version>
+            <Comment>Bump to 1.9.2.15 to fix #17172:
+                * CSRF risk with plugins and 307 redirects
+                * Crash caused by corrupted JPEG image
+                * ParanoidFragmentSink allows javascript: URLs in chrome documents
+                * Use-after-free error using Web Workers
+                * Buffer overflow in JavaScript atom map
+                * Buffer overflow in JavaScript upvarMap
+                * Use-after-free error in JSON.stringify
+                * Recursive eval call causes confirm dialogs to evaluate to true
+                * Miscellaneous memory safety hazards
+                * Fixed several stability issues.
+                * Fixed an issue where some Java applets would fail to load in Firefox 3.6.14
+            </Comment>
+            <Name>Gökçen Eraslan</Name>
+            <Email>gokcen@pardus.org.tr</Email>
+        </Update>
         <Update release="42" type="security">
             <Date>2010-12-11</Date>
             <Version>1.9.2.13</Version>

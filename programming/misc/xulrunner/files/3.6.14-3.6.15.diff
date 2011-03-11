@@ -1,0 +1,542 @@
+diff -r a73120a6aa93 -r c2b88342ea2b .hgtags
+--- a/.hgtags	Wed Feb 16 11:45:23 2011 -0800
++++ b/.hgtags	Thu Mar 03 02:13:03 2011 -0800
+@@ -54,3 +54,9 @@
+ 77abb6fcd2b72a2fa6b346ba17f0783e9072609b THUNDERBIRD_3_1_8_BUILD2
+ 69bfc730b3e9b49539e5dcd639a2787e7863a52c THUNDERBIRD_3_1_8_RELEASE
+ 77abb6fcd2b72a2fa6b346ba17f0783e9072609b THUNDERBIRD_3_1_8_RELEASE
++77abb6fcd2b72a2fa6b346ba17f0783e9072609b FIREFOX_3_6_14_RELEASE
++a73120a6aa9328aea0b9f89944d8e78a3affb053 FIREFOX_3_6_14_RELEASE
++a73120a6aa9328aea0b9f89944d8e78a3affb053 FIREFOX_3_6_14_BUILD3
++a73120a6aa9328aea0b9f89944d8e78a3affb053 THUNDERBIRD_3_1_8_BUILD3
++77abb6fcd2b72a2fa6b346ba17f0783e9072609b THUNDERBIRD_3_1_8_RELEASE
++a73120a6aa9328aea0b9f89944d8e78a3affb053 THUNDERBIRD_3_1_8_RELEASE
+diff -r a73120a6aa93 -r c2b88342ea2b browser/config/version.txt
+--- a/browser/config/version.txt	Wed Feb 16 11:45:23 2011 -0800
++++ b/browser/config/version.txt	Thu Mar 03 02:13:03 2011 -0800
+@@ -1,1 +1,1 @@
+-3.6.14
++3.6.15
+diff -r a73120a6aa93 -r c2b88342ea2b config/milestone.txt
+--- a/config/milestone.txt	Wed Feb 16 11:45:23 2011 -0800
++++ b/config/milestone.txt	Thu Mar 03 02:13:03 2011 -0800
+@@ -10,4 +10,4 @@
+ # hardcoded milestones in the tree from these two files.
+ #--------------------------------------------------------
+ 
+-1.9.2.14
++1.9.2.15
+diff -r a73120a6aa93 -r c2b88342ea2b js/src/config/milestone.txt
+--- a/js/src/config/milestone.txt	Wed Feb 16 11:45:23 2011 -0800
++++ b/js/src/config/milestone.txt	Thu Mar 03 02:13:03 2011 -0800
+@@ -10,4 +10,4 @@
+ # hardcoded milestones in the tree from these two files.
+ #--------------------------------------------------------
+ 
+-1.9.2.14
++1.9.2.15
+diff -r a73120a6aa93 -r c2b88342ea2b js/src/jsapi.cpp
+--- a/js/src/jsapi.cpp	Wed Feb 16 11:45:23 2011 -0800
++++ b/js/src/jsapi.cpp	Thu Mar 03 02:13:03 2011 -0800
+@@ -809,6 +809,7 @@
+     rt->titleSharingDone = JS_NEW_CONDVAR(rt->gcLock);
+     if (!rt->titleSharingDone)
+         goto bad;
++    rt->titleSharingTodo = NO_TITLE_SHARING_TODO;
+     rt->debuggerLock = JS_NEW_LOCK();
+     if (!rt->debuggerLock)
+         goto bad;
+diff -r a73120a6aa93 -r c2b88342ea2b js/src/jscntxt.cpp
+--- a/js/src/jscntxt.cpp	Wed Feb 16 11:45:23 2011 -0800
++++ b/js/src/jscntxt.cpp	Thu Mar 03 02:13:03 2011 -0800
+@@ -152,7 +152,6 @@
+     JS_INIT_CLIST(&thread->contextList);
+     thread->id = id;
+     InitThreadData(&thread->data);
+-    thread->titleSharingTodo = NO_TITLE_SHARING_TODO;
+     return thread;
+ }
+ 
+diff -r a73120a6aa93 -r c2b88342ea2b js/src/jscntxt.h
+--- a/js/src/jscntxt.h	Wed Feb 16 11:45:23 2011 -0800
++++ b/js/src/jscntxt.h	Thu Mar 03 02:13:03 2011 -0800
+@@ -350,19 +350,6 @@
+     /* Indicates that the thread is waiting in ClaimTitle from jslock.cpp. */
+     JSTitle             *titleToShare;
+ 
+-    /* Linked list of titles that this thread must share. */
+-    JSTitle             *titleSharingTodo;
+-
+-/*
+- * Magic terminator for the rt->titleSharingTodo linked list, threaded through
+- * title->u.link.  This hack allows us to test whether a title is on the list
+- * by asking whether title->u.link is non-null.  We use a large, likely bogus
+- * pointer here to distinguish this value from any valid u.count (small int)
+- * value.
+- */
+-#define NO_TITLE_SHARING_TODO   ((JSTitle *) 0xfeedbeef)
+-#define HAS_TITLES_TO_SHARE(cx) ((cx)->thread->titleSharingTodo != NO_TITLE_SHARING_TODO)
+-    
+     JSGCThing           *gcFreeLists[GC_NUM_FREELISTS];
+ 
+     /* Factored out of JSThread for !JS_THREADSAFE embedding in JSRuntime. */
+@@ -393,12 +380,7 @@
+ extern void
+ js_ClearContextThread(JSContext *cx);
+ 
+-
+-#else /* !JS_THREADSAFE */
+-
+-#define HAS_TITLES_TO_SHARE(cx) JS_FALSE
+-
+-#endif /* !JS_THREADSAFE */
++#endif /* JS_THREADSAFE */
+ 
+ typedef enum JSDestroyContextMode {
+     JSDCM_NO_GC,
+@@ -595,8 +577,23 @@
+      * State for sharing single-threaded titles, once a second thread tries to
+      * lock a title.  The titleSharingDone condvar is protected by rt->gcLock
+      * to minimize number of locks taken in JS_EndRequest.
++     *
++     * The titleSharingTodo linked list is likewise "global" per runtime, not
++     * one-list-per-context, to conserve space over all contexts, optimizing
++     * for the likely case that titles become shared rarely, and among a very
++     * small set of threads (contexts).
+      */
+     PRCondVar           *titleSharingDone;
++    JSTitle             *titleSharingTodo;
++
++/*
++ * Magic terminator for the rt->titleSharingTodo linked list, threaded through
++ * title->u.link.  This hack allows us to test whether a title is on the list
++ * by asking whether title->u.link is non-null.  We use a large, likely bogus
++ * pointer here to distinguish this value from any valid u.count (small int)
++ * value.
++ */
++#define NO_TITLE_SHARING_TODO   ((JSTitle *) 0xfeedbeef)
+ 
+     /*
+      * Lock serializing trapList and watchPointList accesses, and count of all
+diff -r a73120a6aa93 -r c2b88342ea2b js/src/jsgc.cpp
+--- a/js/src/jsgc.cpp	Wed Feb 16 11:45:23 2011 -0800
++++ b/js/src/jsgc.cpp	Thu Mar 03 02:13:03 2011 -0800
+@@ -949,13 +949,12 @@
+ #endif
+ 
+ static JSGCArenaInfo *
+-NewGCArena(JSContext *cx)
++NewGCArena(JSRuntime *rt)
+ {
+     jsuword chunk;
+     JSGCArenaInfo *a;
+ 
+-    JSRuntime *rt = cx->runtime;
+-    if (rt->gcBytes >= rt->gcMaxBytes && !HAS_TITLES_TO_SHARE(cx))
++    if (rt->gcBytes >= rt->gcMaxBytes)
+         return NULL;
+ 
+ #if CHUNKED_ARENA_ALLOCATION
+@@ -1753,11 +1752,10 @@
+ }
+ 
+ static JS_INLINE bool
+-IsGCThresholdReached(JSContext *cx)
++IsGCThresholdReached(JSRuntime *rt)
+ {
+-    JSRuntime *rt = cx->runtime;
+ #ifdef JS_GC_ZEAL
+-    if (rt->gcZeal >= 1 && !HAS_TITLES_TO_SHARE(cx))
++    if (rt->gcZeal >= 1)
+         return true;
+ #endif
+ 
+@@ -1766,8 +1764,8 @@
+      * zero (see the js_InitGC function) the return value is false when
+      * the gcBytes value is close to zero at the JS engine start.
+      */
+-    return (rt->gcMallocBytes >= rt->gcMaxMallocBytes ||
+-            rt->gcBytes >= rt->gcTriggerBytes) && !HAS_TITLES_TO_SHARE(cx);
++    return rt->gcMallocBytes >= rt->gcMaxMallocBytes ||
++           rt->gcBytes >= rt->gcTriggerBytes;
+ }
+ 
+ template <class T> static JS_INLINE T*
+@@ -1842,7 +1840,7 @@
+ #endif
+ 
+     arenaList = &rt->gcArenaList[flindex];
+-    doGC = IsGCThresholdReached(cx);
++    doGC = IsGCThresholdReached(rt);
+     for (;;) {
+         if (doGC
+ #ifdef JS_TRACER
+@@ -1922,9 +1920,9 @@
+             }
+ #endif
+ 
+-            a = NewGCArena(cx);
++            a = NewGCArena(rt);
+             if (!a) {
+-                if (doGC || JS_ON_TRACE(cx) || HAS_TITLES_TO_SHARE(cx))
++                if (doGC || JS_ON_TRACE(cx))
+                     goto fail;
+                 doGC = true;
+                 continue;
+@@ -2074,7 +2072,7 @@
+         return NULL;
+     }
+ 
+-    if (IsGCThresholdReached(cx))
++    if (IsGCThresholdReached(rt))
+         goto do_gc;
+ 
+     /*
+@@ -2088,10 +2086,10 @@
+             ARENA_INFO_OFFSET) {
+             if (doubleFlags == DOUBLE_BITMAP_SENTINEL ||
+                 !((JSGCArenaInfo *) doubleFlags)->prev) {
+-                a = NewGCArena(cx);
++                a = NewGCArena(rt);
+                 if (!a) {
+                   do_gc:
+-                    if (didGC || JS_ON_TRACE(cx) || HAS_TITLES_TO_SHARE(cx)) {
++                    if (didGC || JS_ON_TRACE(cx)) {
+                         METER(rt->gcStats.doubleArenaStats.fail++);
+                         JS_UNLOCK_GC(rt);
+                         js_ReportOutOfMemory(cx);
+diff -r a73120a6aa93 -r c2b88342ea2b js/src/jslock.cpp
+--- a/js/src/jslock.cpp	Wed Feb 16 11:45:23 2011 -0800
++++ b/js/src/jslock.cpp	Thu Mar 03 02:13:03 2011 -0800
+@@ -439,14 +439,18 @@
+ static void
+ ShareTitle(JSContext *cx, JSTitle *title)
+ {
++    JSRuntime *rt;
++    JSTitle **todop;
++
++    rt = cx->runtime;
+     if (title->u.link) {
+-        JSThread *ownerThread = title->ownercx->thread;
+-        JSTitle **todop = &ownerThread->titleSharingTodo;
+-        for (; *todop != title; todop = &(*todop)->u.link)
++        for (todop = &rt->titleSharingTodo; *todop != title;
++             todop = &(*todop)->u.link) {
+             JS_ASSERT(*todop != NO_TITLE_SHARING_TODO);
++        }
+         *todop = title->u.link;
+         title->u.link = NULL;       /* null u.link for sanity ASAP */
+-        JS_NOTIFY_ALL_CONDVAR(cx->runtime->titleSharingDone);
++        JS_NOTIFY_ALL_CONDVAR(rt->titleSharingDone);
+     }
+     FinishSharingTitle(cx, title);
+ }
+@@ -620,8 +624,8 @@
+          */
+         if (!title->u.link) {
+             TITLE_TO_SCOPE(title)->hold();
+-            title->u.link = ownercx->thread->titleSharingTodo;
+-            ownercx->thread->titleSharingTodo = title;
++            title->u.link = rt->titleSharingTodo;
++            rt->titleSharingTodo = title;
+         }
+ 
+         /*
+@@ -684,7 +688,7 @@
+     bool shared;
+ 
+     /* See whether cx has any single-threaded titles to start sharing. */
+-    todop = &cx->thread->titleSharingTodo;
++    todop = &cx->runtime->titleSharingTodo;
+     shared = false;
+     while ((title = *todop) != NO_TITLE_SHARING_TODO) {
+         if (title->ownercx != cx) {
+diff -r a73120a6aa93 -r c2b88342ea2b modules/oji/src/nsCSecurityContext.cpp
+--- a/modules/oji/src/nsCSecurityContext.cpp	Wed Feb 16 11:45:23 2011 -0800
++++ b/modules/oji/src/nsCSecurityContext.cpp	Thu Mar 03 02:13:03 2011 -0800
+@@ -139,7 +139,7 @@
+     PRBool javaCompatible = PR_FALSE;
+ 
+     if (NS_SUCCEEDED(GetOriginImpl(origin))) {
+-        if (NS_FAILED(NS_CheckIsJavaCompatibleURLString(origin, PR_TRUE, &javaCompatible)))
++        if (NS_FAILED(NS_CheckIsJavaCompatibleURLString(origin, &javaCompatible)))
+             javaCompatible = PR_FALSE;
+     } else {
+         javaCompatible = PR_FALSE;
+diff -r a73120a6aa93 -r c2b88342ea2b modules/plugin/base/src/nsNPAPIPlugin.cpp
+--- a/modules/plugin/base/src/nsNPAPIPlugin.cpp	Wed Feb 16 11:45:23 2011 -0800
++++ b/modules/plugin/base/src/nsNPAPIPlugin.cpp	Thu Mar 03 02:13:03 2011 -0800
+@@ -92,8 +92,6 @@
+ #include "nsIHttpAuthManager.h"
+ #include "nsICookieService.h"
+ 
+-#include "nsNetUtil.h"
+-
+ #include "mozilla/PluginLibrary.h"
+ using mozilla::PluginLibrary;
+ 
+@@ -616,7 +614,7 @@
+   *aResult = NULL;
+ 
+   nsRefPtr<nsNPAPIPluginInstance> inst =
+-    new nsNPAPIPluginInstance(&fCallbacks, fLibrary, this);
++    new nsNPAPIPluginInstance(&fCallbacks, fLibrary);
+   if (!inst)
+     return NS_ERROR_OUT_OF_MEMORY;
+ 
+@@ -1979,92 +1977,7 @@
+                  ("NPN_GetProperty(npp %p, npobj %p, property %p) called\n",
+                   npp, npobj, property));
+ 
+-  if (!npobj->_class->getProperty(npobj, property, result))
+-    return false;
+-
+-  // If a Java plugin tries to get the document.URL or document.documentURI
+-  // property from us, don't pass back a value that Java won't be able to
+-  // understand -- one that will make the URL(String) constructor throw a
+-  // MalformedURL exception.  Passing such a value causes Java Plugin2 to
+-  // crash (to throw a RuntimeException in Plugin2Manager.getDocumentBase()).
+-  // Also don't pass back a value that Java is likely to mishandle.
+-
+-  nsNPAPIPluginInstance* inst = (nsNPAPIPluginInstance*) npp->ndata;
+-  if (!inst)
+-    return false;
+-  nsNPAPIPlugin* plugin = inst->GetPlugin();
+-  if (!plugin)
+-    return false;
+-  nsRefPtr<nsPluginHost> host = dont_AddRef(nsPluginHost::GetInst());
+-  nsPluginTag* pluginTag = host->FindTagForPlugin(plugin);
+-  if (!pluginTag->mIsJavaPlugin)
+-    return true;
+-
+-  if (!NPVARIANT_IS_STRING(*result))
+-    return true;
+-
+-  NPUTF8* propertyName = _utf8fromidentifier(property);
+-  if (!propertyName)
+-    return true;
+-  bool notURL =
+-    (PL_strcasecmp(propertyName, "URL") &&
+-     PL_strcasecmp(propertyName, "documentURI"));
+-  _memfree(propertyName);
+-  if (notURL)
+-    return true;
+-
+-  NPObject* window_obj = _getwindowobject(npp);
+-  if (!window_obj)
+-    return true;
+-
+-  NPVariant doc_v;
+-  NPObject* document_obj = nsnull;
+-  NPIdentifier doc_id = _getstringidentifier("document");
+-  bool ok = npobj->_class->getProperty(window_obj, doc_id, &doc_v);
+-  _releaseobject(window_obj);
+-  if (ok) {
+-    if (NPVARIANT_IS_OBJECT(doc_v)) {
+-      document_obj = NPVARIANT_TO_OBJECT(doc_v);
+-    } else {
+-      _releasevariantvalue(&doc_v);
+-      return true;
+-    }
+-  } else {
+-    return true;
+-  }
+-  _releaseobject(document_obj);
+-  if (document_obj != npobj)
+-    return true;
+-
+-  NPString urlnp = NPVARIANT_TO_STRING(*result);
+-  nsXPIDLCString url;
+-  url.Assign(urlnp.UTF8Characters, urlnp.UTF8Length);
+-
+-  PRBool javaCompatible = PR_FALSE;
+-  if (NS_FAILED(NS_CheckIsJavaCompatibleURLString(url, PR_FALSE, &javaCompatible)))
+-    javaCompatible = PR_FALSE;
+-  if (javaCompatible)
+-    return true;
+-
+-  // If Java won't be able to interpret the original value of document.URL or
+-  // document.documentURI, or is likely to mishandle it, pass back something
+-  // that Java will understand but won't be able to use to access the network,
+-  // and for which same-origin checks will always fail.
+-
+-  if (inst->mFakeURL.IsVoid()) {
+-    // Abort (do an error return) if NS_MakeRandomInvalidURLString() fails.
+-    if (NS_FAILED(NS_MakeRandomInvalidURLString(inst->mFakeURL))) {
+-      _releasevariantvalue(result);
+-      return false;
+-    }
+-  }
+-
+-  _releasevariantvalue(result);
+-  char* fakeurl = (char *) _memalloc(inst->mFakeURL.Length() + 1);
+-  strcpy(fakeurl, inst->mFakeURL);
+-  STRINGZ_TO_NPVARIANT(fakeurl, *result);
+-
+-  return true;
++  return npobj->_class->getProperty(npobj, property, result);
+ }
+ 
+ bool NP_CALLBACK
+diff -r a73120a6aa93 -r c2b88342ea2b modules/plugin/base/src/nsNPAPIPluginInstance.cpp
+--- a/modules/plugin/base/src/nsNPAPIPluginInstance.cpp	Wed Feb 16 11:45:23 2011 -0800
++++ b/modules/plugin/base/src/nsNPAPIPluginInstance.cpp	Thu Mar 03 02:13:03 2011 -0800
+@@ -912,15 +912,13 @@
+     mLibrary(nsnull),
+     mStreams(nsnull),
+     mMIMEType(nsnull),
+-    mShadow(aShadow),
+-    mPlugin(nsnull)
++    mShadow(aShadow)
+ {
+ }
+ #endif
+ 
+ nsNPAPIPluginInstance::nsNPAPIPluginInstance(NPPluginFuncs* callbacks,
+-                                             PluginLibrary* aLibrary,
+-                                             nsNPAPIPlugin* aPlugin)
++                                             PluginLibrary* aLibrary)
+   : mCallbacks(callbacks),
+ #ifdef XP_MACOSX
+ #ifdef NP_NO_QUICKDRAW
+@@ -942,7 +940,6 @@
+ #ifdef OJI
+     ,mShadow(nsnull)
+ #endif
+-    ,mPlugin(aPlugin)
+ {
+   NS_ASSERTION(mCallbacks != NULL, "null callbacks");
+ 
+@@ -1129,8 +1126,6 @@
+ {
+   PLUGIN_LOG(PLUGIN_LOG_NORMAL, ("nsNPAPIPluginInstance::Stop this=%p\n",this));
+ 
+-  mPlugin = nsnull;
+-
+ #ifdef OJI
+   if (mShadow)
+     return mShadow->Stop();
+diff -r a73120a6aa93 -r c2b88342ea2b modules/plugin/base/src/nsNPAPIPluginInstance.h
+--- a/modules/plugin/base/src/nsNPAPIPluginInstance.h	Wed Feb 16 11:45:23 2011 -0800
++++ b/modules/plugin/base/src/nsNPAPIPluginInstance.h	Thu Mar 03 02:13:03 2011 -0800
+@@ -119,8 +119,6 @@
+   nsIPluginInstanceOld *GetShadow();
+ #endif
+ 
+-  nsNPAPIPlugin* GetPlugin() { return mPlugin; }
+-
+   nsresult GetNPP(NPP * aNPP);
+ 
+   // Return the callbacks for the plugin instance.
+@@ -148,7 +146,7 @@
+   nsNPAPIPluginInstance(nsIPluginInstanceOld *aShadow);
+ #endif
+ 
+-  nsNPAPIPluginInstance(NPPluginFuncs* callbacks, PluginLibrary* aLibrary, nsNPAPIPlugin* aPlugin);
++  nsNPAPIPluginInstance(NPPluginFuncs* callbacks, PluginLibrary* aLibrary);
+ 
+   // Use Release() to destroy this
+   virtual ~nsNPAPIPluginInstance();
+@@ -222,8 +220,6 @@
+   PluginLibrary* mLibrary;
+   nsInstanceStream *mStreams;
+ 
+-  nsXPIDLCString mFakeURL;
+-
+ private:
+   nsTArray<PopupControlState> mPopupStates;
+ 
+@@ -238,7 +234,6 @@
+ #ifdef OJI
+   nsIPluginInstanceOld *mShadow; // Strong
+ #endif
+-  nsNPAPIPlugin* mPlugin; // Weak
+ };
+ 
+ #endif // nsNPAPIPluginInstance_h_
+diff -r a73120a6aa93 -r c2b88342ea2b modules/plugin/base/src/nsPluginHost.h
+--- a/modules/plugin/base/src/nsPluginHost.h	Wed Feb 16 11:45:23 2011 -0800
++++ b/modules/plugin/base/src/nsPluginHost.h	Thu Mar 03 02:13:03 2011 -0800
+@@ -333,10 +333,6 @@
+                                        nsIPluginInstanceOwner* aOwner,
+                                        PRBool aAllowOpeningStreams);
+ 
+-  // Return the tag for |plugin| if found, nsnull if not.
+-  nsPluginTag*
+-  FindTagForPlugin(nsIPlugin* aPlugin);
+-
+ private:
+   nsresult
+   TrySetUpPluginInstance(const char *aMimeType, nsIURI *aURL, nsIPluginInstanceOwner *aOwner);
+@@ -360,6 +356,10 @@
+   nsPluginTag*
+   FindPluginEnabledForExtension(const char* aExtension, const char* &aMimeType);
+ 
++  // Return the tag for |plugin| if found, nsnull if not.
++  nsPluginTag*
++  FindTagForPlugin(nsIPlugin* aPlugin);
++
+   nsresult
+   FindStoppedPluginForURL(nsIURI* aURL, nsIPluginInstanceOwner *aOwner);
+ 
+diff -r a73120a6aa93 -r c2b88342ea2b netwerk/base/public/nsNetUtil.h
+--- a/netwerk/base/public/nsNetUtil.h	Wed Feb 16 11:45:23 2011 -0800
++++ b/netwerk/base/public/nsNetUtil.h	Thu Mar 03 02:13:03 2011 -0800
+@@ -1703,13 +1703,10 @@
+  * Helper function to determine whether urlString is Java-compatible --
+  * whether it can be passed to the Java URL(String) constructor without the
+  * latter throwing a MalformedURLException, or without Java otherwise
+- * mishandling it.  This function (in effect) implements a scheme whitelist
+- * for Java.
++ * mishandling it.
+  */  
+ inline nsresult
+-NS_CheckIsJavaCompatibleURLString(nsCString& urlString,
+-                                  PRBool isOJIPlugin,
+-                                  PRBool *result)
++NS_CheckIsJavaCompatibleURLString(nsCString& urlString, PRBool *result)
+ {
+   *result = PR_FALSE; // Default to "no"
+ 
+@@ -1728,36 +1725,17 @@
+     nsCString scheme;
+     scheme.Assign(urlString.get() + schemePos, schemeLen);
+     // By default Java only understands a small number of URL schemes, and of
+-    // these only some can legitimately represent a browser page's "origin"
+-    // (and be something we can legitimately expect Java to handle ... or not
+-    // to mishandle).
+-    //
+-    // Besides those listed below, the OJI plugin understands the "jar",
+-    // "mailto", "netdoc", "javascript" and "rmi" schemes, and Java Plugin2
+-    // also understands the "about" scheme.  We actually pass "about" URLs
+-    // to Java ("about:blank" when processing a javascript: URL (one that
+-    // calls Java) from the location bar of a blank page, and (in FF4 and up)
+-    // "about:home" when processing a javascript: URL from the home page).
+-    // And Java doesn't appear to mishandle them (for example it doesn't allow
+-    // connections to "about" URLs).  But it doesn't make any sense to do
+-    // same-origin checks on "about" URLs, so we don't include them in our
+-    // scheme whitelist.
+-    //
+-    // The OJI plugin doesn't understand "chrome" URLs (only Java Plugin2
+-    // does) -- so we mustn't pass them to the OJI plugin.  But we do need to
+-    // pass "chrome" URLs to Java Plugin2:  Java Plugin2 grants additional
+-    // privileges to chrome "origins", and some extensions take advantage of
+-    // this.  For more information see bug 620773.
++    // these only some are likely to represent user input (for example from a
++    // link or the location bar) that Java can legitimately be expected to
++    // handle.  (Besides those listed below, Java also understands the "jar",
++    // "mailto" and "netdoc" schemes.  But it probably doesn't expect these
++    // from a browser, and is therefore likely to mishandle them.)
+     if (PL_strcasecmp(scheme.get(), "http") &&
+         PL_strcasecmp(scheme.get(), "https") &&
+         PL_strcasecmp(scheme.get(), "file") &&
+         PL_strcasecmp(scheme.get(), "ftp") &&
+         PL_strcasecmp(scheme.get(), "gopher"))
+       compatible = PR_FALSE;
+-    if (!compatible && !isOJIPlugin) {
+-      if (!PL_strcasecmp(scheme.get(), "chrome"))
+-        compatible = PR_TRUE;
+-    }
+   } else {
+     compatible = PR_FALSE;
+   }
