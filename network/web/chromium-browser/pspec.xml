@@ -13,7 +13,10 @@
         <IsA>app:gui</IsA>
         <Summary>A WebKit powered web browser</Summary>
         <Description>Chromium-browser is an open-source web browser, powered by WebKit.</Description>
-        <Archive sha1sum="4ebc93e202f87f724effb174459c3f5c2a10c9cd" type="tarbz2">http://build.chromium.org/buildbot/official/chromium-9.0.597.107.tar.bz2</Archive>
+        <Archive sha1sum="cc2fa6a62bf3ffb9e0c4a76a2f3db7db4b69d996" type="tarbz2">http://build.chromium.org/buildbot/official/chromium-10.0.648.133.tar.bz2</Archive>
+        <AdditionalFiles>
+            <AdditionalFile permission="0644" target="third_party/flac/flac.gyp">flac.gyp</AdditionalFile>
+        </AdditionalFiles>
         <BuildDependencies>
             <Dependency>alsa-lib</Dependency>
             <Dependency>libstdc++</Dependency>
@@ -39,10 +42,23 @@
             <Dependency>cups</Dependency>
             <Dependency>minizip-devel</Dependency>
             <Dependency>gdk-pixbuf</Dependency>
+            <Dependency>flac-devel</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="0">chromium-system-vpx-r1.patch</Patch>
+            <Patch level="0">chromium-system-vpx-r2.patch</Patch>
             <Patch level="1">pisi_download_warning.patch</Patch>
+
+            <!-- Make sure that we don't use bundled flac-->
+            <Patch level="0">chromium-system-flac-r0.patch</Patch>
+
+            <!-- see crbug.com/61759 -->
+            <Patch level="1">ffmpeg-gyp-vpx.patch</Patch>
+
+            <!-- see crbug.com/26496 -->
+            <Patch level="1">webkit-debug-build.patch</Patch>
+
+            <!--see crbug.com/61759 -->
+            <Patch level="1">version-info-fix.patch</Patch>
 
             <!--Patch is enabled by default in 11.x series, see crbug.com/24507 -->
             <Patch level="1">unblacklist_gecko_mediaplayer.patch</Patch>
@@ -77,6 +93,7 @@
             <Dependency>libgcrypt</Dependency>
             <Dependency>libvpx</Dependency>
             <Dependency>libgnome-keyring</Dependency>
+            <Dependency>flac</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="config">/etc</Path>
@@ -99,6 +116,13 @@
     </Package>
 
     <History>
+<!--        <Update release="21" type="security">-->
+<!--            <Date>2011-03-14</Date>-->
+<!--            <Version>10.0.648.133</Version>-->
+<!--            <Comment>New Stable release. Fixes CVE-2011-1290 [75712] High Memory corruption in style handling</Comment>-->
+<!--            <Name>Fatih Arslan</Name>-->
+<!--            <Email>farslan@pardus.org.tr</Email>-->
+<!--        </Update>-->
         <Update release="20">
             <Date>2011-03-03</Date>
             <Version>9.0.597.107</Version>
