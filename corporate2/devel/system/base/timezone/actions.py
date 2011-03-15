@@ -11,8 +11,8 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 WorkDir = "tzdata"
-tzcode  = "tzcode2010c"
-tzdata  = "tzdata2010c"
+tzcode  = "tzcode2011d"
+tzdata  = "tzdata2011d"
 
 configTemplate = """
 objpfx = %(pwd)s/obj/
