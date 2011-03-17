@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2007-2010 TUBITAK/UEKAE
+# Copyright 2007-2011 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
@@ -11,6 +11,7 @@ from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 shelltools.export("CFLAGS", "%s -fpic" % get.CFLAGS())
+shelltools.export("HOME", get.installDIR())
 
 def setup():
     perlmodules.configure("MP_APR_CONFIG=/usr/bin/apr-1-config \
