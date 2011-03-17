@@ -1,0 +1,29 @@
+--- src/corelib/tools/qstring.cpp.orig	2010-09-10 12:05:25.000000000 +0300
++++ src/corelib/tools/qstring.cpp	2011-03-17 16:05:08.839000096 +0200
+@@ -1143,7 +1177,7 @@
+ void QString::free(Data *d)
+ {
+ #ifdef QT3_SUPPORT
+-    if (d->asciiCache) {
++    if (d->asciiCache && asciiCache) {
+         Q_ASSERT(asciiCache);
+         asciiCache->remove(d);
+     }
+@@ -1277,7 +1311,7 @@
+         d = x;
+     } else {
+ #ifdef QT3_SUPPORT
+-        if (d->asciiCache) {
++        if (d->asciiCache && asciiCache) {
+             Q_ASSERT(asciiCache);
+             asciiCache->remove(d);
+         }
+@@ -7106,7 +7143,7 @@
+         *this = fromRawData(unicode, size);
+     } else {
+ #ifdef QT3_SUPPORT
+-        if (d->asciiCache) {
++        if (d->asciiCache && asciiCache) {
+             Q_ASSERT(asciiCache);
+             asciiCache->remove(d);
+         }
