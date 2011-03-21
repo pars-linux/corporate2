@@ -1,0 +1,28 @@
+From 5ae8aea1ecd60c439121d3329d8eaabf13d292c1 Mon Sep 17 00:00:00 2001
+From: Jan Safranek <jsafrane@redhat.com>
+Date: Tue, 1 Mar 2011 13:11:35 +0100
+Subject: [PATCH] Fix buffer overflow when processing list of controllers from command line (CVE-2011-1006).
+
+Thanks to Nelson Elhage for reporting this issue.
+
+Signed-off-by: Jan Safranek <jsafrane@redhat.com>
+---
+ src/tools/tools-common.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/src/tools/tools-common.c b/src/tools/tools-common.c
+index 4beffcd..7d633be 100644
+--- a/src/tools/tools-common.c
++++ b/src/tools/tools-common.c
+@@ -79,7 +79,7 @@ int parse_cgroup_spec(struct cgroup_group_spec **cdptr, char *optarg,
+ 			}
+ 		}
+ 		j++;
+-	} while (temp);
++	} while (temp && j<CG_CONTROLLER_MAX-1);
+ 
+ 	/* Store path to the cgroup */
+ 	strncpy(cdptr[i]->path, pathptr, FILENAME_MAX);
+-- 
+1.7.0.1
+
