@@ -5,10 +5,10 @@ import os
 import glob
 
 def postInstall(fromVersion, fromRelease, toVersion, toRelease):
-    os.system("/usr/lib/vlc/vlc-cache-gen -f /usr/lib/vlc")
+    os.system("/usr/lib/vlc/vlc-cache-gen -f /usr/lib/vlc/plugins")
 
 def preRemove(fromVersion, fromRelease, toVersion, toRelease):
-    for cache in glob.glob("/usr/lib/vlc/plugins-*-*.dat"):
+    for cache in glob.glob("/usr/lib/vlc/plugins/plugins-*-*.dat"):
         try:
             os.unlink(cache)
         except OSError:
