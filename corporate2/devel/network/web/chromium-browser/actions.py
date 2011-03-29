@@ -77,6 +77,8 @@ def install():
 
     pisitools.newman("chrome.1", "chromium-browser.1")
 
+    pisitools.dosym("/usr/lib/nsbrowser/plugins", "/usr/lib/chromium-browser/plugins")
+
     # Chromium looks for these in its folder
     # See media_posix.cc and base_paths_linux.cc
     for lib in ["libavcodec.so.52" , "libavformat.so.52", "libavutil.so.50"]:
