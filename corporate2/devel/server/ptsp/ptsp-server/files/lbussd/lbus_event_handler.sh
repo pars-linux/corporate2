@@ -53,7 +53,7 @@ function remove_all {
     if [ -d ${HOME}/${DRIVEDIR} ]; then
       for drive in ${HOME}/${DRIVEDIR}/*; do
         if [ -d ${drive} ]; then
-          rmdir --ignore-fail-on-non-empty ${drive}
+          rmdir ${drive}
         fi
       done
     fi
@@ -102,7 +102,7 @@ case "${ACTION}" in
       DESC=$5
       case "${DEVTYPE}" in
           block)  fusermount -u -z "${HOME}/${DRIVEDIR}/${SHARENAME}"
-                  rmdir --ignore-fail-pn-non-empty "${HOME}/${DRIVEDIR}/${SHARENAME}"
+                  rmdir "${HOME}/${DRIVEDIR}/${SHARENAME}"
                   if [ -d `/usr/bin/xdg-user-dir DESKTOP` ]; then
                     rm -f "`/usr/bin/xdg-user-dir DESKTOP`/${SHARENAME}.desktop"
                   fi

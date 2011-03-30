@@ -113,12 +113,12 @@ obtain_lock
 if [ "${ACTION}" = "add" ]; then
 
   #
-  # We used to run vol_id command if this isn't a cdrom, as it's therefore a memory
-  # stick. vol_id is deprecated, so use blkid command from now on which comes from util-linux.
+  # Run the vol_id command if this isn't a cdrom, as it's therefore a memory
+  # stick. 
   #
   
   if [ "${LTSP_DEVTYPE}" = "disk" ]; then
-    eval `blkid -p -o udev "${DEVNAME}" | \
+    eval `/lib/udev/vol_id --export "${DEVNAME}" | \
           sed -e "s/\(.*\)=\(.*\)/\1=\"\2\"/"`
   
     if [ "${ID_FS_USAGE}" != "filesystem" -a \
@@ -206,7 +206,7 @@ elif [ "${ACTION}" = "remove" ]; then
         echo "RemoveDevice|${MOUNTPOINT}" > /tmp/lbus.fifo
         rm ${TABFILE}
 	umount -f "${DEVNAME}"
-        rmdir --ignore-fail-on-non-empty"${TDIR}"
+        rmdir "${TDIR}"
       fi
     fi
   done
