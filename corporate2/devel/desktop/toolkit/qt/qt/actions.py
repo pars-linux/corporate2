@@ -46,6 +46,7 @@ def setup():
                             -qvfb \
                             -glib \
                             -no-sql-sqlite2 \
+                            -no-qt3support \
                             -system-sqlite \
                             -plugin-sql-sqlite \
                             -plugin-sql-mysql \
@@ -79,8 +80,8 @@ def install():
     pisitools.removeDir("%s/include/phonon" % qtbase)
     pisitools.removeDir("/usr/share/kde4")
     pisitools.remove("%s/lib/pkgconfig/phonon*" % qtbase)
-    pisitools.remove("/usr/share/dbus-1/interfaces/org.kde.Phonon.AudioOutput.xml")
-    os.removedirs("%s/usr/share/dbus-1/interfaces" % get.installDIR())
+    # Phonon 4.5 provides libphononwidgets.so file
+    pisitools.remove("%s/designer/libphononwidgets.so" % qt4.plugindir)
 
     for app in ["qmake", "designer", "assistant", "linguist", "qtconfig", "uic", "rcc", "moc", "lrelease", "lupdate", "lconvert"]:
         pisitools.dosym("%s/bin/%s" % (qtbase, app), "/usr/bin/%s-qt4" % app)
