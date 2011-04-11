@@ -46,7 +46,6 @@ def setup():
                             -qvfb \
                             -glib \
                             -no-sql-sqlite2 \
-                            -no-qt3support \
                             -system-sqlite \
                             -plugin-sql-sqlite \
                             -plugin-sql-mysql \
