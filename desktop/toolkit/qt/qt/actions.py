@@ -77,10 +77,9 @@ def install():
     pisitools.remove("%s/lib/libphonon*" % qtbase)
     pisitools.remove("%s/plugins/phonon_backend/libphonon*" % qtbase)
     pisitools.removeDir("%s/include/phonon" % qtbase)
-    pisitools.removeDir("/usr/share/kde4")
     pisitools.remove("%s/lib/pkgconfig/phonon*" % qtbase)
     # Phonon 4.5 provides libphononwidgets.so file
-    pisitools.remove("%s/designer/libphononwidgets.so" % qt4.plugindir)
+    pisitools.remove("%s/plugins/designer/libphononwidgets.so" % qtbase)
 
     for app in ["qmake", "designer", "assistant", "linguist", "qtconfig", "uic", "rcc", "moc", "lrelease", "lupdate", "lconvert"]:
         pisitools.dosym("%s/bin/%s" % (qtbase, app), "/usr/bin/%s-qt4" % app)
