@@ -12,7 +12,7 @@ from pisi.actionsapi import get
 
 arch = "i386" if get.ARCH() == "i686" else "x86_64"
 
-WorkDir = "%s-%s-1190.%s.linux" % (get.srcNAME(), get.srcVERSION(), arch)
+WorkDir = "%s-%s-2092.%s.linux" % (get.srcNAME(), get.srcVERSION(), arch)
 
 def build():
     # Flashplugin hack for Opera, see pardus #13989
