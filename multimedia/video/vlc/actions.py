@@ -91,5 +91,8 @@ def install():
     pisitools.rename("/usr/lib/mozilla","nsbrowser")
     pisitools.remove("/usr/lib/nsbrowser/plugins/*.la")
 
+    # Remove kde4 related desktop files
+    pisitools.removeDir("/usr/share/kde4")
+
     pisitools.dodoc("AUTHORS", "THANKS", "NEWS", "README", "HACKING", "doc/fortunes.txt", "doc/intf-vcd.txt")
 
