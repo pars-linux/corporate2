@@ -93,9 +93,14 @@
         <Files>
             <Path fileType="config">/var/named/chroot/etc</Path>
             <Path fileType="data">/var/named/chroot</Path>
+            <Path fileType="config">/etc/rsyslog.d/bind_chroot.conf</Path>
         </Files>
+        <AdditionalFiles>
+            <AdditionalFile target="/etc/rsyslog.d/bind_chroot.conf" owner="root" group="root" permission="0644">chroot.rsyslog</AdditionalFile>
+        </AdditionalFiles>
         <Provides>
             <COMAR script="chroot_package.py">System.Package</COMAR>
+            <COMAR script="chroot_service.py">System.Service</COMAR>
         </Provides>
     </Package>
 
@@ -129,6 +134,13 @@
     </Package>
 
     <History>
+        <Update release="31">
+            <Date>2011-04-12</Date>
+            <Version>9.7.3</Version>
+            <Comment>Fix chroot package</Comment>
+            <Name>Erdem Bayer</Name>
+            <Email>ebayer@bayer.gen.tr</Email>
+        </Update>
         <Update release="30" type="security">
             <Date>2011-03-21</Date>
             <Version>9.7.3</Version>
