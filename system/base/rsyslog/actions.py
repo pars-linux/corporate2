@@ -41,3 +41,4 @@ def install():
                       "createPgSQLDB.sql")
 
     pisitools.dodoc("COPYING*", "README", "AUTHORS", "ChangeLog")
+    pisitools.dodir("/etc/rsyslog.d")
