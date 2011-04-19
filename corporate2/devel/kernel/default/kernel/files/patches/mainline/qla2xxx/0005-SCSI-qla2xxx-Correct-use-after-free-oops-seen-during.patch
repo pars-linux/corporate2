@@ -1,0 +1,115 @@
+From 083a469db4ecf3b286a96b5b722c37fc1affe0be Mon Sep 17 00:00:00 2001
+From: Giridhar Malavali <giridhar.malavali@qlogic.com>
+Date: Fri, 28 May 2010 15:08:18 -0700
+Subject: [PATCH 005/107] [SCSI] qla2xxx: Correct use-after-free oops seen during EH-abort.
+
+Hold a reference to the srb (sp) while aborting an I/O -- as the
+I/O can/will complete from within the interrupt-context.
+
+Signed-off-by: Andrew Vasquez <andrew.vasquez@qlogic.com>
+Signed-off-by: Giridhar Malavali <giridhar.malavali@qlogic.com>
+Signed-off-by: James Bottomley <James.Bottomley@suse.de>
+---
+ drivers/scsi/qla2xxx/qla_def.h |    1 +
+ drivers/scsi/qla2xxx/qla_os.c  |   31 ++++++++++++++++++++++++++++++-
+ 2 files changed, 31 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/scsi/qla2xxx/qla_def.h b/drivers/scsi/qla2xxx/qla_def.h
+index 8396109..f8239bf 100644
+--- a/drivers/scsi/qla2xxx/qla_def.h
++++ b/drivers/scsi/qla2xxx/qla_def.h
+@@ -202,6 +202,7 @@ struct sd_dif_tuple {
+  * SCSI Request Block
+  */
+ typedef struct srb {
++	atomic_t ref_count;
+ 	struct fc_port *fcport;
+ 	uint32_t handle;
+ 
+diff --git a/drivers/scsi/qla2xxx/qla_os.c b/drivers/scsi/qla2xxx/qla_os.c
+index c345ba7..9e65629 100644
+--- a/drivers/scsi/qla2xxx/qla_os.c
++++ b/drivers/scsi/qla2xxx/qla_os.c
+@@ -517,6 +517,7 @@ qla2x00_get_new_sp(scsi_qla_host_t *vha, fc_port_t *fcport,
+ 	if (!sp)
+ 		return sp;
+ 
++	atomic_set(&sp->ref_count, 1);
+ 	sp->fcport = fcport;
+ 	sp->cmd = cmd;
+ 	sp->flags = 0;
+@@ -797,6 +798,12 @@ qla2x00_wait_for_loop_ready(scsi_qla_host_t *vha)
+ 	return (return_status);
+ }
+ 
++static void
++sp_get(struct srb *sp)
++{
++	atomic_inc(&sp->ref_count);
++}
++
+ /**************************************************************************
+ * qla2xxx_eh_abort
+ *
+@@ -825,6 +832,7 @@ qla2xxx_eh_abort(struct scsi_cmnd *cmd)
+ 	struct qla_hw_data *ha = vha->hw;
+ 	struct req_que *req = vha->req;
+ 	srb_t *spt;
++	int got_ref = 0;
+ 
+ 	fc_block_scsi_eh(cmd);
+ 
+@@ -856,6 +864,10 @@ qla2xxx_eh_abort(struct scsi_cmnd *cmd)
+ 		DEBUG2(printk("%s(%ld): aborting sp %p from RISC."
+ 		" pid=%ld.\n", __func__, vha->host_no, sp, serial));
+ 
++		/* Get a reference to the sp and drop the lock.*/
++		sp_get(sp);
++		got_ref++;
++
+ 		spin_unlock_irqrestore(&ha->hardware_lock, flags);
+ 		if (ha->isp_ops->abort_command(sp)) {
+ 			DEBUG2(printk("%s(%ld): abort_command "
+@@ -881,6 +893,9 @@ qla2xxx_eh_abort(struct scsi_cmnd *cmd)
+ 		}
+ 	}
+ 
++	if (got_ref)
++		qla2x00_sp_compl(ha, sp);
++
+ 	qla_printk(KERN_INFO, ha,
+ 	    "scsi(%ld:%d:%d): Abort command issued -- %d %lx %x.\n",
+ 	    vha->host_no, id, lun, wait, serial, ret);
+@@ -3468,7 +3483,7 @@ qla2x00_sp_free_dma(srb_t *sp)
+ }
+ 
+ void
+-qla2x00_sp_compl(struct qla_hw_data *ha, srb_t *sp)
++qla2x00_sp_final_compl(struct qla_hw_data *ha, srb_t *sp)
+ {
+ 	struct scsi_cmnd *cmd = sp->cmd;
+ 
+@@ -3489,6 +3504,20 @@ qla2x00_sp_compl(struct qla_hw_data *ha, srb_t *sp)
+ 	cmd->scsi_done(cmd);
+ }
+ 
++void
++qla2x00_sp_compl(struct qla_hw_data *ha, srb_t *sp)
++{
++	if (atomic_read(&sp->ref_count) == 0) {
++		DEBUG2(qla_printk(KERN_WARNING, ha,
++		    "SP reference-count to ZERO -- sp=%p\n", sp));
++		DEBUG2(BUG());
++		return;
++	}
++	if (!atomic_dec_and_test(&sp->ref_count))
++		return;
++	qla2x00_sp_final_compl(ha, sp);
++}
++
+ /**************************************************************************
+ *   qla2x00_timer
+ *
+-- 
+1.7.4.2
+

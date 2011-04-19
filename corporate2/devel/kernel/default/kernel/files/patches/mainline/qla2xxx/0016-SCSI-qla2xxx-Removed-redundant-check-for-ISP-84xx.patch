@@ -1,0 +1,27 @@
+From 6c7ccf7bb96a0ae16d2bcc6155e1d1fc3e728b39 Mon Sep 17 00:00:00 2001
+From: Giridhar Malavali <giridhar.malavali@qlogic.com>
+Date: Fri, 28 May 2010 15:08:29 -0700
+Subject: [PATCH 016/107] [SCSI] qla2xxx: Removed redundant check for ISP 84xx.
+
+Signed-off-by: Giridhar Malavali <giridhar.malavali@qlogic.com>
+Signed-off-by: James Bottomley <James.Bottomley@suse.de>
+---
+ drivers/scsi/qla2xxx/qla_attr.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/scsi/qla2xxx/qla_attr.c b/drivers/scsi/qla2xxx/qla_attr.c
+index 2b499c7..fd6f7b1 100644
+--- a/drivers/scsi/qla2xxx/qla_attr.c
++++ b/drivers/scsi/qla2xxx/qla_attr.c
+@@ -1208,7 +1208,7 @@ qla24xx_84xx_fw_version_show(struct device *dev,
+ 	if (!IS_QLA84XX(ha))
+ 		return snprintf(buf, PAGE_SIZE, "\n");
+ 
+-	if (ha->cs84xx && ha->cs84xx->op_fw_version == 0)
++	if (ha->cs84xx->op_fw_version == 0)
+ 		rval = qla84xx_verify_chip(vha, status);
+ 
+ 	if ((rval == QLA_SUCCESS) && (status[0] == 0))
+-- 
+1.7.4.2
+

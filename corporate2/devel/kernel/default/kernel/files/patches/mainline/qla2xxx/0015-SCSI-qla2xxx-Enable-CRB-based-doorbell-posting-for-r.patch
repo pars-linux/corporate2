@@ -1,0 +1,53 @@
+From 6907869d726c04362122afd92717f86915a69f96 Mon Sep 17 00:00:00 2001
+From: Giridhar Malavali <giridhar.malavali@qlogic.com>
+Date: Fri, 28 May 2010 15:08:28 -0700
+Subject: [PATCH 015/107] [SCSI] qla2xxx: Enable CRB based doorbell posting for request queue as default for ISP 82xx.
+
+Signed-off-by: Giridhar Malavali <giridhar.malavali@qlogic.com>
+Signed-off-by: James Bottomley <James.Bottomley@suse.de>
+---
+ drivers/scsi/qla2xxx/qla_nx.c |   13 +++++++++----
+ drivers/scsi/qla2xxx/qla_os.c |    2 +-
+ 2 files changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/scsi/qla2xxx/qla_nx.c b/drivers/scsi/qla2xxx/qla_nx.c
+index ee575b4..e3e3ebd 100644
+--- a/drivers/scsi/qla2xxx/qla_nx.c
++++ b/drivers/scsi/qla2xxx/qla_nx.c
+@@ -3372,11 +3372,16 @@ qla82xx_start_iocbs(srb_t *sp)
+ 	dbval = 0x04 | (ha->portnum << 5);
+ 
+ 	dbval = dbval | (req->id << 8) | (req->ring_index << 16);
+-	WRT_REG_DWORD((unsigned long __iomem *)ha->nxdb_wr_ptr, dbval);
+-	wmb();
+-	while (RD_REG_DWORD(ha->nxdb_rd_ptr) != dbval) {
+-		WRT_REG_DWORD((unsigned long  __iomem *)ha->nxdb_wr_ptr, dbval);
++	if (ql2xdbwr)
++		qla82xx_wr_32(ha, ha->nxdb_wr_ptr, dbval);
++	else {
++		WRT_REG_DWORD((unsigned long __iomem *)ha->nxdb_wr_ptr, dbval);
+ 		wmb();
++		while (RD_REG_DWORD(ha->nxdb_rd_ptr) != dbval) {
++			WRT_REG_DWORD((unsigned long  __iomem *)ha->nxdb_wr_ptr,
++				dbval);
++			wmb();
++		}
+ 	}
+ }
+ 
+diff --git a/drivers/scsi/qla2xxx/qla_os.c b/drivers/scsi/qla2xxx/qla_os.c
+index bc35ecf..5be8db7 100644
+--- a/drivers/scsi/qla2xxx/qla_os.c
++++ b/drivers/scsi/qla2xxx/qla_os.c
+@@ -140,7 +140,7 @@ MODULE_PARM_DESC(ql2xetsenable,
+ 		"Enables firmware ETS burst."
+ 		"Default is 0 - skip ETS enablement.");
+ 
+-int ql2xdbwr;
++int ql2xdbwr = 1;
+ module_param(ql2xdbwr, int, S_IRUGO|S_IRUSR);
+ MODULE_PARM_DESC(ql2xdbwr,
+ 	"Option to specify scheme for request queue posting\n"
+-- 
+1.7.4.2
+
