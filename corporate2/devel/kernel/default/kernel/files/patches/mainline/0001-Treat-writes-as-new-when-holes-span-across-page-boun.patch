@@ -1,0 +1,52 @@
+From 062a8f304b0bc75c6224142a6092bdf6f67841b8 Mon Sep 17 00:00:00 2001
+From: Goldwyn Rodrigues <rgoldwyn@gmail.com>
+Date: Thu, 17 Feb 2011 09:44:40 -0600
+Subject: [PATCH 1/9] Treat writes as new when holes span across page boundaries
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+When a hole spans across page boundaries, the next write forces
+a read of the block. This could end up reading existing garbage
+data from the disk in ocfs2_map_page_blocks. This leads to
+non-zero holes. In order to avoid this, mark the writes as new
+when the holes span across page boundaries.
+
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Signed-off-by: jlbec <jlbec@evilplan.org>
+(cherry picked from commit 272b62c1f0f6f742046e45b50b6fec98860208a0)
+
+CVE-2011-0463 (http://nvd.nist.gov/nvd.cfm?cvename=CVE-2011-0463):
+  The ocfs2_prepare_page_for_write function in fs/ocfs2/aops.c in the
+  Oracle Cluster File System 2 (OCFS2) subsystem in the Linux kernel
+  before 2.6.39-rc1 does not properly handle holes that cross page
+  boundaries, which allows local users to obtain potentially sensitive
+  information from uninitialized disk locations by reading a file.
+
+http://bugs.pardus.org.tr/show_bug.cgi?id=17798
+
+Signed-off-by: Ozan Çağlayan <ozan@pardus.org.tr>
+---
+ fs/ocfs2/aops.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/fs/ocfs2/aops.c b/fs/ocfs2/aops.c
+index 96337a4..1514e27 100644
+--- a/fs/ocfs2/aops.c
++++ b/fs/ocfs2/aops.c
+@@ -1039,6 +1039,12 @@ static int ocfs2_prepare_page_for_write(struct inode *inode, u64 *p_blkno,
+ 	ocfs2_figure_cluster_boundaries(OCFS2_SB(inode->i_sb), cpos,
+ 					&cluster_start, &cluster_end);
+ 
++	/* treat the write as new if the a hole/lseek spanned across
++	 * the page boundary.
++	 */
++	new = new | ((i_size_read(inode) <= page_offset(page)) &&
++			(page_offset(page) <= user_pos));
++
+ 	if (page == wc->w_target_page) {
+ 		map_from = user_pos & (PAGE_CACHE_SIZE - 1);
+ 		map_to = map_from + user_len;
+-- 
+1.7.4.2
+

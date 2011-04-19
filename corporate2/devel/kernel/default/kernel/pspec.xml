@@ -48,7 +48,14 @@
             <!-- CAN information leak (CVE-2010-4565) (#15907) -->
 
             <!-- NULL pointer dereference in AF_ECONET (CVE-2010-4342) (#16198) -->
-            <Patch level="1" compressionType="bz2">patches/mainline/patch-2.6.35.11.bz2</Patch>
+            <!-- dccp: fix oops on Reset after close (pb#17558) -->
+            <!-- kernel signal spoofing issue (CVE-2011-1182) (pb#17554) -->
+            <!-- fs/partitions: Validate map_count in Mac partition tables (CVE-2011-1010) (pb#17156) -->
+            <!-- drm: fix unsigned vs signed comparison issue in modeset ctl ioctl (CVE-2011-1013) (pb#17190) -->
+            <!-- Fix corrupted LDM partition table (CVE-2011-1012) (pb#17378) -->
+            <!-- epoll: prevent creating circular epoll structures (CVE-2011-{1082, 1083}) (pb#17422) -->
+            <!-- IB/cm: Bump reference count on cm_id before invoking callback (CVE-2011-0695) (pb#17485) -->
+            <Patch level="1" compressionType="bz2">patches/mainline/patch-2.6.35.12.bz2</Patch>
 
 
             <!-- Add Apparmor support -->
@@ -70,8 +77,31 @@
             <!-- sys_semctl: fix kernel stack leakage (CVE-2010-4083) (#15480) -->
             <Patch level="1">patches/mainline/linux-2.6.git-982f7c2b2e6a28f8f266e075d92e19c0dd4c6e56.patch</Patch>
 
-            <!-- sctp: Fix out-of-bounds reading in sctp_asoc_get_hmac() (CVE-2010-3705) (#15383) -->
-            <Patch level="1">patches/mainline/net-2.6.git-51e97a12bef19b7e43199fc153cf9bd5f2140362.patch</Patch>
+            <!-- ocfs2: Treat writes as new when holes span across page boundaries (CVE-2011-0463) (pb#17800) -->
+            <Patch level="1">patches/mainline/0001-Treat-writes-as-new-when-holes-span-across-page-boun.patch</Patch>
+
+            <!-- inotify: fix double free/corruption of struct user (pb#17732) -->
+            <Patch level="1">patches/mainline/0002-inotify-fix-double-free-corruption-of-stuct-user.patch</Patch>
+
+            <!-- netfilter & econet infoleaks (CVE-2011-{1170. 1171, 1172)) (pb#17590) -->
+            <Patch level="1">patches/mainline/0003-econet-4-byte-infoleak-to-the-network.patch</Patch>
+            <Patch level="1">patches/mainline/0004-netfilter-arp_tables-fix-infoleak-to-userspace.patch</Patch>
+            <Patch level="1">patches/mainline/0005-netfilter-ip_tables-fix-infoleak-to-userspace.patch</Patch>
+            <Patch level="1">patches/mainline/0006-ipv6-netfilter-ip6_tables-fix-infoleak-to-userspace.patch</Patch>
+
+            <!-- xfs: prevent leaking uninitialized stack memory in FSGEOMETRY_V1 (CVE-2011-0711) (pb#17148) -->
+            <Patch level="1">patches/mainline/0007-xfs-prevent-leaking-uninitialized-stack-memory-in-FS.patch</Patch>
+            <Patch level="1">patches/mainline/0008-xfs-zero-proper-structure-size-for-geometry-calls.patch</Patch>
+
+            <!-- Heap-based buffer overflow in the ldm_frag_add function in fs/partitions/ldm.c (CVE-2011-1017) (pb#17388) -->
+            <Patch level="1">patches/mainline/0009-fs-partitions-ldm.c-fix-oops-caused-by-corrupted-par.patch</Patch>
+
+            <!-- two bluetooth and one ebtables infoleaks/DoSes (CVE-2011-{1078, 1079, 1080}) (pb#17458) -->
+            <Patch level="1">patches/mainline/fix-memleaks-CVE-2011-1078-1079-1080.patch</Patch>
+
+            <!-- gro: reset dev and skb_iff on skb reuse (CVE-2011-1478) (pb#17550) -->
+            <Patch level="1">patches/mainline/linux-2.6.git-net-gro-66c46d741e2e60f0e8b625b80edb0ab820c46d7a.patch</Patch>
+            <Patch level="1">patches/mainline/linux-2.6.git-net-gro-6d152e23ad1a7a5b40fef1f42e017d66e6115159.patch</Patch>
 
 
             <!-- Upstream patches -->
@@ -111,6 +141,13 @@
             <!-- Don't install SCSI headers -->
             <Patch level="1">patches/ubuntu/ubuntu-maverick.git-c7a74029969b912241591b2889961b17514ca61f.patch</Patch>
 
+            <!-- drm/radeon: fix regression with AA resolve checking, CVE-2011-1016 (pb#17384) -->
+            <Patch level="1">patches/ubuntu/ubuntu-maverick.git-1e08ecb8667538b9af61c7a5190cca50be165476.patch</Patch>
+            <Patch level="1">patches/ubuntu/ubuntu-maverick.git-466695b9a74a718586400fe58e4559ce156cd5f9.patch</Patch>
+
+            <!-- net/rds/rdma: iovec integer overflow in net/rds/rdma.c (CVE-2010-3865) (pb#16171) -->
+            <Patch level="1">patches/ubuntu/0001-net-fix-rds_iovec-page-count-overflow.patch</Patch>
+
 
             <!-- Fedora Kernel Patches -->
 
@@ -125,8 +162,6 @@
             <!-- Exec shield patches -->
             <Patch level="1">patches/fedora/linux-2.6-i386-nx-emulation.patch</Patch>
             <Patch level="1">patches/fedora/linux-2.6-32bit-mmap-exec-randomization.patch</Patch>
-
-            <Patch level="1">patches/fedora/fs-call-security_d_instantiate-in-d_obtain_alias.patch</Patch>
 
             <!-- ext4: Always journal quota file modifications -->
             <Patch level="1">patches/fedora/ext4-always-journal-quota-file-modifications.patch</Patch>
@@ -147,6 +182,7 @@
             <Patch level="1">patches/fedora/linux-2.6-acpi-debug-infinite-loop.patch</Patch>
             <Patch level="1">patches/fedora/acpi-update-battery-information-on-notification-0x81.patch</Patch>
             <Patch level="1">patches/fedora/linux-2.6-defaults-no-pm-async.patch</Patch>
+            <Patch level="1">patches/fedora/linux-2.6-acpi-fix-alias.patch</Patch>
 
             <!-- PNP: log PNP resources, as we do for PCI -->
             <Patch level="1">patches/fedora/pnp-log-pnp-resources-as-we-do-for-pci.patch</Patch>
@@ -214,6 +250,7 @@
             <Patch level="1">patches/fedora/drm-nouveau-imac-g4.patch</Patch>
             <Patch level="1">patches/fedora/drm-nouveau-evo-hang.patch</Patch>
             <Patch level="1">patches/fedora/drm-nouveau-nvaf-grclass.patch</Patch>
+            <Patch level="1">patches/fedora/drm-nouveau-init5c.patch</Patch>
             <Patch level="1">patches/fedora/drm-intel-big-hammer.patch</Patch>
             <Patch level="1">patches/fedora/drm-intel-make-lvds-work.patch</Patch>
             <Patch level="1">patches/fedora/drm-i915-disable-sr-polling.patch</Patch>
@@ -264,14 +301,11 @@
             <Patch level="1">patches/fedora/sched-10-change-nohz-idle-load-balancing-logic-to-push-model.patch</Patch>
             <Patch level="1">patches/fedora/sched-15-update-rq-clock-for-nohz-balanced-cpus.patch</Patch>
             <Patch level="1">patches/fedora/sched-20-fix-rq-clock-synchronization-when-migrating-tasks.patch</Patch>
-            <Patch level="1">patches/fedora/sched-25-move-sched_avg_update-to-update_cpu_load.patch</Patch>
             <Patch level="1">patches/fedora/sched-30-sched-fix-nohz-balance-kick.patch</Patch>
-            <Patch level="1">patches/fedora/sched-35-increment-cache_nice_tries-only-on-periodic-lb.patch</Patch>
 
             <!-- Bluetooth: Add more Apple IDs for bluetooth stack -->
             <Patch level="1">patches/fedora/btusb-macbookpro-7-1.patch</Patch>
             <Patch level="1">patches/fedora/btusb-macbookpro-6-2.patch</Patch>
-            <Patch level="1">patches/fedora/add-macbookair3-ids.patch</Patch>
 
             <!-- device-mapper: Allow setting of UUID via rename if not already set -->
             <Patch level="1">patches/fedora/dm-allow-setting-of-uuid-via-rename-if-not-already-set.patch</Patch>
@@ -293,12 +327,6 @@
 
             <!-- Autodetect itpm devices -->
             <Patch level="1">patches/fedora/tpm-autodetect-itpm-devices.patch</Patch>
-
-            <!-- Fix TPM timeouts on boot -->
-            <Patch level="1">patches/fedora/tpm-fix-stall-on-boot.patch</Patch>
-
-            <!-- Fix invalid selector in fs/gs causes kernel panic (CVE-2010-3698) (#15576) -->
-            <Patch level="1">patches/fedora/kvm-fix-fs-gs-reload-oops-with-invalid-ldt.patch</Patch>
 
             <!-- Fix gcc 4.5.1 miscompiling drivers/char/i8k.c -->
             <Patch level="1">patches/fedora/fix-i8k-inline-asm.patch</Patch>
@@ -331,8 +359,22 @@
             <!-- check for proper length of iov entries earlier in blk_rq_map_user_iov() (CVE-2010-4668) (#16219) -->
             <Patch level="1">patches/fedora/block-check-for-proper-length-of-iov-entries-earlier-in-blk_rq_map_user_iov.patch</Patch>
 
-            <Patch level="1">patches/fedora/hostap_cs-fix-sleeping-function-called-from-invalid-context.patch</Patch>
             <Patch level="1">patches/fedora/sunrpc-kernel-panic-when-mount-nfsv4.patch</Patch>
+
+            <!-- bridge: Fix mglist corruption that leads to memory corruption (CVE-2011-0716) (pb#17152) -->
+            <Patch level="1">patches/fedora/bridge-fix-mglist-corruption-that-leads-to-memory-corruption.patch</Patch>
+
+            <!-- Fix 32-bit guest hang on 32-bit PAE host -->
+            <Patch level="1">patches/fedora/kvm-mmu-fix-32-bit-legacy-paging-with-npt.patch</Patch>
+
+            <!-- Fix a warning when writing to bonding sysfs structure -->
+            <Patch level="1">patches/fedora/linux-2.6-bonding-sysfs-warning.patch</Patch>
+
+            <!-- md: fix regression resulting in delays in clearing bits in a bitmap -->
+            <Patch level="1">patches/fedora/md-fix-regression-resulting-in-delays-in-clearing-bits-in-a-bitmap.patch</Patch>
+
+            <!-- virtio_net: Add schedule check to napi_enable call -->
+            <Patch level="1">patches/fedora/virtio_net-add-schedule-check-to-napi_enable-call.patch</Patch>
 
             <!-- Use UTF-8 by default on VFAT -->
             <Patch level="1">patches/fedora/linux-2.6-defaults-fat-utf8.patch</Patch>
@@ -568,6 +610,41 @@
     </Package>
 
     <History>
+        <Update release="152">
+            <Date>2011-04-18</Date>
+            <Version>2.6.35.12</Version>
+            <Comment>
+                - Version bump to 2.6.35.12,
+                - Dropped upstreamed patches,
+                - Fix ACPI aliasing bug,
+                - Backport a Nouveau bugfix,
+                - bridge: Fix mglist corruption that leads to memory corruption (CVE-2011-0716) (pb#17152),
+                - Fix 32-bit guest hang on 32-bit PAE host,
+                - Fix a warning when writing to bonding sysfs structure,
+                - md: fix regression resulting in delays in clearing bits in a bitmap,
+                - virtio_net: Add schedule check to napi_enable call,
+                - dccp: fix oops on Reset after close (pb#17558),
+                - inotify: fix double free/corruption of struct user (pb#17732),
+                - kernel signal spoofing issue (CVE-2011-1182) (pb#17554),
+                - Several vulnerabilities in econet/netfilter (CVE-2011-{1170, 1171, 1172, 1173}) (pb#17590),
+                - ocfs2: Treat writes as new when holes span across page boundaries (CVE-2011-0463) (pb#17800),
+                - two bluetooth and one ebtables infoleaks/DoSes (CVE-2011-{1078, 1079, 1080}) (pb#17458),
+                - Heap-based buffer overflow in the ldm_frag_add function in fs/partitions/ldm.c (CVE-2011-1017) (pb#17388),
+                - fs/partitions: Validate map_count in Mac partition tables (CVE-2011-1010) (pb#17156),
+                - drm: fix unsigned vs signed comparison issue in modeset ctl ioctl (CVE-2011-1013) (pb#17190),
+                - drm/radeon: fix regression with AA resolve checking, (CVE-2011-1016) (pb#17384),
+                - iovec integer overflow in net/rds/rdma.c (CVE-2010-3865) (pb#16171),
+                - Fix corrupted LDM partition table (CVE-2011-1012) (pb#17378),
+                - epoll: prevent creating circular epoll structures (CVE-2011-{1082, 1083}) (pb#17422),
+                - gro: reset dev and skb_iff on skb reuse (CVE-2011-1478) (pb#17550),
+                - IB/cm: Bump reference count on cm_id before invoking callback (CVE-2011-0695) (pb#17485),
+                - netfilter, econet infoleaks (CVE-2011-{1170. 1171, 1172)) (pb#17590),
+                - xfs: prevent leaking uninitialized stack memory in FSGEOMETRY_V1 (CVE-2011-0711) (pb#17148),
+            </Comment>
+            <Type package="kernel">security</Type>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="151">
             <Date>2011-02-07</Date>
             <Version>2.6.35.11</Version>
