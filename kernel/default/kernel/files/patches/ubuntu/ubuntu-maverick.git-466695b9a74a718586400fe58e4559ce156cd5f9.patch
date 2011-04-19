@@ -1,0 +1,39 @@
+From 466695b9a74a718586400fe58e4559ce156cd5f9 Mon Sep 17 00:00:00 2001
+From: Dave Airlie <airlied@redhat.com>
+Date: Sun, 20 Feb 2011 21:57:32 +0000
+Subject: [PATCH] drm/radeon: fix regression with AA resolve checking, CVE-2011-1016
+
+BugLink: http://bugs.launchpad.net/bugs/745686
+
+CVE-2011-1016
+
+Some userspaces can emit a whole packet without disabling AA resolve
+by the looks of it, so we have to deal with them.
+
+Signed-off-by: Dave Airlie <airlied@redhat.com>
+Tested-by: Jorg Otte <jrg.otte@googlemail.com>
+(cherry picked from commit 45e4039c3aea597ede44a264cea322908cdedfe9)
+
+Signed-off-by: Tim Gardner <tim.gardner@canonical.com>
+Acked-by: Stefan Bader <stefan.bader@canonical.com>
+Signed-off-by: Tim Gardner <tim.gardner@canonical.com>
+---
+ drivers/gpu/drm/radeon/r100.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/gpu/drm/radeon/r100.c b/drivers/gpu/drm/radeon/r100.c
+index 2a5c3ae..ba1ffd8 100644
+--- a/drivers/gpu/drm/radeon/r100.c
++++ b/drivers/gpu/drm/radeon/r100.c
+@@ -3449,7 +3449,7 @@ void r100_cs_track_clear(struct radeon_device *rdev, struct r100_cs_track *track
+ 		track->num_texture = 16;
+ 		track->maxy = 4096;
+ 		track->separate_cube = 0;
+-		track->aaresolve = true;
++		track->aaresolve = false;
+ 		track->aa.robj = NULL;
+ 	}
+ 
+-- 
+1.7.0.4
+
