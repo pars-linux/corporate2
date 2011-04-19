@@ -1,0 +1,161 @@
+From 2f0f3f4f06f7cfadebf58b70bd9e7f71d8fd96e4 Mon Sep 17 00:00:00 2001
+From: Madhuranath Iyengar <madhuranath.iyengar@qlogic.com>
+Date: Fri, 23 Jul 2010 15:28:24 +0500
+Subject: [PATCH 021/107] [SCSI] qla2xxx: Appropriately log FCP priority data messages
+
+Signed-off-by: Giridhar Malavali <giridhar.malavali@qlogic.com>
+Signed-off-by: James Bottomley <James.Bottomley@suse.de>
+---
+ drivers/scsi/qla2xxx/qla_bsg.c  |   36 +++++++++++++++++++++++++++++++++---
+ drivers/scsi/qla2xxx/qla_init.c |    7 ++-----
+ drivers/scsi/qla2xxx/qla_sup.c  |   25 +++++++++++++------------
+ 3 files changed, 48 insertions(+), 20 deletions(-)
+
+diff --git a/drivers/scsi/qla2xxx/qla_bsg.c b/drivers/scsi/qla2xxx/qla_bsg.c
+index 20eaa1c..d551ae1 100644
+--- a/drivers/scsi/qla2xxx/qla_bsg.c
++++ b/drivers/scsi/qla2xxx/qla_bsg.c
+@@ -41,13 +41,28 @@ qla24xx_fcp_prio_cfg_valid(struct qla_fcp_prio_cfg *pri_cfg, uint8_t flag)
+ 	int i, ret, num_valid;
+ 	uint8_t *bcode;
+ 	struct qla_fcp_prio_entry *pri_entry;
++	uint32_t *bcode_val_ptr, bcode_val;
+ 
+ 	ret = 1;
+ 	num_valid = 0;
+ 	bcode = (uint8_t *)pri_cfg;
++	bcode_val_ptr = (uint32_t *)pri_cfg;
++	bcode_val = (uint32_t)(*bcode_val_ptr);
+ 
+-	if (bcode[0x0] != 'H' || bcode[0x1] != 'Q' || bcode[0x2] != 'O' ||
+-			bcode[0x3] != 'S') {
++	if (bcode_val == 0xFFFFFFFF) {
++		/* No FCP Priority config data in flash */
++		DEBUG2(printk(KERN_INFO
++		    "%s: No FCP priority config data.\n",
++		    __func__));
++		return 0;
++	}
++
++	if (bcode[0] != 'H' || bcode[1] != 'Q' || bcode[2] != 'O' ||
++			bcode[3] != 'S') {
++		/* Invalid FCP priority data header*/
++		DEBUG2(printk(KERN_ERR
++		    "%s: Invalid FCP Priority data header. bcode=0x%x\n",
++		    __func__, bcode_val));
+ 		return 0;
+ 	}
+ 	if (flag != 1)
+@@ -60,8 +75,18 @@ qla24xx_fcp_prio_cfg_valid(struct qla_fcp_prio_cfg *pri_cfg, uint8_t flag)
+ 		pri_entry++;
+ 	}
+ 
+-	if (num_valid == 0)
++	if (num_valid == 0) {
++		/* No valid FCP priority data entries */
++		DEBUG2(printk(KERN_ERR
++		    "%s: No valid FCP Priority data entries.\n",
++		    __func__));
+ 		ret = 0;
++	} else {
++		/* FCP priority data is valid */
++		DEBUG2(printk(KERN_INFO
++		    "%s: Valid FCP priority data. num entries = %d\n",
++		    __func__, num_valid));
++	}
+ 
+ 	return ret;
+ }
+@@ -78,6 +103,11 @@ qla24xx_proc_fcp_prio_cfg_cmd(struct fc_bsg_job *bsg_job)
+ 
+ 	bsg_job->reply->reply_payload_rcv_len = 0;
+ 
++	if (!IS_QLA24XX_TYPE(ha) || !IS_QLA25XX(ha)) {
++		ret = -EINVAL;
++		goto exit_fcp_prio_cfg;
++	}
++
+ 	if (test_bit(ISP_ABORT_NEEDED, &vha->dpc_flags) ||
+ 		test_bit(ABORT_ISP_ACTIVE, &vha->dpc_flags) ||
+ 		test_bit(ISP_ABORT_RETRY, &vha->dpc_flags)) {
+diff --git a/drivers/scsi/qla2xxx/qla_init.c b/drivers/scsi/qla2xxx/qla_init.c
+index 5bc3170..cea491b 100644
+--- a/drivers/scsi/qla2xxx/qla_init.c
++++ b/drivers/scsi/qla2xxx/qla_init.c
+@@ -566,11 +566,8 @@ qla2x00_initialize_adapter(scsi_qla_host_t *vha)
+ 		}
+ 	}
+ 
+-	if (IS_QLA24XX_TYPE(ha) || IS_QLA25XX(ha)) {
+-		if (qla24xx_read_fcp_prio_cfg(vha))
+-			qla_printk(KERN_ERR, ha,
+-			"Unable to read FCP priority data.\n");
+-	}
++	if (IS_QLA24XX_TYPE(ha) || IS_QLA25XX(ha))
++		qla24xx_read_fcp_prio_cfg(vha);
+ 
+ 	return (rval);
+ }
+diff --git a/drivers/scsi/qla2xxx/qla_sup.c b/drivers/scsi/qla2xxx/qla_sup.c
+index de92504..3c5115f 100644
+--- a/drivers/scsi/qla2xxx/qla_sup.c
++++ b/drivers/scsi/qla2xxx/qla_sup.c
+@@ -664,6 +664,11 @@ qla2xxx_get_flt_info(scsi_qla_host_t *vha, uint32_t flt_addr)
+ 	struct qla_hw_data *ha = vha->hw;
+ 	struct req_que *req = ha->req_q_map[0];
+ 
++	def = 0;
++	if (IS_QLA25XX(ha))
++		def = 1;
++	else if (IS_QLA81XX(ha))
++		def = 2;
+ 	ha->flt_region_flt = flt_addr;
+ 	wptr = (uint16_t *)req->ring;
+ 	flt = (struct qla_flt_header *)req->ring;
+@@ -691,6 +696,10 @@ qla2xxx_get_flt_info(scsi_qla_host_t *vha, uint32_t flt_addr)
+ 		goto no_flash_data;
+ 	}
+ 
++	/* Assign FCP prio region since older FLT's may not have it */
++	ha->flt_region_fcp_prio = ha->flags.port0 ?
++	    fcp_prio_cfg0[def] : fcp_prio_cfg1[def];
++
+ 	loc = locations[1];
+ 	cnt = le16_to_cpu(flt->length) / sizeof(struct qla_flt_region);
+ 	for ( ; cnt; cnt--, region++) {
+@@ -773,13 +782,6 @@ qla2xxx_get_flt_info(scsi_qla_host_t *vha, uint32_t flt_addr)
+ no_flash_data:
+ 	/* Use hardcoded defaults. */
+ 	loc = locations[0];
+-	def = 0;
+-	if (IS_QLA24XX_TYPE(ha))
+-		def = 0;
+-	else if (IS_QLA25XX(ha))
+-		def = 1;
+-	else if (IS_QLA81XX(ha))
+-		def = 2;
+ 	ha->flt_region_fw = def_fw[def];
+ 	ha->flt_region_boot = def_boot[def];
+ 	ha->flt_region_vpd_nvram = def_vpd_nvram[def];
+@@ -790,14 +792,13 @@ no_flash_data:
+ 	ha->flt_region_fdt = def_fdt[def];
+ 	ha->flt_region_npiv_conf = ha->flags.port0 ?
+ 	    def_npiv_conf0[def] : def_npiv_conf1[def];
+-	ha->flt_region_fcp_prio = ha->flags.port0 ?
+-	    fcp_prio_cfg0[def] : fcp_prio_cfg1[def];
+ done:
+ 	DEBUG2(qla_printk(KERN_DEBUG, ha, "FLT[%s]: boot=0x%x fw=0x%x "
+ 	    "vpd_nvram=0x%x vpd=0x%x nvram=0x%x fdt=0x%x flt=0x%x "
+-	    "npiv=0x%x.\n", loc, ha->flt_region_boot, ha->flt_region_fw,
+-	    ha->flt_region_vpd_nvram, ha->flt_region_vpd, ha->flt_region_nvram,
+-	    ha->flt_region_fdt, ha->flt_region_flt, ha->flt_region_npiv_conf));
++	    "npiv=0x%x. fcp_prio_cfg=0x%x\n", loc, ha->flt_region_boot,
++	    ha->flt_region_fw, ha->flt_region_vpd_nvram, ha->flt_region_vpd,
++	    ha->flt_region_nvram, ha->flt_region_fdt, ha->flt_region_flt,
++	    ha->flt_region_npiv_conf, ha->flt_region_fcp_prio));
+ }
+ 
+ static void
+-- 
+1.7.4.2
+

@@ -1,0 +1,44 @@
+From 65155b3708137fabee865dc4da822763c0c41208 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>
+Date: Fri, 11 Jun 2010 12:17:01 +0200
+Subject: [PATCH 001/107] fix typos concerning "management"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Uwe Kleine-König <u.kleine-koenig@pengutronix.de>
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+---
+ drivers/scsi/qla2xxx/qla_iocb.c |    2 +-
+ drivers/scsi/qla2xxx/qla_nx.h   |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/scsi/qla2xxx/qla_iocb.c b/drivers/scsi/qla2xxx/qla_iocb.c
+index 8ef9453..782b30d 100644
+--- a/drivers/scsi/qla2xxx/qla_iocb.c
++++ b/drivers/scsi/qla2xxx/qla_iocb.c
+@@ -1129,7 +1129,7 @@ qla24xx_build_scsi_crc_2_iocbs(srb_t *sp, struct cmd_type_crc_2 *cmd_pkt,
+ 	cmd_pkt->fcp_cmnd_dseg_address[1] = cpu_to_le32(
+ 	    MSD(crc_ctx_dma + CRC_CONTEXT_FCPCMND_OFF));
+ 	fcp_cmnd->task_attribute = 0;
+-	fcp_cmnd->task_managment = 0;
++	fcp_cmnd->task_management = 0;
+ 
+ 	cmd_pkt->fcp_rsp_dseg_len = 0; /* Let response come in status iocb */
+ 
+diff --git a/drivers/scsi/qla2xxx/qla_nx.h b/drivers/scsi/qla2xxx/qla_nx.h
+index f8f99a5..1b44d01 100644
+--- a/drivers/scsi/qla2xxx/qla_nx.h
++++ b/drivers/scsi/qla2xxx/qla_nx.h
+@@ -832,7 +832,7 @@ struct fcp_cmnd {
+ 	struct scsi_lun lun;
+ 	uint8_t crn;
+ 	uint8_t task_attribute;
+-	uint8_t task_managment;
++	uint8_t task_management;
+ 	uint8_t additional_cdb_len;
+ 	uint8_t cdb[260]; /* 256 for CDB len and 4 for FCP_DL */
+ };
+-- 
+1.7.4.2
+

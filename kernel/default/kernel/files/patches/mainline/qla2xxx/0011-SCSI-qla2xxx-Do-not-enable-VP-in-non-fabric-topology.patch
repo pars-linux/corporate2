@@ -1,0 +1,31 @@
+From 3f3b6f98cb33043cba04f45a2f2c43b8303c120c Mon Sep 17 00:00:00 2001
+From: Lalit Chandivade <lalit.chandivade@qlogic.com>
+Date: Fri, 28 May 2010 15:08:24 -0700
+Subject: [PATCH 011/107] [SCSI] qla2xxx: Do not enable VP in non fabric topology.
+
+After topology change ISP is reset and VPs are re-enabled.
+If the topology is not fabric, VPs could falsely get enabled.
+
+Signed-off-by: Giridhar Malavali <giridhar.malavali@qlogic.com>
+Signed-off-by: James Bottomley <James.Bottomley@suse.de>
+---
+ drivers/scsi/qla2xxx/qla_mid.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/scsi/qla2xxx/qla_mid.c b/drivers/scsi/qla2xxx/qla_mid.c
+index 8220e7b..d1618b4 100644
+--- a/drivers/scsi/qla2xxx/qla_mid.c
++++ b/drivers/scsi/qla2xxx/qla_mid.c
+@@ -136,7 +136,8 @@ qla24xx_enable_vp(scsi_qla_host_t *vha)
+ 
+ 	/* Check if physical ha port is Up */
+ 	if (atomic_read(&base_vha->loop_state) == LOOP_DOWN  ||
+-		atomic_read(&base_vha->loop_state) == LOOP_DEAD) {
++		atomic_read(&base_vha->loop_state) == LOOP_DEAD ||
++		!(ha->current_topology & ISP_CFG_F)) {
+ 		vha->vp_err_state =  VP_ERR_PORTDWN;
+ 		fc_vport_set_state(vha->fc_vport, FC_VPORT_LINKDOWN);
+ 		goto enable_failed;
+-- 
+1.7.4.2
+

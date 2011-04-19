@@ -1,0 +1,236 @@
+From cdbb0a4f31c486e4f6fb6e673a892f4f5205f91c Mon Sep 17 00:00:00 2001
+From: Santosh Vernekar <santosh.vernekar@qlogic.com>
+Date: Fri, 28 May 2010 15:08:25 -0700
+Subject: [PATCH 012/107] [SCSI] qla2xxx: Handle outstanding mbx cmds on hung f/w scenarios.
+
+Outstanding mailbox commands, have no way to recover on f/w hung, and we
+timeout on waiting for mbx response. This in turn affects the recovery process
+as follows:
+- We might already be in dpc while waiting for mbx to complete, so recovery for
+that pci function will never get invoked. Reset Timeout (10 sec) is far less
+than mbx timeout (30 sec).
+- Other mbx cmds will get stuck due to serial mbx access.
+
+Solution is to identify fw-hung scenario and handle outstanding mbx commands to
+have an early-exit instead of waiting for response.
+Other mbx commands waiting for access will also do an early-exit if fw-hung is
+still applicable.
+
+Signed-off-by: Giridhar Malavali <giridhar.malavali@qlogic.com>
+Signed-off-by: James Bottomley <James.Bottomley@suse.de>
+---
+ drivers/scsi/qla2xxx/qla_def.h  |    1 +
+ drivers/scsi/qla2xxx/qla_init.c |    3 +-
+ drivers/scsi/qla2xxx/qla_mbx.c  |   78 ++++++++++++++++++++++++++++-----------
+ drivers/scsi/qla2xxx/qla_nx.c   |   20 +++++++++-
+ 4 files changed, 78 insertions(+), 24 deletions(-)
+
+diff --git a/drivers/scsi/qla2xxx/qla_def.h b/drivers/scsi/qla2xxx/qla_def.h
+index f0e792a..2bb187e 100644
+--- a/drivers/scsi/qla2xxx/qla_def.h
++++ b/drivers/scsi/qla2xxx/qla_def.h
+@@ -2413,6 +2413,7 @@ struct qla_hw_data {
+ 		uint32_t	cpu_affinity_enabled	:1;
+ 		uint32_t	disable_msix_handshake	:1;
+ 		uint32_t	fcp_prio_enabled	:1;
++		uint32_t	fw_hung	:1;
+ 	} flags;
+ 
+ 	/* This spinlock is used to protect "io transactions", you must
+diff --git a/drivers/scsi/qla2xxx/qla_init.c b/drivers/scsi/qla2xxx/qla_init.c
+index 9d969b5..4c6cacc 100644
+--- a/drivers/scsi/qla2xxx/qla_init.c
++++ b/drivers/scsi/qla2xxx/qla_init.c
+@@ -1972,7 +1972,8 @@ qla2x00_fw_ready(scsi_qla_host_t *vha)
+ 			}
+ 		} else {
+ 			/* Mailbox cmd failed. Timeout on min_wait. */
+-			if (time_after_eq(jiffies, mtime))
++			if (time_after_eq(jiffies, mtime) ||
++			    (IS_QLA82XX(ha) && ha->flags.fw_hung))
+ 				break;
+ 		}
+ 
+diff --git a/drivers/scsi/qla2xxx/qla_mbx.c b/drivers/scsi/qla2xxx/qla_mbx.c
+index 10f4815..2f39e30 100644
+--- a/drivers/scsi/qla2xxx/qla_mbx.c
++++ b/drivers/scsi/qla2xxx/qla_mbx.c
+@@ -37,7 +37,7 @@ qla2x00_mailbox_command(scsi_qla_host_t *vha, mbx_cmd_t *mcp)
+ 	device_reg_t __iomem *reg;
+ 	uint8_t		abort_active;
+ 	uint8_t		io_lock_on;
+-	uint16_t	command;
++	uint16_t	command = 0;
+ 	uint16_t	*iptr;
+ 	uint16_t __iomem *optr;
+ 	uint32_t	cnt;
+@@ -83,6 +83,13 @@ qla2x00_mailbox_command(scsi_qla_host_t *vha, mbx_cmd_t *mcp)
+ 		return QLA_FUNCTION_TIMEOUT;
+ 	}
+ 
++	if (IS_QLA82XX(ha) && ha->flags.fw_hung) {
++		/* Setting Link-Down error */
++		mcp->mb[0] = MBS_LINK_DOWN_ERROR;
++		rval = QLA_FUNCTION_FAILED;
++		goto premature_exit;
++	}
++
+ 	ha->flags.mbox_busy = 1;
+ 	/* Save mailbox command for debug */
+ 	ha->mcp = mcp;
+@@ -151,7 +158,8 @@ qla2x00_mailbox_command(scsi_qla_host_t *vha, mbx_cmd_t *mcp)
+ 				DEBUG2_3_11(printk(KERN_INFO
+ 				    "%s(%ld): Pending Mailbox timeout. "
+ 				    "Exiting.\n", __func__, base_vha->host_no));
+-				return QLA_FUNCTION_TIMEOUT;
++				rval = QLA_FUNCTION_TIMEOUT;
++				goto premature_exit;
+ 			}
+ 			WRT_REG_DWORD(&reg->isp82.hint, HINT_MBX_INT_PENDING);
+ 		} else if (IS_FWI2_CAPABLE(ha))
+@@ -176,7 +184,8 @@ qla2x00_mailbox_command(scsi_qla_host_t *vha, mbx_cmd_t *mcp)
+ 				DEBUG2_3_11(printk(KERN_INFO
+ 				    "%s(%ld): Pending Mailbox timeout. "
+ 				    "Exiting.\n", __func__, base_vha->host_no));
+-				return QLA_FUNCTION_TIMEOUT;
++				rval = QLA_FUNCTION_TIMEOUT;
++				goto premature_exit;
+ 			}
+ 			WRT_REG_DWORD(&reg->isp82.hint, HINT_MBX_INT_PENDING);
+ 		} else if (IS_FWI2_CAPABLE(ha))
+@@ -214,6 +223,15 @@ qla2x00_mailbox_command(scsi_qla_host_t *vha, mbx_cmd_t *mcp)
+ 		ha->flags.mbox_int = 0;
+ 		clear_bit(MBX_INTERRUPT, &ha->mbx_cmd_flags);
+ 
++		if (IS_QLA82XX(ha) && ha->flags.fw_hung) {
++			ha->flags.mbox_busy = 0;
++			/* Setting Link-Down error */
++			mcp->mb[0] = MBS_LINK_DOWN_ERROR;
++			ha->mcp = NULL;
++			rval = QLA_FUNCTION_FAILED;
++			goto premature_exit;
++		}
++
+ 		if (ha->mailbox_out[0] != MBS_COMMAND_COMPLETE)
+ 			rval = QLA_FUNCTION_FAILED;
+ 
+@@ -279,35 +297,51 @@ qla2x00_mailbox_command(scsi_qla_host_t *vha, mbx_cmd_t *mcp)
+ 			DEBUG2_3_11(printk("%s(%ld): timeout schedule "
+ 			"isp_abort_needed.\n", __func__,
+ 			base_vha->host_no));
+-			qla_printk(KERN_WARNING, ha,
+-			    "Mailbox command timeout occurred. Scheduling ISP "
+-			    "abort. eeh_busy: 0x%x\n", ha->flags.eeh_busy);
+-			set_bit(ISP_ABORT_NEEDED, &base_vha->dpc_flags);
+-			qla2xxx_wake_dpc(vha);
++
++			if (!test_bit(ISP_ABORT_NEEDED, &vha->dpc_flags) &&
++			    !test_bit(ABORT_ISP_ACTIVE, &vha->dpc_flags) &&
++			    !test_bit(ISP_ABORT_RETRY, &vha->dpc_flags)) {
++
++				qla_printk(KERN_WARNING, ha,
++				    "Mailbox command timeout occured. "
++				    "Scheduling ISP " "abort. eeh_busy: 0x%x\n",
++				    ha->flags.eeh_busy);
++				set_bit(ISP_ABORT_NEEDED, &vha->dpc_flags);
++				qla2xxx_wake_dpc(vha);
++			}
+ 		} else if (!abort_active) {
+ 			/* call abort directly since we are in the DPC thread */
+ 			DEBUG(printk("%s(%ld): timeout calling abort_isp\n",
+ 			    __func__, base_vha->host_no));
+ 			DEBUG2_3_11(printk("%s(%ld): timeout calling "
+ 			    "abort_isp\n", __func__, base_vha->host_no));
+-			qla_printk(KERN_WARNING, ha,
+-			    "Mailbox command timeout occurred. Issuing ISP "
+-			    "abort.\n");
+-
+-			set_bit(ABORT_ISP_ACTIVE, &base_vha->dpc_flags);
+-			clear_bit(ISP_ABORT_NEEDED, &base_vha->dpc_flags);
+-			if (ha->isp_ops->abort_isp(base_vha)) {
+-				/* Failed. retry later. */
+-				set_bit(ISP_ABORT_NEEDED, &base_vha->dpc_flags);
++
++			if (!test_bit(ISP_ABORT_NEEDED, &vha->dpc_flags) &&
++			    !test_bit(ABORT_ISP_ACTIVE, &vha->dpc_flags) &&
++			    !test_bit(ISP_ABORT_RETRY, &vha->dpc_flags)) {
++
++				qla_printk(KERN_WARNING, ha,
++				    "Mailbox command timeout occured. "
++				    "Issuing ISP abort.\n");
++
++				set_bit(ABORT_ISP_ACTIVE, &vha->dpc_flags);
++				clear_bit(ISP_ABORT_NEEDED, &vha->dpc_flags);
++				if (ha->isp_ops->abort_isp(vha)) {
++					/* Failed. retry later. */
++					set_bit(ISP_ABORT_NEEDED,
++					    &vha->dpc_flags);
++				}
++				clear_bit(ABORT_ISP_ACTIVE, &vha->dpc_flags);
++				DEBUG(printk("%s(%ld): finished abort_isp\n",
++				    __func__, vha->host_no));
++				DEBUG2_3_11(printk(
++				    "%s(%ld): finished abort_isp\n",
++				    __func__, vha->host_no));
+ 			}
+-			clear_bit(ABORT_ISP_ACTIVE, &base_vha->dpc_flags);
+-			DEBUG(printk("%s(%ld): finished abort_isp\n", __func__,
+-			    base_vha->host_no));
+-			DEBUG2_3_11(printk("%s(%ld): finished abort_isp\n",
+-			    __func__, base_vha->host_no));
+ 		}
+ 	}
+ 
++premature_exit:
+ 	/* Allow next mbx cmd to come in. */
+ 	complete(&ha->mbx_cmd_comp);
+ 
+diff --git a/drivers/scsi/qla2xxx/qla_nx.c b/drivers/scsi/qla2xxx/qla_nx.c
+index 1a9a734..512ba8a 100644
+--- a/drivers/scsi/qla2xxx/qla_nx.c
++++ b/drivers/scsi/qla2xxx/qla_nx.c
+@@ -3543,6 +3543,14 @@ qla82xx_check_fw_alive(scsi_qla_host_t *vha)
+ 				set_bit(ISP_ABORT_NEEDED, &vha->dpc_flags);
+ 			}
+ 			qla2xxx_wake_dpc(vha);
++			if (ha->flags.mbox_busy) {
++				ha->flags.fw_hung = 1;
++				ha->flags.mbox_int = 1;
++				DEBUG2(qla_printk(KERN_ERR, ha,
++				    "Due to fw hung, doing premature "
++				    "completion of mbx command\n"));
++				complete(&ha->mbx_intr_comp);
++			}
+ 		}
+ 	}
+ 	vha->fw_heartbeat_counter = fw_heartbeat_counter;
+@@ -3646,6 +3654,14 @@ void qla82xx_watchdog(scsi_qla_host_t *vha)
+ 				"%s(): Adapter reset needed!\n", __func__);
+ 			set_bit(ISP_ABORT_NEEDED, &vha->dpc_flags);
+ 			qla2xxx_wake_dpc(vha);
++			if (ha->flags.mbox_busy) {
++				ha->flags.fw_hung = 1;
++				ha->flags.mbox_int = 1;
++				DEBUG2(qla_printk(KERN_ERR, ha,
++				    "Need reset, doing premature "
++				    "completion of mbx command\n"));
++				complete(&ha->mbx_intr_comp);
++			}
+ 		} else {
+ 			qla82xx_check_fw_alive(vha);
+ 		}
+@@ -3701,8 +3717,10 @@ qla82xx_abort_isp(scsi_qla_host_t *vha)
+ 	qla82xx_clear_rst_ready(ha);
+ 	qla82xx_idc_unlock(ha);
+ 
+-	if (rval == QLA_SUCCESS)
++	if (rval == QLA_SUCCESS) {
++		ha->flags.fw_hung = 0;
+ 		qla82xx_restart_isp(vha);
++	}
+ 
+ 	if (rval) {
+ 		vha->flags.online = 1;
+-- 
+1.7.4.2
+

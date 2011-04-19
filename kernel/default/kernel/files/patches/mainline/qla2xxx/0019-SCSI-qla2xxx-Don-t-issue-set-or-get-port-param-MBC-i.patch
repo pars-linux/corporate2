@@ -1,0 +1,32 @@
+From 17cf2c5d76b468ca03e59c7cf60decfcef6c08c4 Mon Sep 17 00:00:00 2001
+From: Madhuranath Iyengar <madhuranath.iyengar@qlogic.com>
+Date: Fri, 23 Jul 2010 15:28:22 +0500
+Subject: [PATCH 019/107] [SCSI] qla2xxx: Don't issue set or get port param MBC if invalid port loop id
+
+Signed-off-by: Giridhar Malavali <giridhar.malavali@qlogic.com>
+Signed-off-by: James Bottomley <James.Bottomley@suse.de>
+---
+ drivers/scsi/qla2xxx/qla_bsg.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/scsi/qla2xxx/qla_bsg.c b/drivers/scsi/qla2xxx/qla_bsg.c
+index 3a02483..20eaa1c 100644
+--- a/drivers/scsi/qla2xxx/qla_bsg.c
++++ b/drivers/scsi/qla2xxx/qla_bsg.c
+@@ -1222,6 +1222,13 @@ qla24xx_iidma(struct fc_bsg_job *bsg_job)
+ 		return -EINVAL;
+ 	}
+ 
++	if (fcport->loop_id == FC_NO_LOOP_ID) {
++		DEBUG2(printk(KERN_ERR "%s(%ld): Invalid port loop id, "
++			"loop_id = 0x%x\n",
++			__func__, vha->host_no, fcport->loop_id));
++		return -EINVAL;
++	}
++
+ 	if (port_param->mode)
+ 		rval = qla2x00_set_idma_speed(vha, fcport->loop_id,
+ 			port_param->speed, mb);
+-- 
+1.7.4.2
+

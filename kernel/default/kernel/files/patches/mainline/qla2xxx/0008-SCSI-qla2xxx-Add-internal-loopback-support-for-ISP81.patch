@@ -1,0 +1,414 @@
+From 23f2ebd17a13835c5b34994d2c2e5faacc127947 Mon Sep 17 00:00:00 2001
+From: Sarang Radke <sarang.radke@qlogic.com>
+Date: Fri, 28 May 2010 15:08:21 -0700
+Subject: [PATCH 008/107] [SCSI] qla2xxx: Add internal loopback support for ISP81xx.
+
+Signed-off-by: Giridhar Malavali <giridhar.malavali@qlogic.com>
+Signed-off-by: James Bottomley <James.Bottomley@suse.de>
+---
+ drivers/scsi/qla2xxx/qla_bsg.c |  196 +++++++++++++++++++++++++++++++++++++---
+ drivers/scsi/qla2xxx/qla_bsg.h |    7 ++
+ drivers/scsi/qla2xxx/qla_def.h |    4 +
+ drivers/scsi/qla2xxx/qla_gbl.h |    5 +
+ drivers/scsi/qla2xxx/qla_isr.c |    7 +-
+ drivers/scsi/qla2xxx/qla_mbx.c |   66 ++++++++++++++
+ drivers/scsi/qla2xxx/qla_os.c  |    1 +
+ 7 files changed, 269 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/scsi/qla2xxx/qla_bsg.c b/drivers/scsi/qla2xxx/qla_bsg.c
+index b905dfe..3a02483 100644
+--- a/drivers/scsi/qla2xxx/qla_bsg.c
++++ b/drivers/scsi/qla2xxx/qla_bsg.c
+@@ -483,6 +483,98 @@ done:
+ 	return rval;
+ }
+ 
++/* Set the port configuration to enable the
++ * internal loopback on ISP81XX
++ */
++static inline int
++qla81xx_set_internal_loopback(scsi_qla_host_t *vha, uint16_t *config,
++    uint16_t *new_config)
++{
++	int ret = 0;
++	int rval = 0;
++	struct qla_hw_data *ha = vha->hw;
++
++	if (!IS_QLA81XX(ha))
++		goto done_set_internal;
++
++	new_config[0] = config[0] | (ENABLE_INTERNAL_LOOPBACK << 1);
++	memcpy(&new_config[1], &config[1], sizeof(uint16_t) * 3) ;
++
++	ha->notify_dcbx_comp = 1;
++	ret = qla81xx_set_port_config(vha, new_config);
++	if (ret != QLA_SUCCESS) {
++		DEBUG2(printk(KERN_ERR
++		    "%s(%lu): Set port config failed\n",
++		    __func__, vha->host_no));
++		ha->notify_dcbx_comp = 0;
++		rval = -EINVAL;
++		goto done_set_internal;
++	}
++
++	/* Wait for DCBX complete event */
++	if (!wait_for_completion_timeout(&ha->dcbx_comp, (20 * HZ))) {
++		DEBUG2(qla_printk(KERN_WARNING, ha,
++		    "State change notificaition not received.\n"));
++	} else
++		DEBUG2(qla_printk(KERN_INFO, ha,
++		    "State change RECEIVED\n"));
++
++	ha->notify_dcbx_comp = 0;
++
++done_set_internal:
++	return rval;
++}
++
++/* Set the port configuration to disable the
++ * internal loopback on ISP81XX
++ */
++static inline int
++qla81xx_reset_internal_loopback(scsi_qla_host_t *vha, uint16_t *config,
++    int wait)
++{
++	int ret = 0;
++	int rval = 0;
++	uint16_t new_config[4];
++	struct qla_hw_data *ha = vha->hw;
++
++	if (!IS_QLA81XX(ha))
++		goto done_reset_internal;
++
++	memset(new_config, 0 , sizeof(new_config));
++	if ((config[0] & INTERNAL_LOOPBACK_MASK) >> 1 ==
++			ENABLE_INTERNAL_LOOPBACK) {
++		new_config[0] = config[0] & ~INTERNAL_LOOPBACK_MASK;
++		memcpy(&new_config[1], &config[1], sizeof(uint16_t) * 3) ;
++
++		ha->notify_dcbx_comp = wait;
++		ret = qla81xx_set_port_config(vha, new_config);
++		if (ret != QLA_SUCCESS) {
++			DEBUG2(printk(KERN_ERR
++			    "%s(%lu): Set port config failed\n",
++			     __func__, vha->host_no));
++			ha->notify_dcbx_comp = 0;
++			rval = -EINVAL;
++			goto done_reset_internal;
++		}
++
++		/* Wait for DCBX complete event */
++		if (wait && !wait_for_completion_timeout(&ha->dcbx_comp,
++			(20 * HZ))) {
++			DEBUG2(qla_printk(KERN_WARNING, ha,
++			    "State change notificaition not received.\n"));
++			ha->notify_dcbx_comp = 0;
++			rval = -EINVAL;
++			goto done_reset_internal;
++		} else
++			DEBUG2(qla_printk(KERN_INFO, ha,
++			    "State change RECEIVED\n"));
++
++		ha->notify_dcbx_comp = 0;
++	}
++done_reset_internal:
++	return rval;
++}
++
+ static int
+ qla2x00_process_loopback(struct fc_bsg_job *bsg_job)
+ {
+@@ -494,6 +586,7 @@ qla2x00_process_loopback(struct fc_bsg_job *bsg_job)
+ 	char *type;
+ 	struct msg_echo_lb elreq;
+ 	uint16_t response[MAILBOX_REGISTER_COUNT];
++	uint16_t config[4], new_config[4];
+ 	uint8_t *fw_sts_ptr;
+ 	uint8_t *req_data = NULL;
+ 	dma_addr_t req_data_dma;
+@@ -568,29 +661,102 @@ qla2x00_process_loopback(struct fc_bsg_job *bsg_job)
+ 
+ 	elreq.options = bsg_job->request->rqst_data.h_vendor.vendor_cmd[1];
+ 
+-	if (ha->current_topology != ISP_CFG_F) {
+-		type = "FC_BSG_HST_VENDOR_LOOPBACK";
++	if ((ha->current_topology == ISP_CFG_F ||
++	    (IS_QLA81XX(ha) &&
++	    le32_to_cpu(*(uint32_t *)req_data) == ELS_OPCODE_BYTE
++	    && req_data_len == MAX_ELS_FRAME_PAYLOAD)) &&
++		elreq.options == EXTERNAL_LOOPBACK) {
++		type = "FC_BSG_HST_VENDOR_ECHO_DIAG";
+ 		DEBUG2(qla_printk(KERN_INFO, ha,
+-			"scsi(%ld) bsg rqst type: %s\n",
+-			vha->host_no, type));
+-
+-		command_sent = INT_DEF_LB_LOOPBACK_CMD;
+-		rval = qla2x00_loopback_test(vha, &elreq, response);
++			"scsi(%ld) bsg rqst type: %s\n", vha->host_no, type));
++		command_sent = INT_DEF_LB_ECHO_CMD;
++		rval = qla2x00_echo_test(vha, &elreq, response);
++	} else {
+ 		if (IS_QLA81XX(ha)) {
++			memset(config, 0, sizeof(config));
++			memset(new_config, 0, sizeof(new_config));
++			if (qla81xx_get_port_config(vha, config)) {
++				DEBUG2(printk(KERN_ERR
++					"%s(%lu): Get port config failed\n",
++					__func__, vha->host_no));
++				bsg_job->reply->reply_payload_rcv_len = 0;
++				bsg_job->reply->result = (DID_ERROR << 16);
++				rval = -EPERM;
++				goto done_free_dma_req;
++			}
++
++			if (elreq.options != EXTERNAL_LOOPBACK) {
++				DEBUG2(qla_printk(KERN_INFO, ha,
++					"Internal: current port config = %x\n",
++					config[0]));
++				if (qla81xx_set_internal_loopback(vha, config,
++					new_config)) {
++					bsg_job->reply->reply_payload_rcv_len =
++						0;
++					bsg_job->reply->result =
++						(DID_ERROR << 16);
++					rval = -EPERM;
++					goto done_free_dma_req;
++				}
++			} else {
++				/* For external loopback to work
++				 * ensure internal loopback is disabled
++				 */
++				if (qla81xx_reset_internal_loopback(vha,
++					config, 1)) {
++					bsg_job->reply->reply_payload_rcv_len =
++						0;
++					bsg_job->reply->result =
++						(DID_ERROR << 16);
++					rval = -EPERM;
++					goto done_free_dma_req;
++				}
++			}
++
++			type = "FC_BSG_HST_VENDOR_LOOPBACK";
++			DEBUG2(qla_printk(KERN_INFO, ha,
++				"scsi(%ld) bsg rqst type: %s\n",
++				vha->host_no, type));
++
++			command_sent = INT_DEF_LB_LOOPBACK_CMD;
++			rval = qla2x00_loopback_test(vha, &elreq, response);
++
++			if (new_config[1]) {
++				/* Revert back to original port config
++				 * Also clear internal loopback
++				 */
++				qla81xx_reset_internal_loopback(vha,
++				    new_config, 0);
++			}
++
+ 			if (response[0] == MBS_COMMAND_ERROR &&
+-				response[1] == MBS_LB_RESET) {
++					response[1] == MBS_LB_RESET) {
+ 				DEBUG2(printk(KERN_ERR "%s(%ld): ABORTing "
+-				"ISP\n", __func__, vha->host_no));
++					"ISP\n", __func__, vha->host_no));
+ 				set_bit(ISP_ABORT_NEEDED, &vha->dpc_flags);
+ 				qla2xxx_wake_dpc(vha);
++				qla2x00_wait_for_chip_reset(vha);
++				/* Also reset the MPI */
++				if (qla81xx_restart_mpi_firmware(vha) !=
++				    QLA_SUCCESS) {
++					qla_printk(KERN_INFO, ha,
++					    "MPI reset failed for host%ld.\n",
++					    vha->host_no);
++				}
++
++				bsg_job->reply->reply_payload_rcv_len = 0;
++				bsg_job->reply->result = (DID_ERROR << 16);
++				rval = -EIO;
++				goto done_free_dma_req;
+ 			}
++		} else {
++			type = "FC_BSG_HST_VENDOR_LOOPBACK";
++			DEBUG2(qla_printk(KERN_INFO, ha,
++				"scsi(%ld) bsg rqst type: %s\n",
++				vha->host_no, type));
++			command_sent = INT_DEF_LB_LOOPBACK_CMD;
++			rval = qla2x00_loopback_test(vha, &elreq, response);
+ 		}
+-	} else {
+-		type = "FC_BSG_HST_VENDOR_ECHO_DIAG";
+-		DEBUG2(qla_printk(KERN_INFO, ha,
+-		    "scsi(%ld) bsg rqst type: %s\n", vha->host_no, type));
+-		command_sent = INT_DEF_LB_ECHO_CMD;
+-		rval = qla2x00_echo_test(vha, &elreq, response);
+ 	}
+ 
+ 	if (rval) {
+diff --git a/drivers/scsi/qla2xxx/qla_bsg.h b/drivers/scsi/qla2xxx/qla_bsg.h
+index 76ed92d..1f096da 100644
+--- a/drivers/scsi/qla2xxx/qla_bsg.h
++++ b/drivers/scsi/qla2xxx/qla_bsg.h
+@@ -19,6 +19,13 @@
+ #define INT_DEF_LB_LOOPBACK_CMD         0
+ #define INT_DEF_LB_ECHO_CMD             1
+ 
++/* Loopback related definations */
++#define EXTERNAL_LOOPBACK		0xF2
++#define ENABLE_INTERNAL_LOOPBACK	0x02
++#define INTERNAL_LOOPBACK_MASK		0x000E
++#define MAX_ELS_FRAME_PAYLOAD		252
++#define ELS_OPCODE_BYTE			0x10
++
+ /* BSG Vendor specific definations */
+ #define A84_ISSUE_WRITE_TYPE_CMD        0
+ #define A84_ISSUE_READ_TYPE_CMD         1
+diff --git a/drivers/scsi/qla2xxx/qla_def.h b/drivers/scsi/qla2xxx/qla_def.h
+index f8239bf..2895855 100644
+--- a/drivers/scsi/qla2xxx/qla_def.h
++++ b/drivers/scsi/qla2xxx/qla_def.h
+@@ -714,6 +714,8 @@ typedef struct {
+ #define MBC_SEND_RNFT_ELS		0x5e	/* Send RNFT ELS request */
+ #define MBC_GET_LINK_PRIV_STATS		0x6d	/* Get link & private data. */
+ #define MBC_SET_VENDOR_ID		0x76	/* Set Vendor ID. */
++#define MBC_SET_PORT_CONFIG		0x122	/* Set port configuration */
++#define MBC_GET_PORT_CONFIG		0x123	/* Get port configuration */
+ 
+ /* Firmware return data sizes */
+ #define FCAL_MAP_SIZE	128
+@@ -2631,6 +2633,8 @@ struct qla_hw_data {
+ 	struct mutex vport_lock;        /* Virtual port synchronization */
+ 	struct completion mbx_cmd_comp; /* Serialize mbx access */
+ 	struct completion mbx_intr_comp;  /* Used for completion notification */
++	struct completion dcbx_comp;	/* For set port config notification */
++	int notify_dcbx_comp;
+ 
+ 	/* Basic firmware related information. */
+ 	uint16_t	fw_major_version;
+diff --git a/drivers/scsi/qla2xxx/qla_gbl.h b/drivers/scsi/qla2xxx/qla_gbl.h
+index 2247ef8..7ae2ee4 100644
+--- a/drivers/scsi/qla2xxx/qla_gbl.h
++++ b/drivers/scsi/qla2xxx/qla_gbl.h
+@@ -357,6 +357,11 @@ qla2x00_write_ram_word(scsi_qla_host_t *, uint32_t, uint32_t);
+ extern int qla2x00_get_data_rate(scsi_qla_host_t *);
+ extern int qla24xx_set_fcp_prio(scsi_qla_host_t *, uint16_t, uint16_t,
+ 	uint16_t *);
++extern int
++qla81xx_get_port_config(scsi_qla_host_t *, uint16_t *);
++
++extern int
++qla81xx_set_port_config(scsi_qla_host_t *, uint16_t *);
+ 
+ /*
+  * Global Function Prototypes in qla_isr.c source file.
+diff --git a/drivers/scsi/qla2xxx/qla_isr.c b/drivers/scsi/qla2xxx/qla_isr.c
+index 912befd..e51fc5f 100644
+--- a/drivers/scsi/qla2xxx/qla_isr.c
++++ b/drivers/scsi/qla2xxx/qla_isr.c
+@@ -545,10 +545,13 @@ skip_rio:
+ 		if (IS_QLA2100(ha))
+ 			break;
+ 
+-		if (IS_QLA8XXX_TYPE(ha))
++		if (IS_QLA8XXX_TYPE(ha)) {
+ 			DEBUG2(printk("scsi(%ld): DCBX Completed -- %04x %04x "
+ 			    "%04x\n", vha->host_no, mb[1], mb[2], mb[3]));
+-		else
++			if (ha->notify_dcbx_comp)
++				complete(&ha->dcbx_comp);
++
++		} else
+ 			DEBUG2(printk("scsi(%ld): Asynchronous P2P MODE "
+ 			    "received.\n", vha->host_no));
+ 
+diff --git a/drivers/scsi/qla2xxx/qla_mbx.c b/drivers/scsi/qla2xxx/qla_mbx.c
+index 043f808..10f4815 100644
+--- a/drivers/scsi/qla2xxx/qla_mbx.c
++++ b/drivers/scsi/qla2xxx/qla_mbx.c
+@@ -3950,6 +3950,72 @@ qla2x00_get_data_rate(scsi_qla_host_t *vha)
+ }
+ 
+ int
++qla81xx_get_port_config(scsi_qla_host_t *vha, uint16_t *mb)
++{
++	int rval;
++	mbx_cmd_t mc;
++	mbx_cmd_t *mcp = &mc;
++	struct qla_hw_data *ha = vha->hw;
++
++	DEBUG11(printk(KERN_INFO
++	    "%s(%ld): entered.\n", __func__, vha->host_no));
++
++	if (!IS_QLA81XX(ha))
++		return QLA_FUNCTION_FAILED;
++	mcp->mb[0] = MBC_GET_PORT_CONFIG;
++	mcp->out_mb = MBX_0;
++	mcp->in_mb = MBX_4|MBX_3|MBX_2|MBX_1|MBX_0;
++	mcp->tov = MBX_TOV_SECONDS;
++	mcp->flags = 0;
++
++	rval = qla2x00_mailbox_command(vha, mcp);
++
++	if (rval != QLA_SUCCESS) {
++		DEBUG2_3_11(printk(KERN_WARNING
++		    "%s(%ld): failed=%x (%x).\n", __func__,
++		    vha->host_no, rval, mcp->mb[0]));
++	} else {
++		/* Copy all bits to preserve original value */
++		memcpy(mb, &mcp->mb[1], sizeof(uint16_t) * 4);
++
++		DEBUG11(printk(KERN_INFO
++		    "%s(%ld): done.\n", __func__, vha->host_no));
++	}
++	return rval;
++}
++
++int
++qla81xx_set_port_config(scsi_qla_host_t *vha, uint16_t *mb)
++{
++	int rval;
++	mbx_cmd_t mc;
++	mbx_cmd_t *mcp = &mc;
++
++	DEBUG11(printk(KERN_INFO
++	    "%s(%ld): entered.\n", __func__, vha->host_no));
++
++	mcp->mb[0] = MBC_SET_PORT_CONFIG;
++	/* Copy all bits to preserve original setting */
++	memcpy(&mcp->mb[1], mb, sizeof(uint16_t) * 4);
++	mcp->out_mb = MBX_4|MBX_3|MBX_2|MBX_1|MBX_0;
++	mcp->in_mb = MBX_0;
++	mcp->tov = MBX_TOV_SECONDS;
++	mcp->flags = 0;
++	rval = qla2x00_mailbox_command(vha, mcp);
++
++	if (rval != QLA_SUCCESS) {
++		DEBUG2_3_11(printk(KERN_WARNING
++		    "%s(%ld): failed=%x (%x).\n", __func__,
++		    vha->host_no, rval, mcp->mb[0]));
++	} else
++		DEBUG11(printk(KERN_INFO
++		    "%s(%ld): done.\n", __func__, vha->host_no));
++
++	return rval;
++}
++
++
++int
+ qla24xx_set_fcp_prio(scsi_qla_host_t *vha, uint16_t loop_id, uint16_t priority,
+ 		uint16_t *mb)
+ {
+diff --git a/drivers/scsi/qla2xxx/qla_os.c b/drivers/scsi/qla2xxx/qla_os.c
+index 9e65629..fa59181 100644
+--- a/drivers/scsi/qla2xxx/qla_os.c
++++ b/drivers/scsi/qla2xxx/qla_os.c
+@@ -2128,6 +2128,7 @@ qla2x00_probe_one(struct pci_dev *pdev, const struct pci_device_id *id)
+ 	init_completion(&ha->mbx_cmd_comp);
+ 	complete(&ha->mbx_cmd_comp);
+ 	init_completion(&ha->mbx_intr_comp);
++	init_completion(&ha->dcbx_comp);
+ 
+ 	set_bit(0, (unsigned long *) ha->vp_idx_map);
+ 
+-- 
+1.7.4.2
+

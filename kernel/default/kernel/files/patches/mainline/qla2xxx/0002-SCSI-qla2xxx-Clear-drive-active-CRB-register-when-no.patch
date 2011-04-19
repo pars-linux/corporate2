@@ -1,0 +1,116 @@
+From b963752f47c54a29c11acee99e6c99b3c6bb35c5 Mon Sep 17 00:00:00 2001
+From: Giridhar Malavali <giridhar.malavali@qlogic.com>
+Date: Fri, 28 May 2010 15:08:15 -0700
+Subject: [PATCH 002/107] [SCSI] qla2xxx: Clear drive active CRB register when not in use.
+
+The CRB drive active register is cleared when driver is unloaded
+or when driver enters failed state.
+
+Signed-off-by: Giridhar Malavali <giridhar.malavali@qlogic.com>
+Signed-off-by: James Bottomley <James.Bottomley@suse.de>
+---
+ drivers/scsi/qla2xxx/qla_gbl.h  |    1 -
+ drivers/scsi/qla2xxx/qla_init.c |    2 ++
+ drivers/scsi/qla2xxx/qla_iocb.c |    4 ++--
+ drivers/scsi/qla2xxx/qla_nx.c   |    4 ++++
+ drivers/scsi/qla2xxx/qla_nx.h   |    3 +--
+ drivers/scsi/qla2xxx/qla_os.c   |    4 ++++
+ 6 files changed, 13 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/scsi/qla2xxx/qla_gbl.h b/drivers/scsi/qla2xxx/qla_gbl.h
+index 8217c3b..2247ef8 100644
+--- a/drivers/scsi/qla2xxx/qla_gbl.h
++++ b/drivers/scsi/qla2xxx/qla_gbl.h
+@@ -513,7 +513,6 @@ extern int qla82xx_nvram_config(struct scsi_qla_host *);
+ extern int qla82xx_pinit_from_rom(scsi_qla_host_t *);
+ extern int qla82xx_load_firmware(scsi_qla_host_t *);
+ extern int qla82xx_reset_hw(scsi_qla_host_t *);
+-extern int qla82xx_load_risc_blob(scsi_qla_host_t *, uint32_t *);
+ extern void qla82xx_watchdog(scsi_qla_host_t *);
+ 
+ /* Firmware and flash related functions */
+diff --git a/drivers/scsi/qla2xxx/qla_init.c b/drivers/scsi/qla2xxx/qla_init.c
+index ab2cc71..f1db11a 100644
+--- a/drivers/scsi/qla2xxx/qla_init.c
++++ b/drivers/scsi/qla2xxx/qla_init.c
+@@ -1454,6 +1454,8 @@ qla2x00_setup_chip(scsi_qla_host_t *vha)
+ 		rval = ha->isp_ops->load_risc(vha, &srisc_address);
+ 		if (rval == QLA_SUCCESS)
+ 			goto enable_82xx_npiv;
++		else
++			goto failed;
+ 	}
+ 
+ 	if (!IS_FWI2_CAPABLE(ha) && !IS_QLA2100(ha) && !IS_QLA2200(ha)) {
+diff --git a/drivers/scsi/qla2xxx/qla_iocb.c b/drivers/scsi/qla2xxx/qla_iocb.c
+index 8ef9453..5d0e99c 100644
+--- a/drivers/scsi/qla2xxx/qla_iocb.c
++++ b/drivers/scsi/qla2xxx/qla_iocb.c
+@@ -1683,7 +1683,7 @@ qla2x00_login_iocb(srb_t *sp, struct mbx_entry *mbx)
+ 	struct srb_iocb *lio = ctx->u.iocb_cmd;
+ 	uint16_t opts;
+ 
+-	mbx->entry_type = MBX_IOCB_TYPE;;
++	mbx->entry_type = MBX_IOCB_TYPE;
+ 	SET_TARGET_ID(ha, mbx->loop_id, sp->fcport->loop_id);
+ 	mbx->mb0 = cpu_to_le16(MBC_LOGIN_FABRIC_PORT);
+ 	opts = lio->u.logio.flags & SRB_LOGIN_COND_PLOGI ? BIT_0 : 0;
+@@ -1718,7 +1718,7 @@ qla2x00_logout_iocb(srb_t *sp, struct mbx_entry *mbx)
+ {
+ 	struct qla_hw_data *ha = sp->fcport->vha->hw;
+ 
+-	mbx->entry_type = MBX_IOCB_TYPE;;
++	mbx->entry_type = MBX_IOCB_TYPE;
+ 	SET_TARGET_ID(ha, mbx->loop_id, sp->fcport->loop_id);
+ 	mbx->mb0 = cpu_to_le16(MBC_LOGOUT_FABRIC_PORT);
+ 	mbx->mb1 = HAS_EXTENDED_IDS(ha) ?
+diff --git a/drivers/scsi/qla2xxx/qla_nx.c b/drivers/scsi/qla2xxx/qla_nx.c
+index ff562de..eb12bf2 100644
+--- a/drivers/scsi/qla2xxx/qla_nx.c
++++ b/drivers/scsi/qla2xxx/qla_nx.c
+@@ -3279,6 +3279,10 @@ qla82xx_dev_failed_handler(scsi_qla_host_t *vha)
+ 	/* Disable the board */
+ 	qla_printk(KERN_INFO, ha, "Disabling the board\n");
+ 
++	qla82xx_idc_lock(ha);
++	qla82xx_clear_drv_active(ha);
++	qla82xx_idc_unlock(ha);
++
+ 	/* Set DEV_FAILED flag to disable timer */
+ 	vha->device_flags |= DFLG_DEV_FAILED;
+ 	qla2x00_abort_all_cmds(vha, DID_NO_CONNECT << 16);
+diff --git a/drivers/scsi/qla2xxx/qla_nx.h b/drivers/scsi/qla2xxx/qla_nx.h
+index f8f99a5..aa95d38 100644
+--- a/drivers/scsi/qla2xxx/qla_nx.h
++++ b/drivers/scsi/qla2xxx/qla_nx.h
+@@ -538,11 +538,10 @@
+ /* Driver Coexistence Defines */
+ #define QLA82XX_CRB_DRV_ACTIVE	     (QLA82XX_CAM_RAM(0x138))
+ #define QLA82XX_CRB_DEV_STATE	     (QLA82XX_CAM_RAM(0x140))
+-#define QLA82XX_CRB_DEV_PART_INFO    (QLA82XX_CAM_RAM(0x14c))
+-#define QLA82XX_CRB_DRV_IDC_VERSION  (QLA82XX_CAM_RAM(0x174))
+ #define QLA82XX_CRB_DRV_STATE	     (QLA82XX_CAM_RAM(0x144))
+ #define QLA82XX_CRB_DRV_SCRATCH      (QLA82XX_CAM_RAM(0x148))
+ #define QLA82XX_CRB_DEV_PART_INFO    (QLA82XX_CAM_RAM(0x14c))
++#define QLA82XX_CRB_DRV_IDC_VERSION  (QLA82XX_CAM_RAM(0x174))
+ 
+ /* Every driver should use these Device State */
+ #define QLA82XX_DEV_COLD		1
+diff --git a/drivers/scsi/qla2xxx/qla_os.c b/drivers/scsi/qla2xxx/qla_os.c
+index be1a8fc..c345ba7 100644
+--- a/drivers/scsi/qla2xxx/qla_os.c
++++ b/drivers/scsi/qla2xxx/qla_os.c
+@@ -2402,6 +2402,10 @@ qla2x00_remove_one(struct pci_dev *pdev)
+ 	scsi_host_put(base_vha->host);
+ 
+ 	if (IS_QLA82XX(ha)) {
++		qla82xx_idc_lock(ha);
++		qla82xx_clear_drv_active(ha);
++		qla82xx_idc_unlock(ha);
++
+ 		iounmap((device_reg_t __iomem *)ha->nx_pcibase);
+ 		if (!ql2xdbwr)
+ 			iounmap((device_reg_t __iomem *)ha->nxdb_wr_ptr);
+-- 
+1.7.4.2
+
