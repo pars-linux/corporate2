@@ -68,7 +68,6 @@
             <Patch>gentoo/0085_all_glibc-disable-ldconfig.patch</Patch>
             <Patch level="1">gentoo/1020_all_glibc-2.9-strlen-hack.patch</Patch>
             <Patch level="1">gentoo/1160_all_glibc-2.8-nscd-one-fork.patch</Patch>
-            <Patch>gentoo/5021_all_2.9-fnmatch.patch</Patch>
             <Patch level="1">gentoo/5063_all_glibc-dont-build-timezone.patch</Patch>
 
             <!-- http://securityreason.com/achievement_securityalert/53, #11610 -->
@@ -88,9 +87,18 @@
             <Patch level="1">glibc-2.12.1-never-expand-ORIGIN-in-privileged-programs.patch</Patch>
             <!-- CVE-2010-3856 -->
             <Patch level="1">glibc-2.12.1-CVE-2010-3856.diff</Patch>
+            <!-- CVE-2011-1095 -->
+            <Patch level="1">CVE-2011-1095.patch</Patch>
+            <!-- Fix alloca usage and check size of pattern in wide character representation in fnmatch, fixes CVE-2011-1071 -->
+            <Patch level="1">fix_use_of_alloca_in_fnmatch.patch</Patch>
 
             <!-- Fix paths in 64bit -->
             <Patch level="1">pure64.patch</Patch>
+
+            <!-- Fall back to singlebyte matching in fnmatch if multibyte matching fails -->
+            <!-- FIXME: check if this is still needed with new malloc system
+            <Patch level="1">fnmatch_singlebyte.patch</Patch>
+            -->
         </Patches>
     </Source>
 
@@ -1676,6 +1684,18 @@
     </Package>
 
     <History>
+        <!--
+        <Update release="59" type="security">
+            <Date>2011-04-21</Date>
+            <Version>2.9</Version>
+            <Comment>
+                Properly quote output of locale, fixes CVE-2011-1095, fixes #pb 17815 17816 17817 17818
+                Fix fnmatch stack corruption, fixes CVE-2011-1071, fixes #pb 17680 17681 17682 17683
+            </Comment>
+            <Name>Onur Küçük</Name>
+            <Email>onur@pardus.org.tr</Email>
+        </Update>
+        -->
         <Update release="58">
             <Date>2010-12-23</Date>
             <Version>2.9</Version>
