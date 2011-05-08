@@ -1,0 +1,27 @@
+
+2011-05-08  Onur Küçük  <onur@pardus.org.tr>
+
+	* include/alloca.h (alloca_account): Backport alloca_account
+	for fnmatch malloc update
+
+diff -Nur glibc-20081113T2206-old//include/alloca.h glibc-20081113T2206/include/alloca.h
+--- glibc-20081113T2206-old//include/alloca.h	2011-05-08 17:04:16.439001516 +0300
++++ glibc-20081113T2206/include/alloca.h	2011-05-08 17:04:50.628001539 +0300
+@@ -46,4 +46,17 @@
+   __alloca (((len) = (newlen)))
+ #endif
+ 
++#if defined stackinfo_get_sp && defined stackinfo_sub_sp
++# define alloca_account(size, avar) \
++  ({ void *old__ = stackinfo_get_sp ();			\
++     void *m__ = __alloca (size);			\
++     avar += stackinfo_sub_sp (old__);			\
++     m__; })
++#else
++# define alloca_account(size, avar) \
++  ({ size_t s__ = (size);		    \
++     avar += s__;			    \
++     __alloca (s__); })
++#endif
++
+ #endif
