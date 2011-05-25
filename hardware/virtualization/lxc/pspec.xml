@@ -11,22 +11,22 @@
         <License>LGPLv2+</License>
         <Summary>Linux Resource Containers</Summary>
         <Description>Linux Resource Containers provide process and resource isolation without the overhead of full virtualization.</Description>
-        <Archive sha1sum="507f81d71ba963e6e9eb1b3cae6f6f5e103be9c2" type="targz">http://lxc.sourceforge.net/download/lxc/lxc-0.7.3.tar.gz</Archive>
-        <Archive sha1sum="12c9a92e5558d30db12a7e2b0da3dce593a172ff" type="tarbz2" target="lxc-0.7.3">http://cekirdek.pardus.org.tr/~ozan/dist/sources/lxc-management-tools-0.0_20101021.tar.bz2</Archive>
+        <Archive sha1sum="876cf9a4788eb082e58e4a7853ca81b0a9676037" type="targz">http://lxc.sourceforge.net/download/lxc/lxc-0.7.4.2.tar.gz</Archive>
+        <Archive sha1sum="12c9a92e5558d30db12a7e2b0da3dce593a172ff" type="tarbz2" target="lxc-0.7.4.2">http://cekirdek.pardus.org.tr/~ozan/dist/sources/lxc-management-tools-0.0_20101021.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>libcap</Dependency>
+            <Dependency>kernel-module-headers</Dependency>
         </BuildDependencies>
-        <!--
-        <Patches> disable until sysfs support is in kernel
+        <Patches>
             <Patch level="1">management-tools-pardus.patch</Patch>
         </Patches>
-        -->
     </Source>
 
     <Package>
         <Name>lxc</Name>
         <RuntimeDependencies>
             <Dependency>libcap</Dependency>
+            <Dependency>bridge-utils</Dependency>
             <!-- For management tools -->
             <Dependency>inotify-tools</Dependency>
         </RuntimeDependencies>
@@ -36,12 +36,15 @@
             <Path fileType="man">/usr/share/man</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="data">/var/lib/lxc</Path>
+            <Path fileType="config">/etc/conf.d/lxc</Path>
         </Files>
-        <!-- FIXME: Implement COMAR service
+        <AdditionalFiles>
+            <AdditionalFile target="/usr/share/doc/lxc/templates/lxc-pardus" owner="root" group="root" permission="0755">lxc-pardus</AdditionalFile>
+            <AdditionalFile target="/etc/conf.d/lxc" owner="root" group="root" permission="0644">lxc.conf</AdditionalFile>
+        </AdditionalFiles>
         <Provides>
             <COMAR script="service.py">System.Service</COMAR>
         </Provides>
-        -->
     </Package>
 
     <Package>
@@ -57,6 +60,20 @@
     </Package>
 
     <History>
+        <Update release="6">
+            <Date>2011-05-25</Date>
+            <Version>0.7.4.2</Version>
+            <Comment>
+                * Version Bump
+                * Add config file to autostart selected containers
+                * Add uludag/trunk/scripts/lxc-pardus
+                * Add service script to autostart/stop selected containers
+                * Add bridge-utils as dependency
+                * Delete unnecessary patches
+            </Comment>
+            <Name>Erdem Bayer</Name>
+            <Email>ebayer@bayer.gen.tr</Email>
+        </Update>
         <Update release="5">
             <Date>2010-10-27</Date>
             <Version>0.7.3</Version>
