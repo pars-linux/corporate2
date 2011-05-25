@@ -14,7 +14,8 @@ def setup():
     autotools.autoreconf("-vif")
 
     autotools.configure("--localstatedir=/var \
-                         --disable-doc")
+                         --disable-docs \
+                         --with-linuxdir=/usr/src/linux-headers-%s" % get.curKERNEL())
 
 def build():
     autotools.make()
