@@ -286,17 +286,17 @@ def addUser(uid, name, realname, homedir, shell, password, groups, grants, block
     if password:
         checkPassword(password, (name, realname))
         new_user.set(libuser.SHADOWPASSWORD, shadowCrypt(password))
-    if groups:
-        for item in groups:
-            checkGroupName(item)
-            gr = admin.lookupGroupByName(item)
-            if gr:
-                addUserToGroup(new_user, gr)
-        # First group in the list is the user's main group
-        g = admin.lookupGroupByName(groups[0])
-        new_user.set(libuser.GIDNUMBER, g.get(libuser.GIDNUMBER))
-    else:
-        fail(_(no_group_msg))
+    if len(groups) == 0:
+        groups.append("nogroup")
+    print groups
+    for item in groups:
+        checkGroupName(item)
+        gr = admin.lookupGroupByName(item)
+        if gr:
+            addUserToGroup(new_user, gr)
+    # First group in the list is the user's main group
+    g = admin.lookupGroupByName(groups[0])
+    new_user.set(libuser.GIDNUMBER, g.get(libuser.GIDNUMBER))
 
     for grant in grants:
         if grant != "":
