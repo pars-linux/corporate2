@@ -5,7 +5,7 @@
 case $ACTION in
     add)
         if [ "x${LOAD_VBOXVFS_MODULE-true}" == "xtrue" ]; then
-            /sbin/modprobe -s vboxfs
+            /sbin/modprobe -s vboxsf
         fi
         if [ -x /usr/sbin/VBoxService ]; then
             /usr/sbin/VBoxService $VBOXSERVICE_OPTS
