@@ -286,9 +286,8 @@ def addUser(uid, name, realname, homedir, shell, password, groups, grants, block
     if password:
         checkPassword(password, (name, realname))
         new_user.set(libuser.SHADOWPASSWORD, shadowCrypt(password))
-    if len(groups) == 0:
-        groups.append("nogroup")
-    print groups
+    if not groups:
+        groups = ["nogroup"]
     for item in groups:
         checkGroupName(item)
         gr = admin.lookupGroupByName(item)
