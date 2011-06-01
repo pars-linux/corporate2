@@ -14,10 +14,7 @@
         <IsA>data</IsA>
         <Summary>Filesystem baselayout</Summary>
         <Description>baselayout creates the Pardus Linux main filesystem hierarchy.</Description>
-        <Archive sha1sum="8e4d5b738f127cc0ca1ae058d304b4a8918f2a06" type="targz">http://cekirdek.pardus.org.tr/~fatih/dist/baselayout/baselayout-3.5.1.tar.gz</Archive>
-        <Patches>
-            <Patch level="1">tweak-sysctl.patch</Patch>
-        </Patches>
+        <Archive sha1sum="16dd364f1506211d9a82c43b5c33cdd82553a569" type="targz">http://cekirdek.pardus.org.tr/~ozan/dist/sources/baselayout-3.5.2.tar.gz</Archive>
     </Source>
 
     <Package>
@@ -32,7 +29,6 @@
             <Path fileType="library" permanent="true">/lib*</Path>
             <Path fileType="config" permanent="true">/etc</Path>
             <Path fileType="data" permanent="true">/etc/pardus-release</Path>
-            <Path fileType="data" permanent="true">/etc/os-release</Path>
             <Path fileType="data" permanent="true">/media</Path>
             <Path fileType="data" permanent="true">/boot</Path>
             <Path fileType="data" permanent="true">/proc</Path>
@@ -44,14 +40,19 @@
             <Path fileType="data" permanent="true">/tmp</Path>
             <Path fileType="data" permanent="true">/usr</Path>
             <Path fileType="data" permanent="true">/var</Path>
+            <Path fileType="data" permanent="true">/srv</Path>
         </Files>
         <AdditionalFiles>
             <AdditionalFile owner="root" permission="0644" target="/etc/services">services</AdditionalFile>
             <AdditionalFile owner="root" permission="0644" target="/etc/protocols">protocols</AdditionalFile>
             <AdditionalFile owner="root" permission="0644" target="/etc/pardus-release">pardus-release</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/sysctl.conf">sysctl.conf</AdditionalFile>
 
+            <!-- These are here to squeeze those files, in 2011 we packaged mailcap and bumped baselayout for this -->
             <AdditionalFile owner="root" permission="0644" target="/etc/mailcap">mailcap</AdditionalFile>
             <AdditionalFile owner="root" permission="0644" target="/etc/mime.types">mime.types</AdditionalFile>
+
+            <AdditionalFile owner="root" permission="0644" target="/usr/share/man/man8/start-stop-daemon.8">start-stop-daemon.8</AdditionalFile>
         </AdditionalFiles>
         <Provides>
             <COMAR script="pakhandler.py">System.PackageHandler</COMAR>
@@ -64,8 +65,12 @@
     <History>
         <Update release="164">
             <Date>2011-06-01</Date>
-            <Version>3.5.1</Version>
-            <Comment>Use xdg-open in mailcap too (pb#17534).</Comment>
+            <Version>3.5.2</Version>
+            <Comment>
+                - Use xdg-open in mailcap too (pb#17534),
+                - Version bump,
+                - Fix single-user mode (pb#17924),
+            </Comment>
             <Name>Ozan Çağlayan</Name>
             <Email>ozan@pardus.org.tr</Email>
         </Update>
