@@ -18,21 +18,13 @@ def install():
     def chmod(path, mode):
         shelltools.chmod("%s%s" % (get.installDIR(), path), mode)
 
-    # Install baselayout documentation
-    pisitools.doman("man/*.*")
-
     # Install baselayout utilities
     autotools.rawInstall('-C src DESTDIR="%s"' % get.installDIR())
 
-    # FIXME: Check these if we switch to systemd
     chmod("/tmp", 01777)
     chmod("/var/lock", 0755)
     chmod("/var/tmp", 01777)
     chmod("/usr/share/baselayout/shadow", 0600)
-
-    # FHS compatibility symlinks stuff
-    pisitools.dosym("/var/tmp", "/usr/tmp")
-    pisitools.dosym("share/man", "/usr/local/man")
 
     # For Corporate2's KDE3
     pisitools.dosym("/etc/xdg/autostart", "/usr/share/autostart")
