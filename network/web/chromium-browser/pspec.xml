@@ -13,7 +13,7 @@
         <IsA>app:gui</IsA>
         <Summary>A WebKit powered web browser</Summary>
         <Description>Chromium-browser is an open-source web browser, powered by WebKit.</Description>
-        <Archive sha1sum="188124c0faae0073a2af70a0060abf2f4eaaa1f6" type="tarbz2">http://build.chromium.org/buildbot/official/chromium-11.0.696.68.tar.bz2</Archive>
+        <Archive sha1sum="bb1f84c48cad0846d7e34f78c047ee71fe8a37b0" type="tarbz2">http://build.chromium.org/buildbot/official/chromium-12.0.742.91.tar.bz2</Archive>
         <AdditionalFiles>
             <AdditionalFile permission="0644" target="v8/src/extensions/experimental/experimental.gyp">experimental.gyp</AdditionalFile>
         </AdditionalFiles>
@@ -46,7 +46,12 @@
             <Dependency>git</Dependency>
         </BuildDependencies>
         <Patches>
-            <Patch level="0">chromium-system-vpx-r3.patch</Patch>
+            <!--Make sure we don't use bundled libvpx headers.-->
+            <Patch level="0">chromium-system-vpx-r4.patch</Patch>
+
+            <!--Fix compilation with system zlib -->
+            <Patch level="0">chromium-system-zlib-r0.patch</Patch>
+
             <Patch level="1">pisi_download_warning.patch</Patch>
 
             <!-- see crbug.com/26496 -->
@@ -54,9 +59,6 @@
 
             <!--Disable experimental extensions. It causes compile problems-->
             <Patch level="1">disable_experimental_ext.patch</Patch>
-
-            <!--Chromium has still some problems with gecko media player-->
-            <Patch level="1">blacklist_geckomediaplayer.patch</Patch>
         </Patches>
     </Source>
 
@@ -108,6 +110,38 @@
     </Package>
 
     <History>
+        <Update release="26" type="security">
+            <Date>2011-06-08</Date>
+            <Version>12.0.742.91</Version>
+            <Comment>
+                * New stable release 12.0.742.91
+                * Hardware accelerated 3D CSS
+                * New Safe Browsing protection against downloading malicious files
+                * Ability to delete Flash cookies from inside Chrome
+                * Launch Apps by name from the Omnibox
+                * Integrated Sync into new settings pages
+                * Improved screen reader support
+                * New warning when hitting Command-Q on Mac
+                * Removal of Google Gears
+                * Several security fixes:
+                * [73962] [79746] High CVE-2011-1808: Use-after-free due to integer issues in float handling
+                * [75496] Medium CVE-2011-1809: Use-after-free in accessibility support
+                * [75643] Low CVE-2011-1810: Visit history information leak in CSS
+                * [76034] Low CVE-2011-1811: Browser crash with lots of form submissions
+                * [77026] Medium CVE-2011-1812: Extensions permission bypass
+                * [78516] High CVE-2011-1813: Stale pointer in extension framework
+                * [79362] Medium CVE-2011-1814: Read from uninitialized pointer
+                * [79862] Low CVE-2011-1815: Extension script injection into new tab page
+                * [80358] Medium CVE-2011-1816: Use-after-free in developer tools
+                * [81916] Medium CVE-2011-1817: Browser memory corruption in history deletion
+                * [81949] High CVE-2011-1818: Use-after-free in image loader
+                * [83010] Medium CVE-2011-1819: Extension injection into chrome:// pages
+                * [83275] High CVE-2011-2332: Same origin bypass in v8
+                * [83743] High CVE-2011-2342: Same origin bypass in DOM
+            </Comment>
+            <Name>Fatih Arslan</Name>
+            <Email>farslan@pardus.org.tr</Email>
+        </Update>
         <Update release="25">
             <Date>2011-05-24</Date>
             <Version>11.0.696.68</Version>
