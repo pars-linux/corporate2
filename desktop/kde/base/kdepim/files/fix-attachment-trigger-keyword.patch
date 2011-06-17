@@ -1,0 +1,28 @@
+Index: kdepim-3.5.10/kmail/configuredialog.cpp
+===================================================================
+--- kdepim-3.5.10.orig/kmail/configuredialog.cpp
++++ kdepim-3.5.10/kmail/configuredialog.cpp
+@@ -3516,12 +3516,19 @@ void ComposerPage::AttachmentsTab::doLoa
+   QStringList attachWordsList = GlobalSettings::self()->attachmentKeywords();
+   if ( attachWordsList.isEmpty() ) {
+     // default value
+-    attachWordsList << QString::fromLatin1("attachment")
+-                    << QString::fromLatin1("attached");
+-    if ( QString::fromLatin1("attachment") != i18n("attachment") )
++    if ( QString::fromLatin1("attachment") != i18n("attachment") ) {
+       attachWordsList << i18n("attachment");
+-    if ( QString::fromLatin1("attached") != i18n("attached") )
++    } else {
++      attachWordsList << QString::fromLatin1("attachment");
++    }
++
++    if ( QString::fromLatin1("attached") != i18n("attached") ) {
+       attachWordsList << i18n("attached");
++    } else {
++      attachWordsList << QString::fromLatin1("attached");
++    }
++    // i know this is _ugly_
++    attachWordsList << QString::fromUtf8("ekteki");
+   }
+ 
+   mAttachWordsListEditor->setStringList( attachWordsList );
