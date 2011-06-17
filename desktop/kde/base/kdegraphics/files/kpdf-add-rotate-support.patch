@@ -1,0 +1,316 @@
+--- a/kpdf/core/generator_pdf/generator_pdf.cpp	(revision 1062215)
++++ b/kpdf/core/generator_pdf/generator_pdf.cpp	(revision 1062216)
+@@ -316,7 +316,8 @@
+     // 1. Set OutputDev parameters and Generate contents
+     // note: thread safety is set on 'false' for the GUI (this) thread
+     kpdfOutputDev->setParams( request->width, request->height, genObjectRects, genObjectRects, false );
+-    pdfdoc->displayPage( kpdfOutputDev, page->number() + 1, fakeDpiX, fakeDpiY, 0, false, true, false );
++    pdfdoc->displayPage( kpdfOutputDev, page->number() + 1, fakeDpiX, fakeDpiY, request->rotation,
++                         false, true, false );
+     if ( genObjectRects )
+         pdfdoc->processLinks( kpdfOutputDev, page->number() + 1 );
+ 
+@@ -1225,7 +1226,7 @@
+     d->generator->kpdfOutputDev->setParams( width, height, 
+                                             genObjectRects, genObjectRects, TRUE /*thread safety*/ );
+     d->generator->pdfdoc->displayPage( d->generator->kpdfOutputDev, page->number() + 1,
+-                                       fakeDpiX, fakeDpiY, 0, false, true, false );
++                                       fakeDpiX, fakeDpiY, d->currentRequest->rotation, false, true, false );
+     if ( genObjectRects )
+         d->generator->pdfdoc->processLinks( d->generator->kpdfOutputDev, page->number() + 1 );
+ 
+Index: core/page.h
+===================================================================
+--- a/kpdf/core/page.h	(revision 1062215)
++++ b/kpdf/core/page.h	(revision 1062216)
+@@ -120,6 +120,9 @@
+         void deletePixmapsAndRects();
+         void deleteHighlights( int s_id = -1 );
+ 
++        void setRotation( int r );
++        void rotate90degrees();
++
+     private:
+         friend class PagePainter;
+         int m_number, m_rotation;
+Index: core/generator.h
+===================================================================
+--- a/kpdf/core/generator.h	(revision 1062215)
++++ b/kpdf/core/generator.h	(revision 1062216)
+@@ -92,8 +92,8 @@
+  */
+ struct PixmapRequest
+ {
+-    PixmapRequest( int rId, int n, int w, int h, int p, bool a = false )
+-        : id( rId ), pageNumber( n ), width( w ), height( h ),
++    PixmapRequest( int rId, int n, int w, int h, int p, bool a = false, int r = 0 )
++        : id( rId ), pageNumber( n ), width( w ), height( h ), rotation( r ),
+         priority( p ), async( a ), page( 0 )  {};
+ 
+     // observer id
+@@ -102,6 +102,7 @@
+     int pageNumber;
+     int width;
+     int height;
++    int rotation;
+     // asyncronous request priority (less is better, 0 is max)
+     int priority;
+     // generate the pixmap in a thread and notify observer when done
+Index: core/page.cpp
+===================================================================
+--- a/kpdf/core/page.cpp	(revision 1062215)
++++ b/kpdf/core/page.cpp	(revision 1062216)
+@@ -27,10 +27,40 @@
+     : m_number( page ), m_rotation( r ), m_width( w ), m_height( h ),
+     m_bookmarked( false ), m_text( 0 ), m_transition( 0 )
+ {
++    setRotation( r );
++}
++
++KPDFPage::~KPDFPage()
++{
++    deletePixmapsAndRects();
++    deleteHighlights();
++    delete m_text;
++    delete m_transition;
++}
++
++void KPDFPage::rotate90degrees()
++    {
++        float w = m_width;
++        m_width = m_height;
++        m_height = w;
++
++        // avoid Division-By-Zero problems in the program
++
++        if ( m_width <= 0 )
++        m_width = 1;
++        if ( m_height <= 0 )
++        m_height = 1;
++
++        deletePixmapsAndRects();
++    }
++
++void KPDFPage::setRotation( int r )
++{
+     // if landscape swap width <-> height (rotate 90deg CCW)
+     if ( r == 90 || r == 270 )
+     {
+-        m_width = h;
++        float w = m_width;
++        m_width = m_height;
+         m_height = w;
+     }
+     // avoid Division-By-Zero problems in the program
+@@ -38,17 +68,10 @@
+         m_width = 1;
+     if ( m_height <= 0 )
+         m_height = 1;
+-}
+ 
+-KPDFPage::~KPDFPage()
+-{
+     deletePixmapsAndRects();
+-    deleteHighlights();
+-    delete m_text;
+-    delete m_transition;
+ }
+ 
+-
+ bool KPDFPage::hasPixmap( int id, int width, int height ) const
+ {
+     if ( !m_pixmaps.contains( id ) )
+Index: a/kpdf/xpdf/xpdf/Stream.cc
+===================================================================
+--- a/kpdf/xpdf/xpdf/Stream.cc	(revision 1062215)
++++ b/kpdf/xpdf/xpdf/Stream.cc	(revision 1062216)
+@@ -410,17 +410,14 @@
+   ok = gFalse;
+ 
+   nVals = width * nComps;
++  pixBytes = (nComps * nBits + 7) >> 3;
++  rowBytes = ((nVals * nBits + 7) >> 3) + pixBytes;
+   if (width <= 0 || nComps <= 0 || nBits <= 0 ||
+       nComps > gfxColorMaxComps || nBits > 16 ||
+-      width >= INT_MAX / nComps ||
+-      nVals >= (INT_MAX - 7) / nBits) {
++      width >= INT_MAX / nComps ||      // check for overflow in nVals
++      nVals >= (INT_MAX - 7) / nBits) { // check for overflow in rowBytes
+     return;
+   }
+-  pixBytes = (nComps * nBits + 7) >> 3;
+-  rowBytes = ((nVals * nBits + 7) >> 3) + pixBytes;
+-  if (rowBytes <= 0) {
+-    return;
+-  }
+   predLine = (Guchar *)gmalloc(rowBytes);
+   memset(predLine, 0, rowBytes);
+   predIdx = rowBytes;
+Index: a/kpdf/shell/kpdf.desktop
+===================================================================
+--- a/kpdf/shell/kpdf.desktop	(revision 1062215)
++++ b/kpdf/shell/kpdf.desktop	(revision 1062216)
+@@ -78,5 +78,5 @@
+ Type=Application
+ DocPath=kpdf/index.html
+ InitialPreference=7
+-Categories=Qt;KDE;Graphics;Viewer;
++Categories=Qt;KDE;Office;Viewer;
+ 
+Index: a/kpdf/part.rc
+===================================================================
+--- a/kpdf/part.rc	(revision 1062215)
++++ b/kpdf/part.rc	(revision 1062216)
+@@ -1,5 +1,5 @@
+ <!DOCTYPE kpartgui SYSTEM "kpartgui.dtd">
+-<kpartgui name="kpdf_part" version="18">
++<kpartgui name="kpdf_part" version="19">
+ <MenuBar>
+   <Menu name="file"><text>&amp;File</text>
+     <Action name="save" group="file_save"/>
+@@ -19,6 +19,8 @@
+     <Action name="zoom_fit_width"/>
+     <Action name="zoom_fit_page"/>
+     <Action name="zoom_fit_rect"/>
++    <Action name="rotate_right"/>
++    <Action name="rotate_left"/>
+     <Separator/>
+     <Action name="view_continuous"/>
+     <Action name="view_twopages"/>
+@@ -53,6 +55,8 @@
+   <Action name="zoom_in"/>
+   <Action name="zoom_to" />
+   <Action name="zoom_out"/>
++  <Action name="rotate_left"/>
++  <Action name="rotate_right"/>
+   <Separator/>
+   <Action name="zoom_fit_width"/>
+   <Action name="zoom_fit_page"/>
+Index: ui/pageview.cpp
+===================================================================
+--- a/kpdf/ui/pageview.cpp	(revision 1062215)
++++ b/kpdf/ui/pageview.cpp	(revision 1062216)
+@@ -71,6 +71,7 @@
+     // view layout (columns and continuous in Settings), zoom and mouse
+     PageView::ZoomMode zoomMode;
+     float zoomFactor;
++    int rotation;
+     PageView::MouseMode mouseMode;
+     QPoint mouseGrabPos;
+     QPoint mousePressPos;
+@@ -185,6 +186,7 @@
+     d->document = document;
+     d->zoomMode = (PageView::ZoomMode)KpdfSettings::zoomMode();
+     d->zoomFactor = KpdfSettings::zoomFactor();
++    d->rotation = 0;
+     d->mouseMode = MouseNormal;
+     d->mouseMidStartY = -1;
+     d->mouseOnRect = false;
+@@ -263,6 +265,14 @@
+     d->aZoomFitText = new KToggleAction( i18n("Fit to &Text"), "viewmagfit", 0, ac, "zoom_fit_text" );
+     connect( d->aZoomFitText, SIGNAL( toggled( bool ) ), SLOT( slotFitToTextToggled( bool ) ) );
+ 
++    // rotate actions
++    KAction *action;
++    action = new KAction( i18n("Rotate Right"), "rotate_cw", KShortcut( "Ctrl+Shift++" ),
++                          this, SLOT( slotRotateRight() ), ac, "rotate_right" );
++
++    action = new KAction( i18n("Rotate Left"), "rotate_ccw", KShortcut( "Ctrl+Shift+-" ),
++                          this, SLOT( slotRotateLeft() ), ac, "rotate_left" );
++
+     // View-Layout actions
+     d->aViewTwoPages = new KToggleAction( i18n("&Two Pages"), "view_left_right", 0, ac, "view_twopages" );
+     connect( d->aViewTwoPages, SIGNAL( toggled( bool ) ), SLOT( slotTwoPagesToggled( bool ) ) );
+@@ -1867,7 +1877,7 @@
+         if ( !i->page()->hasPixmap( PAGEVIEW_ID, i->width(), i->height() ) )
+         {
+             PixmapRequest * p = new PixmapRequest(
+-                    PAGEVIEW_ID, i->pageNumber(), i->width(), i->height(), PAGEVIEW_PRIO, true );
++                    PAGEVIEW_ID, i->pageNumber(), i->width(), i->height(), PAGEVIEW_PRIO, true, d->rotation );
+             requestedPixmaps.push_back( p );
+         }
+ 
+@@ -1907,7 +1917,7 @@
+             // request the pixmap if not already present
+             if ( !i->page()->hasPixmap( PAGEVIEW_ID, i->width(), i->height() ) && i->width() > 0 )
+                 requestedPixmaps.push_back( new PixmapRequest(
+-                        PAGEVIEW_ID, i->pageNumber(), i->width(), i->height(), PAGEVIEW_PRELOAD_PRIO, true ) );
++                        PAGEVIEW_ID, i->pageNumber(), i->width(), i->height(), PAGEVIEW_PRELOAD_PRIO, true, d->rotation ) );
+         }
+ 
+         // add the page before the 'visible series' in preload
+@@ -1918,7 +1928,7 @@
+             // request the pixmap if not already present
+             if ( !i->page()->hasPixmap( PAGEVIEW_ID, i->width(), i->height() ) && i->width() > 0 )
+                 requestedPixmaps.push_back( new PixmapRequest(
+-                        PAGEVIEW_ID, i->pageNumber(), i->width(), i->height(), PAGEVIEW_PRELOAD_PRIO, true ) );
++                        PAGEVIEW_ID, i->pageNumber(), i->width(), i->height(), PAGEVIEW_PRELOAD_PRIO, true, d->rotation ) );
+         }
+     }
+ 
+@@ -2044,6 +2054,52 @@
+     if ( on ) updateZoom( ZoomFitText );
+ }
+ 
++void PageView::slotRotateRight()
++{
++    d->rotation = ( d->rotation + 90 ) % 360;
++
++    QValueVector< PageViewItem * >::iterator iIt = d->items.begin(), iEnd = d->items.end();
++    for ( ; iIt != iEnd; ++iIt )
++    {
++        int r = const_cast<KPDFPage*>((*iIt)->page())->rotation();
++        r = ( r + 90 ) % 360;
++
++        const_cast<KPDFPage*>((*iIt)->page())->rotate90degrees();
++    }
++
++    // be sure to block updates to document's viewport
++    bool prevState = d->blockViewport;
++    d->blockViewport = true;
++    slotRelayoutPages();
++    d->blockViewport = prevState;
++    // request pixmaps
++    slotRequestVisiblePixmaps();
++}
++
++void PageView::slotRotateLeft()
++{
++    d->rotation -= 90;
++    if ( d->rotation < 0 ) d->rotation += 360;
++
++    QValueVector< PageViewItem * >::iterator iIt = d->items.begin(), iEnd = d->items.end();
++    for ( ; iIt != iEnd; ++iIt )
++    {
++        int r = const_cast<KPDFPage*>((*iIt)->page())->rotation();
++        r -= 90;
++        if ( r < 0 ) r += 360;
++
++        const_cast<KPDFPage*>((*iIt)->page())->rotate90degrees();
++    }
++
++    // be sure to block updates to document's viewport
++    bool prevState = d->blockViewport;
++    d->blockViewport = true;
++    slotRelayoutPages();
++    d->blockViewport = prevState;
++    // request pixmaps
++    slotRequestVisiblePixmaps();
++}
++
+ void PageView::slotTwoPagesToggled( bool on )
+ {
+     uint newColumns = on ? 2 : 1;
+Index: a/kpdf/ui/pageview.h
+===================================================================
+--- a/kpdf/ui/pageview.h	(revision 1062215)
++++ b/kpdf/ui/pageview.h	(revision 1062216)
+@@ -135,6 +135,8 @@
+         void slotFitToWidthToggled( bool );
+         void slotFitToPageToggled( bool );
+         void slotFitToTextToggled( bool );
++        void slotRotateRight();
++        void slotRotateLeft();
+         void slotTwoPagesToggled( bool );
+         void slotContinuousToggled( bool );
+         void slotSetMouseNormal();
