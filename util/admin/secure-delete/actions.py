@@ -9,6 +9,7 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
+WorkDir = "secure_delete-%s" % get.srcVERSION()
 
 def build():
     shelltools.export("CFLAGS", "%s -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64" % get.CFLAGS())
