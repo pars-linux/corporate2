@@ -13,6 +13,7 @@
         <Summary>Common Unix Printing System</Summary>
         <Description>cups provides a portable printing layer for *nix-based operating systems.</Description>
         <Archive sha1sum="42fb1ca00ee7291561564d3072716eb2045f05d1" type="tarbz2">ftp://ftp.easysw.com/pub/cups/1.4.6/cups-1.4.6-source.tar.bz2</Archive>
+        <Archive sha1sum="062beea95c6f8dda0a5e7eed51604e22806ffad3" type="tar" target="cups-1.4.6">http://cekirdek.pardus.org.tr/~ibrahim/dist/cups-tr.tar</Archive>
         <BuildDependencies>
             <Dependency>mit-kerberos-devel</Dependency>
             <Dependency>openldap-client</Dependency>
@@ -168,14 +169,14 @@
             <!-- Create symbolic link backend/https -->
             <Patch level="1">pardus/backend-https.patch</Patch>
 
-            <!-- Don't install desktop file -->
-            <Patch level="1">pardus/remove-desktop-file-install.patch</Patch>
-
             <!-- Don't strip debugging symbols -->
             <Patch level="1">pardus/nostrip.patch</Patch>
 
             <!-- Fix locale aware character conversion to fix #17066 -->
             <Patch level="1">pardus/fix-locale-aware-character-conversion.patch</Patch>
+
+            <!-- Fix validity of the desktop file -->
+            <Patch level="1">pardus/desktop.patch</Patch>
         </Patches>
     </Source>
 
@@ -192,11 +193,13 @@
             <Dependency>openslp</Dependency>
             <Dependency>gnutls</Dependency>
             <Dependency>avahi</Dependency>
+            <Dependency>xdg-utils</Dependency>
         </RuntimeDependencies>
         <Replaces>
             <Package>cupsddk</Package>
         </Replaces>
         <Files>
+            <Path fileType="data">/etc</Path>
             <Path fileType="config">/etc/cups/*conf</Path>
             <Path fileType="header">/usr/include</Path>
             <Path fileType="library">/usr/lib</Path>
@@ -206,14 +209,14 @@
             <Path fileType="data">/var/spool/cups/tmp</Path>
             <Path fileType="data">/var/run/cups/certs</Path>
             <Path fileType="data">/var/log/cups</Path>
-            <Path fileType="data">/etc</Path>
             <Path fileType="data">/lib/udev/rules.d</Path>
+            <Path fileType="data">/usr/share/applications</Path>
             <Path fileType="data">/usr/share/cups</Path>
             <Path fileType="data">/usr/lib/pkgconfig</Path>
             <Path fileType="data">/usr/share/icons</Path>
-            <Path fileType="doc">/usr/share/doc</Path>
-            <Path fileType="man">/usr/share/man</Path>
             <Path fileType="localedata">/usr/share/locale</Path>
+            <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
         </Files>
         <AdditionalFiles>
             <AdditionalFile owner="root" permission="0644" target="/etc/pam.d/cups">cups.pam</AdditionalFile>
@@ -262,6 +265,13 @@
     </Package>
 
     <History>
+        <Update release="84">
+            <Date>2011-06-20</Date>
+            <Version>1.4.6</Version>
+            <Comment>Install desktop file and add Turkish translation of the web interface.</Comment>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
         <Update release="83">
             <Date>2011-02-01</Date>
             <Version>1.4.6</Version>
