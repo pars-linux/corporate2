@@ -1,0 +1,112 @@
+Index: VirtualBox-4.0.2_OSE/include/VBox/ostypes.h
+===================================================================
+--- VirtualBox-4.0.2_OSE.orig/include/VBox/ostypes.h
++++ VirtualBox-4.0.2_OSE/include/VBox/ostypes.h
+@@ -96,6 +96,8 @@ typedef enum VBOXOSTYPE
+     VBOXOSTYPE_Xandros_x64      = 0x5D100,
+     VBOXOSTYPE_Oracle           = 0x5E000,
+     VBOXOSTYPE_Oracle_x64       = 0x5E100,
++    VBOXOSTYPE_Pardus           = 0xDF000,
++    VBOXOSTYPE_Pardus_x64       = 0xDF100,
+     VBOXOSTYPE_FreeBSD          = 0x60000,
+     VBOXOSTYPE_FreeBSD_x64      = 0x60100,
+     VBOXOSTYPE_OpenBSD          = 0x61000,
+Index: VirtualBox-4.0.2_OSE/src/VBox/Frontends/VirtualBox/src/globals/VBoxGlobal.cpp
+===================================================================
+--- VirtualBox-4.0.2_OSE.orig/src/VBox/Frontends/VirtualBox/src/globals/VBoxGlobal.cpp
++++ VirtualBox-4.0.2_OSE/src/VBox/Frontends/VirtualBox/src/globals/VBoxGlobal.cpp
+@@ -4903,6 +4903,8 @@ void VBoxGlobal::init()
+         {"Xandros_64",      ":/os_xandros_64.png"},
+         {"Oracle",          ":/os_oracle.png"},
+         {"Oracle_64",       ":/os_oracle_64.png"},
++        {"Pardus",          ":/os_pardus.png"},
++        {"Pardus_64",       ":/os_pardus_64.png"},
+         {"Linux",           ":/os_linux_other.png"},
+         {"FreeBSD",         ":/os_freebsd.png"},
+         {"FreeBSD_64",      ":/os_freebsd_64.png"},
+Index: VirtualBox-4.0.2_OSE/src/VBox/Frontends/VirtualBox/src/wizards/newvm/UINewVMWzd.cpp
+===================================================================
+--- VirtualBox-4.0.2_OSE.orig/src/VBox/Frontends/VirtualBox/src/wizards/newvm/UINewVMWzd.cpp
++++ VirtualBox-4.0.2_OSE/src/VBox/Frontends/VirtualBox/src/wizards/newvm/UINewVMWzd.cpp
+@@ -95,6 +95,8 @@ static const osTypePattern gs_OSTypePatt
+     { QRegExp("(Gen)|(Sab)", Qt::CaseInsensitive), "Gentoo" },
+     { QRegExp("Man.*64", Qt::CaseInsensitive), "Mandriva_64" },
+     { QRegExp("Man", Qt::CaseInsensitive), "Mandriva" },
++    { QRegExp("Par.*64", Qt::CaseInsensitive), "Pardus_64" },
++    { QRegExp("Par", Qt::CaseInsensitive), "Pardus" },
+     { QRegExp("((Red)|(rhel)|(cen)).*64", Qt::CaseInsensitive), "RedHat_64" },
+     { QRegExp("(Red)|(rhel)|(cen)", Qt::CaseInsensitive), "RedHat" },
+     { QRegExp("Tur.*64", Qt::CaseInsensitive), "Turbolinux_64" },
+Index: VirtualBox-4.0.2_OSE/src/VBox/Main/src-all/Global.cpp
+===================================================================
+--- VirtualBox-4.0.2_OSE.orig/src/VBox/Main/src-all/Global.cpp
++++ VirtualBox-4.0.2_OSE/src/VBox/Main/src-all/Global.cpp
+@@ -211,6 +211,14 @@ const Global::OSType Global::sOSTypes[Sc
+       VBOXOSTYPE_Oracle_x64,      VBOXOSHINT_64BIT | VBOXOSHINT_PAE | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_RTCUTC,
+        512,  12,  8 * _1G64, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
+         StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, AudioControllerType_AC97  },
++    { "Linux",   "Linux",             SchemaDefs_OSTypeId_Pardus,          "Pardus",
++      VBOXOSTYPE_Pardus,          VBOXOSHINT_RTCUTC | VBOXOSHINT_PAE,
++       512,  12,  8 * _1G64, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
++        StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, AudioControllerType_AC97  },
++    { "Linux",   "Linux",             SchemaDefs_OSTypeId_Pardus_64,       "Pardus (64 bit)",
++      VBOXOSTYPE_Pardus_x64,      VBOXOSHINT_64BIT | VBOXOSHINT_PAE | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_RTCUTC,
++       512,  12,  8 * _1G64, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
++        StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, AudioControllerType_AC97  },
+     { "Linux",   "Linux",             SchemaDefs_OSTypeId_Linux,           "Other Linux",
+       VBOXOSTYPE_Linux,           VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
+        256,  12,  8 * _1G64, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
+Index: VirtualBox-4.0.2_OSE/src/VBox/Main/src-server/ApplianceImpl.cpp
+===================================================================
+--- VirtualBox-4.0.2_OSE.orig/src/VBox/Main/src-server/ApplianceImpl.cpp
++++ VirtualBox-4.0.2_OSE/src/VBox/Main/src-server/ApplianceImpl.cpp
+@@ -97,6 +97,8 @@ g_osTypes[] =
+     { ovf::CIMOSType_CIMOS_SunJavaDesktopSystem,                 SchemaDefs_OSTypeId_Linux },
+     { ovf::CIMOSType_CIMOS_TurboLinux,                           SchemaDefs_OSTypeId_Turbolinux },
+     { ovf::CIMOSType_CIMOS_TurboLinux_64,                        SchemaDefs_OSTypeId_Turbolinux_64 },
++    { ovf::CIMOSType_CIMOS_Pardus,                               SchemaDefs_OSTypeId_Pardus },
++    { ovf::CIMOSType_CIMOS_Pardus_64,                            SchemaDefs_OSTypeId_Pardus_64 },
+     { ovf::CIMOSType_CIMOS_Mandriva,                             SchemaDefs_OSTypeId_Mandriva },
+     { ovf::CIMOSType_CIMOS_Mandriva_64,                          SchemaDefs_OSTypeId_Mandriva_64 },
+     { ovf::CIMOSType_CIMOS_Ubuntu,                               SchemaDefs_OSTypeId_Ubuntu },
+Index: VirtualBox-4.0.2_OSE/src/VBox/Main/xml/VirtualBox-settings-common.xsd
+===================================================================
+--- VirtualBox-4.0.2_OSE.orig/src/VBox/Main/xml/VirtualBox-settings-common.xsd
++++ VirtualBox-4.0.2_OSE/src/VBox/Main/xml/VirtualBox-settings-common.xsd
+@@ -189,6 +189,8 @@
+     <xsd:enumeration value="Xandros_64"/>
+     <xsd:enumeration value="Oracle"/>
+     <xsd:enumeration value="Oracle_64"/>
++    <xsd:enumeration value="Pardus"/>
++    <xsd:enumeration value="Pardus_64"/>
+     <xsd:enumeration value="Linux"/>
+     <xsd:enumeration value="FreeBSD"/>
+     <xsd:enumeration value="FreeBSD_64"/>
+Index: VirtualBox-4.0.2_OSE/src/VBox/Main/include/ovfreader.h
+===================================================================
+--- VirtualBox-4.0.2_OSE.orig/src/VBox/Main/include/ovfreader.h
++++ VirtualBox-4.0.2_OSE/src/VBox/Main/include/ovfreader.h
+@@ -145,7 +145,9 @@ enum CIMOSType_T
+     CIMOSType_CIMOS_CentOS_64 = 107,
+     CIMOSType_CIMOS_OracleEnterpriseLinux = 108,
+     CIMOSType_CIMOS_OracleEnterpriseLinux_64 = 109,
+-    CIMOSType_CIMOS_eComStation = 110
++    CIMOSType_CIMOS_eComStation = 110,
++    CIMOSType_CIMOS_Pardus    = 111,
++    CIMOSType_CIMOS_Pardus_64 = 112
+     // no new types added with CIM 2.26.0
+ };
+ 
+Index: VirtualBox-4.0.2_OSE/src/VBox/Frontends/VirtualBox/VirtualBox2.qrc
+===================================================================
+--- VirtualBox-4.0.2_OSE.orig/src/VBox/Frontends/VirtualBox/VirtualBox2.qrc
++++ VirtualBox-4.0.2_OSE/src/VBox/Frontends/VirtualBox/VirtualBox2.qrc
+@@ -45,6 +45,8 @@
+     <file alias="os_solaris_64.png">images/os_solaris_64.png</file>
+     <file alias="os_ubuntu.png">images/os_ubuntu.png</file>
+     <file alias="os_ubuntu_64.png">images/os_ubuntu_64.png</file>
++    <file alias="os_pardus.png">images/os_pardus.png</file>
++    <file alias="os_pardus_64.png">images/os_pardus_64.png</file>
+     <file alias="os_win_other.png">images/os_win_other.png</file>
+     <file alias="os_win2k.png">images/os_win2k.png</file>
+     <file alias="os_win2k3.png">images/os_win2k3.png</file>
