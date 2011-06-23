@@ -13,8 +13,8 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
                 "/dev/urandom"   : [stat.S_IFCHR | 0666, 1, 9],
                 "/dev/log"       : [stat.S_IFSOCK | 0666, 1, 1],
               }
-    
-    # Create device nodes in chroot
+
+    # Create device NODES in chroot
     for node, values in NODES.items():
         if not os.path.exists("%s%s" % (CHROOT, node)):
             os.mknod("%s%s" % (CHROOT, node), values[0], os.makedev(values[1], values[2]))
@@ -37,8 +37,8 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
 
     # Fix permissions
     os.system("chmod 0700 %s" % CHROOT)
-    os.system("chown named.named %s" % CHROOT)
-    os.system("chown -R named.named %s/var/named" % CHROOT)
-    os.system("chown -R named.named %s/etc/bind" % CHROOT)
-    os.system("chown -R named.named %s/var/run/named" % CHROOT)
-    os.system("chown -R named.named %s/var/log" % CHROOT)
+    os.system("chown named:named %s" % CHROOT)
+    os.system("chown -R named:named %s/var/named" % CHROOT)
+    os.system("chown -R named:named %s/etc/bind" % CHROOT)
+    os.system("chown -R named:named %s/var/run/named" % CHROOT)
+    os.system("chown -R named:named %s/var/log" % CHROOT)
