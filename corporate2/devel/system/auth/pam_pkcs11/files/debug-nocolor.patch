@@ -1,0 +1,26 @@
+Index: pam_pkcs11-0.6.6/src/common/debug.c
+===================================================================
+--- pam_pkcs11-0.6.6.orig/src/common/debug.c
++++ pam_pkcs11-0.6.6/src/common/debug.c
+@@ -37,19 +37,13 @@ void debug_print(int level, const char *
+   if (debug_level >= level) {
+     /* is stdout is a tty */
+     if (isatty(1)) {
+-      const char *t = "\033[34mDEBUG"; /* blue */
+-
+-      if (-1 == level)
+-        t = "\033[31mERROR"; /* red */
+-
+       /* print preamble */
+-      printf("%s:%s:%d: ", t, file, line);
++      printf("%s:%d: ", file, line);
+       /* print message */
+       va_start(ap, format);
+       vprintf(format, ap);
+       va_end(ap);
+-      /* print postamble */
+-      printf("\033[0m\n");
++      printf("\n");
+     }
+     else {
+ 	  /* else we use syslog(3) */
