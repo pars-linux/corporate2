@@ -7,17 +7,19 @@ serviceDesc = _({"en": "BIND Daemon",
                  "tr": "BIND Servisi"})
 serviceConf = "named"
 
+PIDFILE = "/var/run/named/named.pid"
+
 @synchronized
 def start():
     startService(command="/usr/sbin/named",
                  args="-u named -n %s %s" % (config.get("CPU", "1"), config.get("OPTIONS", "")),
-                 pidfile="/var/run/named/named.pid",
+                 pidfile=PIDFILE,
                  donotify=True)
 
 @synchronized
 def stop():
-    stopService(pidfile="/var/run/named/named.pid",
+    stopService(pidfile=PIDFILE,
                 donotify=True)
 
 def status():
-    return isServiceRunning("/var/run/named/named.pid")
+    return isServiceRunning(PIDFILE)
