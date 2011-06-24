@@ -22,6 +22,9 @@
         <Patches>
             <Patch level="1">openssl-0.9.8i-tls-extensions.patch</Patch>
             <Patch level="1">openssl-0.9.8h-ldflags.patch</Patch>
+            <Patch level="1">openssl-1.0.0-beta3-defaults.patch</Patch>
+            <Patch level="1">openssl-1.0.0-beta5-enginesdir.patch</Patch>
+            <Patch level="1">openssl-1.0.0-beta4-ca-dir.patch</Patch>
         </Patches>
     </Source>
 
@@ -41,6 +44,8 @@
         <AdditionalFiles>
             <!-- checked out from Mozilla CVS using the update-certificates.pl script in files directory, also in http://www.mail-archive.com/modssl-users@modssl.org/msg16980.html -->
             <!-- Also do not forget to keep mozilla/security/nss/lib/ckfw/builtins/certdata.c file of nss package updated -->
+            <!-- Script that creates dummy certificates. Taken from Fedora -->
+            <AdditionalFile target="/etc/ssl/certs/make-dummy-cert" owner="root" permission="0755">make-dummy-cert</AdditionalFile>
             <AdditionalFile target="/etc/ssl/certs/ca-bundle.crt" owner="root" permission="0644">ca-bundle.crt</AdditionalFile>
         </AdditionalFiles>
         <Provides>
@@ -49,11 +54,21 @@
     </Package>
 
     <History>
+        <Update release="37">
+            <Date>2011-06-24</Date>
+            <Version>0.9.8r</Version>
+            <Comment>
+                - Refactor paths,
+                - Fix CA path,
+                - Use 2048 bits RSA keys instead of 1024.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="36" type="security">
             <Date>2011-03-28</Date>
             <Version>0.9.8r</Version>
-            <Comment>Update CA list from Mozilla CVS against Comodo
-                certification issue.</Comment>
+            <Comment>Update CA list from Mozilla CVS against Comodo certification issue.</Comment>
             <Name>Gökçen Eraslan</Name>
             <Email>gokcen@pardus.org.tr</Email>
         </Update>
