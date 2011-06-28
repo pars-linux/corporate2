@@ -188,6 +188,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
                 (169, "stap-server"),
                 (170, "stapdev"),
                 (171, "stapusr"),
+                (172, "gdm"),
                 # COMAR profile groups
                 (200, "pnp"),
                 (201, "removable"),
@@ -267,6 +268,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
                 (167, "ntop", "ntop user", "/var/lib/ntop", "/sbin/nologin", "", ["ntop"], [], []),
                 (168, "dansguardian", "DansGuardian web content filter", "/usr/share/dansguardian", "/sbin/nologin", "", ["dansguardian"], [], []),
                 (169, "stap-server", "Systemtap Compile Server", "/var/lib/stap-server", "/sbin/nologin", "", ["stap-server"], [], []),
+                (170, "gdm", "GDM", "/var/lib/gdm", "/sbin/nologin", "", ["gdm"], [], []),
                 (200, "pnp", "PnP", "/dev/null", "/bin/false", "", ["pnp"], [], []),
                 (201, "zarafa", "Zarafa Service Account", "/var/lib/zarafa", "/sbin/nologin", "", ["zarafa"], [], []),
                 (250, "mpd", "Music Player Daemon", "/var/lib/mpd", "/bin/false", "", ["audio", "pulse", "pulse-access", "pulse-rt"], [], []),
