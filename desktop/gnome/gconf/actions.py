@@ -14,6 +14,8 @@ shelltools.export("HOME", get.workDIR())
 def setup():
     autotools.autoreconf("-fiv")
     autotools.configure("--disable-static \
+                         --enable-gtk \
+                         --with-gtk=2.0 \
                          --enable-silent-rules")
 
     #pisitools.dosed("libtool"," -shared "," -Wl,--as-needed -shared ")
