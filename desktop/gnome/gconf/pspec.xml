@@ -8,11 +8,11 @@
             <Name>Burak Çalışkan</Name>
             <Email>burakclskn@gmail.com</Email>
         </Packager>
-        <License>GPLv2</License>
+        <License>LGPLv2+</License>
         <IsA>library</IsA>
-        <Summary>Gnome Configuration System</Summary>
-        <Description>gconf is a Gnome Configuration System.</Description>
-        <Archive sha1sum="8d8d113dc654314cf955c4f8c5a4cccd3a15f447" type="tarbz2">mirrors://gnome/GConf/2.32/GConf-2.32.1.tar.bz2</Archive>
+        <Summary>A process-transparent configuration system</Summary>
+        <Description>GConf is a process-transparent configuration database API used to store user preferences.</Description>
+        <Archive sha1sum="8c53a2b3220cfc058a08638a89fe35e44cfef581" type="tarbz2">mirrors://gnome/GConf/2.32/GConf-2.32.4.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency versionFrom="0.9.12">gobject-introspection-devel</Dependency>
             <Dependency versionFrom="2.18.5">gtk2</Dependency>
@@ -36,7 +36,11 @@
             <Dependency>orbit2</Dependency>
         </RuntimeDependencies>
         <Files>
-            <Path fileType="config">/etc</Path>
+            <Path fileType="config">/etc/gconf/2/path</Path>
+            <Path fileType="config">/etc/gconf/2/evoldap.conf</Path>
+            <Path fileType="data">/etc/gconf</Path>
+            <Path fileType="data">/etc/xdg/autostart</Path>
+            <Path fileType="data">/etc/dbus-1/system.d</Path>
             <Path fileType="header">/usr/include</Path>
             <Path fileType="library">/usr/lib</Path>
             <Path fileType="executable">/usr/bin</Path>
@@ -52,9 +56,6 @@
             <Path fileType="data">/usr/share/aclocal</Path>
             <Path fileType="data">/usr/share/GConf</Path>
         </Files>
-        <AdditionalFiles>
-            <AdditionalFile owner="root" permission="0644" target="/etc/gconf/2/path">gconf2.path</AdditionalFile>
-        </AdditionalFiles>
         <Provides>
             <COMAR script="pakhandler.py">System.PackageHandler</COMAR>
         </Provides>
@@ -70,6 +71,18 @@
     </Package>
 
     <History>
+        <Update release="19">
+            <Date>2011-06-29</Date>
+            <Version>2.32.4</Version>
+            <Comment>
+                - Version bump,
+                - Don't override system's path file,
+                - Create gsettings directory,
+                - Create missing directory which was failing gdm.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="18">
             <Date>2011-06-28</Date>
             <Version>2.32.1</Version>

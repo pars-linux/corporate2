@@ -15,15 +15,18 @@ def setup():
     autotools.autoreconf("-fiv")
     autotools.configure("--disable-static \
                          --enable-gtk \
+                         --enable-defaults-service \
                          --with-gtk=2.0 \
                          --enable-silent-rules")
-
-    #pisitools.dosed("libtool"," -shared "," -Wl,--as-needed -shared ")
 
 def build():
     autotools.make()
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+
+    pisitools.dodir("/etc/gconf/schemas")
+    pisitools.dodir("/etc/gconf/gconf.xml.system")
+    pisitools.dodir("/usr/share/GConf/gsettings")
 
     pisitools.dodoc("README", "TODO", "NEWS", "ChangeLog", "AUTHORS")
