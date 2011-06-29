@@ -1,0 +1,24 @@
+diff -Nur gcc-3.3.6-old//gcc/config/i386/linux64.h gcc-3.3.6/gcc/config/i386/linux64.h
+--- gcc-3.3.6-old//gcc/config/i386/linux64.h	2011-06-29 13:11:57.126001132 +0300
++++ gcc-3.3.6/gcc/config/i386/linux64.h	2011-06-29 13:13:46.054001137 +0300
+@@ -67,7 +67,7 @@
+   %{!shared: \
+     %{!static: \
+       %{rdynamic:-export-dynamic} \
+-      %{m32:%{!dynamic-linker:-dynamic-linker /lib/ld-linux.so.2}} \
++      %{m32:%{!dynamic-linker:-dynamic-linker /lib32/ld-linux.so.2}} \
+       %{!m32:%{!dynamic-linker:-dynamic-linker /lib64/ld-linux-x86-64.so.2}}} \
+     %{static:-static}}"
+ 
+diff -Nur gcc-3.3.6-old//gcc/config/i386/t-linux64 gcc-3.3.6/gcc/config/i386/t-linux64
+--- gcc-3.3.6-old//gcc/config/i386/t-linux64	2011-06-29 13:37:22.116001132 +0300
++++ gcc-3.3.6/gcc/config/i386/t-linux64	2011-06-29 13:37:43.502001082 +0300
+@@ -6,7 +6,7 @@
+ 
+ MULTILIB_OPTIONS = m64/m32
+ MULTILIB_DIRNAMES = 64 32 
+-MULTILIB_OSDIRNAMES = ../lib64 ../lib
++MULTILIB_OSDIRNAMES = ../lib64 ../lib32
+ 
+ LIBGCC = stmp-multilib
+ INSTALL_LIBGCC = install-multilib
