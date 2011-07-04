@@ -25,7 +25,10 @@ if __name__ == "__main__":
     cursor_theme = config.get("XCURSOR_THEME")
 
     desktop_file = loadConfig("/usr/share/display-managers/%s.desktop" % dm_name)
-    dm_path = desktop_file.get("Exec", xdm_path).split()[0]
+
+    dm_args = desktop_file.get("Exec", xdm_path).split()
+    dm_args.append("-nodaemon")
+
     if cursor_theme is None:
         cursor_theme = desktop_file.get("X-Pardus-XCursorTheme")
 
@@ -54,4 +57,4 @@ if __name__ == "__main__":
     if desktop_file.get("X-Pardus-PlymouthTransition") != "true":
         os.system("test -x /bin/plymouth && /bin/plymouth --ping && /bin/plymouth quit")
 
-    os.execl(dm_path, dm_path, "-nodaemon")
+    os.execv(dm_args[0], dm_args)
