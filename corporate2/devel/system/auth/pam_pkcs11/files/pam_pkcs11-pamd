@@ -1,0 +1,16 @@
+#%PAM-1.0
+
+auth       required		pam_env.so
+auth       [success=ignore default=1] pam_succeed_if.so service in kde:xscreensaver use_uid debug
+auth       [success=done ignore=ignore default=die] pam_pkcs11.so wait_for_card card_only debug
+auth       sufficient	pam_unix.so likeauth nullok nodelay
+auth       required		pam_deny.so
+
+account    required		pam_unix.so
+
+password   required		pam_cracklib.so retry=3
+password   sufficient	pam_unix.so nullok md5 shadow use_authtok
+password   required		pam_deny.so
+
+session    required		pam_limits.so
+session    required		pam_unix.so
