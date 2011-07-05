@@ -1,0 +1,13 @@
+Index: kdebase-3.5.10/kdm/backend/client.c
+===================================================================
+--- kdebase-3.5.10.orig/kdm/backend/client.c
++++ kdebase-3.5.10/kdm/backend/client.c
+@@ -398,7 +398,7 @@ doPAMAuth( const char *psrv, struct pam_
+ 		pamh = 0;
+ 		return 0;
+ 	}
+-	if (!curuser) {
++	if (curuser && strcmp(curuser, "") == 0) {
+ 		Debug( " asking PAM for user ...\n" );
+ 		pam_get_item( pamh, PAM_USER, &pitem );
+ 		ReInitErrorLog();
