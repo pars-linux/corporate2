@@ -22,6 +22,7 @@ def setup():
 
 def build():
     autotools.make()
+    autotools.make("-C po tr.gmo")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
