@@ -1,0 +1,22 @@
+Index: pam_pkcs11-0.6.6/src/pam_pkcs11/pam_pkcs11.c
+===================================================================
+--- pam_pkcs11-0.6.6.orig/src/pam_pkcs11/pam_pkcs11.c
++++ pam_pkcs11-0.6.6/src/pam_pkcs11/pam_pkcs11.c
+@@ -406,7 +406,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_h
+   } else {
+       snprintf(password_prompt, sizeof(password_prompt),
+ 		  _("%s found."), _(configuration->token_type));
+-      pam_prompt(pamh, PAM_TEXT_INFO, NULL, password_prompt);
++      /* pam_prompt(pamh, PAM_TEXT_INFO, NULL, password_prompt); Spurious message */
+   }
+   rv = open_pkcs11_session(ph, slot_num);
+   if (rv != 0) {
+@@ -428,7 +428,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_h
+     /* get password */
+ 	snprintf(password_prompt, sizeof(password_prompt),
+ 		_("Welcome %.32s!"), get_slot_tokenlabel(ph));
+-	pam_prompt(pamh, PAM_TEXT_INFO, NULL, password_prompt);
++	/*pam_prompt(pamh, PAM_TEXT_INFO, NULL, password_prompt); Spurious message */
+ 
+ 	/* no CKF_PROTECTED_AUTHENTICATION_PATH */
+ 	rv = get_slot_protected_authentication_path(ph);
