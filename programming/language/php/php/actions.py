@@ -129,10 +129,13 @@ def install():
     pisitools.dosed("%s/etc/php/*/php.ini" % get.installDIR(), r";include_path = \".:/php/includes\"",
                                                              "include_path = \".:/usr/share/php5/PEAR\"")
 
+    # Remove static modules
+    pisitools.remove("/usr/lib/php/modules/*.a")
+
     pisitools.dodir("/etc/php/ext")
     pisitools.dodir("/etc/php/apache2/ext")
     pisitools.dodir("/etc/php/cli/ext")
 
     # Operations for php-imap package
     pisitools.dosym("/etc/php/ext/11-php-imap.ini", "/etc/php/cli/ext/11-php-imap.ini")
-    pisitools.remove("/usr/lib/php/modules/imap.a")
+    pisitools.dosym("/etc/php/ext/11-php-imap.ini", "/etc/php/apache2/ext/11-php-imap.ini")
