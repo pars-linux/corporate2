@@ -1,6 +1,6 @@
-diff -Nur secure_delete-3.1-old/smem.1 secure_delete-3.1/smem.1
---- secure_delete-3.1-old/smem.1	2011-06-20 16:31:36.890599669 +0300
-+++ secure_delete-3.1/smem.1	2011-06-20 16:37:11.867622820 +0300
+diff -Nur secure_delete-3.1-old//smem.1 secure_delete-3.1/smem.1
+--- secure_delete-3.1-old//smem.1	2011-07-07 20:38:39.097001163 +0300
++++ secure_delete-3.1/smem.1	2011-07-07 20:38:50.517001179 +0300
 @@ -9,7 +9,7 @@
  sdmem \- secure memory wiper (secure_deletion toolkit)
  
@@ -20,9 +20,9 @@ diff -Nur secure_delete-3.1-old/smem.1 secure_delete-3.1/smem.1
  .B \-v
  verbose mode
  .PP
-diff -Nur secure_delete-3.1-old/smem.c secure_delete-3.1/smem.c
---- secure_delete-3.1-old/smem.c	2011-06-20 16:31:36.889599617 +0300
-+++ secure_delete-3.1/smem.c	2011-06-20 16:32:58.805684329 +0300
+diff -Nur secure_delete-3.1-old//smem.c secure_delete-3.1/smem.c
+--- secure_delete-3.1-old//smem.c	2011-07-07 20:38:39.096001164 +0300
++++ secure_delete-3.1/smem.c	2011-07-07 20:38:50.518001174 +0300
 @@ -46,6 +46,7 @@
      printf("Options:\n");
      printf("\t-f  fast (and insecure mode): no /dev/urandom.\n");
@@ -31,22 +31,33 @@ diff -Nur secure_delete-3.1-old/smem.c secure_delete-3.1/smem.c
      printf("\t-v  is verbose mode.\n");
      printf("\nsmem does a secure overwrite of the memory (RAM), because memory contents can\n");
      printf("be recovered even after a shutdown! Default is secure mode (38 writes).\n");
-@@ -127,7 +128,19 @@
+@@ -117,17 +118,29 @@
+         fprintf(stderr, "Warning: Not compiled with support for resetting ulimits for memory\n");
+ #endif
+ 
+-    if (mode > 1) {
++    if ((mode > 1) && (mode< 3)) {
+         for (turn=0; turn<27; turn++) {
+             __sdel_fill_buf(write_modes[turn], BLOCKSIZE + 2, buf);
+             memcpy(buffers[turn], buf, BLOCKSIZE);
+         }
+     }
++    else if (mode == 3) {
++        write_modes[0][0] = 0x55;
++        write_modes[0][1] = 0xaa;
++        fread(&write_modes[0][2], 1, 1, devrandom);
++    }
+ 
      alarm(600); /* needed to prevent mem caching */
  
      while ( (ptr = calloc(4096, 16)) != NULL) {
 -        if (mode > 0) {
 +        if (mode == 3) {
-+            __sdel_fill_buf(write_modes[0], BLOCKSIZE + 2, buf);
-+            memcpy(ptr, buf, BLOCKSIZE);
-+            __sdel_fill_buf(write_modes[1], BLOCKSIZE + 2, buf);
-+            memcpy(ptr, buf, BLOCKSIZE);
-+            __sdel_random_buf(BLOCKSIZE + 2, buf);
-+            memcpy(ptr, buf, BLOCKSIZE);
-+            __sdel_fill_buf(write_modes[0], BLOCKSIZE + 2, buf);
-+            memcpy(ptr, buf, BLOCKSIZE);
-+            __sdel_fill_buf(write_modes[1], BLOCKSIZE + 2, buf);
-+            memcpy(ptr, buf, BLOCKSIZE);
++            memset(ptr, (int)write_modes[0][0], BLOCKSIZE);
++            memset(ptr, (int)write_modes[0][1], BLOCKSIZE);
++            memset(ptr, (int)write_modes[0][2], BLOCKSIZE);
++            memset(ptr, (int)write_modes[0][0], BLOCKSIZE);
++            memset(ptr, (int)write_modes[0][1], BLOCKSIZE);
 +        }
 +        else if (mode > 0) {
              for (turn=0; turn<=36; turn++) {
