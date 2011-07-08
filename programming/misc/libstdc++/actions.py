@@ -102,7 +102,8 @@ def install():
         shelltools.echo("%s/%s" % (get.installDIR(), ldconfig["multilib"][0]), ldconfig["multilib"][1])
 
 
-    for i in ["/usr/lib/gcc-lib", "/usr/share/gcc-data"]:
+    # somehow /usr/share is left in farm, but not on my system
+    for i in ["/usr/lib/gcc-lib", "/usr/share/gcc-data", "/usr/share"]:
         if shelltools.isDirectory("%s/%s" % (get.installDIR(), i)):
             pisitools.removeDir(i)
 
