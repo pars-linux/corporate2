@@ -20,3 +20,25 @@ Index: pam_pkcs11-0.6.6/src/tools/pkcs11_eventmgr.c
  						moduleSpec, pkcs11_module);
  	module = SECMOD_LoadUserModule(moduleSpec, NULL, 0);
  	free(moduleSpec);
+Index: pam_pkcs11-0.6.6/src/pam_pkcs11/pam_pkcs11.c
+===================================================================
+--- pam_pkcs11-0.6.6.orig/src/pam_pkcs11/pam_pkcs11.c
++++ pam_pkcs11-0.6.6/src/pam_pkcs11/pam_pkcs11.c
+@@ -258,7 +258,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_h
+    *     is inserted
+    *  3) if not logged in, block until a token that could be used for logging in
+    *     is inserted
+-   * right now, logged in means PKC11_LOGIN_TOKEN_NAME is set,
++   * right now, logged in means PKCS11_LOGIN_TOKEN_NAME is set,
+    * but we could something else later (like set some per-user state in
+    * a pam session module keyed off uid)
+    */
+@@ -505,7 +505,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_h
+   for (i = 0; i < ncert; i++) {
+     X509 *x509 = (X509 *)get_X509_certificate(cert_list[i]);
+     if (!x509 ) continue; /* sanity check */
+-    DBG1("verifing the certificate #%d", i + 1);
++    DBG1("verifying the certificate #%d", i + 1);
+ 
+       /* verify certificate (date, signature, CRL, ...) */
+       rv = verify_certificate(x509,&configuration->policy);
