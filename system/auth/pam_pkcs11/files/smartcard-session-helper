@@ -1,0 +1,67 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+import glob
+import subprocess
+
+def lock(username):
+    """Lock the user's session through a DCOP call."""
+    ret = subprocess.call(["/usr/kde/3.5/bin/dcop", "--user", username,
+                           "kdesktop", "KScreensaverIface", "lock"])
+
+    return ret != 0
+
+def unlock(username, display):
+    """Show the PIN/Password entry popup by sending a fake key click
+    event to X11."""
+    ret = 255
+    if display:
+        env = os.environ
+        env["DISPLAY"] = display
+
+        ret = subprocess.Popen(["/bin/su", "-s", "/bin/sh", "-c",
+                               "/usr/bin/xdotool click 1",
+                               username],
+                               env=env).wait()
+
+    return ret != 0
+
+def get_pkcs11_loggedin_users():
+    """Return a dict of users who seems to be logged with
+    a PKCS#11 token."""
+    result = {}
+    env_vars = ("PKCS11_LOGIN_CERT_ISSUER",
+                "PKCS11_LOGIN_TOKEN_NAME",
+                "PKCS11_LOGIN_CERT_SERIAL",
+                "DISPLAY")
+    for env in glob.glob("/proc/*/environ"):
+        try:
+            environ = open(env, "r").read().strip()
+            if "DISPLAY=" in environ and \
+               "PKCS11_LOGIN_TOKEN_NAME=" in environ:
+                env = dict([line.split("=", 1) for line \
+                        in environ.split("\x00") if line])
+                result[env["USER"]] = dict([(k, env[k]) for \
+                        k in env.keys() if k in env_vars])
+        except IOError:
+            pass
+
+    return result
+
+if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        command = sys.argv[1]
+
+        users = get_pkcs11_loggedin_users()
+
+        if command == "lock":
+            for user in users.keys():
+                lock(user)
+
+        elif command == "unlock":
+            # Maybe we can check for certificates and usermappings
+            # and unlock that user's desktop
+            for user, envdict in users.items():
+                unlock(user, envdict["DISPLAY"])
