@@ -32,6 +32,7 @@
             <Patch level="1">add-tr.patch</Patch>
             <Patch level="1">suppress-unnecessary-messages.patch</Patch>
             <Patch level="1">fix-typos.patch</Patch>
+            <Patch level="1">pkcs11-eventmgr-syslog.patch</Patch>
 
             <Patch level="1">upstream/changeset_trunk_494.diff</Patch>
         </Patches>
@@ -42,6 +43,7 @@
         <RuntimeDependencies>
             <Dependency>nss</Dependency>
             <Dependency>nspr</Dependency>
+            <Dependency>xdotool</Dependency>
             <Dependency>pcsc-lite</Dependency>
             <Dependency>openldap-client</Dependency>
         </RuntimeDependencies>
@@ -58,12 +60,27 @@
         </Files>
         <AdditionalFiles>
             <!-- Out-of-the-box configuration file for AKIS -->
-            <AdditionalFile owner="root" permission="0644" target="/etc/pam_pkcs11/pam_pkcs11.conf.akis">pam_pkcs11.conf.akis</AdditionalFile>
-            <AdditionalFile owner="root" permission="0644" target="/etc/pam_pkcs11/pkcs11_eventmgr.conf.akis">pkcs11_eventmgr.conf.akis</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/pam_pkcs11/pam_pkcs11.conf">pam_pkcs11.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0644" target="/etc/pam_pkcs11/pkcs11_eventmgr.conf">pkcs11_eventmgr.conf</AdditionalFile>
+            <AdditionalFile owner="root" permission="0755" target="/usr/bin/smartcard-session-helper">smartcard-session-helper</AdditionalFile>
         </AdditionalFiles>
+        <Provides>
+            <COMAR script="service.py" name="pkcs11_eventmgr">System.Service</COMAR>
+        </Provides>
     </Package>
 
     <History>
+        <Update release="11">
+            <Date>2011-07-12</Date>
+            <Version>0.6.6</Version>
+            <Comment>
+                - Improve services for AKIS,
+                - Add system service for event manager,
+                - Correctly lock/unlock the session.
+            </Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="10">
             <Date>2011-07-05</Date>
             <Version>0.6.6</Version>

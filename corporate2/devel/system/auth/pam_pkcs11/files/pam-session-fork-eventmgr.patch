@@ -1,0 +1,49 @@
+Index: pam_pkcs11/pam_pkcs11.c
+===================================================================
+--- pam_pkcs11.orig/pam_pkcs11.c
++++ pam_pkcs11/pam_pkcs11.c
+@@ -33,6 +33,7 @@
+ #include <ctype.h>
+ #include <string.h>
+ #include <errno.h>
++#include <unistd.h>
+ #include "../scconf/scconf.h"
+ #include "../common/debug.h"
+ #include "../common/error.h"
+@@ -170,6 +171,21 @@ static int pam_get_pwd(pam_handle_t *pam
+   return PAM_CRED_INSUFFICIENT;
+ }
+ 
++static void
++run_pkcs11_eventmgr(pam_handle_t *pamh)
++{
++    int child;
++    child = fork();
++    if (child == 0) {
++        char *args[] = {NULL, NULL};
++
++        args[0] = strdup("/usr/bin/pkcs11_eventmgr");
++        execv("/usr/bin/pkcs11_eventmgr", args);
++        _exit(PAM_SYSTEM_ERR);
++    } else if (child > 0) {
++    }
++}
++
+ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
+ {
+   int i, rv;
+@@ -742,10 +758,12 @@ PAM_EXTERN int pam_sm_acct_mgmt(pam_hand
+ 
+ PAM_EXTERN int pam_sm_open_session(pam_handle_t *pamh, int flags, int argc, const char **argv)
+ {
+-  ERR("Warning: Function pam_sm_open_session() is not implemented in this module");
++  /*ERR("Warning: Function pam_sm_open_session() is not implemented in this module");
+   pam_syslog(pamh, LOG_WARNING,
+              "Function pm_sm_open_session() is not implemented in this module");
+-  return PAM_SERVICE_ERR;
++  */
++  run_pkcs11_eventmgr(pamh);
++  return PAM_SUCCESS;
+ }
+ 
+ PAM_EXTERN int pam_sm_close_session(pam_handle_t *pamh, int flags, int argc, const char **argv)
