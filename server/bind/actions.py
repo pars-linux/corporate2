@@ -62,12 +62,6 @@ def install():
     # At least drop a file in it
     shelltools.echo("%s%s/README" % (get.installDIR(), CHROOT), "Chroot jail for named")
 
-    # Documentation
-    pisitools.dodoc("CHANGES", "COPYRIGHT", "FAQ", "README")
-    pisitools.dodoc("doc/misc/*", "doc/draft/*", "doc/rfc/*", "contrib/named-bootconf/named-bootconf.sh", "contrib/nanny/nanny.pl")
-    pisitools.dohtml("doc/arm/*")
-    pisitools.remove("/usr/share/doc/%s/Makefile*" % get.srcNAME())
-
     # Create directories
     pisitools.dodir("/var/run/named")
     for d in ("pri", "sec", "slaves", "data", "dynamic"):
@@ -78,3 +72,9 @@ def install():
                       ("%s/pri" % BINDDIR, "/etc/bind/pri"),
                       ("%s/sec" % BINDDIR, "/etc/bind/sec")]:
         pisitools.dosym(src, dest)
+
+    # Documentation
+    pisitools.dodoc("CHANGES", "COPYRIGHT", "FAQ", "README")
+    pisitools.dodoc("doc/misc/*", "doc/draft/*", "doc/rfc/*", "contrib/named-bootconf/named-bootconf.sh", "contrib/nanny/nanny.pl")
+    pisitools.dohtml("doc/arm/*")
+    pisitools.remove("/usr/share/doc/%s/Makefile*" % get.srcNAME())
