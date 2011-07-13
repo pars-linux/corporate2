@@ -1,0 +1,13 @@
+#%PAM-1.0
+
+auth       required		pam_env.so
+auth       [success=done ignore=ignore default=die] pam_pkcs11.so wait_for_card card_only debug
+#auth       include      system-auth
+auth       required     pam_nologin.so
+auth       required     pam_deny.so
+
+account    include      system-auth
+
+password   include      system-auth
+
+session    include      system-auth
