@@ -9,16 +9,6 @@ PIDFILE = "/var/run/pcscd/pcscd.pid"
 
 @synchronized
 def start():
-    startDependencies("hal")
-
-    # pcscd wont start if these exist
-    import os
-    try:
-        os.unlink("/var/run/pcscd/pcscd.comm")
-        os.unlink("/var/run/pcscd/pcscd.pub")
-    except OSError:
-        pass
-
     startService(command="/usr/sbin/pcscd",
                  donotify=True)
 
