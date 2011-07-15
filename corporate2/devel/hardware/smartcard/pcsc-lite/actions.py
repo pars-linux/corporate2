@@ -11,7 +11,6 @@ from pisi.actionsapi import get
 
 def setup():
     autotools.autoreconf("-fi")
-
     autotools.configure("--enable-usbdropdir=/usr/lib/pcsc/drivers \
                          --disable-dependency-tracking \
                          --disable-static")
@@ -21,6 +20,10 @@ def build():
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
+
+    pisitools.dodir("/usr/lib/pcsc/drivers")
+    pisitools.dodir("/etc/reader.conf.d")
+
 
     pisitools.dodoc("AUTHORS", "ChangeLog", "DRIVERS", "HELP", "NEWS",
                     "README", "SECURITY", "doc/README.DAEMON")
