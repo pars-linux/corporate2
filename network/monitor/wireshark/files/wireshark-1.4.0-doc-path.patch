@@ -1,7 +1,8 @@
 635878: wireshark supplied filter manpage is empty
 
 tshark as executed by doc/Makefile tends to link with existing libraries in
-/usr/lib instead of just compiled libraries.
+/usr/lib instead of just compiled libraries. It's probably caused by
+removed rpath...
 
 Point the linker to the right place using LD_LIBRARY_PATH.
 
@@ -13,7 +14,7 @@ diff -up wireshark-1.4.0/doc/Makefile.in.orig wireshark-1.4.0/doc/Makefile.in
  
  wireshark-filter.pod: wireshark-filter.pod.template  ../tshark
 -	WIRESHARK_RUN_FROM_BUILD_DIRECTORY=1 ../tshark -G fields | \
-+	WIRESHARK_RUN_FROM_BUILD_DIRECTORY=1 LD_LIBRARY_PATH=../epan/.libs ../tshark -G fields | \
++	WIRESHARK_RUN_FROM_BUILD_DIRECTORY=1 LD_LIBRARY_PATH=../epan/.libs:../wiretap/.libs:../wsutil/.libs ../tshark -G fields | \
  	$(PERL) $(srcdir)/dfilter2pod.pl $(srcdir)/wireshark-filter.pod.template > wireshark-filter.pod
  
  capinfos.1: capinfos.pod ../config.h
