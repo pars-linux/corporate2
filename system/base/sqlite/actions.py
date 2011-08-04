@@ -10,8 +10,6 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-WorkDir = "%s-autoconf-3070701" % get.srcNAME()
-
 def setup():
     # Use secure delete. Even if the data is deleted with sqlite query, the traces of the deleted data still remains in the file
     # but cannot be seen with sqlite query. However, it can be seen by opening the file with a text editor.
