@@ -1,0 +1,84 @@
+commit 637c6d13fa0bc8facb0c5a742a4b661c2eb7256b
+Author: Ozan Çağlayan <ozan@pardus.org.tr>
+Date:   Wed Aug 10 11:19:15 2011 +0300
+
+    kcontrol/kdm:
+    
+    Fix the defaults of KDM kcontrol module and always read from
+    /etc/conf.d/mudur to avoid garbling system language (pb#17587)
+
+diff --git a/kcontrol/kdm/kdm-appear.cpp b/kcontrol/kdm/kdm-appear.cpp
+index 0c9c8ff..5917559 100644
+--- a/kcontrol/kdm/kdm-appear.cpp
++++ b/kcontrol/kdm/kdm-appear.cpp
+@@ -22,7 +22,6 @@
+ #include <unistd.h>
+ #include <sys/types.h>
+ 
+-
+ #include <qbuttongroup.h>
+ #include <qlabel.h>
+ #include <qlayout.h>
+@@ -250,10 +249,28 @@ void KDMAppearanceWidget::makeReadOnly()
+ void KDMAppearanceWidget::loadLanguageList(KLanguageButton *combo)
+ {
+   QStringList langlist = KGlobal::dirs()->findAllResources("locale",
+-			QString::fromLatin1("*/entry.desktop"));
++                        QString::fromLatin1("*/entry.desktop"));
+   langlist.sort();
+-  for ( QStringList::ConstIterator it = langlist.begin();
+-	it != langlist.end(); ++it )
++
++  // Fetch the current one from mudur configuration
++  QFile file("/etc/conf.d/mudur");
++  if (file.open(IO_ReadOnly)) {
++      QTextStream stream(&file);
++      QString line;
++      while ( !stream.atEnd() ) {
++          line = stream.readLine();
++          if (QString(line).replace(" ", "").startsWith("language=")) {
++              defaultLanguage = line.replace("\"", "").replace("language=", "");
++              file.close();
++              break;
++          }
++      }
++  }
++
++  if (defaultLanguage.isEmpty())
++      defaultLanguage = "tr";
++
++  for ( QStringList::ConstIterator it = langlist.begin(); it != langlist.end(); ++it )
+   {
+     QString fpath = (*it).left((*it).length() - 14);
+     int index = fpath.findRev('/');
+@@ -510,7 +527,7 @@ void KDMAppearanceWidget::load()
+   }
+ 
+   // get the language
+-  langcombo->setCurrentItem(config->readEntry("Language", "C"));
++  langcombo->setCurrentItem(config->readEntry("Language", defaultLanguage));
+ }
+ 
+ 
+@@ -527,7 +544,8 @@ void KDMAppearanceWidget::defaults()
+   xLineEdit->setText( "50" );
+   yLineEdit->setText( "50" );
+ 
+-  langcombo->setCurrentItem( "en_US" );
++  // Default is tr for KDM
++  langcombo->setCurrentItem(defaultLanguage);
+ }
+ 
+ QString KDMAppearanceWidget::quickHelp() const
+diff --git a/kcontrol/kdm/kdm-appear.h b/kcontrol/kdm/kdm-appear.h
+index 991b6e4..bd07eb3 100644
+--- a/kcontrol/kdm/kdm-appear.h
++++ b/kcontrol/kdm/kdm-appear.h
+@@ -77,6 +77,7 @@ private slots:
+ private:
+ 	enum { KdmNone, KdmClock, KdmLogo };
+ 	QLabel      *logoLabel;
++	QString     defaultLanguage;
+ 	QPushButton *logobutton;
+ 	KLineEdit    *greetstr_lined;
+ 	QString      logopath;
