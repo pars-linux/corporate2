@@ -13,7 +13,7 @@ def setup():
     autotools.autoreconf("-fi")
     autotools.configure("--disable-static \
                          --disable-dependency-tracking \
-                         --disable-more-warnings \
+                         --enable-more-warnings=no \
                          --with-crypto=nss \
                          --with-distro=pardus \
                          --with-resolvconf=/etc/resolv.conf \
