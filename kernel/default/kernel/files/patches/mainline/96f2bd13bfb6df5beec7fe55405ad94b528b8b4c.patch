@@ -1,0 +1,29 @@
+commit 96f2bd13bfb6df5beec7fe55405ad94b528b8b4c
+Author: Bruce Allan <bruce.w.allan@intel.com>
+Date:   Tue Aug 3 11:48:35 2010 +0000
+
+    e1000e: correct MAC-PHY interconnect register offset for 82579
+    
+    The MAC-PHY interconnect register set on ICH/PCH parts is accessed through
+    a peephole mechanism by writing an offset to a CSR register.  The offset
+    for the interconnect's half-duplex control register (which is used in a
+    jumbo frame workaround for 82579) is incorrect.
+    
+    Signed-off-by: Bruce Allan <bruce.w.allan@intel.com>
+    Tested-by: Jeff Pieper <jeffrey.e.pieper@intel.com>
+    Signed-off-by: Jeff Kirsher <jeffrey.t.kirsher@intel.com>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+diff --git a/drivers/net/e1000e/hw.h b/drivers/net/e1000e/hw.h
+index a419b07..66ed08f 100644
+--- a/drivers/net/e1000e/hw.h
++++ b/drivers/net/e1000e/hw.h
+@@ -313,7 +313,7 @@ enum e1e_registers {
+ #define E1000_KMRNCTRLSTA_DIAG_NELPBK	0x1000 /* Nearend Loopback mode */
+ #define E1000_KMRNCTRLSTA_K1_CONFIG	0x7
+ #define E1000_KMRNCTRLSTA_K1_ENABLE	0x0002
+-#define E1000_KMRNCTRLSTA_HD_CTRL	0x0002
++#define E1000_KMRNCTRLSTA_HD_CTRL	0x10   /* Kumeran HD Control */
+ 
+ #define IFE_PHY_EXTENDED_STATUS_CONTROL	0x10
+ #define IFE_PHY_SPECIAL_CONTROL		0x11 /* 100BaseTx PHY Special Control */
