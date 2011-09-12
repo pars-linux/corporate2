@@ -20,9 +20,13 @@
             <Dependency>libgsf</Dependency>
             <Dependency>libcroco</Dependency>
             <Dependency>gdk-pixbuf</Dependency>
+            <Dependency>gtk-doc</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">beb01bfb68607bc03adbfd3f238419b238d20fb6.patch</Patch>
+            <!-- Store node type separately in RsvgNode, CVE-2011-3146
+            See https://bugzilla.gnome.org/show_bug.cgi?id=658014 for details -->
+            <Patch level="1">CVE-2011-3146.patch</Patch>
         </Patches>
     </Source>
 
@@ -48,6 +52,15 @@
     </Package>
 
     <History>
+        <Update release="14" type="security">
+            <Date>2011-09-12</Date>
+            <Version>2.32.1</Version>
+            <Comment>* Version bump to fix NULL pointer dereference flaw, CVE-2011-3146 pb#19111.
+                * gtk-doc is needed to build the package, because of the autoreconf actions. This can be patched later, but as a workaround for now, I am adding gtk-doc as a build dependency.
+            </Comment>
+            <Name>Serdar Dalgıç</Name>
+            <Email>serdar@pardus.org.tr</Email>
+        </Update>
         <Update release="13">
             <Date>2010-12-17</Date>
             <Version>2.32.1</Version>
