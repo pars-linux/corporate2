@@ -106,8 +106,6 @@ def build():
     printfancy("building kvmtest")
     autotools.make("-C %s V=1 kvmtrace" % builddirkvmtest)
 
-    # autotools.make('-C CFLAGS="%s -static"' % cflags)
-
 def install():
     autotools.rawInstall('DESTDIR="%s"' % get.installDIR())
 
