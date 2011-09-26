@@ -1,0 +1,65 @@
+Index: kdebase-3.5.10/kcontrol/componentchooser/componentchooser.cpp
+===================================================================
+--- kdebase-3.5.10.orig/kcontrol/componentchooser/componentchooser.cpp
++++ kdebase-3.5.10/kcontrol/componentchooser/componentchooser.cpp
+@@ -24,6 +24,7 @@
+ #include <qlayout.h>
+ #include <qradiobutton.h>
+ #include <qwidgetstack.h>
++#include <qprocess.h>
+ 
+ #include <dcopclient.h>
+ 
+@@ -38,6 +39,7 @@
+ #include <ktrader.h>
+ #include <kurlrequester.h>
+ 
++
+ class MyListBoxItem: public QListBoxText
+ {
+ public:
+@@ -195,6 +197,7 @@ void CfgEmailClient::save(KConfig *)
+ 	{
+ 		pSettings->setSetting(KEMailSettings::ClientProgram, txtEMailClient->text());
+ 		pSettings->setSetting(KEMailSettings::ClientTerminal, (chkRunTerminal->isChecked()) ? "true" : "false");
++        saveGConf();
+ 	}
+ 
+ 	// insure proper permissions -- contains sensitive data
+@@ -207,6 +210,24 @@ void CfgEmailClient::save(KConfig *)
+ 	emit changed(false);
+ }
+ 
++void CfgEmailClient::saveGConf()
++{
++
++    QProcess *proc = new QProcess(this);
++    proc->addArgument("gconftool-2");
++    proc->addArgument("--set");
++    proc->addArgument("--type");
++    proc->addArgument("string");
++    proc->addArgument("/desktop/gnome/url-handlers/mailto/command");
++
++    QString emailClient = txtEMailClient->text().stripWhiteSpace();
++    emailClient.append(" %s");
++
++    proc->addArgument(emailClient);
++
++    proc->start();
++
++}
+ 
+ //END Email client config
+ 
+Index: kdebase-3.5.10/kcontrol/componentchooser/componentchooser.h
+===================================================================
+--- kdebase-3.5.10.orig/kcontrol/componentchooser/componentchooser.h
++++ kdebase-3.5.10/kcontrol/componentchooser/componentchooser.h
+@@ -76,6 +76,7 @@ public:
+ 
+ private:
+ 	KEMailSettings *pSettings;
++	void saveGConf();
+ 
+ protected slots:
+ 	void selectEmailClient();
