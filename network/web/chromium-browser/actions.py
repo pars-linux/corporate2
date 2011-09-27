@@ -66,6 +66,8 @@ def install():
     pisitools.insinto("/usr/lib/chromium-browser", "libffmpegsumo.so")
     pisitools.insinto("/usr/lib/chromium-browser", "ffmpegsumo_nolink")
 
+    pisitools.dosym("/usr/lib/nsbrowser/plugins", "/usr/lib/chromium-browser/plugins")
+
     # Nacl plugin
     # pisitools.insinto("/usr/lib/chromium-browser", "libppGoogleNaClPluginChrome.so")
 
