@@ -100,6 +100,23 @@ def setup():
                        --with-hsqldb-jar=/usr/share/java/hsqldb.jar \
                        --with-dict=ALL \
                        --with-extension-integration \
+                       --enable-ext-barcode \
+                       --enable-ext-ct2n \
+                       --enable-ext-diagram \
+                       --enable-ext-google-docs \
+                       --enable-ext-lightproof \
+                       --enable-ext-nlpsolver \
+                       --enable-ext-oooblogger \
+                       --enable-ext-pdfimport \
+                       --enable-ext-presenter-console \
+                       --enable-ext-presenter-minimizer \
+                       --enable-ext-report-builder \
+                       --enable-ext-scripting-beanshell \
+                       --enable-ext-scripting-javascript \
+                       --enable-ext-scripting-python \
+                       --enable-ext-typo \
+                       --enable-ext-watch-window \
+                       --enable-ext-wiki-publisher \
                        --with-max-jobs=%s' % (AppDir, AppDir, os.path.join(get.workDIR(),WorkDir), os.path.join(get.workDIR(),WorkDir), getJobCount()))
 
 def build():
