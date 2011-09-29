@@ -10,33 +10,25 @@ Index: kdebase-3.5.10/kcontrol/componentchooser/componentchooser.cpp
  
  #include <dcopclient.h>
  
-@@ -38,6 +39,7 @@
- #include <ktrader.h>
- #include <kurlrequester.h>
- 
-+
- class MyListBoxItem: public QListBoxText
- {
- public:
-@@ -190,11 +192,13 @@ void CfgEmailClient::save(KConfig *)
+@@ -190,11 +191,13 @@ void CfgEmailClient::save(KConfig *)
  	{
  		pSettings->setSetting(KEMailSettings::ClientProgram, QString::null);
  		pSettings->setSetting(KEMailSettings::ClientTerminal, "false");
-+        saveGConf("kmailservice");
++		saveGConf("kmailservice '%s'", "mailto");
  	}
  	else
  	{
  		pSettings->setSetting(KEMailSettings::ClientProgram, txtEMailClient->text());
  		pSettings->setSetting(KEMailSettings::ClientTerminal, (chkRunTerminal->isChecked()) ? "true" : "false");
-+        saveGConf(txtEMailClient->text().stripWhiteSpace());
++		saveGConf(txtEMailClient->text().stripWhiteSpace(), "mailto");
  	}
  
  	// insure proper permissions -- contains sensitive data
-@@ -207,6 +211,22 @@ void CfgEmailClient::save(KConfig *)
+@@ -207,6 +210,24 @@ void CfgEmailClient::save(KConfig *)
  	emit changed(false);
  }
  
-+void CfgEmailClient::saveGConf(QString emailClient)
++void CfgEmailClient::saveGConf(QString emailClient, QString mimeType)
 +{
 +
 +    QProcess *proc = new QProcess(this);
@@ -44,7 +36,9 @@ Index: kdebase-3.5.10/kcontrol/componentchooser/componentchooser.cpp
 +    proc->addArgument("--set");
 +    proc->addArgument("--type");
 +    proc->addArgument("string");
-+    proc->addArgument("/desktop/gnome/url-handlers/mailto/command");
++
++    QString gconfLink = "/desktop/gnome/url-handlers/" +  mimeType + "/command";
++    proc->addArgument(gconfLink);
 +
 +    emailClient.append(" '%s'");
 +    proc->addArgument(emailClient);
@@ -55,6 +49,45 @@ Index: kdebase-3.5.10/kcontrol/componentchooser/componentchooser.cpp
  
  //END Email client config
  
+@@ -353,6 +374,11 @@ void CfgBrowser::save(KConfig *) {
+ 	   else
+ 	      exec = "!" + exec; // Litteral command
+ 	}
++    // Store browser for http and https mimetypes
++
++	saveGConf(lineExec->text(), "http");
++	saveGConf(lineExec->text(), "https");
++
+ 	config->writePathEntry("BrowserApplication", exec, true, true);
+ 	config->sync();
+ 	delete config;
+@@ -376,6 +402,26 @@ void CfgBrowser::selectBrowser()
+ 	lineExec->setText(m_browserExec);
+ }
+ 
++void CfgBrowser::saveGConf(QString browserExe, QString mimeType)
++{
++    // TODO:Merge CfgBrowser::saveGconf and CfgEmailClient::saveGconf into one function
++    QProcess *proc = new QProcess(this);
++    proc->addArgument("gconftool-2");
++    proc->addArgument("--set");
++    proc->addArgument("--type");
++    proc->addArgument("string");
++
++    QString gconfLink = "/desktop/gnome/url-handlers/" +  mimeType + "/command";
++    proc->addArgument(gconfLink);
++
++    browserExe.append(" '%s'");
++    proc->addArgument(browserExe);
++
++    proc->start();
++
++}
++
++
+ //END Terminal Emulator Configuration
+ 
+ ComponentChooser::ComponentChooser(QWidget *parent, const char *name):
 Index: kdebase-3.5.10/kcontrol/componentchooser/componentchooser.h
 ===================================================================
 --- kdebase-3.5.10.orig/kcontrol/componentchooser/componentchooser.h
@@ -63,7 +96,15 @@ Index: kdebase-3.5.10/kcontrol/componentchooser/componentchooser.h
  
  private:
  	KEMailSettings *pSettings;
-+	void saveGConf(QString emailClient);
++	void saveGConf(QString emailClient, QString mimeType);
  
  protected slots:
  	void selectEmailClient();
+@@ -121,6 +122,7 @@ signals:
+ private:
+ 	QString m_browserExec;
+ 	KService::Ptr m_browserService;	
++	void saveGConf(QString browserExe, QString mimeType);
+ };
+ 
+ 
