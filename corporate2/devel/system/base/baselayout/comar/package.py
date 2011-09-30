@@ -199,6 +199,8 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
                 (207, "dansguardian"),
                 (208, "wireshark"),
                 (209, "zarafa"),
+                (210, "havp"),
+                (211, "amavis"),
             )
 
     for gid, groupName in groups:
@@ -271,6 +273,8 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
                 (170, "gdm", "GDM", "/var/lib/gdm", "/sbin/nologin", "", ["gdm"], [], []),
                 (200, "pnp", "PnP", "/dev/null", "/bin/false", "", ["pnp"], [], []),
                 (201, "zarafa", "Zarafa Service Account", "/var/lib/zarafa", "/sbin/nologin", "", ["zarafa"], [], []),
+                (202, "havp", "Havp User", "/dev/null", "/sbin/nologin", "", ["havp"], [], []),
+                (203, "amavis", "Amavis User", "/dev/null", "/sbin/nologin", "", ["amavis"], [], []),
                 (250, "mpd", "Music Player Daemon", "/var/lib/mpd", "/bin/false", "", ["audio", "pulse", "pulse-access", "pulse-rt"], [], []),
             )
 
