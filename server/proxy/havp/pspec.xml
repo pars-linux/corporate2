@@ -1,0 +1,57 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>havp</Name>
+        <Homepage>http://www.server-side.de/</Homepage>
+        <Packager>
+            <Name>Kaan Özdinçer</Name>
+            <Email>kozdincer@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv2</License>
+        <IsA>service</IsA>
+        <Summary>Http AntiVirus Proxy</Summary>
+        <Description>havp is a proxy with an antivirus filter. It does not cache or filter content. You need to mount filesystem with "-o mand".</Description>
+        <Archive sha1sum="5bb6b14b187e40a367f9097a5697e2f7ecffcb15" type="targz">http://www.server-side.de/download/havp-0.92a.tar.gz</Archive>
+        <BuildDependencies>
+            <Dependency>clamav</Dependency>
+        </BuildDependencies>
+    </Source>
+
+    <Package>
+        <Name>havp</Name>
+        <RuntimeDependencies>
+            <Dependency>clamav</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="config">/etc/havp/havp.config</Path>
+            <Path fileType="config">/etc/havp/blacklist</Path>
+            <Path fileType="config">/etc/havp/whitelist</Path>
+            <Path fileType="data">/etc/havp/havp.config.default</Path>
+            <Path fileType="data">/etc/havp/templates</Path>
+            <Path fileType="executable">/usr/sbin</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+            <Path fileType="data">/var/run/havp</Path>
+            <Path fileType="data">/var/tmp/havp</Path>
+            <Path fileType="data">/var/log/havp</Path>
+        </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/havp/havp.config">havp.config</AdditionalFile>
+        </AdditionalFiles>
+        <Provides>
+            <COMAR script="service.py">System.Service</COMAR>
+            <COMAR script="package.py">System.Package</COMAR>
+        </Provides>
+    </Package>
+
+    <History>
+        <Update release="1">
+            <Date>2011-04-16</Date>
+            <Version>0.92a</Version>
+            <Comment>First Release.</Comment>
+            <Name>Kaan Özdinçer</Name>
+            <Email>kozdincer@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
+
