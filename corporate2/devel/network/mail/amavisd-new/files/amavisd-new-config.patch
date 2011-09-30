@@ -1,0 +1,61 @@
+diff -Nuar amavisd-new-2.7.0.orig/amavisd.conf amavisd-new-2.7.0/amavisd.conf
+--- amavisd-new-2.7.0.orig/amavisd.conf	2011-07-15 10:05:39.168000105 +0300
++++ amavisd-new-2.7.0/amavisd.conf	2011-07-15 10:11:32.902000107 +0300
+@@ -14,28 +14,28 @@
+ # $bypass_decode_parts = 1;         # controls running of decoders&dearchivers
+ 
+ $max_servers = 2;            # num of pre-forked children (2..30 is common), -m
+-$daemon_user  = 'vscan';     # (no default;  customary: vscan or amavis), -u
+-$daemon_group = 'vscan';     # (no default;  customary: vscan or amavis), -g
++$daemon_user  = 'amavis';     # (no default;  customary: vscan or amavis), -u
++$daemon_group = 'amavis';     # (no default;  customary: vscan or amavis), -g
+ 
+ $mydomain = 'example.com';   # a convenient default for other settings
+ 
+-# $MYHOME = '/var/amavis';   # a convenient default for other settings, -H
+-$TEMPBASE = "$MYHOME/tmp";   # working directory, needs to exist, -T
++$MYHOME = '/var/spool/amavis';   # a convenient default for other settings, -H
++$TEMPBASE = "/var/tmp/amavisd";   # working directory, needs to exist, -T
+ $ENV{TMPDIR} = $TEMPBASE;    # environment variable TMPDIR, used by SA, etc.
+-$QUARANTINEDIR = '/var/virusmails';  # -Q
++$QUARANTINEDIR = '/var/spool/amavis/virusmails';  # -Q
+ # $quarantine_subdir_levels = 1;  # add level of subdirs to disperse quarantine
+ # $release_format = 'resend';     # 'attach', 'plain', 'resend'
+ # $report_format  = 'arf';        # 'attach', 'plain', 'resend', 'arf'
+ 
+ # $daemon_chroot_dir = $MYHOME;   # chroot directory or undef, -R
+ 
+-# $db_home   = "$MYHOME/db";      # dir for bdb nanny/cache/snmp databases, -D
++$db_home   = "/var/db/amavisd";      # dir for bdb nanny/cache/snmp databases, -D
+ # $helpers_home = "$MYHOME/var";  # working directory for SpamAssassin, -S
+-# $lock_file = "$MYHOME/var/amavisd.lock";  # -L
+-# $pid_file  = "$MYHOME/var/amavisd.pid";   # -P
++$lock_file = "/var/run/amavisd/amavisd.lock";  # -L
++$pid_file  = "/var/run/amavisd/amavisd.pid";   # -P
+ #NOTE: create directories $MYHOME/tmp, $MYHOME/var, $MYHOME/db manually
+ 
+-$log_level = 0;              # verbosity 0..5, -d
++$log_level = 2;              # verbosity 0..5, -d
+ $log_recip_templ = undef;    # disable by-recipient level-0 log entries
+ $do_syslog = 1;              # log via syslogd (preferred)
+ $syslog_facility = 'mail';   # Syslog facility as a string
+@@ -51,8 +51,9 @@
+ @mynetworks = qw( 127.0.0.0/8 [::1] [FE80::]/10 [FEC0::]/10
+                   10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 );
+ 
+-$unix_socketname = "$MYHOME/amavisd.sock";  # amavisd-release or amavis-milter
++# $unix_socketname = "/var/run/amavisd/amavisd.sock";  # amavisd-release or amavis-milter
+                # option(s) -p overrides $inet_socket_port and $unix_socketname
++$unix_socketname = undef;
+ 
+ $inet_socket_port = 10024;   # listen on this local TCP port(s)
+ # $inet_socket_port = [10024,10026];  # listen on multiple TCP ports
+@@ -145,7 +146,7 @@
+ 
+ # OTHER MORE COMMON SETTINGS (defaults may suffice):
+ 
+-# $myhostname = 'host.example.com';  # must be a fully-qualified domain name!
++$myhostname = 'host.example.com';  # must be a fully-qualified domain name!
+ 
+ # $notify_method  = 'smtp:[127.0.0.1]:10025';
+ # $forward_method = 'smtp:[127.0.0.1]:10025';  # set to undef with milter!
