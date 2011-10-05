@@ -1,0 +1,74 @@
+Index: kdebase-3.5.10/kmenuedit/menufile.cpp
+===================================================================
+--- kdebase-3.5.10.orig/kmenuedit/menufile.cpp
++++ kdebase-3.5.10/kmenuedit/menufile.cpp
+@@ -16,6 +16,8 @@
+  *
+  */
+ 
++#include <cstdlib>
++
+ #include <qfile.h>
+ #include <qtextstream.h>
+ #include <qregexp.h>
+@@ -24,7 +26,7 @@
+ #include <kglobal.h>
+ #include <klocale.h>
+ #include <kstandarddirs.h>
+-
++#include <kio/job.h>
+ #include "menufile.h"
+ 
+ 
+@@ -46,6 +48,8 @@
+ #define MF_SEPARATOR    "Separator"
+ #define MF_MERGE        "Merge"
+ 
++using namespace KIO;
++
+ MenuFile::MenuFile(const QString &file)
+  : m_fileName(file), m_bDirty(false)
+ {
+@@ -64,14 +68,31 @@ bool MenuFile::load()
+    QFile file( m_fileName );
+    if (!file.open( IO_ReadOnly ))
+    {
++      file.close();
+       kdWarning() << "Could not read " << m_fileName << endl;
+-      create();
+-      return false;
++
++      // If user-defined menu file is not available we need to copy
++      // it from XDG_CONFIG_DIRS/menus/applications-kmenuedit.menu
++      // If we use .menu file from system, QDomDocument fails to
++      // parse translations in menu. It fixes http://bugs.pardus.org.tr/5159
++      QString configDir = QString(getenv("XDG_CONFIG_DIRS"));
++      QString configFilePath = configDir.append("/menus/applications-kmenuedit.menu");
++      QFile configFileObject(configFilePath);
++      if (configFileObject.exists()) {
++         KIO::copy(configFilePath, m_fileName);
++         file.setName(configFilePath);
++         file.open( IO_ReadOnly );
++      }
++      else {
++         create();
++         return false;
++      }
+    }
+-   
++
+    QString errorMsg;
+    int errorRow;
+    int errorCol;
++
+    if ( !m_doc.setContent( &file, &errorMsg, &errorRow, &errorCol ) ) {
+       kdWarning() << "Parse error in " << m_fileName << ", line " << errorRow << ", col " << errorCol << ": " << errorMsg << endl;
+       file.close();
+@@ -79,7 +100,6 @@ bool MenuFile::load()
+       return false;
+    }
+    file.close();
+-
+    return true;
+ }
+ 
