@@ -1,0 +1,22 @@
+Index: jboss-5.1.0.GA/bin/run.sh
+===================================================================
+--- jboss-5.1.0.GA.orig/bin/run.sh
++++ jboss-5.1.0.GA/bin/run.sh
+@@ -10,6 +10,9 @@
+ DIRNAME=`dirname $0`
+ PROGNAME=`basename $0`
+ GREP="grep"
++JBOSS_PIDFILE=/var/run/jboss5.pid
++LAUNCH_JBOSS_IN_BACKGROUND=1
++
+ 
+ # Use the maximum available, or set MAX_FD != -1 to use that
+ MAX_FD="maximum"
+@@ -270,6 +273,7 @@ while true; do
+          -classpath "$JBOSS_CLASSPATH" \
+          org.jboss.Main "$@" &
+       JBOSS_PID=$!
++      echo $JBOSS_PID > $JBOSS_PIDFILE
+       # Trap common signals and relay them to the jboss process
+       trap "kill -HUP  $JBOSS_PID" HUP
+       trap "kill -TERM $JBOSS_PID" INT

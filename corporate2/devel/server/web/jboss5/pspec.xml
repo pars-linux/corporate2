@@ -1,0 +1,59 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>jboss5</Name>
+        <Homepage>http://www.jboss.org</Homepage>
+        <Packager>
+            <Name>Gökhan Özbulak</Name>
+            <Email>gozbulak@pardus.org.tr</Email>
+        </Packager>
+        <License>LGPLv2.1</License>
+        <Icon>jboss</Icon>
+        <Summary>An open-source Java EE based application server</Summary>
+        <Description>JBoss AS is a Java application server widely used for web application development, testing and production deployment. JBoss AS supports load balancing, clustering and a large set of J2EE specifications such as servlets, JSP, JDBC, EJBs and JNDI.</Description>
+        <Archive sha1sum="0906717eec83d57a3fdbdf090555cac036bffc6d" type="zip">mirrors://sourceforge/jboss/jboss-5.1.0.GA-jdk6.zip</Archive>
+        <Patches>
+            <Patch level="0">jboss_startup_pid.patch</Patch>
+            <Patch level="1">fix-port-conflict.patch</Patch>
+            <Patch level="1">fix-sysctl-path.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>jboss5</Name>
+        <IsA>service</IsA>
+        <RuntimeDependencies>
+            <Dependency versionFrom="1.5">sun-jdk</Dependency>
+        </RuntimeDependencies>
+        <Files>
+            <Path fileType="executable">/opt/jboss5</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+        <Provides>
+            <COMAR script="service.py">System.Service</COMAR>
+        </Provides>
+    </Package>
+
+    <Package>
+        <Name>jboss5-docs</Name>
+        <IsA>data:doc</IsA>
+        <Summary>Documentation files for JBoss</Summary>
+        <Description>This package contains some examples and schemas for JBoss.</Description>
+        <Files>
+            <Path fileType="doc">/opt/jboss5/docs</Path>
+        </Files>
+    </Package>
+
+
+    <History>
+        <Update release="1">
+            <Date>2011-03-02</Date>
+            <Version>5.1.0</Version>
+            <Comment>First release.</Comment>
+            <Name>Gökhan Özbulak</Name>
+            <Email>gozbulak@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
+
