@@ -1,0 +1,11 @@
+--- translations/makefile.mk.old	2011-05-19 13:53:17.000000000 +0200
++++ translations/makefile.mk	2011-07-27 14:24:07.000000000 +0200
+@@ -92,7 +92,7 @@ $(MISC)/sdf-l10n/%.sdf : $(MISC)/sdf-tem
+     sed -e "s/\ten-US\t/\tkid\t/" < $@.tmp > $@
+     rm -f $@.tmp
+ .ELSE
+-    $(PO2OO) --skipsource -i $(PRJ)/source/$(@:b) -t $(MISC)/sdf-template/en-US.sdf -o $@ -l $(@:b)
++    $(PO2OO) --skipsource -i $(PRJ)/source/$(@:b) -t $(MISC)/sdf-template/en-US.sdf -o $@ -l $(@:b) 2>&1 | grep -v -e "UserWarning:" -e "warnings\.warn"
+ .ENDIF
+ 
+ $(MISC)/merge.done : $(foreach,i,$(all_languages) $(MISC)/sdf-l10n/$i.sdf)
