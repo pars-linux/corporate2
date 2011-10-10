@@ -13,6 +13,8 @@ from pisi.actionsapi import get
 def setup():
     shelltools.export("CFLAGS", "%s -fPIC" % get.CFLAGS())
 
+    # Don't disable openldap to break circular dep. with openldap
+    # As workaround, we remove openldap-client runtime dep. in pspec
     autotools.configure("--with-saslauthd=/var/lib/sasl2 \
                          --with-pwcheck=/var/lib/sasl2 \
                          --with-configdir=/etc/sasl2 \
@@ -22,10 +24,10 @@ def setup():
                          --with-openssl \
                          --with-dblib=gdbm \
                          --with-gss_impl=mit \
+                         --with-ldap \
                          --with-devrandom=/dev/urandom \
                          --without-pgsql \
                          --without-mysql \
-                         --without-ldap \
                          --enable-anon \
                          --enable-cram \
                          --enable-digest \
@@ -33,7 +35,7 @@ def setup():
                          --enable-login \
                          --enable-ntlm \
                          --enable-plain \
-                         --disable-ldapdb \
+                         --enable-ldapdb \
                          --disable-krb4 \
                          --disable-otp \
                          --disable-java \
