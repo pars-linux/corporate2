@@ -10,7 +10,7 @@ serviceDesc = _({"en": "LibreOffice service mode",
 @synchronized
 def start():
     startService(command="/opt/LibreOffice/lib/libreoffice/program/soffice.bin",
-                 args="--headless",
+                 args="--headless accept=\"socket,host=localhost,port=8100;urp;\" -nofirststartwizard",
                  detach=True,
                  donotify=False)
 
