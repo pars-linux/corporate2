@@ -19,21 +19,21 @@ def setup():
                          --with-plugindir=/usr/lib/sasl2 \
                          --with-dbpath=/etc/sasl2/sasldb2 \
                          --with-pam \
-                         --with-ldap \
                          --with-openssl \
                          --with-dblib=gdbm \
                          --with-gss_impl=mit \
                          --with-devrandom=/dev/urandom \
                          --without-pgsql \
                          --without-mysql \
+                         --without-ldap \
                          --enable-anon \
                          --enable-cram \
                          --enable-digest \
                          --enable-gssapi \
-                         --enable-ldapdb \
                          --enable-login \
                          --enable-ntlm \
                          --enable-plain \
+                         --disable-ldapdb \
                          --disable-krb4 \
                          --disable-otp \
                          --disable-java \
