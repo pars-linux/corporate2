@@ -11,10 +11,14 @@ from pisi.actionsapi import shelltools
 
 import os
 
-WorkDir = "mozilla"
+WorkDir = "mozilla-1.9.2"
 NoStrip = ["/usr/include", "/usr/share/idl"]
 XulVersion = "1.9.2"
 XulDir = "/usr/lib/%s-%s" % (get.srcNAME(), XulVersion)
+
+# On 64-bit systems GRE config file should be installed with 64 suffix ie. /etc/gre.d/1.9.2.23.system-64.conf
+GreConfFileName64 = "%s-64.system.conf" % (get.srcVERSION())
+
 
 def setup():
     # Write xulrunner version correctly including the minor part
@@ -28,12 +32,22 @@ def setup():
     shelltools.system("/bin/bash ../../autoconf-213/autoconf-2.13 --macro-dir=../../autoconf-213/m4")
     shelltools.cd("../..")
 
-    autotools.configure('--enable-optimize="%s -Os -fno-strict-aliasing" --disable-strip --disable-install-strip' % get.CXXFLAGS())
+    shelltools.makedirs("objdir")
+    shelltools.cd("objdir")
+
+    #this dummy configure is needed to build locales.
+    shelltools.system("../configure --prefix=/usr --libdir=/usr/lib --disable-strip --disable-install-strip")
+
+    #now we have Makefiles needed to build locales (like toolkit/Makefile)
+    #since we need debug symbols in dbginfo packages, we shouldn't strip binaries
+    shelltools.system('../configure --enable-optimize="%s -Os -fno-strict-aliasing" --disable-strip --disable-install-strip' % get.CXXFLAGS())
 
 def build():
+    shelltools.cd("objdir")
     autotools.make()
 
 def install():
+    shelltools.cd("objdir")
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
 
     executable = ["xpcshell", "xpidl", "xpt_dump", "xpt_link",\
@@ -52,4 +66,7 @@ def install():
             for file in files:
                 shelltools.chmod(os.path.join(root, file), 0644)
 
-    pisitools.insinto("/etc/ld.so.conf.d", "20-xulrunner.conf")
+    pisitools.insinto("/etc/ld.so.conf.d", "../20-xulrunner.conf")
+
+    if get.ARCH() == "x86_64":
+        pisitools.rename("/etc/gre.d/%s.system.conf" % get.srcVERSION(), "%s" % GreConfFileName64)

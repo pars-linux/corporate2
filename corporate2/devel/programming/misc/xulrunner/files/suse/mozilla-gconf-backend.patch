@@ -1,11 +1,15 @@
 From: various contributors
 Subject: replace gconf backend with more complete mapping for lockdown feature
 
-Index: mozilla/extensions/pref/Makefile.in
-===================================================================
---- mozilla.orig/extensions/pref/Makefile.in
-+++ mozilla/extensions/pref/Makefile.in
-@@ -45,7 +45,7 @@ include $(DEPTH)/config/autoconf.mk
+diff --git a/extensions/pref/Makefile.in b/extensions/pref/Makefile.in
+--- a/extensions/pref/Makefile.in
++++ b/extensions/pref/Makefile.in
+@@ -40,13 +40,13 @@ DEPTH            = ../..
+ topsrcdir        = @top_srcdir@
+ srcdir           = @srcdir@
+ VPATH            = @srcdir@
+ 
+ include $(DEPTH)/config/autoconf.mk
  
  DIRS             = autoconfig
  
@@ -14,11 +18,16 @@ Index: mozilla/extensions/pref/Makefile.in
  DIRS		+= system-pref
  endif
  
-Index: mozilla/extensions/pref/system-pref/src/Makefile.in
-===================================================================
---- mozilla.orig/extensions/pref/system-pref/src/Makefile.in
-+++ mozilla/extensions/pref/system-pref/src/Makefile.in
-@@ -43,14 +43,17 @@ VPATH = @srcdir@
+ include $(topsrcdir)/config/rules.mk
+diff --git a/extensions/pref/system-pref/src/Makefile.in b/extensions/pref/system-pref/src/Makefile.in
+--- a/extensions/pref/system-pref/src/Makefile.in
++++ b/extensions/pref/system-pref/src/Makefile.in
+@@ -38,47 +38,41 @@
+ DEPTH = ../../../..
+ topsrcdir = @top_srcdir@
+ srcdir = @srcdir@
+ VPATH = @srcdir@
+ 
  include $(DEPTH)/config/autoconf.mk
  
  MODULE = system-pref
@@ -39,7 +48,7 @@ Index: mozilla/extensions/pref/system-pref/src/Makefile.in
  
  REQUIRES        = xpcom \
  		  string \
-@@ -58,27 +61,18 @@ REQUIRES        = xpcom \
+ 		  embedcomponents \
  		  pref \
  		  $(NULL)
  
@@ -72,11 +81,15 @@ Index: mozilla/extensions/pref/system-pref/src/Makefile.in
 -		-I$(srcdir)/gconf \
 -		$(NULL)
 -endif
-Index: mozilla/extensions/pref/system-pref/src/gconf/Makefile.in
-===================================================================
---- mozilla.orig/extensions/pref/system-pref/src/gconf/Makefile.in
-+++ mozilla/extensions/pref/system-pref/src/gconf/Makefile.in
-@@ -42,45 +42,32 @@ VPATH = @srcdir@
+diff --git a/extensions/pref/system-pref/src/gconf/Makefile.in b/extensions/pref/system-pref/src/gconf/Makefile.in
+--- a/extensions/pref/system-pref/src/gconf/Makefile.in
++++ b/extensions/pref/system-pref/src/gconf/Makefile.in
+@@ -37,50 +37,37 @@
+ 
+ DEPTH = ../../../../..
+ topsrcdir = @top_srcdir@
+ srcdir = @srcdir@
+ VPATH = @srcdir@
  
  include $(DEPTH)/config/autoconf.mk
  
@@ -133,11 +146,15 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/Makefile.in
 -	$(INSTALL) $(srcdir)/../nsSystemPrefFactory.cpp .
 -
  GARBAGE += nsSystemPrefFactory.cpp
-Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
-===================================================================
---- mozilla.orig/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
-+++ mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
-@@ -23,7 +23,9 @@
+diff --git a/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp b/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
+--- a/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
++++ b/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
+@@ -18,17 +18,19 @@
+  * The Original Code is mozilla.org code.
+  *
+  * The Initial Developer of the Original Code is Sun Microsystems, Inc.
+  * Portions created by Sun Microsystems are Copyright (C) 2003 Sun
+  * Microsystems, Inc. All Rights Reserved.
   *
   * Original Author: Bolian Yin (bolian.yin@sun.com)
   *
@@ -148,7 +165,17 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
   *
   * Alternatively, the contents of this file may be used under the terms of
   * either the GNU General Public License Version 2 or later (the "GPL"), or
-@@ -41,876 +43,1356 @@
+  * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the NPL, indicate your
+@@ -36,299 +38,1300 @@
+  * and other provisions required by the GPL or the LGPL. If you do not delete
+  * the provisions above, a recipient may use your version of this file under
+  * the terms of any one of the NPL, the GPL or the LGPL.
+  *
+  * ***** END LICENSE BLOCK ***** */
  
  #include <glib.h>
  #include <glib-object.h>
@@ -162,21 +189,38 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
  #include "nsIServiceManager.h"
  #include "nsIObserver.h"
  #include "nsWeakReference.h"
--
++#include "nsIPrefBranch2.h"
++#include "nsDataHashtable.h"
++#include "nsHashKeys.h"
++#include "nsICategoryManager.h"
++#include "nsIGenericFactory.h"
++#include "nsStringAPI.h"
++#include "nsIPermissionManager.h"
++#include "../nsSystemPref.h"
+ 
 -#include "nsString.h"
 -#include "nsSystemPrefLog.h"
 -#include "nsSystemPrefService.h"
--
++#define NS_SYSTEMPREF_SERVICE_CID                  \
++  { /* {3724e748-b088-4bf8-9298-aad426b66293} */       \
++    0x3724e748,                                        \
++    0xb088,                                            \
++    0x4bf8,                                            \
++        { 0x92, 0x98, 0xaa, 0xd4, 0x26, 0xb6, 0x62, 0x93 } \
++  }
+ 
 -/*************************************************************************
 - * The strange thing here is that we load the gconf library manually and 
 - * search the function pointers we need. If that process fails, no gconf
 - * support is available in mozilla. The aim is to make mozilla independent
 - * on gconf, in both compile time and run time.
 - ************************************************************************/
--
++#define NS_SYSTEMPREF_SERVICE_CLASSNAME "System Preferences Platform Service"
+ 
 -//gconf types
 -extern "C" {
--
++NS_DEFINE_STATIC_IID_ACCESSOR(nsISystemPrefService, NS_ISYSTEMPREFSERVICE_IID)
+ 
 -    typedef enum {
 -        GCONF_VALUE_INVALID,
 -        GCONF_VALUE_STRING,
@@ -184,16 +228,46 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -        GCONF_VALUE_FLOAT,
 -        GCONF_VALUE_BOOL,
 -        GCONF_VALUE_SCHEMA,
--
++/**
++ * We can link directly to the gconf library. If it's not available,
++ * this component just won't load and no system prefs will be offered.
++ */
+ 
 -        GCONF_VALUE_LIST,
 -        GCONF_VALUE_PAIR
--
++#define NUM_ELEM(a) (sizeof(a)/sizeof(a[0]))
+ 
 -    }GConfValueType;
--
++class nsSystemPrefService;
+ 
 -    typedef struct {
 -        GConfValueType type;
 -    }GConfValue;
--
++/**
++ * List the preferences that have a simple mapping between Moz and gconf.
++ * These preferences have the same meaning and their values are
++ * automatically converted.
++ */
++struct SimplePrefMapping {
++    const char *mozPrefName;
++    const char *gconfPrefName;
++    /**
++     * If this is PR_FALSE, then we never allow Mozilla to change
++     * this setting. The Mozilla pref will always be locked.
++     * If this is PR_TRUE then Mozilla will be allowed to change
++     * the setting --- but only if it is writable in gconf.
++     */
++    PRBool allowWritesFromMozilla;
++};
++typedef nsresult (* ComplexGConfPrefChanged)(nsSystemPrefService* aPrefService,
++                                             GConfClient* aClient);
++typedef nsresult (* ComplexMozPrefChanged)(nsSystemPrefService* aPrefService,
++                                           GConfClient* aClient);
++struct ComplexGConfPrefMapping {
++    const char* gconfPrefName;
++    ComplexGConfPrefChanged callback;
++};
+ 
 -    typedef void * (*GConfClientGetDefaultType) (void);
 -    typedef PRBool (*GConfClientGetBoolType) (void *client, const gchar *key,
 -                                              GError **err);
@@ -222,79 +296,39 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -    typedef void (*GConfClientRemoveDirType) (void *client,
 -                                              const gchar *dir,
 -                                              GError **err);
--
++struct ComplexMozPrefMapping {
++    const char* mozPrefName;
++    ComplexMozPrefChanged callback;
++};
+ 
 -    typedef const char* (*GConfEntryGetKeyType) (const void *entry);
 -    typedef GConfValue* (*GConfEntryGetValueType) (const void *entry);
--
++class nsSystemPrefService : public nsISystemPrefService, nsIPrefBranch
++ {
++ public:
++    NS_DECL_ISUPPORTS
++    NS_DECL_NSIPREFBRANCH
+ 
 -    typedef const char* (*GConfValueGetStringType) (const GConfValue *value);
 -    typedef PRInt32 (*GConfValueGetIntType) (const GConfValue *value);
 -    typedef PRBool (*GConfValueGetBoolType) (const GConfValue *value);
--
++    nsresult Init();
+ 
 -    
 -    static void gconf_key_listener (void* client, guint cnxn_id,
 -                                    void *entry, gpointer user_data);
 -}
--
++    virtual nsresult LoadSystemPreferences(nsISystemPref* aPrefs);
++    virtual nsresult NotifyMozillaPrefChanged(const char* aPrefName);
++    virtual nsresult NotifyUnloadSystemPreferences();
+ 
 -struct GConfCallbackData
 -{
 -    GConfProxy *proxy;
 -    void * userData;
 -    PRUint32 atom;
 -    PRUint32 notifyId;
-+#include "nsIPrefBranch2.h"
-+#include "nsDataHashtable.h"
-+#include "nsHashKeys.h"
-+#include "nsICategoryManager.h"
-+#include "nsIGenericFactory.h"
-+#include "nsStringAPI.h"
-+#include "nsIPermissionManager.h"
-+#include "../nsSystemPref.h"
-+
-+#define NS_SYSTEMPREF_SERVICE_CID                  \
-+  { /* {3724e748-b088-4bf8-9298-aad426b66293} */       \
-+    0x3724e748,                                        \
-+    0xb088,                                            \
-+    0x4bf8,                                            \
-+        { 0x92, 0x98, 0xaa, 0xd4, 0x26, 0xb6, 0x62, 0x93 } \
-+  }
-+
-+#define NS_SYSTEMPREF_SERVICE_CLASSNAME "System Preferences Platform Service"
-+
-+NS_DEFINE_STATIC_IID_ACCESSOR(nsISystemPrefService, NS_ISYSTEMPREFSERVICE_IID)
-+
-+/**
-+ * We can link directly to the gconf library. If it's not available,
-+ * this component just won't load and no system prefs will be offered.
-+ */
-+
-+#define NUM_ELEM(a) (sizeof(a)/sizeof(a[0]))
-+
-+class nsSystemPrefService;
-+
-+/**
-+ * List the preferences that have a simple mapping between Moz and gconf.
-+ * These preferences have the same meaning and their values are
-+ * automatically converted.
-+ */
-+struct SimplePrefMapping {
-+    const char *mozPrefName;
-+    const char *gconfPrefName;
-+    /**
-+     * If this is PR_FALSE, then we never allow Mozilla to change
-+     * this setting. The Mozilla pref will always be locked.
-+     * If this is PR_TRUE then Mozilla will be allowed to change
-+     * the setting --- but only if it is writable in gconf.
-+     */
-+    PRBool allowWritesFromMozilla;
-+};
-+typedef nsresult (* ComplexGConfPrefChanged)(nsSystemPrefService* aPrefService,
-+                                             GConfClient* aClient);
-+typedef nsresult (* ComplexMozPrefChanged)(nsSystemPrefService* aPrefService,
-+                                           GConfClient* aClient);
-+struct ComplexGConfPrefMapping {
-+    const char* gconfPrefName;
-+    ComplexGConfPrefChanged callback;
- };
+-};
 -//////////////////////////////////////////////////////////////////////
 -// GConPrxoy is a thin wrapper for easy use of gconf funcs. It loads the
 -// gconf library and initializes the func pointers for later use.
@@ -305,48 +339,30 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -    GConfProxy(nsSystemPrefService* aSysPrefService);
 -    ~GConfProxy();
 -    PRBool Init();
--
++    nsSystemPrefService();
++    virtual ~nsSystemPrefService();
+ 
 -    nsresult GetBoolPref(const char *aMozKey, PRBool *retval);
 -    nsresult GetCharPref(const char *aMozKey, char **retval);
 -    nsresult GetIntPref(const char *aMozKey, PRInt32 *retval);
 -
 -    nsresult NotifyAdd (PRUint32 aAtom, void *aUserData);
 -    nsresult NotifyRemove (PRUint32 aAtom, const void *aUserData);
- 
+-
 -    nsresult GetAtomForMozKey(const char *aMozKey, PRUint32 *aAtom) {
 -        return GetAtom(aMozKey, 0, aAtom); 
--    }
--    const char *GetMozKey(PRUint32 aAtom) {
--        return GetKey(aAtom, 0); 
--    }
-+struct ComplexMozPrefMapping {
-+    const char* mozPrefName;
-+    ComplexMozPrefChanged callback;
-+};
- 
--    void OnNotify(void *aClient, void * aEntry, PRUint32 aNotifyId,
--                  GConfCallbackData *aData);
-+class nsSystemPrefService : public nsISystemPrefService, nsIPrefBranch
-+ {
-+ public:
-+    NS_DECL_ISUPPORTS
-+    NS_DECL_NSIPREFBRANCH
-+
-+    nsresult Init();
-+
-+    virtual nsresult LoadSystemPreferences(nsISystemPref* aPrefs);
-+    virtual nsresult NotifyMozillaPrefChanged(const char* aPrefName);
-+    virtual nsresult NotifyUnloadSystemPreferences();
-+
-+    nsSystemPrefService();
-+    virtual ~nsSystemPrefService();
-+
 +    nsISystemPref* GetPrefs() { return mPref; }
 +    SimplePrefMapping* GetSimpleCallbackData(PRUint32 aKey) {
 +      SimplePrefMapping* result = nsnull;
 +      mGConfSimpleCallbacks.Get(aKey, &result);
 +      return result;
-+    }
+     }
+-    const char *GetMozKey(PRUint32 aAtom) {
+-        return GetKey(aAtom, 0); 
+-    }
+-
+-    void OnNotify(void *aClient, void * aEntry, PRUint32 aNotifyId,
+-                  GConfCallbackData *aData);
 +    ComplexGConfPrefMapping* GetComplexCallbackData(PRUint32 aKey) {
 +      ComplexGConfPrefMapping* result = nsnull;
 +      mGConfComplexCallbacks.Get(aKey, &result);
@@ -358,7 +374,13 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -    PRLibrary *mGConfLib;
 -    PRBool mInitialized;
 -    nsSystemPrefService *mSysPrefService;
--
++    nsISystemPref* mPref;
++    nsDataHashtable<nsUint32HashKey, SimplePrefMapping*> mGConfSimpleCallbacks;
++    nsDataHashtable<nsUint32HashKey, ComplexGConfPrefMapping*> mGConfComplexCallbacks;
++    // This is set to PR_FALSE temporarily to stop listening to gconf
++    // change notifications (while we change gconf values)
++    PRPackedBool mListenToGConf;
+ 
 -    //listeners
 -    nsAutoVoidArray *mObservers;
 -
@@ -398,21 +420,15 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -    static const char sPrefGConfKey[];
 -    static const char sDefaultLibName1[];
 -    static const char sDefaultLibName2[];
--};
-+    nsISystemPref* mPref;
-+    nsDataHashtable<nsUint32HashKey, SimplePrefMapping*> mGConfSimpleCallbacks;
-+    nsDataHashtable<nsUint32HashKey, ComplexGConfPrefMapping*> mGConfComplexCallbacks;
-+    // This is set to PR_FALSE temporarily to stop listening to gconf
-+    // change notifications (while we change gconf values)
-+    PRPackedBool mListenToGConf;
++    GConfValue* GConfGet(const char *aPrefName);
+ };
  
 -struct SysPrefCallbackData {
 -    nsISupports *observer;
 -    PRBool bIsWeakRef;
 -    PRUint32 prefAtom;
-+    GConfValue* GConfGet(const char *aPrefName);
- };
- 
+-};
+-
 -PRBool
 -sysPrefDeleteObserver(void *aElement, void *aData) {
 -    SysPrefCallbackData *pElement =
@@ -454,63 +470,30 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -    if (!gSysPrefLog) {
 -        gSysPrefLog = PR_NewLogModule("Syspref");
 -        if (!gSysPrefLog) return NS_ERROR_OUT_OF_MEMORY;
--    }
--
--    SYSPREF_LOG(("Init SystemPref Service\n"));
--    if (mInitialized)
--        return NS_ERROR_FAILURE;
--
--    if (!mGConf) {
--        mGConf = new GConfProxy(this);
--        if (!mGConf->Init()) {
--            delete mGConf;
--            mGConf = nsnull;
--            return NS_ERROR_FAILURE;
--        }
--    }
--
--    mInitialized = PR_TRUE;
-     return NS_OK;
- }
- 
--/* readonly attribute string root; */
--NS_IMETHODIMP nsSystemPrefService::GetRoot(char * *aRoot)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
--}
++    return NS_OK;
++}
++
 +NS_IMPL_ISUPPORTS2(nsSystemPrefService, 
 +                   nsISystemPrefService, 
 +                   nsIPrefBranch)
- 
--/* long getPrefType (in string aPrefName); */
--NS_IMETHODIMP nsSystemPrefService::GetPrefType(const char *aPrefName, PRInt32 *_retval)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
++
 +static GConfClient* GetGConf() {
 +    return gconf_client_get_default();
- }
- 
--/* boolean getBoolPref (in string aPrefName); */
--NS_IMETHODIMP nsSystemPrefService::GetBoolPref(const char *aPrefName, PRBool *_retval)
++}
++
 +static PRBool VerifyMatchingTypes(nsISystemPref* aPrefs,
 +                                  const char* aMozPref, GConfValue* aVal)
- {
--    return mInitialized ?
--        mGConf->GetBoolPref(aPrefName, _retval) : NS_ERROR_FAILURE;
--}
++{
 +    nsCOMPtr<nsIPrefBranch2> prefBranch = aPrefs->GetPrefUserBranch();
 +    PRInt32 type;
 +    nsresult rv = prefBranch->GetPrefType(aMozPref, &type);
 +    if (NS_FAILED(rv)) {
 +        // pref probably doesn't exist. Let gconf set it.
 +        return PR_TRUE;
-+    }
+     }
  
--/* void setBoolPref (in string aPrefName, in long aValue); */
--NS_IMETHODIMP nsSystemPrefService::SetBoolPref(const char *aPrefName, PRInt32 aValue)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
--}
+-    SYSPREF_LOG(("Init SystemPref Service\n"));
+-    if (mInitialized)
 +    PRBool ok;
 +    switch (aVal->type) {
 +    case GCONF_VALUE_STRING:
@@ -526,21 +509,11 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +        NS_ERROR("Unhandled gconf preference type");
 +        return PR_FALSE;
 +    }
- 
--/* string getCharPref (in string aPrefName); */
--NS_IMETHODIMP nsSystemPrefService::GetCharPref(const char *aPrefName, char **_retval)
--{
--    return mInitialized ?
--        mGConf->GetCharPref(aPrefName, _retval) : NS_ERROR_FAILURE;
++
 +    NS_ASSERTION(ok, "Mismatched gconf/Mozilla pref types");
 +    return ok;
- }
- 
--/* void setCharPref (in string aPrefName, in string aValue); */
--NS_IMETHODIMP nsSystemPrefService::SetCharPref(const char *aPrefName, const char *aValue)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
--}
++}
++
 +/**
 + * Map a gconf pref value into the corresponding Mozilla pref.
 + */
@@ -553,20 +526,9 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +        // No gconf key, so there's really nothing to do
 +        return NS_OK;
 +    }
- 
--/* long getIntPref (in string aPrefName); */
--NS_IMETHODIMP nsSystemPrefService::GetIntPref(const char *aPrefName, PRInt32 *_retval)
--{
--    return mInitialized ?
--        mGConf->GetIntPref(aPrefName, _retval) : NS_ERROR_FAILURE;
--}
++
 +    VerifyMatchingTypes(aPrefs, aMap->mozPrefName, val);
- 
--/* void setIntPref (in string aPrefName, in long aValue); */
--NS_IMETHODIMP nsSystemPrefService::SetIntPref(const char *aPrefName, PRInt32 aValue)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
--}
++
 +    PRBool locked = !aMap->allowWritesFromMozilla ||
 +        !gconf_client_key_is_writable(aClient, aMap->gconfPrefName, nsnull);
 +    nsresult rv;
@@ -614,14 +576,14 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +        gconf_client_key_is_writable(aClient, aMap->gconfPrefName, nsnull);
 +    if (!writable) {
 +        NS_ERROR("Gconf key is not writable");
-+        return NS_ERROR_FAILURE;
+         return NS_ERROR_FAILURE;
 +    }
  
--/* void getComplexValue (in string aPrefName, in nsIIDRef aType, [iid_is (aType), retval] out nsQIResult aValue); */
--NS_IMETHODIMP nsSystemPrefService::GetComplexValue(const char *aPrefName, const nsIID & aType, void * *aValue)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
--}
+-    if (!mGConf) {
+-        mGConf = new GConfProxy(this);
+-        if (!mGConf->Init()) {
+-            delete mGConf;
+-            mGConf = nsnull;
 +    nsCOMPtr<nsIPrefBranch2> prefBranch = aPrefs->GetPrefUserBranch();
 +    PRInt32 type;
 +    nsresult rv = prefBranch->GetPrefType(aMap->mozPrefName, &type);
@@ -629,12 +591,7 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +        NS_ERROR("Writing back a pref that doesn't exist?");
 +        return rv;
 +    }
- 
--/* void setComplexValue (in string aPrefName, in nsIIDRef aType, in nsISupports aValue); */
--NS_IMETHODIMP nsSystemPrefService::SetComplexValue(const char *aPrefName, const nsIID & aType, nsISupports *aValue)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
--}
++
 +    switch (type) {
 +    case nsIPrefBranch2::PREF_STRING:
 +        {
@@ -642,12 +599,7 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +            rv = prefBranch->GetCharPref(aMap->mozPrefName, &result);
 +            if (NS_FAILED(rv))
 +                return rv;
- 
--/* void clearUserPref (in string aPrefName); */
--NS_IMETHODIMP nsSystemPrefService::ClearUserPref(const char *aPrefName)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
--}
++
 +            gconf_client_set_string(aClient, aMap->gconfPrefName, result, nsnull);
 +            nsMemory::Free(result);
 +        }
@@ -658,12 +610,7 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +            rv = prefBranch->GetIntPref(aMap->mozPrefName, &result);
 +            if (NS_FAILED(rv))
 +                return rv;
- 
--/* void lockPref (in string aPrefName); */
--NS_IMETHODIMP nsSystemPrefService::LockPref(const char *aPrefName)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
--}
++
 +            gconf_client_set_int(aClient, aMap->gconfPrefName, result, nsnull);
 +        }
 +        break;
@@ -673,12 +620,7 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +            rv = prefBranch->GetBoolPref(aMap->mozPrefName, &result);
 +            if (NS_FAILED(rv))
 +                return rv;
- 
--/* boolean prefHasUserValue (in string aPrefName); */
--NS_IMETHODIMP nsSystemPrefService::PrefHasUserValue(const char *aPrefName, PRBool *_retval)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
--}
++
 +            gconf_client_set_bool(aClient, aMap->gconfPrefName, result, nsnull);
 +        }
 +        break;
@@ -686,16 +628,10 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +        NS_ERROR("Unhandled gconf preference type");
 +        return NS_ERROR_FAILURE;
 +    }
- 
--/* boolean prefIsLocked (in string aPrefName); */
--NS_IMETHODIMP nsSystemPrefService::PrefIsLocked(const char *aPrefName, PRBool *_retval)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
++
 +    return NS_OK;
- }
- 
--/* void unlockPref (in string aPrefName); */
--NS_IMETHODIMP nsSystemPrefService::UnlockPref(const char *aPrefName)
++}
++
 +/* BEGIN preference mapping definition area
 + *
 + * There are a few rules that our preference maps have to obey:
@@ -876,8 +812,7 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +static const char MozKey_DownloadDirExplicit[] = "browser.download.dir";
 +static nsresult ApplyDownloadFolder(nsSystemPrefService* aPrefService,
 +                                    GConfClient* aClient)
- {
--    return NS_ERROR_NOT_IMPLEMENTED;
++{
 +    char* str = gconf_client_get_string(aClient, GConfKey_DownloadFolder, nsnull);
 +    if (!str)
 +        return NS_ERROR_FAILURE;
@@ -909,12 +844,8 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +    }
 +    g_free(str);
 +    return rv;
- }
- 
--/* void deleteBranch (in string aStartingAt); */
--NS_IMETHODIMP nsSystemPrefService::DeleteBranch(const char *aStartingAt)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
++}
++
 +static nsresult ReverseApplyDownloadFolder(nsSystemPrefService* aPrefService,
 +                                           GConfClient* aClient)
 +{
@@ -940,9 +871,9 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +        case 3: result = "Home"; break;
 +        default:
 +            NS_ERROR("Unknown download dir type");
-+            return NS_ERROR_FAILURE;
-+        }
-+    }
+             return NS_ERROR_FAILURE;
+         }
+     }
 +    if (!result)
 +        return NS_ERROR_FAILURE;
 +    if (gconf_client_key_is_writable(aClient, GConfKey_DownloadFolder, nsnull))
@@ -952,12 +883,9 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +        NS_ERROR("Gconf key is not writable");
 +    nsMemory::Free(explicitStr);
 +    return NS_OK;
- }
++}
  
--/* void getChildList (in string aStartingAt, out unsigned long aCount, [array, size_is (aCount), retval] out string aChildArray); */
--NS_IMETHODIMP nsSystemPrefService::GetChildList(const char *aStartingAt, PRUint32 *aCount, char ***aChildArray)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
+-    mInitialized = PR_TRUE;
 +/**
 + * The relationship R is
 + * "/apps/firefox/web/disable_cookies" is true if and only if
@@ -1009,13 +937,9 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +        gconf_client_set_bool(aClient, GConfKey_DisableCookies, behavior == 2, nsnull);
 +    else
 +        NS_ERROR("Gconf key is not writable");
-+    return NS_OK;
+     return NS_OK;
  }
  
--/* void resetBranch (in string aStartingAt); */
--NS_IMETHODIMP nsSystemPrefService::ResetBranch(const char *aStartingAt)
--{
--    return NS_ERROR_NOT_IMPLEMENTED;
 +static char const* windowOpenFeatures[] = {
 +    "dom.disable_window_open_feature.close",
 +    "dom.disable_window_open_feature.directories",
@@ -1071,48 +995,11 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +            return rv;
 +    }
 +    return NS_OK;
- }
- 
--/* void addObserver (in string aDomain, in nsIObserver aObserver, in boolean aHoldWeak); */
--NS_IMETHODIMP nsSystemPrefService::AddObserver(const char *aDomain, nsIObserver *aObserver, PRBool aHoldWeak)
++}
++
 +static nsresult ReverseApplyWindowOpen(nsSystemPrefService* aPrefService,
 +                                       GConfClient* aClient)
- {
--    nsresult rv;
--
--    NS_ENSURE_ARG_POINTER(aDomain);
--    NS_ENSURE_ARG_POINTER(aObserver);
--
--    NS_ENSURE_TRUE(mInitialized, NS_ERROR_FAILURE);
--
--    PRUint32 prefAtom;
--    // make sure the pref name is supported
--    rv = mGConf->GetAtomForMozKey(aDomain, &prefAtom);
--    NS_ENSURE_SUCCESS(rv, rv);
--
--    if (!mObservers) {
--        mObservers = new nsAutoVoidArray();
--        if (mObservers == nsnull)
--            return NS_ERROR_OUT_OF_MEMORY;
--    }
--
--    SysPrefCallbackData *pCallbackData = (SysPrefCallbackData *)
--        nsMemory::Alloc(sizeof(SysPrefCallbackData));
--    if (pCallbackData == nsnull)
--        return NS_ERROR_OUT_OF_MEMORY;
--
--    pCallbackData->bIsWeakRef = aHoldWeak;
--    pCallbackData->prefAtom = prefAtom;
--    // hold a weak reference to the observer if so requested
--    nsCOMPtr<nsISupports> observerRef;
--    if (aHoldWeak) {
--        nsCOMPtr<nsISupportsWeakReference> weakRefFactory = 
--            do_QueryInterface(aObserver);
--        if (!weakRefFactory) {
--            // the caller didn't give us a object that supports weak reference.
--            // ... tell them
--            nsMemory::Free(pCallbackData);
--            return NS_ERROR_INVALID_ARG;
++{
 +    nsCOMPtr<nsIPrefBranch2> prefs = aPrefService->GetPrefs()->GetPrefUserBranch();
 +    PRBool allDisabled = PR_TRUE;
 +    PRBool curValues[NUM_ELEM(windowOpenFeatures)];
@@ -1122,22 +1009,15 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +            return rv;
 +        if (!curValues[i]) {
 +            allDisabled = PR_FALSE;
-         }
--        nsCOMPtr<nsIWeakReference> tmp = do_GetWeakReference(weakRefFactory);
--        observerRef = tmp;
--    } else {
--        observerRef = aObserver;
-     }
++        }
++    }
 +    if (gconf_client_key_is_writable(aClient, GConfKey_DisableJSChrome, nsnull))
 +        gconf_client_set_bool(aClient, GConfKey_DisableJSChrome, allDisabled, nsnull);
 +    else
 +        NS_ERROR("Gconf key is not writable");
 +    return NS_OK;
 +}
- 
--    rv = mGConf->NotifyAdd(prefAtom, pCallbackData);
--    if (NS_FAILED(rv)) {
--        nsMemory::Free(pCallbackData);
++
 +/**
 + * The relationship R is
 + * If "/apps/firefox/lockdown/disable_unsafe_protocol" is true then
@@ -1181,7 +1061,7 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +    char **childArray = nsnull;
 +    nsresult rv = prefs->GetChildList(MozKey_BlockedPrefix, &childCount, &childArray);
 +    if (NS_FAILED(rv))
-         return rv;
++        return rv;
 +    PRUint32 i;
 +    for (i = 0; i < childCount; ++i) {
 +        nsDependentCString tmp(childArray[i] + NUM_ELEM(MozKey_BlockedPrefix)-1);
@@ -1204,55 +1084,11 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +        } else {
 +            break;
 +        }
-     }
--
--    pCallbackData->observer = observerRef;
--    NS_ADDREF(pCallbackData->observer);
--
--    mObservers->AppendElement(pCallbackData);
++    }
 +    NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(childCount, childArray);
-     return NS_OK;
- }
- 
--/* void removeObserver (in string aDomain, in nsIObserver aObserver); */
--NS_IMETHODIMP nsSystemPrefService::RemoveObserver(const char *aDomain, nsIObserver *aObserver)
--{
--    nsresult rv;
--
--    NS_ENSURE_ARG_POINTER(aDomain);
--    NS_ENSURE_ARG_POINTER(aObserver);
--    NS_ENSURE_TRUE(mInitialized, NS_ERROR_FAILURE);
--
--    if (!mObservers)
--        return NS_OK;
--    
--    PRUint32 prefAtom;
--    // make sure the pref name is supported
--    rv = mGConf->GetAtomForMozKey(aDomain, &prefAtom);
--    NS_ENSURE_SUCCESS(rv, rv);
--
--    // need to find the index of observer, so we can remove it
--    PRIntn count = mObservers->Count();
--    if (count <= 0)
--        return NS_OK;
--
--    PRIntn i;
--    SysPrefCallbackData *pCallbackData;
--    for (i = 0; i < count; ++i) {
--        pCallbackData = (SysPrefCallbackData *)mObservers->ElementAt(i);
--        if (pCallbackData) {
--            nsCOMPtr<nsISupports> observerRef;
--            if (pCallbackData->bIsWeakRef) {
--                nsCOMPtr<nsISupportsWeakReference> weakRefFactory =
--                    do_QueryInterface(aObserver);
--                if (weakRefFactory) {
--                    nsCOMPtr<nsIWeakReference> tmp =
--                        do_GetWeakReference(aObserver);
--                    observerRef = tmp;
--                }
--            }
--            if (!observerRef)
--                observerRef = aObserver;
++    return NS_OK;
++}
++
 +struct ProtocolPrefClosure {
 +    StringSet safeProtocolSet;
 +    nsIPrefBranch2* prefs;
@@ -1260,16 +1096,7 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +    PRPackedBool disableUnsafe;
 +    PRPackedBool lock;
 +};
- 
--            if (pCallbackData->observer == observerRef &&
--                pCallbackData->prefAtom == prefAtom) {
--                rv = mGConf->NotifyRemove(prefAtom, pCallbackData);
--                if (NS_SUCCEEDED(rv)) {
--                    mObservers->RemoveElementAt(i);
--                    NS_RELEASE(pCallbackData->observer);
--                    nsMemory::Free(pCallbackData);
--                }
--                return rv;
++
 +static PLDHashOperator PR_CALLBACK SetProtocolPref(const nsACString& aKey,
 +                                                   int aItem,
 +                                                   void* aClosure)
@@ -1342,10 +1169,10 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +        if (val) {
 +            if (enabledProtocols.Length() > 0) {
 +                enabledProtocols.Append(',');
-             }
++            }
 +            enabledProtocols.Append(childArray[i] + NUM_ELEM(MozKey_BlockedPrefix)-1);
-         }
-     }
++        }
++    }
 +    NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(childCount, childArray);
 +    if (gconf_client_key_is_writable(aClient, GConfKey_DisableUnsafeProtocols, nsnull) &&
 +            gconf_client_key_is_writable(aClient, GConfKey_AdditionalSafeProtocols, nsnull)) {
@@ -1355,14 +1182,9 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +    } else {
 +        NS_ERROR("Gconf key is not writable");
 +    }
-     return NS_OK;
- }
- 
--void
--nsSystemPrefService::OnPrefChange(PRUint32 aPrefAtom, void *aData)
--{
--    if (!mInitialized)
--        return;
++    return NS_OK;
++}
++
 +/**
 + * Set config.lockdown.setwallpaper if and only if
 + * /desktop/gnome/background/picture_filename is write-only. Always
@@ -1410,10 +1232,7 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +    gconf_client_set_bool(aClient, GConfKey_DisableSavePassword, !remember, nsnull);
 +    return NS_OK;
 +}
- 
--    SysPrefCallbackData *pData = (SysPrefCallbackData *)aData;
--    if (pData->prefAtom != aPrefAtom)
--        return;
++
 +/**
 + * The relationship R is
 + * "permissions.default.image" is 1 (nsIPermissionManager::ALLOW_ACTION) if and only if
@@ -1455,23 +1274,7 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +    return aPrefService->GetPrefs()->
 +        SetOverridingMozillaIntPref(MozKey_ImagePermissions, pref, lock);
 +}
- 
--    nsCOMPtr<nsIObserver> observer;
--    if (pData->bIsWeakRef) {
--        nsCOMPtr<nsIWeakReference> weakRef =
--            do_QueryInterface(pData->observer);
--        if(weakRef)
--            observer = do_QueryReferent(weakRef);
--        if (!observer) {
--            // this weak referenced observer went away, remove it from the list
--            nsresult rv = mGConf->NotifyRemove(aPrefAtom, pData);
--            if (NS_SUCCEEDED(rv)) {
--                mObservers->RemoveElement(pData);
--                NS_RELEASE(pData->observer);
--                nsMemory::Free(pData);
--            }
--            return;
--        }
++
 +static nsresult ReverseApplyLoadImages(nsSystemPrefService* aPrefService,
 +                                        GConfClient* aClient)
 +{
@@ -1486,25 +1289,14 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +      case nsIPermissionManager::DENY_ACTION: setting = 2; break;
 +      case 3: setting = 1; break;
 +      default: return NS_ERROR_FAILURE;
-     }
++    }
 +    if (gconf_client_key_is_writable(aClient, GConfKey_LoadImages, nsnull))
 +        gconf_client_set_int(aClient, GConfKey_LoadImages, setting, nsnull);
-     else
--        observer = do_QueryInterface(pData->observer);
--
--    if (observer)
--        observer->Observe(static_cast<nsIPrefBranch *>(this),
--                          NS_SYSTEMPREF_PREFCHANGE_TOPIC_ID,
--                          NS_ConvertUTF8toUTF16(mGConf->GetMozKey(aPrefAtom)).
--                          get());
++    else
 +        NS_ERROR("Gconf key is not writable");
 +    return NS_OK;
- }
- 
--/*************************************************************
-- *  GConfProxy
-- *
-- ************************************************************/
++}
++
 +/**
 + * The relationship R is
 + * "/apps/firefox/web/disable_popups" is true if and only if
@@ -1533,11 +1325,7 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +    }
 +    return rv;
 +}
- 
--struct GConfFuncListType {
--    const char *FuncName;
--    PRFuncPtr  FuncPtr;
--};
++
 +static nsresult ReverseApplyDisablePopups(nsSystemPrefService* aPrefService,
 +                                          GConfClient* aClient)
 +{
@@ -1552,10 +1340,7 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +        NS_ERROR("Gconf key is not writable");
 +    return NS_OK;
 +}
- 
--struct PrefNamePair {
--    const char *mozPrefName;
--    const char *gconfPrefName;
++
 +static ComplexGConfPrefMapping sComplexGConfPrefMappings[] = {
 +    {GConfKey_TrustedURIs, ApplyTrustedURIs},
 +    {GConfKey_DelegationURIs, ApplyDelegationURIs},
@@ -1568,8 +1353,508 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 +    {GConfKey_DisableSavePassword, ApplyDisableSavePassword},
 +    {GConfKey_LoadImages, ApplyLoadImages},
 +    {GConfKey_DisablePopups, ApplyDisablePopups}
- };
++};
++static ComplexMozPrefMapping sComplexMozPrefMappings[] = {
++    {MozKey_TrustedURIs, ReverseApplyTrustedURIs},
++    {MozKey_DelegationURIs, ReverseApplyDelegationURIs},
++    {MozKey_UseDownloadDir, ReverseApplyDownloadFolder},
++    {MozKey_DownloadDirType, ReverseApplyDownloadFolder},
++    {MozKey_DownloadDirExplicit, ReverseApplyDownloadFolder},
++    {MozKey_CookieBehavior, ReverseApplyDisableCookies},
++    {MozKey_RememberSignons, ReverseApplyDisableSavePassword},
++    {MozKey_ImagePermissions, ReverseApplyLoadImages},
++    {MozKey_DisablePopups, ReverseApplyDisablePopups}
++};
++// The unsafe protocol preferences are handled specially because
++// they affect an unknown number of Mozilla preferences
++// Window opener permissions are also handled specially so we don't have to
++// repeat the windowOpenFeatures list.
++
++/* END preference mapping definition area */
++
++static PR_CALLBACK void GConfSimpleNotification(GConfClient* client,
++                                                guint cnxn_id,
++                                                GConfEntry *entry,
++                                                gpointer user_data)
++{
++    nsSystemPrefService* service = static_cast<nsSystemPrefService*>(user_data);
++    SimplePrefMapping* map = static_cast<SimplePrefMapping*>(
++                                            service->GetSimpleCallbackData(cnxn_id));
++    NS_ASSERTION(map, "Can't find mapping for callback");
++    if (!map)
++        return;
++
++    ApplySimpleMapping(map, service->GetPrefs(), client);
++}
++
++static PR_CALLBACK void GConfComplexNotification(GConfClient* client,
++                                                 guint cnxn_id,
++                                                 GConfEntry *entry,
++                                                 gpointer user_data)
++{
++    nsSystemPrefService* service = static_cast<nsSystemPrefService*>(user_data);
++    ComplexGConfPrefMapping* map = static_cast<ComplexGConfPrefMapping*>(
++                                                  service->GetComplexCallbackData(cnxn_id));
++    NS_ASSERTION(map, "Can't find mapping for callback");
++    if (!map)
++        return;
++
++    map->callback(service, GetGConf());
++}
++
++nsresult nsSystemPrefService::LoadSystemPreferences(nsISystemPref* aPrefs)
++{
++    mPref = aPrefs;
++
++    GConfClient* client = GetGConf();
++    PRUint32 i;
++    // Register simple mappings and callbacks
++    for (i = 0; i < NUM_ELEM(sSimplePrefMappings); ++i) {
++        guint cx = gconf_client_notify_add(client,
++                                           sSimplePrefMappings[i].gconfPrefName,
++                                           GConfSimpleNotification, this,
++                                           nsnull, nsnull);
++        mGConfSimpleCallbacks.Put(cx, &sSimplePrefMappings[i]);
++        nsresult rv = ApplySimpleMapping(&sSimplePrefMappings[i], aPrefs, client);
++        if (NS_FAILED(rv))
++            return rv;
++    }
++
++    // Update Mozilla settings with any gconf settings that have
++    // changed from the default. Do it before we register our
++    // Mozilla notifications.
++    ComplexGConfPrefChanged lastCallback = nsnull;
++    for (i = 0; i < NUM_ELEM(sComplexGConfPrefMappings); ++i) {
++        guint cx = gconf_client_notify_add(client,
++                                           sComplexGConfPrefMappings[i].gconfPrefName,
++                                           GConfComplexNotification, this,
++                                           nsnull, nsnull);
++        mGConfComplexCallbacks.Put(cx, &sComplexGConfPrefMappings[i]);
++        ComplexGConfPrefChanged cb = sComplexGConfPrefMappings[i].callback;
++        if (cb != lastCallback) {
++            cb(this, client);
++            lastCallback = cb;
++        }
++    }
++
++    nsCOMPtr<nsIPrefBranch2> userPrefs = aPrefs->GetPrefUserBranch();
++
++    // Update gconf settings with any Mozilla settings that have
++    // changed from the default.
++    for (i = 0; i < NUM_ELEM(sSimplePrefMappings); ++i) {
++        gconf_client_add_dir(client, sSimplePrefMappings[i].gconfPrefName,
++                             GCONF_CLIENT_PRELOAD_NONE, nsnull);
++
++        PRBool hasUserPref = PR_FALSE;
++        nsresult rv =
++            userPrefs->PrefHasUserValue(sSimplePrefMappings[i].mozPrefName,
++                                        &hasUserPref);
++        if (NS_FAILED(rv))
++            return rv;
++        if (hasUserPref && sSimplePrefMappings[i].allowWritesFromMozilla) {
++            rv = ReverseApplySimpleMapping(&sSimplePrefMappings[i],
++                                           aPrefs, client);
++            if (NS_FAILED(rv))
++                return rv;
++        }
++    }
++    for (i = 0; i < NUM_ELEM(sComplexGConfPrefMappings); ++i) {
++        gconf_client_add_dir(client, sComplexGConfPrefMappings[i].gconfPrefName,
++                             GCONF_CLIENT_PRELOAD_NONE, nsnull);
++    }
++    ComplexMozPrefChanged lastMozCallback = nsnull;
++    for (i = 0; i < NUM_ELEM(sComplexMozPrefMappings); ++i) {
++        PRBool hasUserPref = PR_FALSE;
++        nsresult rv =
++            userPrefs->PrefHasUserValue(sComplexMozPrefMappings[i].mozPrefName,
++                                        &hasUserPref);
++        if (NS_FAILED(rv))
++            return rv;
++        if (hasUserPref) {
++            ComplexMozPrefChanged cb = sComplexMozPrefMappings[i].callback;
++            if (cb != lastMozCallback) {
++                cb(this, client);
++                lastMozCallback = cb;
++            }
++        }
++    }
++
++    ApplyUnsafeProtocols(this, client);
++
++    return NS_OK;
++}
++
++nsresult nsSystemPrefService::NotifyMozillaPrefChanged(const char* aPrefName)
++{
++    PRUint32 i;
++    GConfClient* client = GetGConf();
++
++    for (i = 0; i < NUM_ELEM(sSimplePrefMappings); ++i) {
++        if (!strcmp(aPrefName, sSimplePrefMappings[i].mozPrefName)) {
++            ReverseApplySimpleMapping(&sSimplePrefMappings[i],
++                                      mPref, client);
++        }
++    }
++
++    for (i = 0; i < NUM_ELEM(sComplexMozPrefMappings); ++i) {
++        if (!strcmp(aPrefName, sComplexMozPrefMappings[i].mozPrefName)) {
++            sComplexMozPrefMappings[i].callback(this, client);
++        }
++    }
++
++    for (i = 0; i < NUM_ELEM(windowOpenFeatures); ++i) {
++        if (!strcmp(aPrefName, windowOpenFeatures[i])) {
++            ReverseApplyWindowOpen(this, client);
++        }
++    }
++
++    ReverseApplyUnsafeProtocols(this, client);
++
++    return NS_OK;
++}
++
++static PLDHashOperator PR_CALLBACK UnregisterSimple(const PRUint32& aKey,
++                                                    SimplePrefMapping* aData,
++                                                    void* aClosure)
++{
++    GConfClient* client = GetGConf();
++    gconf_client_notify_remove(client, aKey);
++    gconf_client_remove_dir(client, aData->gconfPrefName, nsnull);
++    return PL_DHASH_NEXT;
++}
++
++static PLDHashOperator PR_CALLBACK UnregisterComplex(const PRUint32& aKey,
++                                                     ComplexGConfPrefMapping* aData,
++                                                     void* aClosure)
++{
++    GConfClient* client = GetGConf();
++    gconf_client_notify_remove(client, aKey);
++    gconf_client_remove_dir(client, aData->gconfPrefName, nsnull);
++    return PL_DHASH_NEXT;
++}
++
++nsresult nsSystemPrefService::NotifyUnloadSystemPreferences()
++{
++    // Unregister callbacks
++    mGConfSimpleCallbacks.EnumerateRead(UnregisterSimple, this);
++    mGConfSimpleCallbacks.Clear();
++    mGConfComplexCallbacks.EnumerateRead(UnregisterComplex, this);
++    mGConfComplexCallbacks.Clear();
++
++    return NS_OK;
++}
++
++// PrefBranch interfaces
++
++GConfValue* nsSystemPrefService::GConfGet(const char *aPrefName)
++{
++    PRUint32 i;
++    PRBool found = PR_FALSE;
++    GConfValue *val = NULL;
++    GConfClient* client = GetGConf();
++    NS_ASSERTION(client, "Could not get default GConf client");
++    if (!client) {
++        return NULL;
++    }
++    for (i = 0; i < NUM_ELEM(sSimplePrefMappings); ++i) {
++        if (!strcmp(aPrefName, sSimplePrefMappings[i].mozPrefName)) {
++            found = PR_TRUE;
++            break;
++        }
++    }
++    if (found) {
++        val = gconf_client_get(client, 
++                               sSimplePrefMappings[i].gconfPrefName, 
++                               NULL);
++    }
++    return val;
++}
++
+ /* readonly attribute string root; */
+ NS_IMETHODIMP nsSystemPrefService::GetRoot(char * *aRoot)
+ {
+     return NS_ERROR_NOT_IMPLEMENTED;
+ }
+ 
+ /* long getPrefType (in string aPrefName); */
+ NS_IMETHODIMP nsSystemPrefService::GetPrefType(const char *aPrefName, PRInt32 *_retval)
+ {
+     return NS_ERROR_NOT_IMPLEMENTED;
+ }
+ 
+ /* boolean getBoolPref (in string aPrefName); */
+ NS_IMETHODIMP nsSystemPrefService::GetBoolPref(const char *aPrefName, PRBool *_retval)
+ {
+-    return mInitialized ?
+-        mGConf->GetBoolPref(aPrefName, _retval) : NS_ERROR_FAILURE;
++    GConfValue *val = GConfGet(aPrefName);
++    if (val) {
++        *_retval = (PRBool)(gconf_value_get_bool(val));
++        return NS_OK;
++    }
++    return NS_ERROR_FAILURE;
+ }
+ 
+ /* void setBoolPref (in string aPrefName, in long aValue); */
+ NS_IMETHODIMP nsSystemPrefService::SetBoolPref(const char *aPrefName, PRInt32 aValue)
+ {
+     return NS_ERROR_NOT_IMPLEMENTED;
+ }
+ 
+ /* string getCharPref (in string aPrefName); */
+ NS_IMETHODIMP nsSystemPrefService::GetCharPref(const char *aPrefName, char **_retval)
+ {
+-    return mInitialized ?
+-        mGConf->GetCharPref(aPrefName, _retval) : NS_ERROR_FAILURE;
++    GConfValue *val = GConfGet(aPrefName);
++    if (val) {
++        *_retval = (char*)(gconf_value_get_string(val));
++        return *_retval ? NS_OK : NS_ERROR_FAILURE;
++    }
++    return NS_ERROR_FAILURE;
+ }
+ 
+ /* void setCharPref (in string aPrefName, in string aValue); */
+ NS_IMETHODIMP nsSystemPrefService::SetCharPref(const char *aPrefName, const char *aValue)
+ {
+     return NS_ERROR_NOT_IMPLEMENTED;
+ }
+ 
+ /* long getIntPref (in string aPrefName); */
+ NS_IMETHODIMP nsSystemPrefService::GetIntPref(const char *aPrefName, PRInt32 *_retval)
+ {
+-    return mInitialized ?
+-        mGConf->GetIntPref(aPrefName, _retval) : NS_ERROR_FAILURE;
++    GConfValue *val = GConfGet(aPrefName);
++    if (val) {
++        *_retval = (PRInt32)(gconf_value_get_int(val));
++        return NS_OK;
++    }
++    return NS_ERROR_FAILURE;
+ }
+ 
+ /* void setIntPref (in string aPrefName, in long aValue); */
+ NS_IMETHODIMP nsSystemPrefService::SetIntPref(const char *aPrefName, PRInt32 aValue)
+ {
+     return NS_ERROR_NOT_IMPLEMENTED;
+ }
+ 
+-/* void getComplexValue (in string aPrefName, in nsIIDRef aType, [iid_is (aType), retval] out nsQIResult aValue); */
++/* void getComplexValue (in string aPrefName, in nsIIDRef aType, [iid_is
++ * (aType), retval] out nsQIResult aValue); */
+ NS_IMETHODIMP nsSystemPrefService::GetComplexValue(const char *aPrefName, const nsIID & aType, void * *aValue)
+ {
+     return NS_ERROR_NOT_IMPLEMENTED;
+ }
 -
+-/* void setComplexValue (in string aPrefName, in nsIIDRef aType, in nsISupports aValue); */
++/* void setComplexValue (in string aPrefName, in nsIIDRef aType, in
++ * nsISupports aValue); */
+ NS_IMETHODIMP nsSystemPrefService::SetComplexValue(const char *aPrefName, const nsIID & aType, nsISupports *aValue)
+ {
+     return NS_ERROR_NOT_IMPLEMENTED;
+ }
+ 
+ /* void clearUserPref (in string aPrefName); */
+ NS_IMETHODIMP nsSystemPrefService::ClearUserPref(const char *aPrefName)
+ {
+@@ -360,557 +1363,36 @@ NS_IMETHODIMP nsSystemPrefService::Unloc
+ }
+ 
+ /* void deleteBranch (in string aStartingAt); */
+ NS_IMETHODIMP nsSystemPrefService::DeleteBranch(const char *aStartingAt)
+ {
+     return NS_ERROR_NOT_IMPLEMENTED;
+ }
+ 
+-/* void getChildList (in string aStartingAt, out unsigned long aCount, [array, size_is (aCount), retval] out string aChildArray); */
++/* void getChildList (in string aStartingAt, out unsigned long aCount, [array,
++ * size_is (aCount), retval] out string aChildArray); */
+ NS_IMETHODIMP nsSystemPrefService::GetChildList(const char *aStartingAt, PRUint32 *aCount, char ***aChildArray)
+ {
+     return NS_ERROR_NOT_IMPLEMENTED;
+ }
+ 
+ /* void resetBranch (in string aStartingAt); */
+ NS_IMETHODIMP nsSystemPrefService::ResetBranch(const char *aStartingAt)
+ {
+     return NS_ERROR_NOT_IMPLEMENTED;
+ }
+ 
+-/* void addObserver (in string aDomain, in nsIObserver aObserver, in boolean aHoldWeak); */
+-NS_IMETHODIMP nsSystemPrefService::AddObserver(const char *aDomain, nsIObserver *aObserver, PRBool aHoldWeak)
+-{
+-    nsresult rv;
+ 
+-    NS_ENSURE_ARG_POINTER(aDomain);
+-    NS_ENSURE_ARG_POINTER(aObserver);
++// Factory stuff
+ 
+-    NS_ENSURE_TRUE(mInitialized, NS_ERROR_FAILURE);
++NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsSystemPrefService, Init)
+ 
+-    PRUint32 prefAtom;
+-    // make sure the pref name is supported
+-    rv = mGConf->GetAtomForMozKey(aDomain, &prefAtom);
+-    NS_ENSURE_SUCCESS(rv, rv);
+-
+-    if (!mObservers) {
+-        mObservers = new nsAutoVoidArray();
+-        if (mObservers == nsnull)
+-            return NS_ERROR_OUT_OF_MEMORY;
+-    }
+-
+-    SysPrefCallbackData *pCallbackData = (SysPrefCallbackData *)
+-        nsMemory::Alloc(sizeof(SysPrefCallbackData));
+-    if (pCallbackData == nsnull)
+-        return NS_ERROR_OUT_OF_MEMORY;
+-
+-    pCallbackData->bIsWeakRef = aHoldWeak;
+-    pCallbackData->prefAtom = prefAtom;
+-    // hold a weak reference to the observer if so requested
+-    nsCOMPtr<nsISupports> observerRef;
+-    if (aHoldWeak) {
+-        nsCOMPtr<nsISupportsWeakReference> weakRefFactory = 
+-            do_QueryInterface(aObserver);
+-        if (!weakRefFactory) {
+-            // the caller didn't give us a object that supports weak reference.
+-            // ... tell them
+-            nsMemory::Free(pCallbackData);
+-            return NS_ERROR_INVALID_ARG;
+-        }
+-        nsCOMPtr<nsIWeakReference> tmp = do_GetWeakReference(weakRefFactory);
+-        observerRef = tmp;
+-    } else {
+-        observerRef = aObserver;
+-    }
+-
+-    rv = mGConf->NotifyAdd(prefAtom, pCallbackData);
+-    if (NS_FAILED(rv)) {
+-        nsMemory::Free(pCallbackData);
+-        return rv;
+-    }
+-
+-    pCallbackData->observer = observerRef;
+-    NS_ADDREF(pCallbackData->observer);
+-
+-    mObservers->AppendElement(pCallbackData);
+-    return NS_OK;
+-}
+-
+-/* void removeObserver (in string aDomain, in nsIObserver aObserver); */
+-NS_IMETHODIMP nsSystemPrefService::RemoveObserver(const char *aDomain, nsIObserver *aObserver)
+-{
+-    nsresult rv;
+-
+-    NS_ENSURE_ARG_POINTER(aDomain);
+-    NS_ENSURE_ARG_POINTER(aObserver);
+-    NS_ENSURE_TRUE(mInitialized, NS_ERROR_FAILURE);
+-
+-    if (!mObservers)
+-        return NS_OK;
+-    
+-    PRUint32 prefAtom;
+-    // make sure the pref name is supported
+-    rv = mGConf->GetAtomForMozKey(aDomain, &prefAtom);
+-    NS_ENSURE_SUCCESS(rv, rv);
+-
+-    // need to find the index of observer, so we can remove it
+-    PRIntn count = mObservers->Count();
+-    if (count <= 0)
+-        return NS_OK;
+-
+-    PRIntn i;
+-    SysPrefCallbackData *pCallbackData;
+-    for (i = 0; i < count; ++i) {
+-        pCallbackData = (SysPrefCallbackData *)mObservers->ElementAt(i);
+-        if (pCallbackData) {
+-            nsCOMPtr<nsISupports> observerRef;
+-            if (pCallbackData->bIsWeakRef) {
+-                nsCOMPtr<nsISupportsWeakReference> weakRefFactory =
+-                    do_QueryInterface(aObserver);
+-                if (weakRefFactory) {
+-                    nsCOMPtr<nsIWeakReference> tmp =
+-                        do_GetWeakReference(aObserver);
+-                    observerRef = tmp;
+-                }
+-            }
+-            if (!observerRef)
+-                observerRef = aObserver;
+-
+-            if (pCallbackData->observer == observerRef &&
+-                pCallbackData->prefAtom == prefAtom) {
+-                rv = mGConf->NotifyRemove(prefAtom, pCallbackData);
+-                if (NS_SUCCEEDED(rv)) {
+-                    mObservers->RemoveElementAt(i);
+-                    NS_RELEASE(pCallbackData->observer);
+-                    nsMemory::Free(pCallbackData);
+-                }
+-                return rv;
+-            }
+-        }
+-    }
+-    return NS_OK;
+-}
+-
+-void
+-nsSystemPrefService::OnPrefChange(PRUint32 aPrefAtom, void *aData)
+-{
+-    if (!mInitialized)
+-        return;
+-
+-    SysPrefCallbackData *pData = (SysPrefCallbackData *)aData;
+-    if (pData->prefAtom != aPrefAtom)
+-        return;
+-
+-    nsCOMPtr<nsIObserver> observer;
+-    if (pData->bIsWeakRef) {
+-        nsCOMPtr<nsIWeakReference> weakRef =
+-            do_QueryInterface(pData->observer);
+-        if(weakRef)
+-            observer = do_QueryReferent(weakRef);
+-        if (!observer) {
+-            // this weak referenced observer went away, remove it from the list
+-            nsresult rv = mGConf->NotifyRemove(aPrefAtom, pData);
+-            if (NS_SUCCEEDED(rv)) {
+-                mObservers->RemoveElement(pData);
+-                NS_RELEASE(pData->observer);
+-                nsMemory::Free(pData);
+-            }
+-            return;
+-        }
+-    }
+-    else
+-        observer = do_QueryInterface(pData->observer);
+-
+-    if (observer)
+-        observer->Observe(static_cast<nsIPrefBranch *>(this),
+-                          NS_SYSTEMPREF_PREFCHANGE_TOPIC_ID,
+-                          NS_ConvertUTF8toUTF16(mGConf->GetMozKey(aPrefAtom)).
+-                          get());
+-}
+-
+-/*************************************************************
+- *  GConfProxy
+- *
+- ************************************************************/
+-
+-struct GConfFuncListType {
+-    const char *FuncName;
+-    PRFuncPtr  FuncPtr;
++static const nsModuleComponentInfo components[] = {
++    { NS_SYSTEMPREF_SERVICE_CLASSNAME,
++      NS_SYSTEMPREF_SERVICE_CID,
++      NS_SYSTEMPREF_SERVICE_CONTRACTID,
++      nsSystemPrefServiceConstructor,
++    },
+ };
+ 
+-struct PrefNamePair {
+-    const char *mozPrefName;
+-    const char *gconfPrefName;
+-};
++NS_IMPL_NSGETMODULE(nsSystemPrefServiceModule, components)
+ 
 -const char
 -GConfProxy::sPrefGConfKey[] = "accessibility.unix.gconf2.shared-library";
 -const char GConfProxy::sDefaultLibName1[] = "libgconf-2.so.4";
@@ -1613,43 +1898,14 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -static const PrefNamePair sPrefNameMapping[] = {
 -#include "gconf_pref_list.inc"
 -    {nsnull, nsnull},
-+static ComplexMozPrefMapping sComplexMozPrefMappings[] = {
-+    {MozKey_TrustedURIs, ReverseApplyTrustedURIs},
-+    {MozKey_DelegationURIs, ReverseApplyDelegationURIs},
-+    {MozKey_UseDownloadDir, ReverseApplyDownloadFolder},
-+    {MozKey_DownloadDirType, ReverseApplyDownloadFolder},
-+    {MozKey_DownloadDirExplicit, ReverseApplyDownloadFolder},
-+    {MozKey_CookieBehavior, ReverseApplyDisableCookies},
-+    {MozKey_RememberSignons, ReverseApplyDisableSavePassword},
-+    {MozKey_ImagePermissions, ReverseApplyLoadImages},
-+    {MozKey_DisablePopups, ReverseApplyDisablePopups}
- };
-+// The unsafe protocol preferences are handled specially because
-+// they affect an unknown number of Mozilla preferences
-+// Window opener permissions are also handled specially so we don't have to
-+// repeat the windowOpenFeatures list.
-+
-+/* END preference mapping definition area */
-+
-+static PR_CALLBACK void GConfSimpleNotification(GConfClient* client,
-+                                                guint cnxn_id,
-+                                                GConfEntry *entry,
-+                                                gpointer user_data)
-+{
-+    nsSystemPrefService* service = static_cast<nsSystemPrefService*>(user_data);
-+    SimplePrefMapping* map = static_cast<SimplePrefMapping*>(
-+                                            service->GetSimpleCallbackData(cnxn_id));
-+    NS_ASSERTION(map, "Can't find mapping for callback");
-+    if (!map)
-+        return;
- 
+-};
+-
 -PRBool
 -gconfDeleteObserver(void *aElement, void *aData) {
 -    nsMemory::Free(aElement);
 -    return PR_TRUE;
-+    ApplySimpleMapping(map, service->GetPrefs(), client);
- }
- 
+-}
+-
 -GConfProxy::GConfProxy(nsSystemPrefService *aSysPrefService):
 -    mGConfClient(nsnull),
 -    mGConfLib(nsnull),
@@ -1657,67 +1913,22 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -    mSysPrefService(aSysPrefService),
 -    mObservers(nsnull)
 -{
-+static PR_CALLBACK void GConfComplexNotification(GConfClient* client,
-+                                                 guint cnxn_id,
-+                                                 GConfEntry *entry,
-+                                                 gpointer user_data)
-+{
-+    nsSystemPrefService* service = static_cast<nsSystemPrefService*>(user_data);
-+    ComplexGConfPrefMapping* map = static_cast<ComplexGConfPrefMapping*>(
-+                                                  service->GetComplexCallbackData(cnxn_id));
-+    NS_ASSERTION(map, "Can't find mapping for callback");
-+    if (!map)
-+        return;
-+
-+    map->callback(service, GetGConf());
- }
- 
+-}
+-
 -GConfProxy::~GConfProxy()
-+nsresult nsSystemPrefService::LoadSystemPreferences(nsISystemPref* aPrefs)
- {
+-{
 -    if (mGConfClient)
 -        g_object_unref(G_OBJECT(mGConfClient));
-+    mPref = aPrefs;
- 
+-
 -    if (mObservers) {
 -        (void)mObservers->EnumerateForwards(gconfDeleteObserver, nsnull);
 -        delete mObservers;
-+    GConfClient* client = GetGConf();
-+    PRUint32 i;
-+    // Register simple mappings and callbacks
-+    for (i = 0; i < NUM_ELEM(sSimplePrefMappings); ++i) {
-+        guint cx = gconf_client_notify_add(client,
-+                                           sSimplePrefMappings[i].gconfPrefName,
-+                                           GConfSimpleNotification, this,
-+                                           nsnull, nsnull);
-+        mGConfSimpleCallbacks.Put(cx, &sSimplePrefMappings[i]);
-+        nsresult rv = ApplySimpleMapping(&sSimplePrefMappings[i], aPrefs, client);
-+        if (NS_FAILED(rv))
-+            return rv;
-+    }
-+
-+    // Update Mozilla settings with any gconf settings that have
-+    // changed from the default. Do it before we register our
-+    // Mozilla notifications.
-+    ComplexGConfPrefChanged lastCallback = nsnull;
-+    for (i = 0; i < NUM_ELEM(sComplexGConfPrefMappings); ++i) {
-+        guint cx = gconf_client_notify_add(client,
-+                                           sComplexGConfPrefMappings[i].gconfPrefName,
-+                                           GConfComplexNotification, this,
-+                                           nsnull, nsnull);
-+        mGConfComplexCallbacks.Put(cx, &sComplexGConfPrefMappings[i]);
-+        ComplexGConfPrefChanged cb = sComplexGConfPrefMappings[i].callback;
-+        if (cb != lastCallback) {
-+            cb(this, client);
-+            lastCallback = cb;
-+        }
-     }
- 
+-    }
+-
 -    // bug 379666: can't unload GConf-2 since it registers atexit handlers
 -    //PR_UnloadLibrary(mGConfLib);
 -}
-+    nsCOMPtr<nsIPrefBranch2> userPrefs = aPrefs->GetPrefUserBranch();
- 
+-
 -PRBool
 -GConfProxy::Init()
 -{
@@ -1726,61 +1937,15 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -        return PR_FALSE;
 -    if (mInitialized)
 -        return PR_TRUE;
-+    // Update gconf settings with any Mozilla settings that have
-+    // changed from the default.
-+    for (i = 0; i < NUM_ELEM(sSimplePrefMappings); ++i) {
-+        gconf_client_add_dir(client, sSimplePrefMappings[i].gconfPrefName,
-+                             GCONF_CLIENT_PRELOAD_NONE, nsnull);
-+
-+        PRBool hasUserPref = PR_FALSE;
-+        nsresult rv =
-+            userPrefs->PrefHasUserValue(sSimplePrefMappings[i].mozPrefName,
-+                                        &hasUserPref);
-+        if (NS_FAILED(rv))
-+            return rv;
-+        if (hasUserPref && sSimplePrefMappings[i].allowWritesFromMozilla) {
-+            rv = ReverseApplySimpleMapping(&sSimplePrefMappings[i],
-+                                           aPrefs, client);
-+            if (NS_FAILED(rv))
-+                return rv;
-+        }
-+    }
-+    for (i = 0; i < NUM_ELEM(sComplexGConfPrefMappings); ++i) {
-+        gconf_client_add_dir(client, sComplexGConfPrefMappings[i].gconfPrefName,
-+                             GCONF_CLIENT_PRELOAD_NONE, nsnull);
-+    }
-+    ComplexMozPrefChanged lastMozCallback = nsnull;
-+    for (i = 0; i < NUM_ELEM(sComplexMozPrefMappings); ++i) {
-+        PRBool hasUserPref = PR_FALSE;
-+        nsresult rv =
-+            userPrefs->PrefHasUserValue(sComplexMozPrefMappings[i].mozPrefName,
-+                                        &hasUserPref);
-+        if (NS_FAILED(rv))
-+            return rv;
-+        if (hasUserPref) {
-+            ComplexMozPrefChanged cb = sComplexMozPrefMappings[i].callback;
-+            if (cb != lastMozCallback) {
-+                cb(this, client);
-+                lastMozCallback = cb;
-+            }
-+        }
-+    }
- 
+-
 -    nsCOMPtr<nsIPrefBranch> pref = do_GetService(NS_PREFSERVICE_CONTRACTID); 
-+    ApplyUnsafeProtocols(this, client);
- 
+-
 -    if (!pref)
 -        return PR_FALSE;
-+    return NS_OK;
-+}
- 
+-
 -    nsXPIDLCString gconfLibName;
 -    nsresult rv;
-+nsresult nsSystemPrefService::NotifyMozillaPrefChanged(const char* aPrefName)
-+{
-+    PRUint32 i;
-+    GConfClient* client = GetGConf();
- 
+-
 -    //check if gconf-2 library is given in prefs
 -    rv = pref->GetCharPref(sPrefGConfKey, getter_Copies(gconfLibName));
 -    if (NS_SUCCEEDED(rv)) {
@@ -1794,22 +1959,13 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -        mGConfLib = PR_LoadLibrary(sDefaultLibName1);
 -        if (!mGConfLib)
 -            mGConfLib = PR_LoadLibrary(sDefaultLibName2);
-+    for (i = 0; i < NUM_ELEM(sSimplePrefMappings); ++i) {
-+        if (!strcmp(aPrefName, sSimplePrefMappings[i].mozPrefName)) {
-+            ReverseApplySimpleMapping(&sSimplePrefMappings[i],
-+                                      mPref, client);
-+        }
-     }
- 
+-    }
+-
 -    if (!mGConfLib) {
 -        SYSPREF_LOG(("Fail to load GConf library\n"));
 -        return PR_FALSE;
-+    for (i = 0; i < NUM_ELEM(sComplexMozPrefMappings); ++i) {
-+        if (!strcmp(aPrefName, sComplexMozPrefMappings[i].mozPrefName)) {
-+            sComplexMozPrefMappings[i].callback(this, client);
-+        }
-     }
- 
+-    }
+-
 -    //check every func we need in the gconf library
 -    GConfFuncListType *funcList;
 -    PRFuncPtr func;
@@ -1818,13 +1974,10 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -        if (!func) {
 -            SYSPREF_LOG(("Check GConf Func Error: %s", funcList->FuncName));
 -            goto init_failed_unload;
-+    for (i = 0; i < NUM_ELEM(windowOpenFeatures); ++i) {
-+        if (!strcmp(aPrefName, windowOpenFeatures[i])) {
-+            ReverseApplyWindowOpen(this, client);
-         }
+-        }
 -        funcList->FuncPtr = func;
-     }
- 
+-    }
+-
 -    InitFuncPtrs();
 -
 -    mGConfClient = GConfClientGetDefault();
@@ -1838,106 +1991,57 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -    }
 -    mInitialized = PR_TRUE;
 -    return PR_TRUE;
-+    ReverseApplyUnsafeProtocols(this, client);
- 
+-
 - init_failed_unload:
 -    PR_UnloadLibrary(mGConfLib);
 - init_failed:
 -    mGConfLib = nsnull;
 -    return PR_FALSE;
-+    return NS_OK;
- }
- 
+-}
+-
 -nsresult
 -GConfProxy::GetBoolPref(const char *aMozKey, PRBool *retval)
-+static PLDHashOperator PR_CALLBACK UnregisterSimple(const PRUint32& aKey,
-+                                                    SimplePrefMapping* aData,
-+                                                    void* aClosure)
- {
+-{
 -    NS_ENSURE_TRUE(mInitialized, NS_ERROR_FAILURE);
 -    *retval = GConfClientGetBool(mGConfClient, MozKey2GConfKey(aMozKey), NULL);
 -    return NS_OK;
-+    GConfClient* client = GetGConf();
-+    gconf_client_notify_remove(client, aKey);
-+    gconf_client_remove_dir(client, aData->gconfPrefName, nsnull);
-+    return PL_DHASH_NEXT;
- }
- 
+-}
+-
 -nsresult
 -GConfProxy::GetCharPref(const char *aMozKey, char **retval)
-+static PLDHashOperator PR_CALLBACK UnregisterComplex(const PRUint32& aKey,
-+                                                     ComplexGConfPrefMapping* aData,
-+                                                     void* aClosure)
- {
+-{
 -    NS_ENSURE_TRUE(mInitialized, NS_ERROR_FAILURE);
-+    GConfClient* client = GetGConf();
-+    gconf_client_notify_remove(client, aKey);
-+    gconf_client_remove_dir(client, aData->gconfPrefName, nsnull);
-+    return PL_DHASH_NEXT;
-+}
- 
+-
 -    const gchar *gconfkey = MozKey2GConfKey(aMozKey);
-+nsresult nsSystemPrefService::NotifyUnloadSystemPreferences()
-+{
-+    // Unregister callbacks
-+    mGConfSimpleCallbacks.EnumerateRead(UnregisterSimple, this);
-+    mGConfSimpleCallbacks.Clear();
-+    mGConfComplexCallbacks.EnumerateRead(UnregisterComplex, this);
-+    mGConfComplexCallbacks.Clear();
- 
+-
 -    if (!strcmp (aMozKey, "network.proxy.no_proxies_on")) {
 -        GSList *s;
 -        nsCString noproxy;
 -        GSList *gslist = GConfClientGetList(mGConfClient, gconfkey,
 -                                            GCONF_VALUE_STRING, NULL);
-+    return NS_OK;
-+}
- 
+-
 -        for (s = gslist; s; s = g_slist_next(s)) {
 -            noproxy += (char *)s->data;
 -            noproxy += ", ";
 -            g_free ((char *)s->data);
 -        }
 -        g_slist_free (gslist);
-+// PrefBranch interfaces
- 
+-
 -        *retval = PL_strdup(noproxy.get());
 -    } else {
 -        gchar *str = GConfClientGetString(mGConfClient, gconfkey, NULL);
 -        if (str) {
 -            *retval = PL_strdup(str);
 -            g_free (str);
-+GConfValue* nsSystemPrefService::GConfGet(const char *aPrefName)
-+{
-+    PRUint32 i;
-+    PRBool found = PR_FALSE;
-+    GConfValue *val = NULL;
-+    GConfClient* client = GetGConf();
-+    NS_ASSERTION(client, "Could not get default GConf client");
-+    if (!client) {
-+        return NULL;
-+    }
-+    for (i = 0; i < NUM_ELEM(sSimplePrefMappings); ++i) {
-+        if (!strcmp(aPrefName, sSimplePrefMappings[i].mozPrefName)) {
-+            found = PR_TRUE;
-+            break;
-         }
-     }
+-        }
+-    }
 -
 -    return NS_OK;
-+    if (found) {
-+        val = gconf_client_get(client, 
-+                               sSimplePrefMappings[i].gconfPrefName, 
-+                               NULL);
-+    }
-+    return val;
- }
- 
+-}
+-
 -nsresult
 -GConfProxy::GetIntPref(const char *aMozKey, PRInt32 *retval)
-+/* readonly attribute string root; */
-+NS_IMETHODIMP nsSystemPrefService::GetRoot(char * *aRoot)
- {
+-{
 -    NS_ENSURE_TRUE(mInitialized, NS_ERROR_FAILURE);
 -    if (strcmp (aMozKey, "network.proxy.type") == 0) {
 -	gchar *str;
@@ -1960,39 +2064,19 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -    	*retval = GConfClientGetInt(mGConfClient, 
 -	                            MozKey2GConfKey(aMozKey), NULL);
 -    }
-+    return NS_ERROR_NOT_IMPLEMENTED;
-+}
- 
+-
 -    return NS_OK;
-+/* long getPrefType (in string aPrefName); */
-+NS_IMETHODIMP nsSystemPrefService::GetPrefType(const char *aPrefName, PRInt32 *_retval)
-+{
-+    return NS_ERROR_NOT_IMPLEMENTED;
- }
- 
+-}
+-
 -nsresult
 -GConfProxy::NotifyAdd (PRUint32 aAtom, void *aUserData)
-+/* boolean getBoolPref (in string aPrefName); */
-+NS_IMETHODIMP nsSystemPrefService::GetBoolPref(const char *aPrefName, PRBool *_retval)
- {
+-{
 -    NS_ENSURE_TRUE(mInitialized, NS_ERROR_FAILURE);
-+    GConfValue *val = GConfGet(aPrefName);
-+    if (val) {
-+        *_retval = (PRBool)(gconf_value_get_bool(val));
-+        return NS_OK;
-+    }
-+    return NS_ERROR_FAILURE;
-+}
- 
+-
 -    const char *gconfKey = GetGConfKey(aAtom);
 -    if (!gconfKey)
 -        return NS_ERROR_FAILURE;
-+/* void setBoolPref (in string aPrefName, in long aValue); */
-+NS_IMETHODIMP nsSystemPrefService::SetBoolPref(const char *aPrefName, PRInt32 aValue)
-+{
-+    return NS_ERROR_NOT_IMPLEMENTED;
-+}
- 
+-
 -    if (!mObservers) {
 -        mObservers = new nsAutoVoidArray();
 -        if (mObservers == nsnull)
@@ -2016,35 +2100,16 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -                                           gconf_key_listener, pData,
 -                                           NULL, NULL);
 -    return NS_OK;
-+/* string getCharPref (in string aPrefName); */
-+NS_IMETHODIMP nsSystemPrefService::GetCharPref(const char *aPrefName, char **_retval)
-+{
-+    GConfValue *val = GConfGet(aPrefName);
-+    if (val) {
-+        *_retval = (char*)(gconf_value_get_string(val));
-+        return *_retval ? NS_OK : NS_ERROR_FAILURE;
-+    }
-+    return NS_ERROR_FAILURE;
- }
- 
+-}
+-
 -nsresult
 -GConfProxy::NotifyRemove (PRUint32 aAtom, const void *aUserData)
-+/* void setCharPref (in string aPrefName, in string aValue); */
-+NS_IMETHODIMP nsSystemPrefService::SetCharPref(const char *aPrefName, const char *aValue)
- {
+-{
 -    NS_ENSURE_TRUE(mInitialized, NS_ERROR_FAILURE);
-+    return NS_ERROR_NOT_IMPLEMENTED;
-+}
- 
+-
 -    PRIntn count = mObservers->Count();
 -    if (count <= 0)
-+/* long getIntPref (in string aPrefName); */
-+NS_IMETHODIMP nsSystemPrefService::GetIntPref(const char *aPrefName, PRInt32 *_retval)
-+{
-+    GConfValue *val = GConfGet(aPrefName);
-+    if (val) {
-+        *_retval = (PRInt32)(gconf_value_get_int(val));
-         return NS_OK;
+-        return NS_OK;
 -
 -    PRIntn i;
 -    GConfCallbackData *pData;
@@ -2058,23 +2123,13 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -            nsMemory::Free(pData);
 -            break;
 -        }
-     }
+-    }
 -    return NS_OK;
-+    return NS_ERROR_FAILURE;
- }
- 
+-}
+-
 -void
 -GConfProxy::InitFuncPtrs()
-+/* void setIntPref (in string aPrefName, in long aValue); */
-+NS_IMETHODIMP nsSystemPrefService::SetIntPref(const char *aPrefName, PRInt32 aValue)
-+{
-+    return NS_ERROR_NOT_IMPLEMENTED;
-+}
-+
-+/* void getComplexValue (in string aPrefName, in nsIIDRef aType, [iid_is
-+ * (aType), retval] out nsQIResult aValue); */
-+NS_IMETHODIMP nsSystemPrefService::GetComplexValue(const char *aPrefName, const nsIID & aType, void * *aValue)
- {
+-{
 -    //gconf client funcs
 -    GConfClientGetDefault =
 -        (GConfClientGetDefaultType) sGConfFuncList[0].FuncPtr;
@@ -2110,47 +2165,24 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -void
 -GConfProxy::OnNotify(void *aClient, void * aEntry, PRUint32 aNotifyId,
 -                     GConfCallbackData *aData)
-+    return NS_ERROR_NOT_IMPLEMENTED;
-+}
-+/* void setComplexValue (in string aPrefName, in nsIIDRef aType, in
-+ * nsISupports aValue); */
-+NS_IMETHODIMP nsSystemPrefService::SetComplexValue(const char *aPrefName, const nsIID & aType, nsISupports *aValue)
- {
+-{
 -    if (!mInitialized || !aEntry || (mGConfClient != aClient) || !aData)
 -        return;
-+    return NS_ERROR_NOT_IMPLEMENTED;
-+}
- 
+-
 -    if (GConfEntryGetValue(aEntry) == NULL)
 -        return;
-+/* void clearUserPref (in string aPrefName); */
-+NS_IMETHODIMP nsSystemPrefService::ClearUserPref(const char *aPrefName)
-+{
-+    return NS_ERROR_NOT_IMPLEMENTED;
-+}
- 
+-
 -    PRUint32 prefAtom;
 -    nsresult rv = GetAtomForGConfKey(GConfEntryGetKey(aEntry), &prefAtom);
 -    if (NS_FAILED(rv))
 -        return;
-+/* void lockPref (in string aPrefName); */
-+NS_IMETHODIMP nsSystemPrefService::LockPref(const char *aPrefName)
-+{
-+    return NS_ERROR_NOT_IMPLEMENTED;
-+}
- 
+-
 -    mSysPrefService->OnPrefChange(prefAtom, aData->userData);
-+/* boolean prefHasUserValue (in string aPrefName); */
-+NS_IMETHODIMP nsSystemPrefService::PrefHasUserValue(const char *aPrefName, PRBool *_retval)
-+{
-+    return NS_ERROR_NOT_IMPLEMENTED;
- }
- 
+-}
+-
 -nsresult
 -GConfProxy::GetAtom(const char *aKey, PRUint8 aNameType, PRUint32 *aAtom)
-+/* boolean prefIsLocked (in string aPrefName); */
-+NS_IMETHODIMP nsSystemPrefService::PrefIsLocked(const char *aPrefName, PRBool *_retval)
- {
+-{
 -    if (!aKey)
 -        return NS_ERROR_FAILURE;
 -    PRUint32 prefSize = sizeof(sPrefNameMapping) / sizeof(sPrefNameMapping[0]);
@@ -2162,76 +2194,43 @@ Index: mozilla/extensions/pref/system-pref/src/gconf/nsSystemPrefService.cpp
 -        }
 -    }
 -    return NS_ERROR_FAILURE;
-+    return NS_ERROR_NOT_IMPLEMENTED;
- }
- 
+-}
+-
 -const char *
 -GConfProxy::GetKey(PRUint32 aAtom, PRUint8 aNameType)
-+/* void unlockPref (in string aPrefName); */
-+NS_IMETHODIMP nsSystemPrefService::UnlockPref(const char *aPrefName)
- {
+-{
 -    PRUint32 mapSize = sizeof(sPrefNameMapping) / sizeof(sPrefNameMapping[0]);
 -    if (aAtom >= 0 && aAtom < mapSize)
 -        return (aNameType == 0) ? sPrefNameMapping[aAtom].mozPrefName :
 -            sPrefNameMapping[aAtom].gconfPrefName;
 -    return NULL;
-+    return NS_ERROR_NOT_IMPLEMENTED;
- }
- 
+-}
+-
 -inline const char *
 -GConfProxy::MozKey2GConfKey(const char *aMozKey)
-+/* void deleteBranch (in string aStartingAt); */
-+NS_IMETHODIMP nsSystemPrefService::DeleteBranch(const char *aStartingAt)
- {
+-{
 -    PRUint32 atom;
 -    nsresult rv = GetAtomForMozKey(aMozKey, &atom);
 -    if (NS_SUCCEEDED(rv))
 -        return GetGConfKey(atom);
 -    return NULL;
-+    return NS_ERROR_NOT_IMPLEMENTED;
- }
- 
+-}
+-
 -/* static */
 -void gconf_key_listener (void* client, guint cnxn_id,
 -                         void *entry, gpointer user_data)
-+/* void getChildList (in string aStartingAt, out unsigned long aCount, [array,
-+ * size_is (aCount), retval] out string aChildArray); */
-+NS_IMETHODIMP nsSystemPrefService::GetChildList(const char *aStartingAt, PRUint32 *aCount, char ***aChildArray)
- {
+-{
 -    SYSPREF_LOG(("...SYSPREF_LOG...key listener get called \n"));
 -    if (!user_data)
 -        return;
 -    GConfCallbackData *pData = reinterpret_cast<GConfCallbackData *>
 -                                               (user_data);
 -    pData->proxy->OnNotify(client, entry, cnxn_id, pData);
-+    return NS_ERROR_NOT_IMPLEMENTED;
-+}
-+
-+/* void resetBranch (in string aStartingAt); */
-+NS_IMETHODIMP nsSystemPrefService::ResetBranch(const char *aStartingAt)
-+{
-+    return NS_ERROR_NOT_IMPLEMENTED;
- }
-+
-+
-+// Factory stuff
-+
-+NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsSystemPrefService, Init)
-+
-+static const nsModuleComponentInfo components[] = {
-+    { NS_SYSTEMPREF_SERVICE_CLASSNAME,
-+      NS_SYSTEMPREF_SERVICE_CID,
-+      NS_SYSTEMPREF_SERVICE_CONTRACTID,
-+      nsSystemPrefServiceConstructor,
-+    },
-+};
-+
-+NS_IMPL_NSGETMODULE(nsSystemPrefServiceModule, components)
-+
-Index: mozilla/extensions/pref/system-pref/src/nsISystemPrefService.h
-===================================================================
+-}
+diff --git a/extensions/pref/system-pref/src/nsISystemPrefService.h b/extensions/pref/system-pref/src/nsISystemPrefService.h
+new file mode 100644
 --- /dev/null
-+++ mozilla/extensions/pref/system-pref/src/nsISystemPrefService.h
++++ b/extensions/pref/system-pref/src/nsISystemPrefService.h
 @@ -0,0 +1,107 @@
 +/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 +/* vim:expandtab:shiftwidth=4:tabstop=4:
@@ -2340,11 +2339,15 @@ Index: mozilla/extensions/pref/system-pref/src/nsISystemPrefService.h
 +};
 +
 +#endif
-Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
-===================================================================
---- mozilla.orig/extensions/pref/system-pref/src/nsSystemPref.cpp
-+++ mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
-@@ -24,6 +24,7 @@
+diff --git a/extensions/pref/system-pref/src/nsSystemPref.cpp b/extensions/pref/system-pref/src/nsSystemPref.cpp
+--- a/extensions/pref/system-pref/src/nsSystemPref.cpp
++++ b/extensions/pref/system-pref/src/nsSystemPref.cpp
+@@ -19,16 +19,17 @@
+  *
+  * The Initial Developer of the Original Code is Sun Microsystems, Inc.
+  * Portions created by Sun Microsystems are Copyright (C) 2003 Sun
+  * Microsystems, Inc. All Rights Reserved.
+  *
   * Original Author: Bolian Yin (bolian.yin@sun.com)
   *
   * Contributor(s):
@@ -2352,7 +2355,17 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
   *
   * Alternatively, the contents of this file may be used under the terms of
   * either the GNU General Public License Version 2 or later (the "GPL"), or
-@@ -41,66 +42,62 @@
+  * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the NPL, indicate your
+@@ -36,76 +37,72 @@
+  * and other provisions required by the GPL or the LGPL. If you do not delete
+  * the provisions above, a recipient may use your version of this file under
+  * the terms of any one of the NPL, the GPL or the LGPL.
+  *
+  * ***** END LICENSE BLOCK ***** */
  
  #include "nsSystemPref.h"
  #include "nsIObserverService.h"
@@ -2454,7 +2467,17 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
  }
  
  ///////////////////////////////////////////////////////////////////////////////
-@@ -131,6 +128,54 @@ nsSystemPref::Init(void)
+ // nsSystemPref::Init
+ // Setup log and listen on NS_PREFSERVICE_READ_TOPIC_ID from pref service
+ ///////////////////////////////////////////////////////////////////////////////
+ nsresult
+ nsSystemPref::Init(void)
+@@ -126,349 +123,519 @@ nsSystemPref::Init(void)
+                                           PR_FALSE);
+         rv = observerService->AddObserver(this, "profile-before-change",
+                                           PR_FALSE);
+         SYSPREF_LOG(("Add Observer for %s\n", NS_PREFSERVICE_READ_TOPIC_ID));
+     }
      return(rv);
  }
  
@@ -2509,19 +2532,19 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
  ///////////////////////////////////////////////////////////////////////////////
  // nsSystemPref::Observe
  // Observe notifications from mozilla pref system and system prefs (if enabled)
-@@ -145,330 +190,452 @@ nsSystemPref::Observe(nsISupports *aSubj
+ ///////////////////////////////////////////////////////////////////////////////
+ NS_IMETHODIMP
+ nsSystemPref::Observe(nsISupports *aSubject,
+                       const char *aTopic,
+                       const PRUnichar *aData)
+ {
+     nsresult rv = NS_OK;
+ 
      if (!aTopic)
          return NS_OK;
  
 -    // if we are notified by pref service
 -    // check the system pref settings
--    if (!nsCRT::strcmp(aTopic, NS_PREFSERVICE_READ_TOPIC_ID)) {
--        SYSPREF_LOG(("Observed: %s\n", aTopic));
--
--        nsCOMPtr<nsIPrefBranch2> prefBranch =
--            do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
--        if (NS_FAILED(rv))
--            return rv;
 +    nsCOMPtr<nsIPrefBranch2> userBranch = GetPrefUserBranch();
 +    nsCOMPtr<nsIPrefBranch> defaultBranch = GetPrefDefaultBranch();
 + 
@@ -2537,64 +2560,81 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
 +    PRBool enabled = defaultEnabled;
 +    if (!enabled) {
 +        rv = userBranch->GetBoolPref(sSysPrefString, &enabled);
- 
--        rv = prefBranch->GetBoolPref(sSysPrefString, &mEnabled);
-         if (NS_FAILED(rv)) {
--            SYSPREF_LOG(("...FAil to Get %s\n", sSysPrefString));
++
++        if (NS_FAILED(rv)) {
 +            SYSPREF_LOG(("...Failed to Get %s\n", sSysPrefString));
-             return rv;
-         }
++            return rv;
++        }
 +    }
-+    if (!nsCRT::strcmp(aTopic, NS_PREFSERVICE_READ_TOPIC_ID)) {
+     if (!nsCRT::strcmp(aTopic, NS_PREFSERVICE_READ_TOPIC_ID)) {
 +        // The prefs have just loaded. This is the first thing that
 +        // happens to us.
-+        SYSPREF_LOG(("Observed: %s\n", aTopic));
+         SYSPREF_LOG(("Observed: %s\n", aTopic));
 + 
  
+-        nsCOMPtr<nsIPrefBranch2> prefBranch =
+-            do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
++        // listen on changes to use_system_pref. It's OK to
++        // hold a strong reference because we don't keep a reference
++        // to the pref branch.
++        rv = userBranch->AddObserver(sSysPrefString, this, PR_TRUE);
++
++        if (NS_FAILED(rv)) {
++            SYSPREF_LOG(("...Failed to add observer for %s\n", sSysPrefString));
++            return rv;
++        }
++        NS_ASSERTION(!mSysPrefService, "Should not be already enabled");
++        if (!enabled) {
++            // Don't load the system pref service if the preference is
++            // not set.
++            return NS_OK;
++        }
++
++        SYSPREF_LOG(("%s is enabled\n", sSysPrefString));
++
++	rv = LoadSystemPrefs();
+         if (NS_FAILED(rv))
+             return rv;
+ 
+-        rv = prefBranch->GetBoolPref(sSysPrefString, &mEnabled);
+-        if (NS_FAILED(rv)) {
+-            SYSPREF_LOG(("...FAil to Get %s\n", sSysPrefString));
+-            return rv;
+-        }
+-
 -        // if there is no system pref service, assume nothing happen to us
 -        mSysPrefService = do_GetService(NS_SYSTEMPREF_SERVICE_CONTRACTID, &rv);
 -        if (NS_FAILED(rv) || !mSysPrefService) {
 -            SYSPREF_LOG(("...No System Pref Service\n"));
 -            return NS_OK;
 -        }
-+        // listen on changes to use_system_pref. It's OK to
-+        // hold a strong reference because we don't keep a reference
-+        // to the pref branch.
-+        rv = userBranch->AddObserver(sSysPrefString, this, PR_TRUE);
- 
+-
 -        // listen on its changes
 -        rv = prefBranch->AddObserver(sSysPrefString, this, PR_TRUE);
-         if (NS_FAILED(rv)) {
+-        if (NS_FAILED(rv)) {
 -            SYSPREF_LOG(("...FAil to add observer for %s\n", sSysPrefString));
-+            SYSPREF_LOG(("...Failed to add observer for %s\n", sSysPrefString));
-             return rv;
-         }
+-            return rv;
+-        }
 -
 -        if (!mEnabled) {
 -            SYSPREF_LOG(("%s is disabled\n", sSysPrefString));
-+        NS_ASSERTION(!mSysPrefService, "Should not be already enabled");
-+        if (!enabled) {
-+            // Don't load the system pref service if the preference is
-+            // not set.
-             return NS_OK;
-         }
+-            return NS_OK;
+-        }
 -        SYSPREF_LOG(("%s is enabled\n", sSysPrefString));
 -        rv = UseSystemPrefs();
- 
+-
 -    }
 -    // sSysPrefString value was changed, update ...
 -    else if (!nsCRT::strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) &&
 -             NS_ConvertUTF8toUTF16(sSysPrefString).Equals(aData)) {
 -        SYSPREF_LOG(("++++++ Notify: topic=%s data=%s\n",
 -                     aTopic, NS_ConvertUTF16toUTF8(aData).get()));
-+        SYSPREF_LOG(("%s is enabled\n", sSysPrefString));
- 
+-
 -        nsCOMPtr<nsIPrefBranch> prefBranch =
 -            do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
-+	rv = LoadSystemPrefs();
-         if (NS_FAILED(rv))
-             return rv;
- 
+-        if (NS_FAILED(rv))
+-            return rv;
+-
 -        PRBool enabled = mEnabled;
 -        rv = prefBranch->GetBoolPref(sSysPrefString, &mEnabled);
 -        if (enabled != mEnabled) {
@@ -2647,24 +2687,8 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
 -      mSysPrefs = nsnull;
 -    } else
 -        SYSPREF_LOG(("Not needed topic Received %s\n", aTopic));
--    return rv;
--}
--
--/* private */
 +    }
- 
--////////////////////////////////////////////////////////////////
--// nsSystemPref::UseSystemPrefs
--// Read all the prefs in the table from system, listen for their
--// changes in system pref service.
--////////////////////////////////////////////////////////////////
--nsresult
--nsSystemPref::UseSystemPrefs()
--{
--    SYSPREF_LOG(("\n====Now Use system prefs==\n"));
--    nsresult rv = NS_OK;
--    if (!mSysPrefService) {
--        return NS_ERROR_FAILURE;
++
 +    if (!nsCRT::strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID)) {
 +        // some other pref changed, tell the backend if there is one
 +        if (mSysPrefService && !mIgnorePrefSetting) {
@@ -2684,67 +2708,43 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
 +            }
 +        }
 +        return NS_OK;
-     }
- 
--    PRIntn sysPrefCount= sizeof(sSysPrefList) / sizeof(sSysPrefList[0]);
++    }
++
 +    if (!nsCRT::strcmp(aTopic,"profile-before-change"))
 +        return RestoreMozillaPrefs();
- 
--    if (!mSysPrefs) {
--        mSysPrefs = new SysPrefItem[sysPrefCount];
--        if (!mSysPrefs)
--            return NS_ERROR_OUT_OF_MEMORY;
--        for (PRIntn index = 0; index < sysPrefCount; ++index)
--            mSysPrefs[index].SetPrefName(sSysPrefList[index]);
--    }
++
 +    SYSPREF_LOG(("Not needed topic Received %s\n", aTopic));
- 
--    for (PRIntn index = 0; index < sysPrefCount; ++index) {
--        // save mozilla prefs
--        SaveMozDefaultPref(mSysPrefs[index].prefName,
--                           &mSysPrefs[index].defaultValue,
--                           &mSysPrefs[index].isLocked);
--
--        // get the system prefs
--        ReadSystemPref(mSysPrefs[index].prefName);
--        SYSPREF_LOG(("Add Listener on %s\n", mSysPrefs[index].prefName));
--        mSysPrefService->AddObserver(mSysPrefs[index].prefName,
--                                     this, PR_TRUE);
--    }
++
      return rv;
  }
  
--//////////////////////////////////////////////////////////////////////
--// nsSystemPref::ReadSystemPref
--// Read a pref value from system pref service, and lock it in mozilla.
--//////////////////////////////////////////////////////////////////////
- nsresult
--nsSystemPref::ReadSystemPref(const char *aPrefName)
+-/* private */
++nsresult
 +nsSystemPref::SetOverridingMozillaBoolPref(const char* aPrefName,
 +                                           PRBool aValue, PRBool aLock, PRBool aPresent)
- {
--    if (!mSysPrefService)
--        return NS_ERROR_FAILURE;
--    nsresult rv;
++{
 +    return OverridePref(aPrefName, nsIPrefBranch::PREF_BOOL,
 +                        (void*)aValue, aLock, aPresent);
 +}
  
--    nsCOMPtr<nsIPrefBranch> prefBranch
--        (do_GetService(NS_PREFSERVICE_CONTRACTID, &rv));
--    if (NS_FAILED(rv))
--        return rv;
-+nsresult
+-////////////////////////////////////////////////////////////////
+-// nsSystemPref::UseSystemPrefs
+-// Read all the prefs in the table from system, listen for their
+-// changes in system pref service.
+-////////////////////////////////////////////////////////////////
+ nsresult
+-nsSystemPref::UseSystemPrefs()
 +nsSystemPref::SetOverridingMozillaIntPref(const char* aPrefName,
 +                                          PRInt32 aValue, PRBool aLock, PRBool aPresent)
-+{
+ {
+-    SYSPREF_LOG(("\n====Now Use system prefs==\n"));
+-    nsresult rv = NS_OK;
+-    if (!mSysPrefService) {
 +    return OverridePref(aPrefName, nsIPrefBranch::PREF_INT,
 +                        (void*)aValue, aLock, aPresent);
 +}
- 
--    SYSPREF_LOG(("about to read aPrefName %s\n", aPrefName));
- 
--    prefBranch->UnlockPref(aPrefName);
++
++
 +nsresult
 +nsSystemPref::SetOverridingMozillaStringPref(const char* aPrefName,
 +                                             const char* aValue, PRBool aLock, PRBool aPresent)
@@ -2752,11 +2752,7 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
 +    return OverridePref(aPrefName, nsIPrefBranch::PREF_STRING,
 +                        (void*)aValue, aLock, aPresent);
 +}
- 
--    PRInt32 prefType = nsIPrefBranch::PREF_INVALID;
--    nsXPIDLCString strValue;
--    PRInt32 intValue = 0;
--    PRBool boolValue = PR_FALSE;
++
 +static nsresult RestorePrefValue(PRInt32 aPrefType,
 +                                 const char* aPrefName,
 +                                 SysPrefItem* aItem,
@@ -2764,68 +2760,60 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
 +                                 nsIPrefBranch* aDefault)
 +{
 +    switch (aPrefType) {
- 
--    rv = prefBranch->GetPrefType(aPrefName, &prefType);
--    if (NS_FAILED(rv))
--        return rv;
--    switch (prefType) {
-     case nsIPrefBranch::PREF_STRING:
--        mSysPrefService->GetCharPref(aPrefName, getter_Copies(strValue));
--        SYSPREF_LOG(("system value is %s\n", strValue.get()));
--
--        prefBranch->SetCharPref(aPrefName, strValue.get());
++
++    case nsIPrefBranch::PREF_STRING:
 +        aDefault->SetCharPref(aPrefName,
 +                              aItem->savedDefaultValueString);
 +        if (aItem->savedUserPresent) {
 +            aUser->SetCharPref(aPrefName, aItem->savedUserValueString);
 +        }
-         break;
-     case nsIPrefBranch::PREF_INT:
--        mSysPrefService->GetIntPref(aPrefName, &intValue);
--        SYSPREF_LOG(("system value is %d\n", intValue));
--
--        prefBranch->SetIntPref(aPrefName, intValue);
++        break;
++    case nsIPrefBranch::PREF_INT:
 +        aDefault->SetBoolPref(aPrefName, aItem->savedDefaultValueScalar);
 +        if (aItem->savedUserPresent) {
 +            aUser->SetBoolPref(aPrefName, aItem->savedUserValueScalar);
 +        }
-         break;
-     case nsIPrefBranch::PREF_BOOL:
--        mSysPrefService->GetBoolPref(aPrefName, &boolValue);
--        SYSPREF_LOG(("system value is %s\n", boolValue ? "TRUE" : "FALSE"));
--
--        prefBranch->SetBoolPref(aPrefName, boolValue);
++        break;
++    case nsIPrefBranch::PREF_BOOL:
 +        aDefault->SetBoolPref(aPrefName, aItem->savedDefaultValueScalar);
 +        if (aItem->savedUserPresent) {
 +            aUser->SetBoolPref(aPrefName, aItem->savedUserValueScalar);
 +        }
-         break;
-     default:
--        SYSPREF_LOG(("Fail to system value for it\n"));
++        break;
++    default:
 +        NS_ERROR("Unknown preference type");
          return NS_ERROR_FAILURE;
      }
--    prefBranch->LockPref(aPrefName);
-+
+ 
+-    PRIntn sysPrefCount= sizeof(sSysPrefList) / sizeof(sSysPrefList[0]);
+-
+-    if (!mSysPrefs) {
+-        mSysPrefs = new SysPrefItem[sysPrefCount];
+-        if (!mSysPrefs)
+-            return NS_ERROR_OUT_OF_MEMORY;
+-        for (PRIntn index = 0; index < sysPrefCount; ++index)
+-            mSysPrefs[index].SetPrefName(sSysPrefList[index]);
 +    if (!aItem->savedUserPresent) {
 +        aUser->DeleteBranch(aPrefName);
-+    }
-+
-     return NS_OK;
- }
+     }
  
--//////////////////////////////////////////////////////////////////////
--// nsSystemPref::UseMozillaPrefs
--// Restore mozilla default prefs, remove system pref listeners
--/////////////////////////////////////////////////////////////////////
--nsresult
--nsSystemPref::UseMozillaPrefs()
+-    for (PRIntn index = 0; index < sysPrefCount; ++index) {
+-        // save mozilla prefs
+-        SaveMozDefaultPref(mSysPrefs[index].prefName,
+-                           &mSysPrefs[index].defaultValue,
+-                           &mSysPrefs[index].isLocked);
++    return NS_OK;
++}
+ 
+-        // get the system prefs
+-        ReadSystemPref(mSysPrefs[index].prefName);
+-        SYSPREF_LOG(("Add Listener on %s\n", mSysPrefs[index].prefName));
+-        mSysPrefService->AddObserver(mSysPrefs[index].prefName,
+-                                     this, PR_TRUE);
 +static PLDHashOperator PR_CALLBACK RestorePref(const nsACString& aKey,
 +                                               SysPrefItem* aItem,
 +                                               void* aClosure)
- {
--    nsresult rv = NS_OK;
--    SYSPREF_LOG(("\n====Now rollback to Mozilla prefs==\n"));
++{
 +    nsSystemPref* prefs = static_cast<nsSystemPref*>(aClosure);
 +    nsCOMPtr<nsIPrefBranch2> userBranch = prefs->GetPrefUserBranch();
 +    const nsCString& prefName = PromiseFlatCString(aKey);
@@ -2846,25 +2834,12 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
 +    // which we always observe, even after we remove the observer, changes to the pref will
 +    // still be observed by us. We must ignore them.
 +    aItem->ignore = PR_TRUE;
- 
--    // if we did not use system prefs, do nothing
--    if (!mSysPrefService)
--        return NS_OK;
- 
--    PRIntn sysPrefCount= sizeof(sSysPrefList) / sizeof(sSysPrefList[0]);
--    for (PRIntn index = 0; index < sysPrefCount; ++index) {
--        // restore mozilla default value and free string memory if needed
--        RestoreMozDefaultPref(mSysPrefs[index].prefName,
--                              &mSysPrefs[index].defaultValue,
--                              mSysPrefs[index].isLocked);
--        SYSPREF_LOG(("stop listening on %s\n", mSysPrefs[index].prefName));
--        mSysPrefService->RemoveObserver(mSysPrefs[index].prefName,
--                                        this);
++
++
 +    // Unlock the pref so we can set it
 +    if (isLocked) {
 +        userBranch->UnlockPref(prefName.get());
      }
--    return rv;
 +
 +    nsCOMPtr<nsIPrefBranch> defaultBranch = prefs->GetPrefDefaultBranch();
 +
@@ -2876,38 +2851,22 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
 +    }
 +
 +    return PL_DHASH_NEXT;
- }
- 
--////////////////////////////////////////////////////////////////////////////
--// nsSystemPref::RestoreMozDefaultPref
--// Save the saved mozilla default value.
--// It is also responsible for allocate the string memory when needed, because
--// this method know what type of value is stored.
--/////////////////////////////////////////////////////////////////////////////
- nsresult
--nsSystemPref::SaveMozDefaultPref(const char *aPrefName,
--                                 MozPrefValue *aPrefValue,
--                                 PRBool *aLocked)
--{
--    NS_ENSURE_ARG_POINTER(aPrefName);
--    NS_ENSURE_ARG_POINTER(aPrefValue);
--    NS_ENSURE_ARG_POINTER(aLocked);
++}
++
++nsresult
 +nsSystemPref::StopOverridingMozillaPref(const char* aPrefName)
 +{
 +    SysPrefItem* item;
 +    nsDependentCString prefNameStr(aPrefName);
 +    if (!mSavedPrefs.Get(prefNameStr, &item))
 +        return NS_OK;
- 
--    nsresult rv;
++
 +    RestorePref(prefNameStr, item, this);
 +    mSavedPrefs.Remove(prefNameStr);
 +    delete item;
 +    return NS_OK;
 +}
- 
--    nsCOMPtr<nsIPrefBranch> prefBranch =
--        do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
++
 +/* private */
 + 
 +nsresult
@@ -2925,8 +2884,8 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
 +        return rv;
 +    PRBool hasUserValue;
 +    rv = userBranch->PrefHasUserValue(aPrefName, &hasUserValue);
-     if (NS_FAILED(rv))
-         return rv;
++    if (NS_FAILED(rv))
++        return rv;
 +    if (prefType == 0) {
 +        // Preference does not exist. Allow the system prefs to
 +        // set it.
@@ -2988,8 +2947,7 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
 +            }
 +        }
 +    }
- 
--    SYSPREF_LOG(("Save Mozilla value for %s\n", aPrefName));
++
 +    // We need to ignore pref changes due to our own calls here
 +    mIgnorePrefSetting = PR_TRUE;
 + 
@@ -2999,9 +2957,7 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
 +        if (NS_FAILED(rv))
 +            return rv;
 +    }
- 
--    PRInt32 prefType = nsIPrefBranch::PREF_INVALID;
--    nsXPIDLCString strValue;
++
 +    // Set the pref on the default branch if we're locking it, because
 +    // only the default branch gets used when the pref is locked.
 +    // Set the pref on the user branch if we're not locking it, because
@@ -3028,16 +2984,204 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
 +            return NS_ERROR_FAILURE;
 +        }
 +    }
++
++    if (NS_FAILED(rv))
++        return rv;
++    if (aLock) {
++        rv = userBranch->LockPref(aPrefName);
++    }
++
++    mIgnorePrefSetting = PR_FALSE;
+     return rv;
+ }
  
--    rv = prefBranch->GetPrefType(aPrefName, &prefType);
+-//////////////////////////////////////////////////////////////////////
+-// nsSystemPref::ReadSystemPref
+-// Read a pref value from system pref service, and lock it in mozilla.
+-//////////////////////////////////////////////////////////////////////
++
+ nsresult
+-nsSystemPref::ReadSystemPref(const char *aPrefName)
++nsSystemPref::FixupLockdownPrefs()
+ {
+-    if (!mSysPrefService)
+-        return NS_ERROR_FAILURE;
+-    nsresult rv;
+-
+-    nsCOMPtr<nsIPrefBranch> prefBranch
+-        (do_GetService(NS_PREFSERVICE_CONTRACTID, &rv));
++    nsCOMPtr<nsIPrefBranch2> userPrefs = GetPrefUserBranch();
++    nsCOMPtr<nsIPrefBranch2> defaultPrefs = GetPrefUserBranch();
++    PRUint32 childCount;
++    char **childArray = nsnull;
++    nsresult rv = userPrefs->GetChildList("config.lockdown.",
++                                          &childCount, &childArray);
      if (NS_FAILED(rv))
          return rv;
+-
+-    SYSPREF_LOG(("about to read aPrefName %s\n", aPrefName));
+-
+-    prefBranch->UnlockPref(aPrefName);
+-
+-    PRInt32 prefType = nsIPrefBranch::PREF_INVALID;
+-    nsXPIDLCString strValue;
+-    PRInt32 intValue = 0;
+-    PRBool boolValue = PR_FALSE;
+-
+-    rv = prefBranch->GetPrefType(aPrefName, &prefType);
+-    if (NS_FAILED(rv))
+-        return rv;
+-    switch (prefType) {
+-    case nsIPrefBranch::PREF_STRING:
+-        mSysPrefService->GetCharPref(aPrefName, getter_Copies(strValue));
+-        SYSPREF_LOG(("system value is %s\n", strValue.get()));
+-
+-        prefBranch->SetCharPref(aPrefName, strValue.get());
+-        break;
+-    case nsIPrefBranch::PREF_INT:
+-        mSysPrefService->GetIntPref(aPrefName, &intValue);
+-        SYSPREF_LOG(("system value is %d\n", intValue));
+-
+-        prefBranch->SetIntPref(aPrefName, intValue);
+-        break;
+-    case nsIPrefBranch::PREF_BOOL:
+-        mSysPrefService->GetBoolPref(aPrefName, &boolValue);
+-        SYSPREF_LOG(("system value is %s\n", boolValue ? "TRUE" : "FALSE"));
+-
+-        prefBranch->SetBoolPref(aPrefName, boolValue);
+-        break;
+-    default:
+-        SYSPREF_LOG(("Fail to system value for it\n"));
+-        return NS_ERROR_FAILURE;
++    for (PRUint32 i = 0; i < childCount; ++i) {
++        PRInt32 type;
++        rv = defaultPrefs->GetPrefType(childArray[i], &type);
++        if (NS_FAILED(rv))
++            return rv;
++        NS_ASSERTION(type == nsIPrefBranch2::PREF_BOOL,
++                     "All config.lockdown.* prefs should be boolean");
++        if (type == nsIPrefBranch2::PREF_BOOL) {
++            rv = defaultPrefs->SetBoolPref(childArray[i], PR_FALSE);
++            if (NS_FAILED(rv))
++                return rv;
++        }
+     }
+-    prefBranch->LockPref(aPrefName);
++    NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(childCount, childArray);
+     return NS_OK;
+ }
+ 
+-//////////////////////////////////////////////////////////////////////
+-// nsSystemPref::UseMozillaPrefs
+-// Restore mozilla default prefs, remove system pref listeners
+-/////////////////////////////////////////////////////////////////////
++
+ nsresult
+-nsSystemPref::UseMozillaPrefs()
++nsSystemPref::LoadSystemPrefs()
+ {
+-    nsresult rv = NS_OK;
+-    SYSPREF_LOG(("\n====Now rollback to Mozilla prefs==\n"));
++    SYSPREF_LOG(("\n====Now Use system prefs==\n"));
++    NS_ASSERTION(!mSysPrefService,
++                 "Shouldn't have the pref service here");
++    nsresult rv;
++    mSysPrefService = do_GetService(NS_SYSTEMPREF_SERVICE_CONTRACTID, &rv);
++    if (NS_FAILED(rv) || !mSysPrefService) {
++        FixupLockdownPrefs();
++        SYSPREF_LOG(("...No System Pref Service\n"));
++        return NS_OK;
++    }
+ 
+-    // if we did not use system prefs, do nothing
+-    if (!mSysPrefService)
+-        return NS_OK;
++    // Cache the pref-branch while we load up the system prefs.
++    NS_ASSERTION(!mCachedUserPrefBranch,
++                 "Shouldn't have a cache here");
++    nsCOMPtr<nsIPrefBranch2> userBranch = GetPrefUserBranch();
++    nsCOMPtr<nsIPrefBranch> defaultBranch = GetPrefDefaultBranch();
++    mCachedDefaultPrefBranch = defaultBranch;
++    mCachedUserPrefBranch = userBranch;
++    rv = mSysPrefService->LoadSystemPreferences(this);
++    mCachedDefaultPrefBranch = nsnull;
++    mCachedUserPrefBranch = nsnull;
+ 
+-    PRIntn sysPrefCount= sizeof(sSysPrefList) / sizeof(sSysPrefList[0]);
+-    for (PRIntn index = 0; index < sysPrefCount; ++index) {
+-        // restore mozilla default value and free string memory if needed
+-        RestoreMozDefaultPref(mSysPrefs[index].prefName,
+-                              &mSysPrefs[index].defaultValue,
+-                              mSysPrefs[index].isLocked);
+-        SYSPREF_LOG(("stop listening on %s\n", mSysPrefs[index].prefName));
+-        mSysPrefService->RemoveObserver(mSysPrefs[index].prefName,
+-                                        this);
++    if (NS_FAILED(rv)) {
++        // Restore all modified preferences to their original values
++        mSavedPrefs.EnumerateRead(RestorePref, this);
++        mSavedPrefs.Clear();
++        mSysPrefService = nsnull;
+     }
++        
+     return rv;
+ }
+ 
+-////////////////////////////////////////////////////////////////////////////
+-// nsSystemPref::RestoreMozDefaultPref
+-// Save the saved mozilla default value.
+-// It is also responsible for allocate the string memory when needed, because
+-// this method know what type of value is stored.
+-/////////////////////////////////////////////////////////////////////////////
++
+ nsresult
+-nsSystemPref::SaveMozDefaultPref(const char *aPrefName,
+-                                 MozPrefValue *aPrefValue,
+-                                 PRBool *aLocked)
++nsSystemPref::RestoreMozillaPrefs()
+ {
+-    NS_ENSURE_ARG_POINTER(aPrefName);
+-    NS_ENSURE_ARG_POINTER(aPrefValue);
+-    NS_ENSURE_ARG_POINTER(aLocked);
++    SYSPREF_LOG(("\n====Now rollback to Mozilla prefs==\n"));
+ 
+-    nsresult rv;
++    NS_ASSERTION(mSysPrefService,
++                 "Should have the pref service here");
++    if (!mSysPrefService)
++        return NS_ERROR_FAILURE;
+ 
+-    nsCOMPtr<nsIPrefBranch> prefBranch =
+-        do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
+-    if (NS_FAILED(rv))
+-        return rv;
++    nsCOMPtr<nsIPrefBranch2> userBranch = GetPrefUserBranch();
++    nsCOMPtr<nsIPrefBranch> defaultBranch = GetPrefDefaultBranch();
++    mCachedDefaultPrefBranch = defaultBranch;
++    mCachedUserPrefBranch = userBranch;
+ 
+-    SYSPREF_LOG(("Save Mozilla value for %s\n", aPrefName));
++    mSysPrefService->NotifyUnloadSystemPreferences();
++    // Restore all modified preferences to their original values
++    mSavedPrefs.EnumerateRead(RestorePref, this);
++    mSavedPrefs.Clear();
+ 
+-    PRInt32 prefType = nsIPrefBranch::PREF_INVALID;
+-    nsXPIDLCString strValue;
++    mCachedDefaultPrefBranch = nsnull;
++    mCachedUserPrefBranch = nsnull;
++    
++    mSysPrefService = nsnull;
+ 
+-    rv = prefBranch->GetPrefType(aPrefName, &prefType);
+-    if (NS_FAILED(rv))
+-        return rv;
 -    switch (prefType) {
 -    case nsIPrefBranch::PREF_STRING:
 -        prefBranch->GetCharPref(aPrefName,
 -                                getter_Copies(strValue));
 -        SYSPREF_LOG(("Mozilla value is %s", strValue.get()));
--
++    FixupLockdownPrefs();
+ 
 -        if (aPrefValue->stringVal)
 -            PL_strfree(aPrefValue->stringVal);
 -        aPrefValue->stringVal = PL_strdup(strValue.get());
@@ -3056,162 +3200,82 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.cpp
 -    default:
 -        SYSPREF_LOG(("Fail to Read Mozilla value for it\n"));
 -        return NS_ERROR_FAILURE;
-+    if (aLock) {
-+        rv = userBranch->LockPref(aPrefName);
-     }
+-    }
 -    rv = prefBranch->PrefIsLocked(aPrefName, aLocked);
 -    SYSPREF_LOG((" (%s).\n", aLocked ? "Locked" : "NOT Locked"));
-+
-+    mIgnorePrefSetting = PR_FALSE;
-     return rv;
- }
- 
+-    return rv;
+-}
+-
 -////////////////////////////////////////////////////////////////////////////
 -// nsSystemPref::RestoreMozDefaultPref
 -// Restore the saved mozilla default value to pref service.
 -// It is also responsible for free the string memory when needed, because
 -// this method know what type of value is stored.
 -/////////////////////////////////////////////////////////////////////////////
-+
- nsresult
+-nsresult
 -nsSystemPref::RestoreMozDefaultPref(const char *aPrefName,
 -                                    MozPrefValue *aPrefValue,
 -                                    PRBool aLocked)
-+nsSystemPref::FixupLockdownPrefs()
- {
+-{
 -    NS_ENSURE_ARG_POINTER(aPrefName);
 -
 -    nsresult rv;
 -
 -    nsCOMPtr<nsIPrefBranch> prefBranch =
 -        do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
-+    nsCOMPtr<nsIPrefBranch2> userPrefs = GetPrefUserBranch();
-+    nsCOMPtr<nsIPrefBranch2> defaultPrefs = GetPrefUserBranch();
-+    PRUint32 childCount;
-+    char **childArray = nsnull;
-+    nsresult rv = userPrefs->GetChildList("config.lockdown.",
-+                                          &childCount, &childArray);
-     if (NS_FAILED(rv))
-         return rv;
-+    for (PRUint32 i = 0; i < childCount; ++i) {
-+        PRInt32 type;
-+        rv = defaultPrefs->GetPrefType(childArray[i], &type);
-+        if (NS_FAILED(rv))
-+            return rv;
-+        NS_ASSERTION(type == nsIPrefBranch2::PREF_BOOL,
-+                     "All config.lockdown.* prefs should be boolean");
-+        if (type == nsIPrefBranch2::PREF_BOOL) {
-+            rv = defaultPrefs->SetBoolPref(childArray[i], PR_FALSE);
-+            if (NS_FAILED(rv))
-+                return rv;
-+        }
-+    }
-+    NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(childCount, childArray);
-+    return NS_OK;
-+}
- 
+-    if (NS_FAILED(rv))
+-        return rv;
+-
 -    SYSPREF_LOG(("Restore Mozilla value for %s\n", aPrefName));
- 
+-
 -    PRInt32 prefType = nsIPrefBranch::PREF_INVALID;
 -    rv = prefBranch->GetPrefType(aPrefName, &prefType);
 -    if (NS_FAILED(rv))
 -        return rv;
-+nsresult
-+nsSystemPref::LoadSystemPrefs()
-+{
-+    SYSPREF_LOG(("\n====Now Use system prefs==\n"));
-+    NS_ASSERTION(!mSysPrefService,
-+                 "Shouldn't have the pref service here");
-+    nsresult rv;
-+    mSysPrefService = do_GetService(NS_SYSTEMPREF_SERVICE_CONTRACTID, &rv);
-+    if (NS_FAILED(rv) || !mSysPrefService) {
-+        FixupLockdownPrefs();
-+        SYSPREF_LOG(("...No System Pref Service\n"));
-+        return NS_OK;
-+    }
- 
+-
 -    // unlock, if it is locked
 -    prefBranch->UnlockPref(aPrefName);
-+    // Cache the pref-branch while we load up the system prefs.
-+    NS_ASSERTION(!mCachedUserPrefBranch,
-+                 "Shouldn't have a cache here");
-+    nsCOMPtr<nsIPrefBranch2> userBranch = GetPrefUserBranch();
-+    nsCOMPtr<nsIPrefBranch> defaultBranch = GetPrefDefaultBranch();
-+    mCachedDefaultPrefBranch = defaultBranch;
-+    mCachedUserPrefBranch = userBranch;
-+    rv = mSysPrefService->LoadSystemPreferences(this);
-+    mCachedDefaultPrefBranch = nsnull;
-+    mCachedUserPrefBranch = nsnull;
-+
-+    if (NS_FAILED(rv)) {
-+        // Restore all modified preferences to their original values
-+        mSavedPrefs.EnumerateRead(RestorePref, this);
-+        mSavedPrefs.Clear();
-+        mSysPrefService = nsnull;
-+    }
-+        
-+    return rv;
-+}
- 
+-
 -    switch (prefType) {
 -    case nsIPrefBranch::PREF_STRING:
 -        prefBranch->SetCharPref(aPrefName,
 -                                aPrefValue->stringVal);
 -        SYSPREF_LOG(("Mozilla value is %s\n", aPrefValue->stringVal));
- 
+-
 -        PL_strfree(aPrefValue->stringVal);
 -        aPrefValue->stringVal = nsnull;
-+nsresult
-+nsSystemPref::RestoreMozillaPrefs()
-+{
-+    SYSPREF_LOG(("\n====Now rollback to Mozilla prefs==\n"));
- 
+-
 -        break;
 -    case nsIPrefBranch::PREF_INT:
 -        prefBranch->SetIntPref(aPrefName, aPrefValue->intVal);
 -        SYSPREF_LOG(("Mozilla value is %d\n", aPrefValue->intVal));
-+    NS_ASSERTION(mSysPrefService,
-+                 "Should have the pref service here");
-+    if (!mSysPrefService)
-+        return NS_ERROR_FAILURE;
- 
+-
 -        break;
 -    case nsIPrefBranch::PREF_BOOL:
 -        prefBranch->SetBoolPref(aPrefName, aPrefValue->boolVal);
 -        SYSPREF_LOG(("Mozilla value is %s\n",
 -                     aPrefValue->boolVal ? "TRUE" : "FALSE"));
-+    nsCOMPtr<nsIPrefBranch2> userBranch = GetPrefUserBranch();
-+    nsCOMPtr<nsIPrefBranch> defaultBranch = GetPrefDefaultBranch();
-+    mCachedDefaultPrefBranch = defaultBranch;
-+    mCachedUserPrefBranch = userBranch;
-+
-+    mSysPrefService->NotifyUnloadSystemPreferences();
-+    // Restore all modified preferences to their original values
-+    mSavedPrefs.EnumerateRead(RestorePref, this);
-+    mSavedPrefs.Clear();
-+
-+    mCachedDefaultPrefBranch = nsnull;
-+    mCachedUserPrefBranch = nsnull;
-+    
-+    mSysPrefService = nsnull;
- 
+-
 -        break;
 -    default:
 -        SYSPREF_LOG(("Fail to Restore Mozilla value for it\n"));
 -        return NS_ERROR_FAILURE;
 -    }
-+    FixupLockdownPrefs();
- 
+-
 -    // restore its old lock status
 -    if (aLocked)
 -        prefBranch->LockPref(aPrefName);
      return NS_OK;
  }
-Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.h
-===================================================================
---- mozilla.orig/extensions/pref/system-pref/src/nsSystemPref.h
-+++ mozilla/extensions/pref/system-pref/src/nsSystemPref.h
-@@ -23,7 +23,7 @@
+diff --git a/extensions/pref/system-pref/src/nsSystemPref.h b/extensions/pref/system-pref/src/nsSystemPref.h
+--- a/extensions/pref/system-pref/src/nsSystemPref.h
++++ b/extensions/pref/system-pref/src/nsSystemPref.h
+@@ -18,17 +18,17 @@
+  * The Original Code is mozilla.org code.
+  *
+  * The Initial Developer of the Original Code is Sun Microsystems, Inc.
+  * Portions created by Sun Microsystems are Copyright (C) 2003 Sun
+  * Microsystems, Inc. All Rights Reserved.
   *
   * Original Author: Bolian Yin (bolian.yin@sun.com)
   *
@@ -3220,7 +3284,17 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.h
   *
   * Alternatively, the contents of this file may be used under the terms of
   * either the GNU General Public License Version 2 or later (the "GPL"), or
-@@ -45,16 +45,14 @@
+  * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the NPL, indicate your
+@@ -40,71 +40,101 @@
+  * ***** END LICENSE BLOCK ***** */
+ 
+ #ifndef __SYSTEM_PREF_H__
+ #define __SYSTEM_PREF_H__
+ 
  #include "nsCOMPtr.h"
  #include "nsXPCOM.h"
  #include "nsCRT.h"
@@ -3242,7 +3316,7 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.h
  struct SysPrefItem;
  
  //////////////////////////////////////////////////////////////////////////
-@@ -62,18 +60,34 @@ struct SysPrefItem;
+ //
  // nsSystemPref, as an extension of mozilla pref service, reads some mozilla
  // prefs from host system when the feature is enabled ("config.system-pref").
  //
@@ -3250,15 +3324,14 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.h
 -// nsSystemPref will start the nsSystemPrefService (platform specific) to
 -// read all the interested prefs (listed in sSysPrefList table) from system
 -// and lock these prefs from user's modification. 
--//
--// This feature will make mozilla integrated better into host platforms. If
--// users want to change the prefs read from system, the system provided pref
--// editor (i.e. gconf-editor in gnome) should be used.
 +// nsSystemPref listens on NS_PREFSERVICE_READ_TOPIC_ID. When
 +// notified, nsSystemPref will start the nsSystemPrefService (platform
 +// specific) and tell it to override Mozilla prefs with its own
 +// settings.
-+//
+ //
+-// This feature will make mozilla integrated better into host platforms. If
+-// users want to change the prefs read from system, the system provided pref
+-// editor (i.e. gconf-editor in gnome) should be used.
 +// When overriding a Mozilla preference the prefservice can request the
 +// pref be locked or unlocked. If the pref is locked then we set the default
 +// value and lock it in Mozilla so the user value is ignored and the user cannot
@@ -3286,7 +3359,9 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.h
  {
  public:
      NS_DECL_ISUPPORTS
-@@ -83,23 +97,39 @@ public:
+     NS_DECL_NSIOBSERVER
+ 
+     nsSystemPref();
      virtual ~nsSystemPref();
      nsresult Init(void);
  
@@ -3311,23 +3386,21 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.h
 -    nsresult SaveMozDefaultPref(const char *aPrefName,
 -                                MozPrefValue *aPrefVal,
 -                                PRBool *aLocked);
--
++    // If we don't load the system prefs for any reason, then
++    // set all config.lockdown.* preferences to PR_FALSE so that
++    // residual lockdown settings are removed.
++    nsresult FixupLockdownPrefs();
+ 
 -    // funcs used to load mozilla default prefs
 -    nsresult UseMozillaPrefs();
 -    nsresult RestoreMozDefaultPref(const char *aPrefName,
 -                                   MozPrefValue *aPrefVal,
 -                                   PRBool aLocked);
--
++    nsresult LoadSystemPrefs();
+ 
 -    nsCOMPtr<nsIPrefBranch2>  mSysPrefService;
 -    PRBool mEnabled;  // system pref is enabled or not
 -    SysPrefItem *mSysPrefs;
-+    // If we don't load the system prefs for any reason, then
-+    // set all config.lockdown.* preferences to PR_FALSE so that
-+    // residual lockdown settings are removed.
-+    nsresult FixupLockdownPrefs();
-+
-+    nsresult LoadSystemPrefs();
-+
 +    nsresult RestoreMozillaPrefs();
 +
 +    nsresult OverridePref(const char* aPrefName, PRInt32 aType,
@@ -3342,11 +3415,20 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPref.h
  };
  
  #define NS_SYSTEMPREF_CID                  \
-Index: mozilla/extensions/pref/system-pref/src/nsSystemPrefFactory.cpp
-===================================================================
---- mozilla.orig/extensions/pref/system-pref/src/nsSystemPrefFactory.cpp
-+++ mozilla/extensions/pref/system-pref/src/nsSystemPrefFactory.cpp
-@@ -42,10 +42,10 @@
+   { /* {549abb24-7c9d-4aba-915e-7ce0b716b32f} */       \
+     0x549abb24,                                        \
+     0x7c9d,                                            \
+     0x4aba,                                            \
+     { 0x91, 0x5e, 0x7c, 0xe0, 0xb7, 0x16, 0xb3, 0x2f } \
+diff --git a/extensions/pref/system-pref/src/nsSystemPrefFactory.cpp b/extensions/pref/system-pref/src/nsSystemPrefFactory.cpp
+--- a/extensions/pref/system-pref/src/nsSystemPrefFactory.cpp
++++ b/extensions/pref/system-pref/src/nsSystemPrefFactory.cpp
+@@ -37,20 +37,20 @@
+  * the provisions above, a recipient may use your version of this file under
+  * the terms of any one of the NPL, the GPL or the LGPL.
+  *
+  * ***** END LICENSE BLOCK ***** */
+ 
  #include "nsICategoryManager.h"
  #include "nsIGenericFactory.h"
  #include "nsSystemPref.h"
@@ -3359,7 +3441,17 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPrefFactory.cpp
  
  // Registering nsSystemPref module as part of the app-startup category to get 
  // it instantiated.
-@@ -96,11 +96,6 @@ static const nsModuleComponentInfo compo
+ 
+ static NS_METHOD
+ RegisterSystemPref(nsIComponentManager *aCompMgr,
+                    nsIFile *aPath,
+                    const char *registryLocation,
+@@ -91,16 +91,11 @@ UnRegisterSystemPref(nsIComponentManager
+ static const nsModuleComponentInfo components[] = {
+     { NS_SYSTEMPREF_CLASSNAME,
+       NS_SYSTEMPREF_CID,
+       NS_SYSTEMPREF_CONTRACTID,
+       nsSystemPrefConstructor,
        RegisterSystemPref,
        UnRegisterSystemPref,
      },
@@ -3371,11 +3463,15 @@ Index: mozilla/extensions/pref/system-pref/src/nsSystemPrefFactory.cpp
  };
  
  NS_IMPL_NSGETMODULE(nsSystemPrefModule, components)
-Index: mozilla/toolkit/library/Makefile.in
-===================================================================
---- mozilla.orig/toolkit/library/Makefile.in
-+++ mozilla/toolkit/library/Makefile.in
-@@ -230,6 +230,10 @@ ifdef MOZ_ENABLE_DBUS
+diff --git a/toolkit/library/Makefile.in b/toolkit/library/Makefile.in
+--- a/toolkit/library/Makefile.in
++++ b/toolkit/library/Makefile.in
+@@ -225,16 +225,20 @@ endif
+ ifdef MOZ_ENABLE_LIBCONIC
+ EXTRA_DSO_LDOPTS += $(LIBCONIC_LIBS)
+ endif
+ 
+ ifdef MOZ_ENABLE_DBUS
  EXTRA_DSO_LDOPTS += $(MOZ_DBUS_LIBS)
  endif
  
@@ -3386,11 +3482,20 @@ Index: mozilla/toolkit/library/Makefile.in
  ifeq (gtk2,$(MOZ_WIDGET_TOOLKIT))
  EXTRA_DSO_LDOPTS += $(XLDFLAGS) $(XLIBS) $(XEXT_LIBS) $(XCOMPOSITE_LIBS) $(MOZ_PANGO_LIBS) $(MOZ_GTK2_LIBS) $(XT_LIBS) -lgthread-2.0
  EXTRA_DSO_LDOPTS += $(FT2_LIBS)
-Index: mozilla/toolkit/toolkit-tiers.mk
-===================================================================
---- mozilla.orig/toolkit/toolkit-tiers.mk
-+++ mozilla/toolkit/toolkit-tiers.mk
-@@ -263,6 +263,13 @@ ifdef NS_TRACE_MALLOC
+ endif
+ 
+ ifeq (qt,$(MOZ_WIDGET_TOOLKIT))
+ EXTRA_DSO_LDOPTS += $(XLDFLAGS) $(XLIBS) $(XT_LIBS) $(MOZ_QT_LIBS) -lgthread-2.0
+ EXTRA_DSO_LDOPTS += $(FT2_LIBS)
+diff --git a/toolkit/toolkit-tiers.mk b/toolkit/toolkit-tiers.mk
+--- a/toolkit/toolkit-tiers.mk
++++ b/toolkit/toolkit-tiers.mk
+@@ -258,16 +258,23 @@ endif
+ ifdef MOZ_ENABLE_LIBXUL
+ tier_toolkit_dirs += xpcom/stub
+ endif
+ 
+ ifdef NS_TRACE_MALLOC
  tier_toolkit_dirs += tools/trace-malloc
  endif
  
@@ -3404,3 +3509,8 @@ Index: mozilla/toolkit/toolkit-tiers.mk
  ifdef MOZ_ENABLE_GNOME_COMPONENT
  tier_toolkit_dirs    += toolkit/system/gnome
  endif
+ 
+ ifndef MOZ_ENABLE_LIBCONIC
+ # if libconic is present, it will do its own network monitoring
+ ifdef MOZ_ENABLE_DBUS
+ tier_toolkit_dirs    += toolkit/system/dbus

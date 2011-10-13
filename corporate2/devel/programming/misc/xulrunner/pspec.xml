@@ -5,20 +5,22 @@
         <Name>xulrunner</Name>
         <Homepage>http://mozilla.org</Homepage>
         <Packager>
-            <Name>Pardus</Name>
-            <Email>admins@pardus.org.tr</Email>
+            <Name>Metin Akdere</Name>
+            <Email>metin@pardus.org.tr</Email>
         </Packager>
         <License>MPL-1.1</License>
         <IsA>library</IsA>
         <Summary>XUL Runtime for Gecko Applications</Summary>
         <Description>xulrunner provides the XUL Runtime environment for Gecko applications.</Description>
-        <Archive sha1sum="7b4ab5c1d67c1d89b112aa15ecc7848c120dc58d" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/mozilla-FIREFOX_3_6_19_RELEASE.tar.lzma</Archive>
+        <Archive sha1sum="e199a7a5d4dd9c5191059b45587c090079b4ef9a" type="tarbz2">ftp://ftp.mozilla.org/pub/mozilla.org/mozilla.org/firefox/releases/3.6.23/source/firefox-3.6.23.source.tar.bz2</Archive>
+        <Archive sha1sum="88d7795ae9a36debaa920213d330c5bf7fcbb681" type="tarbz2" target="mozilla-1.9.2">http://cekirdek.pardus.org.tr/~metin/dist/firefox/l10n-3.6.23.tar.bz2</Archive>
         <AdditionalFiles>
             <AdditionalFile target="20-xulrunner.conf" permission="0644">ld.so.conf</AdditionalFile>
+            <AdditionalFile target=".mozconfig" permission="0644">pardus/mozconfig</AdditionalFile>
         </AdditionalFiles>
         <BuildDependencies>
-            <Dependency versionFrom="3.12.9.1">nss</Dependency>
-            <Dependency versionFrom="4.8.6">nspr</Dependency>
+            <Dependency versionFrom="3.12.11">nss</Dependency>
+            <Dependency versionFrom="4.8.9">nspr</Dependency>
             <Dependency versionFrom="3.7.7.1">sqlite</Dependency>
             <Dependency versionFrom="1.8.8">cairo</Dependency>
             <Dependency>pango</Dependency>
@@ -30,6 +32,18 @@
             <Dependency>gnome-vfs</Dependency>
             <Dependency>libgnomeui</Dependency>
             <Dependency versionFrom="0.4.0">libproxy</Dependency>
+
+            <Dependency>atk</Dependency>
+            <Dependency>libXt</Dependency>
+            <Dependency>gconf</Dependency>
+            <Dependency>libIDL</Dependency>
+            <Dependency>pixman</Dependency>
+            <Dependency>libXext</Dependency>
+            <Dependency>alsa-lib</Dependency>
+            <Dependency>libnotify</Dependency>
+            <Dependency>fontconfig</Dependency>
+            <Dependency>gdk-pixbuf</Dependency>
+            <Dependency>libXrender</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch level="1">xulrunner-version.patch</Patch>
@@ -42,12 +56,19 @@
             <Patch level="1">suse/gecko-lockdown.patch</Patch>
             <Patch level="1">suse/toolkit-ui-lockdown.patch</Patch>
             <Patch level="1">suse/mozilla-ua-locale-pref.patch</Patch>
+            <Patch level="1">suse/mozilla-locale.patch</Patch>
+            <Patch level="1">suse/locale.patch</Patch>
+            <Patch level="1">suse/mozilla-dump_syms-static.patch</Patch>
+            <Patch level="1">suse/mozilla-ntlm-full-path.patch</Patch>
+            <Patch level="1">suse/mozilla-cairo-lcd.patch</Patch>
+            <Patch level="1">suse/mozilla-shared-nss-db.patch</Patch>
+            <Patch level="1">suse/mozilla-linux3.patch</Patch>
+            <Patch level="1">suse/mozilla-implicit-declarations.patch</Patch>
 
             <!-- Pardus -->
             <Patch>pardus/zemberek-firefox3.patch</Patch>
             <Patch level="1">pardus/autoconf-213-hack.diff</Patch>
             <Patch>pardus/as-needed.diff</Patch>
-            <Patch>pardus/xulrunner-mozconfig.patch</Patch>
             <Patch>pardus/pardus-nsplugin-path.patch</Patch>
             <Patch level="1">pardus/change-kmozillahelper-directory.diff</Patch>
 
@@ -58,8 +79,8 @@
     <Package>
         <Name>xulrunner</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="3.12.9.1">nss</Dependency>
-            <Dependency versionFrom="4.8.6">nspr</Dependency>
+            <Dependency versionFrom="3.12.11">nss</Dependency>
+            <Dependency versionFrom="4.8.9">nspr</Dependency>
             <Dependency versionFrom="3.7.7.1">sqlite</Dependency>
             <Dependency versionFrom="1.8.8">cairo</Dependency>
             <Dependency>pango</Dependency>
@@ -70,6 +91,18 @@
             <Dependency>gnome-vfs</Dependency>
             <Dependency>libgnomeui</Dependency>
             <Dependency versionFrom="0.4.0">libproxy</Dependency>
+
+            <Dependency>atk</Dependency>
+            <Dependency>libXt</Dependency>
+            <Dependency>gconf</Dependency>
+            <Dependency>libIDL</Dependency>
+            <Dependency>pixman</Dependency>
+            <Dependency>libXext</Dependency>
+            <Dependency>alsa-lib</Dependency>
+            <Dependency>libnotify</Dependency>
+            <Dependency>fontconfig</Dependency>
+            <Dependency>gdk-pixbuf</Dependency>
+            <Dependency>libXrender</Dependency>
         </RuntimeDependencies>
         <Conflicts>
             <!-- We have moved sdk libraries to base package -->
@@ -103,6 +136,23 @@
     </Package>
 
     <History>
+        <Update release="46">
+            <Date>2011-10-13</Date>
+            <Version>1.9.2.23</Version>
+            <Comment>Version bump to latest security update:
+                * Depend strictly on new nss and nspr to prevent users using fraudulent DigiNotar SSL certificates
+                * Put main configuration file (mozconfig) as an additional file to ease packaging
+                * Add scripts to get source and locales from Mozilla VCS
+                * Add missing dependencies according to checkelf script
+                * Code installation through holding down Enter
+                * Defense against multiple Location headers due to CRLF Injection
+                * XSS via plugins and shadowed window.location object
+                * Integer underflow when using JavaScript RegExp
+                * Miscellaneous memory safety hazards (rv:7.0 / rv:1.9.2.23)
+            </Comment>
+            <Name>Metin Akdere</Name>
+            <Email>metin@pardus.org.tr</Email>
+        </Update>
         <Update release="45" type="security">
             <Date>2011-08-03</Date>
             <Version>1.9.2.19</Version>

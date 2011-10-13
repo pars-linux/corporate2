@@ -1,0 +1,26 @@
+# HG changeset patch
+# User Petr Cerny <pcerny@novell.com>
+# Parent 685ce8f9d8549783e9643907b9e95a3efda526f0
+
+diff --git a/extensions/auth/nsAuthSambaNTLM.cpp b/extensions/auth/nsAuthSambaNTLM.cpp
+--- a/extensions/auth/nsAuthSambaNTLM.cpp
++++ b/extensions/auth/nsAuthSambaNTLM.cpp
+@@ -200,17 +200,17 @@ static PRUint8* ExtractMessage(const nsA
+ nsresult
+ nsAuthSambaNTLM::SpawnNTLMAuthHelper()
+ {
+     const char* username = PR_GetEnv("USER");
+     if (!username)
+         return NS_ERROR_FAILURE;
+ 
+     char* args[] = {
+-        "ntlm_auth",
++        "/usr/bin/ntlm_auth",
+         "--helper-protocol", "ntlmssp-client-1",
+         "--use-cached-creds",
+         "--username", const_cast<char*>(username),
+         nsnull
+     };
+ 
+     PRBool isOK = SpawnIOChild(args, &mChildPID, &mFromChildFD, &mToChildFD);
+     if (!isOK)  

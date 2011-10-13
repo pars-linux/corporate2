@@ -1,0 +1,60 @@
+# HG changeset patch
+# User Wolfgang Rosenauer <wr@rosenauer.org>
+# Parent e069ee20084757311e0826e68d5a1fbeb3dcc29f
+Bug 583793 - Firefox interface language set to LANG, ignores LANGUAGE
+
+diff --git a/intl/locale/src/nsLocaleService.cpp b/intl/locale/src/nsLocaleService.cpp
+--- a/intl/locale/src/nsLocaleService.cpp
++++ b/intl/locale/src/nsLocaleService.cpp
+@@ -169,39 +169,48 @@ nsLocaleService::nsLocaleService(void)
+         nsAutoString category, category_platform;
+         nsLocale* resultLocale;
+         int i;
+ 
+         resultLocale = new nsLocale();
+         if ( resultLocale == NULL ) { 
+             return; 
+         }
++
++        // Get system configuration
++        char* language = getenv("LANGUAGE");
++        char* lang = getenv("LANG");
+         for( i = 0; i < LocaleListLength; i++ ) {
+             nsresult result;
++            // setlocale( , "") evaluates LC_* and LANG
+             char* lc_temp = setlocale(posix_locale_category[i], "");
+             CopyASCIItoUTF16(LocaleList[i], category);
+-            category_platform = category; 
++            category_platform = category;
+             category_platform.AppendLiteral("##PLATFORM");
+             if (lc_temp != nsnull) {
+                 result = posixConverter->GetXPLocale(lc_temp, xpLocale);
+                 CopyASCIItoUTF16(lc_temp, platformLocale);
+             } else {
+-                char* lang = getenv("LANG");
+                 if ( lang == nsnull ) {
+                     platformLocale.AssignLiteral("en_US");
+                     result = posixConverter->GetXPLocale("en-US", xpLocale);
+                 }
+                 else {
+                     CopyASCIItoUTF16(lang, platformLocale);
+-                    result = posixConverter->GetXPLocale(lang, xpLocale); 
++                    result = posixConverter->GetXPLocale(lang, xpLocale);
+                 }
+             }
+             if (NS_FAILED(result)) {
+                 return;
+             }
++            // LANGUAGE is overriding LC_MESSAGES
++            if (i == LC_MESSAGES && language && *language) {
++                CopyASCIItoUTF16(language, platformLocale);
++                result = posixConverter->GetXPLocale(language, xpLocale);
++            }
+             resultLocale->AddCategory(category, xpLocale);
+             resultLocale->AddCategory(category_platform, platformLocale);
+         }
+         mSystemLocale = do_QueryInterface(resultLocale);
+         mApplicationLocale = do_QueryInterface(resultLocale);
+     }  // if ( NS_SUCCEEDED )...
+        
+ #endif // XP_UNIX || XP_BEOS
