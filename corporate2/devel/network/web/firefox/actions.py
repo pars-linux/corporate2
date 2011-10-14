@@ -10,22 +10,25 @@ from pisi.actionsapi import pisitools
 from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
-WorkDir = "mozilla"
+WorkDir = "mozilla-1.9.2"
+locales = ["be", "ca", "de", "es-AR", "es-ES", "fr", "hu", "it", "nl", "pl", "pt-BR", "sv-SE", "tr"]
 
 def setup():
-    #Use autoconf-213 which we provide via a hacky pathc to produce configure
+    # Use autoconf-213 which we provide via a hacky patch to produce configure
     shelltools.system("/bin/bash ./autoconf-213/autoconf-2.13 --macro-dir=autoconf-213/m4")
     shelltools.cd("js/src")
     shelltools.system("/bin/bash ../../autoconf-213/autoconf-2.13 --macro-dir=../../autoconf-213/m4")
     shelltools.cd("../..")
 
+    # Build in a different directory. So that source code and object files are not intermingled
     shelltools.makedirs("objdir")
     shelltools.cd("objdir")
-    #this dummy configure is needed to build locales.
+
+    # This dummy configure is needed to build locales
     shelltools.system("../configure --prefix=/usr --libdir=/usr/lib --disable-strip --disable-install-strip")
 
-    #now we have Makefiles needed to build locales (like toolkit/Makefile)
-    #since we need debug symbols in dbginfo packages, we shouldn't strip binaries
+    # Now we have Makefiles needed to build locales (like objdir/toolkit/Makefile)
+    # Since we need debug symbols in dbginfo packages, we shouldn't strip binaries
     shelltools.system("../configure --prefix=/usr --libdir=/usr/lib --with-libxul-sdk=/usr/lib/xulrunner-devel-1.9.2 --disable-strip --disable-install-strip")
 
 def build():
@@ -33,7 +36,6 @@ def build():
 
     autotools.make()
 
-    locales = ["be", "ca", "de", "es-AR", "es-ES", "fr", "it", "nl", "pl", "pt-BR", "sv-SE", "tr"]
 
     for locale in locales:
         autotools.make("-j1 -C browser/locales libs-%s" % locale)
@@ -50,7 +52,6 @@ def install():
     pisitools.remove("/usr/bin/firefox")
 
     #install locales
-    locales = ["be", "ca", "de", "es-AR", "es-ES", "fr", "it", "nl", "pl", "pt-BR", "sv-SE", "tr"]
     for locale in locales:
         pisitools.insinto("/usr/lib/MozillaFirefox/chrome", "dist/bin/chrome/%s.*" % locale)
 
