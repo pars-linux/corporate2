@@ -15,12 +15,17 @@
         <IsA>app:gui</IsA>
         <Summary>Firefox Web Browser</Summary>
         <Description>It is more secure and faster to browse the web with Firefox web browser. You can personalize your web browser with many specifications that is not enough to explain in two sentences.</Description>
-        <Archive sha1sum="7b4ab5c1d67c1d89b112aa15ecc7848c120dc58d" type="tarlzma">http://cekirdek.pardus.org.tr/~gokcen/files/mozilla-FIREFOX_3_6_19_RELEASE.tar.lzma</Archive>
+        <Archive sha1sum="e199a7a5d4dd9c5191059b45587c090079b4ef9a" type="tarbz2">ftp://ftp.mozilla.org/pub/mozilla.org/mozilla.org/firefox/releases/3.6.23/source/firefox-3.6.23.source.tar.bz2</Archive>
+        <Archive sha1sum="88d7795ae9a36debaa920213d330c5bf7fcbb681" type="tarbz2" target="mozilla-1.9.2">http://cekirdek.pardus.org.tr/~metin/dist/firefox/l10n-3.6.23.tar.bz2</Archive>
+
         <AdditionalFiles>
             <AdditionalFile target="browser/app/profile/kde.js" permission="0644">suse/kde.js</AdditionalFile>
+
+            <!-- The choice of which Mozilla application to build and other configuration options -->
+            <AdditionalFile target=".mozconfig" permission="0644">pardus/mozconfig</AdditionalFile>
         </AdditionalFiles>
         <BuildDependencies>
-            <Dependency versionFrom="1.9.2.19">xulrunner-devel</Dependency>
+            <Dependency versionFrom="1.9.2.23">xulrunner-devel</Dependency>
             <Dependency>fontconfig</Dependency>
             <Dependency versionFrom="2.18.5">gtk2</Dependency>
             <Dependency>pango</Dependency>
@@ -30,11 +35,12 @@
             <Dependency>dbus-glib</Dependency>
             <Dependency>hunspell</Dependency>
             <Dependency versionFrom="0.4.0">libproxy</Dependency>
+            <Dependency versionFrom="4.8.9">nspr</Dependency>
+            <Dependency versionFrom="3.12.11">nss</Dependency>
+            <Dependency>gdk-pixbuf</Dependency>
+            <Dependency>atk</Dependency>
         </BuildDependencies>
         <Patches>
-            <!-- default config values -->
-            <Patch level="1">mozconfig.patch</Patch>
-
             <!-- No default browser patch -->
             <Patch>suse/firefox-appname.patch</Patch>
             <Patch level="1">suse/firefox-kde.patch</Patch>
@@ -61,7 +67,7 @@
     <Package>
         <Name>firefox</Name>
         <RuntimeDependencies>
-            <Dependency versionFrom="1.9.2.19">xulrunner</Dependency>
+            <Dependency versionFrom="1.9.2.23">xulrunner</Dependency>
             <Dependency>fontconfig</Dependency>
             <Dependency versionFrom="2.18.5">gtk2</Dependency>
             <Dependency>pango</Dependency>
@@ -71,6 +77,10 @@
             <Dependency>dbus-glib</Dependency>
             <Dependency>hunspell</Dependency>
             <Dependency versionFrom="0.4.0">libproxy</Dependency>
+            <Dependency versionFrom="4.8.9">nspr</Dependency>
+            <Dependency versionFrom="3.12.11">nss</Dependency>
+            <Dependency>gdk-pixbuf</Dependency>
+            <Dependency>atk</Dependency>
         </RuntimeDependencies>
         <Files>
             <Path fileType="config">/etc/</Path>
@@ -129,6 +139,26 @@
     </Package>
 
     <History>
+        <Update release="139" type="security">
+            <Date>2011-10-15</Date>
+            <Version>3.6.23</Version>
+            <Comment>Version bump to new 3.6.23 security release:
+                * Revoked the root certificate for DigiNotar due to fraudulent SSL certificate issuance (see mozbug#682927)
+                * Removed trust exceptions for certificates issued by Staat der Nederlanden (see mozbug#683449)
+                * Resolved an issue with gov.uk websites (see mozbug#669792)
+                * Depend strictly on new nss and nspr to prevent users using fraudulent DigiNotar SSL certificates
+                * Put main configuration file (mozconfig) as an additional file to ease packaging
+                * Supply translations as a seperate tarball which is being created with the help of tools/create-locale-tar.sh
+                * Add new atk and gdk-pixbuf dependencies
+                * Miscellaneous memory safety hazards
+                * Integer underflow when using JavaScript RegExp
+                * XSS via plugins and shadowed window.location object
+                * Defense against multiple Location headers due to CRLF Injection
+                * Code installation through holding down Enter
+            </Comment>
+            <Name>Metin Akdere</Name>
+            <Email>metin@pardus.org.tr</Email>
+        </Update>
         <Update release="138" type="security">
             <Date>2011-08-03</Date>
             <Version>3.6.19</Version>
