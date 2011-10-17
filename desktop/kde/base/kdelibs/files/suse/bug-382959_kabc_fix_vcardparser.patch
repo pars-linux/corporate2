@@ -1,8 +1,8 @@
-Index: kabc/vcardformatplugin.cpp
-================================================================================
---- kabc/vcardconverter.cpp
+Index: kabc/vcardconverter.cpp
+===================================================================
+--- kabc/vcardconverter.cpp.orig
 +++ kabc/vcardconverter.cpp
-@@ -51,6 +51,14 @@
+@@ -51,6 +51,14 @@ QString VCardConverter::createVCard( con
    return createVCards( list, version );
  }
  
@@ -17,7 +17,7 @@ Index: kabc/vcardformatplugin.cpp
  QString VCardConverter::createVCards( Addressee::List list, Version version )
  {
    VCardTool tool;
-@@ -58,6 +66,13 @@
+@@ -58,6 +66,13 @@ QString VCardConverter::createVCards( Ad
    return tool.createVCards( list, ( version == v3_0 ? VCard::v3_0 : VCard::v2_1 ) );
  }
  
@@ -31,7 +31,7 @@ Index: kabc/vcardformatplugin.cpp
  Addressee VCardConverter::parseVCard( const QString& vcard )
  {
    Addressee::List list = parseVCards( vcard );
-@@ -65,6 +80,13 @@
+@@ -65,6 +80,13 @@ Addressee VCardConverter::parseVCard( co
    return list[ 0 ];
  }
  
@@ -45,7 +45,7 @@ Index: kabc/vcardformatplugin.cpp
  Addressee::List VCardConverter::parseVCards( const QString& vcard )
  {
    VCardTool tool;
-@@ -72,6 +94,13 @@
+@@ -72,6 +94,13 @@ Addressee::List VCardConverter::parseVCa
    return tool.parseVCards( vcard );
  }
  
@@ -59,9 +59,11 @@ Index: kabc/vcardformatplugin.cpp
  // ---------------------------- deprecated stuff ---------------------------- //
  
  bool VCardConverter::vCardToAddressee( const QString &str, Addressee &addr, Version version )
---- kabc/vcardconverter.h
+Index: kabc/vcardconverter.h
+===================================================================
+--- kabc/vcardconverter.h.orig
 +++ kabc/vcardconverter.h
-@@ -82,6 +82,7 @@
+@@ -82,6 +82,7 @@ class KABC_EXPORT VCardConverter
        @param version The version of the generated vCard format
       */
      QString createVCard( const Addressee &addr, Version version = v3_0 );
@@ -69,7 +71,7 @@ Index: kabc/vcardformatplugin.cpp
  
      /**
        Creates a string in vCard format which contains the given
-@@ -92,6 +93,7 @@
+@@ -92,6 +93,7 @@ class KABC_EXPORT VCardConverter
       */
      // FIXME: Add error handling
      QString createVCards( Addressee::List list, Version version = v3_0 );
@@ -77,7 +79,7 @@ Index: kabc/vcardformatplugin.cpp
  
      // FIXME: Add "createVCards( AddressBook * )"
  
-@@ -99,12 +101,14 @@
+@@ -99,12 +101,14 @@ class KABC_EXPORT VCardConverter
        Parses a string in vCard format and returns the first contact.
       */
      Addressee parseVCard( const QString& vcard );
@@ -92,9 +94,11 @@ Index: kabc/vcardformatplugin.cpp
  
      // FIXME: Add "bool parseVCards( AddressBook *, const QString &vcard )"
  
---- kabc/vcardformatplugin.cpp
+Index: kabc/vcardformatplugin.cpp
+===================================================================
+--- kabc/vcardformatplugin.cpp.orig
 +++ kabc/vcardformatplugin.cpp
-@@ -38,14 +38,11 @@
+@@ -38,14 +38,11 @@ VCardFormatPlugin::~VCardFormatPlugin()
  
  bool VCardFormatPlugin::load( Addressee &addressee, QFile *file )
  {
@@ -112,7 +116,7 @@ Index: kabc/vcardformatplugin.cpp
  
    if ( ! l.first().isEmpty() ) {
      addressee = l.first();
-@@ -57,15 +54,11 @@
+@@ -57,15 +54,11 @@ bool VCardFormatPlugin::load( Addressee
  
  bool VCardFormatPlugin::loadAll( AddressBook*, Resource *resource, QFile *file )
  {
@@ -131,7 +135,7 @@ Index: kabc/vcardformatplugin.cpp
  
    Addressee::List::iterator itr;
    for ( itr = l.begin(); itr != l.end(); ++itr) {
-@@ -86,9 +79,8 @@
+@@ -86,9 +79,8 @@ void VCardFormatPlugin::save( const Addr
  
    vcardlist.append( addressee );
  
@@ -143,7 +147,7 @@ Index: kabc/vcardformatplugin.cpp
  }
  
  void VCardFormatPlugin::saveAll( AddressBook*, Resource *resource, QFile *file )
-@@ -102,9 +94,8 @@
+@@ -102,9 +94,8 @@ void VCardFormatPlugin::saveAll( Address
      vcardlist.append( *it );
    }
  
@@ -155,7 +159,9 @@ Index: kabc/vcardformatplugin.cpp
  }
  
  bool VCardFormatPlugin::checkFormat( QFile *file ) const
---- kabc/vcardparser/vcardparser.cpp
+Index: kabc/vcardparser/vcardparser.cpp
+===================================================================
+--- kabc/vcardparser/vcardparser.cpp.orig
 +++ kabc/vcardparser/vcardparser.cpp
 @@ -18,10 +18,13 @@
      Boston, MA 02110-1301, USA.
@@ -171,7 +177,7 @@ Index: kabc/vcardformatplugin.cpp
  
  #include "vcardparser.h"
  
-@@ -29,25 +32,60 @@
+@@ -29,25 +32,58 @@
  
  using namespace KABC;
  
@@ -216,12 +222,10 @@ Index: kabc/vcardformatplugin.cpp
 +
 +bool cStringStartsWith( const QCString &str, const QCString &pattern )
 +{
-+  const int length = pattern.length();
-+  if ( length == 0 )
-+    return true;
++  QString temp_str = QString(str).lower();
++  QString temp_pattern = QString(pattern).lower();
 +
-+  const QCString part = str.left( length );
-+  return (pattern == part);
++  return temp_str.startsWith(temp_pattern);
  }
  
 -static void removeEscapes( QString &str )
@@ -246,7 +250,7 @@ Index: kabc/vcardformatplugin.cpp
  }
  
  VCardParser::VCardParser()
-@@ -60,24 +98,29 @@
+@@ -60,24 +96,29 @@ VCardParser::~VCardParser()
  
  VCard::List VCardParser::parseVCards( const QString& text )
  {
@@ -281,7 +285,7 @@ Index: kabc/vcardformatplugin.cpp
        continue;
      } else {
        if ( inVCard && !currentLine.isEmpty() ) { // now parse the line
-@@ -88,23 +131,23 @@
+@@ -88,23 +129,23 @@ VCard::List VCardParser::parseVCards( co
          }
  
          VCardLine vCardLine;
@@ -314,7 +318,7 @@ Index: kabc/vcardformatplugin.cpp
              if ( pair.size() == 1 ) {
                // correct the fucking 2.1 'standard'
                if ( pair[0].lower() == "quoted-printable" ) {
-@@ -119,12 +162,12 @@
+@@ -119,12 +160,12 @@ VCard::List VCardParser::parseVCards( co
              }
              // This is pretty much a faster pair[1].contains( ',' )...
              if ( pair[1].find( ',' ) != -1 ) { // parameter in type=x,y,z format
@@ -331,7 +335,7 @@ Index: kabc/vcardformatplugin.cpp
            }
          }
  
-@@ -133,10 +176,8 @@
+@@ -133,10 +174,8 @@ VCard::List VCardParser::parseVCards( co
          QByteArray output;
          bool wasBase64Encoded = false;
  
@@ -344,7 +348,7 @@ Index: kabc/vcardformatplugin.cpp
            if ( vCardLine.parameter( "encoding" ).lower() == "b" ||
                 vCardLine.parameter( "encoding" ).lower() == "base64" ) {
              KCodecs::base64Decode( input, output );
-@@ -148,14 +189,14 @@
+@@ -148,14 +187,14 @@ VCard::List VCardParser::parseVCards( co
                value = value.remove( value.length() - 1, 1 ) + (*it);
                ++it;
              }
@@ -362,12 +366,12 @@ Index: kabc/vcardformatplugin.cpp
            QTextCodec *codec =
              QTextCodec::codecForName( vCardLine.parameter( "charset" ).latin1() );
            if ( codec ) {
-@@ -173,17 +214,17 @@
+@@ -173,17 +212,17 @@ VCard::List VCardParser::parseVCards( co
        }
  
        // we do not save the start and end tag as vcardline
 -      if ( (*it).lower().startsWith( "begin:vcard" ) ) {
-+      if ( cStringStartsWith( (*it).lower(), QCString( "begin:vcard" ) ) ) {
++      if ( cStringStartsWith( (*it), QCString( "begin:vcard" ) ) ) {
          inVCard = true;
 -        currentLine.setLength( 0 );
 +        currentLine = QCString();
@@ -376,7 +380,7 @@ Index: kabc/vcardformatplugin.cpp
        }
  
 -      if ( (*it).lower().startsWith( "end:vcard" ) ) {
-+      if ( cStringStartsWith( (*it).lower(), QCString( "end:vcard" ) ) ) {
++      if ( cStringStartsWith( (*it), QCString( "end:vcard" ) ) ) {
          inVCard = false;
          vCardList.append( currentVCard );
 -        currentLine.setLength( 0 );
@@ -384,7 +388,7 @@ Index: kabc/vcardformatplugin.cpp
          currentVCard.clear(); // flush vcard
          continue;
        }
-@@ -197,8 +238,13 @@
+@@ -197,8 +236,13 @@ VCard::List VCardParser::parseVCards( co
  
  QString VCardParser::createVCards( const VCard::List& list )
  {
@@ -400,7 +404,7 @@ Index: kabc/vcardformatplugin.cpp
    QString encodingType;
    QStringList idents;
    QStringList params;
-@@ -213,7 +259,7 @@
+@@ -213,7 +257,7 @@ QString VCardParser::createVCards( const
  
    bool hasEncoding;
  
@@ -409,7 +413,7 @@ Index: kabc/vcardformatplugin.cpp
  
    // iterate over the cards
    VCard::List::ConstIterator listEnd( list.end() );
-@@ -228,9 +274,9 @@
+@@ -228,9 +272,9 @@ QString VCardParser::createVCards( const
        for ( lineIt = lines.constBegin(); lineIt != lines.constEnd(); ++lineIt ) {
          if ( !(*lineIt).value().asString().isEmpty() ) {
            if ( (*lineIt).hasGroup() )
@@ -421,7 +425,7 @@ Index: kabc/vcardformatplugin.cpp
  
            params = (*lineIt).parameterList();
            hasEncoding = false;
-@@ -243,9 +289,9 @@
+@@ -243,9 +287,9 @@ QString VCardParser::createVCards( const
  
                values = (*lineIt).parameters( *paramIt );
                for ( valueIt = values.constBegin(); valueIt != values.constEnd(); ++valueIt ) {
@@ -433,7 +437,7 @@ Index: kabc/vcardformatplugin.cpp
                }
              }
            }
-@@ -261,11 +307,11 @@
+@@ -261,11 +305,11 @@ QString VCardParser::createVCards( const
                KCodecs::quotedPrintableEncode( input, output, false );
              }
  
@@ -447,9 +451,11 @@ Index: kabc/vcardformatplugin.cpp
              addEscapes( value );
              textLine.append( ":" + value );
            }
---- kabc/vcardparser/vcardparser.h
+Index: kabc/vcardparser/vcardparser.h
+===================================================================
+--- kabc/vcardparser/vcardparser.h.orig
 +++ kabc/vcardparser/vcardparser.h
-@@ -34,6 +34,9 @@
+@@ -34,6 +34,9 @@ class VCardParser
      static VCard::List parseVCards( const QString& text );
      static QString createVCards( const VCard::List& list );
  
@@ -459,9 +465,11 @@ Index: kabc/vcardformatplugin.cpp
    private:
      class VCardParserPrivate;
      VCardParserPrivate *d;
---- kabc/vcardtool.cpp
+Index: kabc/vcardtool.cpp
+===================================================================
+--- kabc/vcardtool.cpp.orig
 +++ kabc/vcardtool.cpp
-@@ -74,15 +74,28 @@
+@@ -74,15 +74,28 @@ VCardTool::~VCardTool()
  {
  }
  
@@ -493,7 +501,7 @@ Index: kabc/vcardformatplugin.cpp
      QStringList::ConstIterator strIt;
  
      // ADR + LABEL
-@@ -348,17 +361,30 @@
+@@ -348,17 +361,30 @@ QString VCardTool::createVCards( Address
      vCardList.append( card );
    }
  
@@ -526,9 +534,11 @@ Index: kabc/vcardformatplugin.cpp
  
    VCard::List::ConstIterator cardIt;
    VCard::List::ConstIterator listEnd( vCardList.end() );
---- kabc/vcardtool.h
+Index: kabc/vcardtool.h
+===================================================================
+--- kabc/vcardtool.h.orig
 +++ kabc/vcardtool.h
-@@ -46,12 +46,19 @@
+@@ -46,12 +46,19 @@ class KABC_EXPORT VCardTool
       */
      QString createVCards( Addressee::List list, VCard::Version version = VCard::v3_0 );
  
