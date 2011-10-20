@@ -17,9 +17,9 @@ def setup():
     shelltools.touch("GNUstep.conf")
     shelltools.echo("GNUstep.conf", "GNUSTEP_USER_DIR=%s" % get.workDIR())
     shelltools.echo("GNUstep.conf", "GNUSTEP_USER_DEFAULTS_DIR=%s/Defaults" % get.workDIR())
- 
+
     autotools.autoreconf("-vfi")
-    autotools.configure("--enable-ffcall \
+    autotools.configure("--disable-ffcall \
                         --enable-gnutls \
                         --enable-tls \
                         --enable-zeroconf \
