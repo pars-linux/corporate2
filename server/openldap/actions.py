@@ -68,7 +68,10 @@ def setup():
                          --localstatedir=/var/lib")
 
 def build():
-    autotools.make("-j1")
+    autotools.make()
+
+def check():
+    autotools.make("check")
 
 def install():
     autotools.rawInstall("DESTDIR=%s" % get.installDIR())
