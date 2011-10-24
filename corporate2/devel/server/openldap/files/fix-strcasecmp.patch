@@ -60,6 +60,767 @@ Index: openldap-2.4.23/include/ac/string.h
 +}
 +
  #endif /* _AC_STRING_H */
+Index: openldap-2.4.23/servers/slapd/aci.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/aci.c
++++ openldap-2.4.23/servers/slapd/aci.c
+@@ -253,7 +253,7 @@ aci_list_has_attr(
+ 					}
+ 
+ 				} else if ( val->bv_len >= left.bv_len ) {
+-					if ( strncasecmp( val->bv_val, left.bv_val, left.bv_len ) == 0 ) {
++					if ( ascii_strncasecmp( val->bv_val, left.bv_val, left.bv_len ) == 0 ) {
+ 						return(1);
+ 					}
+ 				}
+Index: openldap-2.4.23/servers/slapd/acl.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/acl.c
++++ openldap-2.4.23/servers/slapd/acl.c
+@@ -1345,7 +1345,7 @@ slap_acl_mask(
+ 						unsigned long	addr;
+ 						int		port_number = -1;
+ 						
+-						if ( strncasecmp( op->o_conn->c_peer_name.bv_val, 
++						if ( ascii_strncasecmp( op->o_conn->c_peer_name.bv_val, 
+ 									acl_bv_ip_eq.bv_val,
+ 									acl_bv_ip_eq.bv_len ) != 0 ) 
+ 							continue;
+@@ -1390,7 +1390,7 @@ slap_acl_mask(
+ 						struct in6_addr	addr;
+ 						int		port_number = -1;
+ 						
+-						if ( strncasecmp( op->o_conn->c_peer_name.bv_val, 
++						if ( ascii_strncasecmp( op->o_conn->c_peer_name.bv_val, 
+ 									acl_bv_ipv6_eq.bv_val,
+ 									acl_bv_ipv6_eq.bv_len ) != 0 ) 
+ 							continue;
+@@ -2164,7 +2164,7 @@ acl_set_gather( SetCookie *cookie, struc
+ 	 * plain strings, since syntax is not known.  It should
+ 	 * also return the syntax or some "comparison cookie".
+ 	 */
+-	if ( strncasecmp( name->bv_val, "ldap:///", STRLENOF( "ldap:///" ) ) != 0 ) {
++	if ( ascii_strncasecmp( name->bv_val, "ldap:///", STRLENOF( "ldap:///" ) ) != 0 ) {
+ 		return acl_set_gather2( cookie, name, desc );
+ 	}
+ 
+@@ -2429,7 +2429,7 @@ slap_dynacl_register( slap_dynacl_t *da
+ 	slap_dynacl_t	*tmp;
+ 
+ 	for ( tmp = da_list; tmp; tmp = tmp->da_next ) {
+-		if ( strcasecmp( da->da_name, tmp->da_name ) == 0 ) {
++		if ( ascii_strcasecmp( da->da_name, tmp->da_name ) == 0 ) {
+ 			break;
+ 		}
+ 	}
+@@ -2464,7 +2464,7 @@ slap_dynacl_get( const char *name )
+ 	slap_dynacl_t	*da;
+ 
+ 	for ( da = slap_dynacl_next( NULL ); da; da = slap_dynacl_next( da ) ) {
+-		if ( strcasecmp( da->da_name, name ) == 0 ) {
++		if ( ascii_strcasecmp( da->da_name, name ) == 0 ) {
+ 			break;
+ 		}
+ 	}
+Index: openldap-2.4.23/servers/slapd/aclparse.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/aclparse.c
++++ openldap-2.4.23/servers/slapd/aclparse.c
+@@ -85,7 +85,7 @@ slap_dynacl_config(
+ 	int		rc = 0;
+ 
+ 	for ( da = b->a_dynacl; da; da = da->da_next ) {
+-		if ( strcasecmp( da->da_name, name ) == 0 ) {
++		if ( ascii_strcasecmp( da->da_name, name ) == 0 ) {
+ 			Debug( LDAP_DEBUG_ANY,
+ 				"%s: line %d: dynacl \"%s\" already specified.\n",
+ 				fname, lineno, name );
+@@ -336,7 +336,7 @@ parse_acl(
+ 
+ 	for ( i = 1; i < argc; i++ ) {
+ 		/* to clause - select which entries are protected */
+-		if ( strcasecmp( argv[i], "to" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[i], "to" ) == 0 ) {
+ 			if ( a != NULL ) {
+ 				Debug( LDAP_DEBUG_ANY, "%s: line %d: "
+ 					"only one to clause allowed in access line\n",
+@@ -346,12 +346,12 @@ parse_acl(
+ 			a = (AccessControl *) ch_calloc( 1, sizeof(AccessControl) );
+ 			a->acl_attrval_style = ACL_STYLE_NONE;
+ 			for ( ++i; i < argc; i++ ) {
+-				if ( strcasecmp( argv[i], "by" ) == 0 ) {
++				if ( ascii_strcasecmp( argv[i], "by" ) == 0 ) {
+ 					i--;
+ 					break;
+ 				}
+ 
+-				if ( strcasecmp( argv[i], "*" ) == 0 ) {
++				if ( ascii_strcasecmp( argv[i], "*" ) == 0 ) {
+ 					if ( !BER_BVISEMPTY( &a->acl_dn_pat ) ||
+ 						a->acl_dn_style != ACL_STYLE_REGEX )
+ 					{
+@@ -376,7 +376,7 @@ parse_acl(
+ 					goto fail;
+ 				}
+ 
+-				if ( strcasecmp( left, "dn" ) == 0 ) {
++				if ( ascii_strcasecmp( left, "dn" ) == 0 ) {
+ 					if ( !BER_BVISEMPTY( &a->acl_dn_pat ) ||
+ 						a->acl_dn_style != ACL_STYLE_REGEX )
+ 					{
+@@ -388,21 +388,21 @@ parse_acl(
+ 					}
+ 
+ 					if ( style == NULL || *style == '\0' ||
+-						strcasecmp( style, "baseObject" ) == 0 ||
+-						strcasecmp( style, "base" ) == 0 ||
+-						strcasecmp( style, "exact" ) == 0 )
++						ascii_strcasecmp( style, "baseObject" ) == 0 ||
++						ascii_strcasecmp( style, "base" ) == 0 ||
++						ascii_strcasecmp( style, "exact" ) == 0 )
+ 					{
+ 						a->acl_dn_style = ACL_STYLE_BASE;
+ 						ber_str2bv( right, 0, 1, &a->acl_dn_pat );
+ 
+-					} else if ( strcasecmp( style, "oneLevel" ) == 0 ||
+-						strcasecmp( style, "one" ) == 0 )
++					} else if ( ascii_strcasecmp( style, "oneLevel" ) == 0 ||
++						ascii_strcasecmp( style, "one" ) == 0 )
+ 					{
+ 						a->acl_dn_style = ACL_STYLE_ONE;
+ 						ber_str2bv( right, 0, 1, &a->acl_dn_pat );
+ 
+-					} else if ( strcasecmp( style, "subtree" ) == 0 ||
+-						strcasecmp( style, "sub" ) == 0 )
++					} else if ( ascii_strcasecmp( style, "subtree" ) == 0 ||
++						ascii_strcasecmp( style, "sub" ) == 0 )
+ 					{
+ 						if( *right == '\0' ) {
+ 							ber_str2bv( "*", STRLENOF( "*" ), 1, &a->acl_dn_pat );
+@@ -412,11 +412,11 @@ parse_acl(
+ 							ber_str2bv( right, 0, 1, &a->acl_dn_pat );
+ 						}
+ 
+-					} else if ( strcasecmp( style, "children" ) == 0 ) {
++					} else if ( ascii_strcasecmp( style, "children" ) == 0 ) {
+ 						a->acl_dn_style = ACL_STYLE_CHILDREN;
+ 						ber_str2bv( right, 0, 1, &a->acl_dn_pat );
+ 
+-					} else if ( strcasecmp( style, "regex" ) == 0 ) {
++					} else if ( ascii_strcasecmp( style, "regex" ) == 0 ) {
+ 						a->acl_dn_style = ACL_STYLE_REGEX;
+ 
+ 						if ( *right == '\0' ) {
+@@ -448,7 +448,7 @@ parse_acl(
+ 					continue;
+ 				}
+ 
+-				if ( strcasecmp( left, "filter" ) == 0 ) {
++				if ( ascii_strcasecmp( left, "filter" ) == 0 ) {
+ 					if ( (a->acl_filter = str2filter( right )) == NULL ) {
+ 						Debug( LDAP_DEBUG_ANY,
+ 				"%s: line %d: bad filter \"%s\" in to clause\n",
+@@ -456,10 +456,10 @@ parse_acl(
+ 						goto fail;
+ 					}
+ 
+-				} else if ( strcasecmp( left, "attr" ) == 0		/* TOLERATED */
+-						|| strcasecmp( left, "attrs" ) == 0 )	/* DOCUMENTED */
++				} else if ( ascii_strcasecmp( left, "attr" ) == 0		/* TOLERATED */
++						|| ascii_strcasecmp( left, "attrs" ) == 0 )	/* DOCUMENTED */
+ 				{
+-					if ( strcasecmp( left, "attr" ) == 0 ) {
++					if ( ascii_strcasecmp( left, "attr" ) == 0 ) {
+ 						Debug( LDAP_DEBUG_ANY,
+ 							"%s: line %d: \"attr\" "
+ 							"is deprecated (and undocumented); "
+@@ -476,7 +476,7 @@ parse_acl(
+ 						goto fail;
+ 					}
+ 
+-				} else if ( strncasecmp( left, "val", 3 ) == 0 ) {
++				} else if ( ascii_strncasecmp( left, "val", 3 ) == 0 ) {
+ 					struct berval	bv;
+ 					char		*mr;
+ 					
+@@ -527,7 +527,7 @@ parse_acl(
+ 					}
+ 					
+ 					if ( style != NULL ) {
+-						if ( strcasecmp( style, "regex" ) == 0 ) {
++						if ( ascii_strcasecmp( style, "regex" ) == 0 ) {
+ 							int e = regcomp( &a->acl_attrval_re, bv.bv_val,
+ 								REG_EXTENDED | REG_ICASE );
+ 							if ( e ) {
+@@ -549,26 +549,26 @@ parse_acl(
+ 						} else {
+ 							/* FIXME: if the attribute has DN syntax, we might
+ 							 * allow one, subtree and children styles as well */
+-							if ( !strcasecmp( style, "base" ) ||
+-								!strcasecmp( style, "exact" ) ) {
++							if ( !ascii_strcasecmp( style, "base" ) ||
++								!ascii_strcasecmp( style, "exact" ) ) {
+ 								a->acl_attrval_style = ACL_STYLE_BASE;
+ 
+ 							} else if ( a->acl_attrs[0].an_desc->ad_type->
+ 								sat_syntax == slap_schema.si_syn_distinguishedName )
+ 							{
+-								if ( !strcasecmp( style, "baseObject" ) ||
+-									!strcasecmp( style, "base" ) )
++								if ( !ascii_strcasecmp( style, "baseObject" ) ||
++									!ascii_strcasecmp( style, "base" ) )
+ 								{
+ 									a->acl_attrval_style = ACL_STYLE_BASE;
+-								} else if ( !strcasecmp( style, "onelevel" ) ||
+-									!strcasecmp( style, "one" ) )
++								} else if ( !ascii_strcasecmp( style, "onelevel" ) ||
++									!ascii_strcasecmp( style, "one" ) )
+ 								{
+ 									a->acl_attrval_style = ACL_STYLE_ONE;
+-								} else if ( !strcasecmp( style, "subtree" ) ||
+-									!strcasecmp( style, "sub" ) )
++								} else if ( !ascii_strcasecmp( style, "subtree" ) ||
++									!ascii_strcasecmp( style, "sub" ) )
+ 								{
+ 									a->acl_attrval_style = ACL_STYLE_SUBTREE;
+-								} else if ( !strcasecmp( style, "children" ) ) {
++								} else if ( !ascii_strcasecmp( style, "children" ) ) {
+ 									a->acl_attrval_style = ACL_STYLE_CHILDREN;
+ 								} else {
+ 									char	buf[ SLAP_TEXT_BUFLEN ];
+@@ -705,7 +705,7 @@ parse_acl(
+ 			}
+ 
+ 		/* by clause - select who has what access to entries */
+-		} else if ( strcasecmp( argv[i], "by" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[i], "by" ) == 0 ) {
+ 			if ( a == NULL ) {
+ 				Debug( LDAP_DEBUG_ANY, "%s: line %d: "
+ 					"to clause required before by clause in access line\n",
+@@ -743,7 +743,7 @@ parse_acl(
+ 				if ( style ) {
+ 					split( style, ',', &style, &style_modifier );
+ 
+-					if ( strncasecmp( style, "level", STRLENOF( "level" ) ) == 0 ) {
++					if ( ascii_strncasecmp( style, "level", STRLENOF( "level" ) ) == 0 ) {
+ 						split( style, '{', &style, &style_level );
+ 						if ( style_level != NULL ) {
+ 							char *p = strchr( style_level, '}' );
+@@ -766,26 +766,26 @@ parse_acl(
+ 				}
+ 
+ 				if ( style == NULL || *style == '\0' ||
+-					strcasecmp( style, "exact" ) == 0 ||
+-					strcasecmp( style, "baseObject" ) == 0 ||
+-					strcasecmp( style, "base" ) == 0 )
++					ascii_strcasecmp( style, "exact" ) == 0 ||
++					ascii_strcasecmp( style, "baseObject" ) == 0 ||
++					ascii_strcasecmp( style, "base" ) == 0 )
+ 				{
+ 					sty = ACL_STYLE_BASE;
+ 
+-				} else if ( strcasecmp( style, "onelevel" ) == 0 ||
+-					strcasecmp( style, "one" ) == 0 )
++				} else if ( ascii_strcasecmp( style, "onelevel" ) == 0 ||
++					ascii_strcasecmp( style, "one" ) == 0 )
+ 				{
+ 					sty = ACL_STYLE_ONE;
+ 
+-				} else if ( strcasecmp( style, "subtree" ) == 0 ||
+-					strcasecmp( style, "sub" ) == 0 )
++				} else if ( ascii_strcasecmp( style, "subtree" ) == 0 ||
++					ascii_strcasecmp( style, "sub" ) == 0 )
+ 				{
+ 					sty = ACL_STYLE_SUBTREE;
+ 
+-				} else if ( strcasecmp( style, "children" ) == 0 ) {
++				} else if ( ascii_strcasecmp( style, "children" ) == 0 ) {
+ 					sty = ACL_STYLE_CHILDREN;
+ 
+-				} else if ( strcasecmp( style, "level" ) == 0 )
++				} else if ( ascii_strcasecmp( style, "level" ) == 0 )
+ 				{
+ 					if ( lutil_atoi( &level, style_level ) != 0 ) {
+ 						Debug( LDAP_DEBUG_ANY,
+@@ -797,16 +797,16 @@ parse_acl(
+ 
+ 					sty = ACL_STYLE_LEVEL;
+ 
+-				} else if ( strcasecmp( style, "regex" ) == 0 ) {
++				} else if ( ascii_strcasecmp( style, "regex" ) == 0 ) {
+ 					sty = ACL_STYLE_REGEX;
+ 
+-				} else if ( strcasecmp( style, "expand" ) == 0 ) {
++				} else if ( ascii_strcasecmp( style, "expand" ) == 0 ) {
+ 					sty = ACL_STYLE_EXPAND;
+ 
+-				} else if ( strcasecmp( style, "ip" ) == 0 ) {
++				} else if ( ascii_strcasecmp( style, "ip" ) == 0 ) {
+ 					sty = ACL_STYLE_IP;
+ 
+-				} else if ( strcasecmp( style, "ipv6" ) == 0 ) {
++				} else if ( ascii_strcasecmp( style, "ipv6" ) == 0 ) {
+ #ifndef LDAP_PF_INET6
+ 					Debug( LDAP_DEBUG_ANY,
+ 						"%s: line %d: IPv6 not supported\n",
+@@ -814,7 +814,7 @@ parse_acl(
+ #endif /* ! LDAP_PF_INET6 */
+ 					sty = ACL_STYLE_IPV6;
+ 
+-				} else if ( strcasecmp( style, "path" ) == 0 ) {
++				} else if ( ascii_strcasecmp( style, "path" ) == 0 ) {
+ 					sty = ACL_STYLE_PATH;
+ #ifndef LDAP_PF_LOCAL
+ 					Debug( LDAP_DEBUG_CONFIG | LDAP_DEBUG_ACL,
+@@ -832,7 +832,7 @@ parse_acl(
+ 				}
+ 
+ 				if ( style_modifier &&
+-					strcasecmp( style_modifier, "expand" ) == 0 )
++					ascii_strcasecmp( style_modifier, "expand" ) == 0 )
+ 				{
+ 					switch ( sty ) {
+ 					case ACL_STYLE_REGEX:
+@@ -852,13 +852,13 @@ parse_acl(
+ 					}
+ 				}
+ 
+-				if ( strncasecmp( left, "real", STRLENOF( "real" ) ) == 0 ) {
++				if ( ascii_strncasecmp( left, "real", STRLENOF( "real" ) ) == 0 ) {
+ 					is_realdn = 1;
+ 					bdn = &b->a_realdn;
+ 					left += STRLENOF( "real" );
+ 				}
+ 
+-				if ( strcasecmp( left, "*" ) == 0 ) {
++				if ( ascii_strcasecmp( left, "*" ) == 0 ) {
+ 					if ( is_realdn ) {
+ 						goto fail;
+ 					}
+@@ -866,19 +866,19 @@ parse_acl(
+ 					ber_str2bv( "*", STRLENOF( "*" ), 1, &bv );
+ 					sty = ACL_STYLE_REGEX;
+ 
+-				} else if ( strcasecmp( left, "anonymous" ) == 0 ) {
++				} else if ( ascii_strcasecmp( left, "anonymous" ) == 0 ) {
+ 					ber_str2bv("anonymous", STRLENOF( "anonymous" ), 1, &bv);
+ 					sty = ACL_STYLE_ANONYMOUS;
+ 
+-				} else if ( strcasecmp( left, "users" ) == 0 ) {
++				} else if ( ascii_strcasecmp( left, "users" ) == 0 ) {
+ 					ber_str2bv("users", STRLENOF( "users" ), 1, &bv);
+ 					sty = ACL_STYLE_USERS;
+ 
+-				} else if ( strcasecmp( left, "self" ) == 0 ) {
++				} else if ( ascii_strcasecmp( left, "self" ) == 0 ) {
+ 					ber_str2bv("self", STRLENOF( "self" ), 1, &bv);
+ 					sty = ACL_STYLE_SELF;
+ 
+-				} else if ( strcasecmp( left, "dn" ) == 0 ) {
++				} else if ( ascii_strcasecmp( left, "dn" ) == 0 ) {
+ 					if ( sty == ACL_STYLE_REGEX ) {
+ 						bdn->a_style = ACL_STYLE_REGEX;
+ 						if ( right == NULL ) {
+@@ -1039,7 +1039,7 @@ parse_acl(
+ 					continue;
+ 				}
+ 
+-				if ( strcasecmp( left, "dnattr" ) == 0 ) {
++				if ( ascii_strcasecmp( left, "dnattr" ) == 0 ) {
+ 					if ( right == NULL || right[0] == '\0' ) {
+ 						Debug( LDAP_DEBUG_ANY, "%s: line %d: "
+ 							"missing \"=\" in (or value after) \"%s\" "
+@@ -1099,7 +1099,7 @@ parse_acl(
+ 					continue;
+ 				}
+ 
+-				if ( strncasecmp( left, "group", STRLENOF( "group" ) ) == 0 ) {
++				if ( ascii_strncasecmp( left, "group", STRLENOF( "group" ) ) == 0 ) {
+ 					char *name = NULL;
+ 					char *value = NULL;
+ 					char *attr_name = SLAPD_GROUP_ATTR;
+@@ -1287,7 +1287,7 @@ parse_acl(
+ 					continue;
+ 				}
+ 
+-				if ( strcasecmp( left, "peername" ) == 0 ) {
++				if ( ascii_strcasecmp( left, "peername" ) == 0 ) {
+ 					switch ( sty ) {
+ 					case ACL_STYLE_REGEX:
+ 					case ACL_STYLE_BASE:
+@@ -1430,7 +1430,7 @@ parse_acl(
+ 					continue;
+ 				}
+ 
+-				if ( strcasecmp( left, "sockname" ) == 0 ) {
++				if ( ascii_strcasecmp( left, "sockname" ) == 0 ) {
+ 					switch ( sty ) {
+ 					case ACL_STYLE_REGEX:
+ 					case ACL_STYLE_BASE:
+@@ -1476,7 +1476,7 @@ parse_acl(
+ 					continue;
+ 				}
+ 
+-				if ( strcasecmp( left, "domain" ) == 0 ) {
++				if ( ascii_strcasecmp( left, "domain" ) == 0 ) {
+ 					switch ( sty ) {
+ 					case ACL_STYLE_REGEX:
+ 					case ACL_STYLE_BASE:
+@@ -1535,7 +1535,7 @@ parse_acl(
+ 					continue;
+ 				}
+ 
+-				if ( strcasecmp( left, "sockurl" ) == 0 ) {
++				if ( ascii_strcasecmp( left, "sockurl" ) == 0 ) {
+ 					switch ( sty ) {
+ 					case ACL_STYLE_REGEX:
+ 					case ACL_STYLE_BASE:
+@@ -1581,7 +1581,7 @@ parse_acl(
+ 					continue;
+ 				}
+ 
+-				if ( strcasecmp( left, "set" ) == 0 ) {
++				if ( ascii_strcasecmp( left, "set" ) == 0 ) {
+ 					switch ( sty ) {
+ 						/* deprecated */
+ 					case ACL_STYLE_REGEX:
+@@ -1631,7 +1631,7 @@ parse_acl(
+ 							*opts = NULL;
+ 
+ #if 1 /* tolerate legacy "aci" <who> */
+-					if ( strcasecmp( left, "aci" ) == 0 ) {
++					if ( ascii_strcasecmp( left, "aci" ) == 0 ) {
+ 						Debug( LDAP_DEBUG_ANY, "%s: line %d: "
+ 							"undocumented deprecated \"aci\" directive "
+ 							"is superseded by \"dynacl/aci\".\n",
+@@ -1640,7 +1640,7 @@ parse_acl(
+ 						
+ 					} else
+ #endif /* tolerate legacy "aci" <who> */
+-					if ( strncasecmp( left, "dynacl/", STRLENOF( "dynacl/" ) ) == 0 ) {
++					if ( ascii_strncasecmp( left, "dynacl/", STRLENOF( "dynacl/" ) ) == 0 ) {
+ 						name = &left[ STRLENOF( "dynacl/" ) ];
+ 						opts = strchr( name, '/' );
+ 						if ( opts ) {
+@@ -1662,7 +1662,7 @@ parse_acl(
+ 				}
+ #endif /* SLAP_DYNACL */
+ 
+-				if ( strcasecmp( left, "ssf" ) == 0 ) {
++				if ( ascii_strcasecmp( left, "ssf" ) == 0 ) {
+ 					if ( sty != ACL_STYLE_REGEX && sty != ACL_STYLE_BASE ) {
+ 						Debug( LDAP_DEBUG_ANY, "%s: line %d: "
+ 							"inappropriate style \"%s\" in by clause.\n",
+@@ -1700,7 +1700,7 @@ parse_acl(
+ 					continue;
+ 				}
+ 
+-				if ( strcasecmp( left, "transport_ssf" ) == 0 ) {
++				if ( ascii_strcasecmp( left, "transport_ssf" ) == 0 ) {
+ 					if ( sty != ACL_STYLE_REGEX && sty != ACL_STYLE_BASE ) {
+ 						Debug( LDAP_DEBUG_ANY, "%s: line %d: "
+ 							"inappropriate style \"%s\" in by clause.\n",
+@@ -1738,7 +1738,7 @@ parse_acl(
+ 					continue;
+ 				}
+ 
+-				if ( strcasecmp( left, "tls_ssf" ) == 0 ) {
++				if ( ascii_strcasecmp( left, "tls_ssf" ) == 0 ) {
+ 					if ( sty != ACL_STYLE_REGEX && sty != ACL_STYLE_BASE ) {
+ 						Debug( LDAP_DEBUG_ANY, "%s: line %d: "
+ 							"inappropriate style \"%s\" in by clause.\n",
+@@ -1776,7 +1776,7 @@ parse_acl(
+ 					continue;
+ 				}
+ 
+-				if ( strcasecmp( left, "sasl_ssf" ) == 0 ) {
++				if ( ascii_strcasecmp( left, "sasl_ssf" ) == 0 ) {
+ 					if ( sty != ACL_STYLE_REGEX && sty != ACL_STYLE_BASE ) {
+ 						Debug( LDAP_DEBUG_ANY, "%s: line %d: "
+ 							"inappropriate style \"%s\" in by clause.\n",
+@@ -1821,7 +1821,7 @@ parse_acl(
+ 				break;
+ 			}
+ 
+-			if ( i == argc || ( strcasecmp( left, "stop" ) == 0 ) ) { 
++			if ( i == argc || ( ascii_strcasecmp( left, "stop" ) == 0 ) ) { 
+ 				/* out of arguments or plain stop */
+ 
+ 				ACL_PRIV_ASSIGN( b->a_access_mask, ACL_PRIV_ADDITIVE );
+@@ -1832,7 +1832,7 @@ parse_acl(
+ 				continue;
+ 			}
+ 
+-			if ( strcasecmp( left, "continue" ) == 0 ) {
++			if ( ascii_strcasecmp( left, "continue" ) == 0 ) {
+ 				/* plain continue */
+ 
+ 				ACL_PRIV_ASSIGN( b->a_access_mask, ACL_PRIV_ADDITIVE );
+@@ -1843,7 +1843,7 @@ parse_acl(
+ 				continue;
+ 			}
+ 
+-			if ( strcasecmp( left, "break" ) == 0 ) {
++			if ( ascii_strcasecmp( left, "break" ) == 0 ) {
+ 				/* plain continue */
+ 
+ 				ACL_PRIV_ASSIGN(b->a_access_mask, ACL_PRIV_ADDITIVE);
+@@ -1854,7 +1854,7 @@ parse_acl(
+ 				continue;
+ 			}
+ 
+-			if ( strcasecmp( left, "by" ) == 0 ) {
++			if ( ascii_strcasecmp( left, "by" ) == 0 ) {
+ 				/* we've gone too far */
+ 				--i;
+ 				ACL_PRIV_ASSIGN( b->a_access_mask, ACL_PRIV_ADDITIVE );
+@@ -1869,11 +1869,11 @@ parse_acl(
+ 			{
+ 				char	*lleft = left;
+ 
+-				if ( strncasecmp( left, "self", STRLENOF( "self" ) ) == 0 ) {
++				if ( ascii_strncasecmp( left, "self", STRLENOF( "self" ) ) == 0 ) {
+ 					b->a_dn_self = 1;
+ 					lleft = &left[ STRLENOF( "self" ) ];
+ 
+-				} else if ( strncasecmp( left, "realself", STRLENOF( "realself" ) ) == 0 ) {
++				} else if ( ascii_strncasecmp( left, "realself", STRLENOF( "realself" ) ) == 0 ) {
+ 					b->a_realdn_self = 1;
+ 					lleft = &left[ STRLENOF( "realself" ) ];
+ 				}
+@@ -1896,15 +1896,15 @@ parse_acl(
+ 				continue;
+ 			}
+ 
+-			if ( strcasecmp( argv[i], "continue" ) == 0 ) {
++			if ( ascii_strcasecmp( argv[i], "continue" ) == 0 ) {
+ 				/* plain continue */
+ 				b->a_type = ACL_CONTINUE;
+ 
+-			} else if ( strcasecmp( argv[i], "break" ) == 0 ) {
++			} else if ( ascii_strcasecmp( argv[i], "break" ) == 0 ) {
+ 				/* plain continue */
+ 				b->a_type = ACL_BREAK;
+ 
+-			} else if ( strcasecmp( argv[i], "stop" ) != 0 ) {
++			} else if ( ascii_strcasecmp( argv[i], "stop" ) != 0 ) {
+ 				/* gone to far */
+ 				i--;
+ 			}
+@@ -2191,34 +2191,34 @@ str2accessmask( const char *str )
+ 		return mask;
+ 	}
+ 
+-	if ( strcasecmp( str, "none" ) == 0 ) {
++	if ( ascii_strcasecmp( str, "none" ) == 0 ) {
+ 		ACL_LVL_ASSIGN_NONE(mask);
+ 
+-	} else if ( strcasecmp( str, "disclose" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "disclose" ) == 0 ) {
+ 		ACL_LVL_ASSIGN_DISCLOSE(mask);
+ 
+-	} else if ( strcasecmp( str, "auth" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "auth" ) == 0 ) {
+ 		ACL_LVL_ASSIGN_AUTH(mask);
+ 
+-	} else if ( strcasecmp( str, "compare" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "compare" ) == 0 ) {
+ 		ACL_LVL_ASSIGN_COMPARE(mask);
+ 
+-	} else if ( strcasecmp( str, "search" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "search" ) == 0 ) {
+ 		ACL_LVL_ASSIGN_SEARCH(mask);
+ 
+-	} else if ( strcasecmp( str, "read" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "read" ) == 0 ) {
+ 		ACL_LVL_ASSIGN_READ(mask);
+ 
+-	} else if ( strcasecmp( str, "add" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "add" ) == 0 ) {
+ 		ACL_LVL_ASSIGN_WADD(mask);
+ 
+-	} else if ( strcasecmp( str, "delete" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "delete" ) == 0 ) {
+ 		ACL_LVL_ASSIGN_WDEL(mask);
+ 
+-	} else if ( strcasecmp( str, "write" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "write" ) == 0 ) {
+ 		ACL_LVL_ASSIGN_WRITE(mask);
+ 
+-	} else if ( strcasecmp( str, "manage" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "manage" ) == 0 ) {
+ 		ACL_LVL_ASSIGN_MANAGE(mask);
+ 
+ 	} else {
+@@ -2493,34 +2493,34 @@ access2str( slap_access_t access )
+ slap_access_t
+ str2access( const char *str )
+ {
+-	if ( strcasecmp( str, "none" ) == 0 ) {
++	if ( ascii_strcasecmp( str, "none" ) == 0 ) {
+ 		return ACL_NONE;
+ 
+-	} else if ( strcasecmp( str, "disclose" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "disclose" ) == 0 ) {
+ 		return ACL_DISCLOSE;
+ 
+-	} else if ( strcasecmp( str, "auth" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "auth" ) == 0 ) {
+ 		return ACL_AUTH;
+ 
+-	} else if ( strcasecmp( str, "compare" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "compare" ) == 0 ) {
+ 		return ACL_COMPARE;
+ 
+-	} else if ( strcasecmp( str, "search" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "search" ) == 0 ) {
+ 		return ACL_SEARCH;
+ 
+-	} else if ( strcasecmp( str, "read" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "read" ) == 0 ) {
+ 		return ACL_READ;
+ 
+-	} else if ( strcasecmp( str, "write" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "write" ) == 0 ) {
+ 		return ACL_WRITE;
+ 
+-	} else if ( strcasecmp( str, "add" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "add" ) == 0 ) {
+ 		return ACL_WADD;
+ 
+-	} else if ( strcasecmp( str, "delete" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "delete" ) == 0 ) {
+ 		return ACL_WDEL;
+ 
+-	} else if ( strcasecmp( str, "manage" ) == 0 ) {
++	} else if ( ascii_strcasecmp( str, "manage" ) == 0 ) {
+ 		return ACL_MANAGE;
+ 	}
+ 
+Index: openldap-2.4.23/servers/slapd/ad.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/ad.c
++++ openldap-2.4.23/servers/slapd/ad.c
+@@ -116,7 +116,7 @@ AttributeDescription * ad_find_tags(
+ 	for (ad = type->sat_ad; ad; ad=ad->ad_next)
+ 	{
+ 		if (ad->ad_tags.bv_len == tags->bv_len &&
+-			!strcasecmp(ad->ad_tags.bv_val, tags->bv_val))
++			!ascii_strcasecmp(ad->ad_tags.bv_val, tags->bv_val))
+ 			break;
+ 	}
+ 	ldap_pvt_thread_mutex_unlock( &type->sat_ad_mutex );
+@@ -226,7 +226,7 @@ int slap_bv2ad(
+ 			return rtn;
+ 		
+ 		} else if ( optlen == STRLENOF("binary") &&
+-			strncasecmp( opt, "binary", STRLENOF("binary") ) == 0 )
++			ascii_strncasecmp( opt, "binary", STRLENOF("binary") ) == 0 )
+ 		{
+ 			/* binary option */
+ 			if( slap_ad_is_binary( &desc ) ) {
+@@ -263,7 +263,7 @@ int slap_bv2ad(
+ 			for( i=ntags-1; i>=0; i-- ) {
+ 				int rc;
+ 
+-				rc = strncasecmp( opt, tags[i].bv_val,
++				rc = ascii_strncasecmp( opt, tags[i].bv_val,
+ 					(unsigned) optlen < tags[i].bv_len
+ 						? (unsigned) optlen : tags[i].bv_len );
+ 
+@@ -333,7 +333,7 @@ done:;
+ 		if( d2->ad_tags.bv_len == 0 ) {
+ 			break;
+ 		}
+-		if( strncasecmp( d2->ad_tags.bv_val, desc.ad_tags.bv_val,
++		if( ascii_strncasecmp( d2->ad_tags.bv_val, desc.ad_tags.bv_val,
+ 			desc.ad_tags.bv_len ) == 0 )
+ 		{
+ 			break;
+@@ -352,7 +352,7 @@ done:;
+ 				continue;
+ 			if (d2->ad_tags.bv_len == 0)
+ 				break;
+-			if (strncasecmp(d2->ad_tags.bv_val, desc.ad_tags.bv_val,
++			if (ascii_strncasecmp(d2->ad_tags.bv_val, desc.ad_tags.bv_val,
+ 				desc.ad_tags.bv_len) == 0)
+ 				break;
+ 		}
+@@ -397,7 +397,7 @@ done:;
+ 				lp = NULL;
+ 				if( desc.ad_tags.bv_len ) {
+ 					lp = desc.ad_tags.bv_val;
+-					while( strncasecmp(lp, "binary", STRLENOF("binary")) < 0
++					while( ascii_strncasecmp(lp, "binary", STRLENOF("binary")) < 0
+ 					       && (lp = strchr( lp, ';' )) != NULL )
+ 						++lp;
+ 					if( lp != desc.ad_tags.bv_val ) {
+@@ -743,7 +743,7 @@ int slap_bv2undef_ad(
+ 
+ 	for( desc = at->sat_ad; desc; desc=desc->ad_next ) {
+ 		if( desc->ad_cname.bv_len == bv->bv_len &&
+-		    !strcasecmp( desc->ad_cname.bv_val, bv->bv_val ) )
++		    !ascii_strcasecmp( desc->ad_cname.bv_val, bv->bv_val ) )
+ 		{
+ 		    	break;
+ 		}
+@@ -826,7 +826,7 @@ undef_promote(
+ 
+ 		/* remove iff undef == name or undef == name;tag */
+ 		if ( (*u_ad)->ad_cname.bv_len >= bv.bv_len
+-			&& strncasecmp( (*u_ad)->ad_cname.bv_val, bv.bv_val, bv.bv_len ) == 0
++			&& ascii_strncasecmp( (*u_ad)->ad_cname.bv_val, bv.bv_val, bv.bv_len ) == 0
+ 			&& ( (*u_ad)->ad_cname.bv_val[ bv.bv_len ] == '\0'
+ 				|| (*u_ad)->ad_cname.bv_val[ bv.bv_len ] == ';' ) )
+ 		{
+@@ -877,7 +877,7 @@ an_find(
+ 
+ 	for ( ; a->an_name.bv_val; a++ ) {
+ 		if ( a->an_name.bv_len != s->bv_len) continue;
+-		if ( strcasecmp( s->bv_val, a->an_name.bv_val ) == 0 ) {
++		if ( ascii_strcasecmp( s->bv_val, a->an_name.bv_val ) == 0 ) {
+ 			return( 1 );
+ 		}
+ 	}
+@@ -1211,7 +1211,7 @@ ad_define_option( const char *name, cons
+ 	options = ch_realloc( options,
+ 		(option_count+1) * sizeof(Attr_option) );
+ 
+-	if ( strcasecmp( name, "binary" ) == 0
++	if ( ascii_strcasecmp( name, "binary" ) == 0
+ 	     || ad_find_option_definition( name, optlen ) ) {
+ 		Debug( LDAP_DEBUG_ANY,
+ 		       "%s: line %d: option \"%s\" is already defined\n",
+@@ -1220,7 +1220,7 @@ ad_define_option( const char *name, cons
+ 	}
+ 
+ 	for ( i = option_count; i; --i ) {
+-		if ( strcasecmp( name, options[i-1].name.bv_val ) >= 0 )
++		if ( ascii_strcasecmp( name, options[i-1].name.bv_val ) >= 0 )
+ 			break;
+ 		options[i] = options[i-1];
+ 	}
+@@ -1233,7 +1233,7 @@ ad_define_option( const char *name, cons
+ 	if ( i != option_count &&
+ 	     options[i].prefix &&
+ 	     optlen < options[i+1].name.bv_len &&
+-	     strncasecmp( name, options[i+1].name.bv_val, optlen ) == 0 ) {
++	     ascii_strncasecmp( name, options[i+1].name.bv_val, optlen ) == 0 ) {
+ 			Debug( LDAP_DEBUG_ANY,
+ 			       "%s: line %d: option \"%s\" overrides previous option\n",
+ 				    fname, lineno, name );
+@@ -1264,9 +1264,9 @@ ad_find_option_definition( const char *o
+ 		char *mname = options[mid].name.bv_val;
+ 		int j;
+ 		if ( optlen < mlen ) {
+-			j = strncasecmp( opt, mname, optlen ) - 1;
++			j = ascii_strncasecmp( opt, mname, optlen ) - 1;
+ 		} else {
+-			j = strncasecmp( opt, mname, mlen );
++			j = ascii_strncasecmp( opt, mname, mlen );
+ 			if ( j==0 && (optlen==mlen || options[mid].prefix) )
+ 				return &options[mid];
+ 		}
 Index: openldap-2.4.23/servers/slapd/at.c
 ===================================================================
 --- openldap-2.4.23.orig/servers/slapd/at.c
@@ -78,7 +839,3536 @@ Index: openldap-2.4.23/servers/slapd/at.c
  	int i = type->bv_len - air->air_name.bv_len;
  	if (i) return i;
 -	return (strncasecmp( type->bv_val, air->air_name.bv_val, type->bv_len ));
-+	return (ascii_strncasecmp( type->bv_val, air->air_name.bv_val, type->bv_len));
++	return (ascii_strncasecmp( type->bv_val, air->air_name.bv_val, type->bv_len ));
  }
  
  AttributeType *
+@@ -404,7 +404,7 @@ at_check_dup(
+ 				return SLAP_SCHERR_ATTR_INCONSISTENT;
+ 			}
+ 			
+-			if ( strcasecmp( sat->sat_names[ i ],
++			if ( ascii_strcasecmp( sat->sat_names[ i ],
+ 					new_sat->sat_names[ i ] ) != 0 )
+ 			{
+ 				return SLAP_SCHERR_ATTR_INCONSISTENT;
+@@ -748,13 +748,13 @@ at_add(
+ 	 */
+ 	if ( sat->sat_extensions ) {
+ 		for (i=0; sat->sat_extensions[i]; i++) {
+-			if (!strcasecmp( sat->sat_extensions[i]->lsei_name,
++			if (!ascii_strcasecmp( sat->sat_extensions[i]->lsei_name,
+ 				"X-ORDERED" ) && sat->sat_extensions[i]->lsei_values ) {
+-				if ( !strcasecmp( sat->sat_extensions[i]->lsei_values[0],
++				if ( !ascii_strcasecmp( sat->sat_extensions[i]->lsei_values[0],
+ 					"VALUES" )) {
+ 					sat->sat_flags |= SLAP_AT_ORDERED_VAL;
+ 					break;
+-				} else if ( !strcasecmp( sat->sat_extensions[i]->lsei_values[0],
++				} else if ( !ascii_strcasecmp( sat->sat_extensions[i]->lsei_values[0],
+ 					"SIBLINGS" )) {
+ 					sat->sat_flags |= SLAP_AT_ORDERED_SIB;
+ 					break;
+Index: openldap-2.4.23/servers/slapd/back-bdb/attr.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-bdb/attr.c
++++ openldap-2.4.23/servers/slapd/back-bdb/attr.c
+@@ -171,7 +171,7 @@ bdb_attr_index_config(
+ 		AttrInfo *a_cr = NULL;
+ #endif
+ 
+-		if( strcasecmp( attrs[i], "default" ) == 0 ) {
++		if( ascii_strcasecmp( attrs[i], "default" ) == 0 ) {
+ 			bdb->bi_defaultmask |= mask;
+ 			continue;
+ 		}
+Index: openldap-2.4.23/servers/slapd/backend.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/backend.c
++++ openldap-2.4.23/servers/slapd/backend.c
+@@ -526,7 +526,7 @@ BackendInfo* backend_info(const char *ty
+ 
+ 	/* search for the backend type */
+ 	LDAP_STAILQ_FOREACH(bi,&backendInfo,bi_next) {
+-		if( strcasecmp(bi->bi_type, type) == 0 ) {
++		if( ascii_strcasecmp(bi->bi_type, type) == 0 ) {
+ 			return bi;
+ 		}
+ 	}
+Index: openldap-2.4.23/servers/slapd/back-ldap/bind.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-ldap/bind.c
++++ openldap-2.4.23/servers/slapd/back-ldap/bind.c
+@@ -2594,7 +2594,7 @@ free_ber:;
+ 		BerElement		*ber = (BerElement *)&berbuf;
+ 		ber_tag_t		tag;
+ 
+-		if ( strncasecmp( authzID.bv_val, "dn:", STRLENOF( "dn:" ) ) != 0 ) {
++		if ( ascii_strncasecmp( authzID.bv_val, "dn:", STRLENOF( "dn:" ) ) != 0 ) {
+ 			rs->sr_err = LDAP_PROTOCOL_ERROR;
+ 			goto done;
+ 		}
+Index: openldap-2.4.23/servers/slapd/back-ldap/chain.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-ldap/chain.c
++++ openldap-2.4.23/servers/slapd/back-ldap/chain.c
+@@ -1023,16 +1023,16 @@ ldap_chain_parse_ctrl(
+ static int
+ str2chain( const char *s )
+ {
+-	if ( strcasecmp( s, "chainingPreferred" ) == 0 ) {
++	if ( ascii_strcasecmp( s, "chainingPreferred" ) == 0 ) {
+ 		return LDAP_CHAINING_PREFERRED;
+ 		
+-	} else if ( strcasecmp( s, "chainingRequired" ) == 0 ) {
++	} else if ( ascii_strcasecmp( s, "chainingRequired" ) == 0 ) {
+ 		return LDAP_CHAINING_REQUIRED;
+ 
+-	} else if ( strcasecmp( s, "referralsPreferred" ) == 0 ) {
++	} else if ( ascii_strcasecmp( s, "referralsPreferred" ) == 0 ) {
+ 		return LDAP_REFERRALS_PREFERRED;
+ 		
+-	} else if ( strcasecmp( s, "referralsRequired" ) == 0 ) {
++	} else if ( ascii_strcasecmp( s, "referralsRequired" ) == 0 ) {
+ 		return LDAP_REFERRALS_REQUIRED;
+ 	}
+ 
+@@ -1373,7 +1373,7 @@ chain_cf_gen( ConfigArgs *c )
+ 		lc->lc_chaining_ctrlflag = 0;
+ 
+ 		for ( argc--, argv++; argc > 0; argc--, argv++ ) {
+-			if ( strncasecmp( argv[ 0 ], "resolve=", STRLENOF( "resolve=" ) ) == 0 ) {
++			if ( ascii_strncasecmp( argv[ 0 ], "resolve=", STRLENOF( "resolve=" ) ) == 0 ) {
+ 				resolve = str2chain( argv[ 0 ] + STRLENOF( "resolve=" ) );
+ 				if ( resolve == -1 ) {
+ 					Debug( LDAP_DEBUG_ANY, "%s: "
+@@ -1383,7 +1383,7 @@ chain_cf_gen( ConfigArgs *c )
+ 					return 1;
+ 				}
+ 
+-			} else if ( strncasecmp( argv[ 0 ], "continuation=", STRLENOF( "continuation=" ) ) == 0 ) {
++			} else if ( ascii_strncasecmp( argv[ 0 ], "continuation=", STRLENOF( "continuation=" ) ) == 0 ) {
+ 				continuation = str2chain( argv[ 0 ] + STRLENOF( "continuation=" ) );
+ 				if ( continuation == -1 ) {
+ 					Debug( LDAP_DEBUG_ANY, "%s: "
+@@ -1393,7 +1393,7 @@ chain_cf_gen( ConfigArgs *c )
+ 					return 1;
+ 				}
+ 
+-			} else if ( strcasecmp( argv[ 0 ], "critical" ) == 0 ) {
++			} else if ( ascii_strcasecmp( argv[ 0 ], "critical" ) == 0 ) {
+ 				iscritical = 1;
+ 
+ 			} else {
+@@ -1560,7 +1560,7 @@ ldap_chain_db_config(
+ 	}
+ 
+ 	/* Something for the chain database? */
+-	if ( strncasecmp( argv[ 0 ], "chain-", STRLENOF( "chain-" ) ) == 0 ) {
++	if ( ascii_strncasecmp( argv[ 0 ], "chain-", STRLENOF( "chain-" ) ) == 0 ) {
+ 		char		*save_argv0 = argv[ 0 ];
+ 		BackendInfo	*bd_info = be->bd_info;
+ 		void		*be_private = be->be_private;
+@@ -1586,7 +1586,7 @@ ldap_chain_db_config(
+ 		argv[ 0 ] += STRLENOF( "chain-" );
+ 
+ 		for ( which_argv = 0; allowed_argv[ which_argv ]; which_argv++ ) {
+-			if ( strcasecmp( argv[ 0 ], allowed_argv[ which_argv ] ) == 0 ) {
++			if ( ascii_strcasecmp( argv[ 0 ], allowed_argv[ which_argv ] ) == 0 ) {
+ 				break;
+ 			}
+ 		}
+Index: openldap-2.4.23/servers/slapd/back-ldap/config.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-ldap/config.c
++++ openldap-2.4.23/servers/slapd/back-ldap/config.c
+@@ -652,7 +652,7 @@ slap_idassert_authzfrom_parse( ConfigArg
+ 
+  	if ( strcmp( c->argv[ 1 ], "*" ) == 0
+  		|| strcmp( c->argv[ 1 ], "dn:*" ) == 0
+- 		|| strcasecmp( c->argv[ 1 ], "dn.regex:.*" ) == 0 )
++ 		|| ascii_strcasecmp( c->argv[ 1 ], "dn.regex:.*" ) == 0 )
+  	{
+  		if ( si->si_authz != NULL ) {
+  			snprintf( c->cr_msg, sizeof( c->cr_msg ),
+@@ -768,7 +768,7 @@ slap_idassert_parse( ConfigArgs *c, slap
+ 	int		i;
+ 
+ 	for ( i = 1; i < c->argc; i++ ) {
+-		if ( strncasecmp( c->argv[ i ], "mode=", STRLENOF( "mode=" ) ) == 0 ) {
++		if ( ascii_strncasecmp( c->argv[ i ], "mode=", STRLENOF( "mode=" ) ) == 0 ) {
+ 			char	*argvi = c->argv[ i ] + STRLENOF( "mode=" );
+ 			int	j;
+ 
+@@ -784,10 +784,10 @@ slap_idassert_parse( ConfigArgs *c, slap
+ 
+ 			si->si_mode = idassert_mode[ j ].mask;
+ 
+-		} else if ( strncasecmp( c->argv[ i ], "authz=", STRLENOF( "authz=" ) ) == 0 ) {
++		} else if ( ascii_strncasecmp( c->argv[ i ], "authz=", STRLENOF( "authz=" ) ) == 0 ) {
+ 			char	*argvi = c->argv[ i ] + STRLENOF( "authz=" );
+ 
+-			if ( strcasecmp( argvi, "native" ) == 0 ) {
++			if ( ascii_strcasecmp( argvi, "native" ) == 0 ) {
+ 				if ( si->si_bc.sb_method != LDAP_AUTH_SASL ) {
+ 					snprintf( c->cr_msg, sizeof( c->cr_msg ),
+ 						"\"idassert-bind <args>\": "
+@@ -798,7 +798,7 @@ slap_idassert_parse( ConfigArgs *c, slap
+ 				}
+ 				si->si_flags |= LDAP_BACK_AUTH_NATIVE_AUTHZ;
+ 
+-			} else if ( strcasecmp( argvi, "proxyAuthz" ) == 0 ) {
++			} else if ( ascii_strcasecmp( argvi, "proxyAuthz" ) == 0 ) {
+ 				si->si_flags &= ~LDAP_BACK_AUTH_NATIVE_AUTHZ;
+ 
+ 			} else {
+@@ -810,7 +810,7 @@ slap_idassert_parse( ConfigArgs *c, slap
+ 				return 1;
+ 			}
+ 
+-		} else if ( strncasecmp( c->argv[ i ], "flags=", STRLENOF( "flags=" ) ) == 0 ) {
++		} else if ( ascii_strncasecmp( c->argv[ i ], "flags=", STRLENOF( "flags=" ) ) == 0 ) {
+ 			char	*argvi = c->argv[ i ] + STRLENOF( "flags=" );
+ 			char	**flags = ldap_str2charray( argvi, "," );
+ 			int	j, err = 0;
+@@ -826,16 +826,16 @@ slap_idassert_parse( ConfigArgs *c, slap
+ 
+ 			for ( j = 0; flags[ j ] != NULL; j++ ) {
+ 
+-				if ( strcasecmp( flags[ j ], "override" ) == 0 ) {
++				if ( ascii_strcasecmp( flags[ j ], "override" ) == 0 ) {
+ 					si->si_flags |= LDAP_BACK_AUTH_OVERRIDE;
+ 
+-				} else if ( strcasecmp( flags[ j ], "prescriptive" ) == 0 ) {
++				} else if ( ascii_strcasecmp( flags[ j ], "prescriptive" ) == 0 ) {
+ 					si->si_flags |= LDAP_BACK_AUTH_PRESCRIPTIVE;
+ 
+-				} else if ( strcasecmp( flags[ j ], "non-prescriptive" ) == 0 ) {
++				} else if ( ascii_strcasecmp( flags[ j ], "non-prescriptive" ) == 0 ) {
+ 					si->si_flags &= ( ~LDAP_BACK_AUTH_PRESCRIPTIVE );
+ 
+-				} else if ( strcasecmp( flags[ j ], "obsolete-proxy-authz" ) == 0 ) {
++				} else if ( ascii_strcasecmp( flags[ j ], "obsolete-proxy-authz" ) == 0 ) {
+ 					if ( si->si_flags & LDAP_BACK_AUTH_OBSOLETE_ENCODING_WORKAROUND ) {
+ 						Debug( LDAP_DEBUG_ANY,
+                                       		 		"%s: \"obsolete-proxy-authz\" flag "
+@@ -849,7 +849,7 @@ slap_idassert_parse( ConfigArgs *c, slap
+ 						si->si_flags |= LDAP_BACK_AUTH_OBSOLETE_PROXY_AUTHZ;
+ 					}
+ 
+-				} else if ( strcasecmp( flags[ j ], "obsolete-encoding-workaround" ) == 0 ) {
++				} else if ( ascii_strcasecmp( flags[ j ], "obsolete-encoding-workaround" ) == 0 ) {
+ 					if ( si->si_flags & LDAP_BACK_AUTH_OBSOLETE_PROXY_AUTHZ ) {
+ 						Debug( LDAP_DEBUG_ANY,
+                                       	 			"%s: \"obsolete-encoding-workaround\" flag "
+@@ -863,10 +863,10 @@ slap_idassert_parse( ConfigArgs *c, slap
+ 						si->si_flags |= LDAP_BACK_AUTH_OBSOLETE_ENCODING_WORKAROUND;
+ 					}
+ 
+-				} else if ( strcasecmp( flags[ j ], "proxy-authz-critical" ) == 0 ) {
++				} else if ( ascii_strcasecmp( flags[ j ], "proxy-authz-critical" ) == 0 ) {
+ 					si->si_flags |= LDAP_BACK_AUTH_PROXYAUTHZ_CRITICAL;
+ 
+-				} else if ( strcasecmp( flags[ j ], "proxy-authz-non-critical" ) == 0 ) {
++				} else if ( ascii_strcasecmp( flags[ j ], "proxy-authz-non-critical" ) == 0 ) {
+ 					si->si_flags &= ~LDAP_BACK_AUTH_PROXYAUTHZ_CRITICAL;
+ 
+ 				} else {
+@@ -1767,7 +1767,7 @@ done_url:;
+ 	case LDAP_BACK_CFG_IDASSERT_MODE:
+ 		i = verb_to_mask( c->argv[1], idassert_mode );
+ 		if ( BER_BVISNULL( &idassert_mode[i].word ) ) {
+-			if ( strncasecmp( c->argv[1], "u:", STRLENOF( "u:" ) ) == 0 ) {
++			if ( ascii_strncasecmp( c->argv[1], "u:", STRLENOF( "u:" ) ) == 0 ) {
+ 				li->li_idassert_mode = LDAP_BACK_IDASSERT_OTHERID;
+ 				ber_str2bv( c->argv[1], 0, 1, &li->li_idassert_authzID );
+ 				li->li_idassert_authzID.bv_val[ 0 ] = 'u';
+@@ -1777,7 +1777,7 @@ done_url:;
+ 
+ 				ber_str2bv( c->argv[1], 0, 0, &id );
+ 
+-				if ( strncasecmp( c->argv[1], "dn:", STRLENOF( "dn:" ) ) == 0 ) {
++				if ( ascii_strncasecmp( c->argv[1], "dn:", STRLENOF( "dn:" ) ) == 0 ) {
+ 					id.bv_val += STRLENOF( "dn:" );
+ 					id.bv_len -= STRLENOF( "dn:" );
+ 				}
+@@ -1807,16 +1807,16 @@ done_url:;
+ 			int	i;
+ 
+ 			for ( i = 2; i < c->argc; i++ ) {
+-				if ( strcasecmp( c->argv[ i ], "override" ) == 0 ) {
++				if ( ascii_strcasecmp( c->argv[ i ], "override" ) == 0 ) {
+ 					li->li_idassert_flags |= LDAP_BACK_AUTH_OVERRIDE;
+ 
+-				} else if ( strcasecmp( c->argv[ i ], "prescriptive" ) == 0 ) {
++				} else if ( ascii_strcasecmp( c->argv[ i ], "prescriptive" ) == 0 ) {
+ 					li->li_idassert_flags |= LDAP_BACK_AUTH_PRESCRIPTIVE;
+ 
+-				} else if ( strcasecmp( c->argv[ i ], "non-prescriptive" ) == 0 ) {
++				} else if ( ascii_strcasecmp( c->argv[ i ], "non-prescriptive" ) == 0 ) {
+ 					li->li_idassert_flags &= ( ~LDAP_BACK_AUTH_PRESCRIPTIVE );
+ 
+-				} else if ( strcasecmp( c->argv[ i ], "obsolete-proxy-authz" ) == 0 ) {
++				} else if ( ascii_strcasecmp( c->argv[ i ], "obsolete-proxy-authz" ) == 0 ) {
+ 					if ( li->li_idassert_flags & LDAP_BACK_AUTH_OBSOLETE_ENCODING_WORKAROUND ) {
+ 						Debug( LDAP_DEBUG_ANY,
+                                        	 		"%s: line %d: \"obsolete-proxy-authz\" flag "
+@@ -1827,7 +1827,7 @@ done_url:;
+ 					}
+ 					li->li_idassert_flags |= LDAP_BACK_AUTH_OBSOLETE_PROXY_AUTHZ;
+ 
+-				} else if ( strcasecmp( c->argv[ i ], "obsolete-encoding-workaround" ) == 0 ) {
++				} else if ( ascii_strcasecmp( c->argv[ i ], "obsolete-encoding-workaround" ) == 0 ) {
+ 					if ( li->li_idassert_flags & LDAP_BACK_AUTH_OBSOLETE_PROXY_AUTHZ ) {
+ 						Debug( LDAP_DEBUG_ANY,
+                                        	 		"%s: line %d: \"obsolete-encoding-workaround\" flag "
+Index: openldap-2.4.23/servers/slapd/back-ldap/distproc.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-ldap/distproc.c
++++ openldap-2.4.23/servers/slapd/back-ldap/distproc.c
+@@ -614,7 +614,7 @@ ldap_distproc_db_config(
+ 	}
+ 
+ 	/* Something for the distproc database? */
+-	if ( strncasecmp( argv[ 0 ], "distproc-", STRLENOF( "distproc-" ) ) == 0 ) {
++	if ( ascii_strncasecmp( argv[ 0 ], "distproc-", STRLENOF( "distproc-" ) ) == 0 ) {
+ 		char		*save_argv0 = argv[ 0 ];
+ 		BackendInfo	*bd_info = be->bd_info;
+ 		void		*be_private = be->be_private;
+@@ -623,7 +623,7 @@ ldap_distproc_db_config(
+ 
+ 		argv[ 0 ] += STRLENOF( "distproc-" );
+ 
+-		if ( strcasecmp( argv[ 0 ], "uri" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 0 ], "uri" ) == 0 ) {
+ 			rc = ldap_distproc_db_init_one( be );
+ 			if ( rc != 0 ) {
+ 				Debug( LDAP_DEBUG_ANY, "%s: line %d: "
+Index: openldap-2.4.23/servers/slapd/back-meta/config.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-meta/config.c
++++ openldap-2.4.23/servers/slapd/back-meta/config.c
+@@ -83,11 +83,11 @@ meta_back_new_target(
+ static int
+ check_true_false( char *str )
+ {
+-	if ( strcasecmp( str, "true" ) == 0 || strcasecmp( str, "yes" ) == 0 ) {
++	if ( ascii_strcasecmp( str, "true" ) == 0 || ascii_strcasecmp( str, "yes" ) == 0 ) {
+ 		return 1;
+ 	}
+ 
+-	if ( strcasecmp( str, "false" ) == 0 || strcasecmp( str, "no" ) == 0 ) {
++	if ( ascii_strcasecmp( str, "false" ) == 0 || ascii_strcasecmp( str, "no" ) == 0 ) {
+ 		return 0;
+ 	}
+ 
+@@ -109,7 +109,7 @@ meta_back_db_config(
+ 	assert( mi != NULL );
+ 
+ 	/* URI of server to query */
+-	if ( strcasecmp( argv[ 0 ], "uri" ) == 0 ) {
++	if ( ascii_strcasecmp( argv[ 0 ], "uri" ) == 0 ) {
+ 		int 		i = mi->mi_ntargets;
+ 		LDAPURLDesc 	*ludp;
+ 		struct berval	dn;
+@@ -314,7 +314,7 @@ meta_back_db_config(
+ 		}
+ 
+ 	/* subtree-exclude */
+-	} else if ( strcasecmp( argv[ 0 ], "subtree-exclude" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "subtree-exclude" ) == 0 ) {
+ 		int 		i = mi->mi_ntargets - 1;
+ 		struct berval	dn, ndn;
+ 
+@@ -390,7 +390,7 @@ meta_back_db_config(
+ 		ber_bvarray_add( &mi->mi_targets[ i ]->mt_subtree_exclude, &ndn );
+ 
+ 	/* default target directive */
+-	} else if ( strcasecmp( argv[ 0 ], "default-target" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "default-target" ) == 0 ) {
+ 		int 		i = mi->mi_ntargets - 1;
+ 		
+ 		if ( argc == 1 ) {
+@@ -404,7 +404,7 @@ meta_back_db_config(
+ 			mi->mi_defaulttarget = i;
+ 
+ 		} else {
+-			if ( strcasecmp( argv[ 1 ], "none" ) == 0 ) {
++			if ( ascii_strcasecmp( argv[ 1 ], "none" ) == 0 ) {
+ 				if ( i >= 0 ) {
+ 					Debug( LDAP_DEBUG_ANY,
+ 	"%s: line %d: \"default-target none\""
+@@ -428,7 +428,7 @@ meta_back_db_config(
+ 		}
+ 		
+ 	/* ttl of dn cache */
+-	} else if ( strcasecmp( argv[ 0 ], "dncache-ttl" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "dncache-ttl" ) == 0 ) {
+ 		if ( argc != 2 ) {
+ 			Debug( LDAP_DEBUG_ANY,
+ 	"%s: line %d: missing ttl in \"dncache-ttl <ttl>\" line\n",
+@@ -436,10 +436,10 @@ meta_back_db_config(
+ 			return 1;
+ 		}
+ 		
+-		if ( strcasecmp( argv[ 1 ], "forever" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "forever" ) == 0 ) {
+ 			mi->mi_cache.ttl = META_DNCACHE_FOREVER;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "disabled" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "disabled" ) == 0 ) {
+ 			mi->mi_cache.ttl = META_DNCACHE_DISABLED;
+ 
+ 		} else {
+@@ -455,7 +455,7 @@ meta_back_db_config(
+ 		}
+ 
+ 	/* network timeout when connecting to ldap servers */
+-	} else if ( strcasecmp( argv[ 0 ], "network-timeout" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "network-timeout" ) == 0 ) {
+ 		unsigned long	t;
+ 		time_t		*tp = mi->mi_ntargets ?
+ 				&mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_network_timeout
+@@ -479,7 +479,7 @@ meta_back_db_config(
+ 		*tp = (time_t)t;
+ 
+ 	/* idle timeout when connecting to ldap servers */
+-	} else if ( strcasecmp( argv[ 0 ], "idle-timeout" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "idle-timeout" ) == 0 ) {
+ 		unsigned long	t;
+ 
+ 		switch ( argc ) {
+@@ -508,7 +508,7 @@ meta_back_db_config(
+ 		mi->mi_idle_timeout = (time_t)t;
+ 
+ 	/* conn ttl */
+-	} else if ( strcasecmp( argv[ 0 ], "conn-ttl" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "conn-ttl" ) == 0 ) {
+ 		unsigned long	t;
+ 
+ 		switch ( argc ) {
+@@ -537,7 +537,7 @@ meta_back_db_config(
+ 		mi->mi_conn_ttl = (time_t)t;
+ 
+ 	/* bind timeout when connecting to ldap servers */
+-	} else if ( strcasecmp( argv[ 0 ], "bind-timeout" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "bind-timeout" ) == 0 ) {
+ 		unsigned long	t;
+ 		struct timeval	*tp = mi->mi_ntargets ?
+ 				&mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_bind_timeout
+@@ -570,8 +570,8 @@ meta_back_db_config(
+ 		tp->tv_usec = t%1000000;
+ 
+ 	/* name to use for meta_back_group */
+-	} else if ( strcasecmp( argv[ 0 ], "acl-authcDN" ) == 0
+-			|| strcasecmp( argv[ 0 ], "binddn" ) == 0 )
++	} else if ( ascii_strcasecmp( argv[ 0 ], "acl-authcDN" ) == 0
++			|| ascii_strcasecmp( argv[ 0 ], "binddn" ) == 0 )
+ 	{
+ 		int 		i = mi->mi_ntargets - 1;
+ 		struct berval	dn;
+@@ -590,7 +590,7 @@ meta_back_db_config(
+ 			return 1;
+ 		}
+ 
+-		if ( strcasecmp( argv[ 0 ], "binddn" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 0 ], "binddn" ) == 0 ) {
+ 			Debug( LDAP_DEBUG_ANY, "%s: line %d: "
+ 				"\"binddn\" statement is deprecated; "
+ 				"use \"acl-authcDN\" instead\n",
+@@ -609,8 +609,8 @@ meta_back_db_config(
+ 		}
+ 
+ 	/* password to use for meta_back_group */
+-	} else if ( strcasecmp( argv[ 0 ], "acl-passwd" ) == 0
+-			|| strcasecmp( argv[ 0 ], "bindpw" ) == 0 )
++	} else if ( ascii_strcasecmp( argv[ 0 ], "acl-passwd" ) == 0
++			|| ascii_strcasecmp( argv[ 0 ], "bindpw" ) == 0 )
+ 	{
+ 		int 		i = mi->mi_ntargets - 1;
+ 
+@@ -628,7 +628,7 @@ meta_back_db_config(
+ 			return 1;
+ 		}
+ 
+-		if ( strcasecmp( argv[ 0 ], "bindpw" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 0 ], "bindpw" ) == 0 ) {
+ 			Debug( LDAP_DEBUG_ANY, "%s: line %d: "
+ 				"\"bindpw\" statement is deprecated; "
+ 				"use \"acl-passwd\" instead\n",
+@@ -639,7 +639,7 @@ meta_back_db_config(
+ 		ber_str2bv( argv[ 1 ], 0L, 1, &mi->mi_targets[ i ]->mt_bindpw );
+ 		
+ 	/* save bind creds for referral rebinds? */
+-	} else if ( strcasecmp( argv[ 0 ], "rebind-as-user" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "rebind-as-user" ) == 0 ) {
+ 		unsigned	*flagsp = mi->mi_ntargets ?
+ 				&mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_flags
+ 				: &mi->mi_flags;
+@@ -675,7 +675,7 @@ meta_back_db_config(
+ 			}
+ 		}
+ 
+-	} else if ( strcasecmp( argv[ 0 ], "chase-referrals" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "chase-referrals" ) == 0 ) {
+ 		unsigned	*flagsp = mi->mi_ntargets ?
+ 				&mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_flags
+ 				: &mi->mi_flags;
+@@ -704,7 +704,7 @@ meta_back_db_config(
+ 			return( 1 );
+ 		}
+ 	
+-	} else if ( strcasecmp( argv[ 0 ], "tls" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "tls" ) == 0 ) {
+ 		unsigned	*flagsp = mi->mi_ntargets ?
+ 				&mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_flags
+ 				: &mi->mi_flags;
+@@ -717,20 +717,20 @@ meta_back_db_config(
+ 		}
+ 
+ 		/* start */
+-		if ( strcasecmp( argv[ 1 ], "start" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "start" ) == 0 ) {
+ 			*flagsp |= ( LDAP_BACK_F_USE_TLS | LDAP_BACK_F_TLS_CRITICAL );
+ 	
+ 		/* try start tls */
+-		} else if ( strcasecmp( argv[ 1 ], "try-start" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "try-start" ) == 0 ) {
+ 			*flagsp &= ~LDAP_BACK_F_TLS_CRITICAL;
+ 			*flagsp |= LDAP_BACK_F_USE_TLS;
+ 	
+ 		/* propagate start tls */
+-		} else if ( strcasecmp( argv[ 1 ], "propagate" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "propagate" ) == 0 ) {
+ 			*flagsp |= ( LDAP_BACK_F_PROPAGATE_TLS | LDAP_BACK_F_TLS_CRITICAL );
+ 		
+ 		/* try start tls */
+-		} else if ( strcasecmp( argv[ 1 ], "try-propagate" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "try-propagate" ) == 0 ) {
+ 			*flagsp &= ~LDAP_BACK_F_TLS_CRITICAL;
+ 			*flagsp |= LDAP_BACK_F_PROPAGATE_TLS;
+ 
+@@ -741,7 +741,7 @@ meta_back_db_config(
+ 			return( 1 );
+ 		}
+ 
+-	} else if ( strcasecmp( argv[ 0 ], "t-f-support" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "t-f-support" ) == 0 ) {
+ 		unsigned	*flagsp = mi->mi_ntargets ?
+ 				&mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_flags
+ 				: &mi->mi_flags;
+@@ -763,7 +763,7 @@ meta_back_db_config(
+ 			break;
+ 
+ 		default:
+-			if ( strcasecmp( argv[ 1 ], "discover" ) == 0 ) {
++			if ( ascii_strcasecmp( argv[ 1 ], "discover" ) == 0 ) {
+ 				*flagsp |= LDAP_BACK_F_T_F_DISCOVER;
+ 
+ 			} else {
+@@ -776,7 +776,7 @@ meta_back_db_config(
+ 		}
+ 
+ 	/* onerr? */
+-	} else if ( strcasecmp( argv[ 0 ], "onerr" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "onerr" ) == 0 ) {
+ 		if ( argc != 2 ) {
+ 			Debug( LDAP_DEBUG_ANY,
+ 	"%s: line %d: \"onerr {CONTINUE|report|stop}\" takes 1 argument\n",
+@@ -784,13 +784,13 @@ meta_back_db_config(
+ 			return( 1 );
+ 		}
+ 
+-		if ( strcasecmp( argv[ 1 ], "continue" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "continue" ) == 0 ) {
+ 			mi->mi_flags &= ~META_BACK_F_ONERR_MASK;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "stop" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "stop" ) == 0 ) {
+ 			mi->mi_flags |= META_BACK_F_ONERR_STOP;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "report" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "report" ) == 0 ) {
+ 			mi->mi_flags |= META_BACK_F_ONERR_REPORT;
+ 
+ 		} else {
+@@ -801,8 +801,8 @@ meta_back_db_config(
+ 		}
+ 
+ 	/* bind-defer? */
+-	} else if ( strcasecmp( argv[ 0 ], "pseudoroot-bind-defer" ) == 0
+-		|| strcasecmp( argv[ 0 ], "root-bind-defer" ) == 0 )
++	} else if ( ascii_strcasecmp( argv[ 0 ], "pseudoroot-bind-defer" ) == 0
++		|| ascii_strcasecmp( argv[ 0 ], "root-bind-defer" ) == 0 )
+ 	{
+ 		if ( argc != 2 ) {
+ 			Debug( LDAP_DEBUG_ANY,
+@@ -828,7 +828,7 @@ meta_back_db_config(
+ 		}
+ 
+ 	/* single-conn? */
+-	} else if ( strcasecmp( argv[ 0 ], "single-conn" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "single-conn" ) == 0 ) {
+ 		if ( argc != 2 ) {
+ 			Debug( LDAP_DEBUG_ANY,
+ 	"%s: line %d: \"single-conn {FALSE|true}\" takes 1 argument\n",
+@@ -860,7 +860,7 @@ meta_back_db_config(
+ 		}
+ 
+ 	/* use-temporaries? */
+-	} else if ( strcasecmp( argv[ 0 ], "use-temporary-conn" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "use-temporary-conn" ) == 0 ) {
+ 		if ( argc != 2 ) {
+ 			Debug( LDAP_DEBUG_ANY,
+ 	"%s: line %d: \"use-temporary-conn {FALSE|true}\" takes 1 argument\n",
+@@ -892,7 +892,7 @@ meta_back_db_config(
+ 		}
+ 
+ 	/* privileged connections pool max size ? */
+-	} else if ( strcasecmp( argv[ 0 ], "conn-pool-max" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "conn-pool-max" ) == 0 ) {
+ 		if ( argc != 2 ) {
+ 			Debug( LDAP_DEBUG_ANY,
+ 	"%s: line %d: \"conn-pool-max <n>\" takes 1 argument\n",
+@@ -917,7 +917,7 @@ meta_back_db_config(
+ 			return 1;
+ 		}
+ 
+-	} else if ( strcasecmp( argv[ 0 ], "cancel" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "cancel" ) == 0 ) {
+ 		unsigned 	flag = 0;
+ 		unsigned	*flagsp = mi->mi_ntargets ?
+ 				&mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_flags
+@@ -930,16 +930,16 @@ meta_back_db_config(
+ 			return( 1 );
+ 		}
+ 
+-		if ( strcasecmp( argv[ 1 ], "abandon" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "abandon" ) == 0 ) {
+ 			flag = LDAP_BACK_F_CANCEL_ABANDON;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "ignore" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "ignore" ) == 0 ) {
+ 			flag = LDAP_BACK_F_CANCEL_IGNORE;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "exop" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "exop" ) == 0 ) {
+ 			flag = LDAP_BACK_F_CANCEL_EXOP;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "exop-discover" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "exop-discover" ) == 0 ) {
+ 			flag = LDAP_BACK_F_CANCEL_EXOP_DISCOVER;
+ 
+ 		} else {
+@@ -952,7 +952,7 @@ meta_back_db_config(
+ 		*flagsp &= ~LDAP_BACK_F_CANCEL_MASK2;
+ 		*flagsp |= flag;
+ 
+-	} else if ( strcasecmp( argv[ 0 ], "timeout" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "timeout" ) == 0 ) {
+ 		char	*sep;
+ 		time_t	*tv = mi->mi_ntargets ?
+ 				mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_timeout
+@@ -974,24 +974,24 @@ meta_back_db_config(
+ 			if ( sep != NULL ) {
+ 				size_t	len = sep - argv[ c ];
+ 
+-				if ( strncasecmp( argv[ c ], "bind", len ) == 0 ) {
++				if ( ascii_strncasecmp( argv[ c ], "bind", len ) == 0 ) {
+ 					t = &tv[ SLAP_OP_BIND ];
+ 				/* unbind makes little sense */
+-				} else if ( strncasecmp( argv[ c ], "add", len ) == 0 ) {
++				} else if ( ascii_strncasecmp( argv[ c ], "add", len ) == 0 ) {
+ 					t = &tv[ SLAP_OP_ADD ];
+-				} else if ( strncasecmp( argv[ c ], "delete", len ) == 0 ) {
++				} else if ( ascii_strncasecmp( argv[ c ], "delete", len ) == 0 ) {
+ 					t = &tv[ SLAP_OP_DELETE ];
+-				} else if ( strncasecmp( argv[ c ], "modrdn", len ) == 0 ) {
++				} else if ( ascii_strncasecmp( argv[ c ], "modrdn", len ) == 0 ) {
+ 					t = &tv[ SLAP_OP_MODRDN ];
+-				} else if ( strncasecmp( argv[ c ], "modify", len ) == 0 ) {
++				} else if ( ascii_strncasecmp( argv[ c ], "modify", len ) == 0 ) {
+ 					t = &tv[ SLAP_OP_MODIFY ];
+-				} else if ( strncasecmp( argv[ c ], "compare", len ) == 0 ) {
++				} else if ( ascii_strncasecmp( argv[ c ], "compare", len ) == 0 ) {
+ 					t = &tv[ SLAP_OP_COMPARE ];
+-				} else if ( strncasecmp( argv[ c ], "search", len ) == 0 ) {
++				} else if ( ascii_strncasecmp( argv[ c ], "search", len ) == 0 ) {
+ 					t = &tv[ SLAP_OP_SEARCH ];
+ 				/* abandon makes little sense */
+ #if 0				/* not implemented yet */
+-				} else if ( strncasecmp( argv[ c ], "extended", len ) == 0 ) {
++				} else if ( ascii_strncasecmp( argv[ c ], "extended", len ) == 0 ) {
+ 					t = &tv[ SLAP_OP_EXTENDED ];
+ #endif
+ 				} else {
+@@ -1030,7 +1030,7 @@ meta_back_db_config(
+ 		}
+ 	
+ 	/* name to use as pseudo-root dn */
+-	} else if ( strcasecmp( argv[ 0 ], "pseudorootdn" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "pseudorootdn" ) == 0 ) {
+ 		int 		i = mi->mi_ntargets - 1;
+ 
+ 		if ( i < 0 ) {
+@@ -1120,7 +1120,7 @@ idassert-authzFrom	"dn:<rootdn>"
+ 		}
+ 
+ 	/* password to use as pseudo-root */
+-	} else if ( strcasecmp( argv[ 0 ], "pseudorootpw" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "pseudorootpw" ) == 0 ) {
+ 		int 		i = mi->mi_ntargets - 1;
+ 
+ 		if ( i < 0 ) {
+@@ -1156,7 +1156,7 @@ idassert-authzFrom	"dn:<rootdn>"
+ 		ber_str2bv( argv[ 1 ], 0, 1, &mi->mi_targets[ i ]->mt_idassert_passwd );
+ 
+ 	/* idassert-bind */
+-	} else if ( strcasecmp( argv[ 0 ], "idassert-bind" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "idassert-bind" ) == 0 ) {
+ 		if ( mi->mi_ntargets == 0 ) {
+ 			Debug( LDAP_DEBUG_ANY,
+ 				"%s: line %d: \"idassert-bind\" "
+@@ -1168,7 +1168,7 @@ idassert-authzFrom	"dn:<rootdn>"
+ 		return mi->mi_ldap_extra->idassert_parse_cf( fname, lineno, argc, argv, &mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_idassert );
+ 
+ 	/* idassert-authzFrom */
+-	} else if ( strcasecmp( argv[ 0 ], "idassert-authzFrom" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "idassert-authzFrom" ) == 0 ) {
+ 		if ( mi->mi_ntargets == 0 ) {
+ 			Debug( LDAP_DEBUG_ANY,
+ 				"%s: line %d: \"idassert-bind\" "
+@@ -1197,7 +1197,7 @@ idassert-authzFrom	"dn:<rootdn>"
+ 		return mi->mi_ldap_extra->idassert_authzfrom_parse_cf( fname, lineno, argv[ 1 ], &mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_idassert );
+ 
+ 	/* quarantine */
+-	} else if ( strcasecmp( argv[ 0 ], "quarantine" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "quarantine" ) == 0 ) {
+ 		char			buf[ SLAP_TEXT_BUFLEN ] = { '\0' };
+ 		slap_retry_info_t	*ri = mi->mi_ntargets ?
+ 				&mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_quarantine
+@@ -1254,7 +1254,7 @@ idassert-authzFrom	"dn:<rootdn>"
+ 
+ #ifdef SLAP_CONTROL_X_SESSION_TRACKING
+ 	/* session tracking request */
+-	} else if ( strcasecmp( argv[ 0 ], "session-tracking-request" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "session-tracking-request" ) == 0 ) {
+ 		unsigned	*flagsp = mi->mi_ntargets ?
+ 				&mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_flags
+ 				: &mi->mi_flags;
+@@ -1285,7 +1285,7 @@ idassert-authzFrom	"dn:<rootdn>"
+ #endif /* SLAP_CONTROL_X_SESSION_TRACKING */
+ 	
+ 	/* dn massaging */
+-	} else if ( strcasecmp( argv[ 0 ], "suffixmassage" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "suffixmassage" ) == 0 ) {
+ 		BackendDB 	*tmp_bd;
+ 		int 		i = mi->mi_ntargets - 1, c, rc;
+ 		struct berval	dn, nvnc, pvnc, nrnc, prnc;
+@@ -1372,7 +1372,7 @@ idassert-authzFrom	"dn:<rootdn>"
+ 		return rc;
+ 		
+ 	/* rewrite stuff ... */
+- 	} else if ( strncasecmp( argv[ 0 ], "rewrite", 7 ) == 0 ) {
++ 	} else if ( ascii_strncasecmp( argv[ 0 ], "rewrite", 7 ) == 0 ) {
+ 		int 		i = mi->mi_ntargets - 1;
+ 
+ 		if ( i < 0 ) {
+@@ -1386,7 +1386,7 @@ idassert-authzFrom	"dn:<rootdn>"
+ 				fname, lineno, argc, argv );
+ 
+ 	/* objectclass/attribute mapping */
+-	} else if ( strcasecmp( argv[ 0 ], "map" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "map" ) == 0 ) {
+ 		int 		i = mi->mi_ntargets - 1;
+ 
+ 		if ( i < 0 ) {
+@@ -1400,7 +1400,7 @@ idassert-authzFrom	"dn:<rootdn>"
+ 				&mi->mi_targets[ i ]->mt_rwmap.rwm_at,
+ 				fname, lineno, argc, argv );
+ 
+-	} else if ( strcasecmp( argv[ 0 ], "nretries" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "nretries" ) == 0 ) {
+ 		int 		i = mi->mi_ntargets - 1;
+ 		int		nretries = META_RETRY_UNDEFINED;
+ 
+@@ -1411,10 +1411,10 @@ idassert-authzFrom	"dn:<rootdn>"
+ 			return 1;
+ 		}
+ 
+-		if ( strcasecmp( argv[ 1 ], "forever" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "forever" ) == 0 ) {
+ 			nretries = META_RETRY_FOREVER;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "never" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "never" ) == 0 ) {
+ 			nretries = META_RETRY_NEVER;
+ 
+ 		} else {
+@@ -1433,7 +1433,7 @@ idassert-authzFrom	"dn:<rootdn>"
+ 			mi->mi_targets[ i ]->mt_nretries = nretries;
+ 		}
+ 
+-	} else if ( strcasecmp( argv[ 0 ], "protocol-version" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "protocol-version" ) == 0 ) {
+ 		int	*version = mi->mi_ntargets ?
+ 				&mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_version
+ 				: &mi->mi_version;
+@@ -1460,7 +1460,7 @@ idassert-authzFrom	"dn:<rootdn>"
+ 		}
+ 
+ 	/* do not return search references */
+-	} else if ( strcasecmp( argv[ 0 ], "norefs" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "norefs" ) == 0 ) {
+ 		unsigned	*flagsp = mi->mi_ntargets ?
+ 				&mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_flags
+ 				: &mi->mi_flags;
+@@ -1490,7 +1490,7 @@ idassert-authzFrom	"dn:<rootdn>"
+ 		}
+ 
+ 	/* do not propagate undefined search filters */
+-	} else if ( strcasecmp( argv[ 0 ], "noundeffilter" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 0 ], "noundeffilter" ) == 0 ) {
+ 		unsigned	*flagsp = mi->mi_ntargets ?
+ 				&mi->mi_targets[ mi->mi_ntargets - 1 ]->mt_flags
+ 				: &mi->mi_flags;
+@@ -1547,11 +1547,11 @@ ldap_back_map_config(
+ 		return 1;
+ 	}
+ 
+-	if ( strcasecmp( argv[ 1 ], "objectclass" ) == 0 ) {
++	if ( ascii_strcasecmp( argv[ 1 ], "objectclass" ) == 0 ) {
+ 		map = oc_map;
+ 		is_oc = 1;
+ 
+-	} else if ( strcasecmp( argv[ 1 ], "attribute" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[ 1 ], "attribute" ) == 0 ) {
+ 		map = at_map;
+ 
+ 	} else {
+@@ -1584,8 +1584,8 @@ ldap_back_map_config(
+ 	}
+ 
+ 	if ( ( map == at_map )
+-		&& ( strcasecmp( src, "objectclass" ) == 0
+-			|| strcasecmp( dst, "objectclass" ) == 0 ) )
++		&& ( ascii_strcasecmp( src, "objectclass" ) == 0
++			|| ascii_strcasecmp( dst, "objectclass" ) == 0 ) )
+ 	{
+ 		Debug( LDAP_DEBUG_ANY,
+ 			"%s: line %d: objectclass attribute cannot be mapped\n",
+Index: openldap-2.4.23/servers/slapd/back-meta/map.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-meta/map.c
++++ openldap-2.4.23/servers/slapd/back-meta/map.c
+@@ -71,7 +71,7 @@ mapping_cmp ( const void *c1, const void
+ 	struct ldapmapping *map2 = (struct ldapmapping *)c2;
+ 	int rc = map1->src.bv_len - map2->src.bv_len;
+ 	if (rc) return rc;
+-	return ( strcasecmp( map1->src.bv_val, map2->src.bv_val ) );
++	return ( ascii_strcasecmp( map1->src.bv_val, map2->src.bv_val ) );
+ }
+ 
+ int
+@@ -80,7 +80,7 @@ mapping_dup ( void *c1, void *c2 )
+ 	struct ldapmapping *map1 = (struct ldapmapping *)c1;
+ 	struct ldapmapping *map2 = (struct ldapmapping *)c2;
+ 
+-	return ( ( strcasecmp( map1->src.bv_val, map2->src.bv_val ) == 0 ) ? -1 : 0 );
++	return ( ( ascii_strcasecmp( map1->src.bv_val, map2->src.bv_val ) == 0 ) ? -1 : 0 );
+ }
+ 
+ void
+Index: openldap-2.4.23/servers/slapd/back-monitor/init.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-monitor/init.c
++++ openldap-2.4.23/servers/slapd/back-monitor/init.c
+@@ -1598,7 +1598,7 @@ monitor_back_get_subsys( const char *nam
+ 		int	i;
+ 		
+ 		for ( i = 0; monitor_subsys[ i ] != NULL; i++ ) {
+-			if ( strcasecmp( monitor_subsys[ i ]->mss_name, name ) == 0 ) {
++			if ( ascii_strcasecmp( monitor_subsys[ i ]->mss_name, name ) == 0 ) {
+ 				return monitor_subsys[ i ];
+ 			}
+ 		}
+Index: openldap-2.4.23/servers/slapd/back-ndb/search.cpp
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-ndb/search.cpp
++++ openldap-2.4.23/servers/slapd/back-ndb/search.cpp
+@@ -436,9 +436,9 @@ static int ndb_oc_search( Operation *op,
+ 		default:
+ 			if ( e.e_name.bv_len <= op->o_req_dn.bv_len ) {
+ 				if ( op->ors_scope != LDAP_SCOPE_SUBTREE ||
+-					strcasecmp( op->o_req_dn.bv_val, e.e_name.bv_val ))
++					ascii_strcasecmp( op->o_req_dn.bv_val, e.e_name.bv_val ))
+ 					continue;
+-			} else if ( strcasecmp( op->o_req_dn.bv_val, e.e_name.bv_val +
++			} else if ( ascii_strcasecmp( op->o_req_dn.bv_val, e.e_name.bv_val +
+ 				e.e_name.bv_len - op->o_req_dn.bv_len ))
+ 				continue;
+ 		}
+Index: openldap-2.4.23/servers/slapd/back-null/null.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-null/null.c
++++ openldap-2.4.23/servers/slapd/back-null/null.c
+@@ -305,14 +305,14 @@ null_back_db_config(
+ 	}
+ 
+ 	/* bind requests allowed */
+-	if ( strcasecmp( argv[0], "bind" ) == 0 ) {
++	if ( ascii_strcasecmp( argv[0], "bind" ) == 0 ) {
+ 		if ( argc < 2 ) {
+ 			fprintf( stderr,
+ 	"%s: line %d: missing <on/off> in \"bind <on/off>\" line\n",
+ 			         fname, lineno );
+ 			return 1;
+ 		}
+-		ni->ni_bind_allowed = strcasecmp( argv[1], "off" );
++		ni->ni_bind_allowed = ascii_strcasecmp( argv[1], "off" );
+ 
+ 	/* anything else */
+ 	} else {
+Index: openldap-2.4.23/servers/slapd/back-passwd/config.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-passwd/config.c
++++ openldap-2.4.23/servers/slapd/back-passwd/config.c
+@@ -49,7 +49,7 @@ passwd_back_db_config(
+ )
+ {
+ 	/* alternate passwd file */
+-	if ( strcasecmp( argv[0], "file" ) == 0 ) {
++	if ( ascii_strcasecmp( argv[0], "file" ) == 0 ) {
+ #ifdef HAVE_SETPWFILE
+ 		if ( argc < 2 ) {
+ 			fprintf( stderr,
+Index: openldap-2.4.23/servers/slapd/back-passwd/search.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-passwd/search.c
++++ openldap-2.4.23/servers/slapd/back-passwd/search.c
+@@ -343,7 +343,7 @@ pw2entry( Backend *be, struct passwd *pw
+ 		}
+ 		val.bv_len = strlen( val.bv_val );
+ 
+-		if ( val.bv_len && strcasecmp( val.bv_val, pw->pw_name ) ) {
++		if ( val.bv_len && ascii_strcasecmp( val.bv_val, pw->pw_name ) ) {
+ 			attr_merge_normalize_one( e, slap_schema.si_ad_cn, &val, NULL );
+ 		}
+ 
+Index: openldap-2.4.23/servers/slapd/back-perl/config.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-perl/config.c
++++ openldap-2.4.23/servers/slapd/back-perl/config.c
+@@ -16,6 +16,7 @@
+  */
+ 
+ #include "perl_back.h"
++#include <ac/string.h>
+ 
+ 
+ /**********************************************************
+@@ -40,7 +41,7 @@ perl_back_db_config(
+ 	int return_code;
+ 	
+ 
+-	if ( strcasecmp( argv[0], "perlModule" ) == 0 ) {
++	if ( ascii_strcasecmp( argv[0], "perlModule" ) == 0 ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_ANY,
+ 				 "%s.pm: line %d: missing module in \"perlModule <module>\" line\n",
+@@ -88,7 +89,7 @@ perl_back_db_config(
+ 			PUTBACK; FREETMPS; LEAVE ;
+ 		}
+ 
+-	} else if ( strcasecmp( argv[0], "perlModulePath" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "perlModulePath" ) == 0 ) {
+ 		if ( argc < 2 ) {
+ 			fprintf( stderr,
+ 				"%s: line %d: missing module in \"PerlModulePath <module>\" line\n",
+@@ -105,7 +106,7 @@ perl_back_db_config(
+ 
+ 		/* XXX loc_sv return value is ignored. */
+ 
+-	} else if ( strcasecmp( argv[0], "filterSearchResults" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "filterSearchResults" ) == 0 ) {
+ 		perl_back->pb_filter_search_results = 1;
+ 	} else {
+ 		return_code = SLAP_CONF_UNKNOWN;
+Index: openldap-2.4.23/servers/slapd/back-shell/config.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-shell/config.c
++++ openldap-2.4.23/servers/slapd/back-shell/config.c
+@@ -56,7 +56,7 @@ shell_back_db_config(
+ 	}
+ 
+ 	/* command + args to exec for binds */
+-	if ( strcasecmp( argv[0], "bind" ) == 0 ) {
++	if ( ascii_strcasecmp( argv[0], "bind" ) == 0 ) {
+ 		if ( argc < 2 ) {
+ 			fprintf( stderr,
+ 	"%s: line %d: missing executable in \"bind <executable>\" line\n",
+@@ -66,7 +66,7 @@ shell_back_db_config(
+ 		si->si_bind = ldap_charray_dup( &argv[1] );
+ 
+ 	/* command + args to exec for unbinds */
+-	} else if ( strcasecmp( argv[0], "unbind" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "unbind" ) == 0 ) {
+ 		if ( argc < 2 ) {
+ 			fprintf( stderr,
+ 	"%s: line %d: missing executable in \"unbind <executable>\" line\n",
+@@ -76,7 +76,7 @@ shell_back_db_config(
+ 		si->si_unbind = ldap_charray_dup( &argv[1] );
+ 
+ 	/* command + args to exec for searches */
+-	} else if ( strcasecmp( argv[0], "search" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "search" ) == 0 ) {
+ 		if ( argc < 2 ) {
+ 			fprintf( stderr,
+ 	"%s: line %d: missing executable in \"search <executable>\" line\n",
+@@ -86,7 +86,7 @@ shell_back_db_config(
+ 		si->si_search = ldap_charray_dup( &argv[1] );
+ 
+ 	/* command + args to exec for compares */
+-	} else if ( strcasecmp( argv[0], "compare" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "compare" ) == 0 ) {
+ 		if ( argc < 2 ) {
+ 			fprintf( stderr,
+ 	"%s: line %d: missing executable in \"compare <executable>\" line\n",
+@@ -96,7 +96,7 @@ shell_back_db_config(
+ 		si->si_compare = ldap_charray_dup( &argv[1] );
+ 
+ 	/* command + args to exec for modifies */
+-	} else if ( strcasecmp( argv[0], "modify" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "modify" ) == 0 ) {
+ 		if ( argc < 2 ) {
+ 			fprintf( stderr,
+ 	"%s: line %d: missing executable in \"modify <executable>\" line\n",
+@@ -106,7 +106,7 @@ shell_back_db_config(
+ 		si->si_modify = ldap_charray_dup( &argv[1] );
+ 
+ 	/* command + args to exec for modrdn */
+-	} else if ( strcasecmp( argv[0], "modrdn" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "modrdn" ) == 0 ) {
+ 		if ( argc < 2 ) {
+ 			fprintf( stderr,
+ 	"%s: line %d: missing executable in \"modrdn <executable>\" line\n",
+@@ -116,7 +116,7 @@ shell_back_db_config(
+ 		si->si_modrdn = ldap_charray_dup( &argv[1] );
+ 
+ 	/* command + args to exec for add */
+-	} else if ( strcasecmp( argv[0], "add" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "add" ) == 0 ) {
+ 		if ( argc < 2 ) {
+ 			fprintf( stderr,
+ 	"%s: line %d: missing executable in \"add <executable>\" line\n",
+@@ -126,7 +126,7 @@ shell_back_db_config(
+ 		si->si_add = ldap_charray_dup( &argv[1] );
+ 
+ 	/* command + args to exec for delete */
+-	} else if ( strcasecmp( argv[0], "delete" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "delete" ) == 0 ) {
+ 		if ( argc < 2 ) {
+ 			fprintf( stderr,
+ 	"%s: line %d: missing executable in \"delete <executable>\" line\n",
+Index: openldap-2.4.23/servers/slapd/back-shell/result.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-shell/result.c
++++ openldap-2.4.23/servers/slapd/back-shell/result.c
+@@ -75,7 +75,7 @@ read_and_send_results(
+ 		}
+ 
+ 		/* ignore lines beginning with DEBUG: */
+-		if ( strncasecmp( line, "DEBUG:", 6 ) == 0 ) {
++		if ( ascii_strncasecmp( line, "DEBUG:", 6 ) == 0 ) {
+ 			continue;
+ 		}
+ 
+@@ -91,7 +91,7 @@ read_and_send_results(
+ 
+ 		/* line marked the end of an entry or result */
+ 		if ( *line == '\n' ) {
+-			if ( strncasecmp( buf, "RESULT", 6 ) == 0 ) {
++			if ( ascii_strncasecmp( buf, "RESULT", 6 ) == 0 ) {
+ 				break;
+ 			}
+ 
+Index: openldap-2.4.23/servers/slapd/back-sock/result.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-sock/result.c
++++ openldap-2.4.23/servers/slapd/back-sock/result.c
+@@ -72,7 +72,7 @@ sock_read_and_send_results(
+ 		}
+ 
+ 		/* ignore lines beginning with DEBUG: */
+-		if ( strncasecmp( line, "DEBUG:", 6 ) == 0 ) {
++		if ( ascii_strncasecmp( line, "DEBUG:", 6 ) == 0 ) {
+ 			continue;
+ 		}
+ 
+@@ -88,7 +88,7 @@ sock_read_and_send_results(
+ 
+ 		/* line marked the end of an entry or result */
+ 		if ( *line == '\n' ) {
+-			if ( strncasecmp( buf, "RESULT", 6 ) == 0 ) {
++			if ( ascii_strncasecmp( buf, "RESULT", 6 ) == 0 ) {
+ 				break;
+ 			}
+ 
+Index: openldap-2.4.23/servers/slapd/back-sql/api.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-sql/api.c
++++ openldap-2.4.23/servers/slapd/back-sql/api.c
+@@ -39,7 +39,7 @@ backsql_api_config( backsql_info *bi, co
+ 	assert( name != NULL );
+ 
+ 	for ( ba = backsqlapi; ba; ba = ba->ba_next ) {
+-		if ( strcasecmp( name, ba->ba_name ) == 0 ) {
++		if ( ascii_strcasecmp( name, ba->ba_name ) == 0 ) {
+ 			backsql_api	*ba2;
+ 
+ 			ba2 = ch_malloc( sizeof( backsql_api ) );
+@@ -97,7 +97,7 @@ backsql_api_register( backsql_api *ba )
+ 	}
+ 
+ 	for ( ba2 = backsqlapi; ba2; ba2 = ba2->ba_next ) {
+-		if ( strcasecmp( ba->ba_name, ba2->ba_name ) == 0 ) {
++		if ( ascii_strcasecmp( ba->ba_name, ba2->ba_name ) == 0 ) {
+ 			fprintf( stderr, "API module \"%s\" already defined\n", ba->ba_name );
+ 			exit( EXIT_FAILURE );
+ 		}
+Index: openldap-2.4.23/servers/slapd/back-sql/config.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-sql/config.c
++++ openldap-2.4.23/servers/slapd/back-sql/config.c
+@@ -55,7 +55,7 @@ backsql_db_config(
+ 	Debug( LDAP_DEBUG_TRACE, "==>backsql_db_config()\n", 0, 0, 0 );
+ 	assert( bi != NULL );
+   
+-	if ( !strcasecmp( argv[ 0 ], "dbhost" ) ) {
++	if ( !ascii_strcasecmp( argv[ 0 ], "dbhost" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE, 
+ 				"<==backsql_db_config (%s line %d): "
+@@ -68,7 +68,7 @@ backsql_db_config(
+ 			"<==backsql_db_config(): hostname=%s\n",
+ 			bi->sql_dbhost, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "dbuser" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "dbuser" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE, 
+ 				"<==backsql_db_config (%s line %d): "
+@@ -80,7 +80,7 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): dbuser=%s\n",
+ 			bi->sql_dbuser, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "dbpasswd" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "dbpasswd" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE, 
+ 				"<==backsql_db_config (%s line %d): "
+@@ -92,7 +92,7 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"dbpasswd=%s\n", /* bi->sql_dbpasswd */ "xxxx", 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "dbname" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "dbname" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE, 
+ 				"<==backsql_db_config (%s line %d): "
+@@ -104,7 +104,7 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): dbname=%s\n",
+ 			bi->sql_dbname, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "concat_pattern" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "concat_pattern" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE, 
+ 				"<==backsql_db_config (%s line %d): "
+@@ -124,7 +124,7 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"concat_pattern=\"%s\"\n", argv[ 1 ], 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "subtree_cond" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "subtree_cond" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE, 
+ 				"<==backsql_db_config (%s line %d): "
+@@ -137,7 +137,7 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"subtree_cond=%s\n", bi->sql_subtree_cond.bv_val, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "children_cond" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "children_cond" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE, 
+ 				"<==backsql_db_config (%s line %d): "
+@@ -150,7 +150,7 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"children_cond=%s\n", bi->sql_children_cond.bv_val, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "dn_match_cond" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "dn_match_cond" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE, 
+ 				"<==backsql_db_config (%s line %d): "
+@@ -163,7 +163,7 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"children_cond=%s\n", bi->sql_dn_match_cond.bv_val, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "oc_query" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "oc_query" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE, 
+ 				"<==backsql_db_config (%s line %d): "
+@@ -176,7 +176,7 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"oc_query=%s\n", bi->sql_oc_query, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "at_query" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "at_query" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): "
+@@ -189,8 +189,8 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"at_query=%s\n", bi->sql_at_query, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "insentry_stmt" ) ||
+-			!strcasecmp( argv[ 0 ], "insentry_query" ) )
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "insentry_stmt" ) ||
++			!ascii_strcasecmp( argv[ 0 ], "insentry_query" ) )
+ 	{
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE, 
+@@ -204,7 +204,7 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"insentry_stmt=%s\n", bi->sql_insentry_stmt, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "create_needs_select" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "create_needs_select" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): "
+@@ -214,10 +214,10 @@ backsql_db_config(
+ 			return 1;
+ 		}
+ 
+-		if ( strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
+ 			bi->sql_flags |= BSQLF_CREATE_NEEDS_SELECT;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "no" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "no" ) == 0 ) {
+ 			bi->sql_flags &= ~BSQLF_CREATE_NEEDS_SELECT;
+ 
+ 		} else {
+@@ -234,7 +234,7 @@ backsql_db_config(
+ 			BACKSQL_CREATE_NEEDS_SELECT( bi ) ? "yes" : "no",
+ 			0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "upper_func" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "upper_func" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): "
+@@ -247,7 +247,7 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"upper_func=%s\n", bi->sql_upper_func.bv_val, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "upper_needs_cast" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "upper_needs_cast" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): "
+@@ -257,10 +257,10 @@ backsql_db_config(
+ 			return 1;
+ 		}
+ 
+-		if ( strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
+ 			bi->sql_flags |= BSQLF_UPPER_NEEDS_CAST;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "no" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "no" ) == 0 ) {
+ 			bi->sql_flags &= ~BSQLF_UPPER_NEEDS_CAST;
+ 
+ 		} else {
+@@ -276,7 +276,7 @@ backsql_db_config(
+ 			"upper_needs_cast =%s\n", 
+ 			BACKSQL_UPPER_NEEDS_CAST( bi ) ? "yes" : "no", 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "strcast_func" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "strcast_func" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): "
+@@ -289,8 +289,8 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"strcast_func=%s\n", bi->sql_strcast_func.bv_val, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "delentry_stmt" ) ||
+-			!strcasecmp( argv[ 0 ], "delentry_query" ) )
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "delentry_stmt" ) ||
++			!ascii_strcasecmp( argv[ 0 ], "delentry_query" ) )
+ 	{
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+@@ -304,8 +304,8 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"delentry_stmt=%s\n", bi->sql_delentry_stmt, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "renentry_stmt" ) ||
+-			!strcasecmp( argv[ 0 ], "renentry_query" ) )
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "renentry_stmt" ) ||
++			!ascii_strcasecmp( argv[ 0 ], "renentry_query" ) )
+ 	{
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+@@ -319,8 +319,8 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"renentry_stmt=%s\n", bi->sql_renentry_stmt, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "delobjclasses_stmt" ) ||
+-			!strcasecmp( argv[ 0 ], "delobjclasses_query" ) )
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "delobjclasses_stmt" ) ||
++			!ascii_strcasecmp( argv[ 0 ], "delobjclasses_query" ) )
+ 	{
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+@@ -334,7 +334,7 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"delobjclasses_stmt=%s\n", bi->sql_delobjclasses_stmt, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "has_ldapinfo_dn_ru" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "has_ldapinfo_dn_ru" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): "
+@@ -344,11 +344,11 @@ backsql_db_config(
+ 			return 1;
+ 		}
+ 
+-		if ( strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
+ 			bi->sql_flags |= BSQLF_HAS_LDAPINFO_DN_RU;
+ 			bi->sql_flags |= BSQLF_DONTCHECK_LDAPINFO_DN_RU;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "no" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "no" ) == 0 ) {
+ 			bi->sql_flags &= ~BSQLF_HAS_LDAPINFO_DN_RU;
+ 			bi->sql_flags |= BSQLF_DONTCHECK_LDAPINFO_DN_RU;
+ 
+@@ -365,7 +365,7 @@ backsql_db_config(
+ 			"has_ldapinfo_dn_ru=%s\n", 
+ 			BACKSQL_HAS_LDAPINFO_DN_RU( bi ) ? "yes" : "no", 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "fail_if_no_mapping" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "fail_if_no_mapping" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): "
+@@ -375,10 +375,10 @@ backsql_db_config(
+ 			return 1;
+ 		}
+ 
+-		if ( strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
+ 			bi->sql_flags |= BSQLF_FAIL_IF_NO_MAPPING;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "no" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "no" ) == 0 ) {
+ 			bi->sql_flags &= ~BSQLF_FAIL_IF_NO_MAPPING;
+ 
+ 		} else {
+@@ -394,7 +394,7 @@ backsql_db_config(
+ 			"fail_if_no_mapping=%s\n", 
+ 			BACKSQL_FAIL_IF_NO_MAPPING( bi ) ? "yes" : "no", 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "allow_orphans" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "allow_orphans" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): "
+@@ -404,10 +404,10 @@ backsql_db_config(
+ 			return 1;
+ 		}
+ 
+-		if ( strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
+ 			bi->sql_flags |= BSQLF_ALLOW_ORPHANS;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "no" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "no" ) == 0 ) {
+ 			bi->sql_flags &= ~BSQLF_ALLOW_ORPHANS;
+ 
+ 		} else {
+@@ -423,7 +423,7 @@ backsql_db_config(
+ 			"allow_orphans=%s\n", 
+ 			BACKSQL_ALLOW_ORPHANS( bi ) ? "yes" : "no", 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "baseobject" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "baseobject" ) ) {
+ 		if ( be->be_suffix == NULL ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): : "
+@@ -456,7 +456,7 @@ backsql_db_config(
+ 			return 1;
+ 		}
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "sqllayer" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "sqllayer" ) ) {
+ 		if ( backsql_api_config( bi, argv[ 1 ], argc - 2, &argv[ 2 ] ) )
+ 		{
+ 			Debug( LDAP_DEBUG_TRACE,
+@@ -466,7 +466,7 @@ backsql_db_config(
+ 			return 1;
+ 		}
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "id_query" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "id_query" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE, 
+ 				"<==backsql_db_config (%s line %d): "
+@@ -479,7 +479,7 @@ backsql_db_config(
+ 		Debug( LDAP_DEBUG_TRACE, "<==backsql_db_config(): "
+ 			"id_query=%s\n", bi->sql_id_query, 0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "use_subtree_shortcut" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "use_subtree_shortcut" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): "
+@@ -489,10 +489,10 @@ backsql_db_config(
+ 			return 1;
+ 		}
+ 
+-		if ( strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
+ 			bi->sql_flags |= BSQLF_USE_SUBTREE_SHORTCUT;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "no" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "no" ) == 0 ) {
+ 			bi->sql_flags &= ~BSQLF_USE_SUBTREE_SHORTCUT;
+ 
+ 		} else {
+@@ -509,7 +509,7 @@ backsql_db_config(
+ 			BACKSQL_USE_SUBTREE_SHORTCUT( bi ) ? "yes" : "no",
+ 			0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "fetch_all_attrs" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "fetch_all_attrs" ) ) {
+ 		if ( argc < 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): "
+@@ -519,10 +519,10 @@ backsql_db_config(
+ 			return 1;
+ 		}
+ 
+-		if ( strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
+ 			bi->sql_flags |= BSQLF_FETCH_ALL_ATTRS;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "no" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "no" ) == 0 ) {
+ 			bi->sql_flags &= ~BSQLF_FETCH_ALL_ATTRS;
+ 
+ 		} else {
+@@ -539,7 +539,7 @@ backsql_db_config(
+ 			BACKSQL_FETCH_ALL_ATTRS( bi ) ? "yes" : "no",
+ 			0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "fetch_attrs" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "fetch_attrs" ) ) {
+ 		char		*str, *s, *next;
+ 		const char	*delimstr = ",";
+ 
+@@ -574,7 +574,7 @@ backsql_db_config(
+ 			return -1;
+ 		}
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "check_schema" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "check_schema" ) ) {
+ 		if ( argc != 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): "
+@@ -584,10 +584,10 @@ backsql_db_config(
+ 			return 1;
+ 		}
+ 
+-		if ( strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
+ 			bi->sql_flags |= BSQLF_CHECK_SCHEMA;
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "no" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "no" ) == 0 ) {
+ 			bi->sql_flags &= ~BSQLF_CHECK_SCHEMA;
+ 
+ 		} else {
+@@ -604,7 +604,7 @@ backsql_db_config(
+ 			BACKSQL_CHECK_SCHEMA( bi ) ? "yes" : "no",
+ 			0, 0 );
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "aliasing_keyword" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "aliasing_keyword" ) ) {
+ 		if ( argc != 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): "
+@@ -623,7 +623,7 @@ backsql_db_config(
+ 		/* add a trailing space... */
+ 		bi->sql_aliasing.bv_val[ bi->sql_aliasing.bv_len - 1] = ' ';
+ 
+-	} else if ( !strcasecmp( argv[ 0 ], "aliasing_quote" ) ) {
++	} else if ( !ascii_strcasecmp( argv[ 0 ], "aliasing_quote" ) ) {
+ 		if ( argc != 2 ) {
+ 			Debug( LDAP_DEBUG_TRACE,
+ 				"<==backsql_db_config (%s line %d): "
+Index: openldap-2.4.23/servers/slapd/back-sql/util.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/back-sql/util.c
++++ openldap-2.4.23/servers/slapd/back-sql/util.c
+@@ -304,7 +304,7 @@ backsql_get_table_spec( backsql_info *bi
+ 	s = q;
+ 
+ 	BACKSQL_NEXT_WORD;
+-	if ( strcasecmp( s, "AS" ) == 0 ) {
++	if ( ascii_strcasecmp( s, "AS" ) == 0 ) {
+ 		s = q;
+ 		BACKSQL_NEXT_WORD;
+ 	}
+Index: openldap-2.4.23/servers/slapd/bconfig.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/bconfig.c
++++ openldap-2.4.23/servers/slapd/bconfig.c
+@@ -1471,9 +1471,9 @@ config_generic(ConfigArgs *c) {
+ 			c->bi = NULL;
+ 			/* NOTE: config is always the first backend!
+ 			 */
+-			if ( !strcasecmp( c->argv[1], "config" )) {
++			if ( !ascii_strcasecmp( c->argv[1], "config" )) {
+ 				c->be = LDAP_STAILQ_FIRST(&backendDB);
+-			} else if ( !strcasecmp( c->argv[1], "frontend" )) {
++			} else if ( !ascii_strcasecmp( c->argv[1], "frontend" )) {
+ 				c->be = frontendDB;
+ 			} else {
+ 				c->be = backend_db_init(c->argv[1], NULL, c->valx, &c->reply);
+@@ -2227,7 +2227,7 @@ config_sizelimit(ConfigArgs *c) {
+ 		goto ok;
+ 	}
+ 	for(i = 1; i < c->argc; i++) {
+-		if(!strncasecmp(c->argv[i], "size", 4)) {
++		if(!ascii_strncasecmp(c->argv[i], "size", 4)) {
+ 			rc = limits_parse_one(c->argv[i], lim);
+ 			if ( rc ) {
+ 				snprintf( c->cr_msg, sizeof( c->cr_msg ), "<%s> unable to parse value", c->argv[0] );
+@@ -2236,7 +2236,7 @@ config_sizelimit(ConfigArgs *c) {
+ 				return(1);
+ 			}
+ 		} else {
+-			if(!strcasecmp(c->argv[i], "unlimited")) {
++			if(!ascii_strcasecmp(c->argv[i], "unlimited")) {
+ 				lim->lms_s_soft = -1;
+ 			} else {
+ 				if ( lutil_atoix( &lim->lms_s_soft, c->argv[i], 0 ) != 0 ) {
+@@ -2308,7 +2308,7 @@ config_timelimit(ConfigArgs *c) {
+ 		goto ok;
+ 	}
+ 	for(i = 1; i < c->argc; i++) {
+-		if(!strncasecmp(c->argv[i], "time", 4)) {
++		if(!ascii_strncasecmp(c->argv[i], "time", 4)) {
+ 			rc = limits_parse_one(c->argv[i], lim);
+ 			if ( rc ) {
+ 				snprintf( c->cr_msg, sizeof( c->cr_msg ), "<%s> unable to parse value", c->argv[0] );
+@@ -2317,7 +2317,7 @@ config_timelimit(ConfigArgs *c) {
+ 				return(1);
+ 			}
+ 		} else {
+-			if(!strcasecmp(c->argv[i], "unlimited")) {
++			if(!ascii_strcasecmp(c->argv[i], "unlimited")) {
+ 				lim->lms_t_soft = -1;
+ 			} else {
+ 				if ( lutil_atoix( &lim->lms_t_soft, c->argv[i], 0 ) != 0 ) {
+@@ -2398,7 +2398,7 @@ config_subordinate(ConfigArgs *c)
+ 		}
+ 		break;
+ 	case LDAP_MOD_DELETE:
+-		if ( !c->line  || strcasecmp( c->line, "advertise" )) {
++		if ( !c->line  || ascii_strcasecmp( c->line, "advertise" )) {
+ 			glue_sub_del( c->be );
+ 		} else {
+ 			SLAP_DBFLAGS( c->be ) &= ~SLAP_DBFLAG_GLUE_ADVERTISE;
+@@ -2419,10 +2419,10 @@ config_subordinate(ConfigArgs *c)
+ 		}
+ 
+ 		if ( c->argc == 2 ) {
+-			if ( strcasecmp( c->argv[1], "advertise" ) == 0 ) {
++			if ( ascii_strcasecmp( c->argv[1], "advertise" ) == 0 ) {
+ 				advertise = 1;
+ 
+-			} else if ( strcasecmp( c->argv[1], "TRUE" ) != 0 ) {
++			} else if ( ascii_strcasecmp( c->argv[1], "TRUE" ) != 0 ) {
+ 				/* log error */
+ 				snprintf( c->cr_msg, sizeof( c->cr_msg),
+ 					"subordinate must be \"TRUE\" or \"advertise\"" );
+@@ -2470,7 +2470,7 @@ tcp_buffer_parse( struct berval *val, in
+ 	}
+ 
+ 	i = 0;
+-	if ( strncasecmp( argv[ i ], "listener=", STRLENOF( "listener=" ) )
++	if ( ascii_strncasecmp( argv[ i ], "listener=", STRLENOF( "listener=" ) )
+ 		== 0 )
+ 	{
+ 		char *url = argv[ i ] + STRLENOF( "listener=" );
+@@ -2490,11 +2490,11 @@ tcp_buffer_parse( struct berval *val, in
+ 	}
+ 
+ 	ptr = argv[ i ];
+-	if ( strncasecmp( ptr, "read=", STRLENOF( "read=" ) ) == 0 ) {
++	if ( ascii_strncasecmp( ptr, "read=", STRLENOF( "read=" ) ) == 0 ) {
+ 		*rw |= SLAP_TCP_RMEM;
+ 		ptr += STRLENOF( "read=" );
+ 
+-	} else if ( strncasecmp( ptr, "write=", STRLENOF( "write=" ) ) == 0 ) {
++	} else if ( ascii_strncasecmp( ptr, "write=", STRLENOF( "write=" ) ) == 0 ) {
+ 		*rw |= SLAP_TCP_WMEM;
+ 		ptr += STRLENOF( "write=" );
+ 
+@@ -2851,7 +2851,7 @@ config_suffix(ConfigArgs *c)
+ 	}
+ 
+ #ifdef SLAPD_MONITOR_DN
+-	if(!strcasecmp(c->argv[1], SLAPD_MONITOR_DN)) {
++	if(!ascii_strcasecmp(c->argv[1], SLAPD_MONITOR_DN)) {
+ 		snprintf( c->cr_msg, sizeof( c->cr_msg ), "<%s> DN is reserved for monitoring slapd",
+ 			c->argv[0] );
+ 		Debug(LDAP_DEBUG_ANY, "%s: %s (%s)\n",
+@@ -3117,14 +3117,14 @@ config_requires(ConfigArgs *c) {
+ 		return 0;
+ 	}
+ 	/* "none" can only be first, to wipe out default/global values */
+-	if ( strcasecmp( c->argv[ 1 ], "none" ) == 0 ) {
++	if ( ascii_strcasecmp( c->argv[ 1 ], "none" ) == 0 ) {
+ 		argv++;
+ 		argc--;
+ 		requires = 0;
+ 	}
+ 	i = verbs_to_mask(argc, argv, requires_ops, &requires);
+ 	if ( i ) {
+-		if (strcasecmp( c->argv[ i ], "none" ) == 0 ) {
++		if (ascii_strcasecmp( c->argv[ i ], "none" ) == 0 ) {
+ 			snprintf( c->cr_msg, sizeof( c->cr_msg ), "<%s> \"none\" (#%d) must be listed first", c->argv[0], i - 1 );
+ 			Debug(LDAP_DEBUG_ANY, "%s: %s\n",
+ 				c->log, c->cr_msg, 0);
+@@ -3454,7 +3454,7 @@ config_security(ConfigArgs *c) {
+ 		slap_ssf_t *tgt = NULL;
+ 		char *src = NULL;
+ 		for ( j=0; !BER_BVISNULL( &sec_keys[j].key ); j++ ) {
+-			if(!strncasecmp(c->argv[i], sec_keys[j].key.bv_val,
++			if(!ascii_strncasecmp(c->argv[i], sec_keys[j].key.bv_val,
+ 				sec_keys[j].key.bv_len)) {
+ 				src = c->argv[i] + sec_keys[j].key.bv_len;
+ 				tgt = (slap_ssf_t *)((char *)set + sec_keys[j].off);
+Index: openldap-2.4.23/servers/slapd/compare.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/compare.c
++++ openldap-2.4.23/servers/slapd/compare.c
+@@ -148,7 +148,7 @@ fe_op_compare( Operation *op, SlapReply
+ 	AttributeAssertion	*ava = op->orc_ava;
+ 	BackendDB		*bd = op->o_bd;
+ 
+-	if( strcasecmp( op->o_req_ndn.bv_val, LDAP_ROOT_DSE ) == 0 ) {
++	if( ascii_strcasecmp( op->o_req_ndn.bv_val, LDAP_ROOT_DSE ) == 0 ) {
+ 		if( backend_check_restrictions( op, rs, NULL ) != LDAP_SUCCESS ) {
+ 			send_ldap_result( op, rs );
+ 			goto cleanup;
+Index: openldap-2.4.23/servers/slapd/config.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/config.c
++++ openldap-2.4.23/servers/slapd/config.c
+@@ -115,8 +115,8 @@ ConfigTable *config_find_keyword(ConfigT
+ 	int i;
+ 
+ 	for(i = 0; Conf[i].name; i++)
+-		if( (Conf[i].length && (!strncasecmp(c->argv[0], Conf[i].name, Conf[i].length))) ||
+-			(!strcasecmp(c->argv[0], Conf[i].name)) ) break;
++		if( (Conf[i].length && (!ascii_strncasecmp(c->argv[0], Conf[i].name, Conf[i].length))) ||
++			(!ascii_strcasecmp(c->argv[0], Conf[i].name)) ) break;
+ 	if ( !Conf[i].name ) return NULL;
+ 	return Conf+i;
+ }
+@@ -283,14 +283,14 @@ int config_check_vals(ConfigTable *Conf,
+ 			case ARG_ON_OFF:
+ 				if (c->argc == 1) {
+ 					iarg = 1;
+-				} else if ( !strcasecmp(c->argv[1], "on") ||
+-					!strcasecmp(c->argv[1], "true") ||
+-					!strcasecmp(c->argv[1], "yes") )
++				} else if ( !ascii_strcasecmp(c->argv[1], "on") ||
++					!ascii_strcasecmp(c->argv[1], "true") ||
++					!ascii_strcasecmp(c->argv[1], "yes") )
+ 				{
+ 					iarg = 1;
+-				} else if ( !strcasecmp(c->argv[1], "off") ||
+-					!strcasecmp(c->argv[1], "false") ||
+-					!strcasecmp(c->argv[1], "no") )
++				} else if ( !ascii_strcasecmp(c->argv[1], "off") ||
++					!ascii_strcasecmp(c->argv[1], "false") ||
++					!ascii_strcasecmp(c->argv[1], "no") )
+ 				{
+ 					iarg = 0;
+ 				} else {
+@@ -1370,7 +1370,7 @@ slap_cf_aux_table_parse( const char *wor
+ 	slap_cf_aux_table *tab;
+ 
+ 	for ( tab = tab0; !BER_BVISNULL( &tab->key ); tab++ ) {
+-		if ( !strncasecmp( word, tab->key.bv_val, tab->key.bv_len ) ) {
++		if ( !ascii_strncasecmp( word, tab->key.bv_val, tab->key.bv_len ) ) {
+ 			char **cptr;
+ 			int *iptr, j;
+ 			unsigned *uptr;
+@@ -1411,7 +1411,7 @@ slap_cf_aux_table_parse( const char *wor
+ 
+ 					rc = 1;
+ 					for ( j = 0; !BER_BVISNULL( &aux[j].word ); j++ ) {
+-						if ( !strcasecmp( val, aux[j].word.bv_val ) ) {
++						if ( !ascii_strcasecmp( val, aux[j].word.bv_val ) ) {
+ 							*iptr = aux[j].mask;
+ 							rc = 0;
+ 							break;
+@@ -2117,7 +2117,7 @@ fp_getline( FILE *fp, ConfigArgs *c )
+ 	c->lineno++;
+ 
+ 	/* avoid stack of bufs */
+-	if ( strncasecmp( line, "include", STRLENOF( "include" ) ) == 0 ) {
++	if ( ascii_strncasecmp( line, "include", STRLENOF( "include" ) ) == 0 ) {
+ 		buf[0] = '\0';
+ 		c->line = line;
+ 		return(1);
+@@ -2173,7 +2173,7 @@ config_fp_parse_line(ConfigArgs *c)
+ 	c->tline = ch_strdup(c->line);
+ 	token = strtok_quote(c->tline, " \t", &quote_ptr);
+ 
+-	if(token) for(i = 0; hide[i]; i++) if(!strcasecmp(token, hide[i])) break;
++	if(token) for(i = 0; hide[i]; i++) if(!ascii_strcasecmp(token, hide[i])) break;
+ 	if(quote_ptr) *quote_ptr = ' ';
+ 	Debug(LDAP_DEBUG_CONFIG, "line %d (%s%s)\n", c->lineno,
+ 		hide[i] ? hide[i] : c->line, hide[i] ? " ***" : "");
+@@ -2300,7 +2300,7 @@ Listener *config_check_my_url( const cha
+ 
+ 	/* Try a straight compare with Listener strings */
+ 	for ( i=0; l && l[i]; i++ ) {
+-		if ( !strcasecmp( url, l[i]->sl_url.bv_val )) {
++		if ( !ascii_strcasecmp( url, l[i]->sl_url.bv_val )) {
+ 			return l[i];
+ 		}
+ 	}
+@@ -2311,15 +2311,15 @@ Listener *config_check_my_url( const cha
+ 	 * Compare it against listeners and ports.
+ 	 */
+ 	if ( !lud->lud_host || !lud->lud_host[0] ||
+-		!strncasecmp("localhost", lud->lud_host,
++		!ascii_strncasecmp("localhost", lud->lud_host,
+ 			STRLENOF("localhost")) ||
+-		!strcasecmp( global_host, lud->lud_host )) {
++		!ascii_strcasecmp( global_host, lud->lud_host )) {
+ 
+ 		for ( i=0; l && l[i]; i++ ) {
+ 			LDAPURLDesc *lu2;
+ 			ldap_url_parse( l[i]->sl_url.bv_val, &lu2 );
+ 			do {
+-				if ( strcasecmp( lud->lud_scheme,
++				if ( ascii_strcasecmp( lud->lud_scheme,
+ 					lu2->lud_scheme ))
+ 					break;
+ 				if ( lud->lud_port != lu2->lud_port )
+@@ -2337,7 +2337,7 @@ Listener *config_check_my_url( const cha
+ 				/* Listener has specific host, must
+ 				 * match it
+ 				 */
+-				if ( !strcasecmp( lud->lud_host,
++				if ( !ascii_strcasecmp( lud->lud_host,
+ 					lu2->lud_host )) {
+ 					isMe = 1;
+ 					break;
+Index: openldap-2.4.23/servers/slapd/cr.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/cr.c
++++ openldap-2.4.23/servers/slapd/cr.c
+@@ -42,7 +42,7 @@ cr_index_cmp(
+ 	const struct cindexrec	*cir2 = v_cir2;
+ 	int i = cir1->cir_name.bv_len - cir2->cir_name.bv_len;
+ 	if (i) return i;
+-	return strcasecmp( cir1->cir_name.bv_val, cir2->cir_name.bv_val );
++	return ascii_strcasecmp( cir1->cir_name.bv_val, cir2->cir_name.bv_val );
+ }
+ 
+ static int
+@@ -54,7 +54,7 @@ cr_index_name_cmp(
+ 	const struct cindexrec *cir  = v_cir;
+ 	int i = name->bv_len - cir->cir_name.bv_len;
+ 	if (i) return i;
+-	return strncasecmp( name->bv_val, cir->cir_name.bv_val, name->bv_len );
++	return ascii_strncasecmp( name->bv_val, cir->cir_name.bv_val, name->bv_len );
+ }
+ 
+ ContentRule *
+Index: openldap-2.4.23/servers/slapd/daemon.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/daemon.c
++++ openldap-2.4.23/servers/slapd/daemon.c
+@@ -1064,7 +1064,7 @@ get_url_perms(
+ 			type++;
+ 		}
+ 
+-		if ( strncasecmp( type, LDAPI_MOD_URLEXT "=",
++		if ( ascii_strncasecmp( type, LDAPI_MOD_URLEXT "=",
+ 			sizeof(LDAPI_MOD_URLEXT "=") - 1 ) == 0 )
+ 		{
+ 			char *value = type + ( sizeof(LDAPI_MOD_URLEXT "=") - 1 );
+Index: openldap-2.4.23/servers/slapd/limits.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/limits.c
++++ openldap-2.4.23/servers/slapd/limits.c
+@@ -305,7 +305,7 @@ limits_add(
+ 	return( 0 );
+ }
+ 
+-#define STRSTART( s, m ) (strncasecmp( s, m, STRLENOF( "" m "" )) == 0)
++#define STRSTART( s, m ) (ascii_strncasecmp( s, m, STRLENOF( "" m "" )) == 0)
+ 
+ int
+ limits_parse(
+@@ -372,10 +372,10 @@ limits_parse(
+ 	if ( strcmp( pattern, "*" ) == 0) {
+ 		flags = SLAP_LIMITS_ANY;
+ 
+-	} else if ( strcasecmp( pattern, "anonymous" ) == 0 ) {
++	} else if ( ascii_strcasecmp( pattern, "anonymous" ) == 0 ) {
+ 		flags = SLAP_LIMITS_ANONYMOUS;
+ 
+-	} else if ( strcasecmp( pattern, "users" ) == 0 ) {
++	} else if ( ascii_strcasecmp( pattern, "users" ) == 0 ) {
+ 		flags = SLAP_LIMITS_USERS;
+ 		
+ 	} else if ( STRSTART( pattern, "dn" ) ) {
+@@ -641,8 +641,8 @@ limits_parse_one(
+ 			arg++;
+ 			if ( STRSTART( arg, "soft=" ) ) {
+ 				arg += STRLENOF( "soft=" );
+-				if ( strcasecmp( arg, "unlimited" ) == 0
+-					|| strcasecmp( arg, "none" ) == 0 )
++				if ( ascii_strcasecmp( arg, "unlimited" ) == 0
++					|| ascii_strcasecmp( arg, "none" ) == 0 )
+ 				{
+ 					limit->lms_t_soft = -1;
+ 
+@@ -662,11 +662,11 @@ limits_parse_one(
+ 				
+ 			} else if ( STRSTART( arg, "hard=" ) ) {
+ 				arg += STRLENOF( "hard=" );
+-				if ( strcasecmp( arg, "soft" ) == 0 ) {
++				if ( ascii_strcasecmp( arg, "soft" ) == 0 ) {
+ 					limit->lms_t_hard = 0;
+ 
+-				} else if ( strcasecmp( arg, "unlimited" ) == 0
+-						|| strcasecmp( arg, "none" ) == 0 )
++				} else if ( ascii_strcasecmp( arg, "unlimited" ) == 0
++						|| ascii_strcasecmp( arg, "none" ) == 0 )
+ 				{
+ 					limit->lms_t_hard = -1;
+ 
+@@ -694,8 +694,8 @@ limits_parse_one(
+ 			
+ 		} else if ( arg[0] == '=' ) {
+ 			arg++;
+-			if ( strcasecmp( arg, "unlimited" ) == 0
+-				|| strcasecmp( arg, "none" ) == 0 )
++			if ( ascii_strcasecmp( arg, "unlimited" ) == 0
++				|| ascii_strcasecmp( arg, "none" ) == 0 )
+ 			{
+ 				limit->lms_t_soft = -1;
+ 
+@@ -719,8 +719,8 @@ limits_parse_one(
+ 			arg++;
+ 			if ( STRSTART( arg, "soft=" ) ) {
+ 				arg += STRLENOF( "soft=" );
+-				if ( strcasecmp( arg, "unlimited" ) == 0
+-					|| strcasecmp( arg, "none" ) == 0 )
++				if ( ascii_strcasecmp( arg, "unlimited" ) == 0
++					|| ascii_strcasecmp( arg, "none" ) == 0 )
+ 				{
+ 					limit->lms_s_soft = -1;
+ 
+@@ -740,11 +740,11 @@ limits_parse_one(
+ 				
+ 			} else if ( STRSTART( arg, "hard=" ) ) {
+ 				arg += STRLENOF( "hard=" );
+-				if ( strcasecmp( arg, "soft" ) == 0 ) {
++				if ( ascii_strcasecmp( arg, "soft" ) == 0 ) {
+ 					limit->lms_s_hard = 0;
+ 
+-				} else if ( strcasecmp( arg, "unlimited" ) == 0
+-						|| strcasecmp( arg, "none" ) == 0 )
++				} else if ( ascii_strcasecmp( arg, "unlimited" ) == 0
++						|| ascii_strcasecmp( arg, "none" ) == 0 )
+ 				{
+ 					limit->lms_s_hard = -1;
+ 
+@@ -768,12 +768,12 @@ limits_parse_one(
+ 				
+ 			} else if ( STRSTART( arg, "unchecked=" ) ) {
+ 				arg += STRLENOF( "unchecked=" );
+-				if ( strcasecmp( arg, "unlimited" ) == 0
+-					|| strcasecmp( arg, "none" ) == 0 )
++				if ( ascii_strcasecmp( arg, "unlimited" ) == 0
++					|| ascii_strcasecmp( arg, "none" ) == 0 )
+ 				{
+ 					limit->lms_s_unchecked = -1;
+ 
+-				} else if ( strcasecmp( arg, "disabled" ) == 0 ) {
++				} else if ( ascii_strcasecmp( arg, "disabled" ) == 0 ) {
+ 					limit->lms_s_unchecked = 0;
+ 
+ 				} else {
+@@ -792,11 +792,11 @@ limits_parse_one(
+ 
+ 			} else if ( STRSTART( arg, "pr=" ) ) {
+ 				arg += STRLENOF( "pr=" );
+-				if ( strcasecmp( arg, "noEstimate" ) == 0 ) {
++				if ( ascii_strcasecmp( arg, "noEstimate" ) == 0 ) {
+ 					limit->lms_s_pr_hide = 1;
+ 
+-				} else if ( strcasecmp( arg, "unlimited" ) == 0
+-						|| strcasecmp( arg, "none" ) == 0 )
++				} else if ( ascii_strcasecmp( arg, "unlimited" ) == 0
++						|| ascii_strcasecmp( arg, "none" ) == 0 )
+ 				{
+ 					limit->lms_s_pr = -1;
+ 
+@@ -817,15 +817,15 @@ limits_parse_one(
+ 			} else if ( STRSTART( arg, "prtotal=" ) ) {
+ 				arg += STRLENOF( "prtotal=" );
+ 
+-				if ( strcasecmp( arg, "unlimited" ) == 0
+-					|| strcasecmp( arg, "none" ) == 0 )
++				if ( ascii_strcasecmp( arg, "unlimited" ) == 0
++					|| ascii_strcasecmp( arg, "none" ) == 0 )
+ 				{
+ 					limit->lms_s_pr_total = -1;
+ 
+-				} else if ( strcasecmp( arg, "disabled" ) == 0 ) {
++				} else if ( ascii_strcasecmp( arg, "disabled" ) == 0 ) {
+ 					limit->lms_s_pr_total = -2;
+ 
+-				} else if ( strcasecmp( arg, "hard" ) == 0 ) {
++				} else if ( ascii_strcasecmp( arg, "hard" ) == 0 ) {
+ 					limit->lms_s_pr_total = 0;
+ 
+ 				} else {
+@@ -852,8 +852,8 @@ limits_parse_one(
+ 			
+ 		} else if ( arg[0] == '=' ) {
+ 			arg++;
+-			if ( strcasecmp( arg, "unlimited" ) == 0
+-				|| strcasecmp( arg, "none" ) == 0 )
++			if ( ascii_strcasecmp( arg, "unlimited" ) == 0
++				|| ascii_strcasecmp( arg, "none" ) == 0 )
+ 			{
+ 				limit->lms_s_soft = -1;
+ 
+Index: openldap-2.4.23/servers/slapd/main.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/main.c
++++ openldap-2.4.23/servers/slapd/main.c
+@@ -113,11 +113,11 @@ slapd_opt_slp( const char *val, void *ar
+ {
+ #ifdef HAVE_SLP
+ 	/* NULL is default */
+-	if ( val == NULL || *val == '(' || strcasecmp( val, "on" ) == 0 ) {
++	if ( val == NULL || *val == '(' || ascii_strcasecmp( val, "on" ) == 0 ) {
+ 		slapd_register_slp = 1;
+ 		slapd_slp_attrs = (val != NULL && *val == '(') ? val : NULL;
+ 
+-	} else if ( strcasecmp( val, "off" ) == 0 ) {
++	} else if ( ascii_strcasecmp( val, "off" ) == 0 ) {
+ 		slapd_register_slp = 0;
+ 
+ 	/* NOTE: add support for URL specification? */
+Index: openldap-2.4.23/servers/slapd/module.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/module.c
++++ openldap-2.4.23/servers/slapd/module.c
+@@ -16,6 +16,7 @@
+ #include "portable.h"
+ #include <stdio.h>
+ #include "slap.h"
++#include <ac/string.h>
+ 
+ #ifdef SLAPD_MODULES
+ 
+@@ -137,7 +138,7 @@ int module_load(const char* file_name, i
+ 	}
+ 
+ 	/* If loading a backend, see if we already have it */
+-	if ( !strncasecmp( file_name, "back_", 5 )) {
++	if ( !ascii_strncasecmp( file_name, "back_", 5 )) {
+ 		char *name = (char *)file_name + 5;
+ 		char *dot = strchr( name, '.');
+ 		if (dot) *dot = '\0';
+Index: openldap-2.4.23/servers/slapd/mr.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/mr.c
++++ openldap-2.4.23/servers/slapd/mr.c
+@@ -45,7 +45,7 @@ mr_index_cmp(
+ 	const struct mindexrec	*mir2 = v_mir2;
+ 	int i = mir1->mir_name.bv_len - mir2->mir_name.bv_len;
+ 	if (i) return i;
+-	return (strcasecmp( mir1->mir_name.bv_val, mir2->mir_name.bv_val ));
++	return (ascii_strcasecmp( mir1->mir_name.bv_val, mir2->mir_name.bv_val ));
+ }
+ 
+ static int
+@@ -58,7 +58,7 @@ mr_index_name_cmp(
+ 	const struct mindexrec *mir  = v_mir;
+ 	int i = name->bv_len - mir->mir_name.bv_len;
+ 	if (i) return i;
+-	return (strncasecmp( name->bv_val, mir->mir_name.bv_val, name->bv_len ));
++	return (ascii_strncasecmp( name->bv_val, mir->mir_name.bv_val, name->bv_len ));
+ }
+ 
+ MatchingRule *
+Index: openldap-2.4.23/servers/slapd/oc.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/oc.c
++++ openldap-2.4.23/servers/slapd/oc.c
+@@ -148,7 +148,7 @@ oc_index_cmp(
+ 	const struct oindexrec *oir1 = v_oir1, *oir2 = v_oir2;
+ 	int i = oir1->oir_name.bv_len - oir2->oir_name.bv_len;
+ 	if (i) return i;
+-	return strcasecmp( oir1->oir_name.bv_val, oir2->oir_name.bv_val );
++	return ascii_strcasecmp( oir1->oir_name.bv_val, oir2->oir_name.bv_val );
+ }
+ 
+ static int
+@@ -160,7 +160,7 @@ oc_index_name_cmp(
+ 	const struct oindexrec *oir  = v_oir;
+ 	int i = name->bv_len - oir->oir_name.bv_len;
+ 	if (i) return i;
+-	return strncasecmp( name->bv_val, oir->oir_name.bv_val, name->bv_len );
++	return ascii_strncasecmp( name->bv_val, oir->oir_name.bv_val, name->bv_len );
+ }
+ 
+ ObjectClass *
+@@ -215,7 +215,7 @@ oc_bvfind_undef( struct berval *ocname )
+ 			continue;
+ 		}
+ 
+-		if ( strcasecmp( oc->soc_cname.bv_val, ocname->bv_val ) == 0 ) {
++		if ( ascii_strcasecmp( oc->soc_cname.bv_val, ocname->bv_val ) == 0 ) {
+ 			break;
+ 		}
+ 	}
+@@ -554,7 +554,7 @@ oc_check_dup(
+ 				return SLAP_SCHERR_CLASS_INCONSISTENT;
+ 			}
+ 			
+-			if ( strcasecmp( soc->soc_names[ i ],
++			if ( ascii_strcasecmp( soc->soc_names[ i ],
+ 					new_soc->soc_names[ i ] ) != 0 )
+ 			{
+ 				return SLAP_SCHERR_CLASS_INCONSISTENT;
+Index: openldap-2.4.23/servers/slapd/overlays/accesslog.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/overlays/accesslog.c
++++ openldap-2.4.23/servers/slapd/overlays/accesslog.c
+@@ -998,7 +998,7 @@ logSchemaControlValidate(
+ 	}
+ 
+ 	/* extract and check criticality */
+-	if ( strncasecmp( &val.bv_val[ i ], "criticality ", STRLENOF( "criticality " ) ) == 0 )
++	if ( ascii_strncasecmp( &val.bv_val[ i ], "criticality ", STRLENOF( "criticality " ) ) == 0 )
+ 	{
+ 		i += STRLENOF( "criticality " );
+ 		for ( ; i < val.bv_len; i++ ) {
+@@ -1046,7 +1046,7 @@ logSchemaControlValidate(
+ 	}
+ 
+ 	/* extract and check controlValue */
+-	if ( strncasecmp( &val.bv_val[ i ], "controlValue ", STRLENOF( "controlValue " ) ) == 0 )
++	if ( ascii_strncasecmp( &val.bv_val[ i ], "controlValue ", STRLENOF( "controlValue " ) ) == 0 )
+ 	{
+ 		i += STRLENOF( "controlValue " );
+ 		for ( ; i < val.bv_len; i++ ) {
+Index: openldap-2.4.23/servers/slapd/overlays/constraint.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/overlays/constraint.c
++++ openldap-2.4.23/servers/slapd/overlays/constraint.c
+@@ -262,7 +262,7 @@ constraint_cf_gen( ConfigArgs *c )
+ 				}
+ 			}
+ 
+-			if ( strcasecmp( c->argv[2], REGEX_STR ) == 0) {
++			if ( ascii_strcasecmp( c->argv[2], REGEX_STR ) == 0) {
+ 				int err;
+ 			
+ 				ap.re = ch_malloc( sizeof(regex_t) );
+@@ -280,17 +280,17 @@ constraint_cf_gen( ConfigArgs *c )
+ 					goto done;
+ 				}
+ 				ber_str2bv( c->argv[3], 0, 1, &ap.val );
+-			} else if ( strcasecmp( c->argv[2], SIZE_STR ) == 0 ) {
++			} else if ( ascii_strcasecmp( c->argv[2], SIZE_STR ) == 0 ) {
+ 				size_t size;
+ 
+ 				if ( ( size = atoi(c->argv[3]) ) != 0 )
+ 					ap.size = size;	
+-			} else if ( strcasecmp( c->argv[2], COUNT_STR ) == 0 ) {
++			} else if ( ascii_strcasecmp( c->argv[2], COUNT_STR ) == 0 ) {
+ 				size_t count;
+ 
+ 				if ( ( count = atoi(c->argv[3]) ) != 0 )
+ 					ap.count = count;	
+-			} else if ( strcasecmp( c->argv[2], URI_STR ) == 0 ) {
++			} else if ( ascii_strcasecmp( c->argv[2], URI_STR ) == 0 ) {
+ 				int err;
+ 			
+ 				err = ldap_url_parse(c->argv[3], &ap.lud);
+@@ -365,7 +365,7 @@ constraint_cf_gen( ConfigArgs *c )
+ 
+ 				ber_str2bv( c->argv[3], 0, 1, &ap.val );
+ 
+-			} else if ( strcasecmp( c->argv[2], SET_STR ) == 0 ) {
++			} else if ( ascii_strcasecmp( c->argv[2], SET_STR ) == 0 ) {
+ 				ap.set = 1;
+ 				ber_str2bv( c->argv[3], 0, 1, &ap.val );
+ 
+@@ -381,7 +381,7 @@ constraint_cf_gen( ConfigArgs *c )
+ 				int argidx;
+ 
+ 				for ( argidx = 4; argidx < c->argc; argidx++ ) {
+-					if ( strncasecmp( c->argv[argidx], "restrict=", STRLENOF("restrict=") ) == 0 ) {
++					if ( ascii_strncasecmp( c->argv[argidx], "restrict=", STRLENOF("restrict=") ) == 0 ) {
+ 						int err;
+ 						char *arg = c->argv[argidx] + STRLENOF("restrict=");
+ 
+Index: openldap-2.4.23/servers/slapd/overlays/dds.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/overlays/dds.c
++++ openldap-2.4.23/servers/slapd/overlays/dds.c
+@@ -1953,18 +1953,18 @@ init_module( int argc, char *argv[] )
+ 		char	*arg = argv[ i ];
+ 		int	no = 0;
+ 
+-		if ( strncasecmp( arg, "no-", STRLENOF( "no-" ) ) == 0 ) {
++		if ( ascii_strncasecmp( arg, "no-", STRLENOF( "no-" ) ) == 0 ) {
+ 			arg += STRLENOF( "no-" );
+ 			no = 1;
+ 		}
+ 
+-		if ( strcasecmp( arg, "exop" ) == 0 ) {
++		if ( ascii_strcasecmp( arg, "exop" ) == 0 ) {
+ 			do_not_load_exop = no;
+ 
+-		} else if ( strcasecmp( arg, "replace" ) == 0 ) {
++		} else if ( ascii_strcasecmp( arg, "replace" ) == 0 ) {
+ 			do_not_replace_exop = no;
+ 
+-		} else if ( strcasecmp( arg, "schema" ) == 0 ) {
++		} else if ( ascii_strcasecmp( arg, "schema" ) == 0 ) {
+ 			do_not_load_schema = no;
+ 
+ 		} else {
+Index: openldap-2.4.23/servers/slapd/overlays/dynlist.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/overlays/dynlist.c
++++ openldap-2.4.23/servers/slapd/overlays/dynlist.c
+@@ -928,7 +928,7 @@ dynlist_db_config(
+ 
+ 	int		rc = 0;
+ 
+-	if ( strcasecmp( argv[0], "dynlist-attrset" ) == 0 ) {
++	if ( ascii_strcasecmp( argv[0], "dynlist-attrset" ) == 0 ) {
+ 		dynlist_info_t		**dlip;
+ 		ObjectClass		*oc;
+ 		AttributeDescription	*ad = NULL,
+@@ -1065,7 +1065,7 @@ dynlist_db_config(
+ 		}
+ 
+ 	/* allow dyngroup syntax */
+-	} else if ( strcasecmp( argv[0], "dynlist-attrpair" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "dynlist-attrpair" ) == 0 ) {
+ 		dynlist_info_t		**dlip;
+ 		ObjectClass		*oc;
+ 		AttributeDescription	*ad = NULL,
+@@ -1393,7 +1393,7 @@ dl_cfgen( ConfigArgs *c )
+ 			return 1;
+ 		}
+ 
+-		if ( strncasecmp( c->argv[ attridx ], "ldap://", STRLENOF("ldap://") ) == 0 ) {
++		if ( ascii_strncasecmp( c->argv[ attridx ], "ldap://", STRLENOF("ldap://") ) == 0 ) {
+ 			if ( ldap_url_parse( c->argv[ attridx ], &lud ) != LDAP_URL_SUCCESS ) {
+ 				snprintf( c->cr_msg, sizeof( c->cr_msg ), DYNLIST_USAGE
+ 					"unable to parse URI \"%s\"",
+Index: openldap-2.4.23/servers/slapd/overlays/pcache.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/overlays/pcache.c
++++ openldap-2.4.23/servers/slapd/overlays/pcache.c
+@@ -4275,10 +4275,10 @@ pc_bind_fail:
+ 		break;
+ 
+ 	case PC_RESP:
+-		if ( strcasecmp( c->argv[1], "head" ) == 0 ) {
++		if ( ascii_strcasecmp( c->argv[1], "head" ) == 0 ) {
+ 			cm->response_cb = PCACHE_RESPONSE_CB_HEAD;
+ 
+-		} else if ( strcasecmp( c->argv[1], "tail" ) == 0 ) {
++		} else if ( ascii_strcasecmp( c->argv[1], "tail" ) == 0 ) {
+ 			cm->response_cb = PCACHE_RESPONSE_CB_TAIL;
+ 
+ 		} else {
+Index: openldap-2.4.23/servers/slapd/overlays/ppolicy.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/overlays/ppolicy.c
++++ openldap-2.4.23/servers/slapd/overlays/ppolicy.c
+@@ -609,7 +609,7 @@ check_password_quality( struct berval *c
+          */
+ 	rc = password_scheme( cred, &sch );
+ 	if (rc == LDAP_SUCCESS) {
+-		if ((sch.bv_val) && (strncasecmp( sch.bv_val, "{cleartext}",
++		if ((sch.bv_val) && (ascii_strncasecmp( sch.bv_val, "{cleartext}",
+ 			sch.bv_len ) == 0)) {
+ 			/*
+ 			 * We can check the cleartext "hash"
+Index: openldap-2.4.23/servers/slapd/overlays/retcode.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/overlays/retcode.c
++++ openldap-2.4.23/servers/slapd/overlays/retcode.c
+@@ -1001,7 +1001,7 @@ rc_cf_gen( ConfigArgs *c )
+ 
+ 		if ( c->argc > 3 ) {
+ 			for ( i = 3; i < c->argc; i++ ) {
+-				if ( strncasecmp( c->argv[ i ], "op=", STRLENOF( "op=" ) ) == 0 )
++				if ( ascii_strncasecmp( c->argv[ i ], "op=", STRLENOF( "op=" ) ) == 0 )
+ 				{
+ 					char		**ops;
+ 					int		j;
+@@ -1012,42 +1012,42 @@ rc_cf_gen( ConfigArgs *c )
+ 					rdi.rdi_mask = SN_DG_OP_NONE;
+ 
+ 					for ( j = 0; ops[ j ] != NULL; j++ ) {
+-						if ( strcasecmp( ops[ j ], "add" ) == 0 ) {
++						if ( ascii_strcasecmp( ops[ j ], "add" ) == 0 ) {
+ 							rdi.rdi_mask |= SN_DG_OP_ADD;
+ 
+-						} else if ( strcasecmp( ops[ j ], "bind" ) == 0 ) {
++						} else if ( ascii_strcasecmp( ops[ j ], "bind" ) == 0 ) {
+ 							rdi.rdi_mask |= SN_DG_OP_BIND;
+ 
+-						} else if ( strcasecmp( ops[ j ], "compare" ) == 0 ) {
++						} else if ( ascii_strcasecmp( ops[ j ], "compare" ) == 0 ) {
+ 							rdi.rdi_mask |= SN_DG_OP_COMPARE;
+ 
+-						} else if ( strcasecmp( ops[ j ], "delete" ) == 0 ) {
++						} else if ( ascii_strcasecmp( ops[ j ], "delete" ) == 0 ) {
+ 							rdi.rdi_mask |= SN_DG_OP_DELETE;
+ 
+-						} else if ( strcasecmp( ops[ j ], "modify" ) == 0 ) {
++						} else if ( ascii_strcasecmp( ops[ j ], "modify" ) == 0 ) {
+ 							rdi.rdi_mask |= SN_DG_OP_MODIFY;
+ 
+-						} else if ( strcasecmp( ops[ j ], "rename" ) == 0
+-							|| strcasecmp( ops[ j ], "modrdn" ) == 0 )
++						} else if ( ascii_strcasecmp( ops[ j ], "rename" ) == 0
++							|| ascii_strcasecmp( ops[ j ], "modrdn" ) == 0 )
+ 						{
+ 							rdi.rdi_mask |= SN_DG_OP_RENAME;
+ 
+-						} else if ( strcasecmp( ops[ j ], "search" ) == 0 ) {
++						} else if ( ascii_strcasecmp( ops[ j ], "search" ) == 0 ) {
+ 							rdi.rdi_mask |= SN_DG_OP_SEARCH;
+ 
+-						} else if ( strcasecmp( ops[ j ], "extended" ) == 0 ) {
++						} else if ( ascii_strcasecmp( ops[ j ], "extended" ) == 0 ) {
+ 							rdi.rdi_mask |= SN_DG_EXTENDED;
+ 
+-						} else if ( strcasecmp( ops[ j ], "auth" ) == 0 ) {
++						} else if ( ascii_strcasecmp( ops[ j ], "auth" ) == 0 ) {
+ 							rdi.rdi_mask |= SN_DG_OP_AUTH;
+ 
+-						} else if ( strcasecmp( ops[ j ], "read" ) == 0 ) {
++						} else if ( ascii_strcasecmp( ops[ j ], "read" ) == 0 ) {
+ 							rdi.rdi_mask |= SN_DG_OP_READ;
+ 
+-						} else if ( strcasecmp( ops[ j ], "write" ) == 0 ) {
++						} else if ( ascii_strcasecmp( ops[ j ], "write" ) == 0 ) {
+ 							rdi.rdi_mask |= SN_DG_OP_WRITE;
+ 
+-						} else if ( strcasecmp( ops[ j ], "all" ) == 0 ) {
++						} else if ( ascii_strcasecmp( ops[ j ], "all" ) == 0 ) {
+ 							rdi.rdi_mask |= SN_DG_OP_ALL;
+ 
+ 						} else {
+@@ -1063,7 +1063,7 @@ rc_cf_gen( ConfigArgs *c )
+ 
+ 					ldap_charray_free( ops );
+ 
+-				} else if ( strncasecmp( c->argv[ i ], "text=", STRLENOF( "text=" ) ) == 0 )
++				} else if ( ascii_strncasecmp( c->argv[ i ], "text=", STRLENOF( "text=" ) ) == 0 )
+ 				{
+ 					if ( !BER_BVISNULL( &rdi.rdi_text ) ) {
+ 						snprintf( c->cr_msg, sizeof(c->cr_msg),
+@@ -1074,7 +1074,7 @@ rc_cf_gen( ConfigArgs *c )
+ 					}
+ 					ber_str2bv( &c->argv[ i ][ STRLENOF( "text=" ) ], 0, 1, &rdi.rdi_text );
+ 
+-				} else if ( strncasecmp( c->argv[ i ], "matched=", STRLENOF( "matched=" ) ) == 0 )
++				} else if ( ascii_strncasecmp( c->argv[ i ], "matched=", STRLENOF( "matched=" ) ) == 0 )
+ 				{
+ 					struct berval	dn;
+ 
+@@ -1095,7 +1095,7 @@ rc_cf_gen( ConfigArgs *c )
+ 						return ARG_BAD_CONF;
+ 					}
+ 
+-				} else if ( strncasecmp( c->argv[ i ], "ref=", STRLENOF( "ref=" ) ) == 0 )
++				} else if ( ascii_strncasecmp( c->argv[ i ], "ref=", STRLENOF( "ref=" ) ) == 0 )
+ 				{
+ 					char		**refs;
+ 					int		j;
+@@ -1130,7 +1130,7 @@ rc_cf_gen( ConfigArgs *c )
+ 
+ 					ldap_charray_free( refs );
+ 
+-				} else if ( strncasecmp( c->argv[ i ], "sleeptime=", STRLENOF( "sleeptime=" ) ) == 0 )
++				} else if ( ascii_strncasecmp( c->argv[ i ], "sleeptime=", STRLENOF( "sleeptime=" ) ) == 0 )
+ 				{
+ 					if ( rdi.rdi_sleeptime != 0 ) {
+ 						snprintf( c->cr_msg, sizeof(c->cr_msg),
+@@ -1149,7 +1149,7 @@ rc_cf_gen( ConfigArgs *c )
+ 						return ARG_BAD_CONF;
+ 					}
+ 
+-				} else if ( strncasecmp( c->argv[ i ], "unsolicited=", STRLENOF( "unsolicited=" ) ) == 0 )
++				} else if ( ascii_strncasecmp( c->argv[ i ], "unsolicited=", STRLENOF( "unsolicited=" ) ) == 0 )
+ 				{
+ 					char		*data;
+ 
+@@ -1182,16 +1182,16 @@ rc_cf_gen( ConfigArgs *c )
+ 							&rdi.rdi_unsolicited_oid );
+ 					}
+ 
+-				} else if ( strncasecmp( c->argv[ i ], "flags=", STRLENOF( "flags=" ) ) == 0 )
++				} else if ( ascii_strncasecmp( c->argv[ i ], "flags=", STRLENOF( "flags=" ) ) == 0 )
+ 				{
+ 					char *arg = &c->argv[ i ][ STRLENOF( "flags=" ) ];
+-					if ( strcasecmp( arg, "disconnect" ) == 0 ) {
++					if ( ascii_strcasecmp( arg, "disconnect" ) == 0 ) {
+ 						rdi.rdi_flags |= RDI_PRE_DISCONNECT;
+ 
+-					} else if ( strcasecmp( arg, "pre-disconnect" ) == 0 ) {
++					} else if ( ascii_strcasecmp( arg, "pre-disconnect" ) == 0 ) {
+ 						rdi.rdi_flags |= RDI_PRE_DISCONNECT;
+ 
+-					} else if ( strcasecmp( arg, "post-disconnect" ) == 0 ) {
++					} else if ( ascii_strcasecmp( arg, "post-disconnect" ) == 0 ) {
+ 						rdi.rdi_flags |= RDI_POST_DISCONNECT;
+ 
+ 					} else {
+Index: openldap-2.4.23/servers/slapd/overlays/rwm.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/overlays/rwm.c
++++ openldap-2.4.23/servers/slapd/overlays/rwm.c
+@@ -1760,21 +1760,21 @@ rwm_db_config(
+ 	int		rc = 0;
+ 	char		*argv0 = NULL;
+ 
+-	if ( strncasecmp( argv[ 0 ], "rwm-", STRLENOF( "rwm-" ) ) == 0 ) {
++	if ( ascii_strncasecmp( argv[ 0 ], "rwm-", STRLENOF( "rwm-" ) ) == 0 ) {
+ 		argv0 = argv[ 0 ];
+ 		argv[ 0 ] = &argv0[ STRLENOF( "rwm-" ) ];
+ 	}
+ 
+-	if ( strncasecmp( argv[0], "rewrite", STRLENOF("rewrite") ) == 0 ) {
++	if ( ascii_strncasecmp( argv[0], "rewrite", STRLENOF("rewrite") ) == 0 ) {
+ 		rc = rwm_rw_config( be, fname, lineno, argc, argv );
+ 
+-	} else if ( strcasecmp( argv[0], "map" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "map" ) == 0 ) {
+ 		rc = rwm_m_config( be, fname, lineno, argc, argv );
+ 
+-	} else if ( strcasecmp( argv[0], "suffixmassage" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "suffixmassage" ) == 0 ) {
+ 		rc = rwm_suffixmassage_config( be, fname, lineno, argc, argv );
+ 
+-	} else if ( strcasecmp( argv[0], "t-f-support" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "t-f-support" ) == 0 ) {
+ 		if ( argc != 2 ) {
+ 			Debug( LDAP_DEBUG_ANY,
+ 		"%s: line %d: \"t-f-support {no|yes|discover}\" needs 1 argument.\n",
+@@ -1782,14 +1782,14 @@ rwm_db_config(
+ 			return( 1 );
+ 		}
+ 
+-		if ( strcasecmp( argv[ 1 ], "no" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "no" ) == 0 ) {
+ 			rwmap->rwm_flags &= ~(RWM_F_SUPPORT_T_F_MASK2);
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
+ 			rwmap->rwm_flags |= RWM_F_SUPPORT_T_F;
+ 
+ 		/* TODO: not implemented yet */
+-		} else if ( strcasecmp( argv[ 1 ], "discover" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "discover" ) == 0 ) {
+ 			Debug( LDAP_DEBUG_ANY,
+ 		"%s: line %d: \"discover\" not supported yet "
+ 		"in \"t-f-support {no|yes|discover}\".\n",
+@@ -1806,7 +1806,7 @@ rwm_db_config(
+ 			return 1;
+ 		}
+ 
+-	} else if ( strcasecmp( argv[0], "normalize-mapped-attrs" ) ==  0 ) {
++	} else if ( ascii_strcasecmp( argv[0], "normalize-mapped-attrs" ) ==  0 ) {
+ 		if ( argc !=2 ) { 
+ 			Debug( LDAP_DEBUG_ANY,
+ 		"%s: line %d: \"normalize-mapped-attrs {no|yes}\" needs 1 argument.\n",
+@@ -1814,10 +1814,10 @@ rwm_db_config(
+ 			return( 1 );
+ 		}
+ 
+-		if ( strcasecmp( argv[ 1 ], "no" ) == 0 ) {
++		if ( ascii_strcasecmp( argv[ 1 ], "no" ) == 0 ) {
+ 			rwmap->rwm_flags &= ~(RWM_F_NORMALIZE_MAPPED_ATTRS);
+ 
+-		} else if ( strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
++		} else if ( ascii_strcasecmp( argv[ 1 ], "yes" ) == 0 ) {
+ 			rwmap->rwm_flags |= RWM_F_NORMALIZE_MAPPED_ATTRS;
+ 		}
+ 
+@@ -2144,7 +2144,7 @@ rwm_cf_gen( ConfigArgs *c )
+ 					ca.argc = 0;
+ 					config_fp_parse_line( &ca );
+ 					
+-					if ( strcasecmp( ca.argv[ 0 ], "suffixmassage" ) == 0 ) {
++					if ( ascii_strcasecmp( ca.argv[ 0 ], "suffixmassage" ) == 0 ) {
+ 						rc = rwm_suffixmassage_config( &db, c->fname, c->lineno,
+ 							ca.argc, ca.argv );
+ 
+@@ -2275,7 +2275,7 @@ rwm_cf_gen( ConfigArgs *c )
+ 		return rc;
+ 	}
+ 
+-	if ( strncasecmp( c->argv[ 0 ], "olcRwm", STRLENOF( "olcRwm" ) ) == 0 ) {
++	if ( ascii_strncasecmp( c->argv[ 0 ], "olcRwm", STRLENOF( "olcRwm" ) ) == 0 ) {
+ 		idx0 = 1;
+ 	}
+ 
+@@ -2305,7 +2305,7 @@ rwm_cf_gen( ConfigArgs *c )
+ 				argv0 = ca.argv[ 0 ];
+ 				ca.argv[ 0 ] += STRLENOF( "rwm-" );
+ 				
+-				if ( strcasecmp( ca.argv[ 0 ], "suffixmassage" ) == 0 ) {
++				if ( ascii_strcasecmp( ca.argv[ 0 ], "suffixmassage" ) == 0 ) {
+ 					rc = rwm_suffixmassage_config( &db, c->fname, c->lineno,
+ 						ca.argc, ca.argv );
+ 
+@@ -2323,11 +2323,11 @@ rwm_cf_gen( ConfigArgs *c )
+ 			}
+ 
+ 			argv0 = c->argv[ idx0 ];
+-			if ( strncasecmp( argv0, "rwm-", STRLENOF( "rwm-" ) ) != 0 ) {
++			if ( ascii_strncasecmp( argv0, "rwm-", STRLENOF( "rwm-" ) ) != 0 ) {
+ 				return 1;
+ 			}
+ 			c->argv[ idx0 ] += STRLENOF( "rwm-" );
+-			if ( strcasecmp( c->argv[ idx0 ], "suffixmassage" ) == 0 ) {
++			if ( ascii_strcasecmp( c->argv[ idx0 ], "suffixmassage" ) == 0 ) {
+ 				rc = rwm_suffixmassage_config( &db, c->fname, c->lineno,
+ 					c->argc - idx0, &c->argv[ idx0 ] );
+ 
+@@ -2355,7 +2355,7 @@ rwm_cf_gen( ConfigArgs *c )
+ 				argv0 = ca.argv[ 0 ];
+ 				ca.argv[ 0 ] += STRLENOF( "rwm-" );
+ 				
+-				if ( strcasecmp( ca.argv[ 0 ], "suffixmassage" ) == 0 ) {
++				if ( ascii_strcasecmp( ca.argv[ 0 ], "suffixmassage" ) == 0 ) {
+ 					rc = rwm_suffixmassage_config( &db, c->fname, c->lineno,
+ 						ca.argc, ca.argv );
+ 
+@@ -2390,11 +2390,11 @@ rwm_cf_gen( ConfigArgs *c )
+ 		}
+ 
+ 		argv0 = c->argv[ idx0 ];
+-		if ( strncasecmp( argv0, "rwm-", STRLENOF( "rwm-" ) ) != 0 ) {
++		if ( ascii_strncasecmp( argv0, "rwm-", STRLENOF( "rwm-" ) ) != 0 ) {
+ 			return 1;
+ 		}
+ 		c->argv[ idx0 ] += STRLENOF( "rwm-" );
+-		if ( strcasecmp( c->argv[ idx0 ], "suffixmassage" ) == 0 ) {
++		if ( ascii_strcasecmp( c->argv[ idx0 ], "suffixmassage" ) == 0 ) {
+ 			rc = rwm_suffixmassage_config( &db, c->fname, c->lineno,
+ 				c->argc - idx0, &c->argv[ idx0 ] );
+ 
+Index: openldap-2.4.23/servers/slapd/overlays/rwmconf.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/overlays/rwmconf.c
++++ openldap-2.4.23/servers/slapd/overlays/rwmconf.c
+@@ -56,11 +56,11 @@ rwm_map_config(
+ 		return 1;
+ 	}
+ 
+-	if ( strcasecmp( argv[1], "objectclass" ) == 0 ) {
++	if ( ascii_strcasecmp( argv[1], "objectclass" ) == 0 ) {
+ 		map = oc_map;
+ 		is_oc = 1;
+ 
+-	} else if ( strcasecmp( argv[1], "attribute" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[1], "attribute" ) == 0 ) {
+ 		map = at_map;
+ 
+ 	} else {
+@@ -95,8 +95,8 @@ rwm_map_config(
+ 	}
+ 
+ 	if ( ( map == at_map )
+-			&& ( strcasecmp( src, "objectclass" ) == 0
+-			|| strcasecmp( dst, "objectclass" ) == 0 ) )
++			&& ( ascii_strcasecmp( src, "objectclass" ) == 0
++			|| ascii_strcasecmp( dst, "objectclass" ) == 0 ) )
+ 	{
+ 		Debug( LDAP_DEBUG_ANY,
+ 			"%s: line %d: objectclass attribute cannot be mapped\n",
+Index: openldap-2.4.23/servers/slapd/overlays/rwmmap.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/overlays/rwmmap.c
++++ openldap-2.4.23/servers/slapd/overlays/rwmmap.c
+@@ -47,7 +47,7 @@ rwm_mapping_cmp( const void *c1, const v
+ 		return rc;
+ 	}
+ 
+-	return strcasecmp( map1->m_src.bv_val, map2->m_src.bv_val );
++	return ascii_strcasecmp( map1->m_src.bv_val, map2->m_src.bv_val );
+ }
+ 
+ int
+@@ -61,7 +61,7 @@ rwm_mapping_dup( void *c1, void *c2 )
+ 		return 0;
+ 	}
+ 
+-	return ( ( strcasecmp( map1->m_src.bv_val, map2->m_src.bv_val ) == 0 ) ? -1 : 0 );
++	return ( ( ascii_strcasecmp( map1->m_src.bv_val, map2->m_src.bv_val ) == 0 ) ? -1 : 0 );
+ }
+ 
+ int
+Index: openldap-2.4.23/servers/slapd/overlays/unique.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/overlays/unique.c
++++ openldap-2.4.23/servers/slapd/overlays/unique.c
+@@ -333,17 +333,17 @@ unique_new_domain ( unique_domain **doma
+ 	ber_str2bv( domain_spec, 0, 1, &domain->domain_spec );
+ 
+ 	uri_start = domain_spec;
+-	if ( strncasecmp ( uri_start, "ignore ",
++	if ( ascii_strncasecmp ( uri_start, "ignore ",
+ 			   STRLENOF( "ignore " ) ) == 0 ) {
+ 		domain->ignore = 1;
+ 		uri_start += STRLENOF( "ignore " );
+ 	}
+-	if ( strncasecmp ( uri_start, "strict ",
++	if ( ascii_strncasecmp ( uri_start, "strict ",
+ 			   STRLENOF( "strict " ) ) == 0 ) {
+ 		domain->strict = 1;
+ 		uri_start += STRLENOF( "strict " );
+ 		if ( !domain->ignore
+-		     && strncasecmp ( uri_start, "ignore ",
++		     && ascii_strncasecmp ( uri_start, "ignore ",
+ 				      STRLENOF( "ignore " ) ) == 0 ) {
+ 			domain->ignore = 1;
+ 			uri_start += STRLENOF( "ignore " );
+@@ -674,7 +674,7 @@ unique_cf_strict( ConfigArgs *c )
+ 		}
+ 		/* ... not using ARG_ON_OFF makes this necessary too */
+ 		assert ( c->argc == 2 );
+-		legacy->strict = (strcasecmp ( c->argv[1], "TRUE" ) == 0);
++		legacy->strict = (ascii_strcasecmp ( c->argv[1], "TRUE" ) == 0);
+ 		private->legacy_strict_set = 1;
+ 		rc = 0;
+ 		break;
+Index: openldap-2.4.23/servers/slapd/proto-slap.h
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/proto-slap.h
++++ openldap-2.4.23/servers/slapd/proto-slap.h
+@@ -132,7 +132,7 @@ LDAP_SLAPD_F (void) ad_destroy LDAP_P((
+ 
+ #define ad_cmp(l,r)	(((l)->ad_cname.bv_len < (r)->ad_cname.bv_len) \
+ 	? -1 : (((l)->ad_cname.bv_len > (r)->ad_cname.bv_len) \
+-		? 1 : strcasecmp((l)->ad_cname.bv_val, (r)->ad_cname.bv_val )))
++		? 1 : ascii_strcasecmp((l)->ad_cname.bv_val, (r)->ad_cname.bv_val )))
+ 
+ LDAP_SLAPD_F (int) is_ad_subtype LDAP_P((
+ 	AttributeDescription *sub,
+Index: openldap-2.4.23/servers/slapd/referral.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/referral.c
++++ openldap-2.4.23/servers/slapd/referral.c
+@@ -97,7 +97,7 @@ static char * referral_dn_muck(
+ 				return ntargetDN.bv_val;
+ 			}
+ 
+-			rc = strcasecmp(
++			rc = ascii_strcasecmp(
+ 				&ntargetDN.bv_val[ntargetDN.bv_len-nbaseDN.bv_len],
+ 				nbaseDN.bv_val );
+ 			if( rc ) {
+Index: openldap-2.4.23/servers/slapd/result.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/result.c
++++ openldap-2.4.23/servers/slapd/result.c
+@@ -1527,7 +1527,7 @@ str2result(
+ 	*matched = NULL;
+ 	*info = NULL;
+ 
+-	if ( strncasecmp( s, "RESULT", STRLENOF( "RESULT" ) ) != 0 ) {
++	if ( ascii_strncasecmp( s, "RESULT", STRLENOF( "RESULT" ) ) != 0 ) {
+ 		Debug( LDAP_DEBUG_ANY, "str2result (%s) expecting \"RESULT\"\n",
+ 		    s, 0, 0 );
+ 
+@@ -1544,7 +1544,7 @@ str2result(
+ 			c++;
+ 		}
+ 
+-		if ( strncasecmp( s, "code", STRLENOF( "code" ) ) == 0 ) {
++		if ( ascii_strncasecmp( s, "code", STRLENOF( "code" ) ) == 0 ) {
+ 			char	*next = NULL;
+ 			long	retcode;
+ 
+@@ -1582,11 +1582,11 @@ str2result(
+ 			/* FIXME: what if it's larger that max int? */
+ 			*code = (int)retcode;
+ 
+-		} else if ( strncasecmp( s, "matched", STRLENOF( "matched" ) ) == 0 ) {
++		} else if ( ascii_strncasecmp( s, "matched", STRLENOF( "matched" ) ) == 0 ) {
+ 			if ( c != NULL ) {
+ 				*matched = c;
+ 			}
+-		} else if ( strncasecmp( s, "info", STRLENOF( "info" ) ) == 0 ) {
++		} else if ( ascii_strncasecmp( s, "info", STRLENOF( "info" ) ) == 0 ) {
+ 			if ( c != NULL ) {
+ 				*info = c;
+ 			}
+Index: openldap-2.4.23/servers/slapd/saslauthz.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/saslauthz.c
++++ openldap-2.4.23/servers/slapd/saslauthz.c
+@@ -102,15 +102,15 @@ int slap_sasl_setpolicy( const char *arg
+ {
+ 	int rc = LDAP_SUCCESS;
+ 
+-	if ( strcasecmp( arg, "none" ) == 0 ) {
++	if ( ascii_strcasecmp( arg, "none" ) == 0 ) {
+ 		authz_policy = SASL_AUTHZ_NONE;
+-	} else if ( strcasecmp( arg, "from" ) == 0 ) {
++	} else if ( ascii_strcasecmp( arg, "from" ) == 0 ) {
+ 		authz_policy = SASL_AUTHZ_FROM;
+-	} else if ( strcasecmp( arg, "to" ) == 0 ) {
++	} else if ( ascii_strcasecmp( arg, "to" ) == 0 ) {
+ 		authz_policy = SASL_AUTHZ_TO;
+-	} else if ( strcasecmp( arg, "both" ) == 0 || strcasecmp( arg, "any" ) == 0 ) {
++	} else if ( ascii_strcasecmp( arg, "both" ) == 0 || ascii_strcasecmp( arg, "any" ) == 0 ) {
+ 		authz_policy = SASL_AUTHZ_FROM | SASL_AUTHZ_TO;
+-	} else if ( strcasecmp( arg, "all" ) == 0 ) {
++	} else if ( ascii_strcasecmp( arg, "all" ) == 0 ) {
+ 		authz_policy = SASL_AUTHZ_FROM | SASL_AUTHZ_TO | SASL_AUTHZ_AND;
+ 	} else {
+ 		rc = LDAP_OTHER;
+@@ -233,29 +233,29 @@ authzValidate(
+ 	 *
+ 	 * <DN> must pass DN normalization
+ 	 */
+-	if ( !strncasecmp( in->bv_val, "dn", STRLENOF( "dn" ) ) ) {
++	if ( !ascii_strncasecmp( in->bv_val, "dn", STRLENOF( "dn" ) ) ) {
+ 		bv.bv_val = in->bv_val + STRLENOF( "dn" );
+ 
+ 		if ( bv.bv_val[ 0 ] == '.' ) {
+ 			bv.bv_val++;
+ 
+-			if ( !strncasecmp( bv.bv_val, "exact:", STRLENOF( "exact:" ) ) ) {
++			if ( !ascii_strncasecmp( bv.bv_val, "exact:", STRLENOF( "exact:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "exact:" );
+ 				scope = LDAP_X_SCOPE_EXACT;
+ 
+-			} else if ( !strncasecmp( bv.bv_val, "regex:", STRLENOF( "regex:" ) ) ) {
++			} else if ( !ascii_strncasecmp( bv.bv_val, "regex:", STRLENOF( "regex:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "regex:" );
+ 				scope = LDAP_X_SCOPE_REGEX;
+ 
+-			} else if ( !strncasecmp( bv.bv_val, "children:", STRLENOF( "children:" ) ) ) {
++			} else if ( !ascii_strncasecmp( bv.bv_val, "children:", STRLENOF( "children:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "children:" );
+ 				scope = LDAP_X_SCOPE_CHILDREN;
+ 
+-			} else if ( !strncasecmp( bv.bv_val, "subtree:", STRLENOF( "subtree:" ) ) ) {
++			} else if ( !ascii_strncasecmp( bv.bv_val, "subtree:", STRLENOF( "subtree:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "subtree:" );
+ 				scope = LDAP_X_SCOPE_SUBTREE;
+ 
+-			} else if ( !strncasecmp( bv.bv_val, "onelevel:", STRLENOF( "onelevel:" ) ) ) {
++			} else if ( !ascii_strncasecmp( bv.bv_val, "onelevel:", STRLENOF( "onelevel:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "onelevel:" );
+ 				scope = LDAP_X_SCOPE_ONELEVEL;
+ 
+@@ -332,7 +332,7 @@ is_dn:		bv.bv_len = in->bv_len - ( bv.bv
+ 	 * 
+ 	 * <DN> must pass DN normalization
+ 	 */
+-	} else if ( strncasecmp( in->bv_val, "group", STRLENOF( "group" ) ) == 0 )
++	} else if ( ascii_strncasecmp( in->bv_val, "group", STRLENOF( "group" ) ) == 0 )
+ 	{
+ 		struct berval	group_dn = BER_BVNULL,
+ 				group_oc = BER_BVNULL,
+@@ -404,7 +404,7 @@ is_dn:		bv.bv_len = in->bv_len - ( bv.bv
+ 		 * an URL as an easy means to define bits of a search with
+ 		 * little parsing.
+ 		 */
+-		if ( strcasecmp( ludp->lud_scheme, "ldap" ) != 0 ) {
++		if ( ascii_strcasecmp( ludp->lud_scheme, "ldap" ) != 0 ) {
+ 			/*
+ 			 * must be ldap:///
+ 			 */
+@@ -490,7 +490,7 @@ authzPrettyNormal(
+ 	 *
+ 	 * <DN> must pass DN normalization
+ 	 */
+-	if ( !strncasecmp( val->bv_val, "dn", STRLENOF( "dn" ) ) ) {
++	if ( !ascii_strncasecmp( val->bv_val, "dn", STRLENOF( "dn" ) ) ) {
+ 		struct berval	out = BER_BVNULL,
+ 				prefix = BER_BVNULL;
+ 		char		*ptr;
+@@ -500,23 +500,23 @@ authzPrettyNormal(
+ 		if ( bv.bv_val[ 0 ] == '.' ) {
+ 			bv.bv_val++;
+ 
+-			if ( !strncasecmp( bv.bv_val, "exact:", STRLENOF( "exact:" ) ) ) {
++			if ( !ascii_strncasecmp( bv.bv_val, "exact:", STRLENOF( "exact:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "exact:" );
+ 				scope = LDAP_X_SCOPE_EXACT;
+ 
+-			} else if ( !strncasecmp( bv.bv_val, "regex:", STRLENOF( "regex:" ) ) ) {
++			} else if ( !ascii_strncasecmp( bv.bv_val, "regex:", STRLENOF( "regex:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "regex:" );
+ 				scope = LDAP_X_SCOPE_REGEX;
+ 
+-			} else if ( !strncasecmp( bv.bv_val, "children:", STRLENOF( "children:" ) ) ) {
++			} else if ( !ascii_strncasecmp( bv.bv_val, "children:", STRLENOF( "children:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "children:" );
+ 				scope = LDAP_X_SCOPE_CHILDREN;
+ 
+-			} else if ( !strncasecmp( bv.bv_val, "subtree:", STRLENOF( "subtree:" ) ) ) {
++			} else if ( !ascii_strncasecmp( bv.bv_val, "subtree:", STRLENOF( "subtree:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "subtree:" );
+ 				scope = LDAP_X_SCOPE_SUBTREE;
+ 
+-			} else if ( !strncasecmp( bv.bv_val, "onelevel:", STRLENOF( "onelevel:" ) ) ) {
++			} else if ( !ascii_strncasecmp( bv.bv_val, "onelevel:", STRLENOF( "onelevel:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "onelevel:" );
+ 				scope = LDAP_X_SCOPE_ONELEVEL;
+ 
+@@ -642,7 +642,7 @@ is_dn:		bv.bv_len = val->bv_len - ( bv.b
+ 	 * 
+ 	 * <DN> must pass DN normalization
+ 	 */
+-	} else if ( strncasecmp( val->bv_val, "group", STRLENOF( "group" ) ) == 0 )
++	} else if ( ascii_strncasecmp( val->bv_val, "group", STRLENOF( "group" ) ) == 0 )
+ 	{
+ 		struct berval	group_dn = BER_BVNULL,
+ 				group_oc = BER_BVNULL,
+@@ -754,7 +754,7 @@ is_dn:		bv.bv_len = val->bv_len - ( bv.b
+ 		 * an URL as an easy means to define bits of a search with
+ 		 * little parsing.
+ 		 */
+-		if ( strcasecmp( ludp->lud_scheme, "ldap" ) != 0 ) {
++		if ( ascii_strcasecmp( ludp->lud_scheme, "ldap" ) != 0 ) {
+ 			/*
+ 			 * must be ldap:///
+ 			 */
+@@ -954,29 +954,29 @@ slap_parseURI(
+ 	 * <dnstyle> defaults to "exact"
+ 	 * if <dnstyle> is not "regex", <dnpattern> must pass DN normalization
+ 	 */
+-	if ( !strncasecmp( uri->bv_val, "dn", STRLENOF( "dn" ) ) ) {
++	if ( !ascii_strncasecmp( uri->bv_val, "dn", STRLENOF( "dn" ) ) ) {
+ 		bv.bv_val = uri->bv_val + STRLENOF( "dn" );
+ 
+ 		if ( bv.bv_val[ 0 ] == '.' ) {
+ 			bv.bv_val++;
+ 
+-			if ( !strncasecmp( bv.bv_val, "exact:", STRLENOF( "exact:" ) ) ) {
++			if ( !ascii_strncasecmp( bv.bv_val, "exact:", STRLENOF( "exact:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "exact:" );
+ 				*scope = LDAP_X_SCOPE_EXACT;
+ 
+-			} else if ( !strncasecmp( bv.bv_val, "regex:", STRLENOF( "regex:" ) ) ) {
++			} else if ( !ascii_strncasecmp( bv.bv_val, "regex:", STRLENOF( "regex:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "regex:" );
+ 				*scope = LDAP_X_SCOPE_REGEX;
+ 
+-			} else if ( !strncasecmp( bv.bv_val, "children:", STRLENOF( "children:" ) ) ) {
++			} else if ( !ascii_strncasecmp( bv.bv_val, "children:", STRLENOF( "children:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "children:" );
+ 				*scope = LDAP_X_SCOPE_CHILDREN;
+ 
+-			} else if ( !strncasecmp( bv.bv_val, "subtree:", STRLENOF( "subtree:" ) ) ) {
++			} else if ( !ascii_strncasecmp( bv.bv_val, "subtree:", STRLENOF( "subtree:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "subtree:" );
+ 				*scope = LDAP_X_SCOPE_SUBTREE;
+ 
+-			} else if ( !strncasecmp( bv.bv_val, "onelevel:", STRLENOF( "onelevel:" ) ) ) {
++			} else if ( !ascii_strncasecmp( bv.bv_val, "onelevel:", STRLENOF( "onelevel:" ) ) ) {
+ 				bv.bv_val += STRLENOF( "onelevel:" );
+ 				*scope = LDAP_X_SCOPE_ONELEVEL;
+ 
+@@ -1083,7 +1083,7 @@ is_dn:		bv.bv_len = uri->bv_len - (bv.bv
+ 	 * 
+ 	 * <groupdn> must pass DN normalization
+ 	 */
+-	} else if ( strncasecmp( uri->bv_val, "group", STRLENOF( "group" ) ) == 0 )
++	} else if ( ascii_strncasecmp( uri->bv_val, "group", STRLENOF( "group" ) ) == 0 )
+ 	{
+ 		struct berval	group_dn = BER_BVNULL,
+ 				group_oc = BER_BVNULL,
+@@ -1168,7 +1168,7 @@ is_dn:		bv.bv_len = uri->bv_len - (bv.bv
+ 		 * an URL as an easy means to define bits of a search with
+ 		 * little parsing.
+ 		 */
+-		if ( strcasecmp( ludp->lud_scheme, "ldap" ) != 0 ) {
++		if ( ascii_strcasecmp( ludp->lud_scheme, "ldap" ) != 0 ) {
+ 			/*
+ 			 * must be ldap:///
+ 			 */
+Index: openldap-2.4.23/servers/slapd/sasl.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/sasl.c
++++ openldap-2.4.23/servers/slapd/sasl.c
+@@ -237,7 +237,7 @@ sasl_ap_lookup( Operation *op, SlapReply
+ 					 * past the scheme name, skip this value.
+ 					 */
+ #ifdef SLAPD_CLEARTEXT
+-					if ( !strncasecmp( bv->bv_val, sc_cleartext.bv_val,
++					if ( !ascii_strncasecmp( bv->bv_val, sc_cleartext.bv_val,
+ 						sc_cleartext.bv_len )) {
+ 						struct berval cbv;
+ 						cbv.bv_len = bv->bv_len - sc_cleartext.bv_len;
+@@ -352,7 +352,7 @@ slap_auxprop_lookup(
+ 
+ 				/* If there's a recognized scheme, see if it's CLEARTEXT */
+ 				if ( lutil_passwd_scheme( op->o_bd->be_rootpw.bv_val )) {
+-					if ( !strncasecmp( op->o_bd->be_rootpw.bv_val,
++					if ( !ascii_strncasecmp( op->o_bd->be_rootpw.bv_val,
+ 						sc_cleartext.bv_val, sc_cleartext.bv_len )) {
+ 
+ 						/* If it's CLEARTEXT, skip past scheme spec */
+@@ -377,7 +377,7 @@ slap_auxprop_lookup(
+ 						} else if ( !(flags & SASL_AUXPROP_AUTHZID ) )
+ 							continue;
+ 
+-						if ( !strcasecmp(name,"userPassword") ) {
++						if ( !ascii_strcasecmp(name,"userPassword") ) {
+ 							sl.sparams->utils->prop_set( sl.sparams->propctx,
+ 								sl.list[i].name, cbv.bv_val, cbv.bv_len );
+ 							break;
+@@ -906,7 +906,7 @@ slapd_rw_config( const char *fname, int
+ 	}
+ 
+ 	uri = argv[0];
+-	if ( strncasecmp( uri, "uri=", STRLENOF( "uri=" ) ) == 0 ) {
++	if ( ascii_strncasecmp( uri, "uri=", STRLENOF( "uri=" ) ) == 0 ) {
+ 		uri += STRLENOF( "uri=" );
+ 	}
+ 
+@@ -917,7 +917,7 @@ slapd_rw_config( const char *fname, int
+         return NULL;
+ 	}
+ 
+-	if ( strcasecmp( lud->lud_scheme, "ldap" )) {
++	if ( ascii_strcasecmp( lud->lud_scheme, "ldap" )) {
+ 		Debug( LDAP_DEBUG_ANY,
+ 			"[%s:%d] illegal URI scheme '%s'\n",
+ 			fname, lineno, lud->lud_scheme );
+@@ -939,8 +939,8 @@ slapd_rw_config( const char *fname, int
+ 				fname, lineno, 0 );
+ 			goto done;
+ 		}
+-		if ( strcasecmp( lud->lud_attrs[0], "dn" ) &&
+-			strcasecmp( lud->lud_attrs[0], "entryDN" )) {
++		if ( ascii_strcasecmp( lud->lud_attrs[0], "dn" ) &&
++			ascii_strcasecmp( lud->lud_attrs[0], "entryDN" )) {
+ 			const char *text;
+ 			rc = slap_str2ad( lud->lud_attrs[0], &ad, &text );
+ 			if ( rc )
+@@ -1772,12 +1772,12 @@ int slap_sasl_getdn( Connection *conn, O
+ 	}
+ 
+ 	if( is_dn == SET_NONE ) {
+-		if( !strncasecmp( id->bv_val, "u:", STRLENOF( "u:" ) ) ) {
++		if( !ascii_strncasecmp( id->bv_val, "u:", STRLENOF( "u:" ) ) ) {
+ 			is_dn = SET_U;
+ 			dn->bv_val = id->bv_val + STRLENOF( "u:" );
+ 			dn->bv_len = id->bv_len - STRLENOF( "u:" );
+ 
+-		} else if ( !strncasecmp( id->bv_val, "dn:", STRLENOF( "dn:" ) ) ) {
++		} else if ( !ascii_strncasecmp( id->bv_val, "dn:", STRLENOF( "dn:" ) ) ) {
+ 			is_dn = SET_DN;
+ 			dn->bv_val = id->bv_val + STRLENOF( "dn:" );
+ 			dn->bv_len = id->bv_len - STRLENOF( "dn:" );
+Index: openldap-2.4.23/servers/slapd/schema_check.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/schema_check.c
++++ openldap-2.4.23/servers/slapd/schema_check.c
+@@ -551,7 +551,7 @@ int oc_check_allowed(
+ 		at->sat_cname.bv_val, 0, 0 );
+ 
+ 	/* always allow objectClass attribute */
+-	if ( strcasecmp( at->sat_cname.bv_val, "objectClass" ) == 0 ) {
++	if ( ascii_strcasecmp( at->sat_cname.bv_val, "objectClass" ) == 0 ) {
+ 		return LDAP_SUCCESS;
+ 	}
+ 
+Index: openldap-2.4.23/servers/slapd/schema_init.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/schema_init.c
++++ openldap-2.4.23/servers/slapd/schema_init.c
+@@ -1978,7 +1978,7 @@ approxMatch(
+ 		else if( len == 1 ) {
+ 			/* Single letter words need to at least match one word's initial */
+ 			for( i=nextavail; i<count; i++ )
+-				if( !strncasecmp( assertv->bv_val + nextchunk, words[i], 1 )) {
++				if( !ascii_strncasecmp( assertv->bv_val + nextchunk, words[i], 1 )) {
+ 					nextavail=i+1;
+ 					break;
+ 				}
+@@ -2187,8 +2187,8 @@ postalAddressValidate(
+ 	for ( c = 0; c < in->bv_len; c++ ) {
+ 		if ( in->bv_val[c] == '\\' ) {
+ 			c++;
+-			if ( strncasecmp( &in->bv_val[c], "24", STRLENOF( "24" ) ) != 0
+-				&& strncasecmp( &in->bv_val[c], "5C", STRLENOF( "5C" ) ) != 0 )
++			if ( ascii_strncasecmp( &in->bv_val[c], "24", STRLENOF( "24" ) ) != 0
++				&& ascii_strncasecmp( &in->bv_val[c], "5C", STRLENOF( "5C" ) ) != 0 )
+ 			{
+ 				return LDAP_INVALID_SYNTAX;
+ 			}
+@@ -3036,7 +3036,7 @@ checkNum( struct berval *in, struct berv
+ 		out->bv_len++;
+ 	}
+ 
+-	if ( strncasecmp( out->bv_val, "0x", STRLENOF("0x") ) == 0 ) {
++	if ( ascii_strncasecmp( out->bv_val, "0x", STRLENOF("0x") ) == 0 ) {
+ 		first = out->bv_val[2];
+ 		extra = 2;
+ 
+@@ -3132,7 +3132,7 @@ serialNumberAndIssuerCheck(
+ 			}
+ 
+ 			/* should be at issuer or serialNumber NamedValue */
+-			if ( strncasecmp( x.bv_val, "issuer", STRLENOF("issuer") ) == 0 ) {
++			if ( ascii_strncasecmp( x.bv_val, "issuer", STRLENOF("issuer") ) == 0 ) {
+ 				if ( have & HAVE_ISSUER ) return LDAP_INVALID_SYNTAX;
+ 
+ 				/* parse issuer */
+@@ -3149,7 +3149,7 @@ serialNumberAndIssuerCheck(
+ 				}
+ 
+ 				/* For backward compatibility, this part is optional */
+-				if ( strncasecmp( x.bv_val, "rdnSequence:", STRLENOF("rdnSequence:") ) == 0 ) {
++				if ( ascii_strncasecmp( x.bv_val, "rdnSequence:", STRLENOF("rdnSequence:") ) == 0 ) {
+ 					x.bv_val += STRLENOF("rdnSequence:");
+ 					x.bv_len -= STRLENOF("rdnSequence:");
+ 				}
+@@ -3178,7 +3178,7 @@ serialNumberAndIssuerCheck(
+ 
+ 				have |= HAVE_ISSUER;
+ 
+-			} else if ( strncasecmp( x.bv_val, "serialNumber", STRLENOF("serialNumber") ) == 0 )
++			} else if ( ascii_strncasecmp( x.bv_val, "serialNumber", STRLENOF("serialNumber") ) == 0 )
+ 			{
+ 				if ( have & HAVE_SN ) return LDAP_INVALID_SYNTAX;
+ 
+@@ -3712,7 +3712,7 @@ issuerAndThisUpdateCheck(
+ 		}
+ 
+ 		/* should be at issuer or thisUpdate */
+-		if ( strncasecmp( x.bv_val, "issuer", STRLENOF("issuer") ) == 0 ) {
++		if ( ascii_strncasecmp( x.bv_val, "issuer", STRLENOF("issuer") ) == 0 ) {
+ 			if ( have & HAVE_ISSUER ) return LDAP_INVALID_SYNTAX;
+ 
+ 			/* parse issuer */
+@@ -3729,7 +3729,7 @@ issuerAndThisUpdateCheck(
+ 			}
+ 
+ 			/* For backward compatibility, this part is optional */
+-			if ( strncasecmp( x.bv_val, "rdnSequence:", STRLENOF("rdnSequence:") ) != 0 ) {
++			if ( ascii_strncasecmp( x.bv_val, "rdnSequence:", STRLENOF("rdnSequence:") ) != 0 ) {
+ 				return LDAP_INVALID_SYNTAX;
+ 			}
+ 			x.bv_val += STRLENOF("rdnSequence:");
+@@ -3759,7 +3759,7 @@ issuerAndThisUpdateCheck(
+ 
+ 			have |= HAVE_ISSUER;
+ 
+-		} else if ( strncasecmp( x.bv_val, "thisUpdate", STRLENOF("thisUpdate") ) == 0 )
++		} else if ( ascii_strncasecmp( x.bv_val, "thisUpdate", STRLENOF("thisUpdate") ) == 0 )
+ 		{
+ 			if ( have & HAVE_THISUPDATE ) return LDAP_INVALID_SYNTAX;
+ 
+@@ -4200,7 +4200,7 @@ serialNumberAndIssuerSerialCheck(
+ 		}
+ 
+ 		/* should be at issuer or serialNumber NamedValue */
+-		if ( strncasecmp( x.bv_val, "issuer", STRLENOF("issuer") ) == 0 ) {
++		if ( ascii_strncasecmp( x.bv_val, "issuer", STRLENOF("issuer") ) == 0 ) {
+ 			if ( have & HAVE_ISSUER ) {
+ 				return LDAP_INVALID_SYNTAX;
+ 			}
+@@ -4227,7 +4227,7 @@ serialNumberAndIssuerSerialCheck(
+ 				/* empty */;
+ 			}
+ 
+-			if ( strncasecmp( x.bv_val, "baseCertificateID ", STRLENOF("baseCertificateID ") ) != 0 ) {
++			if ( ascii_strncasecmp( x.bv_val, "baseCertificateID ", STRLENOF("baseCertificateID ") ) != 0 ) {
+ 				return LDAP_INVALID_SYNTAX;
+ 			}
+ 			x.bv_val += STRLENOF("baseCertificateID ");
+@@ -4249,7 +4249,7 @@ serialNumberAndIssuerSerialCheck(
+ 				}
+ 
+ 				/* parse issuer of baseCertificateID */
+-				if ( strncasecmp( x.bv_val, "issuer ", STRLENOF("issuer ") ) == 0 ) {
++				if ( ascii_strncasecmp( x.bv_val, "issuer ", STRLENOF("issuer ") ) == 0 ) {
+ 					if ( have2 & HAVE_ISSUER ) {
+ 						return LDAP_INVALID_SYNTAX;
+ 					}
+@@ -4271,7 +4271,7 @@ serialNumberAndIssuerSerialCheck(
+ 						/* empty */;
+ 					}
+ 
+-					if ( strncasecmp( x.bv_val, "directoryName:rdnSequence:", STRLENOF("directoryName:rdnSequence:") ) != 0 ) {
++					if ( ascii_strncasecmp( x.bv_val, "directoryName:rdnSequence:", STRLENOF("directoryName:rdnSequence:") ) != 0 ) {
+ 						return LDAP_INVALID_SYNTAX;
+ 					}
+ 					x.bv_val += STRLENOF("directoryName:rdnSequence:");
+@@ -4310,7 +4310,7 @@ serialNumberAndIssuerSerialCheck(
+ 
+ 					have2 |= HAVE_ISSUER;
+ 
+-				} else if ( strncasecmp( x.bv_val, "serial ", STRLENOF("serial ") ) == 0 ) {
++				} else if ( ascii_strncasecmp( x.bv_val, "serial ", STRLENOF("serial ") ) == 0 ) {
+ 					if ( have2 & HAVE_SN ) {
+ 						return LDAP_INVALID_SYNTAX;
+ 					}
+@@ -4365,7 +4365,7 @@ serialNumberAndIssuerSerialCheck(
+ 
+ 			have |= HAVE_ISSUER;
+ 
+-		} else if ( strncasecmp( x.bv_val, "serialNumber", STRLENOF("serialNumber") ) == 0 ) {
++		} else if ( ascii_strncasecmp( x.bv_val, "serialNumber", STRLENOF("serialNumber") ) == 0 ) {
+ 			if ( have & HAVE_SN ) {
+ 				return LDAP_INVALID_SYNTAX;
+ 			}
+@@ -5743,7 +5743,7 @@ again:
+ 	case 'a':
+ 	case 'A':
+ 		if(( tmp.bv_len >= LENOF("any") ) &&
+-			( strncasecmp(tmp.bv_val, "any", LENOF("any")) == 0 ))
++			( ascii_strncasecmp(tmp.bv_val, "any", LENOF("any")) == 0 ))
+ 		{
+ 			tmp.bv_len -= LENOF("any");
+ 			tmp.bv_val += LENOF("any");
+@@ -5754,7 +5754,7 @@ again:
+ 	case 'm':
+ 	case 'M':
+ 		if(( tmp.bv_len >= LENOF("mhs") ) &&
+-			( strncasecmp(tmp.bv_val, "mhs", LENOF("mhs")) == 0 ))
++			( ascii_strncasecmp(tmp.bv_val, "mhs", LENOF("mhs")) == 0 ))
+ 		{
+ 			tmp.bv_len -= LENOF("mhs");
+ 			tmp.bv_val += LENOF("mhs");
+@@ -5765,7 +5765,7 @@ again:
+ 	case 'p':
+ 	case 'P':
+ 		if(( tmp.bv_len >= LENOF("physical") ) &&
+-			( strncasecmp(tmp.bv_val, "physical", LENOF("physical")) == 0 ))
++			( ascii_strncasecmp(tmp.bv_val, "physical", LENOF("physical")) == 0 ))
+ 		{
+ 			tmp.bv_len -= LENOF("physical");
+ 			tmp.bv_val += LENOF("physical");
+@@ -5776,21 +5776,21 @@ again:
+ 	case 't':
+ 	case 'T': /* telex or teletex or telephone */
+ 		if(( tmp.bv_len >= LENOF("telex") ) &&
+-			( strncasecmp(tmp.bv_val, "telex", LENOF("telex")) == 0 ))
++			( ascii_strncasecmp(tmp.bv_val, "telex", LENOF("telex")) == 0 ))
+ 		{
+ 			tmp.bv_len -= LENOF("telex");
+ 			tmp.bv_val += LENOF("telex");
+ 			break;
+ 		}
+ 		if(( tmp.bv_len >= LENOF("teletex") ) &&
+-			( strncasecmp(tmp.bv_val, "teletex", LENOF("teletex")) == 0 ))
++			( ascii_strncasecmp(tmp.bv_val, "teletex", LENOF("teletex")) == 0 ))
+ 		{
+ 			tmp.bv_len -= LENOF("teletex");
+ 			tmp.bv_val += LENOF("teletex");
+ 			break;
+ 		}
+ 		if(( tmp.bv_len >= LENOF("telephone") ) &&
+-			( strncasecmp(tmp.bv_val, "telephone", LENOF("telephone")) == 0 ))
++			( ascii_strncasecmp(tmp.bv_val, "telephone", LENOF("telephone")) == 0 ))
+ 		{
+ 			tmp.bv_len -= LENOF("telephone");
+ 			tmp.bv_val += LENOF("telephone");
+@@ -5801,8 +5801,8 @@ again:
+ 	case 'g':
+ 	case 'G': /* g3fax or g4fax */
+ 		if(( tmp.bv_len >= LENOF("g3fax") ) && (
+-			( strncasecmp(tmp.bv_val, "g3fax", LENOF("g3fax")) == 0 ) ||
+-			( strncasecmp(tmp.bv_val, "g4fax", LENOF("g4fax")) == 0 )))
++			( ascii_strncasecmp(tmp.bv_val, "g3fax", LENOF("g3fax")) == 0 ) ||
++			( ascii_strncasecmp(tmp.bv_val, "g4fax", LENOF("g4fax")) == 0 )))
+ 		{
+ 			tmp.bv_len -= LENOF("g3fax");
+ 			tmp.bv_val += LENOF("g3fax");
+@@ -5813,7 +5813,7 @@ again:
+ 	case 'i':
+ 	case 'I':
+ 		if(( tmp.bv_len >= LENOF("ia5") ) &&
+-			( strncasecmp(tmp.bv_val, "ia5", LENOF("ia5")) == 0 ))
++			( ascii_strncasecmp(tmp.bv_val, "ia5", LENOF("ia5")) == 0 ))
+ 		{
+ 			tmp.bv_len -= LENOF("ia5");
+ 			tmp.bv_val += LENOF("ia5");
+@@ -5824,7 +5824,7 @@ again:
+ 	case 'v':
+ 	case 'V':
+ 		if(( tmp.bv_len >= LENOF("videotex") ) &&
+-			( strncasecmp(tmp.bv_val, "videotex", LENOF("videotex")) == 0 ))
++			( ascii_strncasecmp(tmp.bv_val, "videotex", LENOF("videotex")) == 0 ))
+ 		{
+ 			tmp.bv_len -= LENOF("videotex");
+ 			tmp.bv_val += LENOF("videotex");
+Index: openldap-2.4.23/servers/slapd/shell-backends/passwd-shell.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/shell-backends/passwd-shell.c
++++ openldap-2.4.23/servers/slapd/shell-backends/passwd-shell.c
+@@ -121,7 +121,7 @@ pwdfile_search( struct ldop *op, FILE *o
+     for ( pw = getpwent(); pw != NULL; pw = getpwent()) {
+ 	if (( entry = pw2entry( op, pw )) != NULL ) {
+ 	    if ( oneentry ) {
+-		if ( strcasecmp( op->ldop_dn, entry->lde_dn ) == 0 ) {
++		if ( ascii_strcasecmp( op->ldop_dn, entry->lde_dn ) == 0 ) {
+ 		    write_entry( op, entry, ofp );
+ 		    break;
+ 		}
+Index: openldap-2.4.23/servers/slapd/shell-backends/shellutil.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/shell-backends/shellutil.c
++++ openldap-2.4.23/servers/slapd/shell-backends/shellutil.c
+@@ -118,7 +118,7 @@ attr_requested( char *name, struct ldop
+     }
+ 
+     for ( ap = op->ldop_srch.ldsp_attrs; *ap != NULL; ++ap ) {
+-	if ( strcasecmp( name, *ap ) == 0 ) {
++	if ( ascii_strcasecmp( name, *ap ) == 0 ) {
+ 	    return( 1 );
+ 	}
+     }
+@@ -158,7 +158,7 @@ parse_input( FILE *ifp, FILE *ofp, struc
+ 	write_result( ofp, LDAP_OTHER, NULL, "Empty Input" );
+     }
+     line[ strlen( line ) - 1 ] = '\0';
+-    if ( strncasecmp( line, STR_OP_SEARCH, sizeof( STR_OP_SEARCH ) - 1 )
++    if ( ascii_strncasecmp( line, STR_OP_SEARCH, sizeof( STR_OP_SEARCH ) - 1 )
+ 	    != 0 ) {
+ 	write_result( ofp, LDAP_UNWILLING_TO_PERFORM, NULL,
+ 		"Operation Not Supported" );
+@@ -259,7 +259,7 @@ find_input_tag( char **linep )	/* linep
+     }
+ 
+     for ( i = 0; ips[ i ].ip_type != 0; ++i ) {
+-	if ( strncasecmp( *linep, ips[ i ].ip_tag, p - *linep ) == 0 ) {
++	if ( ascii_strncasecmp( *linep, ips[ i ].ip_tag, p - *linep ) == 0 ) {
+ 	    while ( isspace( (unsigned char) *(++p) )) {
+ 		;
+ 	    }
+Index: openldap-2.4.23/servers/slapd/slapcommon.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/slapcommon.c
++++ openldap-2.4.23/servers/slapd/slapcommon.c
+@@ -119,72 +119,72 @@ parse_slapopt( void )
+ 		p++;
+ 	}
+ 
+-	if ( strncasecmp( optarg, "sockurl", len ) == 0 ) {
++	if ( ascii_strncasecmp( optarg, "sockurl", len ) == 0 ) {
+ 		if ( !BER_BVISNULL( &listener_url ) ) {
+ 			ber_memfree( listener_url.bv_val );
+ 		}
+ 		ber_str2bv( p, 0, 1, &listener_url );
+ 
+-	} else if ( strncasecmp( optarg, "domain", len ) == 0 ) {
++	} else if ( ascii_strncasecmp( optarg, "domain", len ) == 0 ) {
+ 		if ( !BER_BVISNULL( &peer_domain ) ) {
+ 			ber_memfree( peer_domain.bv_val );
+ 		}
+ 		ber_str2bv( p, 0, 1, &peer_domain );
+ 
+-	} else if ( strncasecmp( optarg, "peername", len ) == 0 ) {
++	} else if ( ascii_strncasecmp( optarg, "peername", len ) == 0 ) {
+ 		if ( !BER_BVISNULL( &peer_name ) ) {
+ 			ber_memfree( peer_name.bv_val );
+ 		}
+ 		ber_str2bv( p, 0, 1, &peer_name );
+ 
+-	} else if ( strncasecmp( optarg, "sockname", len ) == 0 ) {
++	} else if ( ascii_strncasecmp( optarg, "sockname", len ) == 0 ) {
+ 		if ( !BER_BVISNULL( &sock_name ) ) {
+ 			ber_memfree( sock_name.bv_val );
+ 		}
+ 		ber_str2bv( p, 0, 1, &sock_name );
+ 
+-	} else if ( strncasecmp( optarg, "ssf", len ) == 0 ) {
++	} else if ( ascii_strncasecmp( optarg, "ssf", len ) == 0 ) {
+ 		if ( lutil_atou( &ssf, p ) ) {
+ 			Debug( LDAP_DEBUG_ANY, "unable to parse ssf=\"%s\".\n", p, 0, 0 );
+ 			return -1;
+ 		}
+ 
+-	} else if ( strncasecmp( optarg, "transport_ssf", len ) == 0 ) {
++	} else if ( ascii_strncasecmp( optarg, "transport_ssf", len ) == 0 ) {
+ 		if ( lutil_atou( &transport_ssf, p ) ) {
+ 			Debug( LDAP_DEBUG_ANY, "unable to parse transport_ssf=\"%s\".\n", p, 0, 0 );
+ 			return -1;
+ 		}
+ 
+-	} else if ( strncasecmp( optarg, "tls_ssf", len ) == 0 ) {
++	} else if ( ascii_strncasecmp( optarg, "tls_ssf", len ) == 0 ) {
+ 		if ( lutil_atou( &tls_ssf, p ) ) {
+ 			Debug( LDAP_DEBUG_ANY, "unable to parse tls_ssf=\"%s\".\n", p, 0, 0 );
+ 			return -1;
+ 		}
+ 
+-	} else if ( strncasecmp( optarg, "sasl_ssf", len ) == 0 ) {
++	} else if ( ascii_strncasecmp( optarg, "sasl_ssf", len ) == 0 ) {
+ 		if ( lutil_atou( &sasl_ssf, p ) ) {
+ 			Debug( LDAP_DEBUG_ANY, "unable to parse sasl_ssf=\"%s\".\n", p, 0, 0 );
+ 			return -1;
+ 		}
+ 
+-	} else if ( strncasecmp( optarg, "authzDN", len ) == 0 ) {
++	} else if ( ascii_strncasecmp( optarg, "authzDN", len ) == 0 ) {
+ 		ber_str2bv( p, 0, 1, &authzDN );
+ 
+ #if defined(LDAP_SYSLOG) && defined(LDAP_DEBUG)
+-	} else if ( strncasecmp( optarg, "syslog", len ) == 0 ) {
++	} else if ( ascii_strncasecmp( optarg, "syslog", len ) == 0 ) {
+ 		if ( parse_debug_level( p, &ldap_syslog, &syslog_unknowns ) ) {
+ 			return -1;
+ 		}
+ 		start_syslog = 1;
+ 
+-	} else if ( strncasecmp( optarg, "syslog-level", len ) == 0 ) {
++	} else if ( ascii_strncasecmp( optarg, "syslog-level", len ) == 0 ) {
+ 		if ( parse_syslog_level( p, &ldap_syslog_level ) ) {
+ 			return -1;
+ 		}
+ 		start_syslog = 1;
+ 
+ #ifdef LOG_LOCAL4
+-	} else if ( strncasecmp( optarg, "syslog-user", len ) == 0 ) {
++	} else if ( ascii_strncasecmp( optarg, "syslog-user", len ) == 0 ) {
+ 		if ( parse_syslog_user( p, &syslogUser ) ) {
+ 			return -1;
+ 		}
+Index: openldap-2.4.23/servers/slapd/slapi/plugin.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/slapi/plugin.c
++++ openldap-2.4.23/servers/slapd/slapi/plugin.c
+@@ -333,7 +333,7 @@ slapi_int_unregister_extop(
+ 		pTmpExtOp = *opList;
+ 		for ( ; pTmpExtOp != NULL; pTmpExtOp = pTmpExtOp->ext_next) {
+ 			int	rc;
+-			rc = strcasecmp( pTmpExtOp->ext_oid.bv_val,
++			rc = ascii_strcasecmp( pTmpExtOp->ext_oid.bv_val,
+ 					pTmpOIDs[ i ] );
+ 			if ( rc == 0 ) {
+ 				if ( backExtOp == NULL ) {
+@@ -475,7 +475,7 @@ slapi_int_get_extop_plugin(
+ 	while ( pTmpExtOp != NULL ) {
+ 		int	rc;
+ 		
+-		rc = strcasecmp( reqoid->bv_val, pTmpExtOp->ext_oid.bv_val );
++		rc = ascii_strcasecmp( reqoid->bv_val, pTmpExtOp->ext_oid.bv_val );
+ 		if ( rc == 0 ) {
+ 			*pFuncAddr = pTmpExtOp->ext_func;
+ 			break;
+@@ -654,13 +654,13 @@ slapi_int_read_config(
+ 		}
+ 	}
+ 	
+-	if ( strcasecmp( argv[1], "preoperation" ) == 0 ) {
++	if ( ascii_strcasecmp( argv[1], "preoperation" ) == 0 ) {
+ 		iType = SLAPI_PLUGIN_PREOPERATION;
+-	} else if ( strcasecmp( argv[1], "postoperation" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[1], "postoperation" ) == 0 ) {
+ 		iType = SLAPI_PLUGIN_POSTOPERATION;
+-	} else if ( strcasecmp( argv[1], "extendedop" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[1], "extendedop" ) == 0 ) {
+ 		iType = SLAPI_PLUGIN_EXTENDEDOP;
+-	} else if ( strcasecmp( argv[1], "object" ) == 0 ) {
++	} else if ( ascii_strcasecmp( argv[1], "object" ) == 0 ) {
+ 		iType = SLAPI_PLUGIN_OBJECT;
+ 	} else {
+ 		fprintf( stderr, "%s: line %d: invalid plugin type \"%s\".\n",
+Index: openldap-2.4.23/servers/slapd/slapi/slapi_ext.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/slapi/slapi_ext.c
++++ openldap-2.4.23/servers/slapd/slapi/slapi_ext.c
+@@ -83,9 +83,9 @@ static int get_extension_block(int objec
+ 
+ static int map_extension_type(const char *objectname, slapi_extension_t *type)
+ {
+-	if ( strcasecmp( objectname, SLAPI_EXT_CONNECTION ) == 0 ) {
++	if ( ascii_strcasecmp( objectname, SLAPI_EXT_CONNECTION ) == 0 ) {
+ 		*type = SLAPI_X_EXT_CONNECTION;
+-	} else if ( strcasecmp( objectname, SLAPI_EXT_OPERATION ) == 0 ) {
++	} else if ( ascii_strcasecmp( objectname, SLAPI_EXT_OPERATION ) == 0 ) {
+ 		*type = SLAPI_X_EXT_OPERATION;
+ 	} else {
+ 		return -1;
+Index: openldap-2.4.23/servers/slapd/slapi/slapi_utils.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/slapi/slapi_utils.c
++++ openldap-2.4.23/servers/slapd/slapi/slapi_utils.c
+@@ -2196,7 +2196,7 @@ int slapi_attr_type_cmp( const char *t1,
+ 
+ #define ad_base_cmp(l,r) (((l)->ad_type->sat_cname.bv_len < (r)->ad_type->sat_cname.bv_len) \
+ 	? -1 : (((l)->ad_type->sat_cname.bv_len > (r)->ad_type->sat_cname.bv_len) \
+-		? 1 : strcasecmp((l)->ad_type->sat_cname.bv_val, (r)->ad_type->sat_cname.bv_val )))
++		? 1 : ascii_strcasecmp((l)->ad_type->sat_cname.bv_val, (r)->ad_type->sat_cname.bv_val )))
+ 
+ 	switch ( opt ) {
+ 	case SLAPI_TYPE_CMP_EXACT:
+Index: openldap-2.4.23/servers/slapd/syncrepl.c
+===================================================================
+--- openldap-2.4.23.orig/servers/slapd/syncrepl.c
++++ openldap-2.4.23/servers/slapd/syncrepl.c
+@@ -2004,7 +2004,7 @@ syncrepl_message_to_entry(
+ 		/* Drop all updates to the contextCSN of the context entry
+ 		 * (ITS#4622, etc.)
+ 		 */
+-		if ( is_ctx && !strcasecmp( tmp.sml_type.bv_val,
++		if ( is_ctx && !ascii_strcasecmp( tmp.sml_type.bv_val,
+ 			slap_schema.si_ad_contextCSN->ad_cname.bv_val )) {
+ 			ber_bvarray_free( tmp.sml_values );
+ 			continue;
+@@ -3992,7 +3992,7 @@ parse_syncrepl_retry(
+ 	int use_default = 0;
+ 
+ 	char *val = arg + STRLENOF( RETRYSTR "=" );
+-	if ( strcasecmp( val, "undefined" ) == 0 ) {
++	if ( ascii_strcasecmp( val, "undefined" ) == 0 ) {
+ 		val = "3600 +";
+ 		use_default = 1;
+ 	}
+@@ -4086,7 +4086,7 @@ parse_syncrepl_line(
+ 	char	*val;
+ 
+ 	for ( i = 1; i < c->argc; i++ ) {
+-		if ( !strncasecmp( c->argv[ i ], IDSTR "=",
++		if ( !ascii_strncasecmp( c->argv[ i ], IDSTR "=",
+ 					STRLENOF( IDSTR "=" ) ) )
+ 		{
+ 			int tmp;
+@@ -4109,7 +4109,7 @@ parse_syncrepl_line(
+ 			si->si_rid = tmp;
+ 			sprintf( si->si_ridtxt, IDSTR "=%03d", si->si_rid );
+ 			si->si_got |= GOT_RID;
+-		} else if ( !strncasecmp( c->argv[ i ], PROVIDERSTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], PROVIDERSTR "=",
+ 					STRLENOF( PROVIDERSTR "=" ) ) )
+ 		{
+ 			val = c->argv[ i ] + STRLENOF( PROVIDERSTR "=" );
+@@ -4119,19 +4119,19 @@ parse_syncrepl_line(
+ 				si->si_bindconf.sb_tls_do_init = 1;
+ #endif
+ 			si->si_got |= GOT_PROVIDER;
+-		} else if ( !strncasecmp( c->argv[ i ], SCHEMASTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], SCHEMASTR "=",
+ 					STRLENOF( SCHEMASTR "=" ) ) )
+ 		{
+ 			val = c->argv[ i ] + STRLENOF( SCHEMASTR "=" );
+-			if ( !strncasecmp( val, "on", STRLENOF( "on" ) ) ) {
++			if ( !ascii_strncasecmp( val, "on", STRLENOF( "on" ) ) ) {
+ 				si->si_schemachecking = 1;
+-			} else if ( !strncasecmp( val, "off", STRLENOF( "off" ) ) ) {
++			} else if ( !ascii_strncasecmp( val, "off", STRLENOF( "off" ) ) ) {
+ 				si->si_schemachecking = 0;
+ 			} else {
+ 				si->si_schemachecking = 1;
+ 			}
+ 			si->si_got |= GOT_SCHEMACHECKING;
+-		} else if ( !strncasecmp( c->argv[ i ], FILTERSTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], FILTERSTR "=",
+ 					STRLENOF( FILTERSTR "=" ) ) )
+ 		{
+ 			val = c->argv[ i ] + STRLENOF( FILTERSTR "=" );
+@@ -4139,7 +4139,7 @@ parse_syncrepl_line(
+ 				ch_free( si->si_filterstr.bv_val );
+ 			ber_str2bv( val, 0, 1, &si->si_filterstr );
+ 			si->si_got |= GOT_FILTER;
+-		} else if ( !strncasecmp( c->argv[ i ], LOGFILTERSTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], LOGFILTERSTR "=",
+ 					STRLENOF( LOGFILTERSTR "=" ) ) )
+ 		{
+ 			val = c->argv[ i ] + STRLENOF( LOGFILTERSTR "=" );
+@@ -4147,7 +4147,7 @@ parse_syncrepl_line(
+ 				ch_free( si->si_logfilterstr.bv_val );
+ 			ber_str2bv( val, 0, 1, &si->si_logfilterstr );
+ 			si->si_got |= GOT_LOGFILTER;
+-		} else if ( !strncasecmp( c->argv[ i ], SEARCHBASESTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], SEARCHBASESTR "=",
+ 					STRLENOF( SEARCHBASESTR "=" ) ) )
+ 		{
+ 			struct berval	bv;
+@@ -4176,7 +4176,7 @@ parse_syncrepl_line(
+ 				return -1;
+ 			}
+ 			si->si_got |= GOT_SEARCHBASE;
+-		} else if ( !strncasecmp( c->argv[ i ], LOGBASESTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], LOGBASESTR "=",
+ 					STRLENOF( LOGBASESTR "=" ) ) )
+ 		{
+ 			struct berval	bv;
+@@ -4196,7 +4196,7 @@ parse_syncrepl_line(
+ 				return -1;
+ 			}
+ 			si->si_got |= GOT_LOGBASE;
+-		} else if ( !strncasecmp( c->argv[ i ], SCOPESTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], SCOPESTR "=",
+ 					STRLENOF( SCOPESTR "=" ) ) )
+ 		{
+ 			int j;
+@@ -4211,16 +4211,16 @@ parse_syncrepl_line(
+ 			}
+ 			si->si_scope = j;
+ 			si->si_got |= GOT_SCOPE;
+-		} else if ( !strncasecmp( c->argv[ i ], ATTRSONLYSTR,
++		} else if ( !ascii_strncasecmp( c->argv[ i ], ATTRSONLYSTR,
+ 					STRLENOF( ATTRSONLYSTR ) ) )
+ 		{
+ 			si->si_attrsonly = 1;
+ 			si->si_got |= GOT_ATTRSONLY;
+-		} else if ( !strncasecmp( c->argv[ i ], ATTRSSTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], ATTRSSTR "=",
+ 					STRLENOF( ATTRSSTR "=" ) ) )
+ 		{
+ 			val = c->argv[ i ] + STRLENOF( ATTRSSTR "=" );
+-			if ( !strncasecmp( val, ":include:", STRLENOF(":include:") ) ) {
++			if ( !ascii_strncasecmp( val, ":include:", STRLENOF(":include:") ) ) {
+ 				char *attr_fname;
+ 				attr_fname = ch_strdup( val + STRLENOF(":include:") );
+ 				si->si_anlist = file2anlist( si->si_anlist, attr_fname, " ,\t" );
+@@ -4253,11 +4253,11 @@ parse_syncrepl_line(
+ 				}
+ 			}
+ 			si->si_got |= GOT_ATTRS;
+-		} else if ( !strncasecmp( c->argv[ i ], EXATTRSSTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], EXATTRSSTR "=",
+ 					STRLENOF( EXATTRSSTR "=" ) ) )
+ 		{
+ 			val = c->argv[ i ] + STRLENOF( EXATTRSSTR "=" );
+-			if ( !strncasecmp( val, ":include:", STRLENOF(":include:") ) ) {
++			if ( !ascii_strncasecmp( val, ":include:", STRLENOF(":include:") ) ) {
+ 				char *attr_fname;
+ 				attr_fname = ch_strdup( val + STRLENOF(":include:") );
+ 				si->si_exanlist = file2anlist(
+@@ -4274,15 +4274,15 @@ parse_syncrepl_line(
+ 				}
+ 			}
+ 			si->si_got |= GOT_EXATTRS;
+-		} else if ( !strncasecmp( c->argv[ i ], TYPESTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], TYPESTR "=",
+ 					STRLENOF( TYPESTR "=" ) ) )
+ 		{
+ 			val = c->argv[ i ] + STRLENOF( TYPESTR "=" );
+-			if ( !strncasecmp( val, "refreshOnly",
++			if ( !ascii_strncasecmp( val, "refreshOnly",
+ 						STRLENOF("refreshOnly") ) )
+ 			{
+ 				si->si_type = si->si_ctype = LDAP_SYNC_REFRESH_ONLY;
+-			} else if ( !strncasecmp( val, "refreshAndPersist",
++			} else if ( !ascii_strncasecmp( val, "refreshAndPersist",
+ 						STRLENOF("refreshAndPersist") ) )
+ 			{
+ 				si->si_type = si->si_ctype = LDAP_SYNC_REFRESH_AND_PERSIST;
+@@ -4295,7 +4295,7 @@ parse_syncrepl_line(
+ 				return -1;
+ 			}
+ 			si->si_got |= GOT_TYPE;
+-		} else if ( !strncasecmp( c->argv[ i ], INTERVALSTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], INTERVALSTR "=",
+ 					STRLENOF( INTERVALSTR "=" ) ) )
+ 		{
+ 			val = c->argv[ i ] + STRLENOF( INTERVALSTR "=" );
+@@ -4362,13 +4362,13 @@ parse_syncrepl_line(
+ 				return -1;
+ 			}
+ 			si->si_got |= GOT_INTERVAL;
+-		} else if ( !strncasecmp( c->argv[ i ], RETRYSTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], RETRYSTR "=",
+ 					STRLENOF( RETRYSTR "=" ) ) )
+ 		{
+ 			if ( parse_syncrepl_retry( c, c->argv[ i ], si ) ) {
+ 				return 1;
+ 			}
+-		} else if ( !strncasecmp( c->argv[ i ], MANAGEDSAITSTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], MANAGEDSAITSTR "=",
+ 					STRLENOF( MANAGEDSAITSTR "=" ) ) )
+ 		{
+ 			val = c->argv[ i ] + STRLENOF( MANAGEDSAITSTR "=" );
+@@ -4382,11 +4382,11 @@ parse_syncrepl_line(
+ 				return 1;
+ 			}
+ 			si->si_got |= GOT_MANAGEDSAIT;
+-		} else if ( !strncasecmp( c->argv[ i ], SLIMITSTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], SLIMITSTR "=",
+ 					STRLENOF( SLIMITSTR "=") ) )
+ 		{
+ 			val = c->argv[ i ] + STRLENOF( SLIMITSTR "=" );
+-			if ( strcasecmp( val, "unlimited" ) == 0 ) {
++			if ( ascii_strcasecmp( val, "unlimited" ) == 0 ) {
+ 				si->si_slimit = 0;
+ 
+ 			} else if ( lutil_atoi( &si->si_slimit, val ) != 0 || si->si_slimit < 0 ) {
+@@ -4397,11 +4397,11 @@ parse_syncrepl_line(
+ 				return 1;
+ 			}
+ 			si->si_got |= GOT_SLIMIT;
+-		} else if ( !strncasecmp( c->argv[ i ], TLIMITSTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], TLIMITSTR "=",
+ 					STRLENOF( TLIMITSTR "=" ) ) )
+ 		{
+ 			val = c->argv[ i ] + STRLENOF( TLIMITSTR "=" );
+-			if ( strcasecmp( val, "unlimited" ) == 0 ) {
++			if ( ascii_strcasecmp( val, "unlimited" ) == 0 ) {
+ 				si->si_tlimit = 0;
+ 
+ 			} else if ( lutil_atoi( &si->si_tlimit, val ) != 0 || si->si_tlimit < 0 ) {
+@@ -4412,7 +4412,7 @@ parse_syncrepl_line(
+ 				return 1;
+ 			}
+ 			si->si_got |= GOT_TLIMIT;
+-		} else if ( !strncasecmp( c->argv[ i ], SYNCDATASTR "=",
++		} else if ( !ascii_strncasecmp( c->argv[ i ], SYNCDATASTR "=",
+ 					STRLENOF( SYNCDATASTR "=" ) ) )
+ 		{
+ 			val = c->argv[ i ] + STRLENOF( SYNCDATASTR "=" );
