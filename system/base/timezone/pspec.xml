@@ -3,7 +3,7 @@
 <PISI>
     <Source>
         <Name>timezone</Name>
-        <Homepage>ftp://elsie.nci.nih.gov/pub/</Homepage>
+        <Homepage>ftp://elsie.nci.nih.gov/pub</Homepage>
         <Packager>
             <Name>Ozan Çağlayan</Name>
             <Email>ozan@pardus.org.tr</Email>
@@ -12,25 +12,28 @@
         <License>public-domain</License>
         <IsA>app:console</IsA>
         <IsA>data</IsA>
-        <Summary>Timezone data files and tools</Summary>
-        <Description>timezone includes timezone data files and tools to use them. Package contents are synchronized with glibc tree.</Description>
-        <!-- Source is prepared from http://cekirdek.pardus.org.tr/~onur/distfiles/tzdata-base-0.tar.bz2 and ftp://elsie.nci.nih.gov/pub/  tzcode and tzdata -->
-        <Archive sha1sum="0b0043f3e15b61eeff74a833da79f41d603e6db6" type="tarbz2">http://cekirdek.pardus.org.tr/~onur/distfiles/tzdata-base-0.tar.bz2</Archive>
-        <Archive sha1sum="47a2724b694b9528c0dbf92c410a790038c4802f" type="targz" target="tzdata/tzcode2011d">http://cekirdek.pardus.org.tr/~onur/distfiles/tzcode2011d.tar.gz</Archive>
-        <Archive sha1sum="2d22bcf138707b9171ec54359ec872ca5cb343f7" type="targz" target="tzdata/tzdata2011d">http://cekirdek.pardus.org.tr/~onur/distfiles/tzdata2011d.tar.gz</Archive>
+        <Summary>Timezone data</Summary>
+        <Description>timezone contains data files with rules for various timezones around the world.</Description>
+        <!-- tzdata-base-0.tar.bz2 is a simple building infrastructure occasionally updated from glibc. -->
+        <Archive sha1sum="0b0043f3e15b61eeff74a833da79f41d603e6db6" type="tarbz2">http://cekirdek.pardus.org.tr/~ozan/dist/sources/tzdata-base-0.tar.bz2</Archive>
+        <Archive sha1sum="4f58cede47df8bba55b37982d8b38cd65266d412" type="targz" target="tzdata/tzcode2011i">ftp://munnari.oz.au/pub/oldtz/tzcode2011i.tar.gz</Archive>
+        <Archive sha1sum="c6740ec9645b78750e2109b6d42cd283e16988d7" type="targz" target="tzdata/tzdata2011l">ftp://munnari.oz.au/pub/oldtz/tzdata2011l.tar.gz</Archive>
         <AdditionalFiles>
             <!-- this script generates tz-db used by Comar Clock methods -->
             <AdditionalFile permission="0755" target="dump-tz-db">dump-tz-db</AdditionalFile>
+            <AdditionalFile permission="0644" target="config.mk">config.mk</AdditionalFile>
         </AdditionalFiles>
         <BuildDependencies>
             <Dependency>perl</Dependency>
             <Dependency>gawk</Dependency>
         </BuildDependencies>
         <Patches>
+            <Patch level="0">tzdata-2011l-kemerovo.patch</Patch>
+            <Patch level="0">tzdata-2011l-brazil.patch</Patch>
+            <Patch level="0">tzdata-2011j-ukraine.patch</Patch>
+
             <Patch level="1">tzdata-extra-tz-links.patch</Patch>
             <Patch level="1">tzdata-mdvconfig.patch</Patch>
-
-            <Patch>tzdata-2011d-kemerovo.patch</Patch>
         </Patches>
     </Source>
 
@@ -59,6 +62,13 @@
     </Package>
 
     <History>
+        <Update release="6">
+            <Date>2011-10-24</Date>
+            <Version>0.0_20111024</Version>
+            <Comment>Bump to 2011l</Comment>
+            <Name>Ozan Çağlayan</Name>
+            <Email>ozan@pardus.org.tr</Email>
+        </Update>
         <Update release="5" type="critical">
             <Date>2011-03-26</Date>
             <Version>0.0_20110315</Version>
