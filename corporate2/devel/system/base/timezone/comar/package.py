@@ -28,14 +28,3 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
     # symlinks by the corresponding tz file using zic.
     if tz and os.path.exists(os.path.join("/usr/share/zoneinfo", tz)):
         ret = subprocess.call(["/usr/sbin/zic", "-l", tz])
-
-    """
-    if tz and os.path.islink("/etc/localtime"):
-        tzfile = os.path.join("/usr/share/zoneinfo", tz)
-        if os.path.exists(tzfile):
-            try:
-                os.unlink("/etc/localtime")
-                shutil.copyfile(tzfile, "/etc/localtime")
-            except:
-                pass
-    """
