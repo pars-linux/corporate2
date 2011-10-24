@@ -61,6 +61,5 @@ def install():
     mycheck()
 
     # Create Timezone db in /usr/share/zoneinfo
-    shelltools.chmod("dump-tz-db", 0755)
     shelltools.system("./dump-tz-db %s" % get.installDIR())
 
