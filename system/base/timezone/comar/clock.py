@@ -32,26 +32,25 @@ def setTimeZone(zone=None):
         ret = subprocess.call(["/usr/sbin/zic", "-l", zone])
         return ret
 
-    """
-    if zone:
-        try:
-            if os.path.exists(tz_file):
-                os.unlink(tz_file)
-        except:
-            pass
-
-        # Copy the new TZ file to /etc/localtime
-        shutil.copy(os.path.join(tz_zones, zone), tz_file)
-    """
-
 def setDate(year=None, month=None, day=None, hour=None, minute=None, second=None):
+    # Returns a list of (tm_year,tm_mon,tm_mday,tm_hour,tm_min,tm_sec,..)
     new = list(time.localtime())
-    if year: new[0] = int(year)
-    if month: new[1] = int(month)
-    if day: new[2] = int(day)
-    if hour: new[3] = int(hour)
-    if minute: new[4] = int(minute)
-    if second: new[5] = int(second)
+
+    # Update that list with the user provided ones.
+    if year:
+        new[0] = int(year)
+    if month:
+        new[1] = int(month)
+    if day:
+        new[2] = int(day)
+    if hour:
+        new[3] = int(hour)
+    if minute:
+        new[4] = int(minute)
+    if second:
+        new[5] = int(second)
+
+    # Python doesn't provide settimeofday() syscall
     csapi.settimeofday(time.mktime(new))
 
 def getDate():
