@@ -73,10 +73,6 @@ def install():
 
     pisitools.insinto("/usr/lib/pkgconfig", "pkgconfig/*pc")
 
-    # we have all mount.* helpers in /usr/bin
-    pisitools.domove("/usr/sbin/mount.cifs", "/usr/bin/")
-    pisitools.domove("/usr/sbin/umount.cifs", "/usr/bin/")
-
     # Nsswitch extensions. Make link for wins and winbind resolvers
     pisitools.dolib_so("../nsswitch/libnss_wins.so")
     pisitools.dolib_so("../nsswitch/libnss_winbind.so")
@@ -87,16 +83,11 @@ def install():
     pisitools.doexe("bin/pam_smbpass.so", "/lib/security")
     pisitools.doexe("bin/pam_winbind.so", "/lib/security")
 
-    # Move mount helpers to /sbin
-    pisitools.dodir("/sbin")
-
-    for f in ("mount.cifs", "umount.cifs"):
-        pisitools.domove("/usr/bin/%s" % f, "/sbin")
-
-    pisitools.domove("/usr/sbin/cifs.upcall", "/sbin")
-
-    # Set SUID bit for mount helpers
-    shelltools.chmod("%s/sbin/*mount.cifs" % get.installDIR(), mode=04755)
+    for f in ("mount.cifs", "umount.cifs", "cifs.upcall"):
+        # umount.cifs helper is deprecated. umount itself is used for unmount ops.
+        # mount.cifs and cifs.upcall are provided by cifs-utils package.
+        pisitools.remove("/usr/sbin/%s" % f)
+        pisitools.remove("/usr/share/man/man8/%s.8" % f)
 
     # cups support
     pisitools.dodir("/usr/lib/cups/backend")
@@ -126,4 +117,3 @@ def install():
 
     # Remove conflicting man pages
     pisitools.remove("/usr/share/man/man8/tdb*")
-
