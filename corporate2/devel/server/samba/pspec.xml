@@ -9,10 +9,11 @@
             <Email>ibrahim@pardus.org.tr</Email>
         </Packager>
         <License>GPLv2</License>
+        <IsA>app:console</IsA>
         <IsA>service</IsA>
         <Summary>A suite of SMB and CIFS client/server programs for UNIX</Summary>
         <Description>samba is a free software implementation of Microsoft's networking protocol released under the GNU General Public License. As of version 3, Samba not only provides file and print services for various Microsoft Windows clients but can also integrate with a Windows Server domain, either as a Primary Domain Controller (PDC) or as a Domain Member. It can also be part of an Active Directory domain.</Description>
-        <Archive sha1sum="de63b1a7e2fa6bcae91dbf7d2cbdfb38d0f97c00" type="targz">http://us6.samba.org/samba/ftp/stable/samba-3.5.10.tar.gz</Archive>
+        <Archive sha1sum="0801871ab6a11f7d8eb8bf32ff0b87896d263441" type="targz">http://us6.samba.org/samba/ftp/stable/samba-3.5.11.tar.gz</Archive>
         <BuildDependencies>
             <Dependency>mit-kerberos-devel</Dependency>
             <Dependency>openldap-client</Dependency>
@@ -30,7 +31,7 @@
         </BuildDependencies>
         <Patches>
             <!-- Gentoo patches -->
-            <Patch level="1">3.0.26a-lazyldflags.patch</Patch>
+            <Patch level="1">gentoo/3.0.26a-lazyldflags.patch</Patch>
 
             <!-- Suse patches -->
             <Patch level="1">suse/smb_child_crash.patch</Patch>
@@ -39,23 +40,20 @@
             <!-- Fedora patches -->
             <Patch level="1">fedora/samba-3.2.0pre1-pipedir.patch</Patch>
             <Patch level="1">fedora/samba-3.2.0pre1-grouppwd.patch</Patch>
-            <Patch level="1">fedora/samba-3.2.5-inotify.patch</Patch>
+            <Patch level="0">fedora/samba-3.2.5-inotify.patch</Patch>
 
             <!-- Replace -lthread with -lpthread -->
             <Patch level="1">pardus/samba-pthread.patch</Patch>
 
             <!-- Add Pardus vendor suffix -->
             <Patch level="1">pardus/add_vendor_suffix.patch</Patch>
-
-            <!-- Remove tdb* binaries -->
-            <!--<Patch level="1">pardus/dont-install-tdb-stuff.patch</Patch>-->
-
-            <Patch level="1">return-ex_usage-on-error.patch</Patch>
+            <Patch level="1">pardus/return-ex_usage-on-error.patch</Patch>
         </Patches>
     </Source>
 
     <Package>
         <Name>samba</Name>
+        <IsA>library</IsA>
         <RuntimeDependencies>
             <Dependency>mit-kerberos-libs</Dependency>
             <Dependency>openldap-client</Dependency>
@@ -107,8 +105,8 @@
         <Summary>The Samba SMB server web configuration program</Summary>
         <Description>samba-swat includes the new SWAT(Samba Web Administration Tool) for remotely managing Samba's smb.conf file using your favorite web browser.</Description>
         <RuntimeDependencies>
+            <Dependency release="current">samba</Dependency>
             <Dependency>cups</Dependency>
-            <Dependency>samba</Dependency>
             <Dependency>libcap</Dependency>
             <Dependency>libtdb</Dependency>
             <Dependency>libtalloc</Dependency>
@@ -123,6 +121,18 @@
     </Package>
 
     <History>
+        <!--
+        <Update release="67">
+            <Date>2011-10-21</Date>
+            <Version>3.5.11</Version>
+            <Comment>
+                * Version bump,
+                * Remove mount and umount helpers and use the ones which are provided by and maintained in cifs-utils package.
+            </Comment>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
+        -->
         <Update release="66" type="security">
             <Date>2011-09-09</Date>
             <Version>3.5.10</Version>
