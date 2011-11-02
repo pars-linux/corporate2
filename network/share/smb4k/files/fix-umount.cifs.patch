@@ -1,0 +1,57 @@
+Index: smb4k-0.9.10/smb4k/core/smb4kcore.cpp
+===================================================================
+--- smb4k-0.9.10.orig/smb4k/core/smb4kcore.cpp
++++ smb4k-0.9.10/smb4k/core/smb4kcore.cpp
+@@ -526,7 +526,7 @@ void Smb4KCore::searchPrograms()
+     }
+   }
+ 
+-  if ( !(program = KStandardDirs::findExe( "umount.cifs" )).isEmpty() )
++  if ( !(program = KStandardDirs::findExe( "umount" )).isEmpty() )
+   {
+     Smb4KSettings::self()->umount_cifsItem()->setDefaultValue( program );
+ 
+@@ -544,9 +544,9 @@ void Smb4KCore::searchPrograms()
+   else
+   {
+     // Try some sbin directories before giving up:
+-    if ( !(program = KStandardDirs::findExe( "umount.cifs", "/sbin" )).isEmpty() ||
+-         !(program = KStandardDirs::findExe( "umount.cifs", "/usr/sbin" )).isEmpty() ||
+-         !(program = KStandardDirs::findExe( "umount.cifs", "/usr/local/sbin" )).isEmpty() )
++    if ( !(program = KStandardDirs::findExe( "umount", "/sbin" )).isEmpty() ||
++         !(program = KStandardDirs::findExe( "umount", "/usr/sbin" )).isEmpty() ||
++         !(program = KStandardDirs::findExe( "umount", "/usr/local/sbin" )).isEmpty() )
+     {
+       Smb4KSettings::self()->umount_cifsItem()->setDefaultValue( program );
+ 
+@@ -563,7 +563,7 @@ void Smb4KCore::searchPrograms()
+     }
+     else
+     {
+-      missing << "umount.cifs";
++      missing << "umount";
+     }
+   }
+ #else
+Index: smb4k-0.9.10/utilities/smb4k_umount.cpp
+===================================================================
+--- smb4k-0.9.10.orig/utilities/smb4k_umount.cpp
++++ smb4k-0.9.10/utilities/smb4k_umount.cpp
+@@ -71,7 +71,7 @@ void info()
+ 	cout << "  {mode}" << endl;
+ #ifndef __FreeBSD__
+         cout << "    --no-suid\tsmb4k_umount is run in normal user mode, so smbumount or" << endl;
+-	cout << "\t\tumount.cifs is invoked." << endl;
++	cout << "\t\tumount is invoked." << endl;
+ 	cout << "    --suid\tsmb4k_umount is run in super user mode, so umount is invoked." << endl;
+ 	cout << "    -n\t\tThe same as the '--no-suid' argument." << endl;
+ 	cout << "    -s\t\tThe same as the '--suid' argument." << endl;
+@@ -410,7 +410,7 @@ int main( int argc, char *argv[], char *
+ 		}
+ 		else
+ 		{
+-			if ( !find_program( "umount.cifs", path ) )
++			if ( !find_program( "umount", path ) )
+ 			{
+ 				exit( EXIT_FAILURE );
+ 			}
