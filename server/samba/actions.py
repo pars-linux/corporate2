@@ -13,6 +13,8 @@ from pisi.actionsapi import get
 SAMBA_SOURCE = "source3"
 
 def setup():
+    # Remove buggy Turkish translation dir until someone does a proper translation
+    shelltools.unlinkDir("swat/lang/tr")
     shelltools.export("CFLAGS", "%s -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -DLDAP_DEPRECATED" % get.CFLAGS())
 
     # Manually fix manpages
