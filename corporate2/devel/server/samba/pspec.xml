@@ -109,34 +109,39 @@
             <Dependency>cups</Dependency>
             <Dependency>libcap</Dependency>
             <Dependency>libtdb</Dependency>
+            <Dependency>xinetd</Dependency>
             <Dependency>libtalloc</Dependency>
             <Dependency>openldap-client</Dependency>
             <Dependency>mit-kerberos-libs</Dependency>
         </RuntimeDependencies>
         <Files>
+            <Path fileType="config">/etc/xinetd.d/swat</Path>
             <Path fileType="data">/usr/share/swat</Path>
             <Path fileType="man">/usr/share/man/man8/swat*</Path>
             <Path fileType="executable">/usr/sbin/swat</Path>
         </Files>
+        <AdditionalFiles>
+            <AdditionalFile owner="root" permission="0644" target="/etc/xinetd.d/swat">samba.xinetd</AdditionalFile>
+        </AdditionalFiles>
     </Package>
 
     <History>
-        <!--
         <Update release="67">
             <Date>2011-10-21</Date>
             <Version>3.5.11</Version>
             <Comment>
                 * Version bump,
-                * Remove mount and umount helpers and use the ones which are provided by and maintained in cifs-utils package.
+                * Remove mount and umount helpers and use the ones which are provided by and maintained in cifs-utils package,
+                * Add a xinetd config file to start Swat as a xinetd service (pb#18579).
             </Comment>
             <Name>H. İbrahim Güngör</Name>
             <Email>ibrahim@pardus.org.tr</Email>
         </Update>
-        -->
         <Update release="66" type="security">
             <Date>2011-09-09</Date>
             <Version>3.5.10</Version>
-            <Comment>Fix CVE-2011-2724 (pb#19098):
+            <Comment>
+                * Fix CVE-2011-2724 (pb#19098):
                 * Check return from check_newline() by -1 that leads missing some errors.
             </Comment>
             <Name>Gökhan Özbulak</Name>
