@@ -1,0 +1,63 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PISI SYSTEM "http://www.pardus.org.tr/projeler/pisi/pisi-spec.dtd">
+<PISI>
+    <Source>
+        <Name>cifs-utils</Name>
+        <Homepage>http://www.samba.org/linux-cifs/cifs-utils</Homepage>
+        <Packager>
+            <Name>Gökhan Özbulak</Name>
+            <Email>gozbulak@pardus.org.tr</Email>
+        </Packager>
+        <License>GPLv3</License>
+        <IsA>app:console</IsA>
+        <Summary>The package of user-space tools for in-kernel CIFS filesystem</Summary>
+        <Description>The in-kernel CIFS filesystem is generally the preferred method for mounting SMB/CIFS shares on Linux and this filesystem relies on a set of user-space tools. The cifs-utils contains these tools.</Description>
+        <Archive sha1sum="f1c66f148a73e6c9e765fc1df13bd927f8dde5fe" type="tarbz2">ftp://ftp.samba.org/pub/linux-cifs/cifs-utils/cifs-utils-5.1.tar.bz2</Archive>
+        <BuildDependencies>
+            <Dependency>samba</Dependency>
+            <Dependency>keyutils</Dependency>
+            <Dependency>mit-kerberos-devel</Dependency>
+            <Dependency>libtalloc</Dependency>
+        </BuildDependencies>
+        <Patches>
+            <Patch level="1">cifs-utils-install-cifsacl-tools-in-usrbin.patch</Patch>
+        </Patches>
+    </Source>
+
+    <Package>
+        <Name>cifs-utils</Name>
+        <RuntimeDependencies>
+            <Dependency releaseFrom="67">samba</Dependency>
+            <Dependency>keyutils</Dependency>
+            <Dependency>mit-kerberos-libs</Dependency>
+            <Dependency>libtalloc</Dependency>
+        </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="66">samba</Package>
+        </Conflicts>
+        <Files>
+            <Path fileType="executable">/sbin</Path>
+            <Path fileType="executable">/usr/bin</Path>
+            <Path fileType="executable">/usr/sbin</Path>
+            <Path fileType="man">/usr/share/man</Path>
+            <Path fileType="doc">/usr/share/doc</Path>
+        </Files>
+    </Package>
+
+    <History>
+        <Update release="2">
+            <Date>2011-10-21</Date>
+            <Version>5.1</Version>
+            <Comment>Version bump.</Comment>
+            <Name>H. İbrahim Güngör</Name>
+            <Email>ibrahim@pardus.org.tr</Email>
+        </Update>
+        <Update release="1">
+            <Date>2011-01-26</Date>
+            <Version>4.8.1</Version>
+            <Comment>First release.</Comment>
+            <Name>Gökhan Özbulak</Name>
+            <Email>gozbulak@pardus.org.tr</Email>
+        </Update>
+    </History>
+</PISI>
