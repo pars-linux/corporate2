@@ -1,0 +1,38 @@
+Index: kdenetwork-3.5.10/kopete/protocols/oscar/icq/icqaccount.cpp
+===================================================================
+--- kdenetwork-3.5.10.orig/kopete/protocols/oscar/icq/icqaccount.cpp
++++ kdenetwork-3.5.10/kopete/protocols/oscar/icq/icqaccount.cpp
+@@ -164,7 +164,7 @@ void ICQAccount::connectWithPassword( co
+ 		myself()->setOnlineStatus( protocol()->statusManager()->connectingStatus() );
+ 		QString icqNumber = accountId();
+ 		kdDebug(14153) << k_funcinfo << "Logging in as " << icqNumber << endl ;
+-		QString server = configGroup()->readEntry( "Server", QString::fromLatin1( "login.oscar.aol.com" ) );
++		QString server = configGroup()->readEntry( "Server", QString::fromLatin1( "login.icq.com" ) );
+ 		uint port = configGroup()->readNumEntry( "Port", 5190 );
+ 		Connection* c = setupConnection( server, port );
+ 
+Index: kdenetwork-3.5.10/kopete/protocols/oscar/icq/ui/icqeditaccountwidget.cpp
+===================================================================
+--- kdenetwork-3.5.10.orig/kopete/protocols/oscar/icq/ui/icqeditaccountwidget.cpp
++++ kdenetwork-3.5.10/kopete/protocols/oscar/icq/ui/icqeditaccountwidget.cpp
+@@ -67,9 +67,9 @@ ICQEditAccountWidget::ICQEditAccountWidg
+ 		mAccountSettings->mPasswordWidget->load(&mAccount->password());
+ 		mAccountSettings->chkAutoLogin->setChecked(mAccount->excludeConnect());
+ 
+-		QString serverEntry = mAccount->configGroup()->readEntry("Server", "login.oscar.aol.com");
++		QString serverEntry = mAccount->configGroup()->readEntry("Server", "login.icq.com");
+ 		int portEntry = mAccount->configGroup()->readNumEntry("Port", 5190);
+-		if ( serverEntry != "login.oscar.aol.com" || ( portEntry != 5190) )
++		if ( serverEntry != "login.icq.com" || ( portEntry != 5190) )
+ 			mAccountSettings->optionOverrideServer->setChecked( true );
+ 
+ 		mAccountSettings->edtServerAddress->setText( serverEntry );
+@@ -144,7 +144,7 @@ Kopete::Account *ICQEditAccountWidget::a
+ 	}
+ 	else
+ 	{
+-		mAccount->setServerAddress("login.oscar.aol.com");
++		mAccount->setServerAddress("login.icq.com");
+ 		mAccount->setServerPort(5190);
+ 	}
+ 	
