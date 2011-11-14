@@ -44,6 +44,8 @@ def install():
     arch = "amd64" if get.ARCH() == "x86_64" else "x86"
     shelltools.cd("out/linux.%s/release/bin" % arch)
 
+    # libraries installation. The files below are unnecessary files.
+    # TODO: change loop and make it more discrete (i.e copying each single file)
     exclude = ("additions", "icons", "nls", "scm", "sdk", "src", "SUP", "vboxkeyboard",
                "VBox.sh", "VBoxSysInfo.sh", "VBoxCreateUSBNode.sh", "VBoxTunctl", "testcase", "tst", "xpidl")
 
@@ -61,7 +63,7 @@ def install():
 
     # Symlinks
     # TODO: Add vboxwebsrv when ready
-    apps = ("VBoxHeadless", "VBoxManage", "VBoxSDL", "VBoxVRDP", "VirtualBox")
+    apps = ("VBoxHeadless", "VBoxManage", "VBoxSDL", "VBoxVRDP", "VirtualBox", "VBoxBalloonCtrl")
     for link in apps:
         pisitools.dosym("../share/virtualbox/VBox.sh", "/usr/bin/%s" % link)
 
