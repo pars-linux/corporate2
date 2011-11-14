@@ -1,8 +1,8 @@
 #!/bin/bash
 
 BRANCH_NAME="mozilla-1.9.2"
-RELEASE_TAG="FIREFOX_3_6_23_RELEASE"
-VERSION="3.6.23"
+RELEASE_TAG="FIREFOX_3_6_24_RELEASE"
+VERSION="3.6.24"
 
 # These are Pardus supported languages. This list may changed by time to time
 LOCALES="be ca de es-AR es-ES fr hu it nl pl pt-BR sv-SE tr"
