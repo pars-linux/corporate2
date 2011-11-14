@@ -22,8 +22,6 @@ $(archs): distclean
 	@echo -e "\n** Creating distdir $(distdir)-$@\n"
 	mkdir -p $(distdir)-$@
 	tar -zxvf $(archive_name).$@.tar.gz -C $(distdir)-$@
-	# Our patched desktop file
-	cp ../kcm_adobe_flash_player.desktop  $(distdir)-$@/usr/share/kde4/services/
 
 distclean:
 	@echo -e "** Removing old distdir files\n"
