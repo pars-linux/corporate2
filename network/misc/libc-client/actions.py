@@ -19,13 +19,16 @@ def build():
 
 def install():
     pisitools.dolib("c-client/libc-client.so.1.0.0")
+
+    # soname,realname,linkername symlinks
     pisitools.dosym("/usr/lib/libc-client.so.1.0.0", "/usr/lib/libc-client.so.1")
     pisitools.dosym("libc-client.so.1.0.0","/usr/lib/libc-client.so")
+
+    # header files
     pisitools.dodir("/usr/include/imap")
     pisitools.insinto("/usr/include/imap", "src/c-client/*.h")
     pisitools.insinto("/usr/include/imap", "c-client/linkage.c")
     pisitools.insinto("/usr/include/imap", "c-client/linkage.h")
-    pisitools.insinto("/usr/include/imap", "c-client/osdep.h")
     pisitools.insinto("/usr/include/imap", "src/osdep/unix/dummy.h")
     pisitools.insinto("/usr/include/imap", "src/osdep/unix/env_unix.h")
     pisitools.insinto("/usr/include/imap", "src/osdep/unix/f*.h")
@@ -33,4 +36,5 @@ def install():
     pisitools.insinto("/usr/include/imap", "src/osdep/unix/tcp_unix.h")
     pisitools.insinto("/usr/include/imap", "src/osdep/unix/unix.h")
     pisitools.insinto("/usr/include/imap", "src/osdep/unix/os_slx.h")
+    pisitools.dosym("/usr/include/imap/os_slx.h", "/usr/include/imap/osdep.h")
     #pisitools.remove("/usr/include/imap/os_*.h")
