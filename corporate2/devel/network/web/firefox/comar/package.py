@@ -4,6 +4,10 @@ import os
 
 def symlink(src, dest):
     try:
+        # Wikipedia search plugin already exists in the source tree
+        # So remove it to replace with the located ones
+        if os.path.exists(dest):
+            os.unlink(dest)
         os.symlink(src, dest)
     except OSError:
         pass
@@ -38,7 +42,6 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
         else:
             symlink("/usr/lib/MozillaFirefox/pardus/bookmarks-en.html", "/usr/lib/MozillaFirefox/defaults/profile/bookmarks.html")
             symlink("/usr/lib/MozillaFirefox/pardus/pardus-wiki_en.xml", "/usr/lib/MozillaFirefox/searchplugins/pardus-wiki.xml")
-            symlink("/usr/lib/MozillaFirefox/pardus/wikipedia_en.xml", "/usr/lib/MozillaFirefox/searchplugins/wikipedia.xml")
 
 def preRemove():
     try:
