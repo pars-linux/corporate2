@@ -9,4 +9,4 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
 
     # On first install...
     if not os.path.exists("/var/lib/pgsql/data/base"):
-        os.system('/bin/su postgres -s /bin/sh -p -c "/usr/bin/initdb --pgdata /var/lib/pgsql/data"')
+        os.system('/bin/su postgres -s /bin/sh -p -c "/usr/bin/initdb --encoding=UTF-8 --locale=en_US.UTF-8 --pgdata /var/lib/pgsql/data"')
