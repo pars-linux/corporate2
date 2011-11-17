@@ -202,6 +202,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
                 (210, "havp"),
                 (211, "amavis"),
                 (212, "bacula"),
+                (213, "cacti"),
             )
 
     for gid, groupName in groups:
@@ -277,6 +278,7 @@ def postInstall(fromVersion, fromRelease, toVersion, toRelease):
                 (202, "havp", "Havp User", "/dev/null", "/sbin/nologin", "", ["havp"], [], []),
                 (203, "amavis", "Amavis User", "/dev/null", "/sbin/nologin", "", ["amavis"], [], []),
                 (204, "bacula", "Bacula User", "/dev/null", "/sbin/nologin", "", ["bacula"], [], []),
+                (205, "cacti", "Cacti User", "/usr/share/cacti", "/sbin/nologin", "", [], [], []),
                 (250, "mpd", "Music Player Daemon", "/var/lib/mpd", "/bin/false", "", ["audio", "pulse", "pulse-access", "pulse-rt"], [], []),
             )
 
