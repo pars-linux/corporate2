@@ -1,0 +1,181 @@
+Index: lider/plugins/plugin_services/main.py
+===================================================================
+--- lider/plugins/plugin_services/main.py	(revision 38489)
++++ lider/plugins/plugin_services/main.py	(revision 38492)
+@@ -49,6 +49,8 @@
+         self.start_set = []
+         self.stop_set = []
+ 
++        self.groupBox = QtGui.QGroupBox()
++
+         #self.tableWidget.setUpdatesEnabled(True);
+ 
+     def set_item(self, item):
+@@ -57,8 +59,9 @@
+             Not required for global widgets.
+         """
+         self.item = item
+-        if self.item and not self.item.folder:
+-            self.groupBox.setEnabled(True)
++        if self.item:
++            if not self.item.folder:
++                self.groupBox.setEnabled(True)
+         else:
+             self.groupBox.setEnabled(False)
+ 
+Index: lider/plugins/plugin_firewall/main.py
+===================================================================
+--- lider/plugins/plugin_firewall/main.py	(revision 38489)
++++ lider/plugins/plugin_firewall/main.py	(revision 38492)
+@@ -138,8 +138,15 @@
+         self.connect(self.pushReset, QtCore.SIGNAL("clicked()"), self.__slot_reset)
+         self.connect(self.pushFailsafe, QtCore.SIGNAL("clicked()"), self.__slot_load_failsafe_rules)
+ 
++    def set_item(self, item):
++        """
++            Sets directory item that is being worked on.
++            Not required for global widgets.
++        """
++        pass
+ 
+-    def showEvent(self, event):
++    # def showEvent(self, event):
++    def showEvent(self):
+         """
+             Things to do before widget is shown.
+         """
+Index: lider/plugins/plugin_software/main.py
+===================================================================
+--- lider/plugins/plugin_software/main.py	(revision 38489)
++++ lider/plugins/plugin_software/main.py	(revision 38492)
+@@ -62,8 +62,16 @@
+         self.connect(self.pushAddRepo, QtCore.SIGNAL("clicked()"), self.__slot_repo_add)
+         self.connect(self.pushRemoveRepo, QtCore.SIGNAL("clicked()"), self.__slot_repo_remove)
+ 
+-    def showEvent(self, event):
++    def set_item(self, item):
+         """
++            Sets directory item that is being worked on.
++            Not required for global widgets.
++        """
++        pass
++
++    # def showEvent(self, event):
++    def showEvent(self):
++        """
+             Things to do before widget is shown.
+         """
+         #jid = "%s@%s" % (self.item.name, self.talk.domain)
+Index: lider/plugins/plugin_web/main.py
+===================================================================
+--- lider/plugins/plugin_web/main.py	(revision 38489)
++++ lider/plugins/plugin_web/main.py	(revision 38492)
+@@ -66,18 +66,20 @@
+         """
+         self.item = item
+         if not self.item:
+-            self.webView.setHtml("")
++            self.webView.setUrl("about:blank")
+             self.comboServices.clear()
+             self.comboServices.addItem("Select...")
+-        else:
++
++    # def showEvent(self, event):
++    def showEvent(self):
++        """
++            Things to do before widget is shown.
++        """
++        if self.item:
+             name = self.item.name
+             jid = "%s@%s" % (name, self.talk.domain)
+             self.talk.send_command(jid, "apache.info")
+ 
+-    def showEvent(self, event):
+-        """
+-            Things to do before widget is shown.
+-        """
+         pass
+ 
+     def get_type(self):
+Index: lider/plugins/plugin_authentication/main.py
+===================================================================
+--- lider/plugins/plugin_authentication/main.py	(revision 38489)
++++ lider/plugins/plugin_authentication/main.py	(revision 38492)
+@@ -42,8 +42,17 @@
+         # Reset UI
+         self.__update_boxes()
+ 
+-    def showEvent(self, event):
++
++    def set_item(self, item):
+         """
++            Sets directory item that is being worked on.
++            Not required for global widgets.
++        """
++        pass
++
++    # def showEvent(self, event):
++    def showEvent(self):
++        """
+             Things to do before widget is shown.
+         """
+         pass
+Index: lider/formmain.py
+===================================================================
+--- lider/formmain.py	(revision 38489)
++++ lider/formmain.py	(revision 38492)
+@@ -937,25 +937,39 @@
+ 
+         self.treeComputers.clearSelection()
+ 
+-        for item in self.items:
+-            item_alt = self.nodes_dn[item.dn]
+-            self.treeComputers.setItemSelected(item_alt, True)
+ 
+         widget = self.tabPolicy.currentWidget()
+-        widget.showEvent()
+-        self.__show_widget(widget)
++        if self.items and (item.name in self.talk.online):
++            for item in self.items:
++                item_alt = self.nodes_dn[item.dn]
++                self.treeComputers.setItemSelected(item_alt, True)
+ 
+-        # Show node information
+-        try:
+-            desc = item_alt.widget.get_uid()
+-            title = item_alt.widget.get_title()
+-            icon = item_alt.widget.get_icon()
+-            self.labelNodeDesc.setText(desc)
+-            self.labelNode.setText(title)
+-            self.pixmapNode.setPixmap(icon.pixmap())
+-        except:
+-            pass
++            if not self.items[0].folder:
++                widget.showEvent()
++                self.__show_widget(widget)
++                widget.showEvent()
++                self.__show_widget(widget)
+ 
++            # widget = self.tabPolicy.currentWidget()
++            # widget.showEvent()
++            # self.__show_widget(widget)
++
++            # Show node information
++            try:
++                desc = item_alt.widget.get_uid()
++                title = item_alt.widget.get_title()
++                icon = item_alt.widget.get_icon()
++                self.labelNodeDesc.setText(desc)
++                self.labelNode.setText(title)
++                self.pixmapNode.setPixmap(icon.pixmap())
++            except:
++                pass
++        else:
++            widget.set_item(item=None)
++            #rc = cb.count
++            #for i in range(rc):
++            #    cb.removeItem(i)
++
+     def __slot_tree2_double_click(self, item, column):
+         """
+             Triggered when user double clicks a node.
