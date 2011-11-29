@@ -1,0 +1,3761 @@
+Index: lider/plugins/plugin_services/main.py
+===================================================================
+--- lider/plugins/plugin_services/main.py	(revision 38504)
++++ lider/plugins/plugin_services/main.py	(revision 38508)
+@@ -68,6 +68,9 @@
+                 self.groupBox.setEnabled(True)
+         else:
+             self.groupBox.setEnabled(False)
++            rc = self.tableWidget.rowCount()
++            for i in range(rc):
++                self.tableWidget.removeRow(0)
+ 
+     #def showEvent(self, event):
+     def showEvent(self):
+Index: lider/plugins/plugin_firewall/main.py
+===================================================================
+--- lider/plugins/plugin_firewall/main.py	(revision 38504)
++++ lider/plugins/plugin_firewall/main.py	(revision 38508)
+@@ -24,7 +24,9 @@
+ # Helper modules
+ from lider.helpers import plugins
+ from lider.helpers import wrappers
++from lider.helpers import i18n
+ 
++i18n = i18n.i18n
+ 
+ class ThreadFW(QtCore.QThread):
+     def __init__(self, group_name= None, rules_xml=None):
+@@ -260,6 +262,8 @@
+         else:
+             name = "Group"
+ 
++        self.plainTextEdit.setPlainText("")
++
+         self.pushEdit.setEnabled(False)
+         self.pushReset.setEnabled(False)
+         self.thread = ThreadFW(name, self.rules_xml)
+@@ -272,8 +276,8 @@
+         """
+         msg = QtGui.QMessageBox(self)
+         msg.setIcon(QtGui.QMessageBox.Question)
+-        msg.setText("Do you want to reset all firewall rules?")
+-        msg.setInformativeText("Do you want to continue?")
++        msg.setText(i18n("Default firewall rules will be loaded."))
++        msg.setInformativeText(i18n("Do you want to continue?"))
+         msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+         msg.setDefaultButton(QtGui.QMessageBox.No)
+ 
+@@ -296,14 +300,16 @@
+         self.rules_xml = file(name).read()
+         self.rules_compiled = file(name + ".sh").read()
+ 
++        self.plainTextEdit.setPlainText(i18n("Default rules were loaded"))
++
+     def __slot_load_failsafe_rules(self):
+         """
+             Triggered when user clicks 'Load Failsafe Rules' button.
+         """
+         msg = QtGui.QMessageBox(self)
+         msg.setIcon(QtGui.QMessageBox.Question)
+-        msg.setText("Do you want to return initial firewall rules?")
+-        msg.setInformativeText("Do you want to continue?")
++        msg.setText(i18n("Failsafe firewall rules will be loaded."))
++        msg.setInformativeText(i18n("Do you want to continue?"))
+         msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+         msg.setDefaultButton(QtGui.QMessageBox.No)
+ 
+@@ -326,6 +332,8 @@
+         self.rules_xml = file(name).read()
+         self.rules_compiled = file(name + ".sh").read()
+ 
++        self.plainTextEdit.setPlainText(i18n("Failsafe rules were loaded"))
++
+     """
+     def __slot_status(self):
+ 
+Index: lider/formmain.py
+===================================================================
+--- lider/formmain.py	(revision 38504)
++++ lider/formmain.py	(revision 38508)
+@@ -574,17 +574,17 @@
+ 
+     def __slot_thread(self):
+ 
+-        if self.thread.isFinished():
+-            self.rules_xml = self.thread.rules_xml
+-            self.rules_compiled = self.thread.rules_compiled
+-            #print "\n\n\n\n\n\n ~~~~~~~ formmain ~~~~~~~~~ \n\n\n\n"
+-            #print self.rules_xml
++        while not self.thread.isFinished():
++            pass
+ 
+-            f = open(FIREWALL_FILE, 'w+')
+-            f.write(self.rules_xml)
+-            f.close()
++        self.rules_xml = self.thread.rules_xml
++        self.rules_compiled = self.thread.rules_compiled
+ 
++        f = open(FIREWALL_FILE, 'w+')
++        f.write(self.rules_xml)
++        f.close()
+ 
++
+     def __slot_modify_default_firewall_rules(self):
+ 
+         name = "Group"
+@@ -832,25 +832,18 @@
+         for i in self.treeComputers.selectedItems():
+             self.items.append(i)
+ 
++        widget = self.tabPolicy.currentWidget()
++
+         # Disable Save and Save&Apply buttons if the selected node is not a computer
+         if self.items[0].folder or self.items[0].user or self.items[0].group:
+             self.pushApply.setEnabled(False)
+             self.pushSave.setEnabled(False)
+ 
++            widget.set_item(item=None)
+         else:
+             self.pushApply.setEnabled(True)
+             self.pushSave.setEnabled(True)
+ 
+-            widget = self.tabPolicy.currentWidget()
+-            widget.showEvent()
+-            self.__show_widget(widget)
+-
+-
+-        if not self.items[0].folder and (item.name in self.talk.online):
+-
+-            if self.tabPolicy.currentWidget().get_classes() == ["servicePolicy"]:
+-                self._show_busy_message(i18n("Getting service list..."))
+-
+             self.splitter_2.refresh()
+ 
+             self.__update_toolbar()
+@@ -861,12 +854,16 @@
+                 item_alt = self.nodes_dn[item.dn]
+                 self.treeComputers.setItemSelected(item_alt, True)
+ 
+-            if not self.items[0].folder:
+-                widget = self.tabPolicy.currentWidget()
++            if item.name in self.talk.online:
++                if self.tabPolicy.currentWidget().get_classes() == ["servicePolicy"]:
++                    self._show_busy_message(i18n("Getting service list..."))
++
+                 widget.showEvent()
+                 self.__show_widget(widget)
+                 widget.showEvent()
+                 self.__show_widget(widget)
++            else:
++                widget.set_item(item=None)
+ 
+             # Show node information
+             desc = item_alt.widget.get_uid()
+@@ -927,11 +924,6 @@
+             else:
+                 self.groupGMembers.hide()
+                 self.groupGMembership.hide()
+-        else:
+-            tw = self.tabPolicy.currentWidget().tableWidget
+-            rc = tw.rowCount()
+-            for i in range(rc):
+-                tw.removeRow(0)
+ 
+     def __slot_tab_clicked(self):
+         """
+Index: po/pt_BR.po
+===================================================================
+--- po/pt_BR.po	(revision 38504)
++++ po/pt_BR.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/es.po
+===================================================================
+--- po/es.po	(revision 38504)
++++ po/es.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/fr.po
+===================================================================
+--- po/fr.po	(revision 38504)
++++ po/fr.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/nl.po
+===================================================================
+--- po/nl.po	(revision 38504)
++++ po/nl.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/az.po
+===================================================================
+--- po/az.po	(revision 38504)
++++ po/az.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/pl.po
+===================================================================
+--- po/pl.po	(revision 38504)
++++ po/pl.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/hu.po
+===================================================================
+--- po/hu.po	(revision 38504)
++++ po/hu.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/it.po
+===================================================================
+--- po/it.po	(revision 38504)
++++ po/it.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/uk.po
+===================================================================
+--- po/uk.po	(revision 38504)
++++ po/uk.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/lider.pot
+===================================================================
+--- po/lider.pot	(revision 38504)
++++ po/lider.pot	(revision 38508)
+@@ -8,7 +8,7 @@
+ msgstr ""
+ "Project-Id-Version: PACKAGE VERSION\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+ "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+ "Language-Team: LANGUAGE <LL@li.org>\n"
+@@ -108,114 +108,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -400,12 +401,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -426,23 +443,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/da.po
+===================================================================
+--- po/da.po	(revision 38504)
++++ po/da.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/sr.po
+===================================================================
+--- po/sr.po	(revision 38504)
++++ po/sr.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/tr.po
+===================================================================
+--- po/tr.po	(revision 38504)
++++ po/tr.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 16:05+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr "XMPP bağlantı hatası."
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr "Bağlantı Hatası"
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr "Bağlantı kesildi. Lütfen takrar bağlanın."
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr "Politika alınamıyor."
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr "XMPP kullanıcı aktif: %s"
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr "XMPP kullanıcısı pasif: %s"
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr "Servis listesini alıyor..."
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr "Üye bulunamadı"
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr "Uyarı"
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr "Yetersiz erişim."
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr "Öğe güncellenemedi."
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr "Bir kerede sadece bir öğe silinebilir."
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr "Seçili öğe boş bir dizin olmadığı için silinemez."
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr "Bu işlem geri alınamaz. Silmek istediğinize emin misiniz?"
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr "Öğe silinemedi."
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr "Bilgisayar eklenemedi."
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr "Kullanıcı eklenemedi."
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr "Grup eklenemedi."
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr "Klasör eklenemedi."
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr "%d öğesi politika güncellemesi için zorlanacak."
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr "Devam etmek istiyor musunuz?"
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr "Politika kaydedilecek."
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr "Düğüm güncellenemedi."
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr "Tüm değişiklikler geri alınacak."
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr "Üst dizindeki politika kopyalanacak."
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr "Aktif Dizin Ayarları"
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr "Varsayılan güvenlik duvarı kuralları yüklenecek."
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr "Varsayılan kurallar yüklendi"
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr "Güvenlik kit kuralları yüklenecek."
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr "Güvenli kit kuralları yüklendi"
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr "Güvenlik Duvarı"
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr "Durum"
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr "Güvenli Kit Kuralları Yükle"
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr "Çalışıyor"
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr "Durdu"
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr "Evet"
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr "Şartlı"
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr "Hayır"
+ 
+@@ -697,6 +714,10 @@
+ msgid "Edit"
+ msgstr "Değiştir"
+ 
++#, fuzzy
++#~ msgid "Do you want to reset all firewall rules?"
++#~ msgstr "Varsayılan güvenlik duvarı kurallarına dönmek istiyor musunuz?"
++
+ #~ msgid "Inherited Policies"
+ #~ msgstr "Kalıtlanmış Politikalar"
+ 
+Index: po/ru.po
+===================================================================
+--- po/ru.po	(revision 38504)
++++ po/ru.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/de.po
+===================================================================
+--- po/de.po	(revision 38504)
++++ po/de.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
+Index: po/sv.po
+===================================================================
+--- po/sv.po	(revision 38504)
++++ po/sv.po	(revision 38508)
+@@ -7,7 +7,7 @@
+ msgstr ""
+ "Project-Id-Version: 1.0\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2011-11-24 14:17+0200\n"
++"POT-Creation-Date: 2011-11-29 15:22+0200\n"
+ "PO-Revision-Date: 2011-08-19 11:36+0300\n"
+ "Last-Translator: Gökhan Özbulak <gozbulak@pardus.org.tr>\n"
+ "Language-Team: Turkish <tr@li.org>\n"
+@@ -107,114 +107,115 @@
+ msgid "XMPP connection error."
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:550 lider/formmain.py:624
+-#: lider/formmain.py:631 lider/formmain.py:1060 lider/formmain.py:1063
+-#: lider/formmain.py:1066 lider/formmain.py:1099 lider/formmain.py:1102
+-#: lider/formmain.py:1105 lider/formmain.py:1131 lider/formmain.py:1134
+-#: lider/formmain.py:1137 lider/formmain.py:1169 lider/formmain.py:1172
+-#: lider/formmain.py:1175 lider/formmain.py:1213 lider/formmain.py:1216
+-#: lider/formmain.py:1219 lider/formmain.py:1251 lider/formmain.py:1254
+-#: lider/formmain.py:1257 lider/formmain.py:1513 lider/formmain.py:1516
++#: lider/formmain.py:544 lider/formmain.py:547 lider/formmain.py:621
++#: lider/formmain.py:628 lider/formmain.py:1082 lider/formmain.py:1085
++#: lider/formmain.py:1088 lider/formmain.py:1121 lider/formmain.py:1124
++#: lider/formmain.py:1127 lider/formmain.py:1153 lider/formmain.py:1156
++#: lider/formmain.py:1159 lider/formmain.py:1191 lider/formmain.py:1194
++#: lider/formmain.py:1197 lider/formmain.py:1235 lider/formmain.py:1238
++#: lider/formmain.py:1241 lider/formmain.py:1273 lider/formmain.py:1276
++#: lider/formmain.py:1279 lider/formmain.py:1541 lider/formmain.py:1544
+ msgid "Connection Error"
+ msgstr ""
+ 
+-#: lider/formmain.py:547 lider/formmain.py:631 lider/formmain.py:1060
+-#: lider/formmain.py:1099 lider/formmain.py:1131 lider/formmain.py:1169
+-#: lider/formmain.py:1213 lider/formmain.py:1251 lider/formmain.py:1513
++#: lider/formmain.py:544 lider/formmain.py:628 lider/formmain.py:1082
++#: lider/formmain.py:1121 lider/formmain.py:1153 lider/formmain.py:1191
++#: lider/formmain.py:1235 lider/formmain.py:1273 lider/formmain.py:1541
+ msgid "Connection lost. Please re-connect."
+ msgstr ""
+ 
+-#: lider/formmain.py:550
++#: lider/formmain.py:547
+ msgid "Unable to get policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:749
++#: lider/formmain.py:746
+ #, python-format
+ msgid "XMPP user is online: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:751
++#: lider/formmain.py:748
+ #, python-format
+ msgid "XMPP user is offline: %s"
+ msgstr ""
+ 
+-#: lider/formmain.py:841
++#: lider/formmain.py:859 lider/formmain.py:949
+ msgid "Getting service list..."
+ msgstr ""
+ 
+-#: lider/formmain.py:906
++#: lider/formmain.py:914
+ msgid "No members found"
+ msgstr ""
+ 
+-#: lider/formmain.py:1001 lider/formmain.py:1080 lider/formmain.py:1086
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1023 lider/formmain.py:1102 lider/formmain.py:1108
++#: lider/formmain.py:1111
+ msgid "Warning"
+ msgstr ""
+ 
+-#: lider/formmain.py:1063 lider/formmain.py:1102 lider/formmain.py:1134
+-#: lider/formmain.py:1172 lider/formmain.py:1216 lider/formmain.py:1254
++#: lider/formmain.py:1085 lider/formmain.py:1124 lider/formmain.py:1156
++#: lider/formmain.py:1194 lider/formmain.py:1238 lider/formmain.py:1276
+ msgid "Insufficient access."
+ msgstr ""
+ 
+-#: lider/formmain.py:1066
++#: lider/formmain.py:1088
+ msgid "Unable to modify item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1080
++#: lider/formmain.py:1102
+ msgid "Only one item at a time can be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1086
++#: lider/formmain.py:1108
+ msgid "The selected item is a non-empty directory. It cannot be deleted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1089
++#: lider/formmain.py:1111
+ msgid "This is not undoable. Are you sure you want to remove?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1105
++#: lider/formmain.py:1127
+ msgid "Unable to delete item."
+ msgstr ""
+ 
+-#: lider/formmain.py:1137
++#: lider/formmain.py:1159
+ msgid "Unable to add computer."
+ msgstr ""
+ 
+-#: lider/formmain.py:1175
++#: lider/formmain.py:1197
+ msgid "Unable to add user."
+ msgstr ""
+ 
+-#: lider/formmain.py:1219
++#: lider/formmain.py:1241
+ msgid "Unable to add group."
+ msgstr ""
+ 
+-#: lider/formmain.py:1257
++#: lider/formmain.py:1279
+ msgid "Unable to add folder."
+ msgstr ""
+ 
+-#: lider/formmain.py:1418
++#: lider/formmain.py:1445
+ #, python-format
+ msgid "%d item(s) will be forced to update policy."
+ msgstr ""
+ 
+-#: lider/formmain.py:1419 lider/formmain.py:1467 lider/formmain.py:1531
+-#: lider/formmain.py:1561
++#: lider/formmain.py:1446 lider/formmain.py:1495 lider/formmain.py:1559
++#: lider/formmain.py:1589 lider/plugins/plugin_firewall/main.py:280
++#: lider/plugins/plugin_firewall/main.py:312
+ msgid "Do you want to continue?"
+ msgstr ""
+ 
+-#: lider/formmain.py:1466
++#: lider/formmain.py:1494
+ msgid "Policy will be saved."
+ msgstr ""
+ 
+-#: lider/formmain.py:1516
++#: lider/formmain.py:1544
+ msgid "Unable to modify node."
+ msgstr ""
+ 
+-#: lider/formmain.py:1530
++#: lider/formmain.py:1558
+ msgid "All changes will be reverted."
+ msgstr ""
+ 
+-#: lider/formmain.py:1560
++#: lider/formmain.py:1588
+ msgid "Policy from parent directory will be copied."
+ msgstr ""
+ 
+@@ -397,12 +398,28 @@
+ msgid "Active Directory Settings"
+ msgstr ""
+ 
++#: lider/plugins/plugin_firewall/main.py:279
++msgid "Default firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:303
++msgid "Default rules were loaded"
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:311
++msgid "Failsafe firewall rules will be loaded."
++msgstr ""
++
++#: lider/plugins/plugin_firewall/main.py:335
++msgid "Failsafe rules were loaded"
++msgstr ""
++
+ #: lider/plugins/plugin_firewall/ui_firewall.py:170
+ msgid "Firewall"
+ msgstr ""
+ 
+ #: lider/plugins/plugin_firewall/ui_firewall.py:171
+-#: lider/plugins/plugin_services/main.py:191
++#: lider/plugins/plugin_services/main.py:205
+ #: lider/plugins/plugin_services/ui_services.py:121
+ msgid "Status"
+ msgstr ""
+@@ -423,23 +440,23 @@
+ msgid "Load Fail Safe Rules"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:164
++#: lider/plugins/plugin_services/main.py:173
+ msgid "Running"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:167
++#: lider/plugins/plugin_services/main.py:176
+ msgid "Stopped"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:182
++#: lider/plugins/plugin_services/main.py:191
+ msgid "Yes"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:184
++#: lider/plugins/plugin_services/main.py:193
+ msgid "Conditional"
+ msgstr ""
+ 
+-#: lider/plugins/plugin_services/main.py:186
++#: lider/plugins/plugin_services/main.py:195
+ msgid "No"
+ msgstr ""
+ 
