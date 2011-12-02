@@ -1,43 +1,66 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2009-2011 TUBITAK/UEKAE
+# Copyright 2009-2010 TUBITAK/UEKAE
 # Licensed under the GNU General Public License, version 2.
 # See the file http://www.gnu.org/copyleft/gpl.txt.
 
-from pisi.actionsapi import shelltools
 from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
+from pisi.actionsapi import shelltools
 from pisi.actionsapi import get
 
 WorkDir = "tzdata"
-tzcode  = "tzcode2011i"
-tzdata  = "tzdata2011l"
+tzcode  = "tzcode2011d"
+tzdata  = "tzdata2011d"
 
-# Switch to POSIX locale
-shelltools.export("LANG", "POSIX")
-shelltools.export("LC_ALL", "POSIX")
-shelltools.export("LANGUAGE", "POSIX")
+configTemplate = """
+objpfx = %(pwd)s/obj/
+sbindir = %(sbindir)s
+datadir = %(datadir)s
+install_root = %(buildroot)s
+sysdep-CFLAGS = %(cflags)s
+"""
+
+configVars = {"pwd": "%s/%s" % (get.workDIR(), WorkDir),
+              "sbindir": "/%s" % get.sbinDIR(),
+              "datadir": "/%s" % get.dataDIR(),
+              "buildroot": get.installDIR(),
+              "cflags": get.CFLAGS()
+}
+
+
+def disableLocale():
+    for i in ["LANG", "LANGUAGE", "LC_ALL"]:
+        shelltools.export(i, "POSIX")
 
 def setup():
-    pisitools.dosed("config.mk", "@@INSTALL_ROOT@@", get.installDIR())
-    pisitools.dosed("config.mk", "@@CFLAGS@@", get.CFLAGS())
-    pisitools.dosed("config.mk", "@@OBJDIR@@", "%s/%s/obj/" % (get.workDIR(), WorkDir))
     shelltools.sym("Makeconfig.in", "Makeconfig")
+    shelltools.echo("config.mk", configTemplate % configVars)
 
 def build():
-    autotools.make()
+    disableLocale()
+    autotools.make("-j1")
+
+# unfortunately check depends on files which are generated during install, that are never put in
+# workdir. We will check after installation not to mess up the already complicated build system
+def mycheck():
+    print "------------------- Start of tests ------------------------"
+    disableLocale()
+    autotools.make("check")
+    print "------------------- End of tests ------------------------"
 
 def install():
+    disableLocale()
     autotools.rawInstall()
+    pisitools.removeDir("/etc")
 
-    for doc in ["README", "Theory", "tz-link.htm"]:
-        pisitools.dodoc("%s/%s" % (tzcode, doc))
+    for i in ["README", "Theory", "tz-link.htm"]:
+        pisitools.dodoc("%s/%s" % (tzcode, i))
 
-    print "====================TESTING========================="
-    autotools.make("check")
-    print "====================TESTING END====================="
+    mycheck()
 
     # Create Timezone db in /usr/share/zoneinfo
+    shelltools.chmod("dump-tz-db", 0755)
     shelltools.system("./dump-tz-db %s" % get.installDIR())
 
