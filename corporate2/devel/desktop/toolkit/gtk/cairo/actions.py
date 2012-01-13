@@ -14,6 +14,7 @@ def setup():
     autotools.configure("--disable-static \
                          --disable-gtk-doc \
                          --enable-glitz \
+                         --enable-tee \
                          --enable-xlib \
                          --enable-xlib-xrender \
                          --enable-xcb \
