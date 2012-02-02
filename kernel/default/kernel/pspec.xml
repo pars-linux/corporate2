@@ -403,6 +403,56 @@
             <!-- Use UTF-8 by default on VFAT -->
             <Patch level="1">patches/fedora/linux-2.6-defaults-fat-utf8.patch</Patch>
 
+            <!--CVE-2011-2905: perf tools: may parse user-controlled configuration file-->
+            <Patch level="1">patches/fedora/perf-tools-do-not-look-at-config-for-configuration.patch</Patch>
+
+            <!--CVE-2011-2695: ext4: kernel panic when writing data to the last block of sparse file-->
+            <Patch level="1">patches/fedora/ext4-fix-max-file-size-and-logical-block-counting-of-extent-format-file.patch</Patch>
+
+            <!--CVE-2011-2497: bluetooth: buffer overflow in l2cap config request-->
+            <Patch level="1">patches/fedora/bluetooth-prevent-buffer-overflow-in-l2cap-config-request.patch</Patch>
+
+            <!--CVE-2011-2699: ipv6: make fragment identifications less predictable-->
+            <Patch level="1">patches/fedora/ipv6-make-fragment-identifications-less-predictable.patch</Patch>
+
+            <!--CVE-2011-2723 and CVE-2011-2928 -->
+            <Patch level="1">patches/fedora/gro-Only-reset-frag0-when-skb-can-be-pulled.patch</Patch>
+            <Patch level="1">patches/fedora/befs-Validate-length-of-long-symbolic-links.patch</Patch>
+
+            <!--CVE-2011-3191-->
+            <Patch level="1">patches/fedora/cifs-fix-possible-memory-corruption-in-CIFSFindNext.patch</Patch>
+
+            <!--CVE-2011-1833-->
+            <Patch level="1">patches/fedora/Ecryptfs-Add-mount-option-to-check-uid-of-device-bei.patch</Patch>
+
+            <!--CVE-2011-2918-->
+            <Patch level="1">patches/fedora/perf-Fix-software-event-overflow.patch</Patch>
+
+            <!--CVE-2011-3353-->
+            <Patch level="1">patches/fedora/fuse-check-size-of-FUSE_NOTIFY_INVAL_ENTRY-message.patch</Patch>
+
+            <!--CVE-2011-1161 CVE-2011-1162-->
+            <Patch level="1">patches/fedora/TPM-Call-tpm_transmit-with-correct-size.patch</Patch>
+            <Patch level="1">patches/fedora/TPM-Zero-buffer-after-copying-to-userspace.patch</Patch>
+
+            <!--CVE-2011-4132 - see: https://bugzilla.redhat.com/show_bug.cgi?id=753346-->
+            <Patch level="1">patches/fedora/jbd-jbd2-validate-sb-s_first-in-journal_get_superblo.patch</Patch>
+
+            <!--CVE-2011-1083: excessive in kernel CPU consumption when creating large nested epoll structures-->
+            <!--See: https://bugzilla.redhat.com/show_bug.cgi?id=748668-->
+            <Patch level="1">patches/fedora/epoll-fix-spurious-lockdep-warnings.patch</Patch>
+            <Patch level="1">patches/fedora/epoll-limit-paths.patch</Patch>
+
+            <!--CVE-2011-4081 crypto: ghash: null pointer deref if no key is set-->
+            <!--See: https://bugzilla.redhat.com/show_bug.cgi?id=749484-->
+            <Patch level="1">patches/fedora/crypto-ghash-Avoid-null-pointer-dereference-if-no-ke.patch</Patch>
+
+            <!--CVE-2011-4326: wrong headroom check in udp6_ufo_fragment()-->
+            <!--See: https://bugzilla.redhat.com/show_bug.cgi?id=755590-->
+            <Patch level="1">patches/fedora/ipv6-udp-fix-the-wrong-headroom-check.patch</Patch>
+
+            <!--CVE-2011-4110 keys: NULL pointer deref in the user-defined key type-->
+            <Patch level="1">patches/fedora/KEYS-Fix-a-NULL-pointer-deref-in-the-user-defined-ke.patch</Patch>
 
 
             <!-- Moblin/Meego patches -->
@@ -637,6 +687,27 @@
     </Package>
 
     <History>
+        <Update release="153">
+            <Date>2012-02-02</Date>
+            <Version>2.6.35.13</Version>
+            <Comment>
+                * Security release with the following fixes:
+                * CVE-2011-1083: excessive in kernel CPU consumption when creating large nested epoll structures
+                * CVE-2011-4081 crypto: ghash: null pointer deref if no key is set
+                * CVE-2011-4132: jbd/jbd2: invalid value of first log block leads to oops
+                * CVE-2011-4326: wrong headroom check in udp6_ufo_fragment()
+                * CVE-2011-4110 keys: NULL pointer deref in the user-defined key type
+                * CVE-2011-2905: perf tools: may parse user-controlled configuration file
+                * CVE-2011-2695: ext4: kernel panic when writing data to the last block of sparse file
+                * CVE-2011-2497: bluetooth: buffer overflow in l2cap config request
+                * CVE-2011-2699: ipv6: make fragment identifications less predictable
+                * CVE-2011-2723, CVE-2011-2928, CVE-2011-3191, CVE-2011-1833, CVE-2011-2918, CVE-2011-3353, CVE-2011-1161, CVE-2011-1162
+            </Comment>
+            <Type package="kernel">security</Type>
+            <Type package="perf">security</Type>
+            <Name>Fatih Arslan</Name>
+            <Email>farslan@pardus.org.tr</Email>
+        </Update>
         <Update release="152">
             <Date>2011-06-02</Date>
             <Version>2.6.35.13</Version>
@@ -1498,7 +1569,7 @@
                 - Fix pci resource allocation broken in 2.6.24
                 - Make "pci=rom" work as documented: don't assign addresses to every rom by default
                 - Backport MTRR fixes from 2.6.25
-                - Fix resource limits for isapnp devices 
+                - Fix resource limits for isapnp devices
                 - Extend memory resource limit for pnp devices
                 - Disable PNP motherboard resources that overlap PCI BARs
                 - Clear simplex DMA before probing pata_atiixp devices
@@ -1509,7 +1580,7 @@
                 - PM: Introduce PM_EVENT_HIBERNATE callback state
                 - Update drm and i915 drm driver to fix suspend issues
                 - Disable DRM suspend/resume on pre-915 Intel chips
-                - x86: provide a DMI based port 0x80 I/O delay override 
+                - x86: provide a DMI based port 0x80 I/O delay override
                 - Resolve sky2 race condition leading to failed suspends
                 - ACPI: fix boot oops regression
                 - Fix for device attached to pata_sis as secondary master
@@ -1547,7 +1618,7 @@
             <Date>2008-03-03</Date>
             <Version>2.6.24.3</Version>
             <Comment>Version bump,
-                - Add early medium-not-present detection in sr/sd drivers 
+                - Add early medium-not-present detection in sr/sd drivers
                 - Fix CDROM_DRIVE_STATUS ioctl implementation
                 - Fix TEST_UNIT_READY for medium detection
                 - tty: enable the echoing of ^C in the N_TTY discipline
