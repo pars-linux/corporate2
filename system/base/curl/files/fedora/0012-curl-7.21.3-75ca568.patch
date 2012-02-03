@@ -1,0 +1,751 @@
+From f0aed6743ecb954849ee6d3edd2e33a5fcb3f2e7 Mon Sep 17 00:00:00 2001
+From: Daniel Stenberg <daniel@haxx.se>
+Date: Fri, 23 Dec 2011 13:24:16 +0100
+Subject: [PATCH] URL sanitize: reject URLs containing bad data
+
+Protocols (IMAP, POP3 and SMTP) that use the path part of a URL in a
+decoded manner now use the new Curl_urldecode() function to reject URLs
+with embedded control codes (anything that is or decodes to a byte value
+less than 32).
+
+URLs containing such codes could easily otherwise be used to do harm and
+allow users to do unintended actions with otherwise innocent tools and
+applications. Like for example using a URL like
+pop3://pop3.example.com/1%0d%0aDELE%201 when the app wants a URL to get
+a mail and instead this would delete one.
+
+This flaw is considered a security vulnerability: CVE-2012-0036
+
+Security advisory at: http://curl.haxx.se/docs/adv_20120124.html
+
+Reported by: Dan Fandrich
+
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ lib/Makefile.in  |    2 +-
+ lib/Makefile.inc |    4 +-
+ lib/escape.c     |  100 ++++++++++-------
+ lib/escape.h     |   10 +-
+ lib/imap.c       |    7 +-
+ lib/non-ascii.c  |  339 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ lib/non-ascii.h  |   63 ++++++++++
+ lib/pop3.c       |    6 +-
+ lib/smtp.c       |    7 +-
+ 9 files changed, 477 insertions(+), 61 deletions(-)
+ create mode 100644 lib/non-ascii.c
+ create mode 100644 lib/non-ascii.h
+
+Index: curl-7.21.3/lib/Makefile.inc
+===================================================================
+--- curl-7.21.3.orig/lib/Makefile.inc
++++ curl-7.21.3/lib/Makefile.inc
+@@ -21,7 +21,7 @@ CSOURCES = file.c timeval.c base64.c hos
+   socks_gssapi.c socks_sspi.c curl_sspi.c slist.c nonblock.c		\
+   curl_memrchr.c imap.c pop3.c smtp.c pingpong.c rtsp.c curl_threads.c	\
+   warnless.c hmac.c polarssl.c curl_rtmp.c openldap.c curl_gethostname.c\
+-  gopher.c
++  gopher.c non-ascii.c
+ 
+ HHEADERS = arpa_telnet.h netrc.h file.h timeval.h qssl.h hostip.h	\
+   progress.h formdata.h cookie.h http.h sendf.h ftp.h url.h dict.h	\
+@@ -36,5 +36,5 @@ HHEADERS = arpa_telnet.h netrc.h file.h
+   curl_base64.h rawstr.h curl_addrinfo.h curl_sspi.h slist.h nonblock.h	\
+   curl_memrchr.h imap.h pop3.h smtp.h pingpong.h rtsp.h curl_threads.h	\
+   warnless.h curl_hmac.h polarssl.h curl_rtmp.h curl_gethostname.h      \
+-  gopher.h
++  gopher.h non-ascii.h
+ 
+Index: curl-7.21.3/lib/escape.c
+===================================================================
+--- curl-7.21.3.orig/lib/escape.c
++++ curl-7.21.3/lib/escape.c
+@@ -5,7 +5,7 @@
+  *                            | (__| |_| |  _ <| |___
+  *                             \___|\___/|_| \_\_____|
+  *
+- * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
++ * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+  *
+  * This software is licensed as described in the file COPYING, which
+  * you should have received as part of this distribution. The terms
+@@ -24,17 +24,14 @@
+  * allocated string or NULL if an error occurred.  */
+ 
+ #include "setup.h"
+-#include <ctype.h>
++
+ #include <curl/curl.h>
+ 
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <string.h>
+ #include "curl_memory.h"
+-/* urldata.h and easyif.h are included for Curl_convert_... prototypes */
+ #include "urldata.h"
+-#include "easyif.h"
+ #include "warnless.h"
++#include "non-ascii.h"
++#include "escape.h"
+ 
+ #define _MPRINTF_REPLACE /* use our functions only */
+ #include <curl/mprintf.h>
+@@ -88,13 +85,10 @@ char *curl_easy_escape(CURL *handle, con
+   char *testing_ptr = NULL;
+   unsigned char in; /* we need to treat the characters unsigned */
+   size_t newlen = alloc;
+-  int strindex=0;
++  size_t strindex=0;
+   size_t length;
++  CURLcode res;
+ 
+-#ifndef CURL_DOES_CONVERSIONS
+-  /* avoid compiler warnings */
+-  (void)handle;
+-#endif
+   ns = malloc(alloc);
+   if(!ns)
+     return NULL;
+@@ -103,10 +97,9 @@ char *curl_easy_escape(CURL *handle, con
+   while(length--) {
+     in = *string;
+ 
+-    if (Curl_isunreserved(in)) {
++    if(Curl_isunreserved(in))
+       /* just copy this */
+       ns[strindex++]=in;
+-    }
+     else {
+       /* encode it */
+       newlen += 2; /* the size grows with two, since this'll become a %XX */
+@@ -122,15 +115,12 @@ char *curl_easy_escape(CURL *handle, con
+         }
+       }
+ 
+-#ifdef CURL_DOES_CONVERSIONS
+-/* escape sequences are always in ASCII so convert them on non-ASCII hosts */
+-      if(!handle ||
+-          (Curl_convert_to_network(handle, &in, 1) != CURLE_OK)) {
++      res = Curl_convert_to_network(handle, &in, 1);
++      if(res) {
+         /* Curl_convert_to_network calls failf if unsuccessful */
+         free(ns);
+         return NULL;
+       }
+-#endif /* CURL_DOES_CONVERSIONS */
+ 
+       snprintf(&ns[strindex], 4, "%%%02X", in);
+ 
+@@ -143,26 +133,29 @@ char *curl_easy_escape(CURL *handle, con
+ }
+ 
+ /*
+- * Unescapes the given URL escaped string of given length. Returns a
+- * pointer to a malloced string with length given in *olen.
+- * If length == 0, the length is assumed to be strlen(string).
+- * If olen == NULL, no output length is stored.
++ * Curl_urldecode() URL decodes the given string.
++ *
++ * Optionally detects control characters (byte codes lower than 32) in the
++ * data and rejects such data.
++ *
++ * Returns a pointer to a malloced string in *ostring with length given in
++ * *olen. If length == 0, the length is assumed to be strlen(string).
++ *
+  */
+-char *curl_easy_unescape(CURL *handle, const char *string, int length,
+-                         int *olen)
++CURLcode Curl_urldecode(struct SessionHandle *data,
++                        const char *string, size_t length,
++                        char **ostring, size_t *olen,
++                        bool reject_ctrl)
+ {
+-  int alloc = (length?length:(int)strlen(string))+1;
++  size_t alloc = (length?length:strlen(string))+1;
+   char *ns = malloc(alloc);
+   unsigned char in;
+-  int strindex=0;
++  size_t strindex=0;
+   unsigned long hex;
++  CURLcode res;
+ 
+-#ifndef CURL_DOES_CONVERSIONS
+-  /* avoid compiler warnings */
+-  (void)handle;
+-#endif
+-  if( !ns )
+-    return NULL;
++  if(!ns)
++    return CURLE_OUT_OF_MEMORY;
+ 
+   while(--alloc > 0) {
+     in = *string;
+@@ -178,19 +171,20 @@ char *curl_easy_unescape(CURL *handle, c
+ 
+       in = curlx_ultouc(hex); /* this long is never bigger than 255 anyway */
+ 
+-#ifdef CURL_DOES_CONVERSIONS
+-/* escape sequences are always in ASCII so convert them on non-ASCII hosts */
+-      if(!handle ||
+-          (Curl_convert_from_network(handle, &in, 1) != CURLE_OK)) {
++      res = Curl_convert_from_network(data, &in, 1);
++      if(res) {
+         /* Curl_convert_from_network calls failf if unsuccessful */
+         free(ns);
+-        return NULL;
++        return res;
+       }
+-#endif /* CURL_DOES_CONVERSIONS */
+ 
+       string+=2;
+       alloc-=2;
+     }
++    if(reject_ctrl && (in < 0x20)) {
++      free(ns);
++      return CURLE_URL_MALFORMAT;
++    }
+ 
+     ns[strindex++] = in;
+     string++;
+@@ -200,7 +194,33 @@ char *curl_easy_unescape(CURL *handle, c
+   if(olen)
+     /* store output size */
+     *olen = strindex;
+-  return ns;
++
++  if(ostring)
++    /* store output string */
++    *ostring = ns;
++
++  return CURLE_OK;
++}
++
++/*
++ * Unescapes the given URL escaped string of given length. Returns a
++ * pointer to a malloced string with length given in *olen.
++ * If length == 0, the length is assumed to be strlen(string).
++ * If olen == NULL, no output length is stored.
++ */
++char *curl_easy_unescape(CURL *handle, const char *string, int length,
++                         int *olen)
++{
++  char *str = NULL;
++  size_t inputlen = length;
++  size_t outputlen;
++  CURLcode res = Curl_urldecode(handle, string, inputlen, &str, &outputlen,
++                                FALSE);
++  if(res)
++    return NULL;
++  if(olen)
++    *olen = curlx_uztosi(outputlen);
++  return str;
+ }
+ 
+ /* For operating systems/environments that use different malloc/free
+Index: curl-7.21.3/lib/escape.h
+===================================================================
+--- curl-7.21.3.orig/lib/escape.h
++++ curl-7.21.3/lib/escape.h
+@@ -1,5 +1,5 @@
+-#ifndef __ESCAPE_H
+-#define __ESCAPE_H
++#ifndef HEADER_CURL_ESCAPE_H
++#define HEADER_CURL_ESCAPE_H
+ 
+ /***************************************************************************
+  *                                  _   _ ____  _
+@@ -8,7 +8,7 @@
+  *                            | (__| |_| |  _ <| |___
+  *                             \___|\___/|_| \_\_____|
+  *
+- * Copyright (C) 1998 - 2006, Daniel Stenberg, <daniel@haxx.se>, et al.
++ * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+  *
+  * This software is licensed as described in the file COPYING, which
+  * you should have received as part of this distribution. The terms
+@@ -25,5 +25,9 @@
+ /* Escape and unescape URL encoding in strings. The functions return a new
+  * allocated string or NULL if an error occurred.  */
+ 
++CURLcode Curl_urldecode(struct SessionHandle *data,
++                        const char *string, size_t length,
++                        char **ostring, size_t *olen,
++                        bool reject_crlf);
+ 
+ #endif
+Index: curl-7.21.3/lib/imap.c
+===================================================================
+--- curl-7.21.3.orig/lib/imap.c
++++ curl-7.21.3/lib/imap.c
+@@ -906,17 +906,12 @@ static CURLcode imap_parse_url_path(stru
+   struct imap_conn *imapc = &conn->proto.imapc;
+   struct SessionHandle *data = conn->data;
+   const char *path = data->state.path;
+-  int len;
+ 
+   if(!*path)
+     path = "INBOX";
+ 
+   /* url decode the path and use this mailbox */
+-  imapc->mailbox = curl_easy_unescape(data, path, 0, &len);
+-  if(!imapc->mailbox)
+-    return CURLE_OUT_OF_MEMORY;
+-
+-  return CURLE_OK;
++  return Curl_urldecode(data, path, 0, &imapc->mailbox, NULL, TRUE);
+ }
+ 
+ /* call this when the DO phase has completed */
+Index: curl-7.21.3/lib/non-ascii.c
+===================================================================
+--- /dev/null
++++ curl-7.21.3/lib/non-ascii.c
+@@ -0,0 +1,339 @@
++/***************************************************************************
++ *                                  _   _ ____  _
++ *  Project                     ___| | | |  _ \| |
++ *                             / __| | | | |_) | |
++ *                            | (__| |_| |  _ <| |___
++ *                             \___|\___/|_| \_\_____|
++ *
++ * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
++ *
++ * This software is licensed as described in the file COPYING, which
++ * you should have received as part of this distribution. The terms
++ * are also available at http://curl.haxx.se/docs/copyright.html.
++ *
++ * You may opt to use, copy, modify, merge, publish, distribute and/or sell
++ * copies of the Software, and permit persons to whom the Software is
++ * furnished to do so, under the terms of the COPYING file.
++ *
++ * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
++ * KIND, either express or implied.
++ *
++ ***************************************************************************/
++
++#include "setup.h"
++
++#ifdef CURL_DOES_CONVERSIONS
++
++#include "non-ascii.h"
++#include "formdata.h"
++#include "sendf.h"
++#include "urldata.h"
++
++#include <curl/curl.h>
++
++#ifdef HAVE_ICONV
++#include <iconv.h>
++/* set default codesets for iconv */
++#ifndef CURL_ICONV_CODESET_OF_NETWORK
++#define CURL_ICONV_CODESET_OF_NETWORK "ISO8859-1"
++#endif
++#ifndef CURL_ICONV_CODESET_FOR_UTF8
++#define CURL_ICONV_CODESET_FOR_UTF8   "UTF-8"
++#endif
++#define ICONV_ERROR  (size_t)-1
++#endif /* HAVE_ICONV */
++
++/*
++ * Curl_convert_clone() returns a malloced copy of the source string (if
++ * returning CURLE_OK), with the data converted to network format.
++ */
++CURLcode Curl_convert_clone(struct SessionHandle *data,
++                           const char *indata,
++                           size_t insize,
++                           char **outbuf)
++{
++  char *convbuf;
++  CURLcode result;
++
++  convbuf = malloc(insize);
++  if(!convbuf)
++    return CURLE_OUT_OF_MEMORY;
++
++  memcpy(convbuf, indata, insize);
++  result = Curl_convert_to_network(data, convbuf, insize);
++  if(result) {
++    free(convbuf);
++    return result;
++  }
++
++  *outbuf = convbuf; /* return the converted buffer */
++
++  return CURLE_OK;
++}
++
++/*
++ * Curl_convert_to_network() is an internal function for performing ASCII
++ * conversions on non-ASCII platforms. It convers the buffer _in place_.
++ */
++CURLcode Curl_convert_to_network(struct SessionHandle *data,
++                                 char *buffer, size_t length)
++{
++  CURLcode rc;
++
++  if(data->set.convtonetwork) {
++    /* use translation callback */
++    rc = data->set.convtonetwork(buffer, length);
++    if(rc != CURLE_OK) {
++      failf(data,
++            "CURLOPT_CONV_TO_NETWORK_FUNCTION callback returned %d: %s",
++            (int)rc, curl_easy_strerror(rc));
++    }
++    return rc;
++  }
++  else {
++#ifdef HAVE_ICONV
++    /* do the translation ourselves */
++    char *input_ptr, *output_ptr;
++    size_t in_bytes, out_bytes, rc;
++    int error;
++
++    /* open an iconv conversion descriptor if necessary */
++    if(data->outbound_cd == (iconv_t)-1) {
++      data->outbound_cd = iconv_open(CURL_ICONV_CODESET_OF_NETWORK,
++                                     CURL_ICONV_CODESET_OF_HOST);
++      if(data->outbound_cd == (iconv_t)-1) {
++        error = ERRNO;
++        failf(data,
++              "The iconv_open(\"%s\", \"%s\") call failed with errno %i: %s",
++              CURL_ICONV_CODESET_OF_NETWORK,
++              CURL_ICONV_CODESET_OF_HOST,
++              error, strerror(error));
++        return CURLE_CONV_FAILED;
++      }
++    }
++    /* call iconv */
++    input_ptr = output_ptr = buffer;
++    in_bytes = out_bytes = length;
++    rc = iconv(data->outbound_cd, (const char**)&input_ptr, &in_bytes,
++               &output_ptr, &out_bytes);
++    if((rc == ICONV_ERROR) || (in_bytes != 0)) {
++      error = ERRNO;
++      failf(data,
++            "The Curl_convert_to_network iconv call failed with errno %i: %s",
++            error, strerror(error));
++      return CURLE_CONV_FAILED;
++    }
++#else
++    failf(data, "CURLOPT_CONV_TO_NETWORK_FUNCTION callback required");
++    return CURLE_CONV_REQD;
++#endif /* HAVE_ICONV */
++  }
++
++  return CURLE_OK;
++}
++
++/*
++ * Curl_convert_from_network() is an internal function for performing ASCII
++ * conversions on non-ASCII platforms. It convers the buffer _in place_.
++ */
++CURLcode Curl_convert_from_network(struct SessionHandle *data,
++                                   char *buffer, size_t length)
++{
++  CURLcode rc;
++
++  if(data->set.convfromnetwork) {
++    /* use translation callback */
++    rc = data->set.convfromnetwork(buffer, length);
++    if(rc != CURLE_OK) {
++      failf(data,
++            "CURLOPT_CONV_FROM_NETWORK_FUNCTION callback returned %d: %s",
++            (int)rc, curl_easy_strerror(rc));
++    }
++    return rc;
++  }
++  else {
++#ifdef HAVE_ICONV
++    /* do the translation ourselves */
++    char *input_ptr, *output_ptr;
++    size_t in_bytes, out_bytes, rc;
++    int error;
++
++    /* open an iconv conversion descriptor if necessary */
++    if(data->inbound_cd == (iconv_t)-1) {
++      data->inbound_cd = iconv_open(CURL_ICONV_CODESET_OF_HOST,
++                                    CURL_ICONV_CODESET_OF_NETWORK);
++      if(data->inbound_cd == (iconv_t)-1) {
++        error = ERRNO;
++        failf(data,
++              "The iconv_open(\"%s\", \"%s\") call failed with errno %i: %s",
++              CURL_ICONV_CODESET_OF_HOST,
++              CURL_ICONV_CODESET_OF_NETWORK,
++              error, strerror(error));
++        return CURLE_CONV_FAILED;
++      }
++    }
++    /* call iconv */
++    input_ptr = output_ptr = buffer;
++    in_bytes = out_bytes = length;
++    rc = iconv(data->inbound_cd, (const char **)&input_ptr, &in_bytes,
++               &output_ptr, &out_bytes);
++    if((rc == ICONV_ERROR) || (in_bytes != 0)) {
++      error = ERRNO;
++      failf(data,
++            "Curl_convert_from_network iconv call failed with errno %i: %s",
++            error, strerror(error));
++      return CURLE_CONV_FAILED;
++    }
++#else
++    failf(data, "CURLOPT_CONV_FROM_NETWORK_FUNCTION callback required");
++    return CURLE_CONV_REQD;
++#endif /* HAVE_ICONV */
++  }
++
++  return CURLE_OK;
++}
++
++/*
++ * Curl_convert_from_utf8() is an internal function for performing UTF-8
++ * conversions on non-ASCII platforms.
++ */
++CURLcode Curl_convert_from_utf8(struct SessionHandle *data,
++                                char *buffer, size_t length)
++{
++  CURLcode rc;
++
++  if(data->set.convfromutf8) {
++    /* use translation callback */
++    rc = data->set.convfromutf8(buffer, length);
++    if(rc != CURLE_OK) {
++      failf(data,
++            "CURLOPT_CONV_FROM_UTF8_FUNCTION callback returned %d: %s",
++            (int)rc, curl_easy_strerror(rc));
++    }
++    return rc;
++  }
++  else {
++#ifdef HAVE_ICONV
++    /* do the translation ourselves */
++    const char *input_ptr;
++    char *output_ptr;
++    size_t in_bytes, out_bytes, rc;
++    int error;
++
++    /* open an iconv conversion descriptor if necessary */
++    if(data->utf8_cd == (iconv_t)-1) {
++      data->utf8_cd = iconv_open(CURL_ICONV_CODESET_OF_HOST,
++                                 CURL_ICONV_CODESET_FOR_UTF8);
++      if(data->utf8_cd == (iconv_t)-1) {
++        error = ERRNO;
++        failf(data,
++              "The iconv_open(\"%s\", \"%s\") call failed with errno %i: %s",
++              CURL_ICONV_CODESET_OF_HOST,
++              CURL_ICONV_CODESET_FOR_UTF8,
++              error, strerror(error));
++        return CURLE_CONV_FAILED;
++      }
++    }
++    /* call iconv */
++    input_ptr = output_ptr = buffer;
++    in_bytes = out_bytes = length;
++    rc = iconv(data->utf8_cd, &input_ptr, &in_bytes,
++               &output_ptr, &out_bytes);
++    if((rc == ICONV_ERROR) || (in_bytes != 0)) {
++      error = ERRNO;
++      failf(data,
++            "The Curl_convert_from_utf8 iconv call failed with errno %i: %s",
++            error, strerror(error));
++      return CURLE_CONV_FAILED;
++    }
++    if(output_ptr < input_ptr) {
++      /* null terminate the now shorter output string */
++      *output_ptr = 0x00;
++    }
++#else
++    failf(data, "CURLOPT_CONV_FROM_UTF8_FUNCTION callback required");
++    return CURLE_CONV_REQD;
++#endif /* HAVE_ICONV */
++  }
++
++  return CURLE_OK;
++}
++
++/*
++ * Init conversion stuff for a SessionHandle
++ */
++void Curl_convert_init(struct SessionHandle *data)
++{
++#if defined(CURL_DOES_CONVERSIONS) && defined(HAVE_ICONV)
++  /* conversion descriptors for iconv calls */
++  data->outbound_cd = (iconv_t)-1;
++  data->inbound_cd  = (iconv_t)-1;
++  data->utf8_cd     = (iconv_t)-1;
++#else
++  (void)data;
++#endif /* CURL_DOES_CONVERSIONS && HAVE_ICONV */
++}
++
++/*
++ * Setup conversion stuff for a SessionHandle
++ */
++void Curl_convert_setup(struct SessionHandle *data)
++{
++  data->inbound_cd = iconv_open(CURL_ICONV_CODESET_OF_HOST,
++                                CURL_ICONV_CODESET_OF_NETWORK);
++  data->outbound_cd = iconv_open(CURL_ICONV_CODESET_OF_NETWORK,
++                                 CURL_ICONV_CODESET_OF_HOST);
++  data->utf8_cd = iconv_open(CURL_ICONV_CODESET_OF_HOST,
++                             CURL_ICONV_CODESET_FOR_UTF8);
++}
++
++/*
++ * Close conversion stuff for a SessionHandle
++ */
++
++void Curl_convert_close(struct SessionHandle *data)
++{
++#ifdef HAVE_ICONV
++  /* close iconv conversion descriptors */
++  if(data->inbound_cd != (iconv_t)-1) {
++    iconv_close(data->inbound_cd);
++  }
++  if(data->outbound_cd != (iconv_t)-1) {
++    iconv_close(data->outbound_cd);
++  }
++  if(data->utf8_cd != (iconv_t)-1) {
++    iconv_close(data->utf8_cd);
++  }
++#else
++  (void)data;
++#endif /* HAVE_ICONV */
++}
++
++/*
++ * Curl_convert_form() is used from http.c, this converts any form items that
++   need to be sent in the network encoding.  Returns CURLE_OK on success.
++ */
++CURLcode Curl_convert_form(struct SessionHandle *data, struct FormData *form)
++{
++  struct FormData *next;
++  CURLcode rc;
++
++  if(!form)
++    return CURLE_OK;
++
++  if(!data)
++    return CURLE_BAD_FUNCTION_ARGUMENT;
++
++  do {
++    next=form->next;  /* the following form line */
++    if(form->type == FORM_DATA) {
++      rc = Curl_convert_to_network(data, form->line, form->length);
++      /* Curl_convert_to_network calls failf if unsuccessful */
++      if(rc != CURLE_OK)
++        return rc;
++    }
++  } while((form = next) != NULL); /* continue */
++  return CURLE_OK;
++}
++
++#endif /* CURL_DOES_CONVERSIONS */
+Index: curl-7.21.3/lib/non-ascii.h
+===================================================================
+--- /dev/null
++++ curl-7.21.3/lib/non-ascii.h
+@@ -0,0 +1,63 @@
++#ifndef HEADER_CURL_NON_ASCII_H
++#define HEADER_CURL_NON_ASCII_H
++/***************************************************************************
++ *                                  _   _ ____  _
++ *  Project                     ___| | | |  _ \| |
++ *                             / __| | | | |_) | |
++ *                            | (__| |_| |  _ <| |___
++ *                             \___|\___/|_| \_\_____|
++ *
++ * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
++ *
++ * This software is licensed as described in the file COPYING, which
++ * you should have received as part of this distribution. The terms
++ * are also available at http://curl.haxx.se/docs/copyright.html.
++ *
++ * You may opt to use, copy, modify, merge, publish, distribute and/or sell
++ * copies of the Software, and permit persons to whom the Software is
++ * furnished to do so, under the terms of the COPYING file.
++ *
++ * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
++ * KIND, either express or implied.
++ *
++ ***************************************************************************/
++#include "setup.h"
++
++#ifdef CURL_DOES_CONVERSIONS
++
++#include "urldata.h"
++
++/*
++ * Curl_convert_clone() returns a malloced copy of the source string (if
++ * returning CURLE_OK), with the data converted to network format.
++ *
++ * If no conversion was needed *outbuf may be NULL.
++ */
++CURLcode Curl_convert_clone(struct SessionHandle *data,
++                            const char *indata,
++                            size_t insize,
++                            char **outbuf);
++
++void Curl_convert_init(struct SessionHandle *data);
++void Curl_convert_setup(struct SessionHandle *data);
++void Curl_convert_close(struct SessionHandle *data);
++
++CURLcode Curl_convert_to_network(struct SessionHandle *data,
++                                 char *buffer, size_t length);
++CURLcode Curl_convert_from_network(struct SessionHandle *data,
++                                 char *buffer, size_t length);
++CURLcode Curl_convert_from_utf8(struct SessionHandle *data,
++                                 char *buffer, size_t length);
++CURLcode Curl_convert_form(struct SessionHandle *data, struct FormData *form);
++#else
++#define Curl_convert_clone(a,b,c,d) ((void)a, CURLE_OK)
++#define Curl_convert_init(x) Curl_nop_stmt
++#define Curl_convert_setup(x) Curl_nop_stmt
++#define Curl_convert_close(x) Curl_nop_stmt
++#define Curl_convert_to_network(a,b,c) ((void)a, CURLE_OK)
++#define Curl_convert_from_network(a,b,c) ((void)a, CURLE_OK)
++#define Curl_convert_from_utf8(a,b,c) ((void)a, CURLE_OK)
++#define Curl_convert_form(a,b) CURLE_OK
++#endif
++
++#endif /* HEADER_CURL_NON_ASCII_H */
+Index: curl-7.21.3/lib/pop3.c
+===================================================================
+--- curl-7.21.3.orig/lib/pop3.c
++++ curl-7.21.3/lib/pop3.c
+@@ -852,11 +852,7 @@ static CURLcode pop3_parse_url_path(stru
+   const char *path = data->state.path;
+ 
+   /* url decode the path and use this mailbox */
+-  pop3c->mailbox = curl_easy_unescape(data, path, 0, NULL);
+-  if (!pop3c->mailbox)
+-    return CURLE_OUT_OF_MEMORY;
+-
+-  return CURLE_OK;
++  return Curl_urldecode(data, path, 0, &pop3c->mailbox, NULL, TRUE);
+ }
+ 
+ /* call this when the DO phase has completed */
+Index: curl-7.21.3/lib/smtp.c
+===================================================================
+--- curl-7.21.3.orig/lib/smtp.c
++++ curl-7.21.3/lib/smtp.c
+@@ -1047,7 +1047,6 @@ static CURLcode smtp_connect(struct conn
+   struct SessionHandle *data=conn->data;
+   struct pingpong *pp=&smtpc->pp;
+   const char *path = conn->data->state.path;
+-  int len;
+   char localhost[1024 + 1];
+ 
+   *done = FALSE; /* default to not done yet */
+@@ -1121,9 +1120,9 @@ static CURLcode smtp_connect(struct conn
+   }
+ 
+   /* url decode the path and use it as domain with EHLO */
+-  smtpc->domain = curl_easy_unescape(conn->data, path, 0, &len);
+-  if(!smtpc->domain)
+-    return CURLE_OUT_OF_MEMORY;
++  result = Curl_urldecode(conn->data, path, 0, &smtpc->domain, NULL, TRUE);
++  if(result)
++    return result;
+ 
+   /* When we connect, we start in the state where we await the server greeting
+    */
