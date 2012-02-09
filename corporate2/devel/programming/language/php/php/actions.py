@@ -10,17 +10,13 @@ from pisi.actionsapi import autotools
 from pisi.actionsapi import pisitools
 from pisi.actionsapi import get
 
-
-shelltools.export("LC_ALL", "C")
-shelltools.export("HOME", get.workDIR())
-
 def extensions():
     configure_disabled = []
 
     configure_enabled = [
         'exif', 'ftp', 'soap', 'sockets', 'sqlite-utf8', 'bcmath',
         'dom', 'wddx', 'tokenizer', 'simplexml', 'mbstring', 'calendar',
-        'gd-native-ttf', 'zlib'
+        'gd-native-ttf'
     ]
     configure_shared = [
         'dba', 'dbase', 'embedded-mysqli'
@@ -77,7 +73,7 @@ def setup():
                       --with-jpeg-dir=/usr/lib/ \
                       --with-png-dir=/usr/lib/ \
                       --with-freetype-dir=/usr \
-                      --with-pear=/usr/share/php5/PEAR \
+                      --without-pear \
                       --with-zend-vm=GOTO \
                       --with-zend-vm=SWITCH \
                       --with-pic \
@@ -120,7 +116,6 @@ def install():
     shelltools.cd("fcgi")
     autotools.rawInstall("INSTALL_ROOT=\"%s\"" % get.installDIR(), "install")
     autotools.rawInstall("INSTALL_ROOT=\"%s\"" % get.installDIR(), "install-sapi")
-    autotools.rawInstall("INSTALL_ROOT=\"%s\"" % get.installDIR(), "install-pear")
 
     shelltools.cd("../apache")
     autotools.rawInstall("INSTALL_ROOT=\"%s\"" % get.installDIR(), "install-sapi")
@@ -140,10 +135,6 @@ def install():
     pisitools.dodir("/etc/php/ext")
     pisitools.dodir("/etc/php/apache2/ext")
     pisitools.dodir("/etc/php/cli/ext")
-
-    # Remove hidden files located under root dir
-    pisitools.remove(".*")
-    pisitools.removeDir(".*")
 
     # Operations for php-imap package
     pisitools.dosym("/etc/php/ext/11-php-imap.ini", "/etc/php/cli/ext/11-php-imap.ini")
