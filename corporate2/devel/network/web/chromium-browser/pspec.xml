@@ -13,7 +13,7 @@
         <IsA>app:gui</IsA>
         <Summary>A WebKit powered web browser</Summary>
         <Description>Chromium-browser is an open-source web browser, powered by WebKit.</Description>
-        <Archive sha1sum="b743e60fcd3f5034ba38cfb9534023bab0bc5ace" type="tarbz2">http://gsdview.appspot.com/chromium-browser-official/chromium-16.0.912.77.tar.bz2</Archive>
+        <Archive sha1sum="87863f6d02d9105724493025e3a60733cc3f8d20" type="tarbz2">http://gsdview.appspot.com/chromium-browser-official/chromium-17.0.963.56.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>alsa-lib</Dependency>
             <Dependency>libstdc++</Dependency>
@@ -49,6 +49,19 @@
 
             <!--It causes regressions, add it on the list again-->
             <Patch level="1">blacklist_geckomediaplayer.patch</Patch>
+
+            <!--Prevent jpeg render curruption when used libjpeg-turbo-->
+            <!--https://bugs.gentoo.org/show_bug.cgi?id=393471-->
+            <Patch level="0">chromium-revert-jpeg-swizzle-r0.patch</Patch>
+
+            <!--Prevent compilation failures caused by missing zlib #include and dependency.-->
+            <Patch level="0">chromium-webkit-zlib-r0.patch</Patch>
+
+            <!--Fix crashes on illegal instructions, bug #401537.-->
+            <Patch level="0">chromium-media-no-sse-r0.patch</Patch>
+
+            <!--Prevent gyp failures caused by target type 'settings' instead of 'none'.-->
+            <Patch level="0">chromium-gyp-settings-r0.patch</Patch>
         </Patches>
     </Source>
 
@@ -100,6 +113,28 @@
     </Package>
 
     <History>
+        <Update release="37" type="security">
+            <Date>2012-02-16</Date>
+            <Version>17.0.963.56</Version>
+            <Comment>
+                * Stable release 17.0.963.56
+                * [105803] CVE-2011-3015: Integer overflows in PDF codecs
+                * [106336] Medium CVE-2011-3016: Read-after-free with counter nodes
+                * [108695] High CVE-2011-3017: Possible use-after-free in database handling
+                * [110172] High CVE-2011-3018: Heap overflow in path rendering
+                * [110849] High CVE-2011-3019: Heap buffer overflow in MKV handling
+                * [111575] Medium CVE-2011-3020: Native client validator error
+                * [111779] High CVE-2011-3021: Use-after-free in subframe loading
+                * [112236] Medium CVE-2011-3022: Inappropriate use of http for translation script
+                * [112259] Medium CVE-2011-3023: Use-after-free with drag and drop
+                * [112451] Low CVE-2011-3024: Browser crash with empty x509 certificate
+                * [112670] Medium CVE-2011-3025: Out-of-bounds read in h.264 parsing
+                * [112822] High CVE-2011-3026: Integer overflow / truncation in libpng
+                * [112847] High CVE-2011-3027: Bad cast in column handling
+            </Comment>
+            <Name>Fatih Arslan</Name>
+            <Email>farslan@pardus.org.tr</Email>
+        </Update>
         <Update release="36" type="security">
             <Date>2012-02-01</Date>
             <Version>16.0.912.77</Version>

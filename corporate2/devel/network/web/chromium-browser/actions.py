@@ -17,10 +17,14 @@ shelltools.export("HOME", get.workDIR())
 ARCH = "x64" if get.ARCH() == "x86_64" else "ia32"
 
 def setup():
-    #TODO use_system_ssl is disabled -->  https://bugzilla.mozilla.org/show_bug.cgi?id=547312
-    #TODO use_system_hunspell has build problems, upstream changes needed
-    #TODO use_system_sqlite has build problems, upstream changes needed
-    #TODO use_system_ffmpeg has build problems, system libraries might be outdated
+    # use_system_ssl is disabled -->  https://bugzilla.mozilla.org/show_bug.cgi?id=547312
+    # use_system_icu is disabled --> http://crbug.com/103360
+    # use_system_hunspell has build problems, upstream changes needed
+    # use_system_sqlite is disabled --> http://crbug.com/22208
+    # use_system_ffmpeg has build problems, system libraries might be outdated
+
+    # We add -fno-ipa-cp to CFLAGS. See: http://crbug.com/41887
+    # We add -fno-inline to CFLAGS. See: http://crbug.com/113893
     shelltools.system("build/gyp_chromium -f make build/all.gyp --depth=. \
                         -Dgcc_version=45 \
                         -Dno_strict_aliasing=1 \
@@ -28,7 +32,7 @@ def setup():
                         -Dlinux_strip_binary=1 \
                         -Dlinux_sandbox_path=/usr/lib/chromium-browser/chromium-sandbox \
                         -Dlinux_sandbox_chrome_path=/usr/lib/chromium-browser/chromium-browser \
-                        -Drelease_extra_cflags=-fno-ipa-cp \
+                        -Drelease_extra_cflags='-fno-ipa-cp -fno-inline' \
                         -Dproprietary_codecs=1 \
                         -Dinclude_pulse_audio=1 \
                         -Duse_system_bzip2=1 \
@@ -36,13 +40,17 @@ def setup():
                         -Duse_system_libevent=1 \
                         -Duse_system_libjpeg=1 \
                         -Duse_system_libxslt=1 \
+                        -Duse_system_libexpat=1 \
+                        -Duse_system_libxml=1 \
+                        -Duse_system_libwebp=0 \
+                        -Duse_system_speex=1 \
                         -Duse_system_zlib=1 \
                         -Duse_system_flac=1 \
-                        -Duse_system_libxml=1 \
                         -Duse_system_vpx=0 \
                         -Duse_system_xdg_utils=1 \
                         -Duse_system_yasm=1 \
                         -Duse_system_ssl=0 \
+                        -Duse_system_icu=0 \
                         -Ddisable_sse2=1 \
                         -Ddisable_nacl=1 \
                         -Dtarget_arch=%s" % ARCH)
