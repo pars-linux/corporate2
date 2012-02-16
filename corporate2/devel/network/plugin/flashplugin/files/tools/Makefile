@@ -1,7 +1,7 @@
 # Create a custom tarball from original flashplugin archives
 
 package = flashplugin
-version = 11.1.102.55
+version = 11.1.102.62
 archs = i386 x86_64
 archive_name = install_flash_player_11_linux
 tarname = $(package)
@@ -15,6 +15,7 @@ dist: $(tarballdir)
 
 $(tarballdir): $(archs)
 	@echo -e "\n** Creating tarball $@.tar.gz from distdir\n"
+	rm -rf $@/usr/
 	tar -zcvf $@.tar.gz $@
 	rm -rf $@
 
