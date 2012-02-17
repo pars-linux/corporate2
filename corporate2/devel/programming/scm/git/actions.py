@@ -27,18 +27,18 @@ ASCIIDOC_NO_ROFF        = 1
 BLK_SHA1                = 1
 NEEDS_CRYPTO_WITH_SSL   = 1
 NO_PYTHON               = 1
-USE_LIBPCRE             = 1
 """ % (get.CFLAGS(), get.LDFLAGS(), get.installDIR())
 
 def setup():
     shelltools.echo("config.mak", config)
+    pisitools.dosed("gitweb/Makefile", "^(gitwebstaticdir_SQ = .*)static(.*)", r"\1gitweb\2")
 
 def build():
     pisitools.dosed("Makefile", "^CC = .*$", "CC = %s" % get.CC())
-    autotools.make("all doc gitweb/gitweb.cgi")
+    autotools.make("all gitweb/gitweb.cgi")
 
 def install():
-    autotools.rawInstall("install")
+    autotools.rawInstall("install install-man")
 
     # Install bash completion
     pisitools.insinto("/etc/bash_completion.d", "contrib/completion/git-completion.bash", "git")
@@ -47,12 +47,10 @@ def install():
     # for git-daemon
     pisitools.dodir("/pub/scm")
 
-    # emacs support
-    autotools.install("-C contrib/emacs")
-    pisitools.insinto("/usr/share/doc/emacs-git", "contrib/emacs/README")
-
-    # Remove unused perl directory
-    pisitools.removeDir("/usr/lib/perl5/site_perl/%s/%s-linux-thread-multi" % (get.curPERL(), get.ARCH())) 
+    # Remove useless perl directories
+    pisitools.removeDir("/usr/lib/perl5/%s" % get.curPERL())
+    pisitools.removeDir("/usr/lib/perl5/site_perl/%s/%s-linux-thread-multi" % (get.curPERL(), get.ARCH()))
 
     # Some docs
     pisitools.dodoc("README", "COPYING", "Documentation/SubmittingPatches")
+
