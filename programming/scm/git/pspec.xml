@@ -11,26 +11,23 @@
         <License>GPLv2</License>
         <Summary>Fast Version Control System</Summary>
         <Description>Git is a fast, scalable, distributed revision control system with an unusually rich command set that provides both high-level operations and full access to internals.</Description>
-        <Archive sha1sum="bd85327627f96c4e98071a4d1d32c30f210aa54a" type="targz">http://git-core.googlecode.com/files/git-1.7.9.1.tar.gz</Archive>
-        <!-- <Archive sha1sum="8c6ee031b39da5c5e53f927952838796e0959ce9" type="targz">http://git-core.googlecode.com/files/git-manpages-1.7.9.1.tar.gz</Archive> -->
+        <Archive sha1sum="8bda6668531fc41a72a680978798deb9ee048846" type="tarbz2">http://kernel.org/pub/software/scm/git/git-1.7.3.4.tar.bz2</Archive>
         <BuildDependencies>
             <Dependency>tcltk</Dependency>
             <Dependency>xmlto</Dependency>
             <Dependency>asciidoc</Dependency>
             <Dependency>perl-Error</Dependency>
             <Dependency versionFrom="5.10.1">perl</Dependency>
-            <!--Needed for emacs-Git package-->
-            <Dependency>emacs</Dependency>
         </BuildDependencies>
         <Patches>
             <Patch>project-root.patch</Patch>
             <Patch level="1">gitk-fonts.patch</Patch>
-            <!-- <Patch level="1">fix-bash-completion.patch</Patch> -->
+            <Patch level="1">fix-bash-completion.patch</Patch>
             <Patch level="1">git-1.5-gitweb-home-link.patch</Patch>
+            <Patch level="1">git-1.6-update-contrib-hooks-path.patch</Patch>
             <Patch level="1">git-cvsps-ignore.patch</Patch>
             <!-- Some UI tweaks to gitweb -->
             <Patch level="1">gitweb-remove-search-box.patch</Patch>
-            <Patch level="1">fix-gitwebdir.patch</Patch>
         </Patches>
     </Source>
 
@@ -48,7 +45,6 @@
         <Files>
             <Path fileType="executable">/usr/bin</Path>
             <Path fileType="executable">/usr/libexec/git-core</Path>
-            <Path fileType="localedata">/usr/share/locale</Path>
             <Path fileType="data">/etc/bash_completion.d</Path>
             <Path fileType="data">/usr/share/git-core</Path>
             <Path fileType="man">/usr/share/man</Path>
@@ -63,6 +59,9 @@
         <RuntimeDependencies>
             <Dependency version="current">git</Dependency>
         </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="80">git</Package>
+        </Conflicts>
         <Files>
             <Path fileType="config">/etc/conf.d/git-daemon</Path>
             <Path fileType="executable">/usr/libexec/git-core/git-daemon</Path>
@@ -86,6 +85,9 @@
             <Dependency>perl-Error</Dependency>
             <Dependency versionFrom="5.10.1">perl</Dependency>
         </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="80">git</Package>
+        </Conflicts>
         <Files>
             <Path fileType="library">/usr/lib/perl5</Path>
             <Path fileType="man">/usr/share/man/man3/Git.3pm</Path>
@@ -101,6 +103,9 @@
             <Dependency>subversion</Dependency>
             <Dependency>perl-Term-ReadKey</Dependency>
         </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="80">git</Package>
+        </Conflicts>
         <Files>
             <Path fileType="executable">/usr/libexec/git-core/*svn*</Path>
             <Path fileType="man">/usr/share/man/man1/*svn*.1*</Path>
@@ -116,6 +121,9 @@
             <Dependency>cvs</Dependency>
             <Dependency>cvsps</Dependency>
         </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="80">git</Package>
+        </Conflicts>
         <Files>
             <Path fileType="executable">/usr/libexec/git-core/*cvs*</Path>
             <Path fileType="executable">/usr/bin/git-cvsserver</Path>
@@ -132,6 +140,9 @@
             <Dependency version="current">git</Dependency>
             <Dependency>tcltk</Dependency>
         </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="80">git</Package>
+        </Conflicts>
         <Files>
             <Path fileType="executable">/usr/bin/gitk</Path>
             <Path fileType="localedata">/usr/share/gitk</Path>
@@ -148,6 +159,9 @@
             <Dependency version="current">gitk</Dependency>
             <Dependency>tcltk</Dependency>
         </RuntimeDependencies>
+        <Conflicts>
+            <Package releaseTo="80">git</Package>
+        </Conflicts>
         <Files>
             <Path fileType="executable">/usr/libexec/git-core/git-gui*</Path>
             <Path fileType="executable">/usr/libexec/git-core/git-citool</Path>
@@ -195,13 +209,6 @@
     </Package>
 
     <History>
-        <Update release="98">
-            <Date>2012-02-17</Date>
-            <Version>1.7.9.1</Version>
-            <Comment>New stable release</Comment>
-            <Name>Fatih Arslan</Name>
-            <Email>farslan@pardus.org.tr</Email>
-        </Update>
         <Update release="97">
             <Date>2010-12-17</Date>
             <Version>1.7.3.4</Version>
