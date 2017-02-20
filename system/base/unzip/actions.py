@@ -12,7 +12,7 @@ from pisi.actionsapi import get
 WorkDir="%s%s" % (get.srcNAME(), get.srcVERSION().replace(".",""))
 
 def build():
-    autotools.make('-f unix/Makefile LF2="" CC="%s" CF="%s -I. -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64" unzips' % (get.CC(),get.CFLAGS()))
+    autotools.make('-f unix/Makefile -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 clean generic2')
 
 def install():
     for bin in ["unzip", "funzip", "unzipsfx", "unix/zipgrep"]:
